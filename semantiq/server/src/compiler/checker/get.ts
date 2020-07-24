@@ -7,11 +7,11 @@ import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
-import { Nhas, Nis } from './predicate';
+import { Thas, Tis } from './predicate';
 export function newGet(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    has: Nhas;
-    is: Nis;
+    has: Thas;
+    is: Tis;
   }
   const qf = f as Frame;
   interface Tget extends ReturnType<typeof qc.newGet> {}
@@ -7493,7 +7493,6 @@ export function newGet(f: qt.Frame) {
       return ambientModulesCache;
     }
   }
-  const r = (qf.get = new Tget());
-  return r;
+  return (qf.get = new Tget());
 }
 export interface Tget extends ReturnType<typeof newGet> {}

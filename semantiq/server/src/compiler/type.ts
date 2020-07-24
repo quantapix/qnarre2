@@ -899,11 +899,11 @@ export interface ForStatement extends IterationStatement {
   incrementor?: Expression;
 }
 export interface Frame {
-  create: any;
-  each: any;
-  get: any;
-  has: any;
-  is: any;
+  create: unknown;
+  each: unknown;
+  get: unknown;
+  has: unknown;
+  is: unknown;
 }
 export interface FreshableIntrinsicType extends IntrinsicType {
   freshType: IntrinsicType;

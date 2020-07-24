@@ -15,7 +15,7 @@ export function newCreate(f: qt.Frame) {
     is: Nis;
   }
   const qf = f as Frame;
-  const r = (qf.create = new (class {
+  return (qf.create = new (class {
     modifier<T extends Modifier['kind']>(k: T): qc.Token<T> {
       return new qc.Token(k);
     }
@@ -67,7 +67,6 @@ export function newCreate(f: qt.Frame) {
       return { file: sourceFile, start: span.start, length: span.length, code: c.code, cat: c.cat, text: c.next ? c : c.text, relatedInformation };
     }
   })());
-  return r;
 }
 export interface Ncreate extends ReturnType<typeof newCreate> {}
 export function newEach(f: qt.Frame) {
@@ -75,7 +74,7 @@ export function newEach(f: qt.Frame) {
     is: Nis;
   }
   const qf = f as Frame;
-  const r = (qf.each = new (class {
+  return (qf.each = new (class {
     ancestor<T>(n: Node | undefined, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
       while (n) {
         const r = cb(n);
@@ -452,7 +451,6 @@ export function newEach(f: qt.Frame) {
       return;
     }
   })());
-  return r;
 }
 export interface Neach extends ReturnType<typeof newEach> {}
 export function newGet(f: qt.Frame) {
@@ -461,7 +459,7 @@ export function newGet(f: qt.Frame) {
     is: Nis;
   }
   const qf = f as Frame;
-  const r = (qf.get = new (class {
+  return (qf.get = new (class {
     getAssignedExpandoIniter(n?: Node): Expression | undefined {
       const p = n?.parent;
       if (qf.is.kind(qc.BinaryExpression, p) && p.operatorToken.kind === Syntax.EqualsToken) {
@@ -1210,7 +1208,6 @@ export function newGet(f: qt.Frame) {
       }
     })();
   })());
-  return r;
 }
 export interface Nget extends ReturnType<typeof newGet> {}
 export function newHas(f: qt.Frame) {
@@ -1219,7 +1216,7 @@ export function newHas(f: qt.Frame) {
     is: Nis;
   }
   const qf = f as Frame;
-  const r = (qf.has = new (class {
+  return (qf.has = new (class {
     typeArguments(n: Node): n is qc.HasTypeArguments {
       return !!(n as qc.HasTypeArguments).typeArguments;
     }
@@ -1262,7 +1259,6 @@ export function newHas(f: qt.Frame) {
       return !!l && qf.is.restParameter(l);
     }
   })());
-  return r;
 }
 export interface Nhas extends ReturnType<typeof newHas> {}
 export function newIs(f: qt.Frame) {
@@ -1271,7 +1267,7 @@ export function newIs(f: qt.Frame) {
     has: Nhas;
   }
   const qf = f as Frame;
-  const r = (qf.is = new (class {
+  return (qf.is = new (class {
     kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
       if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
       return false;
@@ -2519,7 +2515,6 @@ export function newIs(f: qt.Frame) {
       }
     })();
   })());
-  return r;
 }
 export interface Nis extends ReturnType<typeof newIs> {}
 export const fixme = new (class {

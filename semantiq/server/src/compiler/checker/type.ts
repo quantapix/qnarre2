@@ -3,9 +3,9 @@ import * as qt from '../type';
 import * as qu from '../util';
 export * from '../type';
 export interface Frame extends qt.Frame {
-  check: any;
-  instantiate: any;
-  resolve: any;
+  check: unknown;
+  instantiate: unknown;
+  resolve: unknown;
 }
 export const enum IterationUse {
   AllowsSyncIterablesFlag = 1 << 0,

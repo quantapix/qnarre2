@@ -7,8 +7,16 @@ import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
-export function newCreate(qx: qt.Tctx) {
-  const r = (qx.create = new (class {
+import { Tget } from './get';
+import { Thas, Tis } from './predicate';
+interface Frame extends qt.Frame {
+  get: Tget;
+  has: Thas;
+  is: Tis;
+}
+export function newCreate(f: qt.Frame) {
+  const qf = f as Frame;
+  return (qf.create = new (class {
     intrinsicType(kind: qt.TypeFlags, intrinsicName: string, objectFlags: ObjectFlags = 0): IntrinsicType {
       const type = <IntrinsicType>this.type(kind);
       type.intrinsicName = intrinsicName;
@@ -54,7 +62,7 @@ export function newCreate(qx: qt.Tctx) {
     instantiatedSymbolTable(symbols: Symbol[], mapper: TypeMapper, mappingThisOnly: boolean): SymbolTable {
       const result = new SymbolTable();
       for (const symbol of symbols) {
-        result.set(symbol.escName, mappingThisOnly && isThisless(symbol) ? symbol : qx.instantiate.symbol(symbol, mapper));
+        result.set(symbol.escName, mappingThisOnly && isThisless(symbol) ? symbol : qf.instantiate.symbol(symbol, mapper));
       }
       return result;
     }
@@ -201,19 +209,19 @@ export function newCreate(qx: qt.Tctx) {
           );
     }
     signatureInstantiation(signature: Signature, typeArguments: readonly Type[] | undefined): Signature {
-      return qx.instantiate.signature(signature, this.signatureTypeMapper(signature, typeArguments), true);
+      return qf.instantiate.signature(signature, this.signatureTypeMapper(signature, typeArguments), true);
     }
     signatureTypeMapper(signature: Signature, typeArguments: readonly Type[] | undefined): TypeMapper {
       return this.typeMapper(signature.typeParameters!, typeArguments);
     }
     erasedSignature(signature: Signature) {
-      return qx.instantiate.signature(signature, this.typeEraser(signature.typeParameters!), true);
+      return qf.instantiate.signature(signature, this.typeEraser(signature.typeParameters!), true);
     }
     canonicalSignature(signature: Signature) {
       return getSignatureInstantiation(
         signature,
         map(signature.typeParameters, (tp) => (tp.target && !getConstraintOfTypeParameter(tp.target) ? tp.target : tp)),
-        qx.is.inJSFile(signature.declaration)
+        qf.is.inJSFile(signature.declaration)
       );
     }
     indexInfo(type: Type, isReadonly: boolean, declaration?: IndexSignatureDeclaration): IndexInfo {
@@ -239,7 +247,7 @@ export function newCreate(qx: qt.Tctx) {
       type.node = node;
       type.mapper = mapper;
       type.aliasSymbol = aliasSymbol;
-      type.aliasTypeArguments = mapper ? qx.instantiate.types(aliasTypeArguments, mapper) : aliasTypeArguments;
+      type.aliasTypeArguments = mapper ? qf.instantiate.types(aliasTypeArguments, mapper) : aliasTypeArguments;
       return type;
     }
     typeFromGenericGlobalType(genericGlobalType: GenericType, typeArguments: readonly Type[]): ObjectType {
@@ -453,7 +461,7 @@ export function newCreate(qx: qt.Tctx) {
       const jsxChildrenPropertyName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(openingLikeElement));
       for (const attributeDecl of attributes.properties) {
         const member = attributeDecl.symbol;
-        if (qx.is.kind(qc.JsxAttribute, attributeDecl)) {
+        if (qf.is.kind(qc.JsxAttribute, attributeDecl)) {
           const exprType = check.jsxAttribute(attributeDecl, checkMode);
           objectFlags |= getObjectFlags(exprType) & ObjectFlags.PropagatingFlags;
           const attributeSymbol = new Symbol(SymbolFlags.Property | qt.SymbolFlags.Transient | member.flags, member.escName);
@@ -589,7 +597,7 @@ export function newCreate(qx: qt.Tctx) {
       if (promiseType === unknownType) {
         error(
           func,
-          qx.is.importCall(func)
+          qf.is.importCall(func)
             ? qd.msgs.A_dynamic_import_call_returns_a_Promise_Make_sure_you_have_a_declaration_for_Promise_or_include_ES2015_in_your_lib_option
             : qd.msgs.An_async_function_or_method_must_return_a_Promise_Make_sure_you_have_a_declaration_for_Promise_or_include_ES2015_in_your_lib_option
         );
@@ -597,7 +605,7 @@ export function newCreate(qx: qt.Tctx) {
       } else if (!getGlobalPromiseConstructorSymbol(true)) {
         error(
           func,
-          qx.is.importCall(func)
+          qf.is.importCall(func)
             ? qd.msgs.A_dynamic_import_call_in_ES5_SlashES3_requires_the_Promise_constructor_Make_sure_you_have_a_declaration_for_the_Promise_constructor_or_include_ES2015_in_your_lib_option
             : qd.msgs.An_async_function_or_method_in_ES5_SlashES3_requires_the_Promise_constructor_Make_sure_you_have_a_declaration_for_the_Promise_constructor_or_include_ES2015_in_your_lib_option
         );
@@ -648,7 +656,7 @@ export function newCreate(qx: qt.Tctx) {
       tracker: SymbolTracker,
       addUndefined?: boolean
     ) {
-      const declaration = qx.get.parseTreeOf(declarationIn, isVariableLikeOrAccessor);
+      const declaration = qf.get.parseTreeOf(declarationIn, isVariableLikeOrAccessor);
       if (!declaration) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       const symbol = getSymbolOfNode(declaration);
       let type = symbol && !(symbol.flags & (SymbolFlags.TypeLiteral | qt.SymbolFlags.Signature)) ? getWidenedLiteralType(this.getTypeOfSymbol()) : errorType;
@@ -657,13 +665,13 @@ export function newCreate(qx: qt.Tctx) {
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
     returnTypeOfSignatureDeclaration(signatureDeclarationIn: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
-      const signatureDeclaration = qx.get.parseTreeOf(signatureDeclarationIn, isFunctionLike);
+      const signatureDeclaration = qf.get.parseTreeOf(signatureDeclarationIn, isFunctionLike);
       if (!signatureDeclaration) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       const signature = getSignatureFromDeclaration(signatureDeclaration);
       return nodeBuilder.typeToTypeNode(getReturnTypeOfSignature(signature), enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
     typeOfExpression(exprIn: Expression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
-      const expr = qx.get.parseTreeOf(exprIn, isExpression);
+      const expr = qf.get.parseTreeOf(exprIn, isExpression);
       if (!expr) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       const type = getWidenedType(getRegularTypeOfExpression(expr));
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
@@ -689,16 +697,16 @@ export function newCreate(qx: qt.Tctx) {
         getReferencedDeclarationWithCollidingName,
         isDeclarationWithCollidingName,
         isValueAliasDeclaration: (node) => {
-          node = qx.get.parseTreeOf(node);
+          node = qf.get.parseTreeOf(node);
           return node ? isValueAliasDeclaration(node) : true;
         },
         hasGlobalName,
         isReferencedAliasDeclaration: (node, checkChildren?) => {
-          node = qx.get.parseTreeOf(node);
+          node = qf.get.parseTreeOf(node);
           return node ? isReferencedAliasDeclaration(node, checkChildren) : true;
         },
         getNodeCheckFlags: (node) => {
-          node = qx.get.parseTreeOf(node);
+          node = qf.get.parseTreeOf(node);
           return node ? getNodeCheckFlags(node) : 0;
         },
         isTopLevelValueImportEqualsWithEntityName,
@@ -715,7 +723,7 @@ export function newCreate(qx: qt.Tctx) {
         isSymbolAccessible,
         isEntityNameVisible,
         getConstantValue: (nodeIn) => {
-          const node = qx.get.parseTreeOf(nodeIn, canHaveConstantValue);
+          const node = qf.get.parseTreeOf(nodeIn, canHaveConstantValue);
           return node ? getConstantValue(node) : undefined;
         },
         collectLinkedAliases,
@@ -729,13 +737,13 @@ export function newCreate(qx: qt.Tctx) {
         getTypeReferenceDirectivesForSymbol,
         isLiteralConstDeclaration,
         isLateBound: (nodeIn: Declaration): nodeIn is LateBoundDeclaration => {
-          const node = qx.get.parseTreeOf(nodeIn, isDeclaration);
+          const node = qf.get.parseTreeOf(nodeIn, isDeclaration);
           const symbol = node && getSymbolOfNode(node);
           return !!(symbol && this.getCheckFlags() & qt.CheckFlags.Late);
         },
         getJsxFactoryEntity,
         getAllAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
-          accessor = qx.get.parseTreeOf(accessor, GetAccessorDeclaration.orSetKind)!;
+          accessor = qf.get.parseTreeOf(accessor, GetAccessorDeclaration.orSetKind)!;
           const otherKind = accessor.kind === Syntax.SetAccessor ? Syntax.GetAccessor : Syntax.SetAccessor;
           const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(accessor), otherKind);
           const firstAccessor = otherAccessor && otherAccessor.pos < accessor.pos ? otherAccessor : accessor;
@@ -749,14 +757,14 @@ export function newCreate(qx: qt.Tctx) {
             getAccessor,
           };
         },
-        getSymbolOfExternalModuleSpecifier: (moduleName) => qx.resolve.externalModuleNameWorker(moduleName, moduleName, undefined),
+        getSymbolOfExternalModuleSpecifier: (moduleName) => qf.resolve.externalModuleNameWorker(moduleName, moduleName, undefined),
         isBindingCapturedByNode: (node, decl) => {
-          const parseNode = qx.get.parseTreeOf(node);
-          const parseDecl = qx.get.parseTreeOf(decl);
-          return !!parseNode && !!parseDecl && (qx.is.kind(qc.VariableDeclaration, parseDecl) || qx.is.kind(qc.BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+          const parseNode = qf.get.parseTreeOf(node);
+          const parseDecl = qf.get.parseTreeOf(decl);
+          return !!parseNode && !!parseDecl && (qf.is.kind(qc.VariableDeclaration, parseDecl) || qf.is.kind(qc.BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
         },
         getDeclarationStatementsForSourceFile: (node, flags, tracker, bundled) => {
-          const n = qx.get.parseTreeOf(node) as SourceFile;
+          const n = qf.get.parseTreeOf(node) as SourceFile;
           assert(n && n.kind === Syntax.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
           const sym = getSymbolOfNode(node);
           if (!sym) return !node.locals ? [] : nodeBuilder.symbolTableToDeclarationStatements(node.locals, node, flags, tracker, bundled);
@@ -765,7 +773,7 @@ export function newCreate(qx: qt.Tctx) {
         isImportRequiredByAugmentation,
       };
       function isImportRequiredByAugmentation(node: ImportDeclaration) {
-        const file = qx.get.sourceFileOf(node);
+        const file = qf.get.sourceFileOf(node);
         if (!file.symbol) return false;
         const importTarget = getExternalModuleFileFromDeclaration(node);
         if (!importTarget) return false;
@@ -775,7 +783,7 @@ export function newCreate(qx: qt.Tctx) {
           if (s.mergeId) {
             const merged = getMergedSymbol(s);
             for (const d of merged.declarations) {
-              const declFile = qx.get.sourceFileOf(d);
+              const declFile = qf.get.sourceFileOf(d);
               if (declFile === importTarget) return true;
             }
           }
@@ -790,14 +798,14 @@ export function newCreate(qx: qt.Tctx) {
         let meaning = qt.SymbolFlags.Type | qt.SymbolFlags.Namespace;
         if ((node.kind === Syntax.Identifier && isInTypeQuery(node)) || (node.kind === Syntax.PropertyAccessExpression && !isInHeritageClause(node)))
           meaning = qt.SymbolFlags.Value | qt.SymbolFlags.ExportValue;
-        const symbol = qx.resolve.entityName(node, meaning, true);
+        const symbol = qf.resolve.entityName(node, meaning, true);
         return symbol && symbol !== unknownSymbol ? getTypeReferenceDirectivesForSymbol(symbol, meaning) : undefined;
       }
       function addReferencedFilesToTypeDirective(file: SourceFile, key: string) {
         if (fileToDirective.has(file.path)) return;
         fileToDirective.set(file.path, key);
         for (const { fileName } of file.referencedFiles) {
-          const resolvedFile = qx.resolve.tripleslashReference(fileName, file.originalFileName);
+          const resolvedFile = qf.resolve.tripleslashReference(fileName, file.originalFileName);
           const referencedFile = host.getSourceFile(resolvedFile);
           if (referencedFile) addReferencedFilesToTypeDirective(referencedFile, key);
         }
@@ -816,11 +824,11 @@ export function newCreate(qx: qt.Tctx) {
       return { kind, mapper1, mapper2 };
     }
   })());
-  return r;
 }
-export interface Create extends ReturnType<typeof newCreate> {}
-export function newInstantiate(qx: qt.Tctx) {
-  const r = (qx.instantiate = new (class {
+export interface Tcreate extends ReturnType<typeof newCreate> {}
+export function newInstantiate(f: qt.Frame) {
+  const qf = f as Frame;
+  return (qf.instantiate = new (class {
     list<T>(items: readonly T[], mapper: TypeMapper, instantiator: (item: T, mapper: TypeMapper) => T): readonly T[];
     list<T>(items: readonly T[] | undefined, mapper: TypeMapper, instantiator: (item: T, mapper: TypeMapper) => T): readonly T[] | undefined;
     list<T>(items: readonly T[] | undefined, mapper: TypeMapper, instantiator: (item: T, mapper: TypeMapper) => T): readonly T[] | undefined {
@@ -849,18 +857,18 @@ export function newInstantiate(qx: qt.Tctx) {
       return this.list<Signature>(signatures, mapper, this.signature);
     }
     typePredicate(predicate: TypePredicate, mapper: TypeMapper): TypePredicate {
-      return qx.create.typePredicate(predicate.kind, predicate.parameterName, predicate.parameterIndex, this.type(predicate.type, mapper));
+      return qf.create.typePredicate(predicate.kind, predicate.parameterName, predicate.parameterIndex, this.type(predicate.type, mapper));
     }
     signature(signature: Signature, mapper: TypeMapper, eraseTypeParameters?: boolean): Signature {
       let freshTypeParameters: TypeParameter[] | undefined;
       if (signature.typeParameters && !eraseTypeParameters) {
         freshTypeParameters = map(signature.typeParameters, cloneTypeParameter);
-        mapper = combineTypeMappers(qx.create.typeMapper(signature.typeParameters, freshTypeParameters), mapper);
+        mapper = combineTypeMappers(qf.create.typeMapper(signature.typeParameters, freshTypeParameters), mapper);
         for (const tp of freshTypeParameters) {
           tp.mapper = mapper;
         }
       }
-      const result = qx.create.signature(
+      const result = qf.create.signature(
         signature.declaration,
         freshTypeParameters,
         signature.thisParameter && this.symbol(signature.thisParameter, mapper),
@@ -916,7 +924,7 @@ export function newInstantiate(qx: qt.Tctx) {
     }
     mappedArrayType(arrayType: Type, mappedType: MappedType, mapper: TypeMapper) {
       const elementType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
-      return elementType === errorType ? errorType : qx.create.arrayType(elementType, getModifiedReadonlyState(isReadonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
+      return elementType === errorType ? errorType : qf.create.arrayType(elementType, getModifiedReadonlyState(isReadonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
     }
     mappedTupleType(tupleType: TupleTypeReference, mappedType: MappedType, mapper: TypeMapper) {
       const minLength = tupleType.target.minLength;
@@ -929,7 +937,7 @@ export function newInstantiate(qx: qt.Tctx) {
           ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElement ? 1 : 0)
           : minLength;
       const newReadonly = getModifiedReadonlyState(tupleType.target.readonly, modifiers);
-      return contains(elementTypes, errorType) ? errorType : qx.create.tupleType(elementTypes, newMinLength, tupleType.target.hasRestElement, newReadonly, tupleType.target.labeledElementDeclarations);
+      return contains(elementTypes, errorType) ? errorType : qf.create.tupleType(elementTypes, newMinLength, tupleType.target.hasRestElement, newReadonly, tupleType.target.labeledElementDeclarations);
     }
     mappedTypeTemplate(type: MappedType, key: Type, isOptional: boolean, mapper: TypeMapper) {
       const templateMapper = appendTypeMapping(mapper, getTypeParameterFromMappedType(type), key);
@@ -942,7 +950,7 @@ export function newInstantiate(qx: qt.Tctx) {
         : propType;
     }
     anonymousType(type: AnonymousType, mapper: TypeMapper): AnonymousType {
-      const result = <AnonymousType>qx.create.objectType(type.objectFlags | ObjectFlags.Instantiated, type.symbol);
+      const result = <AnonymousType>qf.create.objectType(type.objectFlags | ObjectFlags.Instantiated, type.symbol);
       if (type.objectFlags & ObjectFlags.Mapped) {
         (<MappedType>result).declaration = (<MappedType>type).declaration;
         const origTypeParameter = getTypeParameterFromMappedType(<MappedType>type);
@@ -996,7 +1004,7 @@ export function newInstantiate(qx: qt.Tctx) {
           if (objectFlags & ObjectFlags.Reference && !(<TypeReference>type).node) {
             const resolvedTypeArguments = (<TypeReference>type).resolvedTypeArguments;
             const newTypeArguments = this.types(resolvedTypeArguments, mapper);
-            return newTypeArguments !== resolvedTypeArguments ? qx.create.typeReference((<TypeReference>type).target, newTypeArguments) : type;
+            return newTypeArguments !== resolvedTypeArguments ? qf.create.typeReference((<TypeReference>type).target, newTypeArguments) : type;
           }
           return getObjectTypeInstantiation(<TypeReference | AnonymousType | MappedType>type, mapper);
         }
@@ -1026,7 +1034,7 @@ export function newInstantiate(qx: qt.Tctx) {
       return type;
     }
     indexInfo(info: IndexInfo | undefined, mapper: TypeMapper): IndexInfo | undefined {
-      return info && qx.create.indexInfo(this.type(info.type, mapper), info.isReadonly, info.declaration);
+      return info && qf.create.indexInfo(this.type(info.type, mapper), info.isReadonly, info.declaration);
     }
     contextualType(contextualType: Type | undefined, node: Node, contextFlags?: ContextFlags): Type | undefined {
       if (contextualType && maybeTypeOfKind(contextualType, qt.TypeFlags.Instantiable)) {
@@ -1050,7 +1058,7 @@ export function newInstantiate(qx: qt.Tctx) {
       return type;
     }
     signatureInContextOf(signature: Signature, contextualSignature: Signature, inferenceContext?: InferenceContext, compareTypes?: TypeComparer): Signature {
-      const context = qx.create.inferenceContext(signature.typeParameters!, signature, InferenceFlags.None, compareTypes);
+      const context = qf.create.inferenceContext(signature.typeParameters!, signature, InferenceFlags.None, compareTypes);
       const restType = getEffectiveRestType(contextualSignature);
       const mapper = inferenceContext && (restType && restType.flags & qt.TypeFlags.TypeParameter ? inferenceContext.nonFixingMapper : inferenceContext.mapper);
       const sourceSignature = mapper ? this.signature(contextualSignature, mapper) : contextualSignature;
@@ -1062,7 +1070,7 @@ export function newInstantiate(qx: qt.Tctx) {
           inferTypes(context.inferences, source, target, InferencePriority.ReturnType);
         });
       }
-      return getSignatureInstantiation(signature, getInferredTypes(context), qx.is.inJSFile(contextualSignature.declaration));
+      return getSignatureInstantiation(signature, getInferredTypes(context), qf.is.inJSFile(contextualSignature.declaration));
     }
     typeWithSingleGenericCallSignature(node: Expression | MethodDeclaration | QualifiedName, type: Type, checkMode?: CheckMode) {
       if (checkMode && checkMode & (CheckMode.Inferential | CheckMode.SkipGenericFunctions)) {
@@ -1084,7 +1092,7 @@ export function newInstantiate(qx: qt.Tctx) {
               if (returnSignature && !returnSignature.typeParameters && !every(context.inferences, hasInferenceCandidates)) {
                 const uniqueTypeParameters = getUniqueTypeParameters(context, signature.typeParameters);
                 const instantiatedSignature = getSignatureInstantiationWithoutFillingInTypeArguments(signature, uniqueTypeParameters);
-                const inferences = map(context.inferences, (info) => qx.create.inferenceInfo(info.typeParameter));
+                const inferences = map(context.inferences, (info) => qf.create.inferenceInfo(info.typeParameter));
                 applyToParameterTypes(instantiatedSignature, contextualSignature, (source, target) => {
                   inferTypes(inferences, source, target, true);
                 });
@@ -1107,11 +1115,11 @@ export function newInstantiate(qx: qt.Tctx) {
       return type;
     }
   })());
-  return r;
 }
-export interface Instantiate extends ReturnType<typeof newInstantiate> {}
-export function newResolve(qx: qt.Tctx) {
-  const r = (qx.resolve = new (class {
+export interface Tinstantiate extends ReturnType<typeof newInstantiate> {}
+export function newResolve(f: qt.Frame) {
+  const qf = f as Frame;
+  return (qf.resolve = new (class {
     name(
       location: Node | undefined,
       name: qu.__String,
@@ -1149,7 +1157,7 @@ export function newResolve(qx: qt.Tctx) {
         if (location.locals && !isGlobalSourceFile(location)) {
           if ((result = lookup(location.locals, name, meaning))) {
             let useResult = true;
-            if (qx.is.functionLike(location) && lastLocation && lastLocation !== (<FunctionLikeDeclaration>location).body) {
+            if (qf.is.functionLike(location) && lastLocation && lastLocation !== (<FunctionLikeDeclaration>location).body) {
               if (meaning & result.flags & qt.SymbolFlags.Type && lastLocation.kind !== Syntax.DocComment) {
                 useResult =
                   result.flags & qt.SymbolFlags.TypeParameter
@@ -1174,11 +1182,11 @@ export function newResolve(qx: qt.Tctx) {
         withinDeferredContext = withinDeferredContext || getIsDeferredContext(location, lastLocation);
         switch (location.kind) {
           case Syntax.SourceFile:
-            if (!qx.is.externalOrCommonJsModule(<SourceFile>location)) break;
+            if (!qf.is.externalOrCommonJsModule(<SourceFile>location)) break;
             isInExternalModule = true;
           case Syntax.ModuleDeclaration:
             const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
-            if (location.kind === Syntax.SourceFile || (qx.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
+            if (location.kind === Syntax.SourceFile || (qf.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
               if ((result = moduleExports.get(InternalSymbol.Default))) {
                 const localSymbol = getLocalSymbolForExportDefault(result);
                 if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;
@@ -1194,7 +1202,7 @@ export function newResolve(qx: qt.Tctx) {
               }
             }
             if (name !== InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & qt.SymbolFlags.ModuleMember))) {
-              if (qx.is.kind(qc.SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
+              if (qf.is.kind(qc.SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
               else {
                 break loop;
               }
@@ -1204,7 +1212,7 @@ export function newResolve(qx: qt.Tctx) {
             if ((result = lookup(getSymbolOfNode(location)!.exports!, name, meaning & qt.SymbolFlags.EnumMember))) break loop;
             break;
           case Syntax.PropertyDeclaration:
-            if (!qx.has.syntacticModifier(location, ModifierFlags.Static)) {
+            if (!qf.has.syntacticModifier(location, ModifierFlags.Static)) {
               const ctor = findConstructorDeclaration(location.parent as ClassLikeDeclaration);
               if (ctor && ctor.locals) {
                 if (lookup(ctor.locals, name, meaning & qt.SymbolFlags.Value)) propertyWithInvalidIniter = location;
@@ -1219,7 +1227,7 @@ export function newResolve(qx: qt.Tctx) {
                 result = undefined;
                 break;
               }
-              if (lastLocation && qx.has.syntacticModifier(lastLocation, ModifierFlags.Static)) {
+              if (lastLocation && qf.has.syntacticModifier(lastLocation, ModifierFlags.Static)) {
                 error(errorLocation, qd.msgs.Static_members_cannot_reference_class_type_parameters);
                 return;
               }
@@ -1236,7 +1244,7 @@ export function newResolve(qx: qt.Tctx) {
           case Syntax.ExpressionWithTypeArguments:
             if (lastLocation === (<ExpressionWithTypeArguments>location).expression && (<HeritageClause>location.parent).token === Syntax.ExtendsKeyword) {
               const container = location.parent.parent;
-              if (qx.is.classLike(container) && (result = lookup(getSymbolOfNode(container).members!, name, meaning & qt.SymbolFlags.Type))) {
+              if (qf.is.classLike(container) && (result = lookup(getSymbolOfNode(container).members!, name, meaning & qt.SymbolFlags.Type))) {
                 if (nameNotFoundMessage) error(errorLocation, qd.msgs.Base_class_expressions_cannot_reference_class_type_parameters);
                 return;
               }
@@ -1244,7 +1252,7 @@ export function newResolve(qx: qt.Tctx) {
             break;
           case Syntax.ComputedPropertyName:
             grandparent = location.parent.parent;
-            if (qx.is.classLike(grandparent) || grandparent.kind === Syntax.InterfaceDeclaration) {
+            if (qf.is.classLike(grandparent) || grandparent.kind === Syntax.InterfaceDeclaration) {
               if ((result = lookup(getSymbolOfNode(grandparent as ClassLikeDeclaration | InterfaceDeclaration).members!, name, meaning & qt.SymbolFlags.Type))) {
                 error(errorLocation, qd.msgs.A_computed_property_name_cannot_reference_a_type_parameter_from_its_containing_type);
                 return;
@@ -1278,7 +1286,7 @@ export function newResolve(qx: qt.Tctx) {
             break;
           case Syntax.Decorator:
             if (location.parent && location.parent.kind === Syntax.Parameter) location = location.parent;
-            if (location.parent && (qx.is.classElement(location.parent) || location.parent.kind === Syntax.ClassDeclaration)) location = location.parent;
+            if (location.parent && (qf.is.classElement(location.parent) || location.parent.kind === Syntax.ClassDeclaration)) location = location.parent;
             break;
           case Syntax.DocTypedefTag:
           case Syntax.DocCallbackTag:
@@ -1288,21 +1296,21 @@ export function newResolve(qx: qt.Tctx) {
           case Syntax.Parameter:
             if (
               lastLocation &&
-              (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qx.is.kind(qc.BindingPattern, lastLocation)))
+              (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qf.is.kind(qc.BindingPattern, lastLocation)))
             ) {
               if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as ParameterDeclaration;
             }
             break;
           case Syntax.BindingElement:
-            if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qx.is.kind(qc.BindingPattern, lastLocation)))) {
-              const root = qx.get.rootDeclaration(location);
+            if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qf.is.kind(qc.BindingPattern, lastLocation)))) {
+              const root = qf.get.rootDeclaration(location);
               if (root.kind === Syntax.Parameter) {
                 if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElement;
               }
             }
             break;
         }
-        if (qx.is.selfReferenceLocation(location)) lastSelfReferenceLocation = location;
+        if (qf.is.selfReferenceLocation(location)) lastSelfReferenceLocation = location;
         lastLocation = location;
         location = location.parent;
       }
@@ -1315,7 +1323,7 @@ export function newResolve(qx: qt.Tctx) {
         if (!excludeGlobals) result = lookup(globals, name, meaning);
       }
       if (!result) {
-        if (originalLocation && qx.is.inJSFile(originalLocation) && originalLocation.parent) {
+        if (originalLocation && qf.is.inJSFile(originalLocation) && originalLocation.parent) {
           if (isRequireCall(originalLocation.parent, false)) return requireSymbol;
         }
       }
@@ -1337,7 +1345,7 @@ export function newResolve(qx: qt.Tctx) {
               if (suggestion) {
                 const suggestionName = suggestion.symbolToString();
                 const diagnostic = error(errorLocation, suggestedNameNotFoundMessage, diagnosticName(nameArg!), suggestionName);
-                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qx.create.diagnosticForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
+                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagnosticForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
               }
             }
             if (!suggestion) error(errorLocation, nameNotFoundMessage, diagnosticName(nameArg!));
@@ -1362,7 +1370,7 @@ export function newResolve(qx: qt.Tctx) {
         }
         if (result && isInExternalModule && (meaning & qt.SymbolFlags.Value) === qt.SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.Doc)) {
           const merged = getMergedSymbol(result);
-          if (length(merged.declarations) && every(merged.declarations, (d) => qx.is.kind(qc.NamespaceExportDeclaration, d) || (qx.is.kind(qc.SourceFile, d) && !!d.symbol.globalExports))) {
+          if (length(merged.declarations) && every(merged.declarations, (d) => qf.is.kind(qc.NamespaceExportDeclaration, d) || (qf.is.kind(qc.SourceFile, d) && !!d.symbol.globalExports))) {
             errorOrSuggestion(
               !compilerOptions.allowUmdGlobalAccess,
               errorLocation!,
@@ -1373,7 +1381,7 @@ export function newResolve(qx: qt.Tctx) {
         }
         if (result && associatedDeclarationForContainingIniterOrBindingName && !withinDeferredContext && (meaning & qt.SymbolFlags.Value) === qt.SymbolFlags.Value) {
           const candidate = getMergedSymbol(getLateBoundSymbol(result));
-          const root = qx.get.rootDeclaration(associatedDeclarationForContainingIniterOrBindingName) as ParameterDeclaration;
+          const root = qf.get.rootDeclaration(associatedDeclarationForContainingIniterOrBindingName) as ParameterDeclaration;
           if (candidate === getSymbolOfNode(associatedDeclarationForContainingIniterOrBindingName))
             error(errorLocation, qd.msgs.Parameter_0_cannot_reference_itself, declarationNameToString(associatedDeclarationForContainingIniterOrBindingName.name));
           else if (
@@ -1403,24 +1411,24 @@ export function newResolve(qx: qt.Tctx) {
       return resolved;
     }
     entityName(name: EntityNameOrEntityNameExpression, meaning: qt.SymbolFlags, ignoreErrors?: boolean, dontResolveAlias?: boolean, location?: Node): Symbol | undefined {
-      if (qx.is.missing(name)) return;
-      const namespaceMeaning = qt.SymbolFlags.Namespace | (qx.is.inJSFile(name) ? meaning & qt.SymbolFlags.Value : 0);
+      if (qf.is.missing(name)) return;
+      const namespaceMeaning = qt.SymbolFlags.Namespace | (qf.is.inJSFile(name) ? meaning & qt.SymbolFlags.Value : 0);
       let symbol: Symbol | undefined;
       if (name.kind === Syntax.Identifier) {
         const message = meaning === namespaceMeaning || isSynthesized(name) ? qd.msgs.Cannot_find_namespace_0 : getCannotFindNameDiagnosticForName(getFirstIdentifier(name));
-        const symbolFromJSPrototype = qx.is.inJSFile(name) && !isSynthesized(name) ? this.entityNameFromAssignmentDeclaration(name, meaning) : undefined;
+        const symbolFromJSPrototype = qf.is.inJSFile(name) && !isSynthesized(name) ? this.entityNameFromAssignmentDeclaration(name, meaning) : undefined;
         symbol = getMergedSymbol(this.name(location || name, name.escapedText, meaning, ignoreErrors || symbolFromJSPrototype ? undefined : message, name, true));
         if (!symbol) return getMergedSymbol(symbolFromJSPrototype);
       } else if (name.kind === Syntax.QualifiedName || name.kind === Syntax.PropertyAccessExpression) {
         const left = name.kind === Syntax.QualifiedName ? name.left : name.expression;
         const right = name.kind === Syntax.QualifiedName ? name.right : name.name;
         let namespace = this.entityName(left, namespaceMeaning, ignoreErrors, false, location);
-        if (!namespace || qx.is.missing(right)) return;
+        if (!namespace || qf.is.missing(right)) return;
         else if (namespace === unknownSymbol) return namespace;
-        if (qx.is.inJSFile(name)) {
+        if (qf.is.inJSFile(name)) {
           if (
             namespace.valueDeclaration &&
-            qx.is.kind(qc.VariableDeclaration, namespace.valueDeclaration) &&
+            qf.is.kind(qc.VariableDeclaration, namespace.valueDeclaration) &&
             namespace.valueDeclaration.initer &&
             isCommonJsRequire(namespace.valueDeclaration.initer)
           ) {
@@ -1439,7 +1447,7 @@ export function newResolve(qx: qt.Tctx) {
         }
       } else throw Debug.assertNever(name, 'Unknown entity name kind.');
       assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
-      if (!isSynthesized(name) && qx.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
+      if (!isSynthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
         markSymbolOfAliasDeclarationIfTypeOnly(getAliasDeclarationFromName(name), symbol, undefined, true);
       return symbol.flags & meaning || dontResolveAlias ? symbol : symbol.resolve.alias();
     }
@@ -1465,7 +1473,7 @@ export function newResolve(qx: qt.Tctx) {
       }
       const ambientModule = tryFindAmbientModule(moduleReference, true);
       if (ambientModule) return ambientModule;
-      const currentSourceFile = qx.get.sourceFileOf(location);
+      const currentSourceFile = qf.get.sourceFileOf(location);
       const resolvedModule = getResolvedModule(currentSourceFile, moduleReference)!;
       const resolutionDiagnostic = resolvedModule && getResolutionDiagnostic(compilerOptions, resolvedModule);
       const sourceFile = resolvedModule && !resolutionDiagnostic && host.getSourceFile(resolvedModule.resolvedFileName);
@@ -1545,7 +1553,7 @@ export function newResolve(qx: qt.Tctx) {
         }
         if (compilerOptions.esModuleInterop) {
           const referenceParent = referencingLocation.parent;
-          if ((qx.is.kind(qc.ImportDeclaration, referenceParent) && getNamespaceDeclarationNode(referenceParent)) || qx.is.importCall(referenceParent)) {
+          if ((qf.is.kind(qc.ImportDeclaration, referenceParent) && getNamespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
             const type = this.getTypeOfSymbol();
             let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
             if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
@@ -1561,7 +1569,7 @@ export function newResolve(qx: qt.Tctx) {
               if (symbol.members) result.members = cloneMap(symbol.members);
               if (symbol.exports) result.exports = cloneMap(symbol.exports);
               const resolvedModuleType = this.structuredTypeMembers(moduleType as StructuredType);
-              result.type = qx.create.anonymousType(result, resolvedModuleType.members, empty, empty, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
+              result.type = qf.create.anonymousType(result, resolvedModuleType.members, empty, empty, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
               return result;
             }
           }
@@ -1597,7 +1605,7 @@ export function newResolve(qx: qt.Tctx) {
           qd.msgs.Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members,
           typeToString(reducedBaseType)
         );
-        diagnostics.add(qx.create.diagnosticForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
+        diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
         return (type.resolvedBaseTypes = empty);
       }
       if (type === reducedBaseType || hasBaseType(reducedBaseType, type)) {
@@ -1659,12 +1667,12 @@ export function newResolve(qx: qt.Tctx) {
         stringIndexInfo = source.declaredStringIndexInfo;
         numberIndexInfo = source.declaredNumberIndexInfo;
       } else {
-        mapper = qx.create.typeMapper(typeParameters, typeArguments);
-        members = qx.create.instantiatedSymbolTable(source.declaredProperties, mapper, typeParameters.length === 1);
-        callSignatures = qx.instantiate.signatures(source.declaredCallSignatures, mapper);
-        constructSignatures = qx.instantiate.signatures(source.declaredConstructSignatures, mapper);
-        stringIndexInfo = qx.instantiate.indexInfo(source.declaredStringIndexInfo, mapper);
-        numberIndexInfo = qx.instantiate.indexInfo(source.declaredNumberIndexInfo, mapper);
+        mapper = qf.create.typeMapper(typeParameters, typeArguments);
+        members = qf.create.instantiatedSymbolTable(source.declaredProperties, mapper, typeParameters.length === 1);
+        callSignatures = qf.instantiate.signatures(source.declaredCallSignatures, mapper);
+        constructSignatures = qf.instantiate.signatures(source.declaredConstructSignatures, mapper);
+        stringIndexInfo = qf.instantiate.indexInfo(source.declaredStringIndexInfo, mapper);
+        numberIndexInfo = qf.instantiate.indexInfo(source.declaredNumberIndexInfo, mapper);
       }
       const baseTypes = getBaseTypes(source);
       if (baseTypes.length) {
@@ -1672,11 +1680,11 @@ export function newResolve(qx: qt.Tctx) {
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArgument = lastOrUndefined(typeArguments);
         for (const baseType of baseTypes) {
-          const instantiatedBaseType = thisArgument ? getTypeWithThisArgument(qx.instantiate.type(baseType, mapper), thisArgument) : baseType;
+          const instantiatedBaseType = thisArgument ? getTypeWithThisArgument(qf.instantiate.type(baseType, mapper), thisArgument) : baseType;
           addInheritedMembers(members, getPropertiesOfType(instantiatedBaseType));
           callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
           constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));
-          if (!stringIndexInfo) stringIndexInfo = instantiatedBaseType === anyType ? qx.create.indexInfo(anyType, false) : getIndexInfoOfType(instantiatedBaseType, IndexKind.String);
+          if (!stringIndexInfo) stringIndexInfo = instantiatedBaseType === anyType ? qf.create.indexInfo(anyType, false) : getIndexInfoOfType(instantiatedBaseType, IndexKind.String);
           numberIndexInfo = numberIndexInfo || getIndexInfoOfType(instantiatedBaseType, IndexKind.Number);
         }
       }
@@ -1730,11 +1738,11 @@ export function newResolve(qx: qt.Tctx) {
       const symbol = getMergedSymbol(type.symbol);
       if (type.target) {
         setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
-        const members = qx.create.instantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, false);
-        const callSignatures = qx.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Call), type.mapper!);
-        const constructSignatures = qx.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Construct), type.mapper!);
-        const stringIndexInfo = qx.instantiate.indexInfo(getIndexInfoOfType(type.target, IndexKind.String), type.mapper!);
-        const numberIndexInfo = qx.instantiate.indexInfo(getIndexInfoOfType(type.target, IndexKind.Number), type.mapper!);
+        const members = qf.create.instantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, false);
+        const callSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Call), type.mapper!);
+        const constructSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Construct), type.mapper!);
+        const stringIndexInfo = qf.instantiate.indexInfo(getIndexInfoOfType(type.target, IndexKind.String), type.mapper!);
+        const numberIndexInfo = qf.instantiate.indexInfo(getIndexInfoOfType(type.target, IndexKind.Number), type.mapper!);
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
       } else if (symbol.flags & qt.SymbolFlags.TypeLiteral) {
         setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
@@ -1765,7 +1773,7 @@ export function newResolve(qx: qt.Tctx) {
             members = new SymbolTable(getNamedMembers(members));
             addInheritedMembers(members, getPropertiesOfType(baseConstructorType));
           } else if (baseConstructorType === anyType) {
-            stringIndexInfo = qx.create.indexInfo(anyType, false);
+            stringIndexInfo = qf.create.indexInfo(anyType, false);
           }
         }
         const numberIndexInfo =
@@ -1783,7 +1791,7 @@ export function newResolve(qx: qt.Tctx) {
               constructSignatures.slice(),
               mapDefined(type.callSignatures, (sig) =>
                 isJSConstructor(sig.declaration)
-                  ? qx.create.signature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, classType, undefined, sig.minArgumentCount, sig.flags & SignatureFlags.PropagatingFlags)
+                  ? qf.create.signature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, classType, undefined, sig.minArgumentCount, sig.flags & SignatureFlags.PropagatingFlags)
                   : undefined
               )
             );
@@ -1798,7 +1806,7 @@ export function newResolve(qx: qt.Tctx) {
       const modifiers = getMappedTypeModifiers(type.mappedType);
       const readonlyMask = modifiers & MappedTypeModifiers.IncludeReadonly ? false : true;
       const optionalMask = modifiers & MappedTypeModifiers.IncludeOptional ? 0 : qt.SymbolFlags.Optional;
-      const stringIndexInfo = indexInfo && qx.create.indexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
+      const stringIndexInfo = indexInfo && qf.create.indexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
       const members = new SymbolTable();
       for (const prop of getPropertiesOfType(type.source)) {
         const f = qt.CheckFlags.ReverseMapped | (readonlyMask && isReadonlySymbol(prop) ? qt.CheckFlags.Readonly : 0);
@@ -1863,10 +1871,10 @@ export function newResolve(qx: qt.Tctx) {
           prop.nameType = t;
           members.set(propName, prop);
         } else if (t.flags & (TypeFlags.Any | qt.TypeFlags.String | qt.TypeFlags.Number | qt.TypeFlags.Enum)) {
-          const propType = qx.instantiate.type(templateType, templateMapper);
-          if (t.flags & (TypeFlags.Any | qt.TypeFlags.String)) stringIndexInfo = qx.create.indexInfo(propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
+          const propType = qf.instantiate.type(templateType, templateMapper);
+          if (t.flags & (TypeFlags.Any | qt.TypeFlags.String)) stringIndexInfo = qf.create.indexInfo(propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
           else {
-            numberIndexInfo = qx.create.indexInfo(numberIndexInfo ? getUnionType([numberIndexInfo.type, propType]) : propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
+            numberIndexInfo = qf.create.indexInfo(numberIndexInfo ? getUnionType([numberIndexInfo.type, propType]) : propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
           }
         }
       }
@@ -1964,7 +1972,7 @@ export function newResolve(qx: qt.Tctx) {
             const diags = getSignatureApplicabilityError(node, args, last, assignableRelation, CheckMode.Normal, true, () => chain);
             if (diags) {
               for (const d of diags) {
-                if (last.declaration && candidatesForArgumentError.length > 3) addRelatedInfo(d, qx.create.diagnosticForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
+                if (last.declaration && candidatesForArgumentError.length > 3) addRelatedInfo(d, qf.create.diagnosticForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
                 diagnostics.add(d);
               }
             } else {
@@ -2002,7 +2010,7 @@ export function newResolve(qx: qt.Tctx) {
               const { file, start, length } = diags[0];
               diagnostics.add({ file, start, length, code: chain.code, category: chain.category, messageText: chain, relatedInformation: related });
             } else {
-              diagnostics.add(qx.create.diagnosticForNodeFromMessageChain(node, chain, related));
+              diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(node, chain, related));
             }
           }
         } else if (candidateForArgumentArityError) {
@@ -2047,11 +2055,11 @@ export function newResolve(qx: qt.Tctx) {
                 continue;
               }
             } else {
-              inferenceContext = qx.create.inferenceContext(candidate.typeParameters, candidate, qx.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
+              inferenceContext = qf.create.inferenceContext(candidate.typeParameters, candidate, qf.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
               typeArgumentTypes = inferTypeArguments(node, candidate, args, argCheckMode | CheckMode.SkipGenericFunctions, inferenceContext);
               argCheckMode |= inferenceContext.flags & InferenceFlags.SkippedGenericFunction ? CheckMode.SkipGenericFunctions : CheckMode.Normal;
             }
-            checkCandidate = getSignatureInstantiation(candidate, typeArgumentTypes, qx.is.inJSFile(candidate.declaration), inferenceContext && inferenceContext.inferredTypeParameters);
+            checkCandidate = getSignatureInstantiation(candidate, typeArgumentTypes, qf.is.inJSFile(candidate.declaration), inferenceContext && inferenceContext.inferredTypeParameters);
             if (getNonArrayRestType(candidate) && !hasCorrectArity(node, args, checkCandidate, signatureHelpTrailingComma)) {
               candidateForArgumentArityError = checkCandidate;
               continue;
@@ -2067,7 +2075,7 @@ export function newResolve(qx: qt.Tctx) {
             argCheckMode = CheckMode.Normal;
             if (inferenceContext) {
               const typeArgumentTypes = inferTypeArguments(node, candidate, args, argCheckMode, inferenceContext);
-              checkCandidate = getSignatureInstantiation(candidate, typeArgumentTypes, qx.is.inJSFile(candidate.declaration), inferenceContext && inferenceContext.inferredTypeParameters);
+              checkCandidate = getSignatureInstantiation(candidate, typeArgumentTypes, qf.is.inJSFile(candidate.declaration), inferenceContext && inferenceContext.inferredTypeParameters);
               if (getNonArrayRestType(candidate) && !hasCorrectArity(node, args, checkCandidate, signatureHelpTrailingComma)) {
                 candidateForArgumentArityError = checkCandidate;
                 continue;
@@ -2094,7 +2102,7 @@ export function newResolve(qx: qt.Tctx) {
           return anySignature;
         }
         if (superType !== errorType) {
-          const baseTypeNode = getEffectiveBaseTypeNode(qx.get.containingClass(node)!);
+          const baseTypeNode = getEffectiveBaseTypeNode(qf.get.containingClass(node)!);
           if (baseTypeNode) {
             const baseConstructors = getInstantiatedConstructorsForTypeArguments(superType, baseTypeNode.typeArguments, baseTypeNode);
             return this.call(node, baseConstructors, candidatesOutArray, checkMode, SignatureFlags.None);
@@ -2104,9 +2112,9 @@ export function newResolve(qx: qt.Tctx) {
       }
       let callChainFlags: SignatureFlags;
       let funcType = check.expression(node.expression);
-      if (qx.is.callChain(node)) {
+      if (qf.is.callChain(node)) {
         const nonOptionalType = getOptionalExpressionType(funcType, node.expression);
-        callChainFlags = nonOptionalType === funcType ? SignatureFlags.None : qx.is.outermostOptionalChain(node) ? SignatureFlags.IsOuterCallChain : SignatureFlags.IsInnerCallChain;
+        callChainFlags = nonOptionalType === funcType ? SignatureFlags.None : qf.is.outermostOptionalChain(node) ? SignatureFlags.IsOuterCallChain : SignatureFlags.IsInnerCallChain;
         funcType = nonOptionalType;
       } else {
         callChainFlags = SignatureFlags.None;
@@ -2126,9 +2134,9 @@ export function newResolve(qx: qt.Tctx) {
         else {
           let relatedInformation: qd.DiagnosticRelatedInformation | undefined;
           if (node.arguments.length === 1) {
-            const text = qx.get.sourceFileOf(node).text;
+            const text = qf.get.sourceFileOf(node).text;
             if (qy.is.lineBreak(text.charCodeAt(qy.skipTrivia(text, node.expression.end, true) - 1)))
-              relatedInformation = qx.create.diagnosticForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
+              relatedInformation = qf.create.diagnosticForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
           }
           invocationError(node.expression, apparentType, SignatureKind.Call, relatedInformation);
         }
@@ -2138,7 +2146,7 @@ export function newResolve(qx: qt.Tctx) {
         skippedGenericFunction(node, checkMode);
         return resolvingSignature;
       }
-      if (callSignatures.some((sig) => qx.is.inJSFile(sig.declaration) && !!qc.getDoc.classTag(sig.declaration!))) {
+      if (callSignatures.some((sig) => qf.is.inJSFile(sig.declaration) && !!qc.getDoc.classTag(sig.declaration!))) {
         error(node, qd.msgs.Value_of_type_0_is_not_callable_Did_you_mean_to_include_new, typeToString(funcType));
         return this.errorCall(node);
       }
@@ -2157,7 +2165,7 @@ export function newResolve(qx: qt.Tctx) {
       if (constructSignatures.length) {
         if (!isConstructorAccessible(node, constructSignatures[0])) return this.errorCall(node);
         const valueDecl = expressionType.symbol && getClassLikeDeclarationOfSymbol(expressionType.symbol);
-        if (valueDecl && qx.has.syntacticModifier(valueDecl, ModifierFlags.Abstract)) {
+        if (valueDecl && qf.has.syntacticModifier(valueDecl, ModifierFlags.Abstract)) {
           error(node, qd.msgs.Cannot_create_an_instance_of_an_abstract_class);
           return this.errorCall(node);
         }
@@ -2197,7 +2205,7 @@ export function newResolve(qx: qt.Tctx) {
       const numConstructSignatures = getSignaturesOfType(apparentType, SignatureKind.Construct).length;
       if (isUntypedFunctionCall(funcType, apparentType, callSignatures.length, numConstructSignatures)) return this.untypedCall(node);
       if (isPotentiallyUncalledDecorator(node, callSignatures)) {
-        const nodeStr = qx.get.textOf(node.expression, false);
+        const nodeStr = qf.get.textOf(node.expression, false);
         error(node, qd.msgs._0_accepts_too_few_arguments_to_be_used_as_a_decorator_here_Did_you_mean_to_call_it_first_and_write_0, nodeStr);
         return this.errorCall(node);
       }
@@ -2205,8 +2213,8 @@ export function newResolve(qx: qt.Tctx) {
       if (!callSignatures.length) {
         const errorDetails = invocationErrorDetails(node.expression, apparentType, SignatureKind.Call);
         const messageChain = chainqd.Messages(errorDetails.messageChain, headMessage);
-        const diag = qx.create.diagnosticForNodeFromMessageChain(node.expression, messageChain);
-        if (errorDetails.relatedMessage) addRelatedInfo(diag, qx.create.diagnosticForNode(node.expression, errorDetails.relatedMessage));
+        const diag = qf.create.diagnosticForNodeFromMessageChain(node.expression, messageChain);
+        if (errorDetails.relatedMessage) addRelatedInfo(diag, qf.create.diagnosticForNode(node.expression, errorDetails.relatedMessage));
         diagnostics.add(diag);
         invocationErrorRecovery(apparentType, SignatureKind.Call, diag);
         return this.errorCall(node);
@@ -2216,7 +2224,7 @@ export function newResolve(qx: qt.Tctx) {
     jsxOpeningLikeElement(node: JsxOpeningLikeElement, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
       if (isJsxIntrinsicIdentifier(node.tagName)) {
         const result = getIntrinsicAttributesTypeFromJsxOpeningLikeElement(node);
-        const fakeSignature = qx.create.signatureForJSXIntrinsic(node, result);
+        const fakeSignature = qf.create.signatureForJSXIntrinsic(node, result);
         check.typeAssignableToAndOptionallyElaborate(
           check.expressionWithContextualType(node.attributes, getEffectiveFirstArgumentForJsxSignature(fakeSignature, node), undefined, CheckMode.Normal),
           result,
@@ -2231,7 +2239,7 @@ export function newResolve(qx: qt.Tctx) {
       const signatures = getUninstantiatedJsxSignaturesOfType(exprTypes, node);
       if (isUntypedFunctionCall(exprTypes, apparentType, signatures.length, 0)) return this.untypedCall(node);
       if (signatures.length === 0) {
-        error(node.tagName, qd.msgs.JSX_element_type_0_does_not_have_any_construct_or_call_signatures, qx.get.textOf(node.tagName));
+        error(node.tagName, qd.msgs.JSX_element_type_0_does_not_have_any_construct_or_call_signatures, qf.get.textOf(node.tagName));
         return this.errorCall(node);
       }
       return this.call(node, signatures, candidatesOutArray, checkMode, SignatureFlags.None);
@@ -2258,6 +2266,5 @@ export function newResolve(qx: qt.Tctx) {
       return externalHelpersModule;
     }
   })());
-  return r;
 }
-export interface Resolve extends ReturnType<typeof newResolve> {}
+export interface Tresolve extends ReturnType<typeof newResolve> {}
