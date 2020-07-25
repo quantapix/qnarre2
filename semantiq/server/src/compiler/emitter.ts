@@ -3485,7 +3485,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (qc.is.generatedIdentifier(node)) return generateName(node);
     else if (
       (qc.is.kind(qc.Identifier, node) || qc.is.kind(qc.PrivateIdentifier, node)) &&
-      (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && qc.get.sourceFileOf(node) !== qc.get.originalOf(currentSourceFile)))
+      (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && node.sourceFile !== qc.get.originalOf(currentSourceFile)))
     ) {
       return idText(node);
     } else if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
@@ -3647,7 +3647,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function generateNameCached(node: Node, flags?: GeneratedIdentifierFlags) {
-    const nodeId = getNodeId(node);
+    const nodeId = qf.get.nodeId(node);
     return nodeIdToGeneratedName[nodeId] || (nodeIdToGeneratedName[nodeId] = generateNameForNode(node, flags));
   }
   function isUniqueName(name: string): boolean {

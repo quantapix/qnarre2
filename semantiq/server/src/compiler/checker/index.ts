@@ -33,7 +33,6 @@ const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
 let nextMergeId = 1;
 let nextFlowId = 1;
-export const isNotOverloadAndNotAccessor = qu.and(qf.is.notOverload, qf.is.notAccessor);
 
 function SymbolLinks(this: SymbolLinks) {}
 function NodeLinks(this: NodeLinks) {
@@ -80,16 +79,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const emitResolver = createResolver();
   const nodeBuilder = createNodeBuilder();
   class QNode extends qc.Nobj {
-    static nextNodeId = 1;
-    getNodeId() {
-      if (!this.id) {
-        this.id = QNode.nextNodeId;
-        QNode.nextNodeId++;
-      }
-      return this.id;
-    }
     getNodeLinks(): NodeLinks {
-      const i = this.getNodeId();
+      const i = this.qf.get.nodeId();
       return nodeLinks[i] || (nodeLinks[i] = new (<any>NodeLinks)());
     }
     isGlobalSourceFile() {
@@ -998,7 +989,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | NodeBuilderFlags.WriteTypeParametersInQualifiedName
       );
       const printer = createPrinter({ removeComments: true, omitTrailingSemicolon: true });
-      const sourceFile = enclosingDeclaration && qf.get.sourceFileOf(enclosingDeclaration);
+      const sourceFile = enclosingDeclaration && enclosingDeclaration.sourceFile;
       printer.writeNode(EmitHint.Unspecified, sig!, sourceFile, getTrailingSemicolonDeferringWriter(writer));
       return writer;
     }
@@ -1014,7 +1005,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (typeNode === undefined) return qu.fail('should always get typenode');
     const options = { removeComments: true };
     const printer = createPrinter(options);
-    const sourceFile = enclosingDeclaration && qf.get.sourceFileOf(enclosingDeclaration);
+    const sourceFile = enclosingDeclaration && enclosingDeclaration.sourceFile;
     printer.writeNode(EmitHint.Unspecified, typeNode, sourceFile, writer);
     const result = writer.getText();
     const maxLength = noTruncation ? noTruncationMaximumTruncationLength * 2 : defaultMaximumTruncationLength * 2;
@@ -1039,7 +1030,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           nodeBuilder.typeToTypeNode(typePredicate.type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | NodeBuilderFlags.WriteTypeParametersInQualifiedName)!
       );
       const printer = createPrinter({ removeComments: true });
-      const sourceFile = enclosingDeclaration && qf.get.sourceFileOf(enclosingDeclaration);
+      const sourceFile = enclosingDeclaration && enclosingDeclaration.sourceFile;
       printer.writeNode(EmitHint.Unspecified, predicate, sourceFile, writer);
       return writer;
     }
@@ -1871,14 +1862,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             if (!targetProp) {
               const indexInfo =
                 (isTypeAssignableToKind(nameType, qt.TypeFlags.NumberLike) && getIndexInfoOfType(target, IndexKind.Number)) || getIndexInfoOfType(target, IndexKind.String) || undefined;
-              if (indexInfo && indexInfo.declaration && !get.sourceFileOf(indexInfo.declaration).hasNoDefaultLib) {
+              if (indexInfo && indexInfo.declaration && !indexInfo.declaration.sourceFile.hasNoDefaultLib) {
                 issuedElaboration = true;
                 addRelatedInfo(reportedDiag, qf.create.diagnosticForNode(indexInfo.declaration, qd.msgs.The_expected_type_comes_from_this_index_signature));
               }
             }
             if (!issuedElaboration && ((targetProp && length(targetProp.declarations)) || (target.symbol && length(target.symbol.declarations)))) {
               const targetNode = targetProp && length(targetProp.declarations) ? targetProp.declarations[0] : target.symbol.declarations[0];
-              if (!get.sourceFileOf(targetNode).hasNoDefaultLib) {
+              if (!targetNode.sourceFile.hasNoDefaultLib) {
                 addRelatedInfo(
                   reportedDiag,
                   qf.create.diagnosticForNode(
@@ -2403,7 +2394,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function reportImplicitAny(declaration: Declaration, type: Type, wideningKind?: WideningKind) {
     const typeAsString = typeToString(getWidenedType(type));
-    if (qf.is.inJSFile(declaration) && !isCheckJsEnabledForFile(qf.get.sourceFileOf(declaration), compilerOptions)) return;
+    if (qf.is.inJSFile(declaration) && !isCheckJsEnabledForFile(declaration.sourceFile, compilerOptions)) return;
     let diagnostic: qd.Message;
     switch (declaration.kind) {
       case Syntax.BinaryExpression:
@@ -3106,7 +3097,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function reportFlowControlError(node: Node) {
     const block = <Block | ModuleBlock | SourceFile>qc.findAncestor(node, isFunctionOrModuleBlock);
-    const sourceFile = qf.get.sourceFileOf(node);
+    const sourceFile = node.sourceFile;
     const span = getSpanOfTokenAtPosition(sourceFile, block.statements.pos);
     diagnostics.add(qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.msgs.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
   }
@@ -3745,7 +3736,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function registerForUnusedIdentifiersCheck(node: PotentiallyUnusedIdentifier): void {
     if (produceDiagnostics) {
-      const sourceFile = qf.get.sourceFileOf(node);
+      const sourceFile = node.sourceFile;
       let potentiallyUnusedIdentifiers = allPotentiallyUnusedIdentifiers.get(sourceFile.path);
       if (!potentiallyUnusedIdentifiers) {
         potentiallyUnusedIdentifiers = [];
@@ -4262,7 +4253,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return true;
   }
   function grammarErrorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = qf.get.sourceFileOf(node);
+    const sourceFile = node.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
       const span = getSpanOfTokenAtPosition(sourceFile, node.pos);
       diagnostics.add(qf.create.fileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2));
@@ -4271,7 +4262,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return false;
   }
   function grammarErrorAtPos(nodeForSourceFile: Node, start: number, length: number, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = qf.get.sourceFileOf(nodeForSourceFile);
+    const sourceFile = nodeForSourceFile.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
       diagnostics.add(qf.create.fileDiagnostic(sourceFile, start, length, message, arg0, arg1, arg2));
       return true;
@@ -4279,7 +4270,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return false;
   }
   function grammarErrorOnNode(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = qf.get.sourceFileOf(node);
+    const sourceFile = node.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
       diagnostics.add(qf.create.diagnosticForNode(node, message, arg0, arg1, arg2));
       return true;
@@ -4287,7 +4278,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return false;
   }
   function grammarErrorAfterFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = qf.get.sourceFileOf(node);
+    const sourceFile = node.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
       const span = getSpanOfTokenAtPosition(sourceFile, node.pos);
       diagnostics.add(qf.create.fileDiagnostic(sourceFile, textSpanEnd(span), 0, message, arg0, arg1, arg2));

@@ -56,8 +56,8 @@ export function newIs(f: qt.Frame) {
       return node.decorators !== undefined && nodeCanBeDecorated(node, parent!, grandparent!);
     }
     blockScopedNameDeclaredBeforeUse(declaration: Declaration, usage: Node): boolean {
-      const declarationFile = qf.get.sourceFileOf(declaration);
-      const useFile = qf.get.sourceFileOf(usage);
+      const declarationFile = declaration.sourceFile;
+      const useFile = usage.sourceFile;
       const declContainer = qf.get.enclosingBlockScopeContainer(declaration);
       if (declarationFile !== useFile) {
         if (

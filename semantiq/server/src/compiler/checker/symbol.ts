@@ -71,8 +71,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         : isEitherBlockScoped
         ? qd.msgs.Cannot_redeclare_block_scoped_variable_0
         : qd.msgs.Duplicate_identifier_0;
-      const sourceSymbolFile = this.declarations && get.sourceFileOf(this.declarations[0]);
-      const targetSymbolFile = t.declarations && get.sourceFileOf(t.declarations[0]);
+      const sourceSymbolFile = this.declarations && this.declarations[0].sourceFile;
+      const targetSymbolFile = t.declarations && t.declarations[0].sourceFile;
       const symbolName = this.symbolToString();
       if (sourceSymbolFile && targetSymbolFile && amalgamatedDuplicates && !isEitherEnum && sourceSymbolFile !== targetSymbolFile) {
         const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
@@ -106,7 +106,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const worker = (w: EmitTextWriter) => {
       const b = builder(this, meaning!, decl, f)!;
       const p = createPrinter({ removeComments: true });
-      const s = decl && get.sourceFileOf(decl);
+      const s = decl && decl.sourceFile;
       p.writeNode(EmitHint.Unspecified, b, s, w);
       return w;
     };
@@ -249,8 +249,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return this.parent?.getLateBoundSymbol().getMergedSymbol();
   }
   getAlternativeContainingModules(enclosingDeclaration: Node): Symbol[] {
-    const containingFile = get.sourceFileOf(enclosingDeclaration);
-    const id = '' + containingFile.getNodeId();
+    const containingFile = enclosingDeclaration.sourceFile;
+    const id = '' + containingFile.qf.get.nodeId();
     const ls = this.getLinks();
     let results: Symbol[] | undefined;
     if (ls.extendedContainersByFile && (results = ls.extendedContainersByFile.get(id))) return results;
@@ -298,7 +298,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         is.accessExpression(d.parent.left) &&
         is.entityNameExpression(d.parent.left.expression)
       ) {
-        if (is.moduleExportsAccessExpression(d.parent.left) || is.exportsIdentifier(d.parent.left.expression)) return getSymbolOfNode(get.sourceFileOf(d));
+        if (is.moduleExportsAccessExpression(d.parent.left) || is.exportsIdentifier(d.parent.left.expression)) return getSymbolOfNode(d.sourceFile);
         check.expressionCached(d.parent.left.expression);
         return getNodeLinks(d.parent.left.expression).resolvedSymbol;
       }
@@ -504,7 +504,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       serializeAsNamespaceDeclaration(realMembers, localName, modifierFlags, !!(this.flags & (qt.SymbolFlags.Function | qt.SymbolFlags.Assignment)));
     }
     if (length(mergedMembers)) {
-      const containingFile = get.sourceFileOf(context.enclosingDeclaration);
+      const containingFile = context.enclosingDeclaration.sourceFile;
       const localName = this.getInternalSymbol(symbolName);
       const nsBody = new qc.ModuleBlock([
         new qc.ExportDeclaration(
@@ -517,7 +517,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
                 const name = qy.get.unescUnderscores(s.escName);
                 const localName = getInternalSymbol(s, name);
                 const aliasDecl = s.declarations && s.getDeclarationOfAliasSymbol();
-                if (containingFile && (aliasDecl ? containingFile !== get.sourceFileOf(aliasDecl) : !some(s.declarations, (d) => get.sourceFileOf(d) === containingFile))) {
+                if (containingFile && (aliasDecl ? containingFile !== aliasDecl.sourceFile : !some(s.declarations, (d) => d.sourceFile === containingFile))) {
                   context.tracker?.reportNonlocalAugmentation?.(containingFile, symbol, s);
                   return;
                 }
@@ -654,7 +654,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const isExportAssignment = isExportEquals || isDefault;
     const aliasDecl = this.declarations && this.getDeclarationOfAliasSymbol();
     const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, true);
-    if (target && length(target.declarations) && some(target.declarations, (d) => get.sourceFileOf(d) === get.sourceFileOf(enclosingDeclaration))) {
+    if (target && length(target.declarations) && some(target.declarations, (d) => d.sourceFile === enclosingDeclaration.sourceFile)) {
       const expr = isExportAssignment
         ? qf.get.exportAssignmentExpression(aliasDecl as ExportAssignment | BinaryExpression)
         : qf.get.propertyAssignmentAliasLikeExpression(aliasDecl as ShorthandPropertyAssignment | PropertyAssignment | PropertyAccessExpression);
@@ -740,7 +740,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (symbol.flags & qt.SymbolFlags.Prototype) return getTypeOfPrototypeProperty(symbol);
     if (symbol === requireSymbol) return anyType;
     if (symbol.flags & qt.SymbolFlags.ModuleExports) {
-      const fileSymbol = getSymbolOfNode(get.sourceFileOf(symbol.valueDeclaration));
+      const fileSymbol = getSymbolOfNode(symbol.valueDeclaration.sourceFile);
       const members = new SymbolTable();
       members.set('exports' as qu.__String, fileSymbol);
       return createAnonymousType(symbol, members, empty, empty, undefined, undefined);
@@ -1483,7 +1483,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     let typeReferenceDirectives: string[] | undefined;
     for (const d of this.declarations ?? []) {
       if (d.symbol && d.symbol.flags & meaning!) {
-        const file = get.sourceFileOf(d);
+        const file = d.sourceFile;
         const typeReferenceDirective = fileToDirective.get(file.path);
         if (typeReferenceDirective) (typeReferenceDirectives || (typeReferenceDirectives = [])).push(typeReferenceDirective);
         else return;
@@ -1501,7 +1501,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     if (current.valueDeclaration && current.valueDeclaration.kind === Syntax.SourceFile && current.flags & qt.SymbolFlags.ValueModule) return false;
     for (const d of this.declarations) {
-      const f = get.sourceFileOf(d);
+      const f = d.sourceFile;
       if (fileToDirective.has(f.path)) return true;
     }
     return false;

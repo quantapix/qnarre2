@@ -24,7 +24,7 @@ export function getModuleInstanceState(node: ModuleDeclaration, visited?: Map<Mo
   return node.body ? getModuleInstanceStateCached(node.body, visited) : ModuleInstanceState.Instantiated;
 }
 function getModuleInstanceStateCached(node: Node, visited = createMap<ModuleInstanceState | undefined>()) {
-  const nodeId = '' + getNodeId(node);
+  const nodeId = '' + qf.get.nodeId(node);
   if (visited.has(nodeId)) return visited.get(nodeId) || ModuleInstanceState.NonInstantiated;
   visited.set(nodeId, undefined);
   const result = getModuleInstanceStateWorker(node, visited);
@@ -163,7 +163,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   let subtreeTransformFlags: TransformFlags = TransformFlags.None;
   let skipTransformFlagAggregation: boolean;
   function qf.create.diagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
-    return qf.create.diagnosticForNodeInSourceFile(qc.get.sourceFileOf(node) || file, node, message, arg0, arg1, arg2);
+    return qf.create.diagnosticForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
   }
   function bindSourceFile(f: SourceFile, opts: CompilerOptions) {
     file = f;
@@ -2201,7 +2201,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol | undefined) {
     if (symbol) {
       const members = symbol.assignmentDeclarationMembers || (symbol.assignmentDeclarationMembers = createMap());
-      members.set('' + getNodeId(node), node);
+      members.set('' + qf.get.nodeId(node), node);
     }
   }
   function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElementAccessExpression) {

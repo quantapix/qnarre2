@@ -933,7 +933,7 @@ export function transformModule(context: TransformationContext) {
       if (exportedNames) {
         let expression: Expression = node;
         for (const exportName of exportedNames) {
-          noSubstitution[getNodeId(expression)] = true;
+          noSubstitution[qf.get.nodeId(expression)] = true;
           expression = createExportExpression(exportName, expression, node);
         }
         return expression;
@@ -956,7 +956,7 @@ export function transformModule(context: TransformationContext) {
             ? setRange(new BinaryExpression(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), qc.asLiteral(1)), node)
             : node;
         for (const exportName of exportedNames) {
-          noSubstitution[getNodeId(expression)] = true;
+          noSubstitution[qf.get.nodeId(expression)] = true;
           expression = createExportExpression(exportName, expression);
         }
         return expression;
@@ -2000,7 +2000,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
   function preventSubstitution<T extends Node>(node: T): T {
     if (noSubstitution === undefined) noSubstitution = [];
-    noSubstitution[getNodeId(node)] = true;
+    noSubstitution[qf.get.nodeId(node)] = true;
     return node;
   }
   function isSubstitutionPrevented(node: Node) {

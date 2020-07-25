@@ -102,7 +102,7 @@ export function enableDebugInfo() {
           value(this: Node, includeTrivia?: boolean) {
             if (isSynthesized(this)) return '';
             const parseNode = qc.get.parseTreeOf(this);
-            const sourceFile = parseNode && qc.get.sourceFileOf(parseNode);
+            const sourceFile = parseNode && parseNode.sourceFile;
             return sourceFile ? qf.get.sourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';
           },
         },

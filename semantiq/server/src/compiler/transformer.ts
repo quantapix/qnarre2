@@ -196,7 +196,7 @@ export function transformNodes<T extends Node>(
     },
   };
   for (const node of nodes) {
-    disposeEmitNodes(qc.get.sourceFileOf(qc.get.parseTreeOf(node)));
+    disposeEmitNodes(qc.get.parseTreeOf(node).sourceFile);
   }
   performance.mark('beforeTransform');
   const transformersWithContext = transformers.map((t) => t(context));
@@ -353,7 +353,7 @@ export function transformNodes<T extends Node>(
   function dispose() {
     if (state < TransformationState.Disposed) {
       for (const node of nodes) {
-        disposeEmitNodes(qc.get.sourceFileOf(qc.get.parseTreeOf(node)));
+        disposeEmitNodes(qc.get.parseTreeOf(node).sourceFile);
       }
       lexicalEnvironmentVariableDeclarations = undefined!;
       lexicalEnvironmentVariableDeclarationsStack = undefined!;

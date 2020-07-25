@@ -4039,7 +4039,7 @@ export namespace parenthesize {
 }
 export namespace emit {
   export function disposeEmitNodes(sourceFile: SourceFile) {
-    sourceFile = qf.get.sourceFileOf(qf.get.parseTreeOf(sourceFile));
+    sourceFile = qf.get.parseTreeOf(sourceFile).sourceFile;
     const emitNode = sourceFile && sourceFile.emitNode;
     const annotatedNodes = emitNode && emitNode.annotatedNodes;
     if (annotatedNodes) {
@@ -4052,7 +4052,7 @@ export namespace emit {
     if (!n.emitNode) {
       if (qf.is.parseTreeNode(n)) {
         if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qc.EmitNode);
-        const sourceFile = qf.get.sourceFileOf(qf.get.parseTreeOf(qf.get.sourceFileOf(n)));
+        const sourceFile = qf.get.parseTreeOf(n.sourceFile).sourceFile;
         getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
       }
       n.emitNode = {} as qc.EmitNode;

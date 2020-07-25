@@ -317,7 +317,7 @@ export function transformES2017(context: TransformationContext) {
         enableSubstitutionForAsyncMethodsWithSuper();
         if (qb.hasEntries(capturedSuperProperties)) {
           const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
-          substitutedSuperAccessors[getNodeId(variableStatement)] = true;
+          substitutedSuperAccessors[qf.get.nodeId(variableStatement)] = true;
           insertStatementsAfterStandardPrologue(statements, [variableStatement]);
         }
       }
@@ -384,7 +384,7 @@ export function transformES2017(context: TransformationContext) {
         enclosingSuperContainerFlags = savedEnclosingSuperContainerFlags;
         return;
       }
-    } else if (enabledSubstitutions && substitutedSuperAccessors[getNodeId(node)]) {
+    } else if (enabledSubstitutions && substitutedSuperAccessors[qf.get.nodeId(node)]) {
       const savedEnclosingSuperContainerFlags = enclosingSuperContainerFlags;
       enclosingSuperContainerFlags = 0;
       previousOnEmitNode(hint, node, emitCallback);

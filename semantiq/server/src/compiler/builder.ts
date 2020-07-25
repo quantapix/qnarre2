@@ -987,7 +987,7 @@ export namespace BuilderState {
   export type ComputingExportedModulesMap = QMap<ReferencedSet | false>;
   function getReferencedFileFromImportedModuleSymbol(symbol: Symbol) {
     if (symbol.declarations && symbol.declarations[0]) {
-      const declarationSourceFile = qc.get.sourceFileOf(symbol.declarations[0]);
+      const declarationSourceFile = symbol.declarations[0].sourceFile;
       return declarationSourceFile && declarationSourceFile.resolvedPath;
     }
     return;
@@ -1038,7 +1038,7 @@ export namespace BuilderState {
     return referencedFiles;
     function addReferenceFromAmbientModule(symbol: Symbol) {
       for (const declaration of symbol.declarations) {
-        const declarationSourceFile = qc.get.sourceFileOf(declaration);
+        const declarationSourceFile = declaration.sourceFile;
         if (declarationSourceFile && declarationSourceFile !== sourceFile) addReferencedFile(declarationSourceFile.resolvedPath);
       }
     }

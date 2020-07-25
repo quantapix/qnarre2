@@ -33,11 +33,11 @@ export function newCreate(f: qt.Frame) {
       return { getUnusedExpectations, markUsed };
     }
     diagnosticForNode(n: Node, m: qd.Message, a0?: string | number, a1?: string | number, a2?: string | number, a3?: string | number): qd.DiagnosticWithLocation {
-      const s = qf.get.sourceFileOf(n);
+      const s = n.sourceFile;
       return this.diagnosticForNodeInSourceFile(s, n, m, a0, a1, a2, a3);
     }
     diagnosticForNodeFromMessageChain(n: Node, c: qd.MessageChain, i?: qd.DiagnosticRelatedInformation[]): qd.DiagnosticWithLocation {
-      const s = qf.get.sourceFileOf(n);
+      const s = n.sourceFile;
       const { start, length } = qf.get.errorSpanForNode(s, n);
       return { file: s, start, length, code: c.code, cat: c.cat, text: c.next ? c : c.text, relatedInformation: i };
     }
@@ -501,6 +501,14 @@ export function newGet(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.get = new (class {
+    nextNodeId = 1;
+    nodeId(n: Node) {
+      if (!n.id) {
+        n.id = this.nextNodeId;
+        this.nextNodeId++;
+      }
+      return n.id;
+    }
     parameterSymbolFromDoc(n: qt.DocParameterTag): qt.Symbol | undefined {
       if (n.symbol) return n.symbol;
       if (!qf.is.kind(qc.Identifier, n.name)) return;
@@ -1015,7 +1023,7 @@ export function newGet(f: qt.Frame) {
       return findAncestor(n.parent, (x) => qf.is.blockScope(x, x.parent))!;
     }
     textOf(n: Node, trivia = false): string {
-      return this.sourceTextOfNodeFromSourceFile(this.sourceFileOf(n), n, trivia);
+      return this.sourceTextOfNodeFromSourceFile(n.sourceFile, n, trivia);
     }
     emitFlags(n: Node): EmitFlags {
       const e = n.emitNode;
@@ -1054,14 +1062,6 @@ export function newGet(f: qt.Frame) {
           return n.text;
       }
       return qu.fail(`Literal kind '${n.kind}' not accounted for.`);
-    }
-    sourceFileOf(n: Node): qc.SourceFile;
-    sourceFileOf(n: Node | undefined): qc.SourceFile | undefined;
-    sourceFileOf(n?: Node): qc.SourceFile {
-      while (n && n.kind !== Syntax.SourceFile) {
-        n = n.parent;
-      }
-      return n as qc.SourceFile;
     }
     combinedFlags(n: Node | undefined, cb: (n?: Node) => number): number {
       if (qf.is.kind(qc.BindingElement, n)) n = walkUpBindingElementsAndPatterns(n);
@@ -1412,7 +1412,7 @@ export function newGet(f: qt.Frame) {
     }
     nonDecoratorTokenPosOfNode(n: Node, s?: qy.SourceFileLike): number {
       if (qf.is.missing(n) || !n.decorators) return n.getTokenPos(s);
-      return qy.skipTrivia((s || this.sourceFileOf(n)).text, n.decorators.end);
+      return qy.skipTrivia((s || n.sourceFile).text, n.decorators.end);
     }
     textOfPropertyName(n: qc.PropertyName | qc.NoSubstitutionLiteral): qu.__String {
       switch (n.kind) {
@@ -1704,6 +1704,12 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.is = new (class {
+    notAccessor(n: qt.Declaration) {
+      return !this.accessor(n as Node);
+    }
+    notOverload(n: qt.Declaration) {
+      return (n.kind !== Syntax.FunctionDeclaration && n.kind !== Syntax.MethodDeclaration) || !!(n as qt.FunctionDeclaration).body;
+    }
     computedNonLiteralName(n: qt.PropertyName): boolean {
       return n.kind === Syntax.ComputedPropertyName && !qc.StringLiteral.orNumericLiteralLike(n.expression);
     }
@@ -2972,7 +2978,7 @@ export const fixme = new (class {
     }
   }
   nPosToString(n: Node): string {
-    const file = qf.get.sourceFileOf(n);
+    const file = n.sourceFile;
     const loc = qy.get.lineAndCharOf(file, n.pos);
     return `${file.fileName}(${loc.line + 1},${loc.char + 1})`;
   }
@@ -3127,12 +3133,6 @@ export abstract class Declaration extends qc.Declaration {
   isCatchClauseVariableDeclarationOrBindingElement(this: Declaration) {
     const n = qf.get.rootDeclaration(this);
     return n?.kind === Syntax.VariableDeclaration && n?.parent?.kind === Syntax.CatchClause;
-  }
-  isNotAccessor(this: Declaration) {
-    return !qf.is.accessor(this);
-  }
-  isNotOverload(this: Declaration): boolean {
-    return (this.kind !== Syntax.FunctionDeclaration && this.kind !== Syntax.MethodDeclaration) || !!(this as FunctionDeclaration).body;
   }
   getInternalName(allowComments?: boolean, allowSourceMaps?: boolean) {
     return this.getName(allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);

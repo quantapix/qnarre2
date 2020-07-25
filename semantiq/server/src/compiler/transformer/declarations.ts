@@ -83,7 +83,7 @@ export function transformDeclarations(context: TransformationContext) {
   function trackReferencedAmbientModule(node: ModuleDeclaration, symbol: Symbol) {
     const directives = resolver.getTypeReferenceDirectivesForSymbol(symbol, SymbolFlags.All);
     if (length(directives)) return recordTypeReferenceDirectivesIfNecessary(directives);
-    const container = qc.get.sourceFileOf(node);
+    const container = node.sourceFile;
     refs.set('' + getOriginalNodeId(container), container);
   }
   function handleSymbolAccessibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
@@ -160,8 +160,8 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
   function reportNonlocalAugmentation(containingFile: SourceFile, parentSymbol: Symbol, symbol: Symbol) {
-    const primaryDeclaration = find(parentSymbol.declarations, (d) => qc.get.sourceFileOf(d) === containingFile)!;
-    const augmentingDeclarations = filter(symbol.declarations, (d) => qc.get.sourceFileOf(d) !== containingFile);
+    const primaryDeclaration = find(parentSymbol.declarations, (d) => d.sourceFile === containingFile)!;
+    const augmentingDeclarations = filter(symbol.declarations, (d) => d.sourceFile !== containingFile);
     for (const augmentations of augmentingDeclarations) {
       context.addDiagnostic(
         addRelatedInfo(

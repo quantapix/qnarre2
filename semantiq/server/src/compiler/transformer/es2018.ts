@@ -540,7 +540,7 @@ export function transformES2018(context: TransformationContext) {
     if (emitSuperHelpers) {
       enableSubstitutionForAsyncMethodsWithSuper();
       const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
-      substitutedSuperAccessors[getNodeId(variableStatement)] = true;
+      substitutedSuperAccessors[qf.get.nodeId(variableStatement)] = true;
       insertStatementsAfterStandardPrologue(statements, [variableStatement]);
     }
     statements.push(returnStatement);
@@ -615,7 +615,7 @@ export function transformES2018(context: TransformationContext) {
         enclosingSuperContainerFlags = savedEnclosingSuperContainerFlags;
         return;
       }
-    } else if (enabledSubstitutions && substitutedSuperAccessors[getNodeId(node)]) {
+    } else if (enabledSubstitutions && substitutedSuperAccessors[qf.get.nodeId(node)]) {
       const savedEnclosingSuperContainerFlags = enclosingSuperContainerFlags;
       enclosingSuperContainerFlags = 0 as NodeCheckFlags;
       previousOnEmitNode(hint, node, emitCallback);

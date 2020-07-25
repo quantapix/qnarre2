@@ -257,7 +257,7 @@ export function findMap<T, U>(ts: readonly T[], cb: (t: T, i: number) => U | und
   }
   return fail();
 }
-export function forEach<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+export function each<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
   if (ts) {
     for (let i = 0; i < ts.length; i++) {
       const u = cb(ts[i], i);
@@ -266,7 +266,7 @@ export function forEach<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number
   }
   return;
 }
-export function forEachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+export function eachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
   if (ts) {
     for (let i = ts.length - 1; i >= 0; i--) {
       const u = cb(ts[i], i);
@@ -1098,9 +1098,9 @@ export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
 export function maybeBind<T, A extends unknown, R>(t: T, cb: ((this: T, ...args: A[]) => R) | undefined): ((...args: A[]) => R) | undefined {
   return cb ? cb.bind(t) : undefined;
 }
-export function forEachEntry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
-export function forEachEntry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
-export function forEachEntry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+export function eachEntry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+export function eachEntry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
+export function eachEntry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
   const ts = m.entries();
   for (let i = ts.next(); !i.done; i = ts.next()) {
     const [k, t] = i.value;
@@ -1109,9 +1109,9 @@ export function forEachEntry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, c
   }
   return;
 }
-export function forEachKey<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
-export function forEachKey<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
-export function forEachKey<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
+export function eachKey<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
+export function eachKey<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
+export function eachKey<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
   const ks = m.keys();
   for (let i = ks.next(); !i.done; i = ks.next()) {
     const t = cb(i.value as string & __String);

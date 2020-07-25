@@ -293,9 +293,9 @@ export class QContext {
     }
     if (!this.enclosingDeclaration || !this.tracker.moduleResolverHost) {
       if (ambientModuleSymbolRegex.test(s.escName as string)) return (s.escName as string).substring(1, (s.escName as string).length - 1);
-      return qf.get.sourceFileOf(getNonAugmentationDeclaration(s)!).fileName;
+      return getNonAugmentationDeclaration(s)!.sourceFile.fileName;
     }
-    const contextFile = qf.get.sourceFileOf(qf.get.originalOf(this.enclosingDeclaration));
+    const contextFile = qf.get.originalOf(this.enclosingDeclaration).sourceFile;
     const ls = s.getLinks();
     let specifier = ls.specifierCache && ls.specifierCache.get(contextFile.path);
     if (!specifier) {
@@ -827,7 +827,7 @@ export class QContext {
   serializeExistingTypeNode(existing: TypeNode, includePrivateSymbol?: (s: Symbol) => void, bundled?: boolean) {
     if (cancellationToken && cancellationToken.throwIfCancellationRequested) cancellationToken.throwIfCancellationRequested();
     let hadError = false;
-    const file = qf.get.sourceFileOf(existing);
+    const file = existing.sourceFile;
     const transformed = visitNode(existing, this.visitExistingNodeTreeSymbols);
     if (hadError) return;
     return transformed === existing ? getMutableClone(existing) : transformed;
@@ -1365,7 +1365,7 @@ export class QContext {
     const isConstructorObject = getObjectFlags(type) & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & SymbolFlags.Class;
     const id =
       getObjectFlags(type) & ObjectFlags.Reference && (<TypeReference>type).node
-        ? 'N' + getNodeId((<TypeReference>type).node!)
+        ? 'N' + qf.get.nodeId((<TypeReference>type).node!)
         : type.symbol
         ? (isConstructorObject ? '+' : '') + type.symbol.getId()
         : undefined;
@@ -1696,9 +1696,7 @@ export class QContext {
     }
     function serializeAsNamespaceDeclaration(props: readonly Symbol[], localName: string, modifierFlags: ModifierFlags, suppressNewPrivateContext: boolean) {
       if (length(props)) {
-        const localVsRemoteMap = arrayToMultiMap(props, (p) =>
-          !length(p.declarations) || some(p.declarations, (d) => qf.get.sourceFileOf(d) === qf.get.sourceFileOf(this.enclosingDeclaration!)) ? 'local' : 'remote'
-        );
+        const localVsRemoteMap = arrayToMultiMap(props, (p) => (!length(p.declarations) || some(p.declarations, (d) => d.sourceFile === this.enclosingDeclaration!.sourceFile) ? 'local' : 'remote'));
         const localProps = localVsRemoteMap.get('local') || empty;
         const fakespace = new qc.ModuleDeclaration(undefined, undefined, new Identifier(localName), new qc.ModuleBlock([]), NodeFlags.Namespace);
         fakespace.flags ^= NodeFlags.Synthesized;
@@ -1732,7 +1730,7 @@ export class QContext {
       );
     }
     function isTypeRepresentableAsFunctionNamespaceMerge(typeToSerialize: Type, hostSymbol: Symbol) {
-      const ctxSrc = qf.get.sourceFileOf(this.enclosingDeclaration);
+      const ctxSrc = this.enclosingDeclaration.sourceFile;
       return (
         getObjectFlags(typeToSerialize) & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
         !getIndexInfoOfType(typeToSerialize, IndexKind.String) &&
@@ -1740,9 +1738,9 @@ export class QContext {
         !!(length(getPropertiesOfType(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, SignatureKind.Call))) &&
         !length(getSignaturesOfType(typeToSerialize, SignatureKind.Construct)) &&
         !getDeclarationWithTypeAnnotation(hostSymbol, enclosingDeclaration) &&
-        !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => qf.get.sourceFileOf(d) !== ctxSrc)) &&
+        !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => d.sourceFile !== ctxSrc)) &&
         !some(getPropertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escName)) &&
-        !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => qf.get.sourceFileOf(d) !== ctxSrc)) &&
+        !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => d.sourceFile !== ctxSrc)) &&
         every(getPropertiesOfType(typeToSerialize), (p) => qy.is.identifierText(p.name) && !qy.is.stringAndKeyword(p.name))
       );
     }

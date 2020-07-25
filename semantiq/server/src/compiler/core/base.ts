@@ -1,3 +1,4 @@
+import * as qc from './index';
 import * as qd from '../diagnostic';
 import { Node } from '../type';
 import { CheckFlags, ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from '../type';
@@ -7,56 +8,56 @@ import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { qf } from './index';
 export * from '../type';
-export interface ReadonlyNodeSet<TNode extends Node> {
-  has(node: TNode): boolean;
-  forEach(cb: (node: TNode) => void): void;
-  some(pred: (node: TNode) => boolean): boolean;
+export interface ReadonlyNodeSet<T extends Node> {
+  has(n: T): boolean;
+  forEach(cb: (n: T) => void): void;
+  some(cb: (n: T) => boolean): boolean;
 }
-export class NodeSet<TNode extends Node> implements ReadonlyNodeSet<TNode> {
-  private map = new qu.QMap<TNode>();
-  add(node: TNode): void {
-    this.map.set(String(getNodeId(node)), node);
+export class NodeSet<T extends Node> implements ReadonlyNodeSet<T> {
+  private map = new qu.QMap<T>();
+  add(n: T) {
+    this.map.set(String(qf.get.nodeId(n)), n);
   }
-  tryAdd(node: TNode): boolean {
-    if (this.has(node)) return false;
-    this.add(node);
+  tryAdd(n: T) {
+    if (this.has(n)) return false;
+    this.add(n);
     return true;
   }
-  has(node: TNode): boolean {
-    return this.map.has(String(getNodeId(node)));
+  has(n: T) {
+    return this.map.has(String(qf.get.nodeId(n)));
   }
-  forEach(cb: (node: TNode) => void): void {
+  forEach(cb: (n: T) => void) {
     this.map.forEach(cb);
   }
-  some(pred: (node: TNode) => boolean): boolean {
-    return qu.forEachEntry(this.map, pred) || false;
+  some(cb: (n: T) => boolean) {
+    return qu.eachEntry(this.map, cb) || false;
   }
 }
-export interface ReadonlyNodeMap<TNode extends Node, TValue> {
-  get(node: TNode): TValue | undefined;
-  has(node: TNode): boolean;
+export interface ReadonlyNodeMap<N extends Node, V> {
+  get(n: N): V | undefined;
+  has(n: N): boolean;
 }
-export class NodeMap<TNode extends Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
-  private map = new qu.QMap<{ node: TNode; value: TValue }>();
-  get(node: TNode): TValue | undefined {
-    const res = this.map.get(String(getNodeId(node)));
-    return res && res.value;
+export class NodeMap<N extends Node, V> implements ReadonlyNodeMap<N, V> {
+  private map = new qu.QMap<{ n: N; v: V }>();
+  get(n: N): V | undefined {
+    const r = this.map.get(String(qf.get.nodeId(n)));
+    return r?.v;
   }
-  getOrUpdate(node: TNode, setValue: () => TValue): TValue {
-    const res = this.get(node);
-    if (res) return res;
-    const value = setValue();
-    this.set(node, value);
-    return value;
+  getOrUpdate(n: N, setValue: () => V): V {
+    const r = this.get(n);
+    if (r) return r;
+    const v = setValue();
+    this.set(n, v);
+    return v;
   }
-  set(node: TNode, value: TValue): void {
-    this.map.set(String(getNodeId(node)), { node, value });
+  set(n: N, v: V) {
+    this.map.set(String(qf.get.nodeId(n)), { n, v });
   }
-  has(node: TNode): boolean {
-    return this.map.has(String(getNodeId(node)));
+  has(n: N) {
+    return this.map.has(String(qf.get.nodeId(n)));
   }
-  forEach(cb: (value: TValue, node: TNode) => void): void {
-    this.map.forEach(({ node, value }) => cb(value, node));
+  forEach(cb: (v: V, n: N) => void) {
+    this.map.forEach(({ n, v }) => cb(v, n));
   }
 }
 export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.Nodes<T> {
@@ -114,15 +115,20 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
-  getSourceFile(): SourceFile {
-    return qf.get.sourceFileOf(this);
+  get sourceFile(): qc.SourceFile {
+    let n = this as Node | undefined;
+    while (n) {
+      if (qf.is.kind(qc.SourceFile, n)) return n as SourceFile;
+      n = n.parent;
+    }
+    qu.fail();
   }
   getTokenPos(s?: qy.SourceFileLike, doc?: boolean): number {
     if (qf.is.missing(this)) return this.pos;
-    if (qf.is.doc.node(this)) return qy.skipTrivia((s || qf.get.sourceFileOf(this)).text, this.pos, false, true);
+    if (qf.is.doc.node(this)) return qy.skipTrivia((s || this.sourceFile)!.text, this.pos, false, true);
     if (doc && qf.is.withDocNodes(this)) return this.doc![0].getTokenPos(s);
-    if (qf.is.kind(qc.SyntaxList, this) && this._children?.length) return this._children![0].getTokenPos(s, doc);
-    return qy.skipTrivia((s || qf.get.sourceFileOf(this)).text, this.pos);
+    if (qf.is.kind(SyntaxList, this) && this._children?.length) return this._children![0].getTokenPos(s, doc);
+    return qy.skipTrivia((s || this.sourceFile).text, this.pos);
   }
   getStart(s?: qy.SourceFileLike, doc?: boolean) {
     qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
@@ -194,7 +200,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     const createChildren = () => {
       const cs = [] as Nobj[];
       if (qy.is.node(this.kind)) {
-        if (qc.is.doc.commentContainingNode(this)) {
+        if (qf.is.doc.commentContainingNode(this)) {
           qf.each.child(this, (c) => {
             cs.push(c);
           });
@@ -212,7 +218,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
           cs.push(createSyntaxList(ns));
           p = ns.end;
         };
-        qu.forEach((this as qt.DocContainer).doc, processNode);
+        qu.ach((this as qt.DocContainer).doc, processNode);
         p = this.pos;
         qf.each.child(this, processNode, processNodes);
         addSynthetics(cs, p, this.end);
@@ -376,7 +382,7 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
           flags |= FunctionFlags.Generator;
         }
       case Syntax.ArrowFunction:
-        if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
+        if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
           flags |= FunctionFlags.Async;
         }
         break;
@@ -449,7 +455,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     if (from === undefined || from.length === 0) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
-      if (!qc.is.prologueDirective(to[statementIndex])) break;
+      if (!qf.is.prologueDirective(to[statementIndex])) break;
     }
     to.splice(statementIndex, 0, ...from);
     return to;
@@ -458,7 +464,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     if (statement === undefined) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
-      if (!qc.is.prologueDirective(to[statementIndex])) break;
+      if (!qf.is.prologueDirective(to[statementIndex])) break;
     }
     to.splice(statementIndex, 0, statement);
     return to;
@@ -695,7 +701,7 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qu.__String, 
   add(ss: SymbolTable<S>, m: qd.Message) {
     ss.forEach((s, id) => {
       const t = this.get(id);
-      if (t) qu.forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
+      if (t) qu.ach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
       else this.set(id, s);
     });
     function addDeclarationDiagnostic(id: string, m: qd.Message) {
@@ -1044,7 +1050,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     if (options.outFile || options.out) {
       const moduleKind = getEmitModuleKind(options);
       const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
-      return qu.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qc.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+      return qu.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qf.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     } else {
       const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
       return qu.filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
@@ -1056,7 +1062,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       !(options.noEmitForJsFiles && isSourceFileJS(sourceFile)) &&
       !sourceFile.isDeclarationFile &&
       !host.isSourceFileFromExternalLibrary(sourceFile) &&
-      !(qc.is.jsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) &&
+      !(qf.is.jsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) &&
       (forceDtsEmit || !host.isSourceOfProjectReferenceRedirect(sourceFile.fileName))
     );
   }
@@ -1409,7 +1415,7 @@ export function createGetSymbolWalker(
   getResolvedSymbol: (node: Node) => Symbol,
   getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
-  qf.get.firstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
+  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {
   return getSymbolWalker;
@@ -1704,7 +1710,7 @@ export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxT
     case Syntax.QualifiedName:
       return entityNameToString(name.left) + '.' + entityNameToString(name.right);
     case Syntax.PropertyAccessExpression:
-      if (qc.is.kind(qc.Identifier, name.name) || qc.is.kind(qc.PrivateIdentifier, name.name)) return entityNameToString(name.expression) + '.' + entityNameToString(name.name);
+      if (qf.is.kind(qc.Identifier, name.name) || qf.is.kind(qc.PrivateIdentifier, name.name)) return entityNameToString(name.expression) + '.' + entityNameToString(name.name);
       return qu.assertNever(name.name);
     default:
       return qu.assertNever(name);
@@ -1713,20 +1719,20 @@ export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxT
 export function isBindableObjectDefinePropertyCall(expr: CallExpression): expr is BindableObjectDefinePropertyCall {
   return (
     length(expr.arguments) === 3 &&
-    qc.is.kind(qc.PropertyAccessExpression, expr.expression) &&
-    qc.is.kind(qc.Identifier, expr.expression.expression) &&
+    qf.is.kind(qc.PropertyAccessExpression, expr.expression) &&
+    qf.is.kind(qc.Identifier, expr.expression.expression) &&
     idText(expr.expression.expression) === 'Object' &&
     idText(expr.expression.name) === 'defineProperty' &&
     StringLiteral.orNumericLiteralLike(expr.arguments[1]) &&
-    qc.is.bindableStaticNameExpression(expr.arguments[0], true)
+    qf.is.bindableStaticNameExpression(expr.arguments[0], true)
   );
 }
 export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
   return (
-    qc.is.inJSFile(expr) &&
+    qf.is.inJSFile(expr) &&
     expr.parent &&
     expr.parent.kind === Syntax.ExpressionStatement &&
-    (!qc.is.kind(qc.ElementAccessExpression, expr) || qc.is.literalLikeElementAccess(expr)) &&
+    (!qf.is.kind(qc.ElementAccessExpression, expr) || qf.is.literalLikeElementAccess(expr)) &&
     !!qc.getDoc.typeTag(expr.parent)
   );
 }
@@ -1741,9 +1747,9 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
     case Syntax.ExternalModuleReference:
       return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
     case Syntax.CallExpression:
-      return qc.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
+      return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
     case Syntax.LiteralType:
-      assert(qc.is.kind(qc.StringLiteral, node));
+      assert(qf.is.kind(qc.StringLiteral, node));
       return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
     default:
       return;
@@ -1754,8 +1760,8 @@ export function isDefaultImport(node: ImportDeclaration | ImportEqualsDeclaratio
 }
 export function isDynamicName(name: DeclarationName): boolean {
   if (!(name.kind === Syntax.ComputedPropertyName || name.kind === Syntax.ElementAccessExpression)) return false;
-  const expr = qc.is.kind(qc.ElementAccessExpression, name) ? name.argumentExpression : name.expression;
-  return !StringLiteral.orNumericLiteralLike(expr) && !qc.is.signedNumericLiteral(expr) && !qc.is.wellKnownSymbolSyntactically(expr);
+  const expr = qf.is.kind(qc.ElementAccessExpression, name) ? name.argumentExpression : name.expression;
+  return !StringLiteral.orNumericLiteralLike(expr) && !qf.is.signedNumericLiteral(expr) && !qf.is.wellKnownSymbolSyntactically(expr);
 }
 export function isParameterDeclaration(node: VariableLikeDeclaration) {
   const root = qf.get.rootDeclaration(node);
@@ -1767,7 +1773,7 @@ export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames
 export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): GetCanonicalFileName {
   return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
 }
-export function qf.get.externalModuleNameFromDeclaration(
+export function getExternalModuleNameFromDeclaration(
   host: ResolveModuleNameResolutionHost,
   resolver: EmitResolver,
   declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
@@ -1874,7 +1880,7 @@ export function forSomeAncestorDirectory(directory: string, cb: (directory: stri
   return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
 }
 export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
-  return qc.is.kind(qc.StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qf.get.textOf(moduleSpecifier);
+  return qf.is.kind(qc.StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qf.get.textOf(moduleSpecifier);
 }
 export function getNameOfAccessExpression(node: AccessExpression) {
   if (node.kind === Syntax.PropertyAccessExpression) return node.name;

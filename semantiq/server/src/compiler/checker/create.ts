@@ -774,7 +774,7 @@ export function newCreate(f: qt.Frame) {
         isImportRequiredByAugmentation,
       };
       function isImportRequiredByAugmentation(node: ImportDeclaration) {
-        const file = qf.get.sourceFileOf(node);
+        const file = node.sourceFile;
         if (!file.symbol) return false;
         const importTarget = getExternalModuleFileFromDeclaration(node);
         if (!importTarget) return false;
@@ -784,7 +784,7 @@ export function newCreate(f: qt.Frame) {
           if (s.mergeId) {
             const merged = getMergedSymbol(s);
             for (const d of merged.declarations) {
-              const declFile = qf.get.sourceFileOf(d);
+              const declFile = d.sourceFile;
               if (declFile === importTarget) return true;
             }
           }
@@ -1475,7 +1475,7 @@ export function newResolve(f: qt.Frame) {
       }
       const ambientModule = tryFindAmbientModule(moduleReference, true);
       if (ambientModule) return ambientModule;
-      const currentSourceFile = qf.get.sourceFileOf(location);
+      const currentSourceFile = location.sourceFile;
       const resolvedModule = getResolvedModule(currentSourceFile, moduleReference)!;
       const resolutionDiagnostic = resolvedModule && getResolutionDiagnostic(compilerOptions, resolvedModule);
       const sourceFile = resolvedModule && !resolutionDiagnostic && host.getSourceFile(resolvedModule.resolvedFileName);
@@ -2136,7 +2136,7 @@ export function newResolve(f: qt.Frame) {
         else {
           let relatedInformation: qd.DiagnosticRelatedInformation | undefined;
           if (node.arguments.length === 1) {
-            const text = qf.get.sourceFileOf(node).text;
+            const text = node.sourceFile.text;
             if (qy.is.lineBreak(text.charCodeAt(qy.skipTrivia(text, node.expression.end, true) - 1)))
               relatedInformation = qf.create.diagnosticForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
           }

@@ -6,7 +6,7 @@ import * as qy from '../syntax';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function getOriginalNodeId(node: Node) {
   node = qc.get.originalOf(node);
-  return node ? getNodeId(node) : 0;
+  return node ? qf.get.nodeId(node) : 0;
 }
 export interface ExternalModuleInfo {
   externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];

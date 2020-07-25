@@ -600,17 +600,13 @@ export function newCheck(f: qt.Frame) {
                 const errorTarget = filterType(reducedTarget, isExcessPropertyCheckTarget);
                 if (!errorNode) return qu.fail();
                 if (qf.is.kind(qc.JsxAttributes, errorNode) || qc.isJsx.openingLikeElement(errorNode) || qc.isJsx.openingLikeElement(errorNode.parent)) {
-                  if (prop.valueDeclaration && qf.is.kind(qc.JsxAttribute, prop.valueDeclaration) && qf.get.sourceFileOf(errorNode) === qf.get.sourceFileOf(prop.valueDeclaration.name))
+                  if (prop.valueDeclaration && qf.is.kind(qc.JsxAttribute, prop.valueDeclaration) && errorNode.sourceFile === prop.valueDeclaration.name.sourceFile)
                     errorNode = prop.valueDeclaration.name;
                   reportError(qd.msgs.Property_0_does_not_exist_on_type_1, prop.symbolToString(), typeToString(errorTarget));
                 } else {
                   const objectLiteralDeclaration = source.symbol && firstOrUndefined(source.symbol.declarations);
                   let suggestion;
-                  if (
-                    prop.valueDeclaration &&
-                    qc.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) &&
-                    qf.get.sourceFileOf(objectLiteralDeclaration) === qf.get.sourceFileOf(errorNode)
-                  ) {
+                  if (prop.valueDeclaration && qc.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) && objectLiteralDeclaration.sourceFile === errorNode.sourceFile) {
                     const propDeclaration = prop.valueDeclaration as ObjectLiteralElementLike;
                     qg.assertNode(propDeclaration, isObjectLiteralElementLike);
                     errorNode = propDeclaration;
@@ -1959,7 +1955,7 @@ export function newCheck(f: qt.Frame) {
       }
       jsxFragment(n: qc.JsxFragment): qc.Type {
         this.jsxOpeningLikeElementOrOpeningFragment(n.openingFragment);
-        if (compilerOptions.jsx === JsxEmit.React && (compilerOptions.jsxFactory || qf.get.sourceFileOf(n).pragmas.has('jsx')))
+        if (compilerOptions.jsx === JsxEmit.React && (compilerOptions.jsxFactory || n.sourceFile.pragmas.has('jsx')))
           error(n, compilerOptions.jsxFactory ? qd.msgs.JSX_fragment_is_not_supported_when_using_jsxFactory : qd.msgs.JSX_fragment_is_not_supported_when_using_an_inline_JSX_factory_pragma);
         this.jsxChildren(n);
         return getJsxElementTypeAt(n) || anyType;
@@ -2254,7 +2250,7 @@ export function newCheck(f: qt.Frame) {
     }
     propertyNotUsedBeforeDeclaration(prop: Symbol, n: PropertyAccessExpression | QualifiedName, right: qc.Identifier | PrivateIdentifier): void {
       const { valueDeclaration } = prop;
-      if (!valueDeclaration || qf.get.sourceFileOf(n).isDeclarationFile) return;
+      if (!valueDeclaration || n.sourceFile.isDeclarationFile) return;
       let diagnosticMessage;
       const declarationName = idText(right);
       if (
@@ -2526,7 +2522,7 @@ export function newCheck(f: qt.Frame) {
     }
     importMetaProperty(n: qc.MetaProperty) {
       if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) error(n, qd.msgs.The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system);
-      const file = qf.get.sourceFileOf(n);
+      const file = n.sourceFile;
       qu.assert(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta n flag.');
       qu.assert(!!file.externalModuleIndicator, 'Containing file should be a module.');
       return n.name.escapedText === 'meta' ? getGlobalImportMetaType() : errorType;
@@ -2687,7 +2683,7 @@ export function newCheck(f: qt.Frame) {
       if (produceDiagnostics) {
         if (!(n.flags & NodeFlags.AwaitContext)) {
           if (isTopLevelAwait(n)) {
-            const sourceFile = qf.get.sourceFileOf(n);
+            const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
               let span: TextSpan | undefined;
               if (!isEffectiveExternalModule(sourceFile, compilerOptions)) {
@@ -2712,7 +2708,7 @@ export function newCheck(f: qt.Frame) {
               }
             }
           } else {
-            const sourceFile = qf.get.sourceFileOf(n);
+            const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
               const span = getSpanOfTokenAtPosition(sourceFile, n.pos);
               const diagnostic = qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
@@ -4375,7 +4371,7 @@ export function newCheck(f: qt.Frame) {
             const only = parent.typeParameters!.length === 1;
             const message = only ? qd.msgs._0_is_declared_but_its_value_is_never_read : qd.msgs.All_type_parameters_are_unused;
             const arg0 = only ? name : undefined;
-            addDiagnostic(typeParameter, UnusedKind.Parameter, qf.create.fileDiagnostic(qf.get.sourceFileOf(parent), range.pos, range.end - range.pos, message, arg0));
+            addDiagnostic(typeParameter, UnusedKind.Parameter, qf.create.fileDiagnostic(parent.sourceFile, range.pos, range.end - range.pos, message, arg0));
           }
         } else {
           addDiagnostic(typeParameter, UnusedKind.Parameter, qf.create.diagnosticForNode(typeParameter, qd.msgs._0_is_declared_but_its_value_is_never_read, name));
@@ -4391,12 +4387,12 @@ export function newCheck(f: qt.Frame) {
           return;
         for (const declaration of local.declarations) {
           if (isValidUnusedLocalDeclaration(declaration)) continue;
-          if (isImportedDeclaration(declaration)) addToGroup(unusedImports, importClauseFromImported(declaration), declaration, getNodeId);
+          if (isImportedDeclaration(declaration)) addToGroup(unusedImports, importClauseFromImported(declaration), declaration, qf.get.nodeId);
           else if (qf.is.kind(qc.BindingElement, declaration) && qf.is.kind(qc.ObjectBindingPattern, declaration.parent)) {
             const lastElement = last(declaration.parent.elements);
-            if (declaration === lastElement || !last(declaration.parent.elements).dot3Token) addToGroup(unusedDestructures, declaration.parent, declaration, getNodeId);
+            if (declaration === lastElement || !last(declaration.parent.elements).dot3Token) addToGroup(unusedDestructures, declaration.parent, declaration, qf.get.nodeId);
           } else if (qf.is.kind(qc.VariableDeclaration, declaration)) {
-            addToGroup(unusedVariables, declaration.parent, declaration, getNodeId);
+            addToGroup(unusedVariables, declaration.parent, declaration, qf.get.nodeId);
           } else {
             const parameter = local.valueDeclaration && tryGetRootParameterDeclaration(local.valueDeclaration);
             const name = local.valueDeclaration && qf.get.nameOfDeclaration(local.valueDeclaration);
@@ -4429,7 +4425,7 @@ export function newCheck(f: qt.Frame) {
         const kind = tryGetRootParameterDeclaration(bindingPattern.parent) ? UnusedKind.Parameter : UnusedKind.Local;
         if (bindingPattern.elements.length === bindingElements.length) {
           if (bindingElements.length === 1 && bindingPattern.parent.kind === Syntax.VariableDeclaration && bindingPattern.parent.parent.kind === Syntax.VariableDeclarationList)
-            addToGroup(unusedVariables, bindingPattern.parent.parent, bindingPattern.parent, getNodeId);
+            addToGroup(unusedVariables, bindingPattern.parent.parent, bindingPattern.parent, qf.get.nodeId);
           else {
             addDiagnostic(
               bindingPattern,
@@ -4819,7 +4815,7 @@ export function newCheck(f: qt.Frame) {
         if (n.flags & NodeFlags.AwaitContext) grammarErrorOnFirstToken(n, qd.with_statements_are_not_allowed_in_an_async_function_block);
       }
       this.expression(n.expression);
-      const sourceFile = qf.get.sourceFileOf(n);
+      const sourceFile = n.sourceFile;
       if (!hasParseDiagnostics(sourceFile)) {
         const start = getSpanOfTokenAtPosition(sourceFile, n.pos).start;
         const end = n.statement.pos;
@@ -5360,8 +5356,7 @@ export function newCheck(f: qt.Frame) {
         ) {
           const firstNonAmbientClassOrFunc = getFirstNonAmbientClassOrFunctionDeclaration(symbol);
           if (firstNonAmbientClassOrFunc) {
-            if (qf.get.sourceFileOf(n) !== qf.get.sourceFileOf(firstNonAmbientClassOrFunc))
-              error(n.name, qd.msgs.A_namespace_declaration_cannot_be_in_a_different_file_from_a_class_or_function_with_which_it_is_merged);
+            if (n.sourceFile !== firstNonAmbientClassOrFunc.sourceFile) error(n.name, qd.msgs.A_namespace_declaration_cannot_be_in_a_different_file_from_a_class_or_function_with_which_it_is_merged);
             else if (n.pos < firstNonAmbientClassOrFunc.pos) {
               error(n.name, qd.msgs.A_namespace_declaration_cannot_be_located_prior_to_a_class_or_function_with_which_it_is_merged);
             }
@@ -5619,7 +5614,7 @@ export function newCheck(f: qt.Frame) {
           exports.forEach(({ declarations, flags }, id) => {
             if (id === '__export') return;
             if (flags & (SymbolFlags.Namespace | qt.SymbolFlags.Interface | qt.SymbolFlags.Enum)) return;
-            const exportedDeclarationsCount = countWhere(declarations, isNotOverloadAndNotAccessor);
+            const exportedDeclarationsCount = countWhere(declarations, qu.and(qf.is.notOverload, qf.is.notAccessor));
             if (flags & qt.SymbolFlags.TypeAlias && exportedDeclarationsCount <= 2) return;
             if (exportedDeclarationsCount > 1) {
               for (const declaration of declarations) {
@@ -5832,11 +5827,11 @@ export function newCheck(f: qt.Frame) {
       if (!host || last(host.parameters).symbol !== param) error(n, qd.msgs.A_rest_parameter_must_be_last_in_a_parameter_list);
     }
     nodeDeferred(n: Node) {
-      const enclosingFile = qf.get.sourceFileOf(n);
+      const enclosingFile = n.sourceFile;
       const links = getNodeLinks(enclosingFile);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
         links.deferredNodes = links.deferredNodes || new qu.QMap();
-        const id = '' + getNodeId(n);
+        const id = '' + qf.get.nodeId(n);
         links.deferredNodes.set(id, n);
       }
     }
@@ -5920,7 +5915,7 @@ export function newCheck(f: qt.Frame) {
     }
     externalEmitHelpers(location: Node, helpers: ExternalEmitHelpers) {
       if ((requestedExternalEmitHelpers & helpers) !== helpers && compilerOptions.importHelpers) {
-        const sourceFile = qf.get.sourceFileOf(location);
+        const sourceFile = location.sourceFile;
         if (isEffectiveExternalModule(sourceFile, compilerOptions) && !(location.flags & NodeFlags.Ambient)) {
           const helpersModule = resolveHelpersModule(sourceFile, location);
           if (helpersModule !== unknownSymbol) {
@@ -6175,7 +6170,7 @@ export function newCheck(f: qt.Frame) {
         return false;
       }
       functionLikeDeclaration(n: qc.FunctionLikeDeclaration | MethodSignature): boolean {
-        const file = qf.get.sourceFileOf(n);
+        const file = n.sourceFile;
         return (
           this.decoratorsAndModifiers(n) ||
           this.typeParameterList(n.typeParameters, file) ||
@@ -6185,7 +6180,7 @@ export function newCheck(f: qt.Frame) {
         );
       }
       classLikeDeclaration(n: qc.ClassLikeDeclaration): boolean {
-        const file = qf.get.sourceFileOf(n);
+        const file = n.sourceFile;
         return this.classDeclarationHeritageClauses(n) || this.typeParameterList(n.typeParameters, file);
       }
       arrowFunction(n: Node, file: SourceFile): boolean {
@@ -6230,7 +6225,7 @@ export function newCheck(f: qt.Frame) {
       }
       forAtLeastOneTypeArgument(n: Node, typeArguments: Nodes<TypeNode> | undefined): boolean {
         if (typeArguments && typeArguments.length === 0) {
-          const sourceFile = qf.get.sourceFileOf(n);
+          const sourceFile = n.sourceFile;
           const start = typeArguments.pos - '<'.length;
           const end = qy.skipTrivia(sourceFile.text, typeArguments.end) + '>'.length;
           return grammarErrorAtPos(sourceFile, start, end - start, qd.msgs.Type_argument_list_cannot_be_empty);
@@ -6399,7 +6394,7 @@ export function newCheck(f: qt.Frame) {
         if (this.statementInAmbientContext(forInOrOfStatement)) return true;
         if (forInOrOfStatement.kind === Syntax.ForOfStatement && forInOrOfStatement.awaitModifier) {
           if ((forInOrOfStatement.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
-            const sourceFile = qf.get.sourceFileOf(forInOrOfStatement);
+            const sourceFile = forInOrOfStatement.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
               const diagnostic = qf.create.diagnosticForNode(forInOrOfStatement.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
               const func = qf.get.containingFunction(forInOrOfStatement);
@@ -6627,7 +6622,7 @@ export function newCheck(f: qt.Frame) {
         const jsdocTypeParameters = qf.is.inJSFile(n) ? qc.getDoc.typeParameterDeclarations(n) : undefined;
         const range = n.typeParameters || (jsdocTypeParameters && firstOrUndefined(jsdocTypeParameters));
         if (range) {
-          const pos = range.pos === range.end ? range.pos : qy.skipTrivia(qf.get.sourceFileOf(n).text, range.pos);
+          const pos = range.pos === range.end ? range.pos : qy.skipTrivia(n.sourceFile.text, range.pos);
           return grammarErrorAtPos(n, pos, range.end - pos, qd.msgs.Type_parameters_cannot_appear_on_a_constructor_declaration);
         }
       }

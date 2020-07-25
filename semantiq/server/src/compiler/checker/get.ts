@@ -25,7 +25,7 @@ export function newGet(f: qt.Frame) {
     }
     jsxNamespace(location: Node | undefined): qu.__String {
       if (location) {
-        const file = this.sourceFileOf(location);
+        const file = location.sourceFile;
         if (file) {
           if (file.localJsxNamespace) return file.localJsxNamespace;
           const jsxPragma = file.pragmas.get('jsx');
@@ -390,7 +390,7 @@ export function newGet(f: qt.Frame) {
             symbolFromSymbolTable.flags & qt.SymbolFlags.Alias &&
             symbolFromSymbolTable.escName !== InternalSymbol.ExportEquals &&
             symbolFromSymbolTable.escName !== InternalSymbol.Default &&
-            !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qf.is.externalModule(qf.get.sourceFileOf(enclosingDeclaration))) &&
+            !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qf.is.externalModule(enclosingDeclaration.sourceFile)) &&
             (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, qf.is.externalModuleImportEqualsDeclaration)) &&
             (ignoreQualification || !getDeclarationOfKind(symbolFromSymbolTable, Syntax.ExportSpecifier))
           ) {
@@ -792,7 +792,7 @@ export function newGet(f: qt.Frame) {
           const exportedMember = members.get(name)!;
           if (exportedMember && exportedMember !== s) {
             if (s.flags & qt.SymbolFlags.Value) {
-              if (qf.get.sourceFileOf(s.valueDeclaration) !== qf.get.sourceFileOf(exportedMember.valueDeclaration)) {
+              if (s.valueDeclaration.sourceFile !== exportedMember.valueDeclaration.sourceFile) {
                 const unescName = qy.get.unescUnderscores(s.escName);
                 const exportedMemberName = tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
                 addRelatedInfo(error(s.valueDeclaration, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(exportedMemberName, qd.msgs._0_was_also_declared_here, unescName));
@@ -2327,7 +2327,7 @@ export function newGet(f: qt.Frame) {
         (hasRestElement ? '+' : ',') +
         minLength +
         (readonly ? 'R' : '') +
-        (namedMemberDeclarations && namedMemberDeclarations.length ? ',' + map(namedMemberDeclarations, getNodeId).join(',') : '');
+        (namedMemberDeclarations && namedMemberDeclarations.length ? ',' + map(namedMemberDeclarations, qf.get.nodeId).join(',') : '');
       let type = tupleTypes.get(key);
       if (!type) tupleTypes.set(key, (type = createTupleTypeOfArity(arity, minLength, hasRestElement, readonly, namedMemberDeclarations)));
       return type;
@@ -3949,7 +3949,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.Identifier:
           const symbol = getResolvedSymbol(<Identifier>node);
           return symbol !== unknownSymbol
-            ? `${flowContainer ? getNodeId(flowContainer) : '-1'}|${getTypeId(declaredType)}|${getTypeId(initialType)}|${isConstraintPosition(node) ? '@' : ''}${symbol.getId()}`
+            ? `${flowContainer ? qf.get.nodeId(flowContainer) : '-1'}|${getTypeId(declaredType)}|${getTypeId(initialType)}|${isConstraintPosition(node) ? '@' : ''}${symbol.getId()}`
             : undefined;
         case Syntax.ThisKeyword:
           return '0';
@@ -5022,7 +5022,7 @@ export function newGet(f: qt.Frame) {
           if (qf.is.accessExpression(target)) {
             const { expression } = target;
             if (inJs && qf.is.kind(qc.Identifier, expression)) {
-              const sourceFile = qf.get.sourceFileOf(parent);
+              const sourceFile = parent.sourceFile;
               if (sourceFile.commonJsModuleIndicator && getResolvedSymbol(expression) === sourceFile.symbol) return;
             }
             return getWidenedType(check.expressionCached(expression));
@@ -5979,7 +5979,7 @@ export function newGet(f: qt.Frame) {
     diagnosticSpanForCallNode(node: CallExpression, doNotIncludeArguments?: boolean) {
       let start: number;
       let length: number;
-      const sourceFile = qf.get.sourceFileOf(node);
+      const sourceFile = node.sourceFile;
       if (qf.is.kind(qc.PropertyAccessExpression, node.expression)) {
         const nameSpan = qf.get.errorSpanForNode(sourceFile, node.expression.name);
         start = nameSpan.start;
@@ -6058,7 +6058,7 @@ export function newGet(f: qt.Frame) {
       spanArray.pos = first(spanArray).pos;
       spanArray.end = last(spanArray).end;
       if (spanArray.end === spanArray.pos) spanArray.end++;
-      const diagnostic = qf.create.diagnosticForNodes(qf.get.sourceFileOf(node), spanArray, error, paramRange, argCount);
+      const diagnostic = qf.create.diagnosticForNodes(node.sourceFile, spanArray, error, paramRange, argCount);
       return related ? addRelatedInfo(diagnostic, related) : diagnostic;
     }
     typeArgumentArityError(node: Node, signatures: readonly Signature[], typeArguments: Nodes<TypeNode>) {
@@ -6067,7 +6067,7 @@ export function newGet(f: qt.Frame) {
         const sig = signatures[0];
         const min = getMinTypeArgumentCount(sig.typeParameters);
         const max = length(sig.typeParameters);
-        return qf.create.diagnosticForNodes(qf.get.sourceFileOf(node), typeArguments, qd.msgs.Expected_0_type_arguments_but_got_1, min < max ? min + '-' + max : min, argCount);
+        return qf.create.diagnosticForNodes(node.sourceFile, typeArguments, qd.msgs.Expected_0_type_arguments_but_got_1, min < max ? min + '-' + max : min, argCount);
       }
       let belowArgCount = -Infinity;
       let aboveArgCount = Infinity;
@@ -6081,7 +6081,7 @@ export function newGet(f: qt.Frame) {
       }
       if (belowArgCount !== -Infinity && aboveArgCount !== Infinity) {
         return qf.create.diagnosticForNodes(
-          qf.get.sourceFileOf(node),
+          node.sourceFile,
           typeArguments,
           qd.msgs.No_overload_expects_0_type_arguments_but_overloads_do_exist_that_expect_either_1_or_2_type_arguments,
           argCount,
@@ -6089,7 +6089,7 @@ export function newGet(f: qt.Frame) {
           aboveArgCount
         );
       }
-      return qf.create.diagnosticForNodes(qf.get.sourceFileOf(node), typeArguments, qd.msgs.Expected_0_type_arguments_but_got_1, belowArgCount === -Infinity ? aboveArgCount : belowArgCount, argCount);
+      return qf.create.diagnosticForNodes(node.sourceFile, typeArguments, qd.msgs.Expected_0_type_arguments_but_got_1, belowArgCount === -Infinity ? aboveArgCount : belowArgCount, argCount);
     }
     candidateForOverloadFailure(node: CallLikeExpression, candidates: Signature[], args: readonly Expression[], hasCandidatesOutArray: boolean): Signature {
       assert(candidates.length > 0);
@@ -6447,14 +6447,14 @@ export function newGet(f: qt.Frame) {
       const quickType = getQuickTypeOfExpression(node);
       if (quickType) return quickType;
       if (node.flags & NodeFlags.TypeCached && flowTypeCache) {
-        const cachedType = flowTypeCache[getNodeId(node)];
+        const cachedType = flowTypeCache[qf.get.nodeId(node)];
         if (cachedType) return cachedType;
       }
       const startInvocationCount = flowInvocationCount;
       const type = check.expression(node);
       if (flowInvocationCount !== startInvocationCount) {
         const cache = flowTypeCache || (flowTypeCache = []);
-        cache[getNodeId(node)] = type;
+        cache[qf.get.nodeId(node)] = type;
         node.flags |= NodeFlags.TypeCached;
       }
       return type;
@@ -7326,7 +7326,7 @@ export function newGet(f: qt.Frame) {
           if (parentSymbol) {
             if (parentSymbol.flags & qt.SymbolFlags.ValueModule && parentSymbol.valueDeclaration.kind === Syntax.SourceFile) {
               const symbolFile = <SourceFile>parentSymbol.valueDeclaration;
-              const referenceFile = qf.get.sourceFileOf(node);
+              const referenceFile = node.sourceFile;
               const symbolIsUmdExport = symbolFile !== referenceFile;
               return symbolIsUmdExport ? undefined : symbolFile;
             }
@@ -7426,7 +7426,7 @@ export function newGet(f: qt.Frame) {
       return;
     }
     jsxFactoryEntity(location: Node) {
-      return location ? (getJsxNamespace(location), qf.get.sourceFileOf(location).localJsxFactory || _jsxFactoryEntity) : _jsxFactoryEntity;
+      return location ? (getJsxNamespace(location), location.sourceFile.localJsxFactory || _jsxFactoryEntity) : _jsxFactoryEntity;
     }
     externalModuleFileFromDeclaration(declaration: AnyImportOrReExport | ModuleDeclaration | ImportTypeNode): SourceFile | undefined {
       const specifier = declaration.kind === Syntax.ModuleDeclaration ? tryCast(declaration.name, isStringLiteral) : qf.get.externalModuleName(declaration);
