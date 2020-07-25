@@ -2295,7 +2295,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = new SymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = new SymbolTable());
     let includes = SymbolFlags.None;
     let excludes = SymbolFlags.None;
-    if (qc.is.functionLikeDeclaration(getAssignedExpandoIniter(declaration)!)) {
+    if (qc.is.functionLikeDeclaration(qf.get.assignedExpandoIniter(declaration)!)) {
       includes = SymbolFlags.Method;
       excludes = SymbolFlags.MethodExcludes;
     } else if (qc.is.kind(qc.CallExpression, declaration) && isBindableObjectDefinePropertyCall(declaration)) {
@@ -2338,7 +2338,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function isExpandoSymbol(symbol: Symbol): boolean {
     if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) return true;
     const node = symbol.valueDeclaration;
-    if (node && qc.is.kind(qc.CallExpression, node)) return !!getAssignedExpandoIniter(node);
+    if (node && qc.is.kind(qc.CallExpression, node)) return !!qf.get.assignedExpandoIniter(node);
     let init = !node
       ? undefined
       : qc.is.kind(qc.VariableDeclaration, node)
@@ -2351,7 +2351,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     init = init && getRightMostAssignedExpression(init);
     if (init) {
       const isPrototypeAssignment = qc.is.prototypeAccess(qc.is.kind(qc.VariableDeclaration, node) ? node.name : qc.is.kind(qc.BinaryExpression, node) ? node.left : node);
-      return !!getExpandoIniter(
+      return !!qf.get.expandoIniter(
         qc.is.kind(qc.BinaryExpression, init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
         isPrototypeAssignment
       );
@@ -2388,7 +2388,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function bindCallExpression(node: CallExpression) {
-    if (!file.commonJsModuleIndicator && isRequireCall(node, false)) {
+    if (!file.commonJsModuleIndicator && qf.is.requireCall(node, false)) {
       setCommonJsModuleIndicator(node);
     }
   }

@@ -892,7 +892,7 @@ export function transformDeclarations(context: TransformationContext) {
           const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
           if (input.flags & NodeFlags.Ambient) needsScopeFixMarker = false;
-          if (!input.isGlobalScopeAugmentation() && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
+          if (!input.isGlobalScopeAugmentation() && !qf.has.scopeMarker(lateStatements) && !resultHasScopeMarker) {
             if (needsScopeFixMarker) lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
             else {
               lateStatements = Nodes.visit(lateStatements, stripExportModifiers);
@@ -1048,7 +1048,7 @@ export function transformDeclarations(context: TransformationContext) {
   function isNodeScopeMarker(node: Node) {
     return qc.is.kind(qc.ExportAssignment, node) || qc.is.kind(qc.ExportDeclaration, node);
   }
-  function hasScopeMarker(statements: readonly Statement[]) {
+  function qf.has.scopeMarker(statements: readonly Statement[]) {
     return some(statements, isScopeMarker);
   }
   function ensureModifiers(node: Node): readonly Modifier[] | undefined {

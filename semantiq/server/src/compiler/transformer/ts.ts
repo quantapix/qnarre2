@@ -700,7 +700,7 @@ export function transformTypeScript(context: TransformationContext) {
           continue;
         }
         if (parameter.dot3Token) {
-          expressions.push(serializeTypeNode(getRestParameterElementType(parameter.type)));
+          expressions.push(serializeTypeNode(qf.get.restParameterElementType(parameter.type)));
         } else {
           expressions.push(serializeTypeOfNode(parameter));
         }

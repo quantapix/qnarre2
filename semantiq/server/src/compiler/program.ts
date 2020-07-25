@@ -1538,7 +1538,7 @@ export function createProgram(
       const r = /import|require/g;
       while (r.exec(file.text) !== null) {
         const node = getNodeAtPosition(file, r.lastIndex);
-        if (isRequireCall(node, true)) {
+        if (qf.is.requireCall(node, true)) {
           imports = append(imports, node.arguments[0]);
         } else if (qc.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
           imports = append(imports, node.arguments[0] as StringLiteralLike);
@@ -2379,7 +2379,7 @@ export function createProgram(
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
       if (qc.is.kind(qc.ObjectLiteralExpression, pathProp.initer)) {
-        for (const keyProps of getPropertyAssignment(pathProp.initer, key)) {
+        for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
           if (isArrayLiteralExpression(initer) && initer.elements.length > valueIndex) {
             programqd.add(qf.create.diagnosticForNodeInSourceFile(options.configFile!, initer.elements[valueIndex], message, arg0, arg1, arg2));
@@ -2406,7 +2406,7 @@ export function createProgram(
   }
   function getOptionsSyntaxByName(name: string): object | undefined {
     const compilerOptionsObjectLiteralSyntax = getCompilerOptionsObjectLiteralSyntax();
-    if (compilerOptionsObjectLiteralSyntax) return getPropertyAssignment(compilerOptionsObjectLiteralSyntax, name);
+    if (compilerOptionsObjectLiteralSyntax) return qf.get.propertyAssignment(compilerOptionsObjectLiteralSyntax, name);
     return;
   }
   function getOptionPathsSyntax(): PropertyAssignment[] {
@@ -2419,7 +2419,7 @@ export function createProgram(
     createDiagnosticForOption(undefined, message, arg0);
   }
   function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: qd.Message, arg0?: string | number, arg1?: string | number) {
-    const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
+    const referencesSyntax = firstDefined(qf.get.tsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
     if (referencesSyntax && referencesSyntax.elements.length > index) {
@@ -2439,9 +2439,9 @@ export function createProgram(
   function getCompilerOptionsObjectLiteralSyntax() {
     if (_compilerOptionsObjectLiteralSyntax === undefined) {
       _compilerOptionsObjectLiteralSyntax = null;
-      const jsonObjectLiteral = getTsConfigObjectLiteralExpression(options.configFile);
+      const jsonObjectLiteral = qf.get.tsConfigObjectLiteralExpression(options.configFile);
       if (jsonObjectLiteral) {
-        for (const prop of getPropertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
+        for (const prop of qf.get.propertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
           if (qc.is.kind(qc.ObjectLiteralExpression, prop.initer)) {
             _compilerOptionsObjectLiteralSyntax = prop.initer;
             break;
@@ -2461,7 +2461,7 @@ export function createProgram(
     arg1?: string | number,
     arg2?: string | number
   ): boolean {
-    const props = getPropertyAssignment(objectLiteral, key1, key2);
+    const props = qf.get.propertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
       programqd.add(qf.create.diagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initer, message, arg0, arg1, arg2));
     }

@@ -1487,7 +1487,7 @@ export function convertToObjectWorker(
       if (!isDoubleQuotedString(element.name)) {
         errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, element.name, qd.String_literal_with_double_quotes_expected));
       }
-      const textOfKey = isComputedNonLiteralName(element.name) ? undefined : qc.get.textOfPropertyName(element.name);
+      const textOfKey = qf.is.computedNonLiteralName(element.name) ? undefined : qc.get.textOfPropertyName(element.name);
       const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
       const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
@@ -2365,7 +2365,7 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
     return diag === undefined;
   });
   function createDiagnostic(message: qd.Message, spec: string): Diagnostic {
-    const element = getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
+    const element = qf.get.tsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
     return element ? qf.create.diagnosticForNodeInSourceFile(jsonSourceFile!, element, message, spec) : createCompilerDiagnostic(message, spec);
   }
 }
@@ -2484,7 +2484,7 @@ function getFileNames(): ExpandResult {
         if (sourceFile) {
           const fileName = configFileName || 'tsconfig.json';
           const diagnosticMessage = qd.The_files_list_in_config_file_0_is_empty;
-          const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initer);
+          const nodeValue = firstDefined(qf.get.tsConfigPropArray(sourceFile, 'files'), (property) => property.initer);
           const error = nodeValue ? qf.create.diagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
           errors.push(error);
         } else {

@@ -2952,7 +2952,7 @@ export function newCheck(f: qt.Frame) {
         n = workStacks.expr[stackIndex];
         switch (workStacks.state[stackIndex]) {
           case CheckBinaryExpressionState.MaybeCheckLeft: {
-            if (qf.is.inJSFile(n) && getAssignedExpandoIniter(n)) {
+            if (qf.is.inJSFile(n) && qf.get.assignedExpandoIniter(n)) {
               finishInvocation(this.expression(n.right, checkMode));
               break;
             }
@@ -3219,7 +3219,7 @@ export function newCheck(f: qt.Frame) {
           case AssignmentDeclarationKind.PrototypeProperty:
           case AssignmentDeclarationKind.ThisProperty:
             const symbol = getSymbolOfNode(left);
-            const init = getAssignedExpandoIniter(right);
+            const init = qf.get.assignedExpandoIniter(right);
             return init && qf.is.kind(qc.ObjectLiteralExpression, init) && symbol && qu.hasEntries(symbol.exports);
           default:
             return false;

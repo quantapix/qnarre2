@@ -1326,7 +1326,7 @@ export function newResolve(f: qt.Frame) {
       }
       if (!result) {
         if (originalLocation && qf.is.inJSFile(originalLocation) && originalLocation.parent) {
-          if (isRequireCall(originalLocation.parent, false)) return requireSymbol;
+          if (qf.is.requireCall(originalLocation.parent, false)) return requireSymbol;
         }
       }
       if (!result) {

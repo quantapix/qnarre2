@@ -1628,7 +1628,7 @@ export function newIs(f: qt.Frame) {
       return globalESSymbol === resolveName(left, 'Symbol' as qu.__String, qt.SymbolFlags.Value, undefined, undefined, false);
     }
     commonJsRequire(node: Node): boolean {
-      if (!isRequireCall(node, true)) return false;
+      if (!qf.is.requireCall(node, true)) return false;
       if (!this.kind(qc.Identifier, node.expression)) return qu.fail();
       const resolvedRequire = resolveName(node.expression, node.expression.escapedText, qt.SymbolFlags.Value, undefined, undefined, true)!;
       if (resolvedRequire === requireSymbol) return true;

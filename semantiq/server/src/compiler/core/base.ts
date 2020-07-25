@@ -1542,7 +1542,7 @@ function getDocComment(ds?: readonly Declaration[], tc?: qt.TypeChecker): qt.Sym
       return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
     });
   };
-  if (c.length === 0 || ds.some(hasDocInheritDocTag)) {
+  if (c.length === 0 || ds.some(qf.has.docInheritDocTag)) {
     forEachUnique(ds, (d) => {
       const inheritedDocs = findInherited(d, d.symbol.name);
       if (inheritedDocs) c = c.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), c);
@@ -1741,7 +1741,7 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
     case Syntax.ExternalModuleReference:
       return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
     case Syntax.CallExpression:
-      return qc.is.importCall(node.parent) || isRequireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
+      return qc.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
     case Syntax.LiteralType:
       assert(qc.is.kind(qc.StringLiteral, node));
       return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;

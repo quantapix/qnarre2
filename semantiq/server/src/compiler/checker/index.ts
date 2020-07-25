@@ -684,10 +684,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return diagnostic;
   }
   function addDuplicateDeclarationError(node: Declaration, message: qd.Message, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
-    const errorNode = (getExpandoIniter(node, false) ? getNameOfExpando(node) : qf.get.nameOfDeclaration(node)) || node;
+    const errorNode = (qf.get.expandoIniter(node, false) ? getNameOfExpando(node) : qf.get.nameOfDeclaration(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
     for (const relatedNode of relatedNodes || empty) {
-      const adjustedNode = (getExpandoIniter(relatedNode, false) ? getNameOfExpando(relatedNode) : qf.get.nameOfDeclaration(relatedNode)) || relatedNode;
+      const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? getNameOfExpando(relatedNode) : qf.get.nameOfDeclaration(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
       const leadingMessage = qf.create.diagnosticForNode(adjustedNode, qd.msgs._0_was_also_declared_here, symbolName);
@@ -2049,7 +2049,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             errorNode: prop.name,
             innerExpression: prop.initer,
             nameType: type,
-            errorMessage: isComputedNonLiteralName(prop.name) ? qd.msgs.Type_of_computed_property_s_value_is_0_which_is_not_assignable_to_type_1 : undefined,
+            errorMessage: qf.is.computedNonLiteralName(prop.name) ? qd.msgs.Type_of_computed_property_s_value_is_0_which_is_not_assignable_to_type_1 : undefined,
           };
           break;
         default:
@@ -3729,7 +3729,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function markTypeNodeAsReferenced(node: TypeNode) {
-    markEntityNameOrEntityExpressionAsReference(node && getEntityNameFromTypeNode(node));
+    markEntityNameOrEntityExpressionAsReference(node && qf.get.entityNameFromTypeNode(node));
   }
   function markEntityNameOrEntityExpressionAsReference(typeName: EntityNameOrEntityNameExpression | undefined) {
     if (!typeName) return;
@@ -3769,7 +3769,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     | InferTypeNode;
   function errorUnusedLocal(declaration: Declaration, name: string, addDiagnostic: AddUnusedDiagnostic) {
     const node = qf.get.nameOfDeclaration(declaration) || declaration;
-    const message = isTypeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;
+    const message = qf.is.typeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;
     addDiagnostic(declaration, UnusedKind.Local, qf.create.diagnosticForNode(node, message, name));
   }
   function addToGroup<K, V>(map: qu.QMap<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
@@ -3898,7 +3898,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function computeMemberValue(member: EnumMember, autoValue: number | undefined) {
-    if (isComputedNonLiteralName(member.name)) error(member.name, qd.msgs.Computed_property_names_are_not_allowed_in_enums);
+    if (qf.is.computedNonLiteralName(member.name)) error(member.name, qd.msgs.Computed_property_names_are_not_allowed_in_enums);
     else {
       const text = qf.get.textOfPropertyName(member.name);
       if (NumericLiteral.name(text) && !isInfinityOrNaNString(text)) error(member.name, qd.msgs.An_enum_member_cannot_have_a_numeric_name);

@@ -3392,7 +3392,7 @@ function create() {
           );
         };
         if (!tagNamesEq(n.openingElement.tagName, n.closingElement.tagName)) {
-          parse.errorAtRange(n.closingElement, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, getTextOfNodeFromSourceText(sourceText, n.openingElement.tagName));
+          parse.errorAtRange(n.closingElement, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, qf.get.textOfNodeFromSourceText(sourceText, n.openingElement.tagName));
         }
         r = finishNode(n);
       } else if (opening.kind === Syntax.JsxOpeningFragment) {
@@ -3435,7 +3435,7 @@ function create() {
           } else {
             const tag = openingTag.tagName;
             const start = qy.skipTrivia(sourceText, tag.pos);
-            parse.errorAt(start, tag.end, qd.msgs.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
+            parse.errorAt(start, tag.end, qd.msgs.JSX_element_0_has_no_corresponding_closing_tag, qf.get.textOfNodeFromSourceText(sourceText, openingTag.tagName));
           }
           return;
         case Syntax.LessThanSlashToken:

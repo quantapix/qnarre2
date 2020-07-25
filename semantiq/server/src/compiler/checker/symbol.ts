@@ -181,13 +181,13 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   getDeclarationOfJSPrototypeContainer() {
     const v = this.parent!.valueDeclaration;
     if (!v) return;
-    const i = isAssignmentDeclaration(v) ? getAssignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? qf.get.declaredExpandoIniter(v) : undefined;
+    const i = isAssignmentDeclaration(v) ? qf.get.assignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? qf.get.declaredExpandoIniter(v) : undefined;
     return i || v;
   }
   getExpandoSymbol(): Symbol | undefined {
     const v = this.valueDeclaration;
-    if (!v || !is.inJSFile(v) || this.flags & qt.SymbolFlags.TypeAlias || getExpandoIniter(v, false)) return;
-    const i = is.kind(qc.VariableDeclaration, v) ? qf.get.declaredExpandoIniter(v) : getAssignedExpandoIniter(v);
+    if (!v || !is.inJSFile(v) || this.flags & qt.SymbolFlags.TypeAlias || qf.get.expandoIniter(v, false)) return;
+    const i = is.kind(qc.VariableDeclaration, v) ? qf.get.declaredExpandoIniter(v) : qf.get.assignedExpandoIniter(v);
     if (i) {
       const s = getSymbolOfNode(i);
       if (s) return mergeJSSymbols(s, this);

@@ -353,7 +353,7 @@ export function transformES2017(context: TransformationContext) {
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: TypeNode | undefined) {
-    const typeName = type && getEntityNameFromTypeNode(type);
+    const typeName = type && qf.get.entityNameFromTypeNode(type);
     if (typeName && qc.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
       if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) return typeName;
