@@ -455,7 +455,7 @@ export class CallExpression extends qc.LeftHandSideExpression implements qc.Call
   questionDotToken?: qc.QuestionDotToken;
   typeArguments?: Nodes<qc.TypeNode>;
   arguments: Nodes<qc.Expression>;
-  constructor(e: qc.Expression, ts?: readonly qc.TypeNode[], es?: readonly qc.Expression[]) {
+  constructor(e: qt.Expression, ts?: readonly qt.TypeNode[], es?: readonly qt.Expression[]) {
     super(true);
     this.expression = parenthesize.forAccess(e);
     this.typeArguments = Nodes.from(ts);
@@ -1591,35 +1591,6 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     const n = this.createOptimisticUniqueName(t);
     n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
     return n;
-  }
-  static getGeneratedNameForNode(o?: Node): Identifier;
-  static getGeneratedNameForNode(o: Node | undefined, f: qc.GeneratedIdentifierFlags): Identifier;
-  static getGeneratedNameForNode(o?: Node, f?: qc.GeneratedIdentifierFlags): Identifier {
-    const n = new Identifier(o && qf.is.kind(Identifier, o) ? qc.idText(o) : '');
-    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Node | f!;
-    n.autoGenerateId = nextAutoGenerateId;
-    n.original = o;
-    nextAutoGenerateId++;
-    return n;
-  }
-  static getNamespaceMemberName(ns: Identifier, i: Identifier, comments?: boolean, sourceMaps?: boolean): PropertyAccessExpression {
-    const n = new PropertyAccessExpression(ns, qu.isSynthesized(i) ? i : getSynthesizedClone(i));
-    n.setRange(i);
-    let f: qc.EmitFlags = 0;
-    if (!sourceMaps) f |= qc.EmitFlags.NoSourceMap;
-    if (!comments) f |= qc.EmitFlags.NoComments;
-    if (f) setEmitFlags(n, f);
-    return n;
-  }
-  static getLocalNameForExternalImport(d: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
-    const d2 = qf.get.namespaceDeclarationNode(d);
-    if (d2 && !isDefaultImport(d)) {
-      const n = d2.name;
-      return qf.is.generatedIdentifier(n) ? n : new Identifier(qf.get.sourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
-    }
-    if (d.kind === Syntax.ImportDeclaration && d.importClause) return getGeneratedNameForNode(d);
-    if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return getGeneratedNameForNode(d);
-    return;
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
@@ -2781,7 +2752,7 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
   expression: qc.LeftHandSideExpression;
   questionDotToken?: qc.QuestionDotToken;
   name: Identifier | PrivateIdentifier;
-  constructor(e: qc.Expression, n: string | Identifier | PrivateIdentifier) {
+  constructor(e: qt.Expression, n: string | qt.Identifier | qt.PrivateIdentifier) {
     super(true);
     this.expression = parenthesize.forAccess(e);
     this.name = asName(n);
@@ -4362,7 +4333,7 @@ export namespace fixme {
     return;
   }
 }
-export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
+export function asToken<T extends Syntax>(t: T | qt.Token<T>): qc.Token<T> {
   return typeof t === 'number' ? new qc.Token(t) : t;
 }
 export function asName<T extends Identifier | qc.BindingName | qc.PropertyName | qc.EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
@@ -4385,7 +4356,7 @@ export function asLiteral(v: string | number | qc.PseudoBigInt | boolean | Strin
   }
   return StringLiteral.fromNode(v);
 }
-export function asExpression<T extends qc.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
+export function asExpression<T extends qt.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;
 }
 export function asEmbeddedStatement<T extends Nobj>(s: T): T | EmptyStatement;

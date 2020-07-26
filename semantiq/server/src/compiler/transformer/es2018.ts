@@ -265,7 +265,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitCatchClause(node: CatchClause) {
     if (node.variableDeclaration && qc.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-      const name = getGeneratedNameForNode(node.variableDeclaration.name);
+      const name = qf.get.generatedNameForNode(node.variableDeclaration.name);
       const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, undefined, name);
       const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
       let block = visitNode(node.block, visitor, isBlock);
@@ -370,10 +370,10 @@ export function transformES2018(context: TransformationContext) {
   }
   function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = visitNode(node.expression, visitor, isExpression);
-    const iterator = qc.is.kind(qc.Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(undefined);
-    const result = qc.is.kind(qc.Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(undefined);
+    const iterator = qc.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+    const result = qc.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
     const errorRecord = createUniqueName('e');
-    const catchVariable = getGeneratedNameForNode(errorRecord);
+    const catchVariable = qf.get.generatedNameForNode(errorRecord);
     const returnMethod = createTempVariable(undefined);
     const callValues = createAsyncValuesHelper(context, expression, node.expression);
     const callNext = new qs.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
@@ -426,7 +426,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
     if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
-      return node.update(undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initer, visitor, isExpression));
+      return node.update(undefined, undefined, node.dot3Token, qf.get.generatedNameForNode(node), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
   function visitConstructorDeclaration(node: ConstructorDeclaration) {
@@ -527,7 +527,7 @@ export function transformES2018(context: TransformationContext) {
         new qs.FunctionExpression(
           undefined,
           new Token(Syntax.AsteriskToken),
-          node.name && getGeneratedNameForNode(node.name),
+          node.name && qf.get.generatedNameForNode(node.name),
           undefined,
           [],
           undefined,
@@ -580,7 +580,7 @@ export function transformES2018(context: TransformationContext) {
   function appendObjectRestAssignmentsIfNeeded(statements: Statement[] | undefined, node: FunctionLikeDeclaration): Statement[] | undefined {
     for (const parameter of node.parameters) {
       if (parameter.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-        const temp = getGeneratedNameForNode(parameter);
+        const temp = qf.get.generatedNameForNode(parameter);
         const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
           const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(declarations));

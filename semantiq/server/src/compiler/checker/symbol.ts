@@ -181,7 +181,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   getDeclarationOfJSPrototypeContainer() {
     const v = this.parent!.valueDeclaration;
     if (!v) return;
-    const i = isAssignmentDeclaration(v) ? qf.get.assignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? qf.get.declaredExpandoIniter(v) : undefined;
+    const i = qf.is.assignmentDeclaration(v) ? qf.get.assignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? qf.get.declaredExpandoIniter(v) : undefined;
     return i || v;
   }
   getExpandoSymbol(): Symbol | undefined {
@@ -746,7 +746,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       return createAnonymousType(symbol, members, empty, empty, undefined, undefined);
     }
     const declaration = symbol.valueDeclaration;
-    if (isCatchClauseVariableDeclarationOrBindingElement(declaration)) return anyType;
+    if (qf.is.catchClauseVariableDeclarationOrBindingElement(declaration)) return anyType;
     if (is.kind(qc.SourceFile, declaration) && is.jsonSourceFile(declaration)) {
       if (!declaration.statements.length) return emptyObjectType;
       return getWidenedType(getWidenedLiteralType(check.expression(declaration.statements[0].expression)));

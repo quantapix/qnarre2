@@ -300,7 +300,7 @@ export function transformClassFields(context: TransformationContext) {
     }
     const staticProperties = getProperties(node, true);
     if (some(staticProperties)) {
-      addPropertyStatements(statements, staticProperties, getInternalName(node));
+      addPropertyStatements(statements, staticProperties, qf.get.internalName(node));
     }
     return statements;
   }
@@ -318,7 +318,7 @@ export function transformClassFields(context: TransformationContext) {
           pendingStatements.push(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
         }
         if (pendingStatements && some(staticProperties)) {
-          addPropertyStatements(pendingStatements, staticProperties, getInternalName(node));
+          addPropertyStatements(pendingStatements, staticProperties, qf.get.internalName(node));
         }
         return classExpression;
       } else {
@@ -431,7 +431,7 @@ export function transformClassFields(context: TransformationContext) {
   function transformProperty(property: PropertyDeclaration, receiver: LeftHandSideExpression) {
     const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
     const propertyName =
-      qc.is.kind(qc.ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(getGeneratedNameForNode(property.name)) : property.name;
+      qc.is.kind(qc.ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(qf.get.generatedNameForNode(property.name)) : property.name;
     if (shouldTransformPrivateFields && qc.is.kind(qc.PrivateIdentifier, propertyName)) {
       const privateIdentifierInfo = accessPrivateIdentifier(propertyName);
       if (privateIdentifierInfo) {
@@ -516,7 +516,7 @@ export function transformClassFields(context: TransformationContext) {
       const inlinable = isSimpleInlineableExpression(innerExpression);
       const alreadyTransformed = qc.is.assignmentExpression(innerExpression) && qc.is.generatedIdentifier(innerExpression.left);
       if (!alreadyTransformed && !inlinable && shouldHoist) {
-        const generatedName = getGeneratedNameForNode(name);
+        const generatedName = qf.get.generatedNameForNode(name);
         hoistVariableDeclaration(generatedName);
         return createAssignment(generatedName, expression);
       }
@@ -557,7 +557,7 @@ export function transformClassFields(context: TransformationContext) {
     return;
   }
   function wrapPrivateIdentifierForDestructuringTarget(node: PrivateIdentifierPropertyAccessExpression) {
-    const parameter = getGeneratedNameForNode(node);
+    const parameter = qf.get.generatedNameForNode(node);
     const info = accessPrivateIdentifier(node.name);
     if (!info) return visitEachChild(node, visitor, context);
     let receiver = node.expression;

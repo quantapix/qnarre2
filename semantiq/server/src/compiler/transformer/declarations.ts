@@ -608,7 +608,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (shouldStripInternal(input)) return;
     if (qc.is.declaration(input)) {
       if (isDeclarationAndNotVisible(input)) return;
-      if (hasDynamicName(input) && !resolver.isLateBound(qc.get.parseTreeOf(input) as Declaration)) return;
+      if (qf.has.dynamicName(input) && !resolver.isLateBound(qc.get.parseTreeOf(input) as Declaration)) return;
     }
     if (qc.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
     if (qc.is.kind(qc.SemicolonClassElement, input)) return;
@@ -750,7 +750,7 @@ export function transformDeclarations(context: TransformationContext) {
       setEmitFlags(input, EmitFlags.SingleLine);
     return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
-      if (returnValue && canProduceDiagnostic && hasDynamicName(input as Declaration)) checkName(input as DeclarationDiagnosticProducing);
+      if (returnValue && canProduceDiagnostic && qf.has.dynamicName(input as Declaration)) checkName(input as DeclarationDiagnosticProducing);
       if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;
       if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag;
       if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = oldWithinObjectLiteralType;

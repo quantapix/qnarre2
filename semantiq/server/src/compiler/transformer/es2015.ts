@@ -362,7 +362,7 @@ export function transformES2015(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
-    const variable = new qc.VariableDeclaration(getLocalName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
+    const variable = new qc.VariableDeclaration(qf.get.localName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
     variable.setOriginal(node);
     const statements: qc.Statement[] = [];
     const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([variable]));
@@ -371,7 +371,7 @@ export function transformES2015(context: TransformationContext) {
     startOnNewLine(statement);
     statements.push(statement);
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
-      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
+      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default) ? createExportDefault(qf.get.localName(node)) : createExternalModuleExport(qf.get.localName(node));
       exportStatement.setOriginal(statement);
       statements.push(exportStatement);
     }
@@ -417,7 +417,7 @@ export function transformES2015(context: TransformationContext) {
     addConstructor(statements, node, extendsClauseElement);
     addClassMembers(statements, node);
     const closingBraceLocation = qf.create.tokenRange(qy.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
-    const localName = getInternalName(node);
+    const localName = qf.get.internalName(node);
     const outer = new qc.PartiallyEmittedExpression(localName);
     outer.end = closingBraceLocation.end;
     setEmitFlags(outer, EmitFlags.NoComments);
@@ -432,7 +432,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function addExtendsHelperIfNeeded(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: qc.ExpressionWithTypeArguments | undefined): void {
     if (extendsClauseElement) {
-      statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, getInternalName(node))), extendsClauseElement));
+      statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, qf.get.internalName(node))), extendsClauseElement));
     }
   }
   function addConstructor(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: qc.ExpressionWithTypeArguments | undefined): void {
@@ -445,7 +445,7 @@ export function transformES2015(context: TransformationContext) {
       undefined,
       undefined,
       undefined,
-      getInternalName(node),
+      qf.get.internalName(node),
       undefined,
       transformConstructorParameters(constructor, hasSynthesizedSuper),
       undefined,
@@ -555,7 +555,7 @@ export function transformES2015(context: TransformationContext) {
     if (node.dot3Token) {
       return;
     } else if (qf.is.kind(qc.BindingPattern, node.name)) {
-      return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, getGeneratedNameForNode(node), undefined, undefined, undefined), node).setOriginal(node);
+      return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, qf.get.generatedNameForNode(node), undefined, undefined, undefined), node).setOriginal(node);
     } else if (node.initer) {
       return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, undefined), node).setOriginal(node);
     }
@@ -586,7 +586,7 @@ export function transformES2015(context: TransformationContext) {
       insertStatementAfterCustomPrologue(
         statements,
         setEmitFlags(
-          new qc.VariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))),
+          new qc.VariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, qf.get.generatedNameForNode(parameter)))),
           EmitFlags.CustomPrologue
         )
       );
@@ -594,7 +594,7 @@ export function transformES2015(context: TransformationContext) {
     } else if (initer) {
       insertStatementAfterCustomPrologue(
         statements,
-        setEmitFlags(new qc.ExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initer, visitor, isExpression))), EmitFlags.CustomPrologue)
+        setEmitFlags(new qc.ExpressionStatement(createAssignment(qf.get.generatedNameForNode(parameter), visitNode(initer, visitor, isExpression))), EmitFlags.CustomPrologue)
       );
       return true;
     }
@@ -710,7 +710,7 @@ export function transformES2015(context: TransformationContext) {
           newTarget = new qc.ConditionalExpression(
             createLogicalAnd(
               setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
-              new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))
+              new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.get.localName(node))
             ),
             new qc.PropertyAccessExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
             qc.VoidExpression.zero()
@@ -861,7 +861,7 @@ export function transformES2015(context: TransformationContext) {
     convertedLoopState = undefined;
     const parameters = visitParameterList(node.parameters, visitor, context);
     const body = transformFunctionBody(node);
-    const name = hierarchyFacts & HierarchyFacts.NewTarget ? getLocalName(node) : node.name;
+    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.get.localName(node) : node.name;
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
     return node.update(undefined, parameters, undefined, body);
@@ -872,7 +872,7 @@ export function transformES2015(context: TransformationContext) {
     const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
     const parameters = visitParameterList(node.parameters, visitor, context);
     const body = transformFunctionBody(node);
-    const name = hierarchyFacts & HierarchyFacts.NewTarget ? getLocalName(node) : node.name;
+    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.get.localName(node) : node.name;
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
     return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.asteriskToken, name, undefined, parameters, undefined, body);
@@ -887,7 +887,7 @@ export function transformES2015(context: TransformationContext) {
     const parameters = visitParameterList(node.parameters, visitor, context);
     const body = transformFunctionBody(node);
     if (hierarchyFacts & HierarchyFacts.NewTarget && !name && (node.kind === Syntax.FunctionDeclaration || node.kind === Syntax.FunctionExpression)) {
-      name = getGeneratedNameForNode(node);
+      name = qf.get.generatedNameForNode(node);
     }
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
@@ -1197,7 +1197,7 @@ function createSyntheticBlockForConvertedStatements(statements: qc.Statement[]) 
 function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: qc.Statement[]): qc.Statement {
   const expression = visitNode(node.expression, visitor, isExpression);
   const counter = createLoopVariable();
-  const rhsReference = qf.is.kind(qc.Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(undefined);
+  const rhsReference = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
   setEmitFlags(expression, EmitFlags.NoSourceMap | qf.get.emitFlags(expression));
   const forStatement = setRange(
     new qc.ForStatement(
@@ -1223,10 +1223,10 @@ function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledSta
 }
 function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: qc.Statement[], ancestorFacts: HierarchyFacts): qc.Statement {
   const expression = visitNode(node.expression, visitor, isExpression);
-  const iterator = qf.is.kind(qc.Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(undefined);
-  const result = qf.is.kind(qc.Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(undefined);
+  const iterator = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+  const result = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
   const errorRecord = createUniqueName('e');
-  const catchVariable = getGeneratedNameForNode(errorRecord);
+  const catchVariable = qf.get.generatedNameForNode(errorRecord);
   const returnMethod = createTempVariable(undefined);
   const values = createValuesHelper(context, expression, node.expression);
   const next = new qc.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
@@ -1874,7 +1874,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
   const varStatement = cast(first(classStatements), isVariableStatement);
   const variable = varStatement.declarationList.declarations[0];
   const initer = skipOuterExpressions(variable.initer!);
-  const aliasAssignment = tryCast(initer, isAssignmentExpression);
+  const aliasAssignment = qu.tryCast(initer, isAssignmentExpression);
   const call = cast(aliasAssignment ? skipOuterExpressions(aliasAssignment.right) : initer, isCallExpression);
   const func = cast(skipOuterExpressions(call.expression), isFunctionExpression);
   const funcStatements = func.body.statements;
@@ -1882,7 +1882,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
   let classBodyEnd = -1;
   const statements: qc.Statement[] = [];
   if (aliasAssignment) {
-    const extendsCall = tryCast(funcStatements[classBodyStart], isExpressionStatement);
+    const extendsCall = qu.tryCast(funcStatements[classBodyStart], isExpressionStatement);
     if (extendsCall) {
       statements.push(extendsCall);
       classBodyStart++;
@@ -2100,7 +2100,7 @@ function onSubstituteNode(hint: EmitHint, node: Node) {
 function substituteIdentifier(node: qc.Identifier) {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
     const original = qf.get.parseTreeOf(node, isIdentifier);
-    if (original && isNameOfDeclarationWithCollidingName(original)) return setRange(getGeneratedNameForNode(original), node);
+    if (original && isNameOfDeclarationWithCollidingName(original)) return setRange(qf.get.generatedNameForNode(original), node);
   }
   return node;
 }
@@ -2126,7 +2126,7 @@ function substituteExpression(node: Node) {
 function substituteExpressionIdentifier(node: qc.Identifier): qc.Identifier {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
     const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
-    if (declaration && !(qf.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(getGeneratedNameForNode(qf.get.nameOfDeclaration(declaration)), node);
+    if (declaration && !(qf.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(qf.get.generatedNameForNode(qf.get.nameOfDeclaration(declaration)), node);
   }
   return node;
 }
@@ -2146,7 +2146,7 @@ function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
   return node;
 }
 function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-  return qf.has.syntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : new qc.PropertyAccessExpression(getInternalName(node), 'prototype');
+  return qf.has.syntacticModifier(member, ModifierFlags.Static) ? qf.get.internalName(node) : new qc.PropertyAccessExpression(qf.get.internalName(node), 'prototype');
 }
 function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
   if (!constructor || !hasExtendsClause) return false;

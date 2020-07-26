@@ -111,12 +111,14 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
         new qc.VariableDeclaration(
           p.name,
           p.type,
-          p.initer ? new qc.ConditionalExpression(createStrictEquality(getGeneratedNameForNode(p), qc.VoidExpression.zero()), p.initer, getGeneratedNameForNode(p)) : getGeneratedNameForNode(p)
+          p.initer
+            ? new qc.ConditionalExpression(createStrictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
+            : qf.get.generatedNameForNode(p)
         ),
       ])
     )
   );
-  return p.update(p.decorators, p.modifiers, p.dot3Token, getGeneratedNameForNode(p), p.questionToken, p.type, undefined);
+  return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
 function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
   c.addInitializationStatement(

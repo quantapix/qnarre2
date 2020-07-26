@@ -133,7 +133,7 @@ export function newCheck(f: qt.Frame) {
     resolvedBlockScopedVariable(result: Symbol, errorLocation: Node): void {
       qu.assert(!!(result.flags & qt.SymbolFlags.BlockScopedVariable || result.flags & qt.SymbolFlags.Class || result.flags & qt.SymbolFlags.Enum));
       if (result.flags & (SymbolFlags.Function | qt.SymbolFlags.FunctionScopedVariable | qt.SymbolFlags.Assignment) && result.flags & qt.SymbolFlags.Class) return;
-      const declaration = find(result.declarations, (d) => isBlockOrCatchScoped(d) || qf.is.classLike(d) || d.kind === Syntax.EnumDeclaration);
+      const declaration = find(result.declarations, (d) => qf.is.blockOrCatchScoped(d) || qf.is.classLike(d) || d.kind === Syntax.EnumDeclaration);
       if (declaration === undefined) return qu.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
       if (!(declaration.flags & NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(declaration, errorLocation)) {
         let diagnosticMessage;
@@ -1233,8 +1233,8 @@ export function newCheck(f: qt.Frame) {
           const privateIdentifierDescription = unmatchedProperty.valueDeclaration.name.escapedText;
           const symbolTableKey = getSymbolNameForPrivateIdentifier(source.symbol, privateIdentifierDescription);
           if (symbolTableKey && getPropertyOfType(source, symbolTableKey)) {
-            const sourceName = getDeclarationName(source.symbol.valueDeclaration);
-            const targetName = getDeclarationName(target.symbol.valueDeclaration);
+            const sourceName = qf.get.declarationName(source.symbol.valueDeclaration);
+            const targetName = qf.get.declarationName(target.symbol.valueDeclaration);
             reportError(
               qd.msgs.Property_0_in_type_1_refers_to_a_different_member_that_cannot_be_accessed_from_within_type_2,
               diagnosticName(privateIdentifierDescription),
@@ -3125,7 +3125,7 @@ export function newCheck(f: qt.Frame) {
         case Syntax.EqualsToken:
           const declKind = qf.is.kind(qc.BinaryExpression, left.parent) ? qf.get.assignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
           this.assignmentDeclaration(declKind, rightType);
-          if (isAssignmentDeclaration(declKind)) {
+          if (qf.is.assignmentDeclaration(declKind)) {
             if (
               !(rightType.flags & TypeFlags.Object) ||
               (declKind !== AssignmentDeclarationKind.ModuleExports &&
@@ -3205,7 +3205,7 @@ export function newCheck(f: qt.Frame) {
           }
         }
       }
-      function isAssignmentDeclaration(kind: AssignmentDeclarationKind) {
+      function qf.is.assignmentDeclaration(kind: AssignmentDeclarationKind) {
         switch (kind) {
           case AssignmentDeclarationKind.ModuleExports:
             return true;
@@ -5943,7 +5943,7 @@ export function newCheck(f: qt.Frame) {
           initer.kind === Syntax.FalseKeyword ||
           BigIntLiteral.expression(initer)
         );
-        const isConstOrReadonly = isDeclarationReadonly(n) || (qf.is.kind(qc.VariableDeclaration, n) && qf.is.varConst(n));
+        const isConstOrReadonly = qf.is.declarationReadonly(n) || (qf.is.kind(qc.VariableDeclaration, n) && qf.is.varConst(n));
         if (isConstOrReadonly && !n.type) {
           if (isInvalidIniter) return grammarErrorOnNode(initer, qd.msgs.A_const_initer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference);
         }

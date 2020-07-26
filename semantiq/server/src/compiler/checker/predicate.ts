@@ -1702,11 +1702,11 @@ export function newIs(f: qt.Frame) {
           const ctor = qf.get.containingFunction(expr);
           if (!(ctor && ctor.kind === Syntax.Constructor)) return true;
           if (symbol.valueDeclaration) {
-            const isAssignmentDeclaration = this.kind(qc.BinaryExpression, symbol.valueDeclaration);
+            const qf.is.assignmentDeclaration = this.kind(qc.BinaryExpression, symbol.valueDeclaration);
             const isLocalPropertyDeclaration = ctor.parent === symbol.valueDeclaration.parent;
             const isLocalParameterProperty = ctor === symbol.valueDeclaration.parent;
-            const isLocalThisPropertyAssignment = isAssignmentDeclaration && symbol.parent?.valueDeclaration === ctor.parent;
-            const isLocalThisPropertyAssignmentConstructorFunction = isAssignmentDeclaration && symbol.parent?.valueDeclaration === ctor;
+            const isLocalThisPropertyAssignment = qf.is.assignmentDeclaration && symbol.parent?.valueDeclaration === ctor.parent;
+            const isLocalThisPropertyAssignmentConstructorFunction = qf.is.assignmentDeclaration && symbol.parent?.valueDeclaration === ctor;
             const isWriteableSymbol = isLocalPropertyDeclaration || isLocalParameterProperty || isLocalThisPropertyAssignment || isLocalThisPropertyAssignmentConstructorFunction;
             return !isWriteableSymbol;
           }
@@ -2032,7 +2032,7 @@ export function newIs(f: qt.Frame) {
       return !!(type.flags & qt.TypeFlags.Object) && getSignaturesOfType(type, SignatureKind.Call).length > 0;
     }
     literalConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean {
-      if (isDeclarationReadonly(node) || (this.kind(qc.VariableDeclaration, node) && this.varConst(node))) return isFreshLiteralType(getTypeOfSymbol(getSymbolOfNode(node)));
+      if (qf.is.declarationReadonly(node) || (this.kind(qc.VariableDeclaration, node) && this.varConst(node))) return isFreshLiteralType(getTypeOfSymbol(getSymbolOfNode(node)));
       return false;
     }
     simpleLiteralEnumReference(expr: Expression) {
@@ -2082,7 +2082,7 @@ export function newHas(f: qt.Frame) {
       return !!name && isLateBindableName(name);
     }
     nonBindableDynamicName(node: Declaration) {
-      return hasDynamicName(node) && !hasLateBindableName(node);
+      return qf.has.dynamicName(node) && !hasLateBindableName(node);
     }
     nonCircularBaseConstraint(type: InstantiableType): boolean {
       return getResolvedBaseConstraint(type) !== circularConstraintType;

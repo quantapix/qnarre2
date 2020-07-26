@@ -115,10 +115,10 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
-  get sourceFile(): qc.SourceFile {
+  get sourceFile(): qt.SourceFile {
     let n = this as Node | undefined;
     while (n) {
-      if (qf.is.kind(qc.SourceFile, n)) return n as SourceFile;
+      if (n.kind === Syntax.SourceFile) return n as qt.SourceFile;
       n = n.parent;
     }
     qu.fail();
@@ -636,7 +636,7 @@ export abstract class Symbol implements qt.Symbol {
     const v = this.valueDeclaration;
     if (
       !v ||
-      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && qf.is.assignmentDeclaration(v) && !qf.is.assignmentDeclaration(d)) ||
       (v.kind !== d.kind && qf.is.effectiveModuleDeclaration(v))
     ) {
       this.valueDeclaration = d;
@@ -1255,7 +1255,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     this.qf.each.child(visit);
     return r;
     function addDeclaration(declaration: Declaration) {
-      const name = getDeclarationName(declaration);
+      const name = qf.get.declarationName(declaration);
       if (name) r.add(name, declaration);
     }
     function getDeclarations(name: string) {
@@ -1263,7 +1263,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       if (!declarations) r.set(name, (declarations = []));
       return declarations;
     }
-    function getDeclarationName(declaration: Declaration) {
+    function qf.get.declarationName(declaration: Declaration) {
       const name = qf.get.nonAssignedNameOfDeclaration(declaration);
       return (
         name &&
@@ -1277,7 +1277,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.MethodDeclaration:
         case Syntax.MethodSignature:
           const functionDeclaration = <FunctionLikeDeclaration>node;
-          const declarationName = getDeclarationName(functionDeclaration);
+          const declarationName = qf.get.declarationName(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
             const lastDeclaration = qu.lastOrUndefined(declarations);
@@ -1750,7 +1750,7 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
       return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
     case Syntax.LiteralType:
       assert(qf.is.kind(qc.StringLiteral, node));
-      return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
+      return qu.tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
     default:
       return;
   }

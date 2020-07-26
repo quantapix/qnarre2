@@ -3,6 +3,7 @@ import * as qt from './const';
 import * as qu from './util';
 import { SourceFileLike, Syntax } from './syntax';
 import * as qy from './syntax';
+import { InvalidatedProjectBase } from './tsbuild';
 export * from './const';
 export interface AllAccessorDeclarations {
   firstAccessor: AccessorDeclaration;
@@ -496,6 +497,7 @@ export interface DebuggerStatement extends Statement {
   kind: Syntax.DebuggerStatement;
 }
 export interface Declaration extends Nobj {
+  getName(comments?: boolean, sourceMaps?: boolean, f?: qt.EmitFlags): Identifier;
   _declarationBrand: any;
 }
 export interface DeclarationStatement extends NamedDeclaration, Statement {
@@ -1439,24 +1441,25 @@ export interface NewExpression extends PrimaryExpression, Declaration {
   arguments?: Nodes<Expression>;
 }
 export interface Nobj extends qu.Range {
-  id?: number;
-  kind: Syntax;
-  flags: qt.NodeFlags;
-  transformFlags: qt.TransformFlags;
-  modifierFlagsCache: qt.ModifierFlags;
-  decorators?: Nodes<Decorator>;
-  modifiers?: Modifiers;
-  parent?: Node;
-  original?: Node;
-  symbol: Symbol;
-  localSymbol?: Symbol;
-  locals?: SymbolTable;
-  nextContainer?: Nobj;
-  flowNode?: FlowNode;
-  emitNode?: EmitNode;
   contextualType?: Type;
-  inferenceContext?: InferenceContext;
+  decorators?: Nodes<Decorator>;
   doc?: Doc[];
+  emitNode?: EmitNode;
+  flags: qt.NodeFlags;
+  flowNode?: FlowNode;
+  id?: number;
+  inferenceContext?: InferenceContext;
+  kind: Syntax;
+  locals?: SymbolTable;
+  localSymbol?: Symbol;
+  modifierFlagsCache: qt.ModifierFlags;
+  modifiers?: Modifiers;
+  nextContainer?: Nobj;
+  original?: Node;
+  parent?: Node;
+  sourceFile: SourceFile;
+  symbol: Symbol;
+  transformFlags: qt.TransformFlags;
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined;
 }
 export interface NodeLinks {

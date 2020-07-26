@@ -675,10 +675,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return diagnostic;
   }
   function addDuplicateDeclarationError(node: Declaration, message: qd.Message, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
-    const errorNode = (qf.get.expandoIniter(node, false) ? getNameOfExpando(node) : qf.get.nameOfDeclaration(node)) || node;
+    const errorNode = (qf.get.expandoIniter(node, false) ? qf.get.nameOfExpando(node) : qf.get.nameOfDeclaration(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
     for (const relatedNode of relatedNodes || empty) {
-      const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? getNameOfExpando(relatedNode) : qf.get.nameOfDeclaration(relatedNode)) || relatedNode;
+      const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? qf.get.nameOfExpando(relatedNode) : qf.get.nameOfDeclaration(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
       const leadingMessage = qf.create.diagnosticForNode(adjustedNode, qd.msgs._0_was_also_declared_here, symbolName);
@@ -3696,7 +3696,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return createTupleType(elementTypes, type.target.minLength, false, type.target.readonly);
   }
   function widenTypeInferredFromIniter(declaration: HasExpressionIniter, type: Type) {
-    const widened = qf.get.combinedFlagsOf(declaration) & NodeFlags.Const || isDeclarationReadonly(declaration) ? type : getWidenedLiteralType(type);
+    const widened = qf.get.combinedFlagsOf(declaration) & NodeFlags.Const || qf.is.declarationReadonly(declaration) ? type : getWidenedLiteralType(type);
     if (qf.is.inJSFile(declaration)) {
       if (widened.flags & qt.TypeFlags.Nullable) {
         reportImplicitAny(declaration, anyType);
@@ -3772,7 +3772,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function tryGetRootParameterDeclaration(node: Node): ParameterDeclaration | undefined {
-    return tryCast(qf.get.rootDeclaration(node), isParameter);
+    return qu.tryCast(qf.get.rootDeclaration(node), isParameter);
   }
   function bindingNameText(name: BindingName): string {
     switch (name.kind) {

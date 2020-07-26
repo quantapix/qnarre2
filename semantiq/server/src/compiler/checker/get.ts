@@ -794,7 +794,7 @@ export function newGet(f: qt.Frame) {
             if (s.flags & qt.SymbolFlags.Value) {
               if (s.valueDeclaration.sourceFile !== exportedMember.valueDeclaration.sourceFile) {
                 const unescName = qy.get.unescUnderscores(s.escName);
-                const exportedMemberName = tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
+                const exportedMemberName = qu.tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
                 addRelatedInfo(error(s.valueDeclaration, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(exportedMemberName, qd.msgs._0_was_also_declared_here, unescName));
                 addRelatedInfo(error(exportedMemberName, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(s.valueDeclaration, qd.msgs._0_was_also_declared_here, unescName));
               }
@@ -1067,7 +1067,7 @@ export function newGet(f: qt.Frame) {
         ls[resolutionKind] = earlySymbols || emptySymbols;
         const lateSymbols = new SymbolTable<TransientSymbol>();
         for (const decl of symbol.declarations) {
-          const members = getMembersOfDeclaration(decl);
+          const members = qf.get.membersOfDeclaration(decl);
           if (members) {
             for (const member of members) {
               if (isStatic === qf.has.staticModifier(member) && hasLateBindableName(member)) lateBindMember(symbol, earlySymbols, lateSymbols, member);
@@ -2588,7 +2588,7 @@ export function newGet(f: qt.Frame) {
       return isTypeUsableAsPropertyName(indexType)
         ? getPropertyNameFromType(indexType)
         : accessExpression && check.thatExpressionIsProperSymbolReference(accessExpression.argumentExpression, indexType, false)
-        ? getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>accessExpression.argumentExpression).name))
+        ? qu.getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>accessExpression.argumentExpression).name))
         : accessNode && qf.is.propertyName(accessNode)
         ? qf.get.propertyNameForPropertyNameNode(accessNode)
         : undefined;
@@ -6513,7 +6513,7 @@ export function newGet(f: qt.Frame) {
       return;
     }
     typeArgumentConstraint(node: TypeNode): Type | undefined {
-      const typeReferenceNode = tryCast(node.parent, isTypeReferenceType);
+      const typeReferenceNode = qu.tryCast(node.parent, isTypeReferenceType);
       if (!typeReferenceNode) return;
       const typeParameters = getTypeParametersForTypeReference(typeReferenceNode)!;
       const constraint = getConstraintOfTypeParameter(typeParameters[typeReferenceNode.typeArguments!.indexOf(node)]);
@@ -6794,7 +6794,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     iterationTypesOfIterableSlow(type: Type, resolver: IterationTypesResolver, errorNode: Node | undefined) {
-      const method = getPropertyOfType(type, getPropertyNameForKnownSymbolName(resolver.iteratorSymbolName));
+      const method = getPropertyOfType(type, qu.getPropertyNameForKnownSymbolName(resolver.iteratorSymbolName));
       const methodType = method && !(method.flags & qt.SymbolFlags.Optional) ? getTypeOfSymbol(method) : undefined;
       if (isTypeAny(methodType)) return setCachedIterationTypes(type, resolver.iterableCacheKey, anyIterationTypes);
       const signatures = methodType ? getSignaturesOfType(methodType, SignatureKind.Call) : undefined;
@@ -7429,7 +7429,7 @@ export function newGet(f: qt.Frame) {
       return location ? (getJsxNamespace(location), location.sourceFile.localJsxFactory || _jsxFactoryEntity) : _jsxFactoryEntity;
     }
     externalModuleFileFromDeclaration(declaration: AnyImportOrReExport | ModuleDeclaration | ImportTypeNode): SourceFile | undefined {
-      const specifier = declaration.kind === Syntax.ModuleDeclaration ? tryCast(declaration.name, isStringLiteral) : qf.get.externalModuleName(declaration);
+      const specifier = declaration.kind === Syntax.ModuleDeclaration ? qu.tryCast(declaration.name, isStringLiteral) : qf.get.externalModuleName(declaration);
       const moduleSymbol = resolveExternalModuleNameWorker(specifier!, specifier!, undefined);
       if (!moduleSymbol) return;
       return getDeclarationOfKind(moduleSymbol, Syntax.SourceFile);
