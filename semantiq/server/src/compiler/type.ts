@@ -3009,6 +3009,7 @@ export type Node =
   | DocTypeExpression
   | DocTypeLiteral
   | DocTypeTag
+  | DocUnknownTag
   | DocUnknownType
   | DocVariadicType
   | DoStatement

@@ -1,9 +1,10 @@
 import { Nodes, Token } from './base';
 import * as qc from './base';
 import * as qg from '../debug';
-import { DocTag, Node, NodeFlags } from '../type';
+import { DocTag, Modifier, Node, NodeFlags } from '../type';
+import * as qt from '../type';
 import * as qu from '../util';
-import { Modifier, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { qf } from './index';
 export * from './base';
@@ -1652,14 +1653,14 @@ export class ImportClause extends qc.NamedDeclaration implements qc.ImportClause
   parent?: ImportDeclaration;
   isTypeOnly: boolean;
   name?: Identifier;
-  namedBindings?: qc.NamedImportBindings;
-  constructor(n?: Identifier, b?: qc.NamedImportBindings, isTypeOnly = false) {
+  namedBindings?: qt.NamedImportBindings;
+  constructor(n?: Identifier, b?: qt.NamedImportBindings, isTypeOnly = false) {
     super(true);
     this.name = n;
     this.namedBindings = b;
     this.isTypeOnly = isTypeOnly;
   }
-  update(n?: Identifier, b?: qc.NamedImportBindings, isTypeOnly?: boolean) {
+  update(n?: Identifier, b?: qt.NamedImportBindings, isTypeOnly?: boolean) {
     return this.name !== n || this.namedBindings !== b || this.isTypeOnly !== isTypeOnly ? new ImportClause(n, b, isTypeOnly).updateFrom(this) : this;
   }
 }
@@ -4265,7 +4266,7 @@ export namespace fixme {
     hasImportDefault?: boolean
   ) {
     if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
-      let namedBindings: qc.NamedImportBindings | undefined;
+      let namedBindings: qt.NamedImportBindings | undefined;
       const moduleKind = getEmitModuleKind(compilerOptions);
       if (moduleKind >= ModuleKind.ES2015 && moduleKind <= ModuleKind.ESNext) {
         const helpers = getEmitHelpers(sourceFile);
