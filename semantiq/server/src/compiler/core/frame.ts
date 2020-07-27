@@ -3040,6 +3040,136 @@ export function newIs(f: qt.Frame) {
   })());
 }
 export interface Nis extends ReturnType<typeof newIs> {}
+export const fixme = new (class {
+  containsParseError(n: Node) {
+    this.aggregateChildData(n);
+    return (n.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
+  }
+  aggregateChildData(n: Node) {
+    if (!(n.flags & NodeFlags.HasAggregatedChildData)) {
+      const thisNodeOrAnySubNodesHasError = (n.flags & NodeFlags.ThisNodeHasError) !== 0 || qu.forEach.child(n, containsParseError);
+      if (thisNodeOrAnySubNodesHasError) n.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
+      n.flags |= NodeFlags.HasAggregatedChildData;
+    }
+  }
+  nPosToString(n: Node): string {
+    const file = n.sourceFile;
+    const loc = qy.get.lineAndCharOf(file, n.pos);
+    return `${file.fileName}(${loc.line + 1},${loc.char + 1})`;
+  }
+  guessIndentation(lines: string[]) {
+    let indentation = MAX_SMI_X86;
+    for (const line of lines) {
+      if (!line.length) continue;
+      let i = 0;
+      for (; i < line.length && i < indentation; i++) {
+        if (!qy.is.whiteSpaceLike(line.charCodeAt(i))) break;
+      }
+      if (i < indentation) indentation = i;
+      if (indentation === 0) return 0;
+    }
+    return indentation === MAX_SMI_X86 ? undefined : indentation;
+  }
+  needsScopeMarker(s: qc.Statement) {
+    return !qf.is.anyImportOrReExport(s) && !qf.is.kind(qc.ExportAssignment, s) && !has.syntacticModifier(s, ModifierFlags.Export) && !qf.is.ambientModule(s);
+  }
+  sortAndDeduplicateDiagnostics<T extends qd.Diagnostic>(diagnostics: readonly T[]): qu.SortedReadonlyArray<T> {
+    return sortAndDeduplicate<T>(diagnostics, compareDiagnostics);
+  }
+  validateLocaleAndSetLanguage(
+    locale: string,
+    sys: {
+      getExecutingFilePath(): string;
+      resolvePath(path: string): string;
+      fileExists(fileName: string): boolean;
+      readFile(fileName: string): string | undefined;
+    },
+    errors?: qu.Push<Diagnostic>
+  ) {
+    const matchResult = /^([a-z]+)([_\-]([a-z]+))?$/.exec(locale.toLowerCase());
+    if (!matchResult) {
+      if (errors) {
+        errors.push(createCompilerDiagnostic(qd.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp'));
+      }
+      return;
+    }
+    const language = matchResult[1];
+    const territory = matchResult[3];
+    if (!trySetLanguageAndTerritory(language, territory, errors)) {
+      trySetLanguageAndTerritory(language, undefined, errors);
+    }
+    setUILocale(locale);
+    function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qu.Push<Diagnostic>) {
+      const compilerFilePath = normalizePath(sys.getExecutingFilePath());
+      const containingDirectoryPath = getDirectoryPath(compilerFilePath);
+      let filePath = combinePaths(containingDirectoryPath, language);
+      if (territory) filePath = filePath + '-' + territory;
+      filePath = sys.resolvePath(combinePaths(filePath, 'diagnosticMessages.generated.json'));
+      if (!sys.fileExists(filePath)) return false;
+      let fileContents: string | undefined = '';
+      try {
+        fileContents = sys.readFile(filePath);
+      } catch (e) {
+        if (errors) errors.push(createCompilerDiagnostic(qd.Unable_to_open_file_0, filePath));
+        return false;
+      }
+      try {
+        setLocalizedqd.Messages(JSON.parse(fileContents!));
+      } catch {
+        if (errors) errors.push(createCompilerDiagnostic(qd.Corrupted_locale_file_0, filePath));
+        return false;
+      }
+      return true;
+    }
+  }
+  idText(identifierOrPrivateName: qc.Identifier | qt.PrivateIdentifier): string {
+    return qy.get.unescUnderscores(identifierOrPrivateName.escapedText);
+  }
+  nameForNamelessDocTypedef(declaration: qt.DocTypedefTag | qt.DocEnumTag): qc.Identifier | qc.PrivateIdentifier | undefined {
+    const n = declaration.parent.parent;
+    if (!n) return;
+    if (qf.is.declaration(n)) return qf.get.declarationIdentifier(n);
+    switch (n.kind) {
+      case Syntax.VariableStatement:
+        if (n.declarationList && n.declarationList.declarations[0]) return qf.get.declarationIdentifier(n.declarationList.declarations[0]);
+        break;
+      case Syntax.ExpressionStatement:
+        let expr = n.expression;
+        if (expr.kind === Syntax.BinaryExpression && (expr as qt.BinaryExpression).operatorToken.kind === Syntax.EqualsToken) {
+          expr = (expr as qt.BinaryExpression).left;
+        }
+        switch (expr.kind) {
+          case Syntax.PropertyAccessExpression:
+            return (expr as qc.PropertyAccessExpression).name;
+          case Syntax.ElementAccessExpression:
+            const arg = (expr as qt.ElementAccessExpression).argumentExpression;
+            if (qf.is.kind(qc.Identifier, arg)) return arg;
+        }
+        break;
+      case Syntax.ParenthesizedExpression: {
+        return qf.get.declarationIdentifier(n.expression);
+      }
+      case Syntax.LabeledStatement: {
+        if (qf.is.declaration(n.statement) || qf.is.expression(n.statement)) return qf.get.declarationIdentifier(n.statement);
+        break;
+      }
+    }
+    return;
+  }
+})();
+export interface Nframe extends qt.Frame {
+  create: Ncreate;
+  each: Neach;
+  get: Nget;
+  has: Nhas;
+  is: Nis;
+}
+export const qf = {} as Nframe;
+newCreate(qf);
+newEach(qf);
+newIs(qf);
+newHas(qf);
+newGet(qf);
 function tryAddPropertyAssignment(ps: qu.Push<qt.PropertyAssignment>, p: string, e?: qt.Expression) {
   if (e) {
     ps.push(new qc.PropertyAssignment(p, e));
