@@ -3602,27 +3602,27 @@ VariableDeclaration.prototype.kind = VariableDeclaration.kind;
 export class VariableDeclarationList extends Nobj implements qc.VariableDeclarationList {
   static readonly kind = Syntax.VariableDeclarationList;
   parent?: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
-  declarations: Nodes<VariableDeclaration>;
-  constructor(ds: readonly VariableDeclaration[], f = NodeFlags.None) {
+  declarations: Nodes<qt.VariableDeclaration>;
+  constructor(ds: readonly qt.VariableDeclaration[], f = NodeFlags.None) {
     super(true);
     this.flags |= f & NodeFlags.BlockScoped;
     this.declarations = new Nodes(ds);
   }
-  update(ds: readonly VariableDeclaration[]) {
+  update(ds: readonly qt.VariableDeclaration[]) {
     return this.declarations !== ds ? new VariableDeclarationList(ds, this.flags).updateFrom(this) : this;
   }
 }
 VariableDeclarationList.prototype.kind = VariableDeclarationList.kind;
 export class VariableStatement extends qc.Statement implements qc.VariableStatement {
   static readonly kind = Syntax.VariableStatement;
-  declarationList: VariableDeclarationList;
-  constructor(ms: readonly Modifier[] | undefined, ds: VariableDeclarationList | readonly VariableDeclaration[]) {
+  declarationList: qt.VariableDeclarationList;
+  constructor(ms: readonly Modifier[] | undefined, ds: qt.VariableDeclarationList | readonly qt.VariableDeclaration[]) {
     super(true);
     this.decorators = undefined;
     this.modifiers = Nodes.from(ms);
     this.declarationList = qu.isArray(ds) ? new VariableDeclarationList(ds) : ds;
   }
-  update(ms: readonly Modifier[] | undefined, ds: VariableDeclarationList) {
+  update(ms: readonly Modifier[] | undefined, ds: qt.VariableDeclarationList) {
     return this.modifiers !== ms || this.declarationList !== ds ? new VariableStatement(ms, ds).updateFrom(this) : this;
   }
 }
