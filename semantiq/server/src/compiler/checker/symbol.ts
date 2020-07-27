@@ -428,7 +428,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbol(symbolName))), ModifierFlags.None);
   }
   includePrivateSymbol() {
-    if (some(this.declarations, isParameterDeclaration)) return;
+    if (some(this.declarations, qf.is.parameterDeclaration)) return;
     Debug.assertIsDefined(deferredPrivates);
     getUnusedName(qy.get.unescUnderscores(this.escName), this);
     deferredPrivates.set('' + this.getId(), this);

@@ -1080,15 +1080,15 @@ export class DoStatement extends qc.IterationStatement implements qc.DoStatement
 DoStatement.prototype.kind = DoStatement.kind;
 export class ElementAccessExpression extends qc.MemberExpression implements qc.ElementAccessExpression {
   static readonly kind = Syntax.ElementAccessExpression;
-  expression: qc.LeftHandSideExpression;
+  expression: qt.LeftHandSideExpression;
   questionDotToken?: qc.QuestionDotToken;
-  argumentExpression: qc.Expression;
-  constructor(e: qc.Expression, i: number | qc.Expression) {
+  argumentExpression: qt.Expression;
+  constructor(e: qt.Expression, i: number | qt.Expression) {
     super(true);
     this.expression = parenthesize.forAccess(e);
     this.argumentExpression = asExpression(i);
   }
-  update(e: qc.Expression, a: qc.Expression): ElementAccessExpression {
+  update(e: qt.Expression, a: qt.Expression): ElementAccessExpression {
     if (qf.is.optionalChain(this)) return this.update(e, a, this.questionDotToken);
     return this.expression !== e || this.argumentExpression !== a ? new ElementAccessExpression(e, a).updateFrom(this) : this;
   }
@@ -1535,12 +1535,6 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   }
   isPushOrUnshiftIdentifier(node: Identifier) {
     return node.escapedText === 'push' || node.escapedText === 'unshift';
-  }
-  isThisNodeKind(Identifier, node: Node | undefined): boolean {
-    return !!node && node.kind === Syntax.Identifier && identifierIsThisKeyword(node as Identifier);
-  }
-  identifierIsThisKeyword(id: Identifier): boolean {
-    return id.originalKeywordKind === Syntax.ThisKeyword;
   }
   isDeclarationNameOfEnumOrNamespace(node: Identifier) {
     const parseNode = qf.get.parseTreeOf(node);
@@ -2325,9 +2319,6 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
     this.name = name;
     this.body = b;
   }
-  isGlobalScopeAugmentation() {
-    return !!(this.flags & NodeFlags.GlobalAugmentation);
-  }
   update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: qc.ModuleName, b?: qc.ModuleBody) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.body !== b ? new ModuleDeclaration(ds, ms, name, b, this.flags).updateFrom(this) : this;
   }
@@ -2563,33 +2554,6 @@ export class OptionalTypeNode extends qc.TypeNode implements qc.OptionalTypeNode
 }
 OptionalTypeNode.prototype.kind = OptionalTypeNode.kind;
 export namespace OuterExpression {
-  export function isOuterExpression(n: Node, ks = qc.OuterExpressionKinds.All): n is qc.OuterExpression {
-    switch (n.kind) {
-      case Syntax.ParenthesizedExpression:
-        return (ks & qc.OuterExpressionKinds.Parentheses) !== 0;
-      case Syntax.TypeAssertionExpression:
-      case Syntax.AsExpression:
-        return (ks & qc.OuterExpressionKinds.TypeAssertions) !== 0;
-      case Syntax.NonNullExpression:
-        return (ks & qc.OuterExpressionKinds.NonNullAssertions) !== 0;
-      case Syntax.PartiallyEmittedExpression:
-        return (ks & qc.OuterExpressionKinds.PartiallyEmittedExpressions) !== 0;
-    }
-    return false;
-  }
-  export function skipOuterExpressions(n: qc.Expression, ks?: qc.OuterExpressionKinds): qc.Expression;
-  export function skipOuterExpressions(n: Node, ks?: qc.OuterExpressionKinds): Node;
-  export function skipOuterExpressions(n: Node, ks = qc.OuterExpressionKinds.All) {
-    while (isOuterExpression(n, ks)) {
-      n = n.expression;
-    }
-    return n;
-  }
-  export function skipAssertions(n: qc.Expression): qc.Expression;
-  export function skipAssertions(n: Node): Node;
-  export function skipAssertions(n: Node): Node {
-    return skipOuterExpressions(n, qc.OuterExpressionKinds.Assertions);
-  }
   export function updateOuterExpression(o: qc.OuterExpression, e: qc.Expression) {
     switch (o.kind) {
       case Syntax.ParenthesizedExpression:
@@ -2604,18 +2568,8 @@ export namespace OuterExpression {
         return o.update(e);
     }
   }
-  export function isIgnorableParen(n: qc.Expression) {
-    return (
-      n.kind === Syntax.ParenthesizedExpression &&
-      qu.isSynthesized(n) &&
-      qu.isSynthesized(getSourceMapRange(n)) &&
-      qu.isSynthesized(getCommentRange(n)) &&
-      !qu.some(getSyntheticLeadingComments(n)) &&
-      !qu.some(getSyntheticTrailingComments(n))
-    );
-  }
   export function recreateOuterExpressions(o: qc.Expression | undefined, i: qc.Expression, ks = qc.OuterExpressionKinds.All): qc.Expression {
-    if (o && isOuterExpression(o, ks) && !isIgnorableParen(o)) return o.update(recreateOuterExpressions(o.expression, i));
+    if (o && qf.is.outerExpression(o, ks) && !qf.is.ignorableParen(o)) return o.update(recreateOuterExpressions(o.expression, i));
     return i;
   }
 }
@@ -4364,18 +4318,8 @@ export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement |
 export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined {
   return s && qf.is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
 }
-export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt) {
+export function pseudoBigIntToString({ negative, base10Value }: qt.PseudoBigInt) {
   return (negative && base10Value !== '0' ? '-' : '') + base10Value;
-}
-export function skipParentheses(n: qc.Expression): qc.Expression;
-export function skipParentheses(n: Node): Node;
-export function skipParentheses(n: Node): Node {
-  return skipOuterExpressions(n, qc.OuterExpressionKinds.Parentheses);
-}
-export function skipPartiallyEmittedExpressions(n: qc.Expression): qc.Expression;
-export function skipPartiallyEmittedExpressions(n: Node): Node;
-export function skipPartiallyEmittedExpressions(n: Node) {
-  return skipOuterExpressions(n, qc.OuterExpressionKinds.PartiallyEmittedExpressions);
 }
 export function updateFunctionLikeBody(d: qc.FunctionLikeDeclaration, b: Block): qc.FunctionLikeDeclaration {
   switch (d.kind) {

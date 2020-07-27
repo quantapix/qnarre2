@@ -546,7 +546,7 @@ export function newGet(f: qt.Frame) {
       const pattern = declaration.parent;
       let parentType = getTypeForBindingElementParent(pattern.parent);
       if (!parentType || isTypeAny(parentType)) return parentType;
-      if (strictNullChecks && declaration.flags & NodeFlags.Ambient && isParameterDeclaration(declaration)) parentType = getNonNullableType(parentType);
+      if (strictNullChecks && declaration.flags & NodeFlags.Ambient && qf.is.parameterDeclaration(declaration)) parentType = getNonNullableType(parentType);
       else if (strictNullChecks && pattern.parent.initer && !(getTypeFacts(getTypeOfIniter(pattern.parent.initer)) & TypeFacts.EQUndefined)) {
         parentType = getTypeWithFacts(parentType, TypeFacts.NEUndefined);
       }
@@ -6522,7 +6522,7 @@ export function newGet(f: qt.Frame) {
     effectiveDeclarationFlags(n: Declaration, flagsToCheck: ModifierFlags): ModifierFlags {
       let flags = qf.get.combinedModifierFlags(n);
       if (n.parent.kind !== Syntax.InterfaceDeclaration && n.parent.kind !== Syntax.ClassDeclaration && n.parent.kind !== Syntax.ClassExpression && n.flags & NodeFlags.Ambient) {
-        if (!(flags & ModifierFlags.Ambient) && !(qf.is.kind(qc.ModuleBlock, n.parent) && qf.is.kind(qc.ModuleDeclaration, n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent)))
+        if (!(flags & ModifierFlags.Ambient) && !(qf.is.kind(qc.ModuleBlock, n.parent) && qf.is.kind(qc.ModuleDeclaration, n.parent.parent) && qf.is.globalScopeAugmentation(n.parent.parent)))
           flags |= ModifierFlags.Export;
         flags |= ModifierFlags.Ambient;
       }

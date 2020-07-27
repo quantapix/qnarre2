@@ -48,12 +48,12 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
       defaultRefCount++;
     }
   }
-  return (defaultRefCount > 0 && defaultRefCount !== bindings.elements.length) || (!!(bindings.elements.length - defaultRefCount) && isDefaultImport(node));
+  return (defaultRefCount > 0 && defaultRefCount !== bindings.elements.length) || (!!(bindings.elements.length - defaultRefCount) && qf.is.defaultImport(node));
 }
 export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
   return (
     !getImportNeedsImportStarHelper(node) &&
-    (isDefaultImport(node) || (!!node.importClause && qc.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+    (qf.is.defaultImport(node) || (!!node.importClause && qc.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
   );
 }
 export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: CompilerOptions): ExternalModuleInfo {

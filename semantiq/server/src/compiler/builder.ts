@@ -1240,7 +1240,7 @@ export namespace BuilderState {
     return true;
   }
   function containsGlobalScopeAugmentation(sourceFile: SourceFile) {
-    return some(sourceFile.moduleAugmentations, (augmentation) => isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration));
+    return some(sourceFile.moduleAugmentations, (augmentation) => qf.is.globalScopeAugmentation(augmentation.parent as ModuleDeclaration));
   }
   function isFileAffectingGlobalScope(sourceFile: SourceFile) {
     return containsGlobalScopeAugmentation(sourceFile) || (!qc.is.externalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));

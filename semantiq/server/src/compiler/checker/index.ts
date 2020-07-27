@@ -697,7 +697,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       assert(moduleAugmentation.symbol.declarations.length > 1);
       return;
     }
-    if (isGlobalScopeAugmentation(moduleAugmentation)) globals.merge(moduleAugmentation.symbol.exports!);
+    if (qf.is.globalScopeAugmentation(moduleAugmentation)) globals.merge(moduleAugmentation.symbol.exports!);
     else {
       const moduleNotFoundError = !(moduleName.parent.parent.flags & NodeFlags.Ambient) ? qd.msgs.Invalid_module_name_in_augmentation_module_0_cannot_be_found : undefined;
       let mainModule = resolveExternalModuleNameWorker(moduleName, moduleName, moduleNotFoundError, true);
@@ -4128,7 +4128,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (augmentations) {
       for (const list of augmentations) {
         for (const augmentation of list) {
-          if (!isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration)) continue;
+          if (!qf.is.globalScopeAugmentation(augmentation.parent as ModuleDeclaration)) continue;
           mergeModuleAugmentation(augmentation);
         }
       }
@@ -4156,7 +4156,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (augmentations) {
       for (const list of augmentations) {
         for (const augmentation of list) {
-          if (isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration)) continue;
+          if (qf.is.globalScopeAugmentation(augmentation.parent as ModuleDeclaration)) continue;
           mergeModuleAugmentation(augmentation);
         }
       }

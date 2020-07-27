@@ -892,7 +892,7 @@ export function transformDeclarations(context: TransformationContext) {
           const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
           if (input.flags & NodeFlags.Ambient) needsScopeFixMarker = false;
-          if (!input.isGlobalScopeAugmentation() && !qf.has.scopeMarker(lateStatements) && !resultHasScopeMarker) {
+          if (!input.qf.is.globalScopeAugmentation() && !qf.has.scopeMarker(lateStatements) && !resultHasScopeMarker) {
             if (needsScopeFixMarker) lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
             else {
               lateStatements = Nodes.visit(lateStatements, stripExportModifiers);

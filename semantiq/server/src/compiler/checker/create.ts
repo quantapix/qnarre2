@@ -1188,7 +1188,7 @@ export function newResolve(f: qt.Frame) {
             isInExternalModule = true;
           case Syntax.ModuleDeclaration:
             const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
-            if (location.kind === Syntax.SourceFile || (qf.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
+            if (location.kind === Syntax.SourceFile || (qf.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !qf.is.globalScopeAugmentation(location))) {
               if ((result = moduleExports.get(InternalSymbol.Default))) {
                 const localSymbol = getLocalSymbolForExportDefault(result);
                 if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;

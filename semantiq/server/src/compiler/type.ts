@@ -497,7 +497,6 @@ export interface DebuggerStatement extends Statement {
   kind: Syntax.DebuggerStatement;
 }
 export interface Declaration extends Nobj {
-  getName(comments?: boolean, sourceMaps?: boolean, f?: qt.EmitFlags): Identifier;
   _declarationBrand: any;
 }
 export interface DeclarationStatement extends NamedDeclaration, Statement {

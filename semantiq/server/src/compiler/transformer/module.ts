@@ -449,11 +449,11 @@ export function transformModule(context: TransformationContext) {
       if (!node.importClause) return setRange(new qc.ExpressionStatement(createRequireCall(node)), node).setOriginal(node);
       else {
         const variables: VariableDeclaration[] = [];
-        if (namespaceDeclaration && !isDefaultImport(node)) {
+        if (namespaceDeclaration && !qf.is.defaultImport(node)) {
           variables.push(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
         } else {
           variables.push(new qc.VariableDeclaration(qf.get.generatedNameForNode(node), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
-          if (namespaceDeclaration && isDefaultImport(node)) {
+          if (namespaceDeclaration && qf.is.defaultImport(node)) {
             variables.push(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)));
           }
         }
@@ -465,7 +465,7 @@ export function transformModule(context: TransformationContext) {
           )
         );
       }
-    } else if (namespaceDeclaration && isDefaultImport(node)) {
+    } else if (namespaceDeclaration && qf.is.defaultImport(node)) {
       statements = append(
         statements,
         new qc.VariableStatement(
@@ -1443,7 +1443,7 @@ export function transformSystemModule(context: TransformationContext) {
           node.asteriskToken,
           qf.get.declarationName(node, true),
           undefined,
-          Nodes.visit(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration),
+          Nodes.visit(node.parameters, destructuringAndImportCallVisitor, qf.is.parameterDeclaration),
           undefined,
           visitNode(node.body, destructuringAndImportCallVisitor, isBlock)
         )

@@ -80,7 +80,7 @@ export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb:
   c.startLexicalEnvironment();
   if (ns) {
     c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
-    updated = v(ns, cb, isParameterDeclaration);
+    updated = v(ns, cb, qf.is.parameterDeclaration);
     if (c.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addValueAssignments(updated!, c);
     c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, false);
   }
@@ -208,7 +208,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.MethodSignature:
       return n.update(
         nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        nodesVisitor(n.parameters, cb, isParameterDeclaration),
+        nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration),
         visitNode(n.type, cb, isTypeNode),
         visitNode(n.name, cb, isPropertyName),
         visitNode(n.questionToken, tokenVisitor, isToken)
@@ -245,14 +245,14 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitFunctionBody(n.body!, cb, c)
       );
     case Syntax.CallSignature:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, isParameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.ConstructSignature:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, isParameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.IndexSignature:
       return n.update(
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
-        nodesVisitor(n.parameters, cb, isParameterDeclaration),
+        nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration),
         visitNode(n.type, cb, isTypeNode)
       );
     case Syntax.TypePredicate:
@@ -260,9 +260,9 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.TypeReference:
       return n.update(visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArguments, cb, isTypeNode));
     case Syntax.FunctionType:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, isParameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.ConstructorType:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, isParameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.TypeQuery:
       return n.update(visitNode(n.exprName, cb, isEntityName));
     case Syntax.TypeLiteral:

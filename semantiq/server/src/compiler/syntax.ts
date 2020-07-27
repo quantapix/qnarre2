@@ -783,7 +783,7 @@ export const is = new (class {
     }
     return this.unaryExpression(k);
   }
-  functionLike(k: Syntax) {
+  functionLike(k?: Syntax) {
     switch (k) {
       case Syntax.CallSignature:
       case Syntax.ConstructorType:
@@ -797,7 +797,7 @@ export const is = new (class {
     }
     return this.functionLikeDeclaration(k);
   }
-  functionLikeDeclaration(k: Syntax) {
+  functionLikeDeclaration(k?: Syntax) {
     switch (k) {
       case Syntax.ArrowFunction:
       case Syntax.Constructor:

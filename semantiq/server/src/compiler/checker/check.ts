@@ -4514,7 +4514,7 @@ export function newCheck(f: qt.Frame) {
       return;
     }
     varDeclaredNamesNotShadowed(n: qc.VariableDeclaration | BindingElement) {
-      if ((qf.get.combinedFlagsOf(n) & NodeFlags.BlockScoped) !== 0 || isParameterDeclaration(n)) return;
+      if ((qf.get.combinedFlagsOf(n) & NodeFlags.BlockScoped) !== 0 || qf.is.parameterDeclaration(n)) return;
       if (n.kind === Syntax.VariableDeclaration && !n.initer) return;
       const symbol = getSymbolOfNode(n);
       if (symbol.flags & qt.SymbolFlags.FunctionScopedVariable) {
@@ -5331,7 +5331,7 @@ export function newCheck(f: qt.Frame) {
     }
     moduleDeclaration(n: qc.ModuleDeclaration) {
       if (produceDiagnostics) {
-        const isGlobalAugmentation = isGlobalScopeAugmentation(n);
+        const isGlobalAugmentation = qf.is.globalScopeAugmentation(n);
         const inAmbientContext = n.flags & NodeFlags.Ambient;
         if (isGlobalAugmentation && !inAmbientContext) error(n.name, qd.msgs.Augmentations_for_the_global_scope_should_have_declare_modifier_unless_they_appear_in_already_ambient_context);
         const isAmbientExternalModule = qf.is.ambientModule(n);
@@ -5387,7 +5387,7 @@ export function newCheck(f: qt.Frame) {
       }
       if (n.body) {
         this.sourceElement(n.body);
-        if (!isGlobalScopeAugmentation(n)) registerForUnusedIdentifiersCheck(n);
+        if (!qf.is.globalScopeAugmentation(n)) registerForUnusedIdentifiersCheck(n);
       }
     }
     moduleAugmentationElement(n: Node, isGlobalAugmentation: boolean): void {

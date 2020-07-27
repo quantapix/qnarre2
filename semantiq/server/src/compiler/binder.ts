@@ -236,7 +236,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (name) {
       if (qc.is.ambientModule(node)) {
         const moduleName = qf.get.textOfIdentifierOrLiteral(name as Identifier | StringLiteral);
-        return (isGlobalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qu.__String;
+        return (qf.is.globalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qu.__String;
       }
       if (name.kind === Syntax.ComputedPropertyName) {
         const nameExpression = name.expression;
@@ -2426,7 +2426,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (!qc.is.kind(qc.BindingPattern, node.name)) {
       if (qf.is.blockOrCatchScoped(node)) {
         bindBlockScopedDeclaration(node, SymbolFlags.BlockScopedVariable, SymbolFlags.BlockScopedVariableExcludes);
-      } else if (isParameterDeclaration(node)) {
+      } else if (qf.is.parameterDeclaration(node)) {
         declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParameterExcludes);
       } else {
         declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.FunctionScopedVariableExcludes);

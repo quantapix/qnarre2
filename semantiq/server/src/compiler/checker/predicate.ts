@@ -527,7 +527,7 @@ export function newIs(f: qt.Frame) {
       return (name as string).charCodeAt(0) === Codes._ && (name as string).charCodeAt(1) === Codes._ && (name as string).charCodeAt(2) === Codes.at;
     }
     nonBindableDynamicName(node: DeclarationName) {
-      return isDynamicName(node) && !isLateBindableName(node);
+      return qf.is.dynamicName(node) && !isLateBindableName(node);
     }
     mappedTypeWithKeyofConstraintDeclaration(type: MappedType) {
       const constraintDeclaration = getConstraintDeclarationForMappedType(type)!;
