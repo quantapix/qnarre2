@@ -1067,7 +1067,7 @@ export function newGet(f: qt.Frame) {
         ls[resolutionKind] = earlySymbols || emptySymbols;
         const lateSymbols = new SymbolTable<TransientSymbol>();
         for (const decl of symbol.declarations) {
-          const members = qf.get.membersOfDeclaration(decl);
+          const members = qf.get.declaration.members(decl);
           if (members) {
             for (const member of members) {
               if (isStatic === qf.has.staticModifier(member) && hasLateBindableName(member)) lateBindMember(symbol, earlySymbols, lateSymbols, member);

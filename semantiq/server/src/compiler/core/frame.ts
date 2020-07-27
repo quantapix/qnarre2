@@ -1347,34 +1347,79 @@ export function newGet(f: qt.Frame) {
     is: Nis;
   }
   const qf = f as Frame;
-  return (qf.get = new (class {
-    nextNodeId = 1;
-    nextAutoGenerateId = 1;
-    name(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
-      const n = this.nameOfDeclaration(d);
-      if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
-        const name = getMutableClone(n);
-        f |= this.emitFlags(n);
-        if (!sourceMaps) f |= EmitFlags.NoSourceMap;
-        if (!comments) f |= EmitFlags.NoComments;
-        if (f) setEmitFlags(name, f);
-        return name;
+  return (qf.get = new (class Nget {
+    static nextNodeId = 1;
+    static nextAutoGenerateId = 1;
+    declaration = new (class extends Nget {
+      typeParameterOwner(d?: qt.Declaration): qt.Declaration | undefined {
+        if (d?.kind === Syntax.TypeParameter) {
+          for (let n = d as Node | undefined; n; n = n.parent) {
+            if (qf.is.functionLike(n) || qf.is.classLike(n) || n.kind === Syntax.InterfaceDeclaration) return n as qt.Declaration;
+          }
+        }
+        return;
       }
-      return this.generatedNameForNode(d);
-    }
-    membersOfDeclaration(d: qt.Declaration): Nodes<qt.ClassElement> | Nodes<qt.TypeElement> | Nodes<qt.ObjectLiteralElement> | undefined {
-      const n = d as Node;
-      switch (n.kind) {
-        case Syntax.InterfaceDeclaration:
-        case Syntax.ClassDeclaration:
-        case Syntax.ClassExpression:
-        case Syntax.TypeLiteral:
-          return n.members;
-        case Syntax.ObjectLiteralExpression:
-          return n.properties;
+      members(d?: qt.Declaration): Nodes<qt.ClassElement> | Nodes<qt.TypeElement> | Nodes<qt.ObjectLiteralElement> | undefined {
+        const n = d as Node | undefined;
+        switch (n?.kind) {
+          case Syntax.InterfaceDeclaration:
+          case Syntax.ClassDeclaration:
+          case Syntax.ClassExpression:
+          case Syntax.TypeLiteral:
+            return n.members;
+          case Syntax.ObjectLiteralExpression:
+            return n.properties;
+        }
+        return;
       }
-      return;
-    }
+      nameOfDeclaration(d: qt.Declaration | qt.Expression): qt.DeclarationName | undefined {
+        if (d) {
+          const n = d as Node;
+          if (this.nonAssignedNameOfDeclaration(d) || n.kind === Syntax.FunctionExpression || n.kind === Syntax.ClassExpression) return this.assignedName(n);
+        }
+        return;
+      }
+
+      name(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
+        const n = this.nameOfDeclaration(d);
+        if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
+          const name = getMutableClone(n);
+          f |= this.emitFlags(n);
+          if (!sourceMaps) f |= EmitFlags.NoSourceMap;
+          if (!comments) f |= EmitFlags.NoComments;
+          if (f) setEmitFlags(name, f);
+          return name;
+        }
+        return this.generatedNameForNode(d);
+      }
+      declarationFromName(n: Node): qt.Declaration | undefined {
+        const p = n.parent;
+        switch (n.kind) {
+          case Syntax.StringLiteral:
+          case Syntax.NoSubstitutionLiteral:
+          case Syntax.NumericLiteral:
+            if (p.kind === Syntax.ComputedPropertyName) return p.parent;
+          case Syntax.Identifier:
+            if (qf.is.declaration(p)) return p.name === n ? p : undefined;
+            else if (p.kind === Syntax.QualifiedName) {
+              const pp = p.parent;
+              return pp.kind === Syntax.DocParameterTag && pp.name === p ? pp : undefined;
+            } else {
+              const binExp = p?.parent;
+              return binExp.kind === Syntax.BinaryExpression &&
+                this.assignmentDeclarationKind(binExp) !== qc.AssignmentDeclarationKind.None &&
+                (binExp.left.symbol || binExp.symbol) &&
+                this.nameOfDeclaration(binExp) === n
+                ? binExp
+                : undefined;
+            }
+          case Syntax.PrivateIdentifier:
+            return qf.is.declaration(p) && p.name === n ? p : undefined;
+          default:
+            return;
+        }
+      }
+    })();
     nameOfExpando(n: qt.Declaration): qt.DeclarationName | undefined {
       const p = n.parent;
       if (p?.kind === Syntax.BinaryExpression) {
@@ -2105,33 +2150,6 @@ export function newGet(f: qt.Frame) {
     typeAnnotationNode(n: Node): qt.TypeNode | undefined {
       return (n as qt.HasType).type;
     }
-    declarationFromName(n: Node): qt.Declaration | undefined {
-      const p = n.parent;
-      switch (n.kind) {
-        case Syntax.StringLiteral:
-        case Syntax.NoSubstitutionLiteral:
-        case Syntax.NumericLiteral:
-          if (p.kind === Syntax.ComputedPropertyName) return p.parent;
-        case Syntax.Identifier:
-          if (qf.is.declaration(p)) return p.name === n ? p : undefined;
-          else if (p.kind === Syntax.QualifiedName) {
-            const pp = p.parent;
-            return pp.kind === Syntax.DocParameterTag && pp.name === p ? pp : undefined;
-          } else {
-            const binExp = p?.parent;
-            return binExp.kind === Syntax.BinaryExpression &&
-              this.assignmentDeclarationKind(binExp) !== qc.AssignmentDeclarationKind.None &&
-              (binExp.left.symbol || binExp.symbol) &&
-              this.nameOfDeclaration(binExp) === n
-              ? binExp
-              : undefined;
-          }
-        case Syntax.PrivateIdentifier:
-          return qf.is.declaration(p) && p.name === n ? p : undefined;
-        default:
-          return;
-      }
-    }
     assignmentTargetKind(n?: Node): AssignmentKind {
       let p = n?.parent;
       while (true) {
@@ -2304,13 +2322,6 @@ export function newGet(f: qt.Frame) {
       }
       return (d as qt.NamedDeclaration).name;
     }
-    nameOfDeclaration(d: qt.Declaration | qt.Expression): qt.DeclarationName | undefined {
-      if (d) {
-        const n = d as Node;
-        if (this.nonAssignedNameOfDeclaration(d) || n.kind === Syntax.FunctionExpression || n.kind === Syntax.ClassExpression) return this.assignedName(n);
-      }
-      return;
-    }
     effectiveTypeParameterDeclarations(n: qt.DeclarationWithTypeParameters): readonly qc.TypeParameterDeclaration[] {
       if (n.kind === Syntax.DocSignature) return qu.empty;
       if (qf.is.doc.typeAlias(n)) {
@@ -2337,14 +2348,6 @@ export function newGet(f: qt.Frame) {
           return 'lib.es2020.full.d.ts';
       }
       return 'lib.d.ts';
-    }
-    typeParameterOwner(d: qt.Declaration): qt.Declaration | undefined {
-      if (d && d.kind === Syntax.TypeParameter) {
-        for (let n: Node | undefined = d; n; n = n.parent) {
-          if (qf.is.functionLike(n) || qf.is.classLike(n) || n.kind === Syntax.InterfaceDeclaration) return n as qt.Declaration;
-        }
-      }
-      return;
     }
     combinedModifierFlags(n: qt.Declaration): ModifierFlags {
       return this.combinedFlags(n, getEffectiveModifierFlags);
