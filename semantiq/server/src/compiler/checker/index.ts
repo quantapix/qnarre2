@@ -1815,7 +1815,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           );
         }
         if (
-          (getFunctionFlags(node) & FunctionFlags.Async) === 0 &&
+          (qf.get.functionFlags(node) & FunctionFlags.Async) === 0 &&
           !getTypeOfPropertyOfType(sourceReturn, 'then' as qu.__String) &&
           check.typeRelatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {

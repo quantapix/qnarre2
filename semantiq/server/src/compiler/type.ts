@@ -2799,6 +2799,7 @@ export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplate
 export type CaseOrDefaultClause = CaseClause | DefaultClause;
 export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
 export type ColonToken = Token<Syntax.ColonToken>;
+export type CommaToken = Token<Syntax.CommaToken>;
 export type CommandLineOption = CommandLineOptionOfCustomType | CommandLineOptionOfPrimitiveType | TsConfigOnlyOption | CommandLineOptionOfListType;
 export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qu.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
 export type CompoundAssignmentOperator =

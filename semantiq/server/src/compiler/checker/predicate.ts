@@ -1879,7 +1879,7 @@ export function newIs(f: qt.Frame) {
       return isIteratorResult(type, IterationTypeKind.Return);
     }
     unwrappedReturnTypeVoidOrAny(func: SignatureDeclaration, returnType: Type): boolean {
-      const unwrappedReturnType = unwrapReturnType(returnType, getFunctionFlags(func));
+      const unwrappedReturnType = unwrapReturnType(returnType, qf.get.functionFlags(func));
       return !!unwrappedReturnType && maybeTypeOfKind(unwrappedReturnType, qt.TypeFlags.Void | qt.TypeFlags.AnyOrUnknown);
     }
     instancePropertyWithoutIniter(node: Node) {

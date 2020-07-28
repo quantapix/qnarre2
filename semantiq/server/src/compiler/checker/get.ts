@@ -5086,7 +5086,7 @@ export function newGet(f: qt.Frame) {
     contextualTypeForReturnExpression(node: Expression): Type | undefined {
       const func = qf.get.containingFunction(node);
       if (func) {
-        const functionFlags = getFunctionFlags(func);
+        const functionFlags = qf.get.functionFlags(func);
         if (functionFlags & FunctionFlags.Generator) return;
         const contextualReturnType = getContextualReturnType(func);
         if (contextualReturnType) {
@@ -5110,7 +5110,7 @@ export function newGet(f: qt.Frame) {
     contextualTypeForYieldOperand(node: YieldExpression): Type | undefined {
       const func = qf.get.containingFunction(node);
       if (func) {
-        const functionFlags = getFunctionFlags(func);
+        const functionFlags = qf.get.functionFlags(func);
         const contextualReturnType = getContextualReturnType(func);
         if (contextualReturnType)
           return node.asteriskToken ? contextualReturnType : getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Yield, contextualReturnType, (functionFlags & FunctionFlags.Async) !== 0);
@@ -5118,7 +5118,7 @@ export function newGet(f: qt.Frame) {
       return;
     }
     contextualIterationType(kind: IterationTypeKind, functionDecl: SignatureDeclaration): Type | undefined {
-      const isAsync = !!(getFunctionFlags(functionDecl) & FunctionFlags.Async);
+      const isAsync = !!(qf.get.functionFlags(functionDecl) & FunctionFlags.Async);
       const contextualReturnType = getContextualReturnType(functionDecl);
       if (contextualReturnType) return getIterationTypeOfGeneratorFunctionReturnType(kind, contextualReturnType, isAsync) || undefined;
       return;
@@ -5738,7 +5738,7 @@ export function newGet(f: qt.Frame) {
       }
       const suggestedMethod = qf.is.assignmentTarget(expr) ? 'set' : 'get';
       if (!hasProp(suggestedMethod)) return;
-      let suggestion = tryGetPropertyAccessOrIdentifierToString(expr.expression);
+      let suggestion = qf.get.propertyAccessOrIdentifierToString(expr.expression);
       if (suggestion === undefined) suggestion = suggestedMethod;
       else {
         suggestion += '.' + suggestedMethod;
@@ -6293,7 +6293,7 @@ export function newGet(f: qt.Frame) {
     }
     returnTypeFromBody(func: FunctionLikeDeclaration, checkMode?: CheckMode): Type {
       if (!func.body) return errorType;
-      const functionFlags = getFunctionFlags(func);
+      const functionFlags = qf.get.functionFlags(func);
       const isAsync = (functionFlags & FunctionFlags.Async) !== 0;
       const isGenerator = (functionFlags & FunctionFlags.Generator) !== 0;
       let returnType: Type | undefined;

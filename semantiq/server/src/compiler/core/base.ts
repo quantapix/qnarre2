@@ -376,7 +376,7 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
     s: boolean,
     k: qt.SignatureDeclaration['kind'],
     ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ps?: readonly qt.ParameterDeclaration[],
     t?: qt.TypeNode,
     ta?: readonly qt.TypeNode[]
   ) {
@@ -1393,6 +1393,196 @@ export class SourceMapSource implements qt.SourceMapSource {
     return getLineAndCharacterOfPosition(this, pos);
   }
 }
+let allUnscopedEmitHelpers: qu.QReadonlyMap<UnscopedEmitHelper> | undefined;
+export class UnparsedSource extends Nobj implements qt.UnparsedSource {
+  static readonly kind = Syntax.UnparsedSource;
+  fileName: string;
+  text: string;
+  prologues: readonly UnparsedPrologue[];
+  helpers: readonly UnscopedEmitHelper[] | undefined;
+  referencedFiles: readonly qt.FileReference[];
+  typeReferenceDirectives: readonly string[] | undefined;
+  libReferenceDirectives: readonly qt.FileReference[];
+  hasNoDefaultLib?: boolean;
+  sourceMapPath?: string;
+  sourceMapText?: string;
+  syntheticReferences?: readonly UnparsedSyntheticReference[];
+  texts: readonly UnparsedSourceText[];
+  oldFileOfCurrentEmit?: boolean;
+  parsedSourceMap?: RawSourceMap | false | undefined;
+  lineAndCharOf(pos: number): LineAndChar;
+  createUnparsedSource() {
+    super();
+    this.prologues = empty;
+    this.referencedFiles = empty;
+    this.libReferenceDirectives = empty;
+    this.lineAndCharOf = (pos) => qy.get.lineAndCharOf(this, pos);
+  }
+  createUnparsedSourceFile(text: string): UnparsedSource;
+  createUnparsedSourceFile(inputFile: InputFiles, type: 'js' | 'dts', stripInternal?: boolean): UnparsedSource;
+  createUnparsedSourceFile(text: string, mapPath: string | undefined, map: string | undefined): UnparsedSource;
+  createUnparsedSourceFile(textOrInputFiles: string | InputFiles, mapPathOrType?: string, mapTextOrStripInternal?: string | boolean): UnparsedSource {
+    const r = createUnparsedSource();
+    let stripInternal: boolean | undefined;
+    let bundleFileInfo: BundleFileInfo | undefined;
+    if (!isString(textOrInputFiles)) {
+      qu.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
+      r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
+      r.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.javascriptMapPath : textOrInputFiles.declarationMapPath;
+      Object.defineProperties(r, {
+        text: {
+          get() {
+            return mapPathOrType === 'js' ? textOrInputFiles.javascriptText : textOrInputFiles.declarationText;
+          },
+        },
+        sourceMapText: {
+          get() {
+            return mapPathOrType === 'js' ? textOrInputFiles.javascriptMapText : textOrInputFiles.declarationMapText;
+          },
+        },
+      });
+      if (textOrInputFiles.buildInfo && textOrInputFiles.buildInfo.bundle) {
+        r.oldFileOfCurrentEmit = textOrInputFiles.oldFileOfCurrentEmit;
+        qu.assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
+        stripInternal = mapTextOrStripInternal;
+        bundleFileInfo = mapPathOrType === 'js' ? textOrInputFiles.buildInfo.bundle.js : textOrInputFiles.buildInfo.bundle.dts;
+        if (r.oldFileOfCurrentEmit) {
+          parseOldFileOfCurrentEmit(r, qu.checkDefined(bundleFileInfo));
+          return r;
+        }
+      }
+    } else {
+      r.fileName = '';
+      r.text = textOrInputFiles;
+      r.sourceMapPath = mapPathOrType;
+      r.sourceMapText = mapTextOrStripInternal as string;
+    }
+    qu.assert(!r.oldFileOfCurrentEmit);
+    parseUnparsedSourceFile(r, bundleFileInfo, stripInternal);
+    return r;
+  }
+  getAllUnscopedEmitHelpers() {
+    return (
+      allUnscopedEmitHelpers ||
+      (allUnscopedEmitHelpers = arrayToMap(
+        [
+          valuesHelper,
+          readHelper,
+          spreadHelper,
+          spreadArraysHelper,
+          restHelper,
+          decorateHelper,
+          metadataHelper,
+          paramHelper,
+          awaiterHelper,
+          assignHelper,
+          awaitHelper,
+          asyncGeneratorHelper,
+          asyncDelegator,
+          asyncValues,
+          extendsHelper,
+          templateObjectHelper,
+          generatorHelper,
+          importStarHelper,
+          importDefaultHelper,
+          classPrivateFieldGetHelper,
+          classPrivateFieldSetHelper,
+          createBindingHelper,
+          setModuleDefaultHelper,
+        ],
+        (helper) => helper.name
+      ))
+    );
+  }
+  parseUnparsedSourceFile(this: UnparsedSource, bundleFileInfo: BundleFileInfo | undefined, stripInternal: boolean | undefined) {
+    let prologues: UnparsedPrologue[] | undefined;
+    let helpers: UnscopedEmitHelper[] | undefined;
+    let referencedFiles: qc.FileReference[] | undefined;
+    let typeReferenceDirectives: string[] | undefined;
+    let libReferenceDirectives: qc.FileReference[] | undefined;
+    let texts: UnparsedSourceText[] | undefined;
+    for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
+      switch (section.kind) {
+        case BundleFileSectionKind.Prologue:
+          (prologues || (prologues = [])).push(createUnparsedNode(section, this) as UnparsedPrologue);
+          break;
+        case BundleFileSectionKind.EmitHelpers:
+          (helpers || (helpers = [])).push(getAllUnscopedEmitHelpers().get(section.data)!);
+          break;
+        case BundleFileSectionKind.NoDefaultLib:
+          this.hasNoDefaultLib = true;
+          break;
+        case BundleFileSectionKind.Reference:
+          (referencedFiles || (referencedFiles = [])).push({ pos: -1, end: -1, fileName: section.data });
+          break;
+        case BundleFileSectionKind.Type:
+          (typeReferenceDirectives || (typeReferenceDirectives = [])).push(section.data);
+          break;
+        case BundleFileSectionKind.Lib:
+          (libReferenceDirectives || (libReferenceDirectives = [])).push({ pos: -1, end: -1, fileName: section.data });
+          break;
+        case BundleFileSectionKind.Prepend:
+          const prependNode = createUnparsedNode(section, this) as UnparsedPrepend;
+          let prependTexts: UnparsedTextLike[] | undefined;
+          for (const text of section.texts) {
+            if (!stripInternal || text.kind !== BundleFileSectionKind.Internal) {
+              (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, this) as UnparsedTextLike);
+            }
+          }
+          prependNode.texts = prependTexts || empty;
+          (texts || (texts = [])).push(prependNode);
+          break;
+        case BundleFileSectionKind.Internal:
+          if (stripInternal) {
+            if (!texts) texts = [];
+            break;
+          }
+        case BundleFileSectionKind.Text:
+          (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
+          break;
+        default:
+          qg.assertNever(section);
+      }
+    }
+    this.prologues = prologues || empty;
+    this.helpers = helpers;
+    this.referencedFiles = referencedFiles || empty;
+    this.typeReferenceDirectives = typeReferenceDirectives;
+    this.libReferenceDirectives = libReferenceDirectives || empty;
+    this.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
+  }
+  parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: BundleFileInfo) {
+    qu.assert(!!this.oldFileOfCurrentEmit);
+    let texts: UnparsedTextLike[] | undefined;
+    let syntheticReferences: UnparsedSyntheticReference[] | undefined;
+    for (const section of bundleFileInfo.sections) {
+      switch (section.kind) {
+        case BundleFileSectionKind.Internal:
+        case BundleFileSectionKind.Text:
+          (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
+          break;
+        case BundleFileSectionKind.NoDefaultLib:
+        case BundleFileSectionKind.Reference:
+        case BundleFileSectionKind.Type:
+        case BundleFileSectionKind.Lib:
+          (syntheticReferences || (syntheticReferences = [])).push(new qc.UnparsedSyntheticReference(section, this));
+          break;
+        // Ignore
+        case BundleFileSectionKind.Prologue:
+        case BundleFileSectionKind.EmitHelpers:
+        case BundleFileSectionKind.Prepend:
+          break;
+        default:
+          qg.assertNever(section);
+      }
+    }
+    this.texts = texts || empty;
+    this.helpers = map(bundleFileInfo.sources && bundleFileInfo.sources.helpers, (name) => getAllUnscopedEmitHelpers().get(name)!);
+    this.syntheticReferences = syntheticReferences;
+    return this;
+  }
+}
+UnparsedSource.prototype.kind = UnparsedSource.kind;
 export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
 }
@@ -1711,4 +1901,62 @@ export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction)
   if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertMissingNode')) {
     qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${format.syntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
   }
+}
+export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
+  while (n) {
+    const r = cb(n);
+    if (r === 'quit') return;
+    if (r) return n;
+    n = n.parent;
+  }
+  return;
+}
+export function skipOuterExpressions(n: qt.Expression, ks?: qt.OuterExpressionKinds): qt.Expression;
+export function skipOuterExpressions(n: Node, ks?: qt.OuterExpressionKinds): Node;
+export function skipOuterExpressions(n: Node | qt.Expression, ks = qt.OuterExpressionKinds.All): Node | qt.Expression {
+  while (qf.is.outerExpression(n, ks)) {
+    n = n.expression;
+  }
+  return n;
+}
+export function skipAssertions(n: qt.Expression): qt.Expression;
+export function skipAssertions(n: Node): Node;
+export function skipAssertions(n: Node | qt.Expression) {
+  return skipOuterExpressions(n, qt.OuterExpressionKinds.Assertions);
+}
+export function skipParentheses(n: qt.Expression): qt.Expression;
+export function skipParentheses(n: Node): Node;
+export function skipParentheses(n: Node | qt.Expression) {
+  return skipOuterExpressions(n, qt.OuterExpressionKinds.Parentheses);
+}
+export function skipPartiallyEmittedExpressions(n: qt.Expression): qt.Expression;
+export function skipPartiallyEmittedExpressions(n: Node): Node;
+export function skipPartiallyEmittedExpressions(n: Node | qt.Expression) {
+  return skipOuterExpressions(n, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
+}
+export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
+  return n.kind === Syntax.ExpressionWithTypeArguments && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)
+    ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
+    : undefined;
+}
+function walkUp(n: Node | undefined, k: Syntax) {
+  while (n?.kind === k) {
+    n = n.parent;
+  }
+  return n;
+}
+export function walkUpParenthesizedTypes(n?: Node) {
+  return walkUp(n, Syntax.ParenthesizedType);
+}
+export function walkUpParenthesizedExpressions(n?: Node) {
+  return walkUp(n, Syntax.ParenthesizedExpression);
+}
+export function walkUpBindingElementsAndPatterns(e: qt.BindingElement) {
+  let n = e.parent as Node | undefined;
+  while (n?.parent?.kind === Syntax.BindingElement) {
+    n = n?.parent?.parent;
+  }
+  return n?.parent as qt.ParameterDeclaration | qt.VariableDeclaration | undefined;
 }

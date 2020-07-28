@@ -498,7 +498,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
   function visitBinaryExpression(node: BinaryExpression): Expression {
-    const assoc = getExpressionAssociativity(node);
+    const assoc = qf.get.expressionAssociativity(node);
     switch (assoc) {
       case Associativity.Left:
         return visitLeftAssociativeBinaryExpression(node);

@@ -459,7 +459,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
-    enclosingFunctionFlags = getFunctionFlags(node);
+    enclosingFunctionFlags = qf.get.functionFlags(node);
     const updated = node.update(
       undefined,
       enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
@@ -476,7 +476,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitFunctionDeclaration(node: FunctionDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
-    enclosingFunctionFlags = getFunctionFlags(node);
+    enclosingFunctionFlags = qf.get.functionFlags(node);
     const updated = node.update(
       undefined,
       enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
@@ -492,14 +492,14 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitArrowFunction(node: ArrowFunction) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
-    enclosingFunctionFlags = getFunctionFlags(node);
+    enclosingFunctionFlags = qf.get.functionFlags(node);
     const updated = node.update(node.modifiers, undefined, visitParameterList(node.parameters, visitor, context), undefined, node.equalsGreaterThanToken, transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
   function visitFunctionExpression(node: FunctionExpression) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
-    enclosingFunctionFlags = getFunctionFlags(node);
+    enclosingFunctionFlags = qf.get.functionFlags(node);
     const updated = node.update(
       enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
       enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,

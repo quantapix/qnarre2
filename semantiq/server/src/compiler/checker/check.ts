@@ -2530,7 +2530,7 @@ export function newCheck(f: qt.Frame) {
     andAggregateYieldOperandTypes(func: FunctionLikeDeclaration, checkMode: CheckMode | undefined) {
       const yieldTypes: qc.Type[] = [];
       const nextTypes: qc.Type[] = [];
-      const isAsync = (getFunctionFlags(func) & FunctionFlags.Async) !== 0;
+      const isAsync = (qf.get.functionFlags(func) & FunctionFlags.Async) !== 0;
       forEachYieldExpression(<Block>func.body, (yieldExpression) => {
         const yieldExpressionType = yieldExpression.expression ? this.expression(yieldExpression.expression, checkMode) : undefinedWideningType;
         pushIfUnique(yieldTypes, getYieldedTypeOfYieldExpression(yieldExpression, yieldExpressionType, anyType, isAsync));
@@ -2544,7 +2544,7 @@ export function newCheck(f: qt.Frame) {
       return { yieldTypes, nextTypes };
     }
     andAggregateReturnExpressionTypes(func: FunctionLikeDeclaration, checkMode: CheckMode | undefined): qc.Type[] | undefined {
-      const functionFlags = getFunctionFlags(func);
+      const functionFlags = qf.get.functionFlags(func);
       const aggregatedTypes: qc.Type[] = [];
       let hasReturnWithNoExpression = functionHasImplicitReturn(func);
       let hasReturnOfTypeNever = false;
@@ -2567,7 +2567,7 @@ export function newCheck(f: qt.Frame) {
     }
     allCodePathsInNonVoidFunctionReturnOrThrow(func: FunctionLikeDeclaration | MethodSignature, returnType: qc.Type | undefined): void {
       if (!produceDiagnostics) return;
-      const functionFlags = getFunctionFlags(func);
+      const functionFlags = qf.get.functionFlags(func);
       const type = returnType && unwrapReturnType(returnType, functionFlags);
       if (type && maybeTypeOfKind(type, TypeFlags.Any | TypeFlags.Void)) return;
       if (func.kind === Syntax.MethodSignature || qf.is.missing(func.body) || func.body!.kind !== Syntax.Block || !functionHasImplicitReturn(func)) return;
@@ -2611,7 +2611,7 @@ export function newCheck(f: qt.Frame) {
     }
     functionExpressionOrObjectLiteralMethodDeferred(n: qc.ArrowFunction | FunctionExpression | MethodDeclaration) {
       qu.assert(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
-      const functionFlags = getFunctionFlags(n);
+      const functionFlags = qf.get.functionFlags(n);
       const returnType = getReturnTypeFromAnnotation(n);
       this.allCodePathsInNonVoidFunctionReturnOrThrow(n, returnType);
       if (n.body) {
@@ -2713,7 +2713,7 @@ export function newCheck(f: qt.Frame) {
               const span = getSpanOfTokenAtPosition(sourceFile, n.pos);
               const diagnostic = qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
               const func = qf.get.containingFunction(n);
-              if (func && func.kind !== Syntax.Constructor && (getFunctionFlags(func) & FunctionFlags.Async) === 0) {
+              if (func && func.kind !== Syntax.Constructor && (qf.get.functionFlags(func) & FunctionFlags.Async) === 0) {
                 const relatedInfo = qf.create.diagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }
@@ -3265,7 +3265,7 @@ export function newCheck(f: qt.Frame) {
       }
       const func = qf.get.containingFunction(n);
       if (!func) return anyType;
-      const functionFlags = getFunctionFlags(func);
+      const functionFlags = qf.get.functionFlags(func);
       if (!(functionFlags & FunctionFlags.Generator)) return anyType;
       const isAsync = (functionFlags & FunctionFlags.Async) !== 0;
       if (n.asteriskToken) {
@@ -3589,7 +3589,7 @@ export function newCheck(f: qt.Frame) {
       ) {
         checkGrammar.functionLikeDeclaration(<FunctionLikeDeclaration>n);
       }
-      const functionFlags = getFunctionFlags(<FunctionLikeDeclaration>n);
+      const functionFlags = qf.get.functionFlags(<FunctionLikeDeclaration>n);
       if (!(functionFlags & FunctionFlags.Invalid)) {
         if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < ScriptTarget.ESNext)
           this.externalEmitHelpers(n, ExternalEmitHelpers.AsyncGeneratorIncludes);
@@ -3611,7 +3611,7 @@ export function newCheck(f: qt.Frame) {
           }
         }
         if (returnTypeNode) {
-          const functionFlags = getFunctionFlags(<FunctionDeclaration>n);
+          const functionFlags = qf.get.functionFlags(<FunctionDeclaration>n);
           if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Generator)) === FunctionFlags.Generator) {
             const returnType = getTypeFromTypeNode(returnTypeNode);
             if (returnType === voidType) error(returnTypeNode, qd.msgs.A_generator_cannot_have_a_void_type_annotation);
@@ -4254,7 +4254,7 @@ export function newCheck(f: qt.Frame) {
     functionOrMethodDeclaration(n: qc.FunctionDeclaration | MethodDeclaration | MethodSignature): void {
       this.decorators(n);
       this.signatureDeclaration(n);
-      const functionFlags = getFunctionFlags(n);
+      const functionFlags = qf.get.functionFlags(n);
       if (n.name && n.name.kind === Syntax.ComputedPropertyName) this.computedPropertyName(n.name);
       if (!hasNonBindableDynamicName(n)) {
         const symbol = getSymbolOfNode(n);
@@ -4714,7 +4714,7 @@ export function newCheck(f: qt.Frame) {
     forOfStatement(n: qc.ForOfStatement): void {
       checkGrammar.forInOrForOfStatement(n);
       if (n.awaitModifier) {
-        const functionFlags = getFunctionFlags(qf.get.containingFunction(n));
+        const functionFlags = qf.get.functionFlags(qf.get.containingFunction(n));
         if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < ScriptTarget.ESNext)
           this.externalEmitHelpers(n, ExternalEmitHelpers.ForAwaitOfIncludes);
       }
@@ -4790,7 +4790,7 @@ export function newCheck(f: qt.Frame) {
       }
       const signature = getSignatureFromDeclaration(func);
       const returnType = getReturnTypeOfSignature(signature);
-      const functionFlags = getFunctionFlags(func);
+      const functionFlags = qf.get.functionFlags(func);
       if (strictNullChecks || n.expression || returnType.flags & TypeFlags.Never) {
         const exprType = n.expression ? this.expressionCached(n.expression) : undefinedType;
         if (func.kind === Syntax.SetAccessor) {
@@ -6388,7 +6388,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       jsxExpression(n: qc.JsxExpression) {
-        if (n.expression && isCommaSequence(n.expression)) return grammarErrorOnNode(n.expression, qd.msgs.JSX_expressions_may_not_use_the_comma_operator_Did_you_mean_to_write_an_array);
+        if (n.expression && qf.is.commaSequence(n.expression)) return grammarErrorOnNode(n.expression, qd.msgs.JSX_expressions_may_not_use_the_comma_operator_Did_you_mean_to_write_an_array);
       }
       forInOrForOfStatement(forInOrOfStatement: ForInOrOfStatement): boolean {
         if (this.statementInAmbientContext(forInOrOfStatement)) return true;
@@ -6399,7 +6399,7 @@ export function newCheck(f: qt.Frame) {
               const diagnostic = qf.create.diagnosticForNode(forInOrOfStatement.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
               const func = qf.get.containingFunction(forInOrOfStatement);
               if (func && func.kind !== Syntax.Constructor) {
-                qu.assert((getFunctionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
+                qu.assert((qf.get.functionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
                 const relatedInfo = qf.create.diagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }

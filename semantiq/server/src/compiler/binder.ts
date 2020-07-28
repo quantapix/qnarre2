@@ -2132,7 +2132,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (!setCommonJsModuleIndicator(node)) {
       return;
     }
-    const assignedExpression = getRightMostAssignedExpression(node.right);
+    const assignedExpression = qf.get.rightMostAssignedExpression(node.right);
     if (qf.is.emptyObjectLiteral(assignedExpression) || (container === file && isExportsOrModuleExportsOrAlias(file, assignedExpression))) {
       return;
     }
@@ -2349,7 +2349,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       : qf.is.kind(qc.PropertyAccessExpression, node) && qf.is.kind(qc.BinaryExpression, node.parent)
       ? node.parent.right
       : undefined;
-    init = init && getRightMostAssignedExpression(init);
+    init = init && qf.get.rightMostAssignedExpression(init);
     if (init) {
       const isPrototypeAssignment = qf.is.prototypeAccess(qf.is.kind(qc.VariableDeclaration, node) ? node.name : qf.is.kind(qc.BinaryExpression, node) ? node.left : node);
       return !!qf.get.expandoIniter(

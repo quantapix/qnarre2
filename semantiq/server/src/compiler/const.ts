@@ -10,6 +10,11 @@ export const enum AssignmentDeclarationKind {
   ObjectDefinePropertyExports,
   ObjectDefinePrototypeProperty,
 }
+export const enum AssignmentKind {
+  None,
+  Definite,
+  Compound,
+}
 export const enum Associativity {
   Left,
   Right,

@@ -198,7 +198,7 @@ export function transformES2017(context: TransformationContext) {
       undefined,
       visitParameterList(node.parameters, visitor, context),
       undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
@@ -210,7 +210,7 @@ export function transformES2017(context: TransformationContext) {
       undefined,
       visitParameterList(node.parameters, visitor, context),
       undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
   function visitFunctionExpression(node: FunctionExpression): Expression {
@@ -221,7 +221,7 @@ export function transformES2017(context: TransformationContext) {
       undefined,
       visitParameterList(node.parameters, visitor, context),
       undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
   function visitArrowFunction(node: ArrowFunction) {
@@ -231,7 +231,7 @@ export function transformES2017(context: TransformationContext) {
       visitParameterList(node.parameters, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
   function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: EscapedMap<true>) {
