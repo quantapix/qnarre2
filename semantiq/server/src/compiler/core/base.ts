@@ -309,6 +309,18 @@ export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeW
 }
 export abstract class Declaration extends Nobj implements qt.Declaration {  
   _declarationBrand: any;
+  getName(comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
+    const n = qf.get.declaration.nameOf(this);
+    if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
+      const name = getMutableClone(n);
+      f |= qf.get.emitFlags(n);
+      if (!sourceMaps) f |= EmitFlags.NoSourceMap;
+      if (!comments) f |= EmitFlags.NoComments;
+      if (f) setEmitFlags(name, f);
+      return name;
+    }
+    return qf.get.generatedNameForNode(this);
+  }
 }
 export abstract class NamedDeclaration extends Declaration implements qt.NamedDeclaration {
   name?: qt.DeclarationName;
@@ -1577,7 +1589,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     this.qf.each.child(visit);
     return r;
     function addDeclaration(declaration: Declaration) {
-      const name = qf.get.declarationName(declaration);
+      const name = qf.get.declaration.name(declaration);
       if (name) r.add(name, declaration);
     }
     function getDeclarations(name: string) {
@@ -1585,7 +1597,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       if (!declarations) r.set(name, (declarations = []));
       return declarations;
     }
-    function qf.get.declarationName(declaration: Declaration) {
+    function qf.get.declaration.name(declaration: Declaration) {
       const name = qf.get.nonAssignedNameOfDeclaration(declaration);
       return (
         name &&
@@ -1599,7 +1611,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.MethodDeclaration:
         case Syntax.MethodSignature:
           const functionDeclaration = <FunctionLikeDeclaration>node;
-          const declarationName = qf.get.declarationName(functionDeclaration);
+          const declarationName = qf.get.declaration.name(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
             const lastDeclaration = qu.lastOrUndefined(declarations);
@@ -2015,194 +2027,4 @@ export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction)
     qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${format.syntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
   }
 }
-export const resolvingEmptyArray: never[] = [] as never[];
-export const externalHelpersModuleNameText = 'tslib';
-export const defaultMaximumTruncationLength = 160;
-export const noTruncationMaximumTruncationLength = 1_000_000;
-export function declarationNameToString(name: DeclarationName | QualifiedName | undefined) {
-  return !name || qf.get.fullWidth(name) === 0 ? '(Missing)' : qf.get.textOf(name);
-}
-export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxTagNameExpression | PrivateIdentifier): string {
-  switch (name.kind) {
-    case Syntax.ThisKeyword:
-      return 'this';
-    case Syntax.PrivateIdentifier:
-    case Syntax.Identifier:
-      return qf.get.fullWidth(name) === 0 ? idText(name) : qf.get.textOf(name);
-    case Syntax.QualifiedName:
-      return entityNameToString(name.left) + '.' + entityNameToString(name.right);
-    case Syntax.PropertyAccessExpression:
-      if (qf.is.kind(qc.Identifier, name.name) || qf.is.kind(qc.PrivateIdentifier, name.name)) return entityNameToString(name.expression) + '.' + entityNameToString(name.name);
-      return qu.assertNever(name.name);
-    default:
-      return qu.assertNever(name);
-  }
-}
-export function isBindableObjectDefinePropertyCall(expr: CallExpression): expr is BindableObjectDefinePropertyCall {
-  return (
-    length(expr.arguments) === 3 &&
-    qf.is.kind(qc.PropertyAccessExpression, expr.expression) &&
-    qf.is.kind(qc.Identifier, expr.expression.expression) &&
-    idText(expr.expression.expression) === 'Object' &&
-    idText(expr.expression.name) === 'defineProperty' &&
-    StringLiteral.orNumericLiteralLike(expr.arguments[1]) &&
-    qf.is.bindableStaticNameExpression(expr.arguments[0], true)
-  );
-}
-export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
-  return (
-    qf.is.inJSFile(expr) &&
-    expr.parent &&
-    expr.parent.kind === Syntax.ExpressionStatement &&
-    (!qf.is.kind(qc.ElementAccessExpression, expr) || qf.is.literalLikeElementAccess(expr)) &&
-    !!qc.getDoc.typeTag(expr.parent)
-  );
-}
-export function importFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport {
-  return tryGetImportFromModuleSpecifier(node) || qu.failBadSyntax(node.parent);
-}
-export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport | undefined {
-  switch (node.parent.kind) {
-    case Syntax.ImportDeclaration:
-    case Syntax.ExportDeclaration:
-      return node.parent as AnyValidImportOrReExport;
-    case Syntax.ExternalModuleReference:
-      return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
-    case Syntax.CallExpression:
-      return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
-    case Syntax.LiteralType:
-      assert(qf.is.kind(qc.StringLiteral, node));
-      return qu.tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
-    default:
-      return;
-  }
-}
-export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames?(): boolean }): boolean {
-  return host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : false;
-}
-export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): GetCanonicalFileName {
-  return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
-}
-export function getExternalModuleNameFromDeclaration(
-  host: ResolveModuleNameResolutionHost,
-  resolver: EmitResolver,
-  declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
-): string | undefined {
-  const file = resolver.getExternalModuleFileFromDeclaration(declaration);
-  if (!file || file.isDeclarationFile) {
-    return;
-  }
-  return getResolvedExternalModuleName(host, file);
-}
-export function getOwnEmitOutputFilePath(fileName: string, host: EmitHost, extension: string) {
-  const compilerOptions = host.getCompilerOptions();
-  let emitOutputFilePathWithoutExtension: string;
-  if (compilerOptions.outDir) {
-    emitOutputFilePathWithoutExtension = removeFileExtension(getSourceFilePathInNewDir(fileName, host, compilerOptions.outDir));
-  } else {
-    emitOutputFilePathWithoutExtension = removeFileExtension(fileName);
-  }
-  return emitOutputFilePathWithoutExtension + extension;
-}
-export function getDeclarationEmitOutputFilePath(fileName: string, host: EmitHost) {
-  return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
-}
-export function getDeclarationEmitOutputFilePathWorker(
-  fileName: string,
-  options: CompilerOptions,
-  currentDirectory: string,
-  commonSourceDirectory: string,
-  getCanonicalFileName: GetCanonicalFileName
-): string {
-  const outputDir = options.declarationDir || options.outDir;
-  const path = outputDir ? getSourceFilePathInNewDirWorker(fileName, outputDir, currentDirectory, commonSourceDirectory, getCanonicalFileName) : fileName;
-  return removeFileExtension(path) + Extension.Dts;
-}
-export interface EmitFileNames {
-  jsFilePath?: string | undefined;
-  sourceMapFilePath?: string | undefined;
-  declarationFilePath?: string | undefined;
-  declarationMapPath?: string | undefined;
-  buildInfoPath?: string | undefined;
-}
-export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newDirPath: string): string {
-  return getSourceFilePathInNewDirWorker(fileName, newDirPath, host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
-}
-export function emitNewLineBeforeLeadingComments(lineMap: readonly number[], writer: EmitTextWriter, node: TextRange, leadingComments: readonly CommentRange[] | undefined) {
-  emitNewLineBeforeLeadingCommentsOfPosition(lineMap, writer, node.pos, leadingComments);
-}
-export function emitNewLineBeforeLeadingCommentsOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, leadingComments: readonly CommentRange[] | undefined) {
-  if (
-    leadingComments &&
-    leadingComments.length &&
-    pos !== leadingComments[0].pos &&
-    getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, leadingComments[0].pos)
-  ) {
-    writer.writeLine();
-  }
-}
-export function emitNewLineBeforeLeadingCommentOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, commentPos: number) {
-  if (pos !== commentPos && getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, commentPos)) {
-    writer.writeLine();
-  }
-}
-export function tryExtractTSExtension(fileName: string): string | undefined {
-  return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
-}
-export function readJson(path: string, host: { readFile(fileName: string): string | undefined }): object {
-  try {
-    const jsonText = host.readFile(path);
-    if (!jsonText) return {};
-    const result = parseConfigFileTextToJson(path, jsonText);
-    if (result.error) return {};
-    return result.config;
-  } catch (e) {
-    return {};
-  }
-}
-export function directoryProbablyExists(directoryName: string, host: { directoryExists?: (directoryName: string) => boolean }): boolean {
-  return !host.directoryExists || host.directoryExists(directoryName);
-}
-const carriageReturnLineFeed = '\r\n';
-const lineFeed = '\n';
-export function getNewLineCharacter(options: CompilerOptions | PrinterOptions, getNewLine?: () => string): string {
-  switch (options.newLine) {
-    case NewLineKind.CarriageReturnLineFeed:
-      return carriageReturnLineFeed;
-    case NewLineKind.LineFeed:
-      return lineFeed;
-  }
-  return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
-}
-export function getInitializedVariables(node: VariableDeclarationList) {
-  return filter(node.declarations, isInitializedVariable);
-}
-function isInitializedVariable(node: VariableDeclaration) {
-  return node.initer !== undefined;
-}
-export function isWatchSet(options: CompilerOptions) {
-  return options.watch && options.hasOwnProperty('watch');
-}
-export function closeFileWatcher(watcher: FileWatcher) {
-  watcher.close();
-}
-export function forSomeAncestorDirectory(directory: string, cb: (directory: string) => boolean): boolean {
-  return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
-}
-export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
-  return qf.is.kind(qc.StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qf.get.textOf(moduleSpecifier);
-}
-export function getNameOfAccessExpression(node: AccessExpression) {
-  if (node.kind === Syntax.PropertyAccessExpression) return node.name;
-  assert(node.kind === Syntax.ElementAccessExpression);
-  return node.argumentExpression;
-}
-export function isBundleFileTextLike(section: BundleFileSection): section is BundleFileTextLike {
-  switch (section.kind) {
-    case BundleFileSectionKind.Text:
-    case BundleFileSectionKind.Internal:
-      return true;
-    default:
-      return false;
-  }
-}
+

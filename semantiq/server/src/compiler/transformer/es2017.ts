@@ -250,7 +250,7 @@ export function transformES2017(context: TransformationContext) {
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
-    const variables = getInitializedVariables(node);
+    const variables = qf.get.initializedVariables(node);
     if (variables.length === 0) {
       if (hasReceiver) return visitNode(convertToAssignmentElementTarget(node.declarations[0].name), visitor, isExpression);
       return;

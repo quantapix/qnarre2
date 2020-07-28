@@ -397,7 +397,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return {
       diagnosticMessage,
       errorNode: node,
-      typeName: qf.get.nameOfDeclaration(node.parent.parent as qt.Declaration),
+      typeName: qf.get.declaration.nameOf(node.parent.parent as qt.Declaration),
     };
   }
   function getImportEntityNameVisibilityError(): SymbolAccessibilityDiagnostic {

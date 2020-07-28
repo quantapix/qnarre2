@@ -62,7 +62,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
       if (!unidirectional) this.recordMerged(t);
     } else if (t.flags & qt.SymbolFlags.NamespaceModule) {
-      if (t !== globalThisSymbol) error(qf.get.nameOfDeclaration(this.declarations[0]), qd.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
+      if (t !== globalThisSymbol) error(qf.get.declaration.nameOf(this.declarations[0]), qd.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
     } else {
       const isEitherEnum = !!(t.flags & qt.SymbolFlags.Enum || this.flags & qt.SymbolFlags.Enum);
       const isEitherBlockScoped = !!(t.flags & qt.SymbolFlags.BlockScopedVariable || this.flags & qt.SymbolFlags.BlockScopedVariable);
@@ -1249,13 +1249,13 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         const canonicalFlags = getEffectiveDeclarationFlags(getCanonicalOverload(overloads, implementation), flagsToCheck);
         forEach(overloads, (o) => {
           const deviation = getEffectiveDeclarationFlags(o, flagsToCheck) ^ canonicalFlags;
-          if (deviation & ModifierFlags.Export) error(qf.get.nameOfDeclaration(o), qd.Overload_signatures_must_all_be_exported_or_non_exported);
+          if (deviation & ModifierFlags.Export) error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_exported_or_non_exported);
           else if (deviation & ModifierFlags.Ambient) {
-            error(qf.get.nameOfDeclaration(o), qd.Overload_signatures_must_all_be_ambient_or_non_ambient);
+            error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_ambient_or_non_ambient);
           } else if (deviation & (ModifierFlags.Private | ModifierFlags.Protected)) {
-            error(qf.get.nameOfDeclaration(o) || o, qd.Overload_signatures_must_all_be_public_private_or_protected);
+            error(qf.get.declaration.nameOf(o) || o, qd.Overload_signatures_must_all_be_public_private_or_protected);
           } else if (deviation & ModifierFlags.Abstract) {
-            error(qf.get.nameOfDeclaration(o), qd.Overload_signatures_must_all_be_abstract_or_non_abstract);
+            error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_abstract_or_non_abstract);
           }
         });
       }
@@ -1270,7 +1270,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         const canonicalHasQuestionToken = qf.has.questionToken(getCanonicalOverload(overloads, implementation));
         forEach(overloads, (o) => {
           const deviation = qf.has.questionToken(o) !== canonicalHasQuestionToken;
-          if (deviation) error(qf.get.nameOfDeclaration(o), qd.Overload_signatures_must_all_be_optional_or_required);
+          if (deviation) error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_optional_or_required);
         });
       }
     }
@@ -1362,7 +1362,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     if (duplicateFunctionDeclaration) {
       forEach(declarations, (declaration) => {
-        error(qf.get.nameOfDeclaration(declaration), qd.Duplicate_function_implementation);
+        error(qf.get.declaration.nameOf(declaration), qd.Duplicate_function_implementation);
       });
     }
     if (hasNonAmbientClass && !isConstructor && this.flags & qt.SymbolFlags.Function) {
@@ -1624,8 +1624,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       return 'default';
     }
     if (this.declarations && this.declarations.length) {
-      let d = firstDefined(this.declarations, (d) => (qf.get.nameOfDeclaration(d) ? d : undefined));
-      const name = d && qf.get.nameOfDeclaration(d);
+      let d = firstDefined(this.declarations, (d) => (qf.get.declaration.nameOf(d) ? d : undefined));
+      const name = d && qf.get.declaration.nameOf(d);
       if (d && name) {
         if (qf.is.kind(qc.CallExpression, d) && isBindableObjectDefinePropertyCall(d)) return this.name;
         if (qf.is.kind(qc.ComputedPropertyName, name) && !(this.getCheckFlags() & qt.CheckFlags.Late)) {

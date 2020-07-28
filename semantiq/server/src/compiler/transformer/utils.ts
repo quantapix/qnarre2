@@ -122,7 +122,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
           if (qc.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
-              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.get.declarationName(<FunctionDeclaration>node));
+              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.get.declaration.name(<FunctionDeclaration>node));
               hasExportDefault = true;
             }
           } else {
@@ -139,7 +139,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
           if (qc.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
-              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.get.declarationName(<ClassDeclaration>node));
+              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.get.declaration.name(<ClassDeclaration>node));
               hasExportDefault = true;
             }
           } else {

@@ -2253,3 +2253,9 @@ export namespace semver {
     return `${comparator.operator}${comparator.operand}`;
   }
 }
+export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames?(): boolean }): boolean {
+  return host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : false;
+}
+export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): GetCanonicalFileName {
+  return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
+}

@@ -2078,7 +2078,7 @@ export function newHas(f: qt.Frame) {
       }
     }
     lateBindableName(node: Declaration): node is LateBoundDeclaration | LateBoundBinaryExpressionDeclaration {
-      const name = qf.get.nameOfDeclaration(node);
+      const name = qf.get.declaration.nameOf(node);
       return !!name && isLateBindableName(name);
     }
     nonBindableDynamicName(node: Declaration) {

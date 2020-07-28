@@ -348,7 +348,7 @@ export function transformTypeScript(context: TransformationContext) {
     addConstructorDecorationStatement(statements, node);
     if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) {
       const closingBraceLocation = qc.create.tokenRange(syntax.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
-      const localName = qf.get.internalName(node);
+      const localName = qf.get.declaration.internalName(node);
       const outer = new qc.PartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
       setEmitFlags(outer, EmitFlags.NoComments);
@@ -359,7 +359,7 @@ export function transformTypeScript(context: TransformationContext) {
       insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
       const iife = qc.CallExpression.immediateArrowFunction(statements);
       setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
-      const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.get.localName(node, false, false), undefined, iife)]));
+      const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.get.declaration.localName(node, false, false), undefined, iife)]));
       varStatement.setOriginal(node);
       setCommentRange(varStatement, node);
       setSourceMapRange(varStatement, node.movePastDecorators());
@@ -370,9 +370,9 @@ export function transformTypeScript(context: TransformationContext) {
       addExportMemberAssignment(statements, node);
     } else if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression || facts & ClassFacts.HasConstructorDecorators) {
       if (facts & ClassFacts.IsDefaultExternalExport) {
-        statements.push(createExportDefault(qf.get.localName(node, false, true)));
+        statements.push(createExportDefault(qf.get.declaration.localName(node, false, true)));
       } else if (facts & ClassFacts.IsNamedExternalExport) {
-        statements.push(createExternalModuleExport(qf.get.localName(node, false, true)));
+        statements.push(createExternalModuleExport(qf.get.declaration.localName(node, false, true)));
       }
     }
     if (statements.length > 1) {
@@ -397,7 +397,7 @@ export function transformTypeScript(context: TransformationContext) {
   function createClassDeclarationHeadWithDecorators(node: ClassDeclaration, name: Identifier | undefined) {
     const location = node.movePastDecorators();
     const classAlias = getClassAliasIfNeeded(node);
-    const declName = qf.get.localName(node, false, true);
+    const declName = qf.get.declaration.localName(node, false, true);
     const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
     const members = transformClassMembers(node);
     const classExpression = new qc.ClassExpression(undefined, name, undefined, heritageClauses, members);
@@ -582,7 +582,7 @@ export function transformTypeScript(context: TransformationContext) {
       return;
     }
     const classAlias = classAliases && classAliases[getOriginalNodeId(node)];
-    const localName = qf.get.localName(node, false, true);
+    const localName = qf.get.declaration.localName(node, false, true);
     const decorate = createDecorateHelper(context, decoratorExpressions, localName);
     const expression = createAssignment(localName, classAlias ? createAssignment(classAlias, decorate) : decorate);
     setEmitFlags(expression, EmitFlags.NoComments);
@@ -1087,7 +1087,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
     if (isExportOfNamespace(node)) {
-      const variables = getInitializedVariables(node.declarationList);
+      const variables = qf.get.initializedVariables(node.declarationList);
       if (variables.length === 0) return;
 
       return setRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
@@ -1150,11 +1150,11 @@ export function transformTypeScript(context: TransformationContext) {
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
-      ? qf.get.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
-      : qf.get.localName(node, false, true);
+      ? qf.get.declaration.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
+      : qf.get.declaration.localName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
-      const localName = qf.get.localName(node, false, true);
+      const localName = qf.get.declaration.localName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
     const enumStatement = new qc.ExpressionStatement(
@@ -1244,7 +1244,7 @@ export function transformTypeScript(context: TransformationContext) {
   function addVarForEnumOrModuleDeclaration(statements: Statement[], node: ModuleDeclaration | EnumDeclaration) {
     const statement = new qc.VariableStatement(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
-      new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.get.localName(node, false, true))], currentLexicalScope.kind === Syntax.SourceFile ? NodeFlags.None : NodeFlags.Let)
+      new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.get.declaration.localName(node, false, true))], currentLexicalScope.kind === Syntax.SourceFile ? NodeFlags.None : NodeFlags.Let)
     );
     statement.setOriginal(node);
     recordEmittedDeclarationInScope(node);
@@ -1280,11 +1280,11 @@ export function transformTypeScript(context: TransformationContext) {
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
-      ? qf.get.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
-      : qf.get.localName(node, false, true);
+      ? qf.get.declaration.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
+      : qf.get.declaration.localName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
-      const localName = qf.get.localName(node, false, true);
+      const localName = qf.get.declaration.localName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
     const moduleStatement = new qc.ExpressionStatement(
@@ -1459,7 +1459,7 @@ export function transformTypeScript(context: TransformationContext) {
     return new qc.ExpressionStatement(expression);
   }
   function addExportMemberAssignment(statements: Statement[], node: ClassDeclaration | FunctionDeclaration) {
-    const expression = createAssignment(qf.get.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true), qf.get.localName(node));
+    const expression = createAssignment(qf.get.declaration.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true), qf.get.declaration.localName(node));
     setSourceMapRange(expression, createRange(node.name ? node.name.pos : node.pos, node.end));
     const statement = new qc.ExpressionStatement(expression);
     setSourceMapRange(statement, createRange(-1, node.end));
@@ -1492,10 +1492,10 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function getClassPrototype(node: ClassExpression | ClassDeclaration) {
-    return new qc.PropertyAccessExpression(qf.get.declarationName(node), 'prototype');
+    return new qc.PropertyAccessExpression(qf.get.declaration.name(node), 'prototype');
   }
   function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-    return qc.has.syntacticModifier(member, ModifierFlags.Static) ? qf.get.declarationName(node) : getClassPrototype(node);
+    return qc.has.syntacticModifier(member, ModifierFlags.Static) ? qf.get.declaration.name(node) : getClassPrototype(node);
   }
   function enableSubstitutionForNonQualifiedEnumMembers() {
     if ((enabledSubstitutions & TypeScriptSubstitutionFlags.NonQualifiedEnumMembers) === 0) {

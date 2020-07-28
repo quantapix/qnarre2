@@ -180,6 +180,18 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
     });
   }
 }
+const carriageReturnLineFeed = '\r\n';
+const lineFeed = '\n';
+export function getNewLineCharacter(options: qt.CompilerOptions | qt.PrinterOptions, getNewLine?: () => string): string {
+  switch (options.newLine) {
+    case qt.NewLineKind.CarriageReturnLineFeed:
+      return carriageReturnLineFeed;
+    case qt.NewLineKind.LineFeed:
+      return lineFeed;
+  }
+  return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
+}
+
 export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfFilesAndCompilerOptions<T>): WatchOfFilesAndCompilerOptions<T>;
 export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfConfigFile<T>): WatchOfConfigFile<T>;
 export function createWatchProgram<T extends BuilderProgram>(
@@ -1131,6 +1143,9 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   function clearCache() {
     cachedReadDirectoryResult.clear();
   }
+}
+export function closeFileWatcher(watcher: FileWatcher) {
+  watcher.close();
 }
 export enum ConfigFileProgramReloadLevel {
   None,

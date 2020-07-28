@@ -215,7 +215,7 @@ export function transformModule(context: TransformationContext) {
     }
     for (const importNode of currentModuleInfo.externalImports) {
       const externalModuleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
-      const importAliasName = qf.get.localNameForExternalImport(importNode, currentSourceFile);
+      const importAliasName = qf.get.declaration.localNameForExternalImport(importNode, currentSourceFile);
       if (externalModuleName) {
         if (includeNonAmdDependencies && importAliasName) {
           setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
@@ -232,7 +232,7 @@ export function transformModule(context: TransformationContext) {
     if (qc.is.kind(qc.ImportEqualsDeclaration, node) || qc.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)) {
       return;
     }
-    const name = qf.get.localNameForExternalImport(node, currentSourceFile)!;
+    const name = qf.get.declaration.localNameForExternalImport(node, currentSourceFile)!;
     const expr = getHelperExpressionForImport(node, name);
     if (expr === name) {
       return;
@@ -519,7 +519,7 @@ export function transformModule(context: TransformationContext) {
       }
     } else {
       if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
-        statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(qf.get.exportName(node), qf.get.localName(node))), node).setOriginal(node));
+        statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(qf.get.declaration.exportName(node), qf.get.declaration.localName(node))), node).setOriginal(node));
       }
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
@@ -557,7 +557,7 @@ export function transformModule(context: TransformationContext) {
           );
         } else {
           const exportedValue = new qc.PropertyAccessExpression(generatedName, specifier.propertyName || specifier.name);
-          statements.push(setRange(new qc.ExpressionStatement(createExportExpression(qf.get.exportName(specifier), exportedValue, true)), specifier).setOriginal(specifier));
+          statements.push(setRange(new qc.ExpressionStatement(createExportExpression(qf.get.declaration.exportName(specifier), exportedValue, true)), specifier).setOriginal(specifier));
         }
       }
       return singleOrMany(statements);
@@ -606,7 +606,7 @@ export function transformModule(context: TransformationContext) {
               undefined,
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
               node.asteriskToken,
-              qf.get.declarationName(node, true),
+              qf.get.declaration.name(node, true),
               undefined,
               Nodes.visit(node.parameters, moduleExpressionElementVisitor),
               undefined,
@@ -638,7 +638,7 @@ export function transformModule(context: TransformationContext) {
             new qc.ClassDeclaration(
               undefined,
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
-              qf.get.declarationName(node, true),
+              qf.get.declaration.name(node, true),
               undefined,
               Nodes.visit(node.heritageClauses, moduleExpressionElementVisitor),
               Nodes.visit(node.members, moduleExpressionElementVisitor)
@@ -781,8 +781,8 @@ export function transformModule(context: TransformationContext) {
   function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     if (qc.has.syntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : qf.get.declarationName(decl);
-      statements = appendExportStatement(statements, exportName, qf.get.localName(decl), decl);
+      const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : qf.get.declaration.name(decl);
+      statements = appendExportStatement(statements, exportName, qf.get.declaration.localName(decl), decl);
     }
     if (decl.name) {
       statements = appendExportsOfDeclaration(statements, decl);
@@ -790,7 +790,7 @@ export function transformModule(context: TransformationContext) {
     return statements;
   }
   function appendExportsOfDeclaration(statements: Statement[] | undefined, decl: Declaration, liveBinding?: boolean): Statement[] | undefined {
-    const name = qf.get.declarationName(decl);
+    const name = qf.get.declaration.name(decl);
     const exportSpecifiers = currentModuleInfo.exportSpecifiers.get(idText(name));
     if (exportSpecifiers) {
       for (const exportSpecifier of exportSpecifiers) {
@@ -1342,11 +1342,11 @@ export function transformSystemModule(context: TransformationContext) {
   function createSettersArray(exportStarFunction: Identifier, dependencyGroups: DependencyGroup[]) {
     const setters: Expression[] = [];
     for (const group of dependencyGroups) {
-      const localName = forEach(group.externalImports, (i) => qf.get.localNameForExternalImport(i, currentSourceFile));
+      const localName = forEach(group.externalImports, (i) => qf.get.declaration.localNameForExternalImport(i, currentSourceFile));
       const parameterName = localName ? qf.get.generatedNameForNode(localName) : createUniqueName('');
       const statements: Statement[] = [];
       for (const entry of group.externalImports) {
-        const importVariableName = qf.get.localNameForExternalImport(entry, currentSourceFile)!;
+        const importVariableName = qf.get.declaration.localNameForExternalImport(entry, currentSourceFile)!;
         switch (entry.kind) {
           case Syntax.ImportDeclaration:
             if (!entry.importClause) {
@@ -1395,7 +1395,7 @@ export function transformSystemModule(context: TransformationContext) {
   function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     if (node.importClause) {
-      hoistVariableDeclaration(qf.get.localNameForExternalImport(node, currentSourceFile)!);
+      hoistVariableDeclaration(qf.get.declaration.localNameForExternalImport(node, currentSourceFile)!);
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -1412,7 +1412,7 @@ export function transformSystemModule(context: TransformationContext) {
   function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
     assert(qc.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: Statement[] | undefined;
-    hoistVariableDeclaration(qf.get.localNameForExternalImport(node, currentSourceFile)!);
+    hoistVariableDeclaration(qf.get.declaration.localNameForExternalImport(node, currentSourceFile)!);
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
       deferredExports[id] = appendExportsOfImportEqualsDeclaration(deferredExports[id], node);
@@ -1441,7 +1441,7 @@ export function transformSystemModule(context: TransformationContext) {
           node.decorators,
           Nodes.visit(node.modifiers, modifierVisitor, isModifier),
           node.asteriskToken,
-          qf.get.declarationName(node, true),
+          qf.get.declaration.name(node, true),
           undefined,
           Nodes.visit(node.parameters, destructuringAndImportCallVisitor, qf.is.parameterDeclaration),
           undefined,
@@ -1461,7 +1461,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    const name = qf.get.localName(node);
+    const name = qf.get.declaration.localName(node);
     hoistVariableDeclaration(name);
     statements = append(
       statements,
@@ -1619,7 +1619,7 @@ export function transformSystemModule(context: TransformationContext) {
     } else if (!qc.is.generatedIdentifier(decl.name)) {
       let excludeName: string | undefined;
       if (exportSelf) {
-        statements = appendExportStatement(statements, decl.name, qf.get.localName(decl));
+        statements = appendExportStatement(statements, decl.name, qf.get.declaration.localName(decl));
         excludeName = idText(decl.name);
       }
       statements = appendExportsOfDeclaration(statements, decl, excludeName);
@@ -1631,7 +1631,7 @@ export function transformSystemModule(context: TransformationContext) {
     let excludeName: string | undefined;
     if (qc.has.syntacticModifier(decl, ModifierFlags.Export)) {
       const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? qc.asLiteral('default') : decl.name!;
-      statements = appendExportStatement(statements, exportName, qf.get.localName(decl));
+      statements = appendExportStatement(statements, exportName, qf.get.declaration.localName(decl));
       excludeName = qf.get.textOfIdentifierOrLiteral(exportName);
     }
     if (decl.name) {
@@ -1641,7 +1641,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
   function appendExportsOfDeclaration(statements: Statement[] | undefined, decl: Declaration, excludeName?: string): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
-    const name = qf.get.declarationName(decl);
+    const name = qf.get.declaration.name(decl);
     const exportSpecifiers = moduleInfo.exportSpecifiers.get(idText(name));
     if (exportSpecifiers) {
       for (const exportSpecifier of exportSpecifiers) {
@@ -1994,7 +1994,7 @@ export function transformSystemModule(context: TransformationContext) {
       if (valueDeclaration) {
         const exportContainer = resolver.getReferencedExportContainer(name, false);
         if (exportContainer && exportContainer.kind === Syntax.SourceFile) {
-          exportedNames = append(exportedNames, qf.get.declarationName(valueDeclaration));
+          exportedNames = append(exportedNames, qf.get.declaration.name(valueDeclaration));
         }
         exportedNames = addRange(exportedNames, moduleInfo && moduleInfo.exportedBindings[getOriginalNodeId(valueDeclaration)]);
       }

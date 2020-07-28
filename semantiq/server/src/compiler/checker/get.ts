@@ -1767,7 +1767,7 @@ export function newGet(f: qt.Frame) {
             if (typeNode) error(typeNode, qd.msgs.Return_type_annotation_circularly_references_itself);
             else if (noImplicitAny) {
               const declaration = <Declaration>signature.declaration;
-              const name = qf.get.nameOfDeclaration(declaration);
+              const name = qf.get.declaration.nameOf(declaration);
               if (name) {
                 error(
                   name,
@@ -2500,7 +2500,7 @@ export function newGet(f: qt.Frame) {
         if (!type && !isKnownSymbol(prop)) {
           if (prop.escName === InternalSymbol.Default) type = getLiteralType('default');
           else {
-            const name = prop.valueDeclaration && (qf.get.nameOfDeclaration(prop.valueDeclaration) as PropertyName);
+            const name = prop.valueDeclaration && (qf.get.declaration.nameOf(prop.valueDeclaration) as PropertyName);
             type = (name && getLiteralTypeFromPropertyName(name)) || getLiteralType(prop.name);
           }
         }

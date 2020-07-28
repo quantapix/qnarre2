@@ -675,10 +675,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return diagnostic;
   }
   function addDuplicateDeclarationError(node: Declaration, message: qd.Message, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
-    const errorNode = (qf.get.expandoIniter(node, false) ? qf.get.nameOfExpando(node) : qf.get.nameOfDeclaration(node)) || node;
+    const errorNode = (qf.get.expandoIniter(node, false) ? qf.get.declaration.nameOfExpando(node) : qf.get.declaration.nameOf(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
     for (const relatedNode of relatedNodes || empty) {
-      const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? qf.get.nameOfExpando(relatedNode) : qf.get.nameOfDeclaration(relatedNode)) || relatedNode;
+      const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? qf.get.declaration.nameOfExpando(relatedNode) : qf.get.declaration.nameOf(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
       const leadingMessage = qf.create.diagnosticForNode(adjustedNode, qd.msgs._0_was_also_declared_here, symbolName);
@@ -1199,7 +1199,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (lateSymbol.flags & getExcludedSymbolFlags(symbolFlags) || earlySymbol) {
           const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
           const name = (!(type.flags & qt.TypeFlags.UniqueESSymbol) && qy.get.unescUnderscores(memberName)) || declarationNameToString(declName);
-          forEach(declarations, (declaration) => error(qf.get.nameOfDeclaration(declaration) || declaration, qd.msgs.Property_0_was_also_declared_here, name));
+          forEach(declarations, (declaration) => error(qf.get.declaration.nameOf(declaration) || declaration, qd.msgs.Property_0_was_also_declared_here, name));
           error(declName || decl, qd.msgs.Duplicate_property_0, name);
           lateSymbol = new Symbol(SymbolFlags.None, memberName, qt.CheckFlags.Late);
         }
@@ -2457,7 +2457,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       default:
         diagnostic = noImplicitAny ? qd.msgs.Variable_0_implicitly_has_an_1_type : qd.msgs.Variable_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage;
     }
-    errorOrSuggestion(noImplicitAny, declaration, diagnostic, declarationNameToString(qf.get.nameOfDeclaration(declaration)), typeAsString);
+    errorOrSuggestion(noImplicitAny, declaration, diagnostic, declarationNameToString(qf.get.declaration.nameOf(declaration)), typeAsString);
   }
   function reportErrorsFromWidening(declaration: Declaration, type: Type, wideningKind?: WideningKind) {
     if (
@@ -3759,7 +3759,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     | TypeAliasDeclaration
     | InferTypeNode;
   function errorUnusedLocal(declaration: Declaration, name: string, addDiagnostic: AddUnusedDiagnostic) {
-    const node = qf.get.nameOfDeclaration(declaration) || declaration;
+    const node = qf.get.declaration.nameOf(declaration) || declaration;
     const message = qf.is.typeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;
     addDiagnostic(declaration, UnusedKind.Local, qf.create.diagnosticForNode(node, message, name));
   }
@@ -3810,7 +3810,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return type === autoType ? anyType : type === autoArrayType ? anyArrayType : type;
   }
   function errorNextVariableOrPropertyDeclarationMustHaveSameType(firstDeclaration: Declaration | undefined, firstType: Type, nextDeclaration: Declaration, nextType: Type): void {
-    const nextDeclarationName = qf.get.nameOfDeclaration(nextDeclaration);
+    const nextDeclarationName = qf.get.declaration.nameOf(nextDeclaration);
     const message =
       nextDeclaration.kind === Syntax.PropertyDeclaration || nextDeclaration.kind === Syntax.PropertySignature
         ? qd.msgs.Subsequent_property_declarations_must_have_the_same_type_Property_0_must_be_of_type_1_but_here_has_type_2

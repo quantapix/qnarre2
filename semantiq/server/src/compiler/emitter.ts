@@ -6,6 +6,70 @@ import { Syntax } from './syntax';
 import * as qy from './syntax';
 const brackets = createBracketsMap();
 const syntheticParent: TextRange = { pos: -1, end: -1 };
+export interface EmitFileNames {
+  jsFilePath?: string | undefined;
+  sourceMapFilePath?: string | undefined;
+  declarationFilePath?: string | undefined;
+  declarationMapPath?: string | undefined;
+  buildInfoPath?: string | undefined;
+}
+export function getExternalModuleNameFromDeclaration(
+  host: ResolveModuleNameResolutionHost,
+  resolver: EmitResolver,
+  declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
+): string | undefined {
+  const file = resolver.getExternalModuleFileFromDeclaration(declaration);
+  if (!file || file.isDeclarationFile) {
+    return;
+  }
+  return getResolvedExternalModuleName(host, file);
+}
+
+export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newDirPath: string): string {
+  return getSourceFilePathInNewDirWorker(fileName, newDirPath, host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
+}
+export function getOwnEmitOutputFilePath(fileName: string, host: EmitHost, extension: string) {
+  const compilerOptions = host.getCompilerOptions();
+  let emitOutputFilePathWithoutExtension: string;
+  if (compilerOptions.outDir) {
+    emitOutputFilePathWithoutExtension = removeFileExtension(getSourceFilePathInNewDir(fileName, host, compilerOptions.outDir));
+  } else {
+    emitOutputFilePathWithoutExtension = removeFileExtension(fileName);
+  }
+  return emitOutputFilePathWithoutExtension + extension;
+}
+export function getDeclarationEmitOutputFilePath(fileName: string, host: EmitHost) {
+  return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
+}
+export function getDeclarationEmitOutputFilePathWorker(
+  fileName: string,
+  options: CompilerOptions,
+  currentDirectory: string,
+  commonSourceDirectory: string,
+  getCanonicalFileName: GetCanonicalFileName
+): string {
+  const outputDir = options.declarationDir || options.outDir;
+  const path = outputDir ? getSourceFilePathInNewDirWorker(fileName, outputDir, currentDirectory, commonSourceDirectory, getCanonicalFileName) : fileName;
+  return removeFileExtension(path) + Extension.Dts;
+}
+export function emitNewLineBeforeLeadingComments(lineMap: readonly number[], writer: EmitTextWriter, node: TextRange, leadingComments: readonly CommentRange[] | undefined) {
+  emitNewLineBeforeLeadingCommentsOfPosition(lineMap, writer, node.pos, leadingComments);
+}
+export function emitNewLineBeforeLeadingCommentsOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, leadingComments: readonly CommentRange[] | undefined) {
+  if (
+    leadingComments &&
+    leadingComments.length &&
+    pos !== leadingComments[0].pos &&
+    getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, leadingComments[0].pos)
+  ) {
+    writer.writeLine();
+  }
+}
+export function emitNewLineBeforeLeadingCommentOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, commentPos: number) {
+  if (pos !== commentPos && getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, commentPos)) {
+    writer.writeLine();
+  }
+}
 export function isBuildInfoFile(file: string) {
   return fileExtensionIs(file, Extension.TsBuildInfo);
 }
@@ -803,6 +867,15 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
     return false;
   }
+  function isBundleFileTextLike(s: qt.BundleFileSection): s is qt.BundleFileTextLike {
+    switch (s.kind) {
+      case qt.BundleFileSectionKind.Text:
+      case qt.BundleFileSectionKind.Internal:
+        return true;
+    }
+    return false;
+  }
+
   function writeBundle(bundle: Bundle, output: EmitTextWriter, sourceMapGenerator: SourceMapGenerator | undefined) {
     isOwnFileEmit = false;
     const previousWriter = writer;

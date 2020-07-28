@@ -2270,3 +2270,6 @@ export function newResolve(f: qt.Frame) {
   })());
 }
 export interface Tresolve extends ReturnType<typeof newResolve> {}
+export function tryExtractTSExtension(fileName: string): string | undefined {
+  return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
+}

@@ -941,3 +941,7 @@ export enum WatchFileKind {
   UseFsEvents,
   UseFsEventsOnParentDirectory,
 }
+export const resolvingEmptyArray: never[] = [] as never[];
+export const externalHelpersModuleNameText = 'tslib';
+export const defaultMaximumTruncationLength = 160;
+export const noTruncationMaximumTruncationLength = 1_000_000;

@@ -13,7 +13,30 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.is = new (class {
-    outerExpression(n: Node | qt.Expression, k = qt.OuterExpressionKinds.All): n is qc.OuterExpression {
+    isBindableObjectDefinePropertyCall(n: qt.CallExpression): n is qc.BindableObjectDefinePropertyCall {
+      return (
+        length(n.arguments) === 3 &&
+        this.kind(qc.PropertyAccessExpression, n.expression) &&
+        this.kind(qc.Identifier, n.expression.expression) &&
+        qc.idText(n.expression.expression) === 'Object' &&
+        qc.idText(n.expression.name) === 'defineProperty' &&
+        qc.StringLiteral.orNumericLiteralLike(n.arguments[1]) &&
+        this.bindableStaticNameExpression(n.arguments[0], true)
+      );
+    }
+
+    dynamicName(d: qt.Declaration): d is qc.DynamicNamedDeclaration | qc.DynamicNamedBinaryExpression {
+      const n = qf.get.declaration.nameOf(d);
+      return !!n && qf.has.dynamicName(n);
+    }
+    parameterDeclaration(n: qt.VariableLikeDeclaration) {
+      const r = qf.get.rootDeclaration(n);
+      return r?.kind === Syntax.Parameter;
+    }
+    defaultImport(n: qt.ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration) {
+      return n.kind === Syntax.ImportDeclaration && !!n.importClause && !!n.importClause.name;
+    }
+    outerExpression(n: Node | qt.Expression, k = qt.OuterExpressionKinds.All): n is qt.OuterExpression {
       switch (n.kind) {
         case Syntax.ParenthesizedExpression:
           return (k & qt.OuterExpressionKinds.Parentheses) !== 0;
@@ -287,7 +310,7 @@ export function newIs(f: qt.Frame) {
         case Syntax.QualifiedName:
         case Syntax.ThisKeyword: {
           if (p?.kind === Syntax.TypeQuery) return false;
-          if (p?.kind === Syntax.ImportTypeNode) return !p.isTypeOf;
+          if (p?.kind === Syntax.ImportType) return !p.isTypeOf;
           if (p && Syntax.FirstTypeNode <= p.kind && p.kind <= Syntax.LastTypeNode) return true;
           console.log(n);
           switch (p?.kind) {
@@ -391,7 +414,11 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.MetaProperty && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
     }
     literalImportTypeNode(n: Node): n is qc.LiteralImportTypeNode {
-      return n.kind === Syntax.ImportType && n.argument.kind === Syntax.LiteralType && n.argument.literal.kind === Syntax.StringLiteral;
+      if (n.kind === Syntax.ImportType) {
+        const a = n.argument as Node;
+        return a.kind === Syntax.LiteralType && a.literal.kind === Syntax.StringLiteral;
+      }
+      return false;
     }
     prologueDirective(n: Node): n is qc.PrologueDirective {
       return n.kind === Syntax.ExpressionStatement && n.expression.kind === Syntax.StringLiteral;
@@ -489,8 +516,8 @@ export function newIs(f: qt.Frame) {
     shorthandAmbientModule(n: Node) {
       return n.kind === Syntax.ModuleDeclaration && !n.body;
     }
-    globalScopeAugmentation(n?: Node) {
-      return !!(n?.flags & NodeFlags.GlobalAugmentation);
+    globalScopeAugmentation(n: Node) {
+      return !!(n.flags & NodeFlags.GlobalAugmentation);
     }
     blockScopedContainerTopLevel(n: Node) {
       return n.kind === Syntax.SourceFile || n.kind === Syntax.ModuleDeclaration || this.functionLike(n);
@@ -591,7 +618,7 @@ export function newIs(f: qt.Frame) {
     nonNullChain(n: Node): n is qc.NonNullChain {
       return n.kind === Syntax.NonNullExpression && !!(n.flags & NodeFlags.OptionalChain);
     }
-    unparsedNode(n: Node): n is qc.UnparsedNode {
+    unparsedNode(n: Node): n is qt.UnparsedNode {
       const k = n.kind;
       return this.unparsedTextLike(n) || k === Syntax.UnparsedPrologue || k === Syntax.UnparsedSyntheticReference;
     }
@@ -1218,7 +1245,7 @@ export function newIs(f: qt.Frame) {
       if (n.kind === Syntax.OmittedExpression) return true;
       return this.emptyBindingPattern(n.name);
     }
-    emptyBindingPattern(n: qt.BindingName): n is qc.BindingPattern {
+    emptyBindingPattern(n: qt.BindingName): n is qt.BindingPattern {
       if (this.kind(qc.BindingPattern, n)) return qu.every(n.elements, this.emptyBindingElement);
       return false;
     }
@@ -1372,45 +1399,29 @@ export function newGet(f: qt.Frame) {
         }
         return;
       }
-      nameOfDeclaration(d: qt.Declaration | qt.Expression): qt.DeclarationName | undefined {
+      nameOf(d: qt.Declaration | qt.Expression): qt.DeclarationName | undefined {
         if (d) {
           const n = d as Node;
           if (this.nonAssignedNameOfDeclaration(d) || n.kind === Syntax.FunctionExpression || n.kind === Syntax.ClassExpression) return this.assignedName(n);
         }
         return;
       }
-
-      name(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
-        const n = this.nameOfDeclaration(d);
-        if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
-          const name = getMutableClone(n);
-          f |= this.emitFlags(n);
-          if (!sourceMaps) f |= EmitFlags.NoSourceMap;
-          if (!comments) f |= EmitFlags.NoComments;
-          if (f) setEmitFlags(name, f);
-          return name;
-        }
-        return this.generatedNameForNode(d);
-      }
-      declarationFromName(n: Node): qt.Declaration | undefined {
+      fromName(n: Node): qt.Declaration | undefined {
         const p = n.parent;
         switch (n.kind) {
           case Syntax.StringLiteral:
           case Syntax.NoSubstitutionLiteral:
           case Syntax.NumericLiteral:
-            if (p.kind === Syntax.ComputedPropertyName) return p.parent;
+            if (p?.kind === Syntax.ComputedPropertyName) return p.parent;
           case Syntax.Identifier:
             if (qf.is.declaration(p)) return p.name === n ? p : undefined;
-            else if (p.kind === Syntax.QualifiedName) {
+            else if (p?.kind === Syntax.QualifiedName) {
               const pp = p.parent;
-              return pp.kind === Syntax.DocParameterTag && pp.name === p ? pp : undefined;
+              return pp?.kind === Syntax.DocParameterTag && pp.name === p ? pp : undefined;
             } else {
-              const binExp = p?.parent;
-              return binExp.kind === Syntax.BinaryExpression &&
-                this.assignmentDeclarationKind(binExp) !== qc.AssignmentDeclarationKind.None &&
-                (binExp.left.symbol || binExp.symbol) &&
-                this.nameOfDeclaration(binExp) === n
-                ? binExp
+              const pp = p?.parent;
+              return pp?.kind === Syntax.BinaryExpression && this.assignmentDeclarationKind(pp) !== qc.AssignmentDeclarationKind.None && (pp.left.symbol || pp.symbol) && this.nameOf(pp) === n
+                ? pp
                 : undefined;
             }
           case Syntax.PrivateIdentifier:
@@ -1419,41 +1430,85 @@ export function newGet(f: qt.Frame) {
             return;
         }
       }
+      nameOfExpando(d: qt.Declaration): qt.DeclarationName | undefined {
+        const p = d.parent;
+        if (p?.kind === Syntax.BinaryExpression) {
+          const p2 = (p.operatorToken.kind === Syntax.Bar2Token || p.operatorToken.kind === Syntax.Question2Token) && p.parent?.kind === Syntax.BinaryExpression ? p.parent : p;
+          if (p2.operatorToken.kind === Syntax.EqualsToken && p2.left.kind === Syntax.Identifier) return p2.left;
+        } else if (p?.kind === Syntax.VariableDeclaration) return p.name;
+        return;
+      }
+      internalName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
+        return (d as qc.Declaration).getName(comments, sourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
+      }
+      localName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
+        return (d as qc.Declaration).getName(comments, sourceMaps, EmitFlags.LocalName);
+      }
+      exportName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean): qt.Identifier {
+        return (d as qc.Declaration).getName(comments, sourceMaps, EmitFlags.ExportName);
+      }
+      name(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
+        return (d as qc.Declaration).getName(comments, sourceMaps);
+      }
+      externalModuleOrNamespaceExportName(n: qt.Declaration, s: qt.Identifier | undefined, comments?: boolean, sourceMaps?: boolean): qt.Identifier | qt.PropertyAccessExpression {
+        if (s && qf.has.syntacticModifier(n as Node, ModifierFlags.Export)) return this.namespaceMemberName(s, this.name(n), comments, sourceMaps);
+        return this.exportName(n, comments, sourceMaps);
+      }
+      localNameForExternalImport(d: qt.ImportDeclaration | qt.ExportDeclaration | qt.ImportEqualsDeclaration, sourceFile: qt.SourceFile): qc.Identifier | undefined {
+        const d2 = this.namespaceDeclarationNode(d);
+        if (d2 && !qf.is.defaultImport(d)) {
+          const n = d2.name;
+          return qf.is.generatedIdentifier(n) ? n : new qc.Identifier(this.sourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
+        }
+        if (d.kind === Syntax.ImportDeclaration && d.importClause) return this.generatedNameForNode(d);
+        if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return this.generatedNameForNode(d);
+        return;
+      }
+      declarationNameToString(n?: qt.DeclarationName | qt.QualifiedName) {
+        return !n || this.fullWidth(n) === 0 ? '(Missing)' : this.textOf(n);
+      }
     })();
-    nameOfExpando(n: qt.Declaration): qt.DeclarationName | undefined {
-      const p = n.parent;
-      if (p?.kind === Syntax.BinaryExpression) {
-        const p2 = (p.operatorToken.kind === Syntax.Bar2Token || p.operatorToken.kind === Syntax.Question2Token) && p.parent?.kind === Syntax.BinaryExpression ? p.parent : p;
-        if (p2.operatorToken.kind === Syntax.EqualsToken && p2.left.kind === Syntax.Identifier) return p2.left;
-      } else if (p?.kind === Syntax.VariableDeclaration) return p.name;
-      return;
+    showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
+      return qf.is.kind(qc.StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qf.get.textOf(moduleSpecifier);
     }
-    internalName(n: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
-      return this.name(n, comments, sourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
-    }
-    localName(n: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
-      return this.name(n, comments, sourceMaps, EmitFlags.LocalName);
-    }
-    exportName(n: qt.Declaration, comments?: boolean, sourceMaps?: boolean): qt.Identifier {
-      return this.name(n, comments, sourceMaps, EmitFlags.ExportName);
-    }
-    declarationName(n: qt.Declaration, comments?: boolean, sourceMaps?: boolean) {
-      return this.name(n, comments, sourceMaps);
-    }
-    externalModuleOrNamespaceExportName(n: qt.Declaration, s: qt.Identifier | undefined, comments?: boolean, sourceMaps?: boolean): qt.Identifier | qt.PropertyAccessExpression {
-      if (s && qf.has.syntacticModifier(n as Node, ModifierFlags.Export)) return this.namespaceMemberName(s, this.name(n), comments, sourceMaps);
-      return this.exportName(n, comments, sourceMaps);
+    entityNameToString(n: qt.EntityNameOrEntityNameExpression | qt.JsxTagNameExpression | qt.PrivateIdentifier): string {
+      switch (n.kind) {
+        case Syntax.ThisKeyword:
+          return 'this';
+        case Syntax.PrivateIdentifier:
+        case Syntax.Identifier:
+          return qf.get.fullWidth(n) === 0 ? idText(n) : this.textOf(n);
+        case Syntax.QualifiedName:
+          return entityNameToString(n.left) + '.' + entityNameToString(n.right);
+        case Syntax.PropertyAccessExpression:
+          if (name.name.kind === Syntax.Identifier || name.name.kind === Syntax.PrivateIdentifier) return this.entityNameToString(name.expression) + '.' + this.entityNameToString(name.name);
+          return qu.assertNever(name.name);
+        default:
+          return qu.assertNever(name);
+      }
     }
     generatedNameForNode(o?: Node): qc.Identifier;
     generatedNameForNode(o: Node | undefined, f: qt.GeneratedIdentifierFlags): qc.Identifier;
     generatedNameForNode(o?: Node, f?: qt.GeneratedIdentifierFlags): qc.Identifier {
       const n = new qc.Identifier(o && o.kind === Syntax.Identifier ? qc.idText(o) : '');
       n.autoGenerateFlags = qt.GeneratedIdentifierFlags.Node | f!;
-      n.autoGenerateId = this.nextAutoGenerateId;
+      n.autoGenerateId = Nget.nextAutoGenerateId;
       n.original = o;
-      this.nextAutoGenerateId++;
+      Nget.nextAutoGenerateId++;
       return n;
     }
+    initializedVariables(n: qt.VariableDeclarationList) {
+      function initialized(n: qt.VariableDeclaration) {
+        return n.initer !== undefined;
+      }
+      return qu.filter(n.declarations, initialized);
+    }
+    nameOfAccessExpression(n: AccessExpression) {
+      if (n.kind === Syntax.PropertyAccessExpression) return n.name;
+      qu.assert(n.kind === Syntax.ElementAccessExpression);
+      return n.argumentExpression;
+    }
+
     namespaceMemberName(ns: qt.Identifier, i: qt.Identifier, comments?: boolean, sourceMaps?: boolean): qc.PropertyAccessExpression {
       const n = new qc.PropertyAccessExpression(ns, qu.isSynthesized(i) ? i : getSynthesizedClone(i));
       n.setRange(i);
@@ -1462,28 +1517,6 @@ export function newGet(f: qt.Frame) {
       if (!comments) f |= EmitFlags.NoComments;
       if (f) setEmitFlags(n, f);
       return n;
-    }
-    localNameForExternalImport(d: qt.ImportDeclaration | qt.ExportDeclaration | qt.ImportEqualsDeclaration, sourceFile: qt.SourceFile): qc.Identifier | undefined {
-      const d2 = this.namespaceDeclarationNode(d);
-      if (d2 && !this.defaultImport(d)) {
-        const n = d2.name;
-        return qf.is.generatedIdentifier(n) ? n : new qc.Identifier(this.sourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
-      }
-      if (d.kind === Syntax.ImportDeclaration && d.importClause) return this.generatedNameForNode(d);
-      if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return this.generatedNameForNode(d);
-      return;
-    }
-    defaultImport(n: qt.ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration) {
-      return n.kind === Syntax.ImportDeclaration && !!n.importClause && !!n.importClause.name;
-    }
-    dynamicName(n: qt.DeclarationName) {
-      if (!(n.kind === Syntax.ComputedPropertyName || n.kind === Syntax.ElementAccessExpression)) return false;
-      const e = n.kind === Syntax.ElementAccessExpression ? n.argumentExpression : n.expression;
-      return !qc.StringLiteral.orNumericLiteralLike(e) && !qf.is.signedNumericLiteral(e) && !qf.is.wellKnownSymbolSyntactically(e);
-    }
-    parameterDeclaration(n: qt.VariableLikeDeclaration) {
-      const r = this.rootDeclaration(n);
-      return r.kind === Syntax.Parameter;
     }
 
     nodeId(n: Node) {
@@ -2278,7 +2311,7 @@ export function newGet(f: qt.Frame) {
       return decl;
     }
     declarationIdentifier(n: qt.Declaration | qt.Expression): qt.Identifier | undefined {
-      const name = this.nameOfDeclaration(n);
+      const name = this.nameOf(n);
       return name && name.kind === Syntax.Identifier ? name : undefined;
     }
     nonAssignedNameOfDeclaration(d: qt.Declaration | qt.Expression): qt.DeclarationName | undefined {
@@ -2585,6 +2618,11 @@ export function newHas(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.has = new (class {
+    dynamicName(n: qt.DeclarationName) {
+      if (!(n.kind === Syntax.ComputedPropertyName || n.kind === Syntax.ElementAccessExpression)) return false;
+      const e = (n.kind === Syntax.ElementAccessExpression ? n.argumentExpression : n.expression) as Node;
+      return !qc.StringLiteral.orNumericLiteralLike(e) && !qf.is.signedNumericLiteral(e) && !qf.is.wellKnownSymbolSyntactically(e);
+    }
     docInheritDocTag(n: Node) {
       return qf.get.doc.tags(n).some((t) => t.tagName.text === 'inheritDoc');
     }
@@ -2631,10 +2669,6 @@ export function newHas(f: qt.Frame) {
     restParameter(n: qt.SignatureDeclaration | qt.DocSignature) {
       const l = qu.lastOrUndefined<qc.ParameterDeclaration | qt.DocParameterTag>(n.parameters);
       return !!l && qf.is.restParameter(l);
-    }
-    dynamicName(n: qt.Declaration): n is qc.DynamicNamedDeclaration | qc.DynamicNamedBinaryExpression {
-      const name = qf.get.nameOfDeclaration(n);
-      return !!name && this.dynamicName(name);
     }
   })());
 }

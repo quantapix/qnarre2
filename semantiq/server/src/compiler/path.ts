@@ -429,7 +429,7 @@ export interface ResolveModuleNameResolutionHost {
   getCommonSourceDirectory(): string;
   getCurrentDirectory(): string;
 }
-export function qf.get.externalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
+export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
   const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
   const dir = toPath(referencePath ? getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
   const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
@@ -437,6 +437,7 @@ export function qf.get.externalModuleNameFromPath(host: ResolveModuleNameResolut
   const extensionless = removeFileExtension(relativePath);
   return referencePath ? ensurePathIsNonModuleName(extensionless) : extensionless;
 }
+
 export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: string, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: qu.GetCanonicalFileName): string {
   let sourceFilePath = getNormalizedAbsolutePath(fileName, currentDirectory);
   const isSourceFileInCommonSourceDirectory = getCanonicalFileName(sourceFilePath).indexOf(getCanonicalFileName(commonSourceDirectory)) === 0;
@@ -716,4 +717,7 @@ export const emptyFileSystemEntries: FileSystemEntries = {
 };
 export interface HostWithIsSourceOfProjectReferenceRedirect {
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
+}
+export function forSomeAncestorDirectory(directory: string, cb: (directory: string) => boolean): boolean {
+  return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
 }

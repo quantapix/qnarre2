@@ -490,7 +490,7 @@ export function transformGenerators(context: TransformationContext) {
       for (const variable of node.declarationList.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      const variables = getInitializedVariables(node.declarationList);
+      const variables = qf.get.initializedVariables(node.declarationList);
       if (variables.length === 0) {
         return;
       }
@@ -917,7 +917,7 @@ export function transformGenerators(context: TransformationContext) {
       setCommentRange(name, variable.name);
       hoistVariableDeclaration(name);
     }
-    const variables = getInitializedVariables(node);
+    const variables = qf.get.initializedVariables(node);
     const numVariables = variables.length;
     let variablesWritten = 0;
     let pendingExpressions: Expression[] = [];
@@ -1099,7 +1099,7 @@ export function transformGenerators(context: TransformationContext) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      const variables = getInitializedVariables(initer);
+      const variables = qf.get.initializedVariables(initer);
       node = updateFor(
         node,
         variables.length > 0 ? inlineExpressions(map(variables, transformInitializedVariable)) : undefined,

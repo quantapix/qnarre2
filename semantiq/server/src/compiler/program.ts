@@ -95,6 +95,9 @@ export function createCompilerHostWorker(options: CompilerOptions, setParentNode
   }
   let outputFingerprints: Map<OutputFingerprint>;
   function writeFileWorker(fileName: string, data: string, writeByteOrderMark: boolean) {
+    function isWatchSet(options: CompilerOptions) {
+      return options.watch && options.hasOwnProperty('watch');
+    }
     if (!isWatchSet(options) || !system.createHash || !system.getModifiedTime) {
       system.writeFile(fileName, data, writeByteOrderMark);
       return;

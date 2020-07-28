@@ -722,6 +722,9 @@ export function resolveTypeReferenceDirective(
     resolvedTypeReferenceDirective = { primary, resolvedFileName, packageId, isExternalLibraryImport: pathContainsNodeModules(fileName) };
   }
   return { resolvedTypeReferenceDirective, failedLookupLocations };
+  function directoryProbablyExists(directoryName: string, host: { directoryExists?: (directoryName: string) => boolean }): boolean {
+    return !host.directoryExists || host.directoryExists(directoryName);
+  }
   function primaryLookup(): PathAndPackageId | undefined {
     if (typeRoots && typeRoots.length) {
       if (traceEnabled) {
@@ -768,6 +771,18 @@ export function resolveTypeReferenceDirective(
     }
   }
 }
+function readJson(path: string, host: { readFile(fileName: string): string | undefined }): object {
+  try {
+    const jsonText = host.readFile(path);
+    if (!jsonText) return {};
+    const result = parseConfigFileTextToJson(path, jsonText);
+    if (result.error) return {};
+    return result.config;
+  } catch (e) {
+    return {};
+  }
+}
+
 export function getAutomaticTypeDirectiveNames(options: CompilerOptions, host: ModuleResolutionHost): string[] {
   if (options.types) return options.types;
   const result: string[] = [];
@@ -1617,4 +1632,23 @@ export function loadModuleFromGlobalCache(
 type SearchResult<T> = { value: T | undefined } | undefined;
 function toSearchResult<T>(value: T | undefined): SearchResult<T> {
   return value !== undefined ? { value } : undefined;
+}
+export function importFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport {
+  return tryGetImportFromModuleSpecifier(node) || qu.failBadSyntax(node.parent);
+}
+export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport | undefined {
+  switch (node.parent.kind) {
+    case Syntax.ImportDeclaration:
+    case Syntax.ExportDeclaration:
+      return node.parent as AnyValidImportOrReExport;
+    case Syntax.ExternalModuleReference:
+      return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
+    case Syntax.CallExpression:
+      return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
+    case Syntax.LiteralType:
+      assert(qf.is.kind(qc.StringLiteral, node));
+      return qu.tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
+    default:
+      return;
+  }
 }
