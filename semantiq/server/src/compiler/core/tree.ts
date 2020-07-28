@@ -1488,103 +1488,8 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   get text(): string {
     return qc.idText(this);
   }
-  isInternalName() {
-    return (qf.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
-  }
-  isLocalName() {
-    return (qf.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
-  }
-  isExportName() {
-    return (qf.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
-  }
   update(ts?: Nodes<qt.TypeNode | qt.TypeParameterDeclaration>) {
     return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
-  }
-  isIdentifierName(node: Identifier): boolean {
-    let parent = node.parent;
-    switch (parent.kind) {
-      case Syntax.PropertyDeclaration:
-      case Syntax.PropertySignature:
-      case Syntax.MethodDeclaration:
-      case Syntax.MethodSignature:
-      case Syntax.GetAccessor:
-      case Syntax.SetAccessor:
-      case Syntax.EnumMember:
-      case Syntax.PropertyAssignment:
-      case Syntax.PropertyAccessExpression:
-        return (<NamedDeclaration | PropertyAccessExpression>parent).name === node;
-      case Syntax.QualifiedName:
-        if ((<QualifiedName>parent).right === node) {
-          while (parent.kind === Syntax.QualifiedName) {
-            parent = parent.parent;
-          }
-          return parent.kind === Syntax.TypeQuery || parent.kind === Syntax.TypeReference;
-        }
-        return false;
-      case Syntax.BindingElement:
-      case Syntax.ImportSpecifier:
-        return (<BindingElement | ImportSpecifier>parent).propertyName === node;
-      case Syntax.ExportSpecifier:
-      case Syntax.JsxAttribute:
-        return true;
-    }
-    return false;
-  }
-  isIdentifierANonContextualKeyword({ originalKeywordKind }: Identifier): boolean {
-    return !!originalKeywordKind && !qy.is.contextualKeyword(originalKeywordKind);
-  }
-  isPushOrUnshiftIdentifier(node: Identifier) {
-    return node.escapedText === 'push' || node.escapedText === 'unshift';
-  }
-  isDeclarationNameOfEnumOrNamespace(node: Identifier) {
-    const parseNode = qf.get.parseTreeOf(node);
-    if (parseNode) {
-      switch (parseNode.parent.kind) {
-        case Syntax.EnumDeclaration:
-        case Syntax.ModuleDeclaration:
-          return parseNode === (<EnumDeclaration | ModuleDeclaration>parseNode.parent).name;
-      }
-    }
-    return false;
-  }
-  static createTempVariable(record?: (i: Identifier) => void): Identifier;
-  static createTempVariable(record: ((i: Identifier) => void) | undefined, reserved: boolean): GeneratedIdentifier;
-  static createTempVariable(record?: (i: Identifier) => void, reserved?: boolean): GeneratedIdentifier {
-    const n = new Identifier('') as GeneratedIdentifier;
-    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Auto;
-    n.autoGenerateId = nextAutoGenerateId;
-    nextAutoGenerateId++;
-    if (record) record(n);
-    if (reserved) n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.ReservedInNestedScopes;
-    return n;
-  }
-  static createLoopVariable(): Identifier {
-    const n = new Identifier('');
-    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Loop;
-    n.autoGenerateId = nextAutoGenerateId;
-    nextAutoGenerateId++;
-    return n;
-  }
-  static createUniqueName(t: string): Identifier {
-    const n = new Identifier(t);
-    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique;
-    n.autoGenerateId = nextAutoGenerateId;
-    nextAutoGenerateId++;
-    return n;
-  }
-  static createOptimisticUniqueName(t: string): Identifier;
-  static createOptimisticUniqueName(t: string): GeneratedIdentifier;
-  static createOptimisticUniqueName(t: string): GeneratedIdentifier {
-    const n = new Identifier(t) as GeneratedIdentifier;
-    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique | qc.GeneratedIdentifierFlags.Optimistic;
-    n.autoGenerateId = nextAutoGenerateId;
-    nextAutoGenerateId++;
-    return n;
-  }
-  static createFileLevelUniqueName(t: string): Identifier {
-    const n = this.createOptimisticUniqueName(t);
-    n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
-    return n;
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
@@ -4256,7 +4161,7 @@ export namespace fixme {
     }
     return;
   }
-  export function qf.get.externalModuleNameLiteral(
+  export function getExternalModuleNameLiteral(
     importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
     sourceFile: SourceFile,
     host: EmitHost,

@@ -24,6 +24,103 @@ export function newIs(f: qt.Frame) {
         this.bindableStaticNameExpression(n.arguments[0], true)
       );
     }
+    isCommaSequence(): this is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
+      return (this.kind === Syntax.BinaryExpression && (<BinaryExpression>this).operatorToken.kind === Syntax.CommaToken) || this.kind === Syntax.CommaListExpression;
+    }
+    isSameEntityName(name: Expression, initer: Expression) {
+      if (this.propertyNameLiteral(name) && this.propertyNameLiteral(initer)) return qf.get.textOfIdentifierOrLiteral(name) === qf.get.textOfIdentifierOrLiteral(name);
+      if (
+        this.kind(qc.Identifier, name) &&
+        this.literalLikeAccess(initer) &&
+        (initer.expression.kind === Syntax.ThisKeyword ||
+          (this.kind(qc.Identifier, initer.expression) && (initer.expression.escapedText === 'window' || initer.expression.escapedText === 'self' || initer.expression.escapedText === 'global')))
+      ) {
+        const nameOrArgument = qf.get.nameOrArgument(initer);
+        if (this.kind(qc.PrivateIdentifier, nameOrArgument)) {
+          qu.fail('Unexpected qt.PrivateIdentifier in name expression with literal-like access.');
+        }
+        return isSameEntityName(name, nameOrArgument);
+      }
+      if (this.literalLikeAccess(name) && this.literalLikeAccess(initer))
+        return qf.get.elementOrPropertyAccessName(name) === qf.get.elementOrPropertyAccessName(initer) && isSameEntityName(name.expression, initer.expression);
+      return false;
+    }
+    isDefaultedExpandoIniter(n: qt.BinaryExpression) {
+      const name = this.kind(qc.VariableDeclaration, n.parent)
+        ? n.parent.name
+        : this.kind(qc.BinaryExpression, n.parent) && n.parent.operatorToken.kind === Syntax.EqualsToken
+        ? n.parent.left
+        : undefined;
+      return name && qf.get.expandoIniter(n.right, this.prototypeAccess(name)) && this.entityNameExpression(name) && isSameEntityName(name, n.left);
+    }
+    isDottedName(n: Expression): boolean {
+      return (
+        n.kind === Syntax.Identifier ||
+        n.kind === Syntax.ThisKeyword ||
+        n.kind === Syntax.SuperKeyword ||
+        (n.kind === Syntax.PropertyAccessExpression && isDottedName((<PropertyAccessExpression>n).expression)) ||
+        (n.kind === Syntax.ParenthesizedExpression && isDottedName((<ParenthesizedExpression>n).expression))
+      );
+    }
+    isUseStrictPrologue(n: qt.ExpressionStatement): boolean {
+      return this.kind(StringLiteral, n.expression) && n.expression.text === 'use strict';
+    }
+    isIdentifierName(node: Identifier): boolean {
+      let parent = node.parent;
+      switch (parent.kind) {
+        case Syntax.PropertyDeclaration:
+        case Syntax.PropertySignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.EnumMember:
+        case Syntax.PropertyAssignment:
+        case Syntax.PropertyAccessExpression:
+          return (<NamedDeclaration | PropertyAccessExpression>parent).name === node;
+        case Syntax.QualifiedName:
+          if ((<QualifiedName>parent).right === node) {
+            while (parent.kind === Syntax.QualifiedName) {
+              parent = parent.parent;
+            }
+            return parent.kind === Syntax.TypeQuery || parent.kind === Syntax.TypeReference;
+          }
+          return false;
+        case Syntax.BindingElement:
+        case Syntax.ImportSpecifier:
+          return (<BindingElement | ImportSpecifier>parent).propertyName === node;
+        case Syntax.ExportSpecifier:
+        case Syntax.JsxAttribute:
+          return true;
+      }
+      return false;
+    }
+    isIdentifierANonContextualKeyword({ originalKeywordKind }: Identifier): boolean {
+      return !!originalKeywordKind && !qy.is.contextualKeyword(originalKeywordKind);
+    }
+    isPushOrUnshiftIdentifier(node: Identifier) {
+      return node.escapedText === 'push' || node.escapedText === 'unshift';
+    }
+    isDeclarationNameOfEnumOrNamespace(node: Identifier) {
+      const parseNode = qf.get.parseTreeOf(node);
+      if (parseNode) {
+        switch (parseNode.parent.kind) {
+          case Syntax.EnumDeclaration:
+          case Syntax.ModuleDeclaration:
+            return parseNode === (<EnumDeclaration | ModuleDeclaration>parseNode.parent).name;
+        }
+      }
+      return false;
+    }
+    isInternalName() {
+      return (qf.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
+    }
+    isLocalName() {
+      return (qf.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
+    }
+    isExportName() {
+      return (qf.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
+    }
 
     dynamicName(d: qt.Declaration): d is qc.DynamicNamedDeclaration | qc.DynamicNamedBinaryExpression {
       const n = qf.get.declaration.nameOf(d);
@@ -1468,6 +1565,75 @@ export function newGet(f: qt.Frame) {
         return !n || this.fullWidth(n) === 0 ? '(Missing)' : this.textOf(n);
       }
     })();
+    getLeftmostExpression(e: qt.Expression, stopAtCallExpressions: boolean) {
+      let n = e as Node;
+      while (true) {
+        switch (n.kind) {
+          case Syntax.PostfixUnaryExpression:
+            n = n.operand as Node;
+            continue;
+          case Syntax.BinaryExpression:
+            n = n.left as Node;
+            continue;
+          case Syntax.ConditionalExpression:
+            n = n.condition as Node;
+            continue;
+          case Syntax.TaggedTemplateExpression:
+            n = n.tag as Node;
+            continue;
+          case Syntax.CallExpression:
+            if (stopAtCallExpressions) return n;
+          case Syntax.AsExpression:
+          case Syntax.ElementAccessExpression:
+          case Syntax.NonNullExpression:
+          case Syntax.PartiallyEmittedExpression:
+          case Syntax.PropertyAccessExpression:
+            n = n.expression as Node;
+            continue;
+        }
+        return n;
+      }
+    }
+    getRightMostAssignedExpression(e: qt.Expression) {
+      let n = e as Node;
+      while (qf.is.assignmentExpression(n, true)) {
+        n = n.right as Node;
+      }
+      return n;
+    }
+    getDefaultedExpandoIniter(name: Expression, initer: Expression, isPrototypeAssignment: boolean) {
+      const e =
+        qf.is.kind(qc.BinaryExpression, initer) &&
+        (initer.operatorToken.kind === Syntax.Bar2Token || initer.operatorToken.kind === Syntax.Question2Token) &&
+        this.expandoIniter(initer.right, isPrototypeAssignment);
+      if (e && isSameEntityName(name, (initer as qt.BinaryExpression).left)) return e;
+      return;
+    }
+    getExpressionAssociativity(expression: Expression) {
+      const operator = getOperator(expression);
+      const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
+      return qy.get.operatorAssociativity(expression.kind, operator, hasArguments);
+    }
+    getExpressionPrecedence(expression: Expression) {
+      const operator = getOperator(expression);
+      const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
+      return qy.get.operatorPrecedence(expression.kind, operator, hasArguments);
+    }
+    getOperator(expression: Expression): Syntax {
+      if (expression.kind === Syntax.BinaryExpression) return (<BinaryExpression>expression).operatorToken.kind;
+      else if (expression.kind === Syntax.PrefixUnaryExpression || expression.kind === Syntax.PostfixUnaryExpression) return (<PrefixUnaryExpression | PostfixUnaryExpression>expression).operator;
+      return expression.kind;
+    }
+    tryGetPropertyAccessOrIdentifierToString(expr: Expression): string | undefined {
+      if (qf.is.kind(qc.PropertyAccessExpression, expr)) {
+        const baseStr = tryGetPropertyAccessOrIdentifierToString(expr.expression);
+        if (baseStr !== undefined) return baseStr + '.' + expr.name;
+      } else if (qf.is.kind(qc.Identifier, expr)) {
+        return qy.get.unescUnderscores(expr.escapedText);
+      }
+      return;
+    }
+
     showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
       return qf.is.kind(qc.StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qf.get.textOf(moduleSpecifier);
     }
@@ -1477,14 +1643,14 @@ export function newGet(f: qt.Frame) {
           return 'this';
         case Syntax.PrivateIdentifier:
         case Syntax.Identifier:
-          return qf.get.fullWidth(n) === 0 ? idText(n) : this.textOf(n);
+          return qf.get.fullWidth(n) === 0 ? qc.idText(n) : this.textOf(n);
         case Syntax.QualifiedName:
-          return entityNameToString(n.left) + '.' + entityNameToString(n.right);
+          return this.entityNameToString(n.left) + '.' + this.entityNameToString(n.right);
         case Syntax.PropertyAccessExpression:
-          if (name.name.kind === Syntax.Identifier || name.name.kind === Syntax.PrivateIdentifier) return this.entityNameToString(name.expression) + '.' + this.entityNameToString(name.name);
-          return qu.assertNever(name.name);
+          if (n.name.kind === Syntax.Identifier || n.name.kind === Syntax.PrivateIdentifier) return this.entityNameToString(name.expression) + '.' + this.entityNameToString(name.name);
+          return qu.assertNever(n.name);
         default:
-          return qu.assertNever(name);
+          return qu.assertNever(n);
       }
     }
     generatedNameForNode(o?: Node): qc.Identifier;
@@ -2886,6 +3052,165 @@ export function newCreate(f: qt.Frame) {
     }
     tokenRange(pos: number, k: Syntax): qu.TextRange {
       return new qu.TextRange(pos, pos + qy.toString(k)!.length);
+    }
+    createExpressionFromEntityName(n: qc.EntityName | qt.Expression): qt.Expression {
+      if (qf.is.kind(QualifiedName, n)) {
+        const left = createExpressionFromEntityName(n.left);
+        const right = getMutableClone(n.right);
+        return setRange(new qc.PropertyAccessExpression(left, right), n);
+      }
+      return getMutableClone(n);
+    }
+    createExpressionForPropertyName(memberName: Exclude<qt.PropertyName, qt.PrivateIdentifier>): qt.Expression {
+      if (qf.is.kind(qc.Identifier, memberName)) return qc.asLiteral(memberName);
+      else if (qf.is.kind(qc.ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
+      return getMutableClone(memberName);
+    }
+    createExpressionForObjectLiteralElementLike(n: qt.ObjectLiteralExpression, property: qt.ObjectLiteralElementLike, receiver: Expression): qt.Expression | undefined {
+      if (property.name && qf.is.kind(qc.PrivateIdentifier, property.name)) qc.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
+      function createExpressionForAccessorDeclaration(
+        properties: Nodes<Declaration>,
+        property: qt.AccessorDeclaration & { name: Exclude<PropertyName, qt.PrivateIdentifier> },
+        receiver: Expression,
+        multiLine: boolean
+      ) {
+        const { firstAccessor, getAccessor, setAccessor } = qf.get.allAccessorDeclarations(properties, property);
+        if (property === firstAccessor) {
+          const properties: ObjectLiteralElementLike[] = [];
+          if (getAccessor) {
+            const getterFunction = new qc.FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
+            setRange(getterFunction, getAccessor);
+            getterFunction.setOriginal(getAccessor);
+            const getter = new qc.PropertyAssignment('get', getterFunction);
+            properties.push(getter);
+          }
+          if (setAccessor) {
+            const setterFunction = new qc.FunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
+            setRange(setterFunction, setAccessor);
+            setterFunction.setOriginal(setAccessor);
+            const setter = new qc.PropertyAssignment('set', setterFunction);
+            properties.push(setter);
+          }
+          properties.push(new qc.PropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
+          properties.push(new qc.PropertyAssignment('configurable', new qc.BooleanLiteral(true)));
+          const expression = setRange(
+            new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'defineProperty'), undefined, [
+              receiver,
+              createExpressionForPropertyName(property.name),
+              new qc.ObjectLiteralExpression(properties, multiLine),
+            ]),
+            firstAccessor
+          );
+          return aggregateTransformFlags(expression);
+        }
+        return;
+      }
+      function createExpressionForPropertyAssignment(property: qt.PropertyAssignment, receiver: Expression) {
+        return aggregateTransformFlags(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
+      }
+      function createExpressionForShorthandPropertyAssignment(property: qt.ShorthandPropertyAssignment, receiver: Expression) {
+        return aggregateTransformFlags(
+          setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
+        );
+      }
+      function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
+        return aggregateTransformFlags(
+          setOriginalNode(
+            setRange(
+              createAssignment(
+                createMemberAccessForPropertyName(receiver, method.name, method.name),
+                setRange(new qc.FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method).setOriginal(method)
+              ),
+              method
+            ),
+            method
+          )
+        );
+      }
+      switch (property.kind) {
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+          return createExpressionForAccessorDeclaration(n.properties, property as typeof property & { name: Exclude<PropertyName, qt.PrivateIdentifier> }, receiver, !!n.multiLine);
+        case Syntax.PropertyAssignment:
+          return createExpressionForPropertyAssignment(property, receiver);
+        case Syntax.ShorthandPropertyAssignment:
+          return createExpressionForShorthandPropertyAssignment(property, receiver);
+        case Syntax.MethodDeclaration:
+          return createExpressionForMethodDeclaration(property, receiver);
+      }
+      return;
+    }
+    createTypeCheck(value: Expression, tag: TypeOfTag) {
+      return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
+    }
+    createMemberAccessForPropertyName(target: Expression, memberName: qt.PropertyName, location?: qu.TextRange): MemberExpression {
+      if (qf.is.kind(qc.ComputedPropertyName, memberName)) return setRange(new qc.ElementAccessExpression(target, memberName.expression), location);
+      else {
+        const expression = setRange(
+          qf.is.kind(qc.Identifier, memberName) || qf.is.kind(qc.PrivateIdentifier, memberName)
+            ? new qc.PropertyAccessExpression(target, memberName)
+            : new qc.ElementAccessExpression(target, memberName),
+          memberName
+        );
+        getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
+        return expression;
+      }
+    }
+    createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: qu.TextRange) {
+      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+    }
+    createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: qu.TextRange) {
+      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+    }
+    createArraySlice(array: Expression, start?: number | Expression) {
+      const argumentsList: Expression[] = [];
+      if (start !== undefined) argumentsList.push(typeof start === 'number' ? qc.asLiteral(start) : start);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(array, 'slice'), undefined, argumentsList);
+    }
+    createArrayConcat(array: Expression, values: readonly Expression[]) {
+      return new qc.CallExpression(new qc.PropertyAccessExpression(array, 'concat'), undefined, values);
+    }
+    createMathPow(left: Expression, right: Expression, location?: qu.TextRange) {
+      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Math'), 'pow'), undefined, [left, right]), location);
+    }
+    createTempVariable(record?: (i: Identifier) => void): Identifier;
+    createTempVariable(record: ((i: Identifier) => void) | undefined, reserved: boolean): GeneratedIdentifier;
+    createTempVariable(record?: (i: Identifier) => void, reserved?: boolean): GeneratedIdentifier {
+      const n = new Identifier('') as GeneratedIdentifier;
+      n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Auto;
+      n.autoGenerateId = nextAutoGenerateId;
+      nextAutoGenerateId++;
+      if (record) record(n);
+      if (reserved) n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.ReservedInNestedScopes;
+      return n;
+    }
+    createLoopVariable(): Identifier {
+      const n = new Identifier('');
+      n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Loop;
+      n.autoGenerateId = nextAutoGenerateId;
+      nextAutoGenerateId++;
+      return n;
+    }
+    createUniqueName(t: string): Identifier {
+      const n = new Identifier(t);
+      n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique;
+      n.autoGenerateId = nextAutoGenerateId;
+      nextAutoGenerateId++;
+      return n;
+    }
+    createOptimisticUniqueName(t: string): Identifier;
+    createOptimisticUniqueName(t: string): GeneratedIdentifier;
+    createOptimisticUniqueName(t: string): GeneratedIdentifier {
+      const n = new Identifier(t) as GeneratedIdentifier;
+      n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique | qc.GeneratedIdentifierFlags.Optimistic;
+      n.autoGenerateId = nextAutoGenerateId;
+      nextAutoGenerateId++;
+      return n;
+    }
+    createFileLevelUniqueName(t: string): Identifier {
+      const n = this.createOptimisticUniqueName(t);
+      n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
+      return n;
     }
   })());
 }
