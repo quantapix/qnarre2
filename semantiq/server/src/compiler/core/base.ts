@@ -301,7 +301,7 @@ export abstract class TypeNode extends Nobj implements qt.TypeNode {
   _typeNodeBrand: any;
 }
 export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeWithTypeArguments {
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: qt.Nodes<qt.TypeNode>;
 }
 export abstract class Declaration extends Nobj implements qt.Declaration {
   _declarationBrand: any;
@@ -331,15 +331,15 @@ export abstract class ClassElement extends NamedDeclaration implements qt.ClassE
 }
 export abstract class ClassLikeDeclarationBase extends NamedDeclaration implements qt.ClassLikeDeclarationBase {
   name?: qt.Identifier;
-  typeParameters?: Nodes<qt.TypeParameterDeclaration>;
-  heritageClauses?: Nodes<qt.HeritageClause>;
-  members: Nodes<ClassElement>;
+  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
+  heritageClauses?: qt.Nodes<qt.HeritageClause>;
+  members: qt.Nodes<qt.ClassElement>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
     ts: readonly qt.TypeParameterDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
-    es: readonly ClassElement[]
+    es: readonly qt.ClassElement[]
   ) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
@@ -368,37 +368,23 @@ export const enum FunctionFlags {
 }
 export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
-  typeParameters?: Nodes<qt.TypeParameterDeclaration>;
-  parameters!: Nodes<qt.ParameterDeclaration>;
-  type?: TypeNode;
-  typeArguments?: Nodes<qt.TypeNode>;
-  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
+  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
+  parameters!: qt.Nodes<qt.ParameterDeclaration>;
+  type?: qt.TypeNode;
+  typeArguments?: qt.Nodes<qt.TypeNode>;
+  constructor(
+    s: boolean,
+    k: qt.SignatureDeclaration['kind'],
+    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ps: readonly qt.ParameterDeclaration[],
+    t?: qt.TypeNode,
+    ta?: readonly qt.TypeNode[]
+  ) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
     this.parameters = new Nodes(ps);
     this.type = t;
     this.typeArguments = Nodes.from(ta);
-  }
-  getFunctionFlags(node: SignatureDeclaration | undefined) {
-    if (!node) return FunctionFlags.Invalid;
-    let flags = FunctionFlags.Normal;
-    switch (node.kind) {
-      case Syntax.FunctionDeclaration:
-      case Syntax.FunctionExpression:
-      case Syntax.MethodDeclaration:
-        if (node.asteriskToken) {
-          flags |= FunctionFlags.Generator;
-        }
-      case Syntax.ArrowFunction:
-        if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
-          flags |= FunctionFlags.Async;
-        }
-        break;
-    }
-    if (!(node as FunctionLikeDeclaration).body) {
-      flags |= FunctionFlags.Invalid;
-    }
-    return flags;
   }
 
   /*
@@ -420,7 +406,7 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
 export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
-  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {
+  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.TypeNode) {
     super(s, k, ts, ps, t);
   }
   _typeNodeBrand: any;
@@ -584,7 +570,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
   }
 }
 export abstract class IterationStatement extends Statement implements qt.IterationStatement {
-  statement!: Statement;
+  statement!: qt.Statement;
 }
 export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
   text!: string;

@@ -13,6 +13,38 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.is = new (class {
+    isIdentifierTypePredicate(): this is qc.IdentifierTypePredicate {
+      return this.kind === qc.TypePredicateKind.Identifier;
+    }
+    isThisTypePredicate(): this is qc.ThisTypePredicate {
+      return this.kind === qc.TypePredicateKind.This;
+    }
+
+    orSetKind(n: qt.GetAccessorDeclaration): this is qt.AccessorDeclaration {
+      return this.kind === Syntax.SetAccessor || this.kind === Syntax.GetAccessor;
+    }
+
+    shouldBeCapturedInTempVariable(n: qt.Expression, cacheIdentifiers: boolean): boolean {
+      const target = skipParentheses(n) as qc.Expression | ArrayLiteralExpression | ObjectLiteralExpression;
+      switch (target.kind) {
+        case Syntax.Identifier:
+          return cacheIdentifiers;
+        case Syntax.ThisKeyword:
+        case Syntax.NumericLiteral:
+        case Syntax.BigIntLiteral:
+        case Syntax.StringLiteral:
+          return false;
+        case Syntax.ArrayLiteralExpression:
+          const elements = target.elements;
+          if (elements.length === 0) return false;
+          return true;
+        case Syntax.ObjectLiteralExpression:
+          return (<ObjectLiteralExpression>target).properties.length > 0;
+        default:
+          return true;
+      }
+    }
+
     isBindableObjectDefinePropertyCall(n: qt.CallExpression): n is qc.BindableObjectDefinePropertyCall {
       return (
         length(n.arguments) === 3 &&
@@ -1565,6 +1597,87 @@ export function newGet(f: qt.Frame) {
         return !n || this.fullWidth(n) === 0 ? '(Missing)' : this.textOf(n);
       }
     })();
+    mapBundleFileSectionKindToSyntax(kind: BundleFileSectionKind): Syntax {
+      switch (kind) {
+        case BundleFileSectionKind.Prologue:
+          return Syntax.UnparsedPrologue;
+        case BundleFileSectionKind.Prepend:
+          return Syntax.UnparsedPrepend;
+        case BundleFileSectionKind.Internal:
+          return Syntax.UnparsedInternalText;
+        case BundleFileSectionKind.Text:
+          return Syntax.UnparsedText;
+        case BundleFileSectionKind.EmitHelpers:
+        case BundleFileSectionKind.NoDefaultLib:
+        case BundleFileSectionKind.Reference:
+        case BundleFileSectionKind.Type:
+        case BundleFileSectionKind.Lib:
+          return qu.fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
+        default:
+          return qg.assertNever(kind);
+      }
+    }
+
+    orTemplateTailKind(n: Node): n is TemplateMiddle | TemplateTail {
+      const k = this.kind;
+      return k === Syntax.TemplateMiddle || k === Syntax.TemplateTail;
+    }
+
+    like(n: Node): n is qc.StringLiteralLike {
+      return n.kind === Syntax.StringLiteral || n.kind === Syntax.NoSubstitutionLiteral;
+    }
+    orNumericLiteralLike(n: Node): n is qc.StringLiteralLike | NumericLiteral {
+      return this.like(n) || n.kind === Syntax.NumericLiteral;
+    }
+    orJsxExpressionKind(n: Node): n is StringLiteral | JsxExpression {
+      const k = n.kind;
+      return k === Syntax.StringLiteral || k === Syntax.JsxExpression;
+    }
+    orNumberLiteralExpression(e: qc.Expression) {
+      return this.orNumericLiteralLike(e) || (qf.is.kind(PrefixUnaryExpression, e) && e.operator === Syntax.MinusToken && e.operand.kind === Syntax.NumericLiteral);
+    }
+
+    unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUnwrapLabelCallback?: (node: LabeledStatement) => void): Statement {
+      while (true) {
+        if (beforeUnwrapLabelCallback) {
+          beforeUnwrapLabelCallback(node);
+        }
+        if (node.statement.kind !== Syntax.LabeledStatement) return node.statement;
+        node = <LabeledStatement>node.statement;
+      }
+    }
+
+    toExpression(n: qt.FunctionDeclaration) {
+      if (!this.body) return qu.fail();
+      const e = new FunctionExpression(this.modifiers, this.asteriskToken, this.name, this.typeParameters, this.parameters, this.type, this.body);
+      e.setOriginal(this);
+      e.setRange(this);
+      if (getStartsOnNewLine(this)) setStartsOnNewLine(e, true);
+      aggregateTransformFlags(e);
+      return e;
+    }
+
+    getFunctionFlags(node: qt.SignatureDeclaration | undefined) {
+      if (!node) return FunctionFlags.Invalid;
+      let flags = FunctionFlags.Normal;
+      switch (node.kind) {
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
+        case Syntax.MethodDeclaration:
+          if (node.asteriskToken) {
+            flags |= FunctionFlags.Generator;
+          }
+        case Syntax.ArrowFunction:
+          if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
+            flags |= FunctionFlags.Async;
+          }
+          break;
+      }
+      if (!(node as FunctionLikeDeclaration).body) {
+        flags |= FunctionFlags.Invalid;
+      }
+      return flags;
+    }
     getLeftmostExpression(e: qt.Expression, stopAtCallExpressions: boolean) {
       let n = e as Node;
       while (true) {
@@ -2965,6 +3078,206 @@ export function newCreate(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.create = new (class {
+    nextAutoGenerateId = 0;
+    createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
+      const r = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
+      r.parent = parent;
+      r.data = section.data;
+    }
+
+    fromNode(n: Exclude<qc.PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
+      const r = new StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
+      r.textSourceNode = n;
+      return r;
+    }
+
+    logicalNot(e: qc.Expression) {
+      return new PrefixUnaryExpression(Syntax.ExclamationToken, e);
+    }
+
+    increment(e: qt.Expression) {
+      return new PostfixUnaryExpression(e, Syntax.Plus2Token);
+    }
+
+    recreateOuterExpressions(o: qt.Expression | undefined, i: qt.Expression, ks = qt.OuterExpressionKinds.All): qc.Expression {
+      if (o && qf.is.outerExpression(o, ks) && !qf.is.ignorableParen(o)) return o.update(recreateOuterExpressions(o.expression, i));
+      return i;
+    }
+
+    createReactNamespace(reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment) {
+      const r = new Identifier(reactNamespace || 'React');
+      r.flags &= ~NodeFlags.Synthesized;
+      r.parent = qf.get.parseTreeOf(parent);
+      return r;
+    }
+    createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
+      if (qf.is.kind(QualifiedName, jsxFactory)) {
+        const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
+        const right = new Identifier(qc.idText(jsxFactory.right));
+        right.escapedText = jsxFactory.right.escapedText;
+        return new qc.PropertyAccessExpression(left, right);
+      }
+      return createReactNamespace(qc.idText(jsxFactory), parent);
+    }
+    createJsxFactoryExpression(jsxFactoryEntity: qc.EntityName | undefined, reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
+      return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : new qc.PropertyAccessExpression(createReactNamespace(reactNamespace, parent), 'createElement');
+    }
+
+    createExpressionForJsxFragment(
+      jsxFactoryEntity: qc.EntityName | undefined,
+      reactNamespace: string,
+      children: readonly qt.Expression[],
+      parentElement: JsxOpeningFragment,
+      location: qu.TextRange
+    ): qc.LeftHandSideExpression {
+      const tagName = new qc.PropertyAccessExpression(createReactNamespace(reactNamespace, parentElement), 'Fragment');
+      const argumentsList = [<qc.Expression>tagName];
+      argumentsList.push(new qc.NullLiteral());
+      if (children && children.length > 0) {
+        if (children.length > 1) {
+          for (const c of children) {
+            startOnNewLine(c);
+            argumentsList.push(c);
+          }
+        } else argumentsList.push(children[0]);
+      }
+      return new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList).setRange(location);
+    }
+
+    createExpression(
+      jsxFactoryEntity: qc.EntityName | undefined,
+      reactNamespace: string,
+      tagName: qc.Expression,
+      props: qc.Expression,
+      children: readonly qt.Expression[],
+      parentElement: qc.JsxOpeningLikeElement,
+      location: qu.TextRange
+    ): qc.LeftHandSideExpression {
+      const argumentsList = [tagName];
+      if (props) argumentsList.push(props);
+      if (children && children.length > 0) {
+        if (!props) argumentsList.push(new NullLiteral());
+        if (children.length > 1) {
+          for (const c of children) {
+            startOnNewLine(c);
+            argumentsList.push(c);
+          }
+        } else argumentsList.push(children[0]);
+      }
+      return new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList).setRange(location);
+    }
+
+    createExternalModuleExport(exportName: Identifier) {
+      return new ExportDeclaration(undefined, undefined, new NamedExports([new ExportSpecifier(undefined, exportName)]));
+    }
+    createEmptyExports() {
+      return new ExportDeclaration(undefined, undefined, new NamedExports([]), undefined);
+    }
+
+    createExportDefault(e: qt.Expression) {
+      return new ExportAssignment(undefined, undefined, false, e);
+    }
+
+    immediateFunctionExpression(ss: readonly qt.Statement[]): CallExpression;
+    immediateFunctionExpression(ss: readonly qt.Statement[], p: ParameterDeclaration, v: qc.Expression): CallExpression;
+    immediateFunctionExpression(ss: readonly qt.Statement[], p?: ParameterDeclaration, v?: qc.Expression) {
+      return new CallExpression(new FunctionExpression(undefined, undefined, undefined, undefined, p ? [p] : [], undefined, new Block(ss, true)), undefined, v ? [v] : []);
+    }
+    immediateArrowFunction(ss: readonly qt.Statement[]): CallExpression;
+    immediateArrowFunction(ss: readonly qt.Statement[], p: ParameterDeclaration, v: qc.Expression): CallExpression;
+    immediateArrowFunction(ss: readonly qt.Statement[], p?: ParameterDeclaration, v?: qc.Expression) {
+      return new CallExpression(new ArrowFunction(undefined, undefined, p ? [p] : [], undefined, undefined, new Block(ss, true)), undefined, v ? [v] : []);
+    }
+
+    createCallBinding(e: qc.Expression, recordTempVariable: (temp: Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): CallBinding {
+      const callee = skipOuterExpressions(e, qc.OuterExpressionKinds.All);
+      let thisArg: qc.Expression;
+      let target: qc.LeftHandSideExpression;
+      if (qf.is.superProperty(callee)) {
+        thisArg = new ThisExpression();
+        target = callee;
+      } else if (callee.kind === Syntax.SuperKeyword) {
+        thisArg = new ThisExpression();
+        target = <PrimaryExpression>callee;
+      } else if (qf.get.emitFlags(callee) & qc.EmitFlags.HelperName) {
+        thisArg = VoidExpression.zero();
+        target = parenthesize.forAccess(callee);
+      } else {
+        switch (callee.kind) {
+          case Syntax.PropertyAccessExpression: {
+            if (shouldBeCapturedInTempVariable((<PropertyAccessExpression>callee).expression, cacheIdentifiers)) {
+              // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
+              thisArg = createTempVariable(recordTempVariable);
+              target = new PropertyAccessExpression(
+                createAssignment(thisArg, (<PropertyAccessExpression>callee).expression).setRange((<PropertyAccessExpression>callee).expression),
+                (<PropertyAccessExpression>callee).name
+              );
+              target.setRange(callee);
+            } else {
+              thisArg = (<PropertyAccessExpression>callee).expression;
+              target = <PropertyAccessExpression>callee;
+            }
+            break;
+          }
+          case Syntax.ElementAccessExpression: {
+            if (shouldBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
+              // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
+              thisArg = createTempVariable(recordTempVariable);
+              target = new ElementAccessExpression(
+                createAssignment(thisArg, (<ElementAccessExpression>callee).expression).setRange((<ElementAccessExpression>callee).expression),
+                (<ElementAccessExpression>callee).argumentExpression
+              );
+              target.setRange(callee);
+            } else {
+              thisArg = (<ElementAccessExpression>callee).expression;
+              target = <ElementAccessExpression>callee;
+            }
+            break;
+          }
+          default: {
+            // for `a()` target is `a` and thisArg is `void 0`
+            thisArg = VoidExpression.zero();
+            target = parenthesize.forAccess(e);
+            break;
+          }
+        }
+      }
+      return { target, thisArg };
+    }
+
+    createStrictEquality(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.Equals3Token, r);
+    }
+    createStrictInequality(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.ExclamationEquals2Token, r);
+    }
+    createAdd(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.PlusToken, r);
+    }
+    createSubtract(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.MinusToken, r);
+    }
+    createLogicalAnd(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.Ampersand2Token, r);
+    }
+    createLogicalOr(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.Bar2Token, r);
+    }
+    createNullishCoalesce(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.Question2Token, r);
+    }
+    createComma(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.CommaToken, r);
+    }
+    createLessThan(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.LessThanToken, r);
+    }
+    //createAssignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
+    createAssignment(l: qt.Expression, r: qt.Expression): qc.BinaryExpression;
+    createAssignment(l: qt.Expression, r: qt.Expression) {
+      return new qc.BinaryExpression(l, Syntax.EqualsToken, r);
+    }
+
     commentDirectivesMap(s: qt.SourceFile, ds: qt.CommentDirective[]): qt.CommentDirectivesMap {
       const ds2 = new qu.QMap(ds.map((d) => [`${qy.get.lineAndCharOf(s, d.range.end).line}`, d]));
       const ls = new qu.QMap<boolean>();
@@ -3221,6 +3534,59 @@ export function newEach(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.each = new (class {
+    forEachReturnStatement<T>(visitor: (stmt: ReturnStatement) => T): T | undefined {
+      function traverse(n: Node): T | undefined {
+        switch (n.kind) {
+          case Syntax.ReturnStatement:
+            return visitor(<ReturnStatement>n);
+          case Syntax.CaseBlock:
+          case Syntax.Block:
+          case Syntax.IfStatement:
+          case Syntax.DoStatement:
+          case Syntax.WhileStatement:
+          case Syntax.ForStatement:
+          case Syntax.ForInStatement:
+          case Syntax.ForOfStatement:
+          case Syntax.WithStatement:
+          case Syntax.SwitchStatement:
+          case Syntax.CaseClause:
+          case Syntax.DefaultClause:
+          case Syntax.LabeledStatement:
+          case Syntax.TryStatement:
+          case Syntax.CatchClause:
+            return qf.each.child(n, traverse);
+        }
+        return;
+      }
+      return traverse(this);
+    }
+    forEachYieldExpression(visitor: (expr: YieldExpression) => void): void {
+      function traverse(n: Node) {
+        switch (n.kind) {
+          case Syntax.YieldExpression:
+            visitor(<YieldExpression>n);
+            const operand = (<YieldExpression>n).expression;
+            if (operand) {
+              traverse(operand);
+            }
+            return;
+          case Syntax.EnumDeclaration:
+          case Syntax.InterfaceDeclaration:
+          case Syntax.ModuleDeclaration:
+          case Syntax.TypeAliasDeclaration:
+            return;
+          default:
+            if (qf.is.functionLike(n)) {
+              if (n.name && n.name.kind === Syntax.ComputedPropertyName) {
+                traverse(n.name.expression);
+                return;
+              }
+            } else if (!qf.is.partOfTypeNode(n)) qf.each.child(n, traverse);
+        }
+      }
+      return traverse(this);
+    }
+
     ancestor<T>(n: Node | undefined, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
       while (n) {
         const r = cb(n);

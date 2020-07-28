@@ -3,7 +3,6 @@ import * as qt from './const';
 import * as qu from './util';
 import { SourceFileLike, Syntax } from './syntax';
 import * as qy from './syntax';
-import { InvalidatedProjectBase } from './tsbuild';
 export * from './const';
 export interface AllAccessorDeclarations {
   firstAccessor: AccessorDeclaration;
