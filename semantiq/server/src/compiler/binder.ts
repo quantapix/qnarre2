@@ -1008,7 +1008,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     bind(node.expression);
     if (node.expression.kind === Syntax.CallExpression) {
       const call = <CallExpression>node.expression;
-      if (isDottedName(call.expression) && call.expression.kind !== Syntax.SuperKeyword) {
+      if (qf.is.dottedName(call.expression) && call.expression.kind !== Syntax.SuperKeyword) {
         currentFlow = createFlowCall(currentFlow, call);
       }
     }
@@ -1347,7 +1347,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     if (node.expression.kind === Syntax.PropertyAccessExpression) {
       const propertyAccess = <PropertyAccessExpression>node.expression;
-      if (qf.is.kind(qc.Identifier, propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
+      if (qf.is.kind(qc.Identifier, propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && qf.is.pushOrUnshiftIdentifier(propertyAccess.name)) {
         currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
       }
     }
@@ -1647,7 +1647,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       inStrictMode &&
       node.originalKeywordKind! >= Syntax.FirstFutureReservedWord &&
       node.originalKeywordKind! <= Syntax.LastFutureReservedWord &&
-      !isIdentifierName(node) &&
+      !qf.is.identifierName(node) &&
       !(node.flags & NodeFlags.Ambient) &&
       !(node.flags & NodeFlags.Doc)
     ) {
@@ -1811,14 +1811,14 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         if (!qf.is.prologueDirective(statement)) {
           return;
         }
-        if (isUseStrictPrologueDirective(<ExpressionStatement>statement)) {
+        if (qf.is.useStrictPrologueDirective(<ExpressionStatement>statement)) {
           inStrictMode = true;
           return;
         }
       }
     }
   }
-  function isUseStrictPrologueDirective(node: ExpressionStatement): boolean {
+  function qf.is.useStrictPrologueDirective(node: ExpressionStatement): boolean {
     const nodeText = qf.get.sourceTextOfNodeFromSourceFile(file, node.expression);
     return nodeText === '"use strict"' || nodeText === "'use strict'";
   }
@@ -2299,7 +2299,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qf.is.functionLikeDeclaration(qf.get.assignedExpandoIniter(declaration)!)) {
       includes = SymbolFlags.Method;
       excludes = SymbolFlags.MethodExcludes;
-    } else if (qf.is.kind(qc.CallExpression, declaration) && isBindableObjectDefinePropertyCall(declaration)) {
+    } else if (qf.is.kind(qc.CallExpression, declaration) && qf.is.bindableObjectDefinePropertyCall(declaration)) {
       if (
         some(declaration.arguments[2].properties, (p) => {
           const id = qf.get.declaration.nameOf(p);

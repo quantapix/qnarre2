@@ -2156,7 +2156,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (targetTypePredicate) {
         const sourceTypePredicate = getTypePredicateOfSignature(source);
         if (sourceTypePredicate) result &= compareTypePredicateRelatedTo(sourceTypePredicate, targetTypePredicate, reportErrors, errorReporter, compareTypes);
-        else if (isIdentifierTypePredicate(targetTypePredicate)) {
+        else if (qf.is.identifierTypePredicate(targetTypePredicate)) {
           if (reportErrors) errorReporter!(qd.msgs.Signature_0_must_be_a_type_predicate, signatureToString(source));
           return Ternary.False;
         }

@@ -5156,7 +5156,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.Bar2Token:
         case Syntax.Question2Token:
           const type = getContextualType(binaryExpression, contextFlags);
-          return node === right && ((type && type.pattern) || (!type && !isDefaultedExpandoIniter(binaryExpression))) ? getTypeOfExpression(left) : type;
+          return node === right && ((type && type.pattern) || (!type && !qf.is.defaultedExpandoIniter(binaryExpression))) ? getTypeOfExpression(left) : type;
         case Syntax.Ampersand2Token:
         case Syntax.CommaToken:
           return node === right ? getContextualType(binaryExpression, contextFlags) : undefined;
@@ -7177,7 +7177,7 @@ export function newGet(f: qt.Frame) {
           ) {
             return resolveExternalModuleName(node, <LiteralExpression>node, ignoreErrors);
           }
-          if (qf.is.kind(qc.CallExpression, parent) && isBindableObjectDefinePropertyCall(parent) && parent.arguments[1] === node) return getSymbolOfNode(parent);
+          if (qf.is.kind(qc.CallExpression, parent) && qf.is.bindableObjectDefinePropertyCall(parent) && parent.arguments[1] === node) return getSymbolOfNode(parent);
         case Syntax.NumericLiteral:
           const objectType = qf.is.kind(qc.ElementAccessExpression, parent)
             ? parent.argumentExpression === node

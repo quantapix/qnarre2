@@ -1627,7 +1627,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       let d = firstDefined(this.declarations, (d) => (qf.get.declaration.nameOf(d) ? d : undefined));
       const name = d && qf.get.declaration.nameOf(d);
       if (d && name) {
-        if (qf.is.kind(qc.CallExpression, d) && isBindableObjectDefinePropertyCall(d)) return this.name;
+        if (qf.is.kind(qc.CallExpression, d) && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
         if (qf.is.kind(qc.ComputedPropertyName, name) && !(this.getCheckFlags() & qt.CheckFlags.Late)) {
           const nameType = this.getLinks().nameType;
           if (nameType && nameType.flags & qt.TypeFlags.StringOrNumberLiteral) {

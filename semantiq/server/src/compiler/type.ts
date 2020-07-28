@@ -6,9 +6,9 @@ import * as qy from './syntax';
 export * from './const';
 export interface AllAccessorDeclarations {
   firstAccessor: AccessorDeclaration;
-  secondAccessor: AccessorDeclaration | undefined;
-  getAccessor: GetAccessorDeclaration | undefined;
-  setAccessor: SetAccessorDeclaration | undefined;
+  secondAccessor?: AccessorDeclaration;
+  getAccessor?: GetAccessorDeclaration;
+  setAccessor?: SetAccessorDeclaration;
 }
 export interface AmbientModuleDeclaration extends ModuleDeclaration {
   body?: ModuleBlock;
@@ -53,13 +53,13 @@ export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.AssertsIdentifier;
   parameterName: string;
   parameterIndex: number;
-  type: Type | undefined;
+  type?: Type;
 }
 export interface AssertsThisTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.AssertsThis;
   parameterName: undefined;
   parameterIndex: undefined;
-  type: Type | undefined;
+  type?: Type;
 }
 export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
   left: LeftHandSideExpression;
@@ -242,7 +242,7 @@ export interface CommandLineOptionBase {
   affectsBindDiagnostics?: true;
   affectsSemanticDiagnostics?: true;
   affectsEmit?: true;
-  transpileOptionValue?: boolean | undefined;
+  transpileOptionValue?: boolean;
 }
 export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
   type: qu.QMap<number | string>;
@@ -453,7 +453,7 @@ export interface ConditionalTypeNode extends TypeNode {
   falseType: TypeNode;
 }
 export interface ConfigFileSpecs {
-  filesSpecs: readonly string[] | undefined;
+  filesSpecs?: readonly string[];
   includeSpecs?: readonly string[];
   excludeSpecs?: readonly string[];
   validatedIncludeSpecs?: readonly string[];
@@ -902,7 +902,7 @@ export interface FlowCondition extends FlowNobj {
   antecedent: FlowNode;
 }
 export interface FlowLabel extends FlowNobj {
-  antecedents: FlowNode[] | undefined;
+  antecedents?: FlowNode[];
 }
 export interface FlowNobj {
   flags: qt.FlowFlags;
@@ -1106,8 +1106,8 @@ export interface InferenceContext {
 }
 export interface InferenceInfo {
   typeParameter: TypeParameter;
-  candidates: Type[] | undefined;
-  contraCandidates: Type[] | undefined;
+  candidates?: Type[];
+  contraCandidates?: Type[];
   inferredType?: Type;
   priority?: qt.InferencePriority;
   topLevel: boolean;
@@ -1144,10 +1144,10 @@ export interface InterfaceDeclaration extends DeclarationStatement, DocContainer
   members: Nodes<TypeElement>;
 }
 export interface InterfaceType extends ObjectType {
-  typeParameters: TypeParameter[] | undefined;
-  outerTypeParameters: TypeParameter[] | undefined;
-  localTypeParameters: TypeParameter[] | undefined;
-  thisType: TypeParameter | undefined;
+  typeParameters?: TypeParameter[];
+  outerTypeParameters?: TypeParameter[];
+  localTypeParameters?: TypeParameter[];
+  thisType?: TypeParameter;
   resolvedBaseConstructorType?: Type;
   resolvedBaseTypes: BaseType[];
 }
@@ -1871,7 +1871,7 @@ export interface ResolvedModuleFull extends ResolvedModule {
   packageId?: PackageId;
 }
 export interface ResolvedModuleWithFailedLookupLocations {
-  readonly resolvedModule: ResolvedModuleFull | undefined;
+  readonly resolvedModule?: ResolvedModuleFull;
   readonly failedLookupLocations: string[];
 }
 export interface ResolvedProjectReference {
@@ -1891,12 +1891,12 @@ export interface ResolvedType extends ObjectType, UnionOrIntersectionType {
 }
 export interface ResolvedTypeReferenceDirective {
   primary: boolean;
-  resolvedFileName: string | undefined;
+  resolvedFileName?: string;
   packageId?: PackageId;
   isExternalLibraryImport?: boolean;
 }
 export interface ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
-  readonly resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective | undefined;
+  readonly resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective;
   readonly failedLookupLocations: string[];
 }
 export interface RestTypeNode extends TypeNode {
@@ -2564,7 +2564,7 @@ export interface TypeParameterDeclaration extends NamedDeclaration {
 }
 export interface TypePredicateBase {
   kind: qt.TypePredicateKind;
-  type: Type | undefined;
+  type?: Type;
 }
 export interface TypePredicateNode extends TypeNode {
   kind: Syntax.TypePredicate;
@@ -2636,9 +2636,9 @@ export interface UnparsedSource extends Nobj {
   fileName: string;
   text: string;
   prologues: readonly UnparsedPrologue[];
-  helpers: readonly UnscopedEmitHelper[] | undefined;
+  helpers?: readonly UnscopedEmitHelper[];
   referencedFiles: readonly FileReference[];
-  typeReferenceDirectives: readonly string[] | undefined;
+  typeReferenceDirectives?: readonly string[];
   libReferenceDirectives: readonly FileReference[];
   hasNoDefaultLib?: boolean;
   sourceMapPath?: string;
@@ -2646,7 +2646,7 @@ export interface UnparsedSource extends Nobj {
   syntheticReferences?: readonly UnparsedSyntheticReference[];
   texts: readonly UnparsedSourceText[];
   oldFileOfCurrentEmit?: boolean;
-  parsedSourceMap?: RawSourceMap | false | undefined;
+  parsedSourceMap?: RawSourceMap | false;
   getLineAndCharacterOfPosition(pos: number): qy.LineAndChar;
 }
 export interface UnparsedSyntheticReference extends UnparsedSection {

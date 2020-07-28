@@ -927,7 +927,7 @@ export function transformModule(context: TransformationContext) {
       qc.is.kind(qc.Identifier, node.left) &&
       !qc.is.generatedIdentifier(node.left) &&
       !isLocalName(node.left) &&
-      !isDeclarationNameOfEnumOrNamespace(node.left)
+      !qf.is.declarationNameOfEnumOrNamespace(node.left)
     ) {
       const exportedNames = getExports(node.left);
       if (exportedNames) {
@@ -947,7 +947,7 @@ export function transformModule(context: TransformationContext) {
       qc.is.kind(qc.Identifier, node.operand) &&
       !qc.is.generatedIdentifier(node.operand) &&
       !isLocalName(node.operand) &&
-      !isDeclarationNameOfEnumOrNamespace(node.operand)
+      !qf.is.declarationNameOfEnumOrNamespace(node.operand)
     ) {
       const exportedNames = getExports(node.operand);
       if (exportedNames) {
@@ -1948,7 +1948,7 @@ export function transformSystemModule(context: TransformationContext) {
       qc.is.kind(qc.Identifier, node.left) &&
       !qc.is.generatedIdentifier(node.left) &&
       !isLocalName(node.left) &&
-      !isDeclarationNameOfEnumOrNamespace(node.left)
+      !qf.is.declarationNameOfEnumOrNamespace(node.left)
     ) {
       const exportedNames = getExports(node.left);
       if (exportedNames) {
@@ -1967,7 +1967,7 @@ export function transformSystemModule(context: TransformationContext) {
       qc.is.kind(qc.Identifier, node.operand) &&
       !qc.is.generatedIdentifier(node.operand) &&
       !isLocalName(node.operand) &&
-      !isDeclarationNameOfEnumOrNamespace(node.operand)
+      !qf.is.declarationNameOfEnumOrNamespace(node.operand)
     ) {
       const exportedNames = getExports(node.operand);
       if (exportedNames) {

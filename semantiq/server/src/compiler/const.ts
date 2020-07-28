@@ -168,6 +168,13 @@ export const enum FlowFlags {
   Label = BranchLabel | LoopLabel,
   Condition = TrueCondition | FalseCondition,
 }
+export const enum FunctionFlags {
+  Normal = 0,
+  Generator = 1 << 0,
+  Async = 1 << 1,
+  Invalid = 1 << 2,
+  AsyncGenerator = Async | Generator,
+}
 export const enum GeneratedIdentifierFlags {
   None = 0,
   Auto = 1,

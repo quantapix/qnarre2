@@ -1222,7 +1222,7 @@ export function newIs(f: qt.Frame) {
       const parent = root.parent;
       const isLengthPushOrUnshift =
         this.kind(qc.PropertyAccessExpression, parent) &&
-        (parent.name.escapedText === 'length' || (parent.parent.kind === Syntax.CallExpression && this.kind(qc.Identifier, parent.name) && isPushOrUnshiftIdentifier(parent.name)));
+        (parent.name.escapedText === 'length' || (parent.parent.kind === Syntax.CallExpression && this.kind(qc.Identifier, parent.name) && qf.is.pushOrUnshiftIdentifier(parent.name)));
       const isElementAssignment =
         parent.kind === Syntax.ElementAccessExpression &&
         (<ElementAccessExpression>parent).expression === root &&
@@ -1678,7 +1678,7 @@ export function newIs(f: qt.Frame) {
     }
     readonlyAssignmentDeclaration(d: Declaration) {
       if (!this.kind(qc.CallExpression, d)) return false;
-      if (!isBindableObjectDefinePropertyCall(d)) return false;
+      if (!qf.is.bindableObjectDefinePropertyCall(d)) return false;
       const objectLitType = check.expressionCached(d.arguments[2]);
       const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qu.__String);
       if (valueType) {

@@ -359,13 +359,6 @@ export abstract class TypeElement extends NamedDeclaration implements qt.TypeEle
   questionToken?: qt.QuestionToken;
   _typeElementBrand: any;
 }
-export const enum FunctionFlags {
-  Normal = 0,
-  Generator = 1 << 0,
-  Async = 1 << 1,
-  Invalid = 1 << 2,
-  AsyncGenerator = Async | Generator,
-}
 export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
@@ -487,7 +480,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     while (statementOffset < numStatements) {
       const statement = source[statementOffset];
       if (qf.is.prologueDirective(statement)) {
-        if (isUseStrictPrologue(statement)) foundUseStrict = true;
+        if (qf.is.useStrictPrologue(statement)) foundUseStrict = true;
         target.push(statement);
       } else {
         break;
@@ -524,14 +517,14 @@ export abstract class Statement extends Nobj implements qt.Statement {
   findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
     for (const statement of statements) {
       if (qf.is.prologueDirective(statement)) {
-        if (isUseStrictPrologue(statement)) return statement;
+        if (qf.is.useStrictPrologue(statement)) return statement;
       } else break;
     }
     return;
   }
   startsWithUseStrict(statements: readonly Statement[]) {
     const firstStatement = qu.firstOrUndefined(statements);
-    return firstStatement !== undefined && qf.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
+    return firstStatement !== undefined && qf.is.prologueDirective(firstStatement) && qf.is.useStrictPrologue(firstStatement);
   }
   createForOfBindingStatement(n: ForIniter, boundValue: Expression): Statement {
     if (qf.is.kind(qc.VariableDeclarationList, n)) {

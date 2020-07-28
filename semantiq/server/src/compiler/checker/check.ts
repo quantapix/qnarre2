@@ -2427,7 +2427,7 @@ export function newCheck(f: qt.Frame) {
       const returnType = getReturnTypeOfSignature(signature);
       if (returnType.flags & TypeFlags.ESSymbolLike && isSymbolOrSymbolForCall(n)) return getESSymbolLikeTypeForNode(walkUpParenthesizedExpressions(n.parent));
       if (n.kind === Syntax.CallExpression && n.parent.kind === Syntax.ExpressionStatement && returnType.flags & TypeFlags.Void && getTypePredicateOfSignature(signature)) {
-        if (!isDottedName(n.expression)) error(n.expression, qd.msgs.Assertions_require_the_call_target_to_be_an_identifier_or_qualified_name);
+        if (!qf.is.dottedName(n.expression)) error(n.expression, qd.msgs.Assertions_require_the_call_target_to_be_an_identifier_or_qualified_name);
         else if (!getEffectsSignature(n)) {
           const diagnostic = error(n.expression, qd.msgs.Assertions_require_every_name_in_the_call_target_to_be_declared_with_an_explicit_type_annotation);
           getTypeOfDottedName(n.expression, diagnostic);

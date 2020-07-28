@@ -744,7 +744,7 @@ export function newCreate(f: qt.Frame) {
         },
         getJsxFactoryEntity,
         qf.get.allAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
-          accessor = qf.get.parseTreeOf(accessor, GetAccessorDeclaration.orSetKind)!;
+          accessor = qf.get.parseTreeOf(accessor, qf.is.getOrSetKind)!;
           const otherKind = accessor.kind === Syntax.SetAccessor ? Syntax.GetAccessor : Syntax.SetAccessor;
           const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(accessor), otherKind);
           const firstAccessor = otherAccessor && otherAccessor.pos < accessor.pos ? otherAccessor : accessor;
