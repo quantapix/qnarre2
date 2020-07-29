@@ -302,7 +302,7 @@ export abstract class TypeNode extends Nobj implements qt.TypeNode {
 export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeWithTypeArguments {
   typeArguments?: qt.Nodes<qt.TypeNode>;
 }
-export abstract class Declaration extends Nobj implements qt.Declaration {
+export abstract class Dobj extends Nobj implements qt.Dobj {
   _declarationBrand: any;
   getName(comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
     const n = qf.get.declaration.nameOf(this);
@@ -317,18 +317,18 @@ export abstract class Declaration extends Nobj implements qt.Declaration {
     return qf.get.generatedNameForNode(this);
   }
 }
-export abstract class NamedDeclaration extends Declaration implements qt.NamedDeclaration {
+export abstract class NamedDobj extends Dobj implements qt.NamedDobj {
   name?: qt.DeclarationName;
 }
-export abstract class DeclarationStatement extends NamedDeclaration implements qt.DeclarationStatement {
+export abstract class DeclarationSobj extends NamedDobj implements qt.DeclarationSobj {
   name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
   _statementBrand: any;
 }
-export abstract class ClassElement extends NamedDeclaration implements qt.ClassElement {
+export abstract class ClassElement extends NamedDobj implements qt.ClassElement {
   name?: qt.PropertyName;
   _classElementBrand: any;
 }
-export abstract class ClassLikeDeclarationBase extends NamedDeclaration implements qt.ClassLikeDeclarationBase {
+export abstract class ClassLikeDobj extends NamedDobj implements qt.ClassLikeDobj {
   name?: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
@@ -346,19 +346,19 @@ export abstract class ClassLikeDeclarationBase extends NamedDeclaration implemen
     this.members = new Nodes(es);
   }
 }
-export abstract class ObjectLiteralElement extends NamedDeclaration implements qt.ObjectLiteralElement {
+export abstract class ObjectLiteralElement extends NamedDobj implements qt.ObjectLiteralElement {
   name?: qt.PropertyName;
   _objectLiteralBrand: any;
 }
-export abstract class PropertyLikeDeclaration extends NamedDeclaration implements qt.PropertyLikeDeclaration {
+export abstract class PropertyLikeDobj extends NamedDobj implements qt.PropertyLikeDobj {
   name!: qt.PropertyName;
 }
-export abstract class TypeElement extends NamedDeclaration implements qt.TypeElement {
+export abstract class TypeElement extends NamedDobj implements qt.TypeElement {
   name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
   _typeElementBrand: any;
 }
-export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
+export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDobj {
   name?: qt.PropertyName;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   parameters!: qt.Nodes<qt.ParameterDeclaration>;
@@ -385,7 +385,7 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
   }
   */
 }
-export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
+export abstract class FunctionLikeDobj extends SignatureDobj implements qt.FunctionLikeDobj {
   docCache?: readonly qt.DocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
@@ -395,7 +395,7 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
+export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDobj implements qt.FunctionOrConstructorTypeNodeBase {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.TypeNode) {
@@ -421,7 +421,7 @@ export abstract class MemberExpression extends LeftHandSideExpression implements
 export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
   _primaryExpressionBrand: any;
 }
-export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElement> extends PrimaryExpression implements qt.ObjectLiteralExpressionBase<T> {
+export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElement> extends PrimaryExpression implements qt.ObjectLiteralEobj<T> {
   properties!: Nodes<T>;
   _declarationBrand: any;
 }
@@ -785,7 +785,7 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qu.__String, 
       else this.set(id, s);
     });
     function addDeclarationDiagnostic(id: string, m: qd.Message) {
-      return (d: Declaration) => diagnostics.add(qf.create.diagnosticForNode(d, m, id));
+      return (d: qt.Declaration) => diagnostics.add(qf.create.diagnosticForNode(d, m, id));
     }
   }
   merge(ss: SymbolTable<S>, unidirectional = false) {
@@ -948,7 +948,7 @@ export class Signature implements qt.Signature {
     return !!(s.flags & SignatureFlags.HasLiteralTypes);
   }
 }
-export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceFile {
+export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
   static readonly kind = Syntax.SourceFile;
   kind: Syntax.SourceFile;
   statements: Nodes<Statement>;
@@ -1035,7 +1035,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   resolvedTypeReferenceDirectiveNames!: qu.QMap<ResolvedTypeReferenceDirective>;
   imports!: readonly StringLiteralLike[];
   moduleAugmentations!: StringLiteral[];
-  private namedDeclarations: qu.QMap<Declaration[]> | undefined;
+  private namedDeclarations: qu.QMap<qt.Declaration[]> | undefined;
   ambientModuleNames!: string[];
   checkJsDirective: CheckJsDirective | undefined;
   errorExpectations: qu.TextRange[] | undefined;
@@ -1133,9 +1133,9 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     const fullText = this.getFullText();
     return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
   }
-  getNamedDeclarations(): qu.QMap<Declaration[]> {
+  getNamedDobjs(): qu.QMap<qt.Declaration[]> {
     if (!this.namedDeclarations) {
-      this.namedDeclarations = this.computeNamedDeclarations();
+      this.namedDeclarations = this.computeNamedDobjs();
     }
     return this.namedDeclarations;
   }
@@ -1261,11 +1261,11 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     }
     return node;
   }
-  private computeNamedDeclarations(): qu.QMap<Declaration[]> {
-    const r = new qu.MultiMap<Declaration>();
+  private computeNamedDobjs(): qu.QMap<qt.Declaration[]> {
+    const r = new qu.MultiMap<qt.Declaration>();
     qf.each.child(visit);
     return r;
-    function addDeclaration(declaration: Declaration) {
+    function addDeclaration(declaration: qt.Declaration) {
       const name = qf.get.declaration.name(declaration);
       if (name) r.add(name, declaration);
     }
@@ -1274,7 +1274,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       if (!declarations) r.set(name, (declarations = []));
       return declarations;
     }
-    function getDeclarationName(declaration: Declaration) {
+    function getDeclarationName(declaration: qt.Declaration) {
       const name = qf.get.nonAssignedNameOfDeclaration(declaration);
       return (
         name &&
@@ -1312,7 +1312,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
         case Syntax.TypeLiteral:
-          addDeclaration(<Declaration>node);
+          addDeclaration(<qt.Declaration>node);
           forEach.child(node, visit);
           break;
         case Syntax.Parameter:
@@ -1329,7 +1329,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.EnumMember:
         case Syntax.PropertyDeclaration:
         case Syntax.PropertySignature:
-          addDeclaration(<Declaration>node);
+          addDeclaration(<qt.Declaration>node);
           break;
         case Syntax.ExportDeclaration:
           const exportDeclaration = <ExportDeclaration>node;
@@ -1741,7 +1741,7 @@ export function createGetSymbolWalker(
 function getDocComment(ds?: readonly qt.Declaration[], tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
   if (!ds) return qu.empty;
   let c = Doc.getDocCommentsFromDeclarations(ds);
-  const findInherited = (d: Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
+  const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
     return qu.firstDefined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
       const superType = tc?.getTypeAtLocation(n);
       const baseProperty = superType && tc?.getPropertyOfType(superType, pName);
@@ -1760,9 +1760,9 @@ function getDocComment(ds?: readonly qt.Declaration[], tc?: qt.TypeChecker): qt.
 export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
   return Scanner.lineOf(lineMap, pos);
 }
-qu.addMixins(ClassLikeDeclarationBase, [DocContainer]);
+qu.addMixins(ClassLikeDobj, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
-qu.addMixins(ObjectLiteralExpressionBase, [Declaration]);
+qu.addMixins(ObjectLiteralEobj, [Dobj]);
 qu.addMixins(LiteralExpression, [LiteralLikeNode]);
 export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
   return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);

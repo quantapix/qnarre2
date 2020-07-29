@@ -2195,11 +2195,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         Debug.failBadSyntax(thisContainer);
     }
   }
-  function bindDynamicallyNamedThisNode(PropertyAssignment, node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol) {
+  function bindDynamicallyNamedThisNode(PropertyAssignment, node: BinaryExpression | DynamicNamedDobj, symbol: Symbol) {
     bindAnonymousDeclaration(node, SymbolFlags.Property, InternalSymbol.Computed);
     addLateBoundAssignmentDeclarationToSymbol(node, symbol);
   }
-  function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol | undefined) {
+  function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDobj, symbol: Symbol | undefined) {
     if (symbol) {
       const members = symbol.assignmentDeclarationMembers || (symbol.assignmentDeclarationMembers = createMap());
       members.set('' + qf.get.nodeId(node), node);

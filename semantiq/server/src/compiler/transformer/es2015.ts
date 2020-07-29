@@ -2118,7 +2118,7 @@ function isNameOfDeclarationWithCollidingName(node: qc.Identifier) {
     case Syntax.ClassDeclaration:
     case Syntax.EnumDeclaration:
     case Syntax.VariableDeclaration:
-      return (<NamedDeclaration>node.parent).name === node && resolver.isDeclarationWithCollidingName(<Declaration>node.parent);
+      return (<NamedDobj>node.parent).name === node && resolver.isDeclarationWithCollidingName(<Declaration>node.parent);
   }
   return false;
 }

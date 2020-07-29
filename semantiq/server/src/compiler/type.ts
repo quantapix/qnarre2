@@ -38,7 +38,7 @@ export interface ArrayTypeNode extends TypeNode {
   kind: Syntax.ArrayType;
   elementType: TypeNode;
 }
-export interface ArrowFunction extends FunctionLikeDeclarationBase, Expression, DocContainer {
+export interface ArrowFunction extends FunctionLikeDobj, Expression, DocContainer {
   kind: Syntax.ArrowFunction;
   equalsGreaterThanToken: EqualsGreaterThanToken;
   body: ConciseBody;
@@ -75,7 +75,7 @@ export interface BigIntLiteral extends LiteralExpression {
 export interface BigIntLiteralType extends LiteralType {
   value: PseudoBigInt;
 }
-export interface BinaryExpression extends Expression, Declaration {
+export interface BinaryExpression extends Expression, Dobj {
   kind: Syntax.BinaryExpression;
   left: Expression;
   operatorToken: BinaryOperatorToken;
@@ -87,7 +87,7 @@ export interface BindablePropertyAssignmentExpression extends BinaryExpression {
 export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
   left: BindableStaticAccessExpression;
 }
-export interface BindingElement extends NamedDeclaration {
+export interface BindingElement extends NamedDobj {
   kind: Syntax.BindingElement;
   parent?: BindingPattern;
   propertyName?: PropertyName;
@@ -164,14 +164,14 @@ export interface CallChain extends CallExpression {
 export interface CallChainRoot extends CallChain {
   questionDotToken: QuestionDotToken;
 }
-export interface CallExpression extends LeftHandSideExpression, Declaration {
+export interface CallExpression extends LeftHandSideExpression, Dobj {
   kind: Syntax.CallExpression;
   expression: LeftHandSideExpression;
   questionDotToken?: QuestionDotToken;
   typeArguments?: Nodes<TypeNode>;
   arguments: Nodes<Expression>;
 }
-export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
+export interface CallSignatureDeclaration extends SignatureDobj, TypeElement {
   kind: Syntax.CallSignature;
 }
 export interface CancellationToken {
@@ -199,22 +199,22 @@ export interface CatchClause extends Nobj {
 export interface CheckJsDirective extends qu.Range {
   enabled: boolean;
 }
-export interface ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
+export interface ClassDeclaration extends ClassLikeDobj, DeclarationSobj {
   kind: Syntax.ClassDeclaration;
   name?: Identifier;
 }
-export interface ClassElement extends NamedDeclaration {
+export interface ClassElement extends NamedDobj {
   _classElementBrand: any;
   name?: PropertyName;
 }
-export interface ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
+export interface ClassExpression extends ClassLikeDobj, PrimaryExpression {
   kind: Syntax.ClassExpression;
 }
 export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
   readonly class: ClassLikeDeclaration;
   readonly isImplements: boolean;
 }
-export interface ClassLikeDeclarationBase extends NamedDeclaration, DocContainer {
+export interface ClassLikeDobj extends NamedDobj, DocContainer {
   kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
@@ -460,7 +460,7 @@ export interface ConfigFileSpecs {
   validatedExcludeSpecs?: readonly string[];
   wildcardDirectories: qu.MapLike<qt.WatchDirectoryFlags>;
 }
-export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, DocContainer {
+export interface ConstructorDeclaration extends FunctionLikeDobj, ClassElement, DocContainer {
   kind: Syntax.Constructor;
   parent?: ClassLikeDeclaration;
   body?: FunctionBody;
@@ -468,7 +468,7 @@ export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, Cla
 export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
   kind: Syntax.ConstructorType;
 }
-export interface ConstructSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
+export interface ConstructSignatureDeclaration extends SignatureDobj, TypeElement {
   kind: Syntax.ConstructSignature;
 }
 export interface ContinueStatement extends Statement {
@@ -495,10 +495,7 @@ export interface CustomTransformers {
 export interface DebuggerStatement extends Statement {
   kind: Syntax.DebuggerStatement;
 }
-export interface Declaration extends Nobj {
-  _declarationBrand: any;
-}
-export interface DeclarationStatement extends NamedDeclaration, Statement {
+export interface DeclarationSobj extends NamedDobj, Statement {
   name?: Identifier | StringLiteral | NumericLiteral;
 }
 export interface Decorator extends Nobj {
@@ -524,6 +521,9 @@ export interface DidYouMeanOptionsDiagnostics {
   unknownOptionDiagnostic: qd.Message;
   unknownDidYouMeanDiagnostic: qd.Message;
 }
+export interface Dobj extends Nobj {
+  _declarationBrand: any;
+}
 export interface Doc extends Nobj {
   kind: Syntax.DocComment;
   parent?: HasDoc;
@@ -540,9 +540,9 @@ export interface DocAugmentsTag extends DocTag {
 export interface DocAuthorTag extends DocTag {
   kind: Syntax.DocAuthorTag;
 }
-export interface DocCallbackTag extends DocTag, NamedDeclaration {
-  parent?: Doc;
+export interface DocCallbackTag extends DocTag, NamedDobj {
   kind: Syntax.DocCallbackTag;
+  parent?: Doc;
   fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
   typeExpression: DocSignature;
@@ -554,12 +554,12 @@ export interface DocContainer {
   doc?: Doc[];
   docCache?: readonly DocTag[];
 }
-export interface DocEnumTag extends DocTag, Declaration {
-  parent?: Doc;
+export interface DocEnumTag extends DocTag, Dobj {
   kind: Syntax.DocEnumTag;
+  parent?: Doc;
   typeExpression?: DocTypeExpression;
 }
-export interface DocFunctionType extends DocType, SignatureDeclarationBase {
+export interface DocFunctionType extends DocType, SignatureDobj {
   kind: Syntax.DocFunctionType;
 }
 export interface DocImplementsTag extends DocTag {
@@ -592,7 +592,7 @@ export interface DocParameterTag extends DocPropertyLikeTag {
 export interface DocPrivateTag extends DocTag {
   kind: Syntax.DocPrivateTag;
 }
-export interface DocPropertyLikeTag extends DocTag, Declaration {
+export interface DocPropertyLikeTag extends DocTag, Dobj {
   parent?: Doc;
   name: EntityName;
   typeExpression?: DocTypeExpression;
@@ -615,7 +615,7 @@ export interface DocReturnTag extends DocTag {
   kind: Syntax.DocReturnTag;
   typeExpression?: DocTypeExpression;
 }
-export interface DocSignature extends DocType, Declaration {
+export interface DocSignature extends DocType, Dobj {
   kind: Syntax.DocSignature;
   typeParameters?: readonly DocTemplateTag[];
   parameters: readonly DocParameterTag[];
@@ -639,7 +639,7 @@ export interface DocThisTag extends DocTag {
 export interface DocType extends TypeNode {
   _docTypeBrand: any;
 }
-export interface DocTypedefTag extends DocTag, NamedDeclaration {
+export interface DocTypedefTag extends DocTag, NamedDobj {
   parent?: Doc;
   kind: Syntax.DocTypedefTag;
   fullName?: DocNamespaceDeclaration | Identifier;
@@ -689,7 +689,7 @@ export interface DoStatement extends IterationStatement {
 export interface DynamicNamedBinaryExpression extends BinaryExpression {
   left: ElementAccessExpression;
 }
-export interface DynamicNamedDeclaration extends NamedDeclaration {
+export interface DynamicNamedDobj extends NamedDobj {
   name: ComputedPropertyName;
 }
 export interface ElementAccessChain extends ElementAccessExpression {
@@ -751,7 +751,7 @@ export interface EmitResolver {
   isTopLevelValueImportEqualsWithEntityName(node: ImportEqualsDeclaration): boolean;
   getNodeCheckFlags(node: Node): qt.NodeCheckFlags;
   isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
-  isLateBound(node: Declaration): node is LateBoundDeclaration;
+  isLateBound(node: Dobj): node is LateBoundDobj;
   collectLinkedAliases(node: Identifier, setVisibility?: boolean): Node[] | undefined;
   isImplementationOfOverload(node: FunctionLikeDeclaration): boolean | undefined;
   isRequiredInitializedParameter(node: ParameterDeclaration): boolean;
@@ -784,7 +784,7 @@ export interface EmitResolver {
   getAllAccessorDeclarations(declaration: AccessorDeclaration): AllAccessorDeclarations;
   getSymbolOfExternalModuleSpecifier(node: StringLiteralLike): Symbol | undefined;
   isBindingCapturedByNode(node: Node, decl: VariableDeclaration | BindingElement): boolean;
-  getDeclarationStatementsForSourceFile(node: SourceFile, flags: qt.NodeBuilderFlags, tracker: SymbolTracker, bundled?: boolean): Statement[] | undefined;
+  getDeclarationSobjsForSourceFile(node: SourceFile, flags: qt.NodeBuilderFlags, tracker: SymbolTracker, bundled?: boolean): Statement[] | undefined;
   isImportRequiredByAugmentation(decl: ImportDeclaration): boolean;
 }
 export interface EmitResult {
@@ -820,12 +820,12 @@ export interface EmptyStatement extends Statement {
 export interface EndOfDeclarationMarker extends Statement {
   kind: Syntax.EndOfDeclarationMarker;
 }
-export interface EnumDeclaration extends DeclarationStatement, DocContainer {
+export interface EnumDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.EnumDeclaration;
   name: Identifier;
   members: Nodes<EnumMember>;
 }
-export interface EnumMember extends NamedDeclaration, DocContainer {
+export interface EnumMember extends NamedDobj, DocContainer {
   kind: Syntax.EnumMember;
   parent?: EnumDeclaration;
   name: PropertyName;
@@ -841,20 +841,20 @@ export interface ExpandResult {
   wildcardDirectories: qu.MapLike<qt.WatchDirectoryFlags>;
   spec: ConfigFileSpecs;
 }
-export interface ExportAssignment extends DeclarationStatement {
+export interface ExportAssignment extends DeclarationSobj {
   kind: Syntax.ExportAssignment;
   parent?: SourceFile;
   isExportEquals?: boolean;
   expression: Expression;
 }
-export interface ExportDeclaration extends DeclarationStatement, DocContainer {
+export interface ExportDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.ExportDeclaration;
   parent?: SourceFile | ModuleBlock;
   isTypeOnly: boolean;
   exportClause?: NamedExportBindings;
   moduleSpecifier?: Expression;
 }
-export interface ExportSpecifier extends NamedDeclaration {
+export interface ExportSpecifier extends NamedDobj {
   kind: Syntax.ExportSpecifier;
   parent?: NamedExports;
   propertyName?: Identifier;
@@ -953,17 +953,17 @@ export interface FreshableIntrinsicType extends IntrinsicType {
 export interface FreshObjectLiteralType extends ResolvedType {
   regularType: ResolvedType;
 }
-export interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
+export interface FunctionDeclaration extends FunctionLikeDobj, DeclarationSobj {
   kind: Syntax.FunctionDeclaration;
   name?: Identifier;
   body?: FunctionBody;
 }
-export interface FunctionExpression extends PrimaryExpression, FunctionLikeDeclarationBase, DocContainer {
+export interface FunctionExpression extends PrimaryExpression, FunctionLikeDobj, DocContainer {
   kind: Syntax.FunctionExpression;
   name?: Identifier;
   body: FunctionBody;
 }
-export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
+export interface FunctionLikeDobj extends SignatureDobj {
   _functionLikeDeclarationBrand: any;
   asteriskToken?: AsteriskToken;
   questionToken?: QuestionToken;
@@ -972,7 +972,7 @@ export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
   endFlowNode?: FlowNode;
   returnFlowNode?: FlowNode;
 }
-export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
+export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDobj {
   kind: Syntax.FunctionType | Syntax.ConstructorType;
   type: TypeNode;
 }
@@ -986,7 +986,7 @@ export interface GenericType extends InterfaceType, TypeReference {
   instantiations: qu.QMap<TypeReference>;
   variances?: qt.VarianceFlags[];
 }
-export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
+export interface GetAccessorDeclaration extends FunctionLikeDobj, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.GetAccessor;
   parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
@@ -1002,7 +1002,7 @@ export interface HeritageClause extends Nobj {
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
   types: Nodes<ExpressionWithTypeArguments>;
 }
-export interface Identifier extends PrimaryExpression, Declaration {
+export interface Identifier extends PrimaryExpression, Dobj {
   kind: Syntax.Identifier;
   escapedText: qu.__String;
   originalKeywordKind?: Syntax;
@@ -1027,7 +1027,7 @@ export interface IfStatement extends Statement {
 export interface ImportCall extends CallExpression {
   expression: ImportExpression;
 }
-export interface ImportClause extends NamedDeclaration {
+export interface ImportClause extends NamedDobj {
   kind: Syntax.ImportClause;
   parent?: ImportDeclaration;
   isTypeOnly: boolean;
@@ -1040,7 +1040,7 @@ export interface ImportDeclaration extends Statement {
   importClause?: ImportClause;
   moduleSpecifier: Expression;
 }
-export interface ImportEqualsDeclaration extends DeclarationStatement, DocContainer {
+export interface ImportEqualsDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.ImportEqualsDeclaration;
   parent?: SourceFile | ModuleBlock;
   name: Identifier;
@@ -1053,7 +1053,7 @@ export interface ImportMetaProperty extends MetaProperty {
   keywordToken: Syntax.ImportKeyword;
   name: Identifier & { escapedText: qu.__String & 'meta' };
 }
-export interface ImportSpecifier extends NamedDeclaration {
+export interface ImportSpecifier extends NamedDobj {
   kind: Syntax.ImportSpecifier;
   parent?: NamedImports;
   propertyName?: Identifier;
@@ -1086,7 +1086,7 @@ export interface IndexInfo {
   isReadonly: boolean;
   declaration?: IndexSignatureDeclaration;
 }
-export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
+export interface IndexSignatureDeclaration extends SignatureDobj, ClassElement, TypeElement {
   kind: Syntax.IndexSignature;
   parent?: ObjectTypeDeclaration;
 }
@@ -1136,7 +1136,7 @@ export interface InstantiableType extends Type {
   resolvedIndexType?: IndexType;
   resolvedStringIndexType?: IndexType;
 }
-export interface InterfaceDeclaration extends DeclarationStatement, DocContainer {
+export interface InterfaceDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.InterfaceDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
@@ -1203,7 +1203,7 @@ export interface JsxAttribute extends ObjectLiteralElement {
   name: Identifier;
   initer?: StringLiteral | JsxExpression;
 }
-export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
+export interface JsxAttributes extends ObjectLiteralEobj<JsxAttributeLike> {
   kind: Syntax.JsxAttributes;
   parent?: JsxOpeningLikeElement;
 }
@@ -1288,7 +1288,7 @@ export interface LabeledStatement extends Statement, DocContainer {
 export interface LateBoundBinaryExpressionDeclaration extends DynamicNamedBinaryExpression {
   left: LateBoundElementAccessExpression;
 }
-export interface LateBoundDeclaration extends DynamicNamedDeclaration {
+export interface LateBoundDobj extends DynamicNamedDobj {
   name: LateBoundName;
 }
 export interface LateBoundElementAccessExpression extends ElementAccessExpression {
@@ -1329,7 +1329,7 @@ export interface MappedType extends AnonymousType {
   modifiersType?: Type;
   resolvedApparentType?: Type;
 }
-export interface MappedTypeNode extends TypeNode, Declaration {
+export interface MappedTypeNode extends TypeNode, Dobj {
   kind: Syntax.MappedType;
   readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
   typeParameter: TypeParameterDeclaration;
@@ -1347,18 +1347,18 @@ export interface MetaProperty extends PrimaryExpression {
   keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
   name: Identifier;
 }
-export interface MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
+export interface MethodDeclaration extends FunctionLikeDobj, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.MethodDeclaration;
   parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
   body?: FunctionBody;
 }
-export interface MethodSignature extends SignatureDeclarationBase, TypeElement {
+export interface MethodSignature extends SignatureDobj, TypeElement {
   kind: Syntax.MethodSignature;
   parent?: ObjectTypeDeclaration;
   name: PropertyName;
 }
-export interface MissingDeclaration extends DeclarationStatement {
+export interface MissingDeclaration extends DeclarationSobj {
   kind: Syntax.MissingDeclaration;
   name?: Identifier;
 }
@@ -1367,7 +1367,7 @@ export interface ModuleBlock extends Statement {
   parent?: ModuleDeclaration;
   statements: Nodes<Statement>;
 }
-export interface ModuleDeclaration extends DeclarationStatement, DocContainer {
+export interface ModuleDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.ModuleDeclaration;
   parent?: ModuleBody | SourceFile;
   name: ModuleName;
@@ -1394,7 +1394,7 @@ export interface ModuleSpecifierResolutionHost {
   getProjectReferenceRedirect(fileName: string): string | undefined;
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
 }
-export interface NamedDeclaration extends Declaration {
+export interface NamedDobj extends Dobj {
   name?: DeclarationName;
 }
 export interface NamedExports extends Nobj {
@@ -1407,7 +1407,7 @@ export interface NamedImports extends Nobj {
   parent?: ImportClause;
   elements: Nodes<ImportSpecifier>;
 }
-export interface NamedTupleMember extends TypeNode, DocContainer, Declaration {
+export interface NamedTupleMember extends TypeNode, DocContainer, Dobj {
   kind: Syntax.NamedTupleMember;
   dot3Token?: Token<Syntax.Dot3Token>;
   name: Identifier;
@@ -1418,21 +1418,21 @@ export interface NamespaceDeclaration extends ModuleDeclaration {
   name: Identifier;
   body: NamespaceBody;
 }
-export interface NamespaceExport extends NamedDeclaration {
+export interface NamespaceExport extends NamedDobj {
   kind: Syntax.NamespaceExport;
   parent?: ExportDeclaration;
   name: Identifier;
 }
-export interface NamespaceExportDeclaration extends DeclarationStatement {
+export interface NamespaceExportDeclaration extends DeclarationSobj {
   kind: Syntax.NamespaceExportDeclaration;
   name: Identifier;
 }
-export interface NamespaceImport extends NamedDeclaration {
+export interface NamespaceImport extends NamedDobj {
   kind: Syntax.NamespaceImport;
   parent?: ImportClause;
   name: Identifier;
 }
-export interface NewExpression extends PrimaryExpression, Declaration {
+export interface NewExpression extends PrimaryExpression, Dobj {
   kind: Syntax.NewExpression;
   expression: LeftHandSideExpression;
   typeArguments?: Nodes<TypeNode>;
@@ -1502,7 +1502,7 @@ export interface NonNullExpression extends LeftHandSideExpression {
   kind: Syntax.NonNullExpression;
   expression: Expression;
 }
-export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
+export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Dobj {
   kind: Syntax.NoSubstitutionLiteral;
   templateFlags?: qt.TokenFlags;
 }
@@ -1518,7 +1518,7 @@ export interface NullLiteral extends PrimaryExpression, TypeNode {
 export interface NumberLiteralType extends LiteralType {
   value: number;
 }
-export interface NumericLiteral extends LiteralExpression, Declaration {
+export interface NumericLiteral extends LiteralExpression, Dobj {
   kind: Syntax.NumericLiteral;
   numericLiteralFlags: qt.TokenFlags;
 }
@@ -1530,15 +1530,15 @@ export interface ObjectBindingPattern extends Nobj {
 export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
   left: ObjectLiteralExpression;
 }
-export interface ObjectLiteralElement extends NamedDeclaration {
+export interface ObjectLiteralElement extends NamedDobj {
   _objectLiteralBrand: any;
   name?: PropertyName;
 }
-export interface ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> {
+export interface ObjectLiteralExpression extends ObjectLiteralEobj<ObjectLiteralElementLike> {
   kind: Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
 }
-export interface ObjectLiteralExpressionBase<T extends ObjectLiteralElement> extends PrimaryExpression, Declaration {
+export interface ObjectLiteralEobj<T extends ObjectLiteralElement> extends PrimaryExpression, Dobj {
   properties: Nodes<T>;
 }
 export interface ObjectType extends Type {
@@ -1563,7 +1563,7 @@ export interface PackageId {
   subModuleName: string;
   version: string;
 }
-export interface ParameterDeclaration extends NamedDeclaration, DocContainer {
+export interface ParameterDeclaration extends NamedDobj, DocContainer {
   kind: Syntax.Parameter;
   parent?: SignatureDeclaration;
   dot3Token?: Dot3Token;
@@ -1783,7 +1783,7 @@ export interface PropertyAccessEntityNameExpression extends PropertyAccessExpres
   expression: EntityNameExpression;
   name: Identifier;
 }
-export interface PropertyAccessExpression extends MemberExpression, NamedDeclaration {
+export interface PropertyAccessExpression extends MemberExpression, NamedDobj {
   kind: Syntax.PropertyAccessExpression;
   expression: LeftHandSideExpression;
   questionDotToken?: QuestionDotToken;
@@ -1813,7 +1813,7 @@ export interface PropertyDescriptorAttributes {
   get?: Expression;
   set?: Expression;
 }
-export interface PropertyLikeDeclaration extends NamedDeclaration {
+export interface PropertyLikeDobj extends NamedDobj {
   name: PropertyName;
 }
 export interface PropertySignature extends TypeElement, DocContainer {
@@ -1927,7 +1927,7 @@ export interface SemicolonClassElement extends ClassElement {
   kind: Syntax.SemicolonClassElement;
   parent?: ClassLikeDeclaration;
 }
-export interface SetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
+export interface SetAccessorDeclaration extends FunctionLikeDobj, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.SetAccessor;
   parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
@@ -1961,7 +1961,7 @@ export interface Signature {
   isolatedSignatureType?: ObjectType;
   instantiations?: qu.QMap<Signature>;
 }
-export interface SignatureDeclarationBase extends NamedDeclaration, DocContainer {
+export interface SignatureDobj extends NamedDobj, DocContainer {
   kind: SignatureDeclaration['kind'];
   name?: PropertyName;
   typeParameters?: Nodes<TypeParameterDeclaration>;
@@ -1969,7 +1969,7 @@ export interface SignatureDeclarationBase extends NamedDeclaration, DocContainer
   type?: TypeNode;
   typeArguments?: Nodes<TypeNode>;
 }
-export interface SourceFile extends Declaration {
+export interface SourceFile extends Dobj {
   kind: Syntax.SourceFile;
   statements: Nodes<Statement>;
   endOfFileToken: Token<Syntax.EndOfFileToken>;
@@ -2084,7 +2084,7 @@ export interface SpreadElement extends Expression {
 export interface Statement extends Nobj {
   _statementBrand: any;
 }
-export interface StringLiteral extends LiteralExpression, Declaration {
+export interface StringLiteral extends LiteralExpression, Dobj {
   kind: Syntax.StringLiteral;
   textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
   singleQuote?: boolean;
@@ -2331,7 +2331,7 @@ export interface TypeAcquisition {
   exclude?: string[];
   [option: string]: string[] | boolean | undefined;
 }
-export interface TypeAliasDeclaration extends DeclarationStatement, DocContainer {
+export interface TypeAliasDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.TypeAliasDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
@@ -2525,12 +2525,12 @@ export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   readonly redirectTargetsMap: RedirectTargetsMap;
 }
-export interface TypeElement extends NamedDeclaration {
+export interface TypeElement extends NamedDobj {
   _typeElementBrand: any;
   name?: PropertyName;
   questionToken?: QuestionToken;
 }
-export interface TypeLiteralNode extends TypeNode, Declaration {
+export interface TypeLiteralNode extends TypeNode, Dobj {
   kind: Syntax.TypeLiteral;
   members: Nodes<TypeElement>;
 }
@@ -2554,7 +2554,7 @@ export interface TypeParameter extends InstantiableType {
   isThisType?: boolean;
   resolvedDefaultType?: Type;
 }
-export interface TypeParameterDeclaration extends NamedDeclaration {
+export interface TypeParameterDeclaration extends NamedDobj {
   kind: Syntax.TypeParameter;
   parent?: DeclarationWithTypeParameterChildren | InferTypeNode;
   name: Identifier;
@@ -2680,7 +2680,7 @@ export interface UserPreferences {
 export interface ValidImportTypeNode extends ImportTypeNode {
   argument: LiteralTypeNode & { literal: StringLiteral };
 }
-export interface VariableDeclaration extends NamedDeclaration {
+export interface VariableDeclaration extends NamedDobj {
   kind: Syntax.VariableDeclaration;
   parent?: VariableDeclarationList | CatchClause;
   name: BindingName;
@@ -2816,6 +2816,65 @@ export type CompoundAssignmentOperator =
   | Syntax.SlashEqualsToken;
 export type ConciseBody = FunctionBody | Expression;
 export type CustomTransformerFactory = (context: TransformationContext) => CustomTransformer;
+export type Declaration =
+  | ArrowFunction
+  | BinaryExpression
+  | BindingElement
+  | CallExpression
+  | CallSignatureDeclaration
+  | ClassDeclaration
+  | ClassExpression
+  | ConstructorDeclaration
+  | ConstructorTypeNode
+  | ConstructSignatureDeclaration
+  | DocCallbackTag
+  | DocEnumTag
+  | DocFunctionType
+  | DocParameterTag
+  | DocPropertyTag
+  | DocSignature
+  | DocTypedefTag
+  | EnumDeclaration
+  | EnumMember
+  | ExportAssignment
+  | ExportDeclaration
+  | ExportSpecifier
+  | FunctionDeclaration
+  | FunctionExpression
+  | FunctionTypeNode
+  | GetAccessorDeclaration
+  | Identifier
+  | ImportClause
+  | ImportEqualsDeclaration
+  | ImportSpecifier
+  | IndexSignatureDeclaration
+  | InterfaceDeclaration
+  | JsxAttributes
+  | MappedTypeNode
+  | MethodDeclaration
+  | MethodSignature
+  | MissingDeclaration
+  | ModuleDeclaration
+  | NamedTupleMember
+  | NamespaceExportDeclaration
+  | NamespaceImport
+  | NewExpression
+  | NoSubstitutionLiteral
+  | NumericLiteral
+  | ObjectLiteralElement
+  | ObjectLiteralExpression
+  | ParameterDeclaration
+  | PropertyAccessExpression
+  | PropertyDeclaration
+  | PropertySignature
+  | SemicolonClassElement
+  | SetAccessorDeclaration
+  | SourceFile
+  | StringLiteral
+  | TypeAliasDeclaration
+  | TypeLiteralNode
+  | TypeParameterDeclaration
+  | VariableDeclaration;
 export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElementAccessExpression | BindingPattern | EntityNameExpression;
 export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | DocTemplateTag;
 export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | DocTypedefTag | DocCallbackTag | DocSignature;
@@ -2980,6 +3039,7 @@ export type Node =
   | ConstructSignatureDeclaration
   | ContinueStatement
   | DebuggerStatement
+  | Declaration
   | Decorator
   | DefaultClause
   | DeleteExpression

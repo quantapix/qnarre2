@@ -179,7 +179,7 @@ export function transformDeclarations(context: TransformationContext) {
         : qd.Declaration_emit_for_this_file_requires_using_private_name_0_An_explicit_type_annotation_may_unblock_declaration_emit,
       errorNode: s.errorNode || sourceFile,
     });
-    const result = resolver.getDeclarationStatementsForSourceFile(sourceFile, declarationEmitNodeBuilderFlags, symbolTracker, bundled);
+    const result = resolver.getDeclarationSobjsForSourceFile(sourceFile, declarationEmitNodeBuilderFlags, symbolTracker, bundled);
     getSymbolAccessibilityDiagnostic = oldDiag;
     return result;
   }
@@ -210,7 +210,7 @@ export function transformDeclarations(context: TransformationContext) {
           if (qc.is.externalOrCommonJsModule(sourceFile) || qc.is.jsonSourceFile(sourceFile)) {
             resultHasExternalModuleIndicator = false;
             needsDeclare = false;
-            const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
+            const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, true)) : Nodes.visit(sourceFile.statements, visitDeclarationSobjs);
             const newFile = qp_updateSourceNode(
               sourceFile,
               [
@@ -230,7 +230,7 @@ export function transformDeclarations(context: TransformationContext) {
             return newFile;
           }
           needsDeclare = true;
-          const updated = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
+          const updated = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationSobjs);
           return qp_updateSourceNode(sourceFile, transformAndReplaceLatePaintedStatements(updated), true, [], [], false, []);
         }),
         mapDefined(node.prepends, (prepend) => {
@@ -277,7 +277,7 @@ export function transformDeclarations(context: TransformationContext) {
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
     } else {
-      const statements = Nodes.visit(node.statements, visitDeclarationStatements);
+      const statements = Nodes.visit(node.statements, visitDeclarationSobjs);
       combinedStatements = setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), node.statements);
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
@@ -429,8 +429,8 @@ export function transformDeclarations(context: TransformationContext) {
       return returnValue || new qc.KeywordTypeNode(Syntax.AnyKeyword);
     }
   }
-  function isDeclarationAndNotVisible(node: NamedDeclaration) {
-    node = qc.get.parseTreeOf(node) as NamedDeclaration;
+  function isDeclarationAndNotVisible(node: NamedDobj) {
+    node = qc.get.parseTreeOf(node) as NamedDobj;
     switch (node.kind) {
       case Syntax.FunctionDeclaration:
       case Syntax.ModuleDeclaration:
@@ -761,8 +761,8 @@ export function transformDeclarations(context: TransformationContext) {
   function isPrivateMethodTypeParameter(node: TypeParameterDeclaration) {
     return node.parent.kind === Syntax.MethodDeclaration && qc.has.effectiveModifier(node.parent, ModifierFlags.Private);
   }
-  function visitDeclarationStatements(input: Node): VisitResult<Node> {
-    if (!isPreservedDeclarationStatement(input)) return;
+  function visitDeclarationSobjs(input: Node): VisitResult<Node> {
+    if (!isPreservedDeclarationSobj(input)) return;
     if (shouldStripInternal(input)) return;
     switch (input.kind) {
       case Syntax.ExportDeclaration: {
@@ -889,7 +889,7 @@ export function transformDeclarations(context: TransformationContext) {
           const oldHasScopeFix = resultHasScopeMarker;
           resultHasScopeMarker = false;
           needsScopeFixMarker = false;
-          const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
+          const statements = Nodes.visit(inner.statements, visitDeclarationSobjs);
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
           if (input.flags & NodeFlags.Ambient) needsScopeFixMarker = false;
           if (!input.qf.is.globalScopeAugmentation() && !qf.has.scopeMarker(lateStatements) && !resultHasScopeMarker) {
@@ -908,7 +908,7 @@ export function transformDeclarations(context: TransformationContext) {
           needsDeclare = previousNeedsDeclare;
           const mods = ensureModifiers(input);
           needsDeclare = false;
-          visitNode(inner, visitDeclarationStatements);
+          visitNode(inner, visitDeclarationSobjs);
           const id = '' + getOriginalNodeId(inner!);
           const body = lateStatementReplacementMap.get(id);
           lateStatementReplacementMap.delete(id);
@@ -1034,9 +1034,9 @@ export function transformDeclarations(context: TransformationContext) {
       oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
     }
-    errorNameNode = (node as NamedDeclaration).name;
+    errorNameNode = (node as NamedDobj).name;
     assert(resolver.isLateBound(qc.get.parseTreeOf(node) as Declaration));
-    const decl = (node as NamedDeclaration) as LateBoundDeclaration;
+    const decl = (node as NamedDobj) as LateBoundDobj;
     const entityName = decl.name.expression;
     checkEntityNameVisibility(entityName, enclosingDeclaration);
     if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag!;
@@ -1128,7 +1128,7 @@ function canHaveLiteralIniter(node: Node): boolean {
   }
   return false;
 }
-type ProcessedDeclarationStatement =
+type ProcessedDeclarationSobj =
   | FunctionDeclaration
   | ModuleDeclaration
   | ImportEqualsDeclaration
@@ -1140,7 +1140,7 @@ type ProcessedDeclarationStatement =
   | ImportDeclaration
   | ExportDeclaration
   | ExportAssignment;
-function isPreservedDeclarationStatement(node: Node): node is ProcessedDeclarationStatement {
+function isPreservedDeclarationSobj(node: Node): node is ProcessedDeclarationSobj {
   switch (node.kind) {
     case Syntax.FunctionDeclaration:
     case Syntax.ModuleDeclaration:

@@ -1520,7 +1520,7 @@ export class QContext {
       return fail(`Unhandled class member kind! ${(p as any).__debugFlags || p.flags}`);
     };
   }
-  symbolTableToDeclarationStatements(symbolTable: SymbolTable, bundled?: boolean): Statement[] {
+  symbolTableToDeclarationSobjs(symbolTable: SymbolTable, bundled?: boolean): Statement[] {
     const serializePropertySymbolForClass = this.makeSerializePropertySymbol<ClassElement>(createProperty, Syntax.MethodDeclaration, true);
     const serializePropertySymbolForInterfaceWorker = this.makeSerializePropertySymbol<TypeElement>(
       (_decorators, mods, name, question, type, initer) => new qc.PropertySignature(mods, name, question, type, initer),
@@ -1583,7 +1583,7 @@ export class QContext {
           const getNamesOfDeclaration = (s: Statement): Identifier[] => {
             const isIdentifierAndNotUndefined = (n?: Node): n is Identifier => n?.kind === Syntax.Identifier;
             if (qf.is.kind(qc.VariableStatement, s)) return filter(map(s.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
-            return filter([qf.get.declaration.nameOf(s as DeclarationStatement)], isIdentifierAndNotUndefined);
+            return filter([qf.get.declaration.nameOf(s as DeclarationSobj)], isIdentifierAndNotUndefined);
           };
           ns.body.statements = new Nodes([
             ...ns.body.statements,
@@ -1766,8 +1766,8 @@ export class QContext {
         withContext(enclosingDeclaration, flags, tracker, (c) => c.symbolToParameterDeclaration(symbol)),
       typeParameterToDeclaration: (parameter: TypeParameter, enclosingDeclaration?: Node, flags?: NodeBuilderFlags, tracker?: SymbolTracker) =>
         withContext(enclosingDeclaration, flags, tracker, (c) => c.typeParameterToDeclaration(parameter)),
-      symbolTableToDeclarationStatements: (symbolTable: SymbolTable, enclosingDeclaration?: Node, flags?: NodeBuilderFlags, tracker?: SymbolTracker, bundled?: boolean) =>
-        withContext(enclosingDeclaration, flags, tracker, (c) => c.symbolTableToDeclarationStatements(symbolTable, bundled)),
+      symbolTableToDeclarationSobjs: (symbolTable: SymbolTable, enclosingDeclaration?: Node, flags?: NodeBuilderFlags, tracker?: SymbolTracker, bundled?: boolean) =>
+        withContext(enclosingDeclaration, flags, tracker, (c) => c.symbolTableToDeclarationSobjs(symbolTable, bundled)),
     };
     function withContext<T>(enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker: SymbolTracker | undefined, cb: (context: QContext) => T): T | undefined {
       assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);

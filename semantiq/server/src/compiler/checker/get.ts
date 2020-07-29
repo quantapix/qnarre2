@@ -794,7 +794,7 @@ export function newGet(f: qt.Frame) {
             if (s.flags & qt.SymbolFlags.Value) {
               if (s.valueDeclaration.sourceFile !== exportedMember.valueDeclaration.sourceFile) {
                 const unescName = qy.get.unescUnderscores(s.escName);
-                const exportedMemberName = qu.tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
+                const exportedMemberName = qu.tryCast(exportedMember.valueDeclaration, isNamedDobj)?.name || exportedMember.valueDeclaration;
                 addRelatedInfo(error(s.valueDeclaration, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(exportedMemberName, qd.msgs._0_was_also_declared_here, unescName));
                 addRelatedInfo(error(exportedMemberName, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(s.valueDeclaration, qd.msgs._0_was_also_declared_here, unescName));
               }

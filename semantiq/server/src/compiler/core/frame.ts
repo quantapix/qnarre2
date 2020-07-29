@@ -1085,7 +1085,7 @@ export function newIs(f: qt.Frame) {
     exportName(i: qt.Identifier) {
       return (qf.get.emitFlags(i) & qt.EmitFlags.ExportName) !== 0;
     }
-    dynamicName(d: qt.Declaration): d is qt.DynamicNamedDeclaration | qt.DynamicNamedBinaryExpression {
+    dynamicName(d: qt.Declaration): d is qt.DynamicNamedDobj | qt.DynamicNamedBinaryExpression {
       const n = qf.get.declaration.nameOf(d);
       return !!n && qf.has.dynamicName(n);
     }
@@ -1650,8 +1650,8 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    namedDeclaration(n: Node): n is qt.NamedDeclaration & { name: qt.DeclarationName } {
-      return !!(n as qt.NamedDeclaration).name;
+    namedDeclaration(n: Node): n is qt.NamedDobj & { name: qt.DeclarationName } {
+      return !!(n as qt.NamedDobj).name;
     }
     propertyAccessChain(n: Node): n is qt.PropertyAccessChain {
       return n.kind === Syntax.PropertyAccessExpression && !!(n.flags & NodeFlags.OptionalChain);
@@ -1840,11 +1840,11 @@ export function newIs(f: qt.Frame) {
     forIniter(n: qt.Nobj): n is qt.ForIniter {
       return n.kind === Syntax.VariableDeclarationList || this.expression(n as Node);
     }
-    declaration(n?: Node): n is qt.NamedDeclaration {
+    declaration(n?: Node): n is qt.NamedDobj {
       if (n?.kind === Syntax.TypeParameter) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || this.inJSFile(n);
       return qy.is.declaration(n?.kind);
     }
-    declarationStatement(n: Node): n is qt.DeclarationStatement {
+    declarationStatement(n: Node): n is qt.DeclarationSobj {
       return qy.is.declarationStatement(n.kind);
     }
     statementButNotDeclaration(n: Node): n is qt.Statement {
@@ -2330,7 +2330,7 @@ export function newIs(f: qt.Frame) {
       if (n.kind === Syntax.VariableDeclaration) return this.requireCall(n.initer as Node | undefined, literal);
       return false;
     }
-    requireVariableDeclarationStatement(n: Node, literal = true): n is qt.VariableStatement {
+    requireVariableDeclarationSobj(n: Node, literal = true): n is qt.VariableStatement {
       if (n.kind === Syntax.VariableStatement) return qu.every(n.declarationList.declarations, (d) => this.requireVariableDeclaration(d, literal));
       return false;
     }
