@@ -435,9 +435,9 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
     super(undefined, k, pos, end);
   }
 }
-export abstract class Statement extends Nobj implements qt.Statement {
+export abstract class Sobj extends Nobj implements qt.Sobj {
   _statementBrand: any;
-  static insertStatementsAfterPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+  static insertStatementsAfterPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
     if (from === undefined || from.length === 0) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
@@ -446,7 +446,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     to.splice(statementIndex, 0, ...from);
     return to;
   }
-  static insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+  static insertStatementAfterPrologue<T extends Sobj>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
     if (statement === undefined) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
@@ -455,23 +455,23 @@ export abstract class Statement extends Nobj implements qt.Statement {
     to.splice(statementIndex, 0, statement);
     return to;
   }
-  static insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+  static insertStatementsAfterStandardPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined): T[] {
     return this.insertStatementsAfterPrologue(to, from, isPrologueDirective);
   }
-  static insertStatementsAfterCustomPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+  static insertStatementsAfterCustomPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined): T[] {
     return this.insertStatementsAfterPrologue(to, from, isAnyPrologueDirective);
   }
-  static insertStatementAfterStandardPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+  static insertStatementAfterStandardPrologue<T extends Sobj>(to: T[], statement: T | undefined): T[] {
     return this.insertStatementAfterPrologue(to, statement, isPrologueDirective);
   }
-  static insertStatementAfterCustomPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+  static insertStatementAfterCustomPrologue<T extends Sobj>(to: T[], statement: T | undefined): T[] {
     return this.insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
   }
-  addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (n: Nobj) => VisitResult<Nobj>): number {
+  addPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean, visitor?: (n: Nobj) => VisitResult<Nobj>): number {
     const offset = addStandardPrologue(target, source, ensureUseStrict);
     return addCustomPrologue(target, source, offset, visitor);
   }
-  addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
+  addStandardPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean): number {
     qu.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
     let foundUseStrict = false;
     let statementOffset = 0;
@@ -489,17 +489,17 @@ export abstract class Statement extends Nobj implements qt.Statement {
     if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))));
     return statementOffset;
   }
-  addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (n: Nobj) => VisitResult<Nobj>, filter?: (n: Nobj) => boolean): number;
+  addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], statementOffset: number, visitor?: (n: Nobj) => VisitResult<Nobj>, filter?: (n: Nobj) => boolean): number;
   addCustomPrologue(
-    target: Statement[],
-    source: readonly Statement[],
+    target: qt.Statement[],
+    source: readonly qt.Statement[],
     statementOffset: number | undefined,
     visitor?: (n: Nobj) => VisitResult<Nobj>,
     filter?: (n: Nobj) => boolean
   ): number | undefined;
   addCustomPrologue(
-    target: Statement[],
-    source: readonly Statement[],
+    target: qt.Statement[],
+    source: readonly qt.Statement[],
     statementOffset: number | undefined,
     visitor?: (n: Nobj) => VisitResult<Nobj>,
     filter: (n: Nobj) => boolean = () => true
@@ -513,7 +513,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     }
     return statementOffset;
   }
-  findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
+  findUseStrictPrologue(statements: readonly qt.Statement[]): qt.Statement | undefined {
     for (const statement of statements) {
       if (qf.is.prologueDirective(statement)) {
         if (qf.is.useStrictPrologue(statement)) return statement;
@@ -521,11 +521,11 @@ export abstract class Statement extends Nobj implements qt.Statement {
     }
     return;
   }
-  startsWithUseStrict(statements: readonly Statement[]) {
+  startsWithUseStrict(statements: readonly qt.Statement[]) {
     const firstStatement = qu.firstOrUndefined(statements);
     return firstStatement !== undefined && qf.is.prologueDirective(firstStatement) && qf.is.useStrictPrologue(firstStatement);
   }
-  createForOfBindingStatement(n: ForIniter, boundValue: Expression): Statement {
+  createForOfBindingStatement(n: qt.ForIniter, boundValue: Expression): qt.Statement {
     if (qf.is.kind(qc.VariableDeclarationList, n)) {
       const firstDeclaration = first(n.declarations);
       const updatedDeclaration = firstDeclaration.update(firstDeclaration.name, undefined, boundValue);
@@ -535,11 +535,11 @@ export abstract class Statement extends Nobj implements qt.Statement {
       return setRange(new qc.ExpressionStatement(updatedExpression), n);
     }
   }
-  insertLeadingStatement(dest: Statement, source: Statement) {
+  insertLeadingStatement(dest: qt.Statement, source: qt.Statement) {
     if (qf.is.kind(qc.Block, dest)) return dest.update(setRange(new qc.Nodes([source, ...dest.statements]), dest.statements));
     return new qc.Block(new qc.Nodes([dest, source]), true);
   }
-  restoreEnclosingLabel(n: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (n: LabeledStatement) => void): Statement {
+  restoreEnclosingLabel(n: qt.Statement, outermostLabeledStatement: qt.LabeledStatement | undefined, afterRestoreLabelCallback?: (n: LabeledStatement) => void): qt.Statement {
     if (!outermostLabeledStatement) return n;
     const updated = updateLabel(
       outermostLabeledStatement,
@@ -561,7 +561,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
     );
   }
 }
-export abstract class IterationStatement extends Statement implements qt.IterationStatement {
+export abstract class IterationSobj extends Sobj implements qt.IterationSobj {
   statement!: qt.Statement;
 }
 export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
@@ -951,7 +951,7 @@ export class Signature implements qt.Signature {
 export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
   static readonly kind = Syntax.SourceFile;
   kind: Syntax.SourceFile;
-  statements: Nodes<Statement>;
+  statements: Nodes<qt.Statement>;
   endOfFileToken: Token<Syntax.EndOfFileToken>;
   fileName: string;
   path: Path;
@@ -1006,7 +1006,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
   text!: string;
   scriptSnapshot!: IScriptSnapshot;
   lineMap!: readonly number[];
-  statements!: Nodes<Statement>;
+  statements!: Nodes<qt.Statement>;
   endOfFileToken!: Token<Syntax.EndOfFileToken>;
   amdDependencies!: { name: string; path: string }[];
   moduleName!: string;
@@ -1206,7 +1206,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
   }
   qp_updateSourceNode(
     node: SourceFile,
-    statements: readonly Statement[],
+    statements: readonly qt.Statement[],
     isDeclarationFile?: boolean,
     referencedFiles?: SourceFile['referencedFiles'],
     typeReferences?: SourceFile['typeReferenceDirectives'],

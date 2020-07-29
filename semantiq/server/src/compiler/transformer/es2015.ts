@@ -43,7 +43,7 @@ interface ConvertedLoopState {
   loopOutParameters: LoopOutParameter[];
 }
 type LoopConverter = (
-  node: IterationStatement,
+  node: IterationSobj,
   outermostLabeledStatement: LabeledStatement | undefined,
   convertedLoopBodyStatements: qc.Statement[] | undefined,
   ancestorFacts: HierarchyFacts
@@ -58,15 +58,15 @@ const enum HierarchyFacts {
   ExportedVariableStatement = 1 << 5,
   TopLevel = 1 << 6,
   Block = 1 << 7,
-  IterationStatement = 1 << 8,
-  IterationStatementBlock = 1 << 9,
+  IterationSobj = 1 << 8,
+  IterationSobjBlock = 1 << 9,
   IterationContainer = 1 << 10,
   ForStatement = 1 << 11,
   ForInOrForOfStatement = 1 << 12,
   ConstructorWithCapturedSuper = 1 << 13,
   AncestorFactsMask = (ConstructorWithCapturedSuper << 1) - 1,
   BlockScopeIncludes = None,
-  BlockScopeExcludes = TopLevel | Block | IterationStatement | IterationStatementBlock | ForStatement | ForInOrForOfStatement,
+  BlockScopeExcludes = TopLevel | Block | IterationSobj | IterationSobjBlock | ForStatement | ForInOrForOfStatement,
   SourceFileIncludes = TopLevel,
   SourceFileExcludes = (BlockScopeExcludes & ~TopLevel) | IterationContainer,
   FunctionIncludes = Function | TopLevel,
@@ -77,16 +77,16 @@ const enum HierarchyFacts {
   ArrowFunctionExcludes = (BlockScopeExcludes & ~TopLevel) | ConstructorWithCapturedSuper,
   ConstructorIncludes = FunctionIncludes | NonStaticClassElement,
   ConstructorExcludes = FunctionExcludes & ~NonStaticClassElement,
-  DoOrWhileStatementIncludes = IterationStatement | IterationContainer,
+  DoOrWhileStatementIncludes = IterationSobj | IterationContainer,
   DoOrWhileStatementExcludes = None,
-  ForStatementIncludes = IterationStatement | ForStatement | IterationContainer,
+  ForStatementIncludes = IterationSobj | ForStatement | IterationContainer,
   ForStatementExcludes = BlockScopeExcludes & ~ForStatement,
-  ForInOrForOfStatementIncludes = IterationStatement | ForInOrForOfStatement | IterationContainer,
+  ForInOrForOfStatementIncludes = IterationSobj | ForInOrForOfStatement | IterationContainer,
   ForInOrForOfStatementExcludes = BlockScopeExcludes & ~ForInOrForOfStatement,
   BlockIncludes = Block,
   BlockExcludes = BlockScopeExcludes & ~Block,
-  IterationStatementBlockIncludes = IterationStatementBlock,
-  IterationStatementBlockExcludes = BlockScopeExcludes,
+  IterationSobjBlockIncludes = IterationSobjBlock,
+  IterationSobjBlockExcludes = BlockScopeExcludes,
   NewTarget = 1 << 14,
   CapturedLexicalThis = 1 << 15,
   SubtreeFactsMask = ~AncestorFactsMask,
@@ -139,7 +139,7 @@ export function transformES2015(context: TransformationContext) {
       (node.transformFlags & TransformFlags.ContainsES2015) !== 0 ||
       convertedLoopState !== undefined ||
       (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (qf.is.statement(node) || node.kind === Syntax.Block)) ||
-      (qf.is.iterationStatement(node, false) && shouldConvertIterationStatement(node)) ||
+      (qf.is.iterationStatement(node, false) && shouldConvertIterationSobj(node)) ||
       (qf.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0
     );
   }
@@ -960,8 +960,8 @@ export function transformES2015(context: TransformationContext) {
   function visitBlock(node: Block, isFunctionBody: boolean): Block {
     if (isFunctionBody) return visitEachChild(node, visitor, context);
     const ancestorFacts =
-      hierarchyFacts & HierarchyFacts.IterationStatement
-        ? enterSubtree(HierarchyFacts.IterationStatementBlockExcludes, HierarchyFacts.IterationStatementBlockIncludes)
+      hierarchyFacts & HierarchyFacts.IterationSobj
+        ? enterSubtree(HierarchyFacts.IterationSobjBlockExcludes, HierarchyFacts.IterationSobjBlockIncludes)
         : enterSubtree(HierarchyFacts.BlockExcludes, HierarchyFacts.BlockIncludes);
     const updated = visitEachChild(node, visitor, context);
     exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
@@ -1057,7 +1057,7 @@ export function transformES2015(context: TransformationContext) {
     const flags = resolver.getNodeCheckFlags(node);
     const isCapturedInFunction = flags & NodeCheckFlags.CapturedBlockScopedBinding;
     const isDeclaredInLoop = flags & NodeCheckFlags.BlockScopedBindingInLoop;
-    const emittedAsTopLevel = (hierarchyFacts & HierarchyFacts.TopLevel) !== 0 || (isCapturedInFunction && isDeclaredInLoop && (hierarchyFacts & HierarchyFacts.IterationStatementBlock) !== 0);
+    const emittedAsTopLevel = (hierarchyFacts & HierarchyFacts.TopLevel) !== 0 || (isCapturedInFunction && isDeclaredInLoop && (hierarchyFacts & HierarchyFacts.IterationSobjBlock) !== 0);
     const emitExplicitIniter =
       !emittedAsTopLevel &&
       (hierarchyFacts & HierarchyFacts.ForInOrForOfStatement) === 0 &&
@@ -1097,10 +1097,10 @@ export function transformES2015(context: TransformationContext) {
     }
     const statement = unwrapInnermostStatementOfLabel(node, convertedLoopState && recordLabel);
     return qf.is.iterationStatement(statement, false)
-      ? visitIterationStatement(statement, node)
+      ? visitIterationSobj(statement, node)
       : restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node, convertedLoopState && resetLabel);
   }
-  function visitIterationStatement(node: IterationStatement, outermostLabeledStatement: LabeledStatement) {
+  function visitIterationSobj(node: IterationSobj, outermostLabeledStatement: LabeledStatement) {
     switch (node.kind) {
       case Syntax.DoStatement:
       case Syntax.WhileStatement:
@@ -1113,29 +1113,29 @@ export function transformES2015(context: TransformationContext) {
         return visitForOfStatement(<ForOfStatement>node, outermostLabeledStatement);
     }
   }
-  function visitIterationStatementWithFacts(
+  function visitIterationSobjWithFacts(
     excludeFacts: HierarchyFacts,
     includeFacts: HierarchyFacts,
-    node: IterationStatement,
+    node: IterationSobj,
     outermostLabeledStatement: LabeledStatement | undefined,
     convert?: LoopConverter
   ) {
     const ancestorFacts = enterSubtree(excludeFacts, includeFacts);
-    const updated = convertIterationStatementBodyIfNecessary(node, outermostLabeledStatement, ancestorFacts, convert);
+    const updated = convertIterationSobjBodyIfNecessary(node, outermostLabeledStatement, ancestorFacts, convert);
     exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
     return updated;
   }
   function visitDoOrWhileStatement(node: DoStatement | WhileStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-    return visitIterationStatementWithFacts(HierarchyFacts.DoOrWhileStatementExcludes, HierarchyFacts.DoOrWhileStatementIncludes, node, outermostLabeledStatement);
+    return visitIterationSobjWithFacts(HierarchyFacts.DoOrWhileStatementExcludes, HierarchyFacts.DoOrWhileStatementIncludes, node, outermostLabeledStatement);
   }
   function visitForStatement(node: ForStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-    return visitIterationStatementWithFacts(HierarchyFacts.ForStatementExcludes, HierarchyFacts.ForStatementIncludes, node, outermostLabeledStatement);
+    return visitIterationSobjWithFacts(HierarchyFacts.ForStatementExcludes, HierarchyFacts.ForStatementIncludes, node, outermostLabeledStatement);
   }
   function visitForInStatement(node: ForInStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-    return visitIterationStatementWithFacts(HierarchyFacts.ForInOrForOfStatementExcludes, HierarchyFacts.ForInOrForOfStatementIncludes, node, outermostLabeledStatement);
+    return visitIterationSobjWithFacts(HierarchyFacts.ForInOrForOfStatementExcludes, HierarchyFacts.ForInOrForOfStatementIncludes, node, outermostLabeledStatement);
   }
   function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
-    return visitIterationStatementWithFacts(
+    return visitIterationSobjWithFacts(
       HierarchyFacts.ForInOrForOfStatementExcludes,
       HierarchyFacts.ForInOrForOfStatementIncludes,
       node,
@@ -1329,22 +1329,22 @@ interface ForStatementWithConvertibleCondition extends ForStatement {
 interface ForStatementWithConvertibleIncrementor extends ForStatement {
   incrementor: qc.Expression;
 }
-function shouldConvertPartOfIterationStatement(node: Node) {
+function shouldConvertPartOfIterationSobj(node: Node) {
   return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ContainsCapturedBlockScopeBinding) !== 0;
 }
-function shouldConvertIniterOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleIniter {
-  return qf.is.kind(qc.ForStatement, node) && !!node.initer && shouldConvertPartOfIterationStatement(node.initer);
+function shouldConvertIniterOfForStatement(node: IterationSobj): node is ForStatementWithConvertibleIniter {
+  return qf.is.kind(qc.ForStatement, node) && !!node.initer && shouldConvertPartOfIterationSobj(node.initer);
 }
-function shouldConvertConditionOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleCondition {
-  return qf.is.kind(qc.ForStatement, node) && !!node.condition && shouldConvertPartOfIterationStatement(node.condition);
+function shouldConvertConditionOfForStatement(node: IterationSobj): node is ForStatementWithConvertibleCondition {
+  return qf.is.kind(qc.ForStatement, node) && !!node.condition && shouldConvertPartOfIterationSobj(node.condition);
 }
-function shouldConvertIncrementorOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleIncrementor {
-  return qf.is.kind(qc.ForStatement, node) && !!node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor);
+function shouldConvertIncrementorOfForStatement(node: IterationSobj): node is ForStatementWithConvertibleIncrementor {
+  return qf.is.kind(qc.ForStatement, node) && !!node.incrementor && shouldConvertPartOfIterationSobj(node.incrementor);
 }
-function shouldConvertIterationStatement(node: IterationStatement) {
-  return shouldConvertBodyOfIterationStatement(node) || shouldConvertIniterOfForStatement(node);
+function shouldConvertIterationSobj(node: IterationSobj) {
+  return shouldConvertBodyOfIterationSobj(node) || shouldConvertIniterOfForStatement(node);
 }
-function shouldConvertBodyOfIterationStatement(node: IterationStatement): boolean {
+function shouldConvertBodyOfIterationSobj(node: IterationSobj): boolean {
   return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.LoopWithCapturedBlockScopedBinding) !== 0;
 }
 function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopState, node: VariableDeclaration): void {
@@ -1364,13 +1364,13 @@ function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopSta
     }
   }
 }
-function convertIterationStatementBodyIfNecessary(
-  node: IterationStatement,
+function convertIterationSobjBodyIfNecessary(
+  node: IterationSobj,
   outermostLabeledStatement: LabeledStatement | undefined,
   ancestorFacts: HierarchyFacts,
   convert?: LoopConverter
 ): VisitResult<Statement> {
-  if (!shouldConvertIterationStatement(node)) {
+  if (!shouldConvertIterationSobj(node)) {
     let saveAllowedNonLabeledJumps: Jump | undefined;
     if (convertedLoopState) {
       saveAllowedNonLabeledJumps = convertedLoopState.allowedNonLabeledJumps;
@@ -1389,7 +1389,7 @@ function convertIterationStatementBodyIfNecessary(
   const outerConvertedLoopState = convertedLoopState;
   convertedLoopState = currentState;
   const initerFunction = shouldConvertIniterOfForStatement(node) ? createFunctionForIniterOfForStatement(node, currentState) : undefined;
-  const bodyFunction = shouldConvertBodyOfIterationStatement(node) ? createFunctionForBodyOfIterationStatement(node, currentState, outerConvertedLoopState) : undefined;
+  const bodyFunction = shouldConvertBodyOfIterationSobj(node) ? createFunctionForBodyOfIterationSobj(node, currentState, outerConvertedLoopState) : undefined;
   convertedLoopState = outerConvertedLoopState;
   if (initerFunction) statements.push(initerFunction.functionDeclaration);
   if (bodyFunction) statements.push(bodyFunction.functionDeclaration);
@@ -1402,19 +1402,19 @@ function convertIterationStatementBodyIfNecessary(
     if (convert) {
       loop = convert(node, outermostLabeledStatement, bodyFunction.part, ancestorFacts);
     } else {
-      const clone = convertIterationStatementCore(node, initerFunction, new Block(bodyFunction.part, true));
+      const clone = convertIterationSobjCore(node, initerFunction, new Block(bodyFunction.part, true));
       aggregateTransformFlags(clone);
       loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
     }
   } else {
-    const clone = convertIterationStatementCore(node, initerFunction, visitNode(node.statement, visitor, isStatement, liftToBlock));
+    const clone = convertIterationSobjCore(node, initerFunction, visitNode(node.statement, visitor, isStatement, liftToBlock));
     aggregateTransformFlags(clone);
     loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
   }
   statements.push(loop);
   return statements;
 }
-function convertIterationStatementCore(node: IterationStatement, initerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: qc.Statement) {
+function convertIterationSobjCore(node: IterationSobj, initerFunction: IterationSobjPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: qc.Statement) {
   switch (node.kind) {
     case Syntax.ForStatement:
       return convertForStatement(node as ForStatement, initerFunction, convertedLoopBody);
@@ -1427,12 +1427,12 @@ function convertIterationStatementCore(node: IterationStatement, initerFunction:
     case Syntax.WhileStatement:
       return convertWhileStatement(node as WhileStatement, convertedLoopBody);
     default:
-      return qu.failBadSyntax(node, 'IterationStatement expected');
+      return qu.failBadSyntax(node, 'IterationSobj expected');
   }
 }
-function convertForStatement(node: ForStatement, initerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: qc.Statement) {
-  const shouldConvertCondition = node.condition && shouldConvertPartOfIterationStatement(node.condition);
-  const shouldConvertIncrementor = shouldConvertCondition || (node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor));
+function convertForStatement(node: ForStatement, initerFunction: IterationSobjPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: qc.Statement) {
+  const shouldConvertCondition = node.condition && shouldConvertPartOfIterationSobj(node.condition);
+  const shouldConvertIncrementor = shouldConvertCondition || (node.incrementor && shouldConvertPartOfIterationSobj(node.incrementor));
   return updateFor(
     node,
     visitNode(initerFunction ? initerFunction.part : node.initer, visitor, isForIniter),
@@ -1453,7 +1453,7 @@ function convertDoStatement(node: DoStatement, convertedLoopBody: qc.Statement) 
 function convertWhileStatement(node: WhileStatement, convertedLoopBody: qc.Statement) {
   return node.update(visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
-function createConvertedLoopState(node: IterationStatement) {
+function createConvertedLoopState(node: IterationSobj) {
   let loopIniter: VariableDeclarationList | undefined;
   switch (node.kind) {
     case Syntax.ForStatement:
@@ -1533,7 +1533,7 @@ function addExtraDeclarationsForConvertedLoop(statements: qc.Statement[], state:
     statements.push(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(extraVariableDeclarations)));
   }
 }
-interface IterationStatementPartFunction<T> {
+interface IterationSobjPartFunction<T> {
   functionName: qc.Identifier;
   functionDeclaration: qc.Statement;
   containsYield: boolean;
@@ -1542,7 +1542,7 @@ interface IterationStatementPartFunction<T> {
 function createOutVariable(p: LoopOutParameter) {
   return new qc.VariableDeclaration(p.originalName, undefined, p.outParamName);
 }
-function createFunctionForIniterOfForStatement(node: ForStatementWithConvertibleIniter, currentState: ConvertedLoopState): IterationStatementPartFunction<VariableDeclarationList> {
+function createFunctionForIniterOfForStatement(node: ForStatementWithConvertibleIniter, currentState: ConvertedLoopState): IterationSobjPartFunction<VariableDeclarationList> {
   const functionName = createUniqueName('_loop_init');
   const containsYield = (node.initer.transformFlags & TransformFlags.ContainsYield) !== 0;
   let emitFlags = EmitFlags.None;
@@ -1578,11 +1578,7 @@ function createFunctionForIniterOfForStatement(node: ForStatementWithConvertible
   const part = new qc.VariableDeclarationList(map(currentState.loopOutParameters, createOutVariable));
   return { functionName, containsYield, functionDeclaration, part };
 }
-function createFunctionForBodyOfIterationStatement(
-  node: IterationStatement,
-  currentState: ConvertedLoopState,
-  outerState: ConvertedLoopState | undefined
-): IterationStatementPartFunction<Statement[]> {
+function createFunctionForBodyOfIterationSobj(node: IterationSobj, currentState: ConvertedLoopState, outerState: ConvertedLoopState | undefined): IterationSobjPartFunction<Statement[]> {
   const functionName = createUniqueName('_loop');
   startLexicalEnvironment();
   const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
@@ -1721,7 +1717,7 @@ function processLabeledJumps(table: qu.QMap<string>, isBreak: boolean, loopResul
   });
 }
 function processLoopVariableDeclaration(
-  container: IterationStatement,
+  container: IterationSobj,
   decl: VariableDeclaration | BindingElement,
   loopParameters: ParameterDeclaration[],
   loopOutParameters: LoopOutParameter[],

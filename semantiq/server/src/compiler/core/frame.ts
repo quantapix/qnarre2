@@ -1812,9 +1812,9 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.NotEmittedStatement || k === Syntax.PartiallyEmittedExpression;
     }
-    iterationStatement(n: Node, look: false): n is qt.IterationStatement;
-    iterationStatement(n: Node, look: boolean): n is qt.IterationStatement | qt.LabeledStatement;
-    iterationStatement(n: Node, look: boolean): n is qt.IterationStatement {
+    iterationStatement(n: Node, look: false): n is qt.IterationSobj;
+    iterationStatement(n: Node, look: boolean): n is qt.IterationSobj | qt.LabeledStatement;
+    iterationStatement(n: Node, look: boolean): n is qt.IterationSobj {
       switch (n.kind) {
         case Syntax.DoStatement:
         case Syntax.ForInStatement:

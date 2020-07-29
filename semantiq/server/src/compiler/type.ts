@@ -95,7 +95,7 @@ export interface BindingElement extends NamedDobj {
   name: BindingName;
   initer?: Expression;
 }
-export interface Block extends Statement {
+export interface Block extends Sobj {
   kind: Syntax.Block;
   statements: Nodes<Statement>;
   multiLine?: boolean;
@@ -103,7 +103,7 @@ export interface Block extends Statement {
 export interface BooleanLiteral extends PrimaryExpression, TypeNode {
   kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
 }
-export interface BreakStatement extends Statement {
+export interface BreakStatement extends Sobj {
   kind: Syntax.BreakStatement;
   label?: Identifier;
 }
@@ -471,7 +471,7 @@ export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
 export interface ConstructSignatureDeclaration extends SignatureDobj, TypeElement {
   kind: Syntax.ConstructSignature;
 }
-export interface ContinueStatement extends Statement {
+export interface ContinueStatement extends Sobj {
   kind: Syntax.ContinueStatement;
   label?: Identifier;
 }
@@ -492,10 +492,10 @@ export interface CustomTransformers {
   after?: (TransformerFactory<SourceFile> | CustomTransformerFactory)[];
   afterDeclarations?: (TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory)[];
 }
-export interface DebuggerStatement extends Statement {
+export interface DebuggerStatement extends Sobj {
   kind: Syntax.DebuggerStatement;
 }
-export interface DeclarationSobj extends NamedDobj, Statement {
+export interface DeclarationSobj extends NamedDobj, Sobj {
   name?: Identifier | StringLiteral | NumericLiteral;
 }
 export interface Decorator extends Nobj {
@@ -682,7 +682,7 @@ export interface DocVariadicType extends DocType {
   kind: Syntax.DocVariadicType;
   type: TypeNode;
 }
-export interface DoStatement extends IterationStatement {
+export interface DoStatement extends IterationSobj {
   kind: Syntax.DoStatement;
   expression: Expression;
 }
@@ -814,10 +814,10 @@ export interface EmitTransformers {
   scriptTransformers: readonly TransformerFactory<SourceFile | Bundle>[];
   declarationTransformers: readonly TransformerFactory<SourceFile | Bundle>[];
 }
-export interface EmptyStatement extends Statement {
+export interface EmptyStatement extends Sobj {
   kind: Syntax.EmptyStatement;
 }
-export interface EndOfDeclarationMarker extends Statement {
+export interface EndOfDeclarationMarker extends Sobj {
   kind: Syntax.EndOfDeclarationMarker;
 }
 export interface EnumDeclaration extends DeclarationSobj, DocContainer {
@@ -863,7 +863,7 @@ export interface ExportSpecifier extends NamedDobj {
 export interface Expression extends Nobj {
   _expressionBrand: any;
 }
-export interface ExpressionStatement extends Statement, DocContainer {
+export interface ExpressionStatement extends Sobj, DocContainer {
   kind: Syntax.ExpressionStatement;
   expression: Expression;
 }
@@ -922,18 +922,18 @@ export interface FlowSwitchClause extends FlowNobj {
   clauseEnd: number;
   antecedent: FlowNode;
 }
-export interface ForInStatement extends IterationStatement {
+export interface ForInStatement extends IterationSobj {
   kind: Syntax.ForInStatement;
   initer: ForIniter;
   expression: Expression;
 }
-export interface ForOfStatement extends IterationStatement {
+export interface ForOfStatement extends IterationSobj {
   kind: Syntax.ForOfStatement;
   awaitModifier?: AwaitKeywordToken;
   initer: ForIniter;
   expression: Expression;
 }
-export interface ForStatement extends IterationStatement {
+export interface ForStatement extends IterationSobj {
   kind: Syntax.ForStatement;
   initer?: ForIniter;
   condition?: Expression;
@@ -1018,7 +1018,7 @@ export interface IdentifierTypePredicate extends TypePredicateBase {
   parameterIndex: number;
   type: Type;
 }
-export interface IfStatement extends Statement {
+export interface IfStatement extends Sobj {
   kind: Syntax.IfStatement;
   expression: Expression;
   thenStatement: Statement;
@@ -1034,7 +1034,7 @@ export interface ImportClause extends NamedDobj {
   name?: Identifier;
   namedBindings?: NamedImportBindings;
 }
-export interface ImportDeclaration extends Statement {
+export interface ImportDeclaration extends Sobj {
   kind: Syntax.ImportDeclaration;
   parent?: SourceFile | ModuleBlock;
   importClause?: ImportClause;
@@ -1178,7 +1178,7 @@ export interface IterableOrIteratorType extends ObjectType, UnionType {
   iterationTypesOfAsyncIterator?: IterationTypes;
   iterationTypesOfIteratorResult?: IterationTypes;
 }
-export interface IterationStatement extends Statement {
+export interface IterationSobj extends Sobj {
   statement: Statement;
 }
 export interface IterationTypes {
@@ -1280,7 +1280,7 @@ export interface KeywordTypeNode extends TypeNode {
     | Syntax.UnknownKeyword
     | Syntax.VoidKeyword;
 }
-export interface LabeledStatement extends Statement, DocContainer {
+export interface LabeledStatement extends Sobj, DocContainer {
   kind: Syntax.LabeledStatement;
   label: Identifier;
   statement: Statement;
@@ -1339,7 +1339,7 @@ export interface MappedTypeNode extends TypeNode, Dobj {
 export interface MemberExpression extends LeftHandSideExpression {
   _memberExpressionBrand: any;
 }
-export interface MergeDeclarationMarker extends Statement {
+export interface MergeDeclarationMarker extends Sobj {
   kind: Syntax.MergeDeclarationMarker;
 }
 export interface MetaProperty extends PrimaryExpression {
@@ -1362,7 +1362,7 @@ export interface MissingDeclaration extends DeclarationSobj {
   kind: Syntax.MissingDeclaration;
   name?: Identifier;
 }
-export interface ModuleBlock extends Statement {
+export interface ModuleBlock extends Sobj {
   kind: Syntax.ModuleBlock;
   parent?: ModuleDeclaration;
   statements: Nodes<Statement>;
@@ -1506,7 +1506,7 @@ export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLitera
   kind: Syntax.NoSubstitutionLiteral;
   templateFlags?: qt.TokenFlags;
 }
-export interface NotEmittedStatement extends Statement {
+export interface NotEmittedStatement extends Sobj {
   kind: Syntax.NotEmittedStatement;
 }
 export interface NullableType extends IntrinsicType {
@@ -1903,7 +1903,7 @@ export interface RestTypeNode extends TypeNode {
   kind: Syntax.RestType;
   type: TypeNode;
 }
-export interface ReturnStatement extends Statement {
+export interface ReturnStatement extends Sobj {
   kind: Syntax.ReturnStatement;
   expression?: Expression;
 }
@@ -1968,6 +1968,9 @@ export interface SignatureDobj extends NamedDobj, DocContainer {
   parameters: Nodes<ParameterDeclaration>;
   type?: TypeNode;
   typeArguments?: Nodes<TypeNode>;
+}
+export interface Sobj extends Nobj {
+  _statementBrand: any;
 }
 export interface SourceFile extends Dobj {
   kind: Syntax.SourceFile;
@@ -2081,9 +2084,6 @@ export interface SpreadElement extends Expression {
   parent?: ArrayLiteralExpression | CallExpression | NewExpression;
   expression: Expression;
 }
-export interface Statement extends Nobj {
-  _statementBrand: any;
-}
 export interface StringLiteral extends LiteralExpression, Dobj {
   kind: Syntax.StringLiteral;
   textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
@@ -2108,7 +2108,7 @@ export interface SuperExpression extends PrimaryExpression {
 export interface SuperPropertyAccessExpression extends PropertyAccessExpression {
   expression: SuperExpression;
 }
-export interface SwitchStatement extends Statement {
+export interface SwitchStatement extends Sobj {
   kind: Syntax.SwitchStatement;
   expression: Expression;
   caseBlock: CaseBlock;
@@ -2269,7 +2269,7 @@ export interface ThisTypePredicate extends TypePredicateBase {
   parameterIndex: undefined;
   type: Type;
 }
-export interface ThrowStatement extends Statement {
+export interface ThrowStatement extends Sobj {
   kind: Syntax.ThrowStatement;
   expression?: Expression;
 }
@@ -2283,7 +2283,7 @@ export interface TransientIdentifier extends Identifier {
 export interface TransientSymbol extends Symbol, SymbolLinks {
   checkFlags: qt.CheckFlags;
 }
-export interface TryStatement extends Statement {
+export interface TryStatement extends Sobj {
   kind: Syntax.TryStatement;
   tryBlock: Block;
   catchClause?: CatchClause;
@@ -2693,7 +2693,7 @@ export interface VariableDeclarationList extends Nobj {
   parent?: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
 }
-export interface VariableStatement extends Statement, DocContainer {
+export interface VariableStatement extends Sobj, DocContainer {
   kind: Syntax.VariableStatement;
   declarationList: VariableDeclarationList;
 }
@@ -2712,7 +2712,7 @@ export interface WellKnownSymbolExpression extends PropertyAccessExpression {
   expression: Identifier & { escapedText: 'Symbol' };
   name: Identifier;
 }
-export interface WhileStatement extends IterationStatement {
+export interface WhileStatement extends IterationSobj {
   kind: Syntax.WhileStatement;
   expression: Expression;
 }
@@ -2722,7 +2722,7 @@ export interface WideningContext {
   siblings?: Type[];
   resolvedProperties?: Symbol[];
 }
-export interface WithStatement extends Statement {
+export interface WithStatement extends Sobj {
   kind: Syntax.WithStatement;
   expression: Expression;
   statement: Statement;
@@ -2861,7 +2861,6 @@ export type Declaration =
   | NewExpression
   | NoSubstitutionLiteral
   | NumericLiteral
-  | ObjectLiteralElement
   | ObjectLiteralExpression
   | ParameterDeclaration
   | PropertyAccessExpression
@@ -3039,11 +3038,9 @@ export type Node =
   | ConstructSignatureDeclaration
   | ContinueStatement
   | DebuggerStatement
-  | Declaration
   | Decorator
   | DefaultClause
   | DeleteExpression
-  | Doc
   | Doc
   | DocAllType
   | DocAugmentsTag
@@ -3276,6 +3273,42 @@ export type SignatureDeclaration =
   | MethodDeclaration
   | MethodSignature;
 export type SourceOfProjectReferenceRedirect = string | true;
+export type Statement =
+  | Block
+  | BreakStatement
+  | ClassDeclaration
+  | ContinueStatement
+  | DebuggerStatement
+  | DoStatement
+  | EmptyStatement
+  | EndOfDeclarationMarker
+  | EnumDeclaration
+  | ExportAssignment
+  | ExportDeclaration
+  | ExpressionStatement
+  | ForInStatement
+  | ForOfStatement
+  | ForStatement
+  | FunctionDeclaration
+  | IfStatement
+  | ImportDeclaration
+  | ImportEqualsDeclaration
+  | InterfaceDeclaration
+  | LabeledStatement
+  | MergeDeclarationMarker
+  | MissingDeclaration
+  | ModuleBlock
+  | ModuleDeclaration
+  | NamespaceExportDeclaration
+  | NotEmittedStatement
+  | ReturnStatement
+  | SwitchStatement
+  | ThrowStatement
+  | TryStatement
+  | TypeAliasDeclaration
+  | VariableStatement
+  | WhileStatement
+  | WithStatement;
 export type StringLiteralLike = StringLiteral | NoSubstitutionLiteral;
 export type StructuredType = ObjectType | UnionType | IntersectionType;
 export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;

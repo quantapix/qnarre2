@@ -854,7 +854,7 @@ export class JsxAttribute extends qc.ObjectLiteralElement implements qt.JsxAttri
     return this.name !== n || this.initer !== i ? new JsxAttribute(n, i).updateFrom(this) : this;
   }
 }
-export class DoStatement extends qc.IterationStatement implements qt.DoStatement {
+export class DoStatement extends qc.IterationSobj implements qt.DoStatement {
   static readonly kind = Syntax.DoStatement;
   expression: qt.Expression;
   constructor(s: qt.Statement, e: qt.Expression) {
@@ -1040,7 +1040,7 @@ export class ExternalModuleReference extends Nobj implements qt.ExternalModuleRe
   }
 }
 ExternalModuleReference.prototype.kind = ExternalModuleReference.kind;
-export class ForInStatement extends qc.IterationStatement implements qt.ForInStatement {
+export class ForInStatement extends qc.IterationSobj implements qt.ForInStatement {
   static readonly kind = Syntax.ForInStatement;
   initer: qt.ForIniter;
   expression: qt.Expression;
@@ -1055,7 +1055,7 @@ export class ForInStatement extends qc.IterationStatement implements qt.ForInSta
   }
 }
 ForInStatement.prototype.kind = ForInStatement.kind;
-export class ForOfStatement extends qc.IterationStatement implements qt.ForOfStatement {
+export class ForOfStatement extends qc.IterationSobj implements qt.ForOfStatement {
   static readonly kind = Syntax.ForOfStatement;
   awaitModifier?: qt.AwaitKeywordToken;
   initer: qt.ForIniter;
@@ -1072,7 +1072,7 @@ export class ForOfStatement extends qc.IterationStatement implements qt.ForOfSta
   }
 }
 ForOfStatement.prototype.kind = ForOfStatement.kind;
-export class ForStatement extends qc.IterationStatement implements qt.ForStatement {
+export class ForStatement extends qc.IterationSobj implements qt.ForStatement {
   static readonly kind = Syntax.ForStatement;
   initer?: qt.ForIniter;
   condition?: qt.Expression;
@@ -2937,7 +2937,7 @@ export class VoidExpression extends qc.UnaryExpression implements qt.VoidExpress
   }
 }
 VoidExpression.prototype.kind = VoidExpression.kind;
-export class WhileStatement extends qc.IterationStatement implements qt.WhileStatement {
+export class WhileStatement extends qc.IterationSobj implements qt.WhileStatement {
   static readonly kind = Syntax.WhileStatement;
   expression: qt.Expression;
   constructor(e: qt.Expression, s: qt.Statement) {

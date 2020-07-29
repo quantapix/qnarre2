@@ -20,8 +20,8 @@ const enum HierarchyFacts {
   ClassOrFunctionExcludes = IterationContainer,
   ArrowFunctionIncludes = None,
   ArrowFunctionExcludes = ClassOrFunctionExcludes,
-  IterationStatementIncludes = IterationContainer,
-  IterationStatementExcludes = None,
+  IterationSobjIncludes = IterationContainer,
+  IterationSobjExcludes = None,
 }
 export function transformES2018(context: TransformationContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
@@ -114,11 +114,11 @@ export function transformES2018(context: TransformationContext) {
       case Syntax.DoStatement:
       case Syntax.WhileStatement:
       case Syntax.ForInStatement:
-        return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
+        return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationSobjExcludes, HierarchyFacts.IterationSobjIncludes);
       case Syntax.ForOfStatement:
         return visitForOfStatement(node as ForOfStatement, undefined);
       case Syntax.ForStatement:
-        return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
+        return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationSobjExcludes, HierarchyFacts.IterationSobjIncludes);
       case Syntax.VoidExpression:
         return visitVoidExpression(node as VoidExpression);
       case Syntax.Constructor:
@@ -315,7 +315,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitorNoDestructuringValue, context);
   }
   function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
-    const ancestorFacts = enterSubtree(HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
+    const ancestorFacts = enterSubtree(HierarchyFacts.IterationSobjExcludes, HierarchyFacts.IterationSobjIncludes);
     if (node.initer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       node = transformForOfStatementWithObjectRest(node);
     }

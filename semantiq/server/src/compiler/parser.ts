@@ -2582,7 +2582,7 @@ function create() {
         if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initer = this.variableDeclarationList(true);
         else initer = flags.withDisallowIn(this.expression);
       }
-      let n: qc.IterationStatement;
+      let n: qc.IterationSobj;
       if (awaitToken ? this.expected(Syntax.OfKeyword) : this.optional(Syntax.OfKeyword)) {
         const n2 = create.node(Syntax.ForOfStatement, pos);
         n2.awaitModifier = awaitToken;
