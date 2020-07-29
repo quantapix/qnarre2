@@ -27,7 +27,7 @@ export function flattenDestructuringAssignment(
   context: TransformationContext,
   level: FlattenLevel,
   needsValue?: boolean,
-  createAssignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression
+  qf.create.assignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression
 ): Expression {
   let location: TextRange = node;
   let value: Expression | undefined;
@@ -76,10 +76,10 @@ export function flattenDestructuringAssignment(
     expressions = append(expressions, expression);
   }
   function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange, original: Node) {
-    Debug.assertNode(target, createAssignmentCallback ? isIdentifier : isExpression);
-    const expression = createAssignmentCallback
-      ? createAssignmentCallback(<Identifier>target, value, location)
-      : setRange(createAssignment(visitNode(<Expression>target, visitor, isExpression), value), location);
+    Debug.assertNode(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
+    const expression = qf.create.assignmentCallback
+      ? qf.create.assignmentCallback(<Identifier>target, value, location)
+      : setRange(qf.create.assignment(visitNode(<Expression>target, visitor, isExpression), value), location);
     expression.original = original;
     emitExpression(expression);
   }
@@ -153,7 +153,7 @@ export function flattenDestructuringBinding(
     } else {
       context.hoistVariableDeclaration(temp);
       const pendingDeclaration = last(pendingDeclarations);
-      pendingDeclaration.pendingExpressions = append(pendingDeclaration.pendingExpressions, createAssignment(temp, pendingDeclaration.value));
+      pendingDeclaration.pendingExpressions = append(pendingDeclaration.pendingExpressions, qf.create.assignment(temp, pendingDeclaration.value));
       addRange(pendingDeclaration.pendingExpressions, pendingExpressions);
       pendingDeclaration.value = temp;
     }
@@ -317,7 +317,7 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
     const temp = createTempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
       flattenContext.context.hoistVariableDeclaration(temp);
-      flattenContext.emitExpression(setRange(createAssignment(temp, value), location));
+      flattenContext.emitExpression(setRange(qf.create.assignment(temp, value), location));
     } else {
       flattenContext.emitBindingOrAssignment(temp, value, location, undefined);
     }
@@ -377,7 +377,7 @@ function createRestCall(
       if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
-        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, qc.asLiteral(''))));
+        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, qf.create.add(temp, qc.asLiteral(''))));
       } else {
         propertyNames.push(qc.asLiteral(propertyName));
       }

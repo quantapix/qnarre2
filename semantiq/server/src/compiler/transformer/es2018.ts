@@ -1,9 +1,10 @@
-import * as qb from '../base';
-import { Node, Nodes } from '../core3';
-import * as qc from '../core3';
-import * as qt from '../types';
+import { Node, Nodes, Modifier, ModifierFlags } from '../core';
+import * as qc from '../core';
+import { qf } from '../core';
+import * as qt from '../type';
+import * as qu from '../util';
 import * as qy from '../syntax';
-import { Modifier, ModifierFlags, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 const enum ESNextSubstitutionFlags {
   AsyncMethodsWithSuper = 1 << 0,
 }
@@ -382,7 +383,7 @@ export function transformES2018(context: TransformationContext) {
     const callReturn = createFunctionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
-    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
+    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
     const forStatement = setEmitFlags(
       setRange(
         new qc.ForStatement(
@@ -390,7 +391,7 @@ export function transformES2018(context: TransformationContext) {
             setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
           ),
-          createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
+          qf.create.comma(qf.create.assignment(result, createDownlevelAwait(callNext)), qf.create.logicalNot(getDone)),
           undefined,
           convertForOfStatementHead(node, getValue)
         ),
@@ -402,14 +403,17 @@ export function transformES2018(context: TransformationContext) {
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
-        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+        setEmitFlags(
+          new Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
+          EmitFlags.SingleLine
+        )
       ),
       new Block([
         new qc.TryStatement(
           new Block([
             setEmitFlags(
               new qc.IfStatement(
-                createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
+                qf.create.logicalAnd(qf.create.logicalAnd(result, qf.create.logicalNot(getDone)), qf.create.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
                 new qc.ExpressionStatement(createDownlevelAwait(callReturn))
               ),
               EmitFlags.SingleLine
@@ -519,7 +523,7 @@ export function transformES2018(context: TransformationContext) {
     appendObjectRestAssignmentsIfNeeded(statements, node);
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
-    capturedSuperProperties = qb.createEscapedMap<true>();
+    capturedSuperProperties = qu.createEscapedMap<true>();
     hasSuperElementAccess = false;
     const returnStatement = new qc.ReturnStatement(
       createAsyncGeneratorHelper(

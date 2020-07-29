@@ -177,7 +177,7 @@ export function transformClassFields(context: TransformationContext) {
               createPrivateIdentifierAssignment(
                 info,
                 initializeExpression || readExpression,
-                new BinaryExpression(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
+                new BinaryExpression(returnValue ? qf.create.assignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
                 Syntax.EqualsToken
               ),
               returnValue,
@@ -209,12 +209,12 @@ export function transformClassFields(context: TransformationContext) {
     const clone = isSynthesized(receiver) ? receiver : getSynthesizedClone(receiver);
     if (isSimpleInlineableExpression(receiver)) return { readExpression: clone, initializeExpression: undefined };
     const readExpression = createTempVariable(hoistVariableDeclaration);
-    const initializeExpression = createAssignment(readExpression, clone);
+    const initializeExpression = qf.create.assignment(readExpression, clone);
     return { readExpression, initializeExpression };
   }
   function visitCallExpression(node: CallExpression) {
     if (shouldTransformPrivateFields && qc.is.privateIdentifierPropertyAccessExpression(node.expression)) {
-      const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
+      const { thisArg, target } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion);
       return node.update(new qc.PropertyAccessExpression(visitNode(target, visitor), 'call'), undefined, [
         visitNode(thisArg, visitor, isExpression),
         ...Nodes.visit(node.arguments, visitor, isExpression),
@@ -224,7 +224,7 @@ export function transformClassFields(context: TransformationContext) {
   }
   function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
     if (shouldTransformPrivateFields && qc.is.privateIdentifierPropertyAccessExpression(node.tag)) {
-      const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
+      const { thisArg, target } = qf.create.callBinding(node.tag, hoistVariableDeclaration, languageVersion);
       return node.update(
         new qs.CallExpression(new qc.PropertyAccessExpression(visitNode(target, visitor), 'bind'), undefined, [visitNode(thisArg, visitor, isExpression)]),
         visitNode(node.template, visitor, isTemplateLiteral)
@@ -332,7 +332,7 @@ export function transformClassFields(context: TransformationContext) {
           classAliases[getOriginalNodeId(node)] = alias;
         }
         setEmitFlags(classExpression, EmitFlags.Indented | qc.get.emitFlags(classExpression));
-        expressions.push(startOnNewLine(createAssignment(temp, classExpression)));
+        expressions.push(startOnNewLine(qf.create.assignment(temp, classExpression)));
         addRange(expressions, map(pendingExpressions, startOnNewLine));
         addRange(expressions, generateInitializedPropertyExpressions(staticProperties, temp));
         expressions.push(startOnNewLine(temp));
@@ -459,7 +459,7 @@ export function transformClassFields(context: TransformationContext) {
         : qs.VoidExpression.zero();
     if (emitAssignment || qc.is.kind(qc.PrivateIdentifier, propertyName)) {
       const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, propertyName);
-      return createAssignment(memberAccess, initer);
+      return qf.create.assignment(memberAccess, initer);
     } else {
       const name = qc.is.kind(qc.ComputedPropertyName, propertyName)
         ? propertyName.expression
@@ -518,7 +518,7 @@ export function transformClassFields(context: TransformationContext) {
       if (!alreadyTransformed && !inlinable && shouldHoist) {
         const generatedName = qf.get.generatedNameForNode(name);
         hoistVariableDeclaration(generatedName);
-        return createAssignment(generatedName, expression);
+        return qf.create.assignment(generatedName, expression);
       }
       return inlinable || qc.is.kind(qc.Identifier, innerExpression) ? undefined : expression;
     }
@@ -539,7 +539,7 @@ export function transformClassFields(context: TransformationContext) {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });
-    (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, new qc.NewExpression(new Identifier('WeakMap'), undefined, [])));
+    (pendingExpressions || (pendingExpressions = [])).push(qf.create.assignment(weakMapName, new qc.NewExpression(new Identifier('WeakMap'), undefined, [])));
   }
   function accessPrivateIdentifier(name: PrivateIdentifier) {
     if (currentPrivateIdentifierEnvironment) {
@@ -597,7 +597,7 @@ export function transformClassFields(context: TransformationContext) {
       if (target && qc.is.privateIdentifierPropertyAccessExpression(target)) {
         const initer = getIniterOfBindingOrAssignmentElement(node);
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
-        return node.update(visitNode(node.name, visitor), initer ? createAssignment(wrapped, visitNode(initer, visitor)) : wrapped);
+        return node.update(visitNode(node.name, visitor), initer ? qf.create.assignment(wrapped, visitNode(initer, visitor)) : wrapped);
       }
       return node.update(visitNode(node.name, visitor), visitNode(node.initer, visitorDestructuringTarget));
     }

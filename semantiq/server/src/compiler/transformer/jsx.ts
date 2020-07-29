@@ -79,7 +79,7 @@ export function transformJsx(context: TransformationContext) {
         objectProperties = createAssignHelper(context, segments);
       }
     }
-    const element = qs.JsxElement.createExpression(
+    const element = qs.JsxElement.qf.create.expression(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!,
       tagName,
@@ -94,7 +94,7 @@ export function transformJsx(context: TransformationContext) {
     return element;
   }
   function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
-    const element = createExpressionForJsxFragment(
+    const element = qf.create.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!,
       mapDefined(children, transformJsxChildToExpression),

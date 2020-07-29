@@ -163,7 +163,7 @@ export namespace BindingOrAssignmentElement {
         return new qc.SpreadElement(e.name).setRange(e).setOriginal(e);
       }
       const e2 = convertToAssignmentElementTarget(e.name);
-      return e.initer ? createAssignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
+      return e.initer ? qf.create.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
     }
     qc.assertNode(e, isExpression);
     return <qc.Expression>e;
@@ -176,7 +176,7 @@ export namespace BindingOrAssignmentElement {
       }
       if (e.propertyName) {
         const e2 = convertToAssignmentElementTarget(e.name);
-        return new qc.PropertyAssignment(e.propertyName, e.initer ? createAssignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
+        return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
       qc.assertNode(e.name, isIdentifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);

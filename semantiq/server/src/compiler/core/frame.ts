@@ -3071,6 +3071,7 @@ export const fixme = new (class {
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Nget;
+    is: Nis;
   }
   const qf = f as Frame;
   return (qf.create = new (class {
@@ -3116,125 +3117,108 @@ export function newCreate(f: qt.Frame) {
       return clone;
     }
 
-    createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
-      const r = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
-      r.parent = parent;
-      r.data = section.data;
+    createUnparsedNode(s: qt.BundleFileSection, p: qt.UnparsedSource): qt.UnparsedNode {
+      const n = new qc.UparsedNode(mapBundleFileSectionKindToSyntax(s.kind), s.pos, s.end);
+      n.parent = p;
+      n.data = s.data;
+      return n;
     }
 
-    fromNode(n: Exclude<qc.PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
-      const r = new StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
+    fromNode(n: Exclude<qt.PropertyNameLiteral, qt.PrivateIdentifier>): qt.StringLiteral {
+      const r = new qc.StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
       r.textSourceNode = n;
       return r;
     }
-
-    logicalNot(e: qc.Expression) {
-      return new PrefixUnaryExpression(Syntax.ExclamationToken, e);
+    logicalNot(e: qt.Expression) {
+      return new qc.PrefixUnaryExpression(Syntax.ExclamationToken, e);
     }
-
     increment(e: qt.Expression) {
-      return new PostfixUnaryExpression(e, Syntax.Plus2Token);
+      return new qc.PostfixUnaryExpression(e, Syntax.Plus2Token);
     }
-
-    recreateOuterExpressions(o: qt.Expression | undefined, i: qt.Expression, ks = qt.OuterExpressionKinds.All): qc.Expression {
-      if (o && qf.is.outerExpression(o, ks) && !qf.is.ignorableParen(o)) return o.update(recreateOuterExpressions(o.expression, i));
+    recreateOuterExpressions(o: qt.Expression | undefined, i: qt.Expression, ks = qt.OuterExpressionKinds.All): qt.Expression {
+      if (o && qf.is.outerExpression(o, ks) && !qf.is.ignorableParen(o)) return o.update(this.recreateOuterExpressions(o.expression, i));
       return i;
     }
-
-    createReactNamespace(reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment) {
-      const r = new Identifier(reactNamespace || 'React');
+    reactNamespace(react: string, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment) {
+      const r = new qc.Identifier(react || 'React');
       r.flags &= ~NodeFlags.Synthesized;
-      r.parent = qf.get.parseTreeOf(parent);
+      r.parent = qf.get.parseTreeOf(p);
       return r;
     }
-    createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
-      if (qf.is.kind(QualifiedName, jsxFactory)) {
-        const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
-        const right = new Identifier(qc.idText(jsxFactory.right));
-        right.escapedText = jsxFactory.right.escapedText;
-        return new qc.PropertyAccessExpression(left, right);
+    jsxFactoryExpressionFromEntityName(e: qt.EntityName, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment): qt.Expression {
+      if (e.kind === Syntax.QualifiedName) {
+        const l = this.jsxFactoryExpressionFromEntityName(e.left, p);
+        const r = new qc.Identifier(qc.idText(e.right));
+        r.escapedText = e.right.escapedText;
+        return new qc.PropertyAccessExpression(l, r);
       }
-      return createReactNamespace(qc.idText(jsxFactory), parent);
+      return this.reactNamespace(qc.idText(e), p);
     }
-    createJsxFactoryExpression(jsxFactoryEntity: qc.EntityName | undefined, reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
-      return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : new qc.PropertyAccessExpression(createReactNamespace(reactNamespace, parent), 'createElement');
+    jsxFactoryExpression(e: qt.EntityName | undefined, react: string, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment): qt.Expression {
+      return e ? this.jsxFactoryExpressionFromEntityName(e, p) : new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'createElement');
     }
-
-    createExpressionForJsxFragment(
-      jsxFactoryEntity: qc.EntityName | undefined,
-      reactNamespace: string,
-      children: readonly qt.Expression[],
-      parentElement: JsxOpeningFragment,
-      location: qu.TextRange
-    ): qc.LeftHandSideExpression {
-      const tagName = new qc.PropertyAccessExpression(createReactNamespace(reactNamespace, parentElement), 'Fragment');
-      const argumentsList = [<qc.Expression>tagName];
-      argumentsList.push(new qc.NullLiteral());
-      if (children && children.length > 0) {
-        if (children.length > 1) {
-          for (const c of children) {
+    expressionForJsxFragment(e: qt.EntityName | undefined, react: string, cs: readonly qt.Expression[], p: qt.JsxOpeningFragment, r: qu.TextRange): qt.LeftHandSideExpression {
+      const t = new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'Fragment');
+      const args = [t as qt.Expression];
+      args.push(new qc.NullLiteral());
+      if (cs.length > 1) {
+        for (const c of cs) {
+          startOnNewLine(c);
+          args.push(c);
+        }
+      } else args.push(cs[0]);
+      return new qc.CallExpression(this.jsxFactoryExpression(e, react, p), undefined, args).setRange(r);
+    }
+    expression(
+      e: qt.EntityName | undefined,
+      react: string,
+      t: qt.Expression,
+      ps: qt.Expression,
+      cs: readonly qt.Expression[],
+      p: qt.JsxOpeningLikeElement,
+      r: qu.TextRange
+    ): qt.LeftHandSideExpression {
+      const args = [t];
+      if (ps) args.push(ps);
+      if (cs.length) {
+        if (!ps) args.push(new qc.NullLiteral());
+        if (cs.length > 1) {
+          for (const c of cs) {
             startOnNewLine(c);
-            argumentsList.push(c);
+            args.push(c);
           }
-        } else argumentsList.push(children[0]);
+        } else args.push(cs[0]);
       }
-      return new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList).setRange(location);
+      return new qc.CallExpression(this.jsxFactoryExpression(e, react, p), undefined, args).setRange(r);
     }
-
-    createExpression(
-      jsxFactoryEntity: qc.EntityName | undefined,
-      reactNamespace: string,
-      tagName: qc.Expression,
-      props: qc.Expression,
-      children: readonly qt.Expression[],
-      parentElement: qc.JsxOpeningLikeElement,
-      location: qu.TextRange
-    ): qc.LeftHandSideExpression {
-      const argumentsList = [tagName];
-      if (props) argumentsList.push(props);
-      if (children && children.length > 0) {
-        if (!props) argumentsList.push(new NullLiteral());
-        if (children.length > 1) {
-          for (const c of children) {
-            startOnNewLine(c);
-            argumentsList.push(c);
-          }
-        } else argumentsList.push(children[0]);
-      }
-      return new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList).setRange(location);
+    externalModuleExport(i: qt.Identifier) {
+      return new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(undefined, i)]));
     }
-
-    createExternalModuleExport(exportName: Identifier) {
-      return new ExportDeclaration(undefined, undefined, new NamedExports([new ExportSpecifier(undefined, exportName)]));
+    emptyExports() {
+      return new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([]), undefined);
     }
-    createEmptyExports() {
-      return new ExportDeclaration(undefined, undefined, new NamedExports([]), undefined);
+    exportDefault(e: qt.Expression) {
+      return new qc.ExportAssignment(undefined, undefined, false, e);
     }
-
-    createExportDefault(e: qt.Expression) {
-      return new ExportAssignment(undefined, undefined, false, e);
+    immediateFunctionExpression(ss: readonly qt.Statement[]): qt.CallExpression;
+    immediateFunctionExpression(ss: readonly qt.Statement[], p: qt.ParameterDeclaration, v: qt.Expression): qt.CallExpression;
+    immediateFunctionExpression(ss: readonly qt.Statement[], p?: qt.ParameterDeclaration, v?: qt.Expression) {
+      return new qc.CallExpression(new qc.FunctionExpression(undefined, undefined, undefined, undefined, p ? [p] : [], undefined, new qc.Block(ss, true)), undefined, v ? [v] : []);
     }
-
-    immediateFunctionExpression(ss: readonly qt.Statement[]): CallExpression;
-    immediateFunctionExpression(ss: readonly qt.Statement[], p: ParameterDeclaration, v: qc.Expression): CallExpression;
-    immediateFunctionExpression(ss: readonly qt.Statement[], p?: ParameterDeclaration, v?: qc.Expression) {
-      return new CallExpression(new FunctionExpression(undefined, undefined, undefined, undefined, p ? [p] : [], undefined, new Block(ss, true)), undefined, v ? [v] : []);
+    immediateArrowFunction(ss: readonly qt.Statement[]): qt.CallExpression;
+    immediateArrowFunction(ss: readonly qt.Statement[], p: qt.ParameterDeclaration, v: qt.Expression): qt.CallExpression;
+    immediateArrowFunction(ss: readonly qt.Statement[], p?: qt.ParameterDeclaration, v?: qt.Expression) {
+      return new qc.CallExpression(new qc.ArrowFunction(undefined, undefined, p ? [p] : [], undefined, undefined, new qc.Block(ss, true)), undefined, v ? [v] : []);
     }
-    immediateArrowFunction(ss: readonly qt.Statement[]): CallExpression;
-    immediateArrowFunction(ss: readonly qt.Statement[], p: ParameterDeclaration, v: qc.Expression): CallExpression;
-    immediateArrowFunction(ss: readonly qt.Statement[], p?: ParameterDeclaration, v?: qc.Expression) {
-      return new CallExpression(new ArrowFunction(undefined, undefined, p ? [p] : [], undefined, undefined, new Block(ss, true)), undefined, v ? [v] : []);
-    }
-
-    createCallBinding(e: qc.Expression, recordTempVariable: (temp: Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): CallBinding {
+    callBinding(e: qc.Expression, recordTempVariable: (temp: qt.Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): qt.CallBinding {
       const callee = qc.skipOuterExpressions(e, qc.OuterExpressionKinds.All);
       let thisArg: qc.Expression;
       let target: qc.LeftHandSideExpression;
       if (qf.is.superProperty(callee)) {
-        thisArg = new ThisExpression();
+        thisArg = new qc.ThisExpression();
         target = callee;
       } else if (callee.kind === Syntax.SuperKeyword) {
-        thisArg = new ThisExpression();
+        thisArg = new qc.ThisExpression();
         target = <PrimaryExpression>callee;
       } else if (qf.get.emitFlags(callee) & qc.EmitFlags.HelperName) {
         thisArg = VoidExpression.zero();
@@ -3245,8 +3229,8 @@ export function newCreate(f: qt.Frame) {
             if (qf.is.toBeCapturedInTempVariable((<PropertyAccessExpression>callee).expression, cacheIdentifiers)) {
               // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
-              target = new PropertyAccessExpression(
-                createAssignment(thisArg, (<PropertyAccessExpression>callee).expression).setRange((<PropertyAccessExpression>callee).expression),
+              target = new qc.PropertyAccessExpression(
+                qf.create.assignment(thisArg, (<PropertyAccessExpression>callee).expression).setRange((<PropertyAccessExpression>callee).expression),
                 (<PropertyAccessExpression>callee).name
               );
               target.setRange(callee);
@@ -3260,8 +3244,8 @@ export function newCreate(f: qt.Frame) {
             if (qf.is.toBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
               // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
-              target = new ElementAccessExpression(
-                createAssignment(thisArg, (<ElementAccessExpression>callee).expression).setRange((<ElementAccessExpression>callee).expression),
+              target = new qc.ElementAccessExpression(
+                qf.create.assignment(thisArg, (<ElementAccessExpression>callee).expression).setRange((<ElementAccessExpression>callee).expression),
                 (<ElementAccessExpression>callee).argumentExpression
               );
               target.setRange(callee);
@@ -3274,47 +3258,45 @@ export function newCreate(f: qt.Frame) {
           default: {
             // for `a()` target is `a` and thisArg is `void 0`
             thisArg = VoidExpression.zero();
-            target = parenthesize.forAccess(e);
+            target = qc.parenthesize.forAccess(e);
             break;
           }
         }
       }
       return { target, thisArg };
     }
-
-    createStrictEquality(l: qt.Expression, r: qt.Expression) {
+    strictEquality(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.Equals3Token, r);
     }
-    createStrictInequality(l: qt.Expression, r: qt.Expression) {
+    strictInequality(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.ExclamationEquals2Token, r);
     }
-    createAdd(l: qt.Expression, r: qt.Expression) {
+    add(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.PlusToken, r);
     }
-    createSubtract(l: qt.Expression, r: qt.Expression) {
+    subtract(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.MinusToken, r);
     }
-    createLogicalAnd(l: qt.Expression, r: qt.Expression) {
+    logicalAnd(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.Ampersand2Token, r);
     }
-    createLogicalOr(l: qt.Expression, r: qt.Expression) {
+    logicalOr(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.Bar2Token, r);
     }
-    createNullishCoalesce(l: qt.Expression, r: qt.Expression) {
+    nullishCoalesce(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.Question2Token, r);
     }
-    createComma(l: qt.Expression, r: qt.Expression) {
+    comma(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.CommaToken, r);
     }
-    createLessThan(l: qt.Expression, r: qt.Expression) {
+    lessThan(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.LessThanToken, r);
     }
-    //createAssignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
-    createAssignment(l: qt.Expression, r: qt.Expression): qc.BinaryExpression;
-    createAssignment(l: qt.Expression, r: qt.Expression) {
+    //qf.create.assignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
+    assignment(l: qt.Expression, r: qt.Expression): qc.BinaryExpression;
+    assignment(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.EqualsToken, r);
     }
-
     commentDirectivesMap(s: qt.SourceFile, ds: qt.CommentDirective[]): qt.CommentDirectivesMap {
       const ds2 = new qu.QMap(ds.map((d) => [`${qy.get.lineAndCharOf(s, d.range.end).line}`, d]));
       const ls = new qu.QMap<boolean>();
@@ -3456,18 +3438,18 @@ export function newCreate(f: qt.Frame) {
         return;
       }
       function createExpressionForPropertyAssignment(property: qt.PropertyAssignment, receiver: Expression) {
-        return aggregateTransformFlags(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
+        return aggregateTransformFlags(setRange(qf.create.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
       }
       function createExpressionForShorthandPropertyAssignment(property: qt.ShorthandPropertyAssignment, receiver: Expression) {
         return aggregateTransformFlags(
-          setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
+          setRange(qf.create.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
         );
       }
       function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
         return aggregateTransformFlags(
           setOriginalNode(
             setRange(
-              createAssignment(
+              qf.create.assignment(
                 createMemberAccessForPropertyName(receiver, method.name, method.name),
                 setRange(new qc.FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method).setOriginal(method)
               ),
@@ -3491,7 +3473,7 @@ export function newCreate(f: qt.Frame) {
       return;
     }
     createTypeCheck(value: Expression, tag: TypeOfTag) {
-      return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
+      return tag === 'undefined' ? qf.create.strictEquality(value, VoidExpression.zero()) : qf.create.strictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
     }
     createMemberAccessForPropertyName(target: Expression, memberName: qt.PropertyName, location?: qu.TextRange): MemberExpression {
       if (qf.is.kind(qc.ComputedPropertyName, memberName)) return setRange(new qc.ElementAccessExpression(target, memberName.expression), location);

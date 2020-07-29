@@ -3511,7 +3511,7 @@ export namespace fixme {
     return setEmitFlags(new Identifier(name), qt.EmitFlags.HelperName | qt.EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
-    return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, createComma)!;
+    return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
   }
   export function convertToFunctionBody(node: qc.ConciseBody, multiLine?: boolean): qt.Block {
     return qf.is.kind(Block, node) ? node : new Block([new ReturnStatement(node).setRange(node)], multiLine).setRange(node);
@@ -3651,7 +3651,7 @@ export function asLiteral(v: string | number | qc.PseudoBigInt | boolean | Strin
     if (singleQuote) r.singleQuote = true;
     return r;
   }
-  return StringLiteral.fromNode(v);
+  return qf.create.fromNode(v);
 }
 export function asExpression<T extends qt.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;

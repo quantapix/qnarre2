@@ -112,7 +112,7 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
           p.name,
           p.type,
           p.initer
-            ? new qc.ConditionalExpression(createStrictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
+            ? new qc.ConditionalExpression(qf.create.strictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
             : qf.get.generatedNameForNode(p)
         ),
       ])
@@ -129,7 +129,10 @@ function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expres
           new Block([
             new qc.ExpressionStatement(
               setEmitFlags(
-                setRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)), p),
+                setRange(
+                  qf.create.assignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)),
+                  p
+                ),
                 EmitFlags.NoComments
               )
             ),

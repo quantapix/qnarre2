@@ -42,8 +42,8 @@ export function transformES2016(context: TransformationContext) {
       const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
       target = setRange(
         new qs.ElementAccessExpression(
-          setRange(createAssignment(expressionTemp, left.expression), left.expression),
-          setRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
+          setRange(qf.create.assignment(expressionTemp, left.expression), left.expression),
+          setRange(qf.create.assignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
         ),
         left
       );
@@ -51,14 +51,14 @@ export function transformES2016(context: TransformationContext) {
     } else if (qc.is.kind(qc.PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = setRange(new qc.PropertyAccessExpression(setRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
+      target = setRange(new qc.PropertyAccessExpression(setRange(qf.create.assignment(expressionTemp, left.expression), left.expression), left.name), left);
       value = setRange(new qc.PropertyAccessExpression(expressionTemp, left.name), left);
     } else {
       // Transforms `a **= b` into `a = Math.pow(a, b)`
       target = left;
       value = left;
     }
-    return setRange(createAssignment(target, createMathPow(value, right, node)), node);
+    return setRange(qf.create.assignment(target, createMathPow(value, right, node)), node);
   }
   function visitExponentiationExpression(node: BinaryExpression) {
     // Transforms `a ** b` into `Math.pow(a, b)`

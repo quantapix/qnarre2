@@ -532,7 +532,7 @@ export abstract class Statement extends Nobj implements qt.Statement {
       const updatedDeclaration = firstDeclaration.update(firstDeclaration.name, undefined, boundValue);
       return setRange(new qc.VariableStatement(undefined, n.update([updatedDeclaration])), n);
     } else {
-      const updatedExpression = setRange(createAssignment(n, boundValue), n);
+      const updatedExpression = setRange(qf.create.assignment(n, boundValue), n);
       return setRange(new qc.ExpressionStatement(updatedExpression), n);
     }
   }

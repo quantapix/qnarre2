@@ -282,7 +282,7 @@ export function transformDeclarations(context: TransformationContext) {
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
       if (qc.is.externalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker)))
-        combinedStatements = setRange(new Nodes([...combinedStatements, createEmptyExports()]), combinedStatements);
+        combinedStatements = setRange(new Nodes([...combinedStatements, qf.create.emptyExports()]), combinedStatements);
     }
     const updated = qp_updateSourceNode(node, combinedStatements, true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
     updated.exportedModulesFromDeclarationEmit = exportedModulesFromDeclarationEmit;
@@ -893,7 +893,7 @@ export function transformDeclarations(context: TransformationContext) {
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
           if (input.flags & NodeFlags.Ambient) needsScopeFixMarker = false;
           if (!input.qf.is.globalScopeAugmentation() && !qf.has.scopeMarker(lateStatements) && !resultHasScopeMarker) {
-            if (needsScopeFixMarker) lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
+            if (needsScopeFixMarker) lateStatements = new Nodes([...lateStatements, qf.create.emptyExports()]);
             else {
               lateStatements = Nodes.visit(lateStatements, stripExportModifiers);
             }

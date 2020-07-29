@@ -63,7 +63,7 @@ export function transformES2020(context: TransformationContext) {
     if (captureThisArg) {
       if (shouldCaptureInTempVariable(expression)) {
         thisArg = createTempVariable(hoistVariableDeclaration);
-        expression = createAssignment(thisArg, expression);
+        expression = qf.create.assignment(thisArg, expression);
         // if (inParameterIniter) tempVariableInParameter = true;
       } else {
         thisArg = expression;
@@ -100,7 +100,7 @@ export function transformES2020(context: TransformationContext) {
     let capturedLeft: Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
-      leftExpression = createAssignment(capturedLeft, leftExpression);
+      leftExpression = qf.create.assignment(capturedLeft, leftExpression);
       // if (inParameterIniter) tempVariableInParameter = true;
     }
     let rightExpression = capturedLeft;
@@ -113,7 +113,7 @@ export function transformES2020(context: TransformationContext) {
           if (i === chain.length - 1 && captureThisArg) {
             if (shouldCaptureInTempVariable(rightExpression)) {
               thisArg = createTempVariable(hoistVariableDeclaration);
-              rightExpression = createAssignment(thisArg, rightExpression);
+              rightExpression = qf.create.assignment(thisArg, rightExpression);
               // if (inParameterIniter) tempVariableInParameter = true;
             } else {
               thisArg = rightExpression;
@@ -155,7 +155,7 @@ export function transformES2020(context: TransformationContext) {
     let right = left;
     if (shouldCaptureInTempVariable(left)) {
       right = createTempVariable(hoistVariableDeclaration);
-      left = createAssignment(right, left);
+      left = qf.create.assignment(right, left);
       // if (inParameterIniter) tempVariableInParameter = true;
     }
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));

@@ -1,10 +1,11 @@
-import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../core3';
-import * as qt from '../types';
+import { qf } from '../core';
+import { Modifier } from '../type';
+import * as qu from '../util';
+import * as qt from '../type';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 // Transforms generator functions into a compatible ES5 representation with similar runtime
 // semantics. This is accomplished by first transforming the body of each generator
 // function into an intermediate representation that is the compiled into a JavaScript
@@ -401,7 +402,7 @@ export function transformGenerators(context: TransformationContext) {
     if (node.asteriskToken) {
       node = setOriginalNode(
         setRange(
-          new qs.FunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
+          new qc.FunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
           node
         ),
         node
@@ -553,7 +554,7 @@ export function transformGenerators(context: TransformationContext) {
       const operator = node.operatorToken.kind;
       if (isCompoundAssignment(operator)) {
         return setRange(
-          createAssignment(target, setRange(new BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
+          qf.create.assignment(target, setRange(new BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
           node
         );
       }
@@ -816,7 +817,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
-      const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
+      const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
       return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
@@ -833,10 +834,10 @@ export function transformGenerators(context: TransformationContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      new (_b.apply(_a, _c.concat([%sent%, 2])));
-      const { target, thisArg } = createCallBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
+      const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
         setRange(
-          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qs.VoidExpression.zero())), undefined, []),
+          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qc.VoidExpression.zero())), undefined, []),
           node
         ),
         node
@@ -938,7 +939,7 @@ export function transformGenerators(context: TransformationContext) {
     return;
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    return setSourceMapRange(createAssignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
+    return setSourceMapRange(qf.create.assignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
   }
   function transformAndEmitIfStatement(node: IfStatement) {
     if (containsYield(node)) {
@@ -1148,7 +1149,7 @@ export function transformGenerators(context: TransformationContext) {
         new qc.ForInStatement(
           key,
           visitNode(node.expression, visitor, isExpression),
-          new qc.ExpressionStatement(new qs.CallExpression(new qc.PropertyAccessExpression(keysArray, 'push'), undefined, [key]))
+          new qc.ExpressionStatement(new qc.CallExpression(new qc.PropertyAccessExpression(keysArray, 'push'), undefined, [key]))
         )
       );
       emitAssignment(keysIndex, qc.asLiteral(0));
@@ -1156,7 +1157,7 @@ export function transformGenerators(context: TransformationContext) {
       const incrementLabel = defineLabel();
       const endLabel = beginLoopBlock(incrementLabel);
       markLabel(conditionLabel);
-      emitBreakWhenFalse(endLabel, createLessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
+      emitBreakWhenFalse(endLabel, qf.create.lessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: Expression;
       if (qc.is.kind(qc.VariableDeclarationList, initer)) {
         for (const variable of initer.declarations) {
@@ -1167,10 +1168,10 @@ export function transformGenerators(context: TransformationContext) {
         variable = visitNode(initer, visitor, isExpression);
         assert(qc.is.leftHandSideExpression(variable));
       }
-      emitAssignment(variable, new qs.ElementAccessExpression(keysArray, keysIndex));
+      emitAssignment(variable, new qc.ElementAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
       markLabel(incrementLabel);
-      emitStatement(new qc.ExpressionStatement(qs.PostfixUnaryExpression.increment(keysIndex)));
+      emitStatement(new qc.ExpressionStatement(qf.create.increment(keysIndex)));
       emitBreak(conditionLabel);
       endLoopBlock();
     } else {
@@ -1588,7 +1589,7 @@ export function transformGenerators(context: TransformationContext) {
     exception.state = ExceptionBlockState.Catch;
     exception.catchVariable = name;
     exception.catchLabel = catchLabel;
-    emitAssignment(name, new qs.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []));
+    emitAssignment(name, new qc.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []));
     emitNop();
   }
   function beginFinallyBlock(): void {
@@ -1770,7 +1771,7 @@ export function transformGenerators(context: TransformationContext) {
     return setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
   function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
-    return setRange(new qs.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []), location);
+    return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []), location);
   }
   function emitNop() {
     emitWorker(OpCode.Nop);
@@ -1839,7 +1840,7 @@ export function transformGenerators(context: TransformationContext) {
     return createGeneratorHelper(
       context,
       setEmitFlags(
-        new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
+        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
         EmitFlags.ReuseTempVariableScope
       )
     );
@@ -1915,7 +1916,7 @@ export function transformGenerators(context: TransformationContext) {
         const { startLabel, catchLabel, finallyLabel, endLabel } = currentExceptionBlock;
         statements.unshift(
           new qc.ExpressionStatement(
-            new qs.CallExpression(new qc.PropertyAccessExpression(new qc.PropertyAccessExpression(state, 'trys'), 'push'), undefined, [
+            new qc.CallExpression(new qc.PropertyAccessExpression(new qc.PropertyAccessExpression(state, 'trys'), 'push'), undefined, [
               new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
             ])
           )
@@ -1925,7 +1926,7 @@ export function transformGenerators(context: TransformationContext) {
       if (markLabelEnd) {
         // The case clause for the last label falls through to this label, so we
         // add an assignment statement to reflect the change in labels.
-        statements.push(new qc.ExpressionStatement(createAssignment(new qc.PropertyAccessExpression(state, 'label'), qc.asLiteral(labelNumber + 1))));
+        statements.push(new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(state, 'label'), qc.asLiteral(labelNumber + 1))));
       }
     }
     clauses.push(new qc.CaseClause(qc.asLiteral(labelNumber), statements || []));
@@ -2048,7 +2049,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
   function writeAssign(left: Expression, right: Expression, operationLocation: TextRange | undefined): void {
-    writeStatement(setRange(new qc.ExpressionStatement(createAssignment(left, right)), operationLocation));
+    writeStatement(setRange(new qc.ExpressionStatement(qf.create.assignment(left, right)), operationLocation));
   }
   function writeThrow(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
@@ -2086,7 +2087,7 @@ export function transformGenerators(context: TransformationContext) {
     writeStatement(
       setEmitFlags(
         new qc.IfStatement(
-          qs.PrefixUnaryExpression.logicalNot(condition),
+          qf.create.logicalNot(condition),
           setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
@@ -2113,7 +2114,7 @@ export function transformGenerators(context: TransformationContext) {
 }
 function createGeneratorHelper(context: TransformationContext, body: FunctionExpression) {
   context.requestEmitHelper(generatorHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__generator'), undefined, [new qc.ThisExpression(), body]);
+  return new qc.CallExpression(getUnscopedHelperName('__generator'), undefined, [new qc.ThisExpression(), body]);
 }
 // The __generator helper is used by down-level transformations to emulate the runtime
 // semantics of an ES2015 generator function. When called, this helper returns an

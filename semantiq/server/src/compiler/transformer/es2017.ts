@@ -272,7 +272,7 @@ export function transformES2017(context: TransformationContext) {
     }
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    const converted = setSourceMapRange(createAssignment(convertToAssignmentElementTarget(node.name), node.initer!), node);
+    const converted = setSourceMapRange(qf.create.assignment(convertToAssignmentElementTarget(node.name), node.initer!), node);
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
@@ -464,7 +464,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
             [new qc.ParameterDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
-            createAssignment(setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
+            qf.create.assignment(setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
           )
         )
       );
