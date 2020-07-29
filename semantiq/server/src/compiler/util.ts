@@ -897,7 +897,7 @@ export function rangeEquals<T>(a: readonly T[], b: readonly T[], pos: number, en
   }
   return true;
 }
-export function elementAt<T>(ts: readonly T[] | undefined, offset: number): T | undefined {
+export function elemAt<T>(ts: readonly T[] | undefined, offset: number): T | undefined {
   if (ts) {
     offset = toOffset(ts, offset);
     if (offset < ts.length) return ts[offset];
@@ -928,7 +928,7 @@ export function singleOrMany<T>(ts: readonly T[] | undefined): T | readonly T[] 
 export function singleOrMany<T>(ts: readonly T[] | undefined): T | readonly T[] | undefined {
   return ts && ts.length === 1 ? ts[0] : ts;
 }
-export function replaceElement<T>(ts: readonly T[], index: number, value: T): T[] {
+export function replaceElem<T>(ts: readonly T[], index: number, value: T): T[] {
   const r = ts.slice(0);
   r[index] = value;
   return r;
@@ -1354,9 +1354,9 @@ export function unorderedRemoveItemAt<T>(array: T[], index: number): void {
   array.pop();
 }
 export function unorderedRemoveItem<T>(array: T[], item: T) {
-  return unorderedRemoveFirstItemWhere(array, (element) => element === item);
+  return unorderedRemoveFirstItemWhere(array, (elem) => elem === item);
 }
-function unorderedRemoveFirstItemWhere<T>(array: T[], cb: (element: T) => boolean) {
+function unorderedRemoveFirstItemWhere<T>(array: T[], cb: (elem: T) => boolean) {
   for (let i = 0; i < array.length; i++) {
     if (cb(array[i])) {
       unorderedRemoveItemAt(array, i);
@@ -1419,7 +1419,7 @@ export function not<T extends unknown[]>(fn: (...args: T) => boolean): (...args:
   return (...args) => !fn(...args);
 }
 export function assertType<T>(_: T): void {}
-export function singleElementArray<T>(t: T | undefined): T[] | undefined {
+export function singleElemArray<T>(t: T | undefined): T[] | undefined {
   return t === undefined ? undefined : [t];
 }
 export function enumerateInsertsAndDeletes<T, U>(

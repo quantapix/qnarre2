@@ -26,17 +26,17 @@ const enum SignatureFlags {
   Doc = 1 << 5,
 }
 const enum Context {
-  SourceElements,
+  SourceElems,
   BlockStatements,
   SwitchClauses,
   SwitchClauseStatements,
   TypeMembers,
   ClassMembers,
   EnumMembers,
-  HeritageClauseElement,
+  HeritageClauseElem,
   VariableDeclarations,
-  ObjectBindingElements,
-  ArrayBindingElements,
+  ObjectBindingElems,
+  ArrayBindingElems,
   ArgumentExpressions,
   ObjectLiteralMembers,
   JsxAttributes,
@@ -47,7 +47,7 @@ const enum Context {
   RestProperties,
   TypeParameters,
   TypeArguments,
-  TupleElementTypes,
+  TupleElemTypes,
   HeritageClauses,
   ImportOrExportSpecifiers,
   Count,
@@ -340,7 +340,7 @@ function create() {
         case Syntax.ObjectKeyword:
           return true;
         case Syntax.ArrayType:
-          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTypeNode).elementType);
+          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTypeNode).elemType);
         default:
           return qc.is.kind(qc.TypeReferenceNode, n) && qc.is.kind(qc.Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
       }
@@ -687,8 +687,8 @@ function create() {
       const es = [] as T[];
       const p = getNodePos();
       while (!this.isListTerminator(c)) {
-        if (this.isListElement(c, false)) {
-          const e = this.parseListElement(c, cb);
+        if (this.isListElem(c, false)) {
+          const e = this.parseListElem(c, cb);
           es.push(e);
           continue;
         }
@@ -715,9 +715,9 @@ function create() {
         return c === Context.EnumMembers ? qd.msgs.An_enum_member_name_must_be_followed_by_a_or : undefined;
       };
       while (true) {
-        if (this.isListElement(c, false)) {
+        if (this.isListElem(c, false)) {
           const sp = scanner.getStartPos();
-          es.push(this.parseListElement(c, cb));
+          es.push(this.parseListElem(c, cb));
           s = scanner.getTokenPos();
           if (parse.optional(Syntax.CommaToken)) continue;
           s = -1;
@@ -735,7 +735,7 @@ function create() {
       if (s >= 0) r.trailingComma = true;
       return r;
     }
-    parseJsxChildren(tag: JsxOpeningElement | JsxOpeningFragment): Nodes<JsxChild> {
+    parseJsxChildren(tag: JsxOpeningElem | JsxOpeningFragment): Nodes<JsxChild> {
       const list = [];
       const listPos = getNodePos();
       const o = this.value;
@@ -760,7 +760,7 @@ function create() {
         switch (c) {
           case Context.ClassMembers:
           case Context.SwitchClauses:
-          case Context.SourceElements:
+          case Context.SourceElems:
           case Context.BlockStatements:
           case Context.SwitchClauseStatements:
           case Context.EnumMembers:
@@ -786,7 +786,7 @@ function create() {
               case Syntax.GetAccessor:
               case Syntax.SetAccessor:
               case Syntax.PropertyDeclaration:
-              case Syntax.SemicolonClassElement:
+              case Syntax.SemicolonClassElem:
                 return true;
               case Syntax.MethodDeclaration:
                 const n2 = n as qc.MethodDeclaration;
@@ -800,7 +800,7 @@ function create() {
                 return true;
             }
             break;
-          case Context.SourceElements:
+          case Context.SourceElems:
           case Context.BlockStatements:
           case Context.SwitchClauseStatements:
             switch (n.kind) {
@@ -866,10 +866,10 @@ function create() {
       next.tok();
       return n;
     }
-    private isListElement(c: Context, error: boolean) {
+    private isListElem(c: Context, error: boolean) {
       if (this.nodeFor(c)) return true;
       switch (c) {
-        case Context.SourceElements:
+        case Context.SourceElems:
         case Context.BlockStatements:
         case Context.SwitchClauseStatements:
           return !(tok() === Syntax.SemicolonToken && error) && is.startOfStatement();
@@ -947,9 +947,9 @@ function create() {
           }
         case Context.RestProperties:
           return is.literalPropertyName();
-        case Context.ObjectBindingElements:
+        case Context.ObjectBindingElems:
           return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
-        case Context.HeritageClauseElement:
+        case Context.HeritageClauseElem:
           const isHeritageClauseObjectLiteral = () => {
             qu.assert(tok() === Syntax.OpenBraceToken);
             if (next.tok() === Syntax.CloseBraceToken) {
@@ -967,7 +967,7 @@ function create() {
           return is.identifier() && !isExtendsOrImplementsKeyword();
         case Context.VariableDeclarations:
           return is.identifierOrPrivateIdentifierOrPattern();
-        case Context.ArrayBindingElements:
+        case Context.ArrayBindingElems:
           return tok() === Syntax.CommaToken || tok() === Syntax.Dot3Token || is.identifierOrPrivateIdentifierOrPattern();
         case Context.TypeParameters:
           return is.identifier();
@@ -984,7 +984,7 @@ function create() {
         case Context.DocParameters:
           return is.startOfParameter(true);
         case Context.TypeArguments:
-        case Context.TupleElementTypes:
+        case Context.TupleElemTypes:
           return tok() === Syntax.CommaToken || is.startOfType();
         case Context.HeritageClauses:
           return is.heritageClause();
@@ -995,7 +995,7 @@ function create() {
         case Context.JsxChildren:
           return true;
       }
-      return qu.fail("Non-exhaustive case in 'isListElement'.");
+      return qu.fail("Non-exhaustive case in 'isListElem'.");
     }
     private isListTerminator(c: Context) {
       if (tok() === Syntax.EndOfFileToken) return true;
@@ -1006,12 +1006,12 @@ function create() {
         case Context.ClassMembers:
         case Context.EnumMembers:
         case Context.ObjectLiteralMembers:
-        case Context.ObjectBindingElements:
+        case Context.ObjectBindingElems:
         case Context.ImportOrExportSpecifiers:
           return tok() === Syntax.CloseBraceToken;
         case Context.SwitchClauseStatements:
           return tok() === Syntax.CloseBraceToken || tok() === Syntax.CaseKeyword || tok() === Syntax.DefaultKeyword;
-        case Context.HeritageClauseElement:
+        case Context.HeritageClauseElem:
           return tok() === Syntax.OpenBraceToken || tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
         case Context.VariableDeclarations:
           const isTerminator = () => {
@@ -1026,8 +1026,8 @@ function create() {
         case Context.ArgumentExpressions:
           return tok() === Syntax.CloseParenToken || tok() === Syntax.SemicolonToken;
         case Context.ArrayLiteralMembers:
-        case Context.TupleElementTypes:
-        case Context.ArrayBindingElements:
+        case Context.TupleElemTypes:
+        case Context.ArrayBindingElems:
           return tok() === Syntax.CloseBracketToken;
         case Context.DocParameters:
         case Context.Parameters:
@@ -1045,7 +1045,7 @@ function create() {
           return false;
       }
     }
-    private parseListElement<T extends Node>(c: Context, cb: () => T): T {
+    private parseListElem<T extends Node>(c: Context, cb: () => T): T {
       const n = this.nodeFor(c);
       if (n) return this.consumeNode(n) as T;
       return cb();
@@ -1053,7 +1053,7 @@ function create() {
     private abort(c: Context) {
       const errors = (): qd.Message => {
         switch (c) {
-          case Context.SourceElements:
+          case Context.SourceElems:
             return qd.msgs.Declaration_or_statement_expected;
           case Context.BlockStatements:
             return qd.msgs.Declaration_or_statement_expected;
@@ -1068,14 +1068,14 @@ function create() {
             return qd.msgs.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
           case Context.EnumMembers:
             return qd.msgs.Enum_member_expected;
-          case Context.HeritageClauseElement:
+          case Context.HeritageClauseElem:
             return qd.msgs.Expression_expected;
           case Context.VariableDeclarations:
             return qd.msgs.Variable_declaration_expected;
-          case Context.ObjectBindingElements:
+          case Context.ObjectBindingElems:
             return qd.msgs.Property_destructuring_pattern_expected;
-          case Context.ArrayBindingElements:
-            return qd.msgs.Array_element_destructuring_pattern_expected;
+          case Context.ArrayBindingElems:
+            return qd.msgs.Array_elem_destructuring_pattern_expected;
           case Context.ArgumentExpressions:
             return qd.msgs.Argument_expression_expected;
           case Context.ObjectLiteralMembers:
@@ -1090,7 +1090,7 @@ function create() {
             return qd.msgs.Type_parameter_declaration_expected;
           case Context.TypeArguments:
             return qd.msgs.Type_argument_expected;
-          case Context.TupleElementTypes:
+          case Context.TupleElemTypes:
             return qd.msgs.Type_expected;
           case Context.HeritageClauses:
             return qd.msgs.Unexpected_token_expected;
@@ -1107,7 +1107,7 @@ function create() {
       parse.errorAtToken(errors());
       for (let c = 0; c < Context.Count; c++) {
         if (this.value & (1 << c)) {
-          if (this.isListElement(c, true) || this.isListTerminator(c)) return true;
+          if (this.isListElem(c, true) || this.isListTerminator(c)) return true;
         }
       }
       next.tok();
@@ -1139,7 +1139,7 @@ function create() {
         diags.push(qf.create.fileDiagnostic(source, pos, end, diagnostic));
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
-      source.statements = ctx.parseList(Context.SourceElements, parse.statement);
+      source.statements = ctx.parseList(Context.SourceElems, parse.statement);
       qu.assert(tok() === Syntax.EndOfFileToken);
       source.endOfFileToken = addDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
@@ -1496,10 +1496,10 @@ function create() {
       n.members = this.objectTypeMembers();
       return finishNode(n);
     }
-    objectTypeMembers(): Nodes<qc.TypeElement> {
-      let es: Nodes<qc.TypeElement>;
+    objectTypeMembers(): Nodes<qc.TypeElem> {
+      let es: Nodes<qc.TypeElem>;
       if (this.expected(Syntax.OpenBraceToken)) {
-        const typeMember = (): qc.TypeElement => {
+        const typeMember = (): qc.TypeElem => {
           if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.signatureMember(Syntax.CallSignature);
           if (tok() === Syntax.NewKeyword && lookAhead(next.isOpenParenOrLessThan)) return this.signatureMember(Syntax.ConstructSignature);
           const n = create.nodeWithDoc(Syntax.Unknown);
@@ -1509,7 +1509,7 @@ function create() {
         };
         es = ctx.parseList(Context.TypeMembers, typeMember);
         this.expected(Syntax.CloseBraceToken);
-      } else es = create.missingList<qc.TypeElement>();
+      } else es = create.missingList<qc.TypeElem>();
       return es;
     }
     mappedTypeParameter() {
@@ -1538,7 +1538,7 @@ function create() {
       this.expected(Syntax.CloseBraceToken);
       return finishNode(n);
     }
-    tupleElementType() {
+    tupleElemType() {
       const p = getNodePos();
       if (this.optional(Syntax.Dot3Token)) {
         const n = create.node(Syntax.RestType, p);
@@ -1552,22 +1552,22 @@ function create() {
     tupleType(): qc.TupleTypeNode {
       const n = create.node(Syntax.TupleType);
       const nameOrType = () => {
-        const isTupleElementName = () => {
+        const isTupleElemName = () => {
           if (tok() === Syntax.Dot3Token) return qy.is.identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
           return qy.is.identifierOrKeyword(tok()) && next.isColonOrQuestionColon();
         };
-        if (lookAhead(isTupleElementName)) {
+        if (lookAhead(isTupleElemName)) {
           const n = create.node(Syntax.NamedTupleMember);
           n.dot3Token = this.optionalToken(Syntax.Dot3Token);
           n.name = this.identifierName();
           n.questionToken = this.optionalToken(Syntax.QuestionToken);
           this.expected(Syntax.ColonToken);
-          n.type = this.tupleElementType();
+          n.type = this.tupleElemType();
           return addDocComment(finishNode(n));
         }
-        return this.tupleElementType();
+        return this.tupleElemType();
       };
-      n.elements = ctx.parseBracketedList(Context.TupleElementTypes, nameOrType, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
+      n.elems = ctx.parseBracketedList(Context.TupleElemTypes, nameOrType, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       return finishNode(n);
     }
     parenthesizedType(): qc.TypeNode {
@@ -1709,7 +1709,7 @@ function create() {
               type = finishNode(n);
             } else {
               const n = create.node(Syntax.ArrayType, type.pos);
-              n.elementType = type;
+              n.elemType = type;
               this.expected(Syntax.CloseBracketToken);
               type = finishNode(n);
             }
@@ -2162,7 +2162,7 @@ function create() {
         n.operand = this.leftHandSideExpressionOrHigher();
         return finishNode(n);
       } else if (source.languageVariant === LanguageVariant.JSX && tok() === Syntax.LessThanToken && lookAhead(next.isIdentifierOrKeywordOrGreaterThan)) {
-        return parseJsx.elementOrSelfClosingElementOrFragment(true);
+        return parseJsx.elemOrSelfClosingElemOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
       qu.assert(qc.is.leftHandSideExpression(expression));
@@ -2235,12 +2235,12 @@ function create() {
       }
       return finishNode(n);
     }
-    elementAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
-      const n = create.node(Syntax.ElementAccessExpression, expression.pos);
+    elemAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
+      const n = create.node(Syntax.ElemAccessExpression, expression.pos);
       n.expression = expression;
       n.questionDotToken = questionDotToken;
       if (tok() === Syntax.CloseBracketToken) {
-        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_element_access_expression_should_take_an_argument);
+        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_elem_access_expression_should_take_an_argument);
       } else {
         const argument = flags.withoutDisallowIn(this.expression);
         if (qf.is.stringOrNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
@@ -2273,7 +2273,7 @@ function create() {
           continue;
         }
         if ((questionDotToken || !flags.inContext(NodeFlags.DecoratorContext)) && this.optional(Syntax.OpenBracketToken)) {
-          expression = this.elementAccessExpressionRest(expression, questionDotToken);
+          expression = this.elemAccessExpressionRest(expression, questionDotToken);
           continue;
         }
         if (is.templateStartOfTaggedTemplate()) {
@@ -2390,27 +2390,27 @@ function create() {
       this.expected(Syntax.CloseParenToken);
       return finishNode(n);
     }
-    spreadElement(): qc.Expression {
-      const n = create.node(Syntax.SpreadElement);
+    spreadElem(): qc.Expression {
+      const n = create.node(Syntax.SpreadElem);
       this.expected(Syntax.Dot3Token);
       n.expression = this.assignmentExpressionOrHigher();
       return finishNode(n);
     }
-    argumentOrArrayLiteralElement(): qc.Expression {
-      return tok() === Syntax.Dot3Token ? this.spreadElement() : tok() === Syntax.CommaToken ? create.node(Syntax.OmittedExpression) : this.assignmentExpressionOrHigher();
+    argumentOrArrayLiteralElem(): qc.Expression {
+      return tok() === Syntax.Dot3Token ? this.spreadElem() : tok() === Syntax.CommaToken ? create.node(Syntax.OmittedExpression) : this.assignmentExpressionOrHigher();
     }
     argumentExpression(): qc.Expression {
-      return flags.withoutContext(withDisallowInDecoratorContext, this.argumentOrArrayLiteralElement);
+      return flags.withoutContext(withDisallowInDecoratorContext, this.argumentOrArrayLiteralElem);
     }
     arrayLiteralExpression(): qc.ArrayLiteralExpression {
       const n = create.node(Syntax.ArrayLiteralExpression);
       this.expected(Syntax.OpenBracketToken);
       if (scanner.hasPrecedingLineBreak()) n.multiLine = true;
-      n.elements = ctx.parseDelimitedList(Context.ArrayLiteralMembers, this.argumentOrArrayLiteralElement);
+      n.elems = ctx.parseDelimitedList(Context.ArrayLiteralMembers, this.argumentOrArrayLiteralElem);
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    objectLiteralElement(): qc.ObjectLiteralElementLike {
+    objectLiteralElem(): qc.ObjectLiteralElemLike {
       const n = create.nodeWithDoc(Syntax.Unknown);
       if (this.optionalToken(Syntax.Dot3Token)) {
         n.kind = Syntax.SpreadAssignment;
@@ -2447,7 +2447,7 @@ function create() {
       const p = scanner.getTokenPos();
       this.expected(Syntax.OpenBraceToken);
       if (scanner.hasPrecedingLineBreak()) n.multiLine = true;
-      n.properties = ctx.parseDelimitedList(Context.ObjectLiteralMembers, this.objectLiteralElement, true);
+      n.properties = ctx.parseDelimitedList(Context.ObjectLiteralMembers, this.objectLiteralElem, true);
       if (!this.expected(Syntax.CloseBraceToken)) {
         const e = lastOrUndefined(diags);
         if (e && e.code === qd.msgs._0_expected.code) {
@@ -2845,16 +2845,16 @@ function create() {
       }
       return this.functionBlock(flags, m);
     }
-    arrayBindingElement(): qc.ArrayBindingElement {
+    arrayBindingElem(): qc.ArrayBindingElem {
       if (tok() === Syntax.CommaToken) return create.node(Syntax.OmittedExpression);
-      const n = create.node(Syntax.BindingElement);
+      const n = create.node(Syntax.BindingElem);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       n.name = this.identifierOrPattern();
       n.initer = this.initer();
       return finishNode(n);
     }
-    objectBindingElement(): qc.BindingElement {
-      const n = create.node(Syntax.BindingElement);
+    objectBindingElem(): qc.BindingElem {
+      const n = create.node(Syntax.BindingElem);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       const tokenIsIdentifier = is.identifier();
       const propertyName = this.propertyName();
@@ -2870,14 +2870,14 @@ function create() {
     objectBindingPattern(): qc.ObjectBindingPattern {
       const n = create.node(Syntax.ObjectBindingPattern);
       this.expected(Syntax.OpenBraceToken);
-      n.elements = ctx.parseDelimitedList(Context.ObjectBindingElements, this.objectBindingElement);
+      n.elems = ctx.parseDelimitedList(Context.ObjectBindingElems, this.objectBindingElem);
       this.expected(Syntax.CloseBraceToken);
       return finishNode(n);
     }
     arrayBindingPattern(): qc.ArrayBindingPattern {
       const n = create.node(Syntax.ArrayBindingPattern);
       this.expected(Syntax.OpenBracketToken);
-      n.elements = ctx.parseDelimitedList(Context.ArrayBindingElements, this.arrayBindingElement);
+      n.elems = ctx.parseDelimitedList(Context.ArrayBindingElems, this.arrayBindingElem);
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
@@ -3022,9 +3022,9 @@ function create() {
       }
       return modifiers;
     }
-    classElement(): qc.ClassElement {
+    classElem(): qc.ClassElem {
       if (tok() === Syntax.SemicolonToken) {
-        const n = create.node(Syntax.SemicolonClassElement);
+        const n = create.node(Syntax.SemicolonClassElem);
         next.tok();
         return finishNode(n);
       }
@@ -3080,7 +3080,7 @@ function create() {
       if (this.expected(Syntax.OpenBraceToken)) {
         n.members = this.classMembers();
         this.expected(Syntax.CloseBraceToken);
-      } else n.members = create.missingList<ClassElement>();
+      } else n.members = create.missingList<ClassElem>();
       return finishNode(n);
     }
     nameOfClassDeclarationOrExpression(): qc.Identifier | undefined {
@@ -3097,7 +3097,7 @@ function create() {
       const n = create.node(Syntax.HeritageClause);
       n.token = t;
       next.tok();
-      n.types = ctx.parseDelimitedList(Context.HeritageClauseElement, this.expressionWithTypeArguments);
+      n.types = ctx.parseDelimitedList(Context.HeritageClauseElem, this.expressionWithTypeArguments);
       return finishNode(n);
     }
     expressionWithTypeArguments(): qc.ExpressionWithTypeArguments {
@@ -3106,8 +3106,8 @@ function create() {
       n.typeArguments = parse.typeArguments();
       return finishNode(n);
     }
-    classMembers(): Nodes<ClassElement> {
-      return ctx.parseList(Context.ClassMembers, this.classElement);
+    classMembers(): Nodes<ClassElem> {
+      return ctx.parseList(Context.ClassMembers, this.classElem);
     }
     interfaceDeclaration(n: InterfaceDeclaration): InterfaceDeclaration {
       n.kind = Syntax.InterfaceDeclaration;
@@ -3267,7 +3267,7 @@ function create() {
     namedImportsOrExports(kind: Syntax.NamedExports): NamedExports;
     namedImportsOrExports(kind: Syntax): NamedImportsOrExports {
       const n = create.node(kind);
-      n.elements = <Nodes<ImportSpecifier> | Nodes<ExportSpecifier>>(
+      n.elems = <Nodes<ImportSpecifier> | Nodes<ExportSpecifier>>(
         ctx.parseBracketedList(Context.ImportOrExportSpecifiers, kind === Syntax.NamedImports ? this.importSpecifier : this.exportSpecifier, Syntax.OpenBraceToken, Syntax.CloseBraceToken)
       );
       return finishNode(n);
@@ -3374,14 +3374,14 @@ function create() {
     scanAttributeValue(): Syntax {
       return (currentToken = scanner.scanJsxAttributeValue());
     }
-    elementOrSelfClosingElementOrFragment(inExpressionContext: boolean): JsxElement | JsxSelfClosingElement | JsxFragment {
-      const opening = this.openingOrSelfClosingElementOrOpeningFragment(inExpressionContext);
-      let r: JsxElement | JsxSelfClosingElement | JsxFragment;
-      if (opening.kind === Syntax.JsxOpeningElement) {
-        const n = create.node(Syntax.JsxElement, opening.pos);
-        n.openingElement = opening;
-        n.children = ctx.parseJsxChildren(n.openingElement);
-        n.closingElement = this.closingElement(inExpressionContext);
+    elemOrSelfClosingElemOrFragment(inExpressionContext: boolean): JsxElem | JsxSelfClosingElem | JsxFragment {
+      const opening = this.openingOrSelfClosingElemOrOpeningFragment(inExpressionContext);
+      let r: JsxElem | JsxSelfClosingElem | JsxFragment;
+      if (opening.kind === Syntax.JsxOpeningElem) {
+        const n = create.node(Syntax.JsxElem, opening.pos);
+        n.openingElem = opening;
+        n.children = ctx.parseJsxChildren(n.openingElem);
+        n.closingElem = this.closingElem(inExpressionContext);
         const tagNamesEq = (a: JsxTagNameExpression, b: JsxTagNameExpression): boolean => {
           if (a.kind !== b.kind) return false;
           if (a.kind === Syntax.Identifier) return a.escapedText === (<qc.Identifier>b).escapedText;
@@ -3391,8 +3391,8 @@ function create() {
             tagNamesEq(a.expression as JsxTagNameExpression, (b as PropertyAccessExpression).expression as JsxTagNameExpression)
           );
         };
-        if (!tagNamesEq(n.openingElement.tagName, n.closingElement.tagName)) {
-          parse.errorAtRange(n.closingElement, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, qf.get.textOfNodeFromSourceText(sourceText, n.openingElement.tagName));
+        if (!tagNamesEq(n.openingElem.tagName, n.closingElem.tagName)) {
+          parse.errorAtRange(n.closingElem, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, qf.get.textOfNodeFromSourceText(sourceText, n.openingElem.tagName));
         }
         r = finishNode(n);
       } else if (opening.kind === Syntax.JsxOpeningFragment) {
@@ -3402,20 +3402,20 @@ function create() {
         n.closingFragment = this.closingFragment(inExpressionContext);
         r = finishNode(n);
       } else {
-        qu.assert(opening.kind === Syntax.JsxSelfClosingElement);
+        qu.assert(opening.kind === Syntax.JsxSelfClosingElem);
         r = opening;
       }
       if (inExpressionContext && tok() === Syntax.LessThanToken) {
-        const invalid = tryParse(() => this.elementOrSelfClosingElementOrFragment(true));
+        const invalid = tryParse(() => this.elemOrSelfClosingElemOrFragment(true));
         if (invalid) {
-          parse.errorAtToken(qd.msgs.JSX_expressions_must_have_one_parent_element);
+          parse.errorAtToken(qd.msgs.JSX_expressions_must_have_one_parent_elem);
           const n2 = create.node(Syntax.BinaryExpression, r.pos);
           n2.end = invalid.end;
           n2.left = r;
           n2.right = invalid;
           n2.operatorToken = create.missingNode(Syntax.CommaToken, false);
           n2.operatorToken.pos = n2.operatorToken.end = n2.right.pos;
-          return (n2 as Node) as JsxElement;
+          return (n2 as Node) as JsxElem;
         }
       }
       return r;
@@ -3427,7 +3427,7 @@ function create() {
       currentToken = scanner.scanJsxToken();
       return finishNode(n);
     }
-    child(openingTag: JsxOpeningElement | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
+    child(openingTag: JsxOpeningElem | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
       switch (token) {
         case Syntax.EndOfFileToken:
           if (qc.is.kind(qc.JsxOpeningFragment, openingTag)) {
@@ -3435,7 +3435,7 @@ function create() {
           } else {
             const tag = openingTag.tagName;
             const start = qy.skipTrivia(sourceText, tag.pos);
-            parse.errorAt(start, tag.end, qd.msgs.JSX_element_0_has_no_corresponding_closing_tag, qf.get.textOfNodeFromSourceText(sourceText, openingTag.tagName));
+            parse.errorAt(start, tag.end, qd.msgs.JSX_elem_0_has_no_corresponding_closing_tag, qf.get.textOfNodeFromSourceText(sourceText, openingTag.tagName));
           }
           return;
         case Syntax.LessThanSlashToken:
@@ -3447,7 +3447,7 @@ function create() {
         case Syntax.OpenBraceToken:
           return this.expression(false);
         case Syntax.LessThanToken:
-          return this.elementOrSelfClosingElementOrFragment(false);
+          return this.elemOrSelfClosingElemOrFragment(false);
         default:
           return qc.assert.never(token);
       }
@@ -3457,7 +3457,7 @@ function create() {
       n.properties = ctx.parseList(Context.JsxAttributes, this.attribute);
       return finishNode(n);
     }
-    openingOrSelfClosingElementOrOpeningFragment(inExpressionContext: boolean): JsxOpeningElement | JsxSelfClosingElement | JsxOpeningFragment {
+    openingOrSelfClosingElemOrOpeningFragment(inExpressionContext: boolean): JsxOpeningElem | JsxSelfClosingElem | JsxOpeningFragment {
       const fullStart = scanner.getStartPos();
       parse.expected(Syntax.LessThanToken);
       if (tok() === Syntax.GreaterThanToken) {
@@ -3465,12 +3465,12 @@ function create() {
         this.scanText();
         return finishNode(n);
       }
-      const tagName = this.elementName();
+      const tagName = this.elemName();
       const typeArguments = parse.typeArguments();
       const attributes = this.attributes();
-      let n: JsxOpeningLikeElement;
+      let n: JsxOpeningLikeElem;
       if (tok() === Syntax.GreaterThanToken) {
-        n = create.node(Syntax.JsxOpeningElement, fullStart);
+        n = create.node(Syntax.JsxOpeningElem, fullStart);
         this.scanText();
       } else {
         parse.expected(Syntax.SlashToken);
@@ -3479,14 +3479,14 @@ function create() {
           parse.expected(Syntax.GreaterThanToken, undefined, false);
           this.scanText();
         }
-        n = create.node(Syntax.JsxSelfClosingElement, fullStart);
+        n = create.node(Syntax.JsxSelfClosingElem, fullStart);
       }
       n.tagName = tagName;
       n.typeArguments = typeArguments;
       n.attributes = attributes;
       return finishNode(n);
     }
-    elementName(): JsxTagNameExpression {
+    elemName(): JsxTagNameExpression {
       this.scanIdentifier();
       let e: JsxTagNameExpression = tok() === Syntax.ThisKeyword ? parse.tokenNode<ThisExpression>() : parse.identifierName();
       while (parse.optional(Syntax.DotToken)) {
@@ -3535,10 +3535,10 @@ function create() {
       parse.expected(Syntax.CloseBraceToken);
       return finishNode(n);
     }
-    closingElement(inExpressionContext: boolean): JsxClosingElement {
-      const n = create.node(Syntax.JsxClosingElement);
+    closingElem(inExpressionContext: boolean): JsxClosingElem {
+      const n = create.node(Syntax.JsxClosingElem);
       parse.expected(Syntax.LessThanSlashToken);
-      n.tagName = this.elementName();
+      n.tagName = this.elemName();
       if (inExpressionContext) parse.expected(Syntax.GreaterThanToken);
       else {
         parse.expected(Syntax.GreaterThanToken, undefined, false);
@@ -3549,7 +3549,7 @@ function create() {
     closingFragment(inExpressionContext: boolean): JsxClosingFragment {
       const n = create.node(Syntax.JsxClosingFragment);
       parse.expected(Syntax.LessThanSlashToken);
-      if (qy.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), qd.msgs.Expected_corresponding_closing_tag_for_JSX_fragment);
+      if (qy.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elemName(), qd.msgs.Expected_corresponding_closing_tag_for_JSX_fragment);
       if (inExpressionContext) parse.expected(Syntax.GreaterThanToken);
       else {
         parse.expected(Syntax.GreaterThanToken, undefined, false);
@@ -4545,7 +4545,7 @@ namespace IncrementalParser {
     qu.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
     qu.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
     const delta = textChangeRangeNewSpan(changeRange).length - changeRange.span.length;
-    updateTokenPositionsAndMarkElements(
+    updateTokenPositionsAndMarkElems(
       incrementalSourceFile,
       changeRange.span.start,
       textSpanEnd(changeRange.span),
@@ -4600,9 +4600,9 @@ namespace IncrementalParser {
       }
     }
   }
-  function moveElementEntirelyPastChangeRange(element: IncrementalElement, isArray: boolean, delta: number, oldText: string, newText: string, aggressiveChecks: boolean) {
-    if (isArray) visitArray(<IncrementalNodes>element);
-    else visitNode(<IncrementalNode>element);
+  function moveElemEntirelyPastChangeRange(elem: IncrementalElem, isArray: boolean, delta: number, oldText: string, newText: string, aggressiveChecks: boolean) {
+    if (isArray) visitArray(<IncrementalNodes>elem);
+    else visitNode(<IncrementalNode>elem);
     return;
     function visitNode(n: IncrementalNode) {
       let text = '';
@@ -4637,21 +4637,21 @@ namespace IncrementalParser {
       }
     }
   }
-  function adjustIntersectingElement(element: IncrementalElement, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
-    qu.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
-    qu.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
-    qu.assert(element.pos <= element.end);
-    element.pos = Math.min(element.pos, changeRangeNewEnd);
-    if (element.end >= changeRangeOldEnd) {
-      element.end += delta;
-    } else element.end = Math.min(element.end, changeRangeNewEnd);
-    qu.assert(element.pos <= element.end);
-    if (element.parent) {
-      qu.assert(element.pos >= element.parent.pos);
-      qu.assert(element.end <= element.parent.end);
+  function adjustIntersectingElem(elem: IncrementalElem, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
+    qu.assert(elem.end >= changeStart, 'Adjusting an elem that was entirely before the change range');
+    qu.assert(elem.pos <= changeRangeOldEnd, 'Adjusting an elem that was entirely after the change range');
+    qu.assert(elem.pos <= elem.end);
+    elem.pos = Math.min(elem.pos, changeRangeNewEnd);
+    if (elem.end >= changeRangeOldEnd) {
+      elem.end += delta;
+    } else elem.end = Math.min(elem.end, changeRangeNewEnd);
+    qu.assert(elem.pos <= elem.end);
+    if (elem.parent) {
+      qu.assert(elem.pos >= elem.parent.pos);
+      qu.assert(elem.end <= elem.parent.end);
     }
   }
-  function updateTokenPositionsAndMarkElements(
+  function updateTokenPositionsAndMarkElems(
     source: IncrementalNode,
     changeStart: number,
     changeRangeOldEnd: number,
@@ -4666,14 +4666,14 @@ namespace IncrementalParser {
     function visitNode(child: IncrementalNode) {
       qu.assert(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
-        moveElementEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
+        moveElemEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
         return;
       }
       const fullEnd = child.end;
       if (fullEnd >= changeStart) {
         child.intersectsChange = true;
         child._children = undefined;
-        adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
+        adjustIntersectingElem(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
         qf.each.child(child, visitNode, visitArray);
         if (qc.is.withDocNodes(child)) {
           for (const docComment of child.doc!) {
@@ -4688,14 +4688,14 @@ namespace IncrementalParser {
     function visitArray(array: IncrementalNodes) {
       qu.assert(array.pos <= array.end);
       if (array.pos > changeRangeOldEnd) {
-        moveElementEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
+        moveElemEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
         return;
       }
       const fullEnd = array.end;
       if (fullEnd >= changeStart) {
         array.intersectsChange = true;
         array._children = undefined;
-        adjustIntersectingElement(array, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
+        adjustIntersectingElem(array, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
         for (const node of array) {
           visitNode(node);
         }
@@ -4783,16 +4783,16 @@ namespace IncrementalParser {
       }
     }
   }
-  interface IncrementalElement extends TextRange {
+  interface IncrementalElem extends TextRange {
     parent: Node;
     intersectsChange: boolean;
     length?: number;
     _children: Node[] | undefined;
   }
-  export interface IncrementalNode extends Node, IncrementalElement {
+  export interface IncrementalNode extends Node, IncrementalElem {
     hasBeenIncrementallyParsed: boolean;
   }
-  interface IncrementalNodes extends Nodes<IncrementalNode>, IncrementalElement {
+  interface IncrementalNodes extends Nodes<IncrementalNode>, IncrementalElem {
     length: number;
   }
   export interface SyntaxCursor {
@@ -4811,14 +4811,14 @@ namespace IncrementalParser {
             currentArrayIndex++;
             current = currentArray[currentArrayIndex];
           }
-          if (!current || current.pos !== position) findHighestListElementThatStartsAtPosition(position);
+          if (!current || current.pos !== position) findHighestListElemThatStartsAtPosition(position);
         }
         lastQueriedPosition = position;
         qu.assert(!current || current.pos === position);
         return <IncrementalNode>current;
       },
     };
-    function findHighestListElementThatStartsAtPosition(position: number) {
+    function findHighestListElemThatStartsAtPosition(position: number) {
       currentArray = undefined!;
       currentArrayIndex = InvalidPosition.Value;
       current = undefined!;

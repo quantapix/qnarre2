@@ -324,21 +324,21 @@ export abstract class DeclarationSobj extends NamedDobj implements qt.Declaratio
   name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
   _statementBrand: any;
 }
-export abstract class ClassElement extends NamedDobj implements qt.ClassElement {
+export abstract class ClassElem extends NamedDobj implements qt.ClassElem {
   name?: qt.PropertyName;
-  _classElementBrand: any;
+  _classElemBrand: any;
 }
 export abstract class ClassLikeDobj extends NamedDobj implements qt.ClassLikeDobj {
   name?: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
-  members: qt.Nodes<qt.ClassElement>;
+  members: qt.Nodes<qt.ClassElem>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
     ts: readonly qt.TypeParameterDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
-    es: readonly qt.ClassElement[]
+    es: readonly qt.ClassElem[]
   ) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
@@ -346,17 +346,17 @@ export abstract class ClassLikeDobj extends NamedDobj implements qt.ClassLikeDob
     this.members = new Nodes(es);
   }
 }
-export abstract class ObjectLiteralElement extends NamedDobj implements qt.ObjectLiteralElement {
+export abstract class ObjectLiteralElem extends NamedDobj implements qt.ObjectLiteralElem {
   name?: qt.PropertyName;
   _objectLiteralBrand: any;
 }
 export abstract class PropertyLikeDobj extends NamedDobj implements qt.PropertyLikeDobj {
   name!: qt.PropertyName;
 }
-export abstract class TypeElement extends NamedDobj implements qt.TypeElement {
+export abstract class TypeElem extends NamedDobj implements qt.TypeElem {
   name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
-  _typeElementBrand: any;
+  _typeElemBrand: any;
 }
 export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDobj {
   name?: qt.PropertyName;
@@ -421,7 +421,7 @@ export abstract class MemberExpression extends LeftHandSideExpression implements
 export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
   _primaryExpressionBrand: any;
 }
-export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElement> extends PrimaryExpression implements qt.ObjectLiteralEobj<T> {
+export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElem> extends PrimaryExpression implements qt.ObjectLiteralEobj<T> {
   properties!: Nodes<T>;
   _declarationBrand: any;
 }
@@ -933,7 +933,7 @@ export class Signature implements qt.Signature {
     return this.checker.getReturnTypeOfSignature(this);
   }
   getDocComment(): qt.SymbolDisplayPart[] {
-    return this.docComment || (this.docComment = getDocComment(singleElementArray(this.declaration), this.checker));
+    return this.docComment || (this.docComment = getDocComment(singleElemArray(this.declaration), this.checker));
   }
   getDocTags(): qt.DocTagInfo[] {
     if (this.docTags === undefined) {
@@ -1318,7 +1318,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         case Syntax.Parameter:
           if (!qf.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
         case Syntax.VariableDeclaration:
-        case Syntax.BindingElement: {
+        case Syntax.BindingElem: {
           const decl = <VariableDeclaration>node;
           if (qf.is.kind(qc.BindingPattern, decl.name)) {
             qf.each.child(decl.name, visit);
@@ -1334,7 +1334,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         case Syntax.ExportDeclaration:
           const exportDeclaration = <ExportDeclaration>node;
           if (exportDeclaration.exportClause) {
-            if (qf.is.kind(qc.NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elements, visit);
+            if (qf.is.kind(qc.NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elems, visit);
             else visit(exportDeclaration.exportClause.name);
           }
           break;
@@ -1344,7 +1344,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
             if (importClause.name) addDeclaration(importClause.name);
             if (importClause.namedBindings) {
               if (importClause.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(importClause.namedBindings);
-              else forEach(importClause.namedBindings.elements, visit);
+              else forEach(importClause.namedBindings.elems, visit);
             }
           }
           break;
@@ -1946,9 +1946,9 @@ export function walkUpParenthesizedTypes(n?: Node) {
 export function walkUpParenthesizedExpressions(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedExpression);
 }
-export function walkUpBindingElementsAndPatterns(e: qt.BindingElement) {
+export function walkUpBindingElemsAndPatterns(e: qt.BindingElem) {
   let n = e.parent as Node | undefined;
-  while (n?.parent?.kind === Syntax.BindingElement) {
+  while (n?.parent?.kind === Syntax.BindingElem) {
     n = n?.parent?.parent;
   }
   return n?.parent as qt.ParameterDeclaration | qt.VariableDeclaration | undefined;

@@ -466,7 +466,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const typeParamDecls = map(localParams, (p) => typeParameterToDeclaration(p, context));
     const baseTypes = getBaseTypes(interfaceType);
     const baseType = length(baseTypes) ? getIntersectionType(baseTypes) : undefined;
-    const members = flatMap<Symbol, TypeElement>(getPropertiesOfType(interfaceType), (p) => serializePropertySymbolForInterface(p, baseType));
+    const members = flatMap<Symbol, TypeElem>(getPropertiesOfType(interfaceType), (p) => serializePropertySymbolForInterface(p, baseType));
     const callSignatures = serializeSignatures(SignatureKind.Call, interfaceType, baseType, Syntax.CallSignature) as CallSignatureDeclaration[];
     const constructSignatures = serializeSignatures(SignatureKind.Construct, interfaceType, baseType, Syntax.ConstructSignature) as ConstructSignatureDeclaration[];
     const indexSignatures = serializeIndexSignatures(interfaceType, baseType);
@@ -707,7 +707,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
             (declaration) =>
               qf.is.kind(qc.BinaryExpression, declaration) &&
               qf.get.assignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
-              (declaration.left.kind !== Syntax.ElementAccessExpression || qf.is.stringOrNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
+              (declaration.left.kind !== Syntax.ElemAccessExpression || qf.is.stringOrNumericLiteralLike((<ElemAccessExpression>declaration.left).argumentExpression)) &&
               !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
           );
       }
@@ -746,7 +746,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       return createAnonymousType(symbol, members, empty, empty, undefined, undefined);
     }
     const declaration = symbol.valueDeclaration;
-    if (qf.is.catchClauseVariableDeclarationOrBindingElement(declaration)) return anyType;
+    if (qf.is.catchClauseVariableDeclarationOrBindingElem(declaration)) return anyType;
     if (qf.is.kind(qc.SourceFile, declaration) && qf.is.jsonSourceFile(declaration)) {
       if (!declaration.statements.length) return emptyObjectType;
       return getWidenedType(getWidenedLiteralType(check.expression(declaration.statements[0].expression)));
@@ -761,13 +761,13 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       qf.is.kind(qc.BinaryExpression, declaration) ||
       (qf.is.inJSFile(declaration) &&
         (qf.is.kind(qc.CallExpression, declaration) ||
-          ((qf.is.kind(qc.PropertyAccessExpression, declaration) || qf.is.bindableStaticElementAccessExpression(declaration)) && qf.is.kind(qc.BinaryExpression, declaration.parent))))
+          ((qf.is.kind(qc.PropertyAccessExpression, declaration) || qf.is.bindableStaticElemAccessExpression(declaration)) && qf.is.kind(qc.BinaryExpression, declaration.parent))))
     ) {
       type = getWidenedTypeForAssignmentDeclaration(symbol);
     } else if (
       qc.isDoc.propertyLikeTag(declaration) ||
       qf.is.kind(qc.PropertyAccessExpression, declaration) ||
-      qf.is.kind(qc.ElementAccessExpression, declaration) ||
+      qf.is.kind(qc.ElemAccessExpression, declaration) ||
       qf.is.kind(qc.Identifier, declaration) ||
       qf.is.stringLiteralLike(declaration) ||
       qf.is.kind(qc.NumericLiteral, declaration) ||
@@ -792,7 +792,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       qf.is.kind(qc.PropertyDeclaration, declaration) ||
       qf.is.kind(qc.PropertySignature, declaration) ||
       qf.is.kind(qc.VariableDeclaration, declaration) ||
-      qf.is.kind(qc.BindingElement, declaration)
+      qf.is.kind(qc.BindingElem, declaration)
     ) {
       type = getWidenedTypeForVariableLikeDeclaration(declaration, true);
     } else if (qf.is.kind(qc.EnumDeclaration, declaration)) {
@@ -1432,7 +1432,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (this.getCheckFlags() & qt.CheckFlags.Synthetic) return mapDefined(this.getLinks().containingType!.types, (t) => getPropertyOfType(t, this.escName));
     if (this.flags & qt.SymbolFlags.Transient) {
       const { leftSpread, rightSpread, syntheticOrigin } = this as TransientSymbol;
-      return leftSpread ? [leftSpread, rightSpread!] : syntheticOrigin ? [syntheticOrigin] : singleElementArray(this.tryGetAliasTarget());
+      return leftSpread ? [leftSpread, rightSpread!] : syntheticOrigin ? [syntheticOrigin] : singleElemArray(this.tryGetAliasTarget());
     }
     return;
   }
@@ -1444,15 +1444,15 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return target;
   }
-  isSymbolOfDestructuredElementOfCatchBinding() {
-    return qf.is.kind(qc.BindingElement, this.valueDeclaration) && walkUpBindingElementsAndPatterns(this.valueDeclaration).parent.kind === Syntax.CatchClause;
+  isSymbolOfDestructuredElemOfCatchBinding() {
+    return qf.is.kind(qc.BindingElem, this.valueDeclaration) && walkUpBindingElemsAndPatterns(this.valueDeclaration).parent.kind === Syntax.CatchClause;
   }
   isSymbolOfDeclarationWithCollidingName() {
     if (this.flags & qt.SymbolFlags.BlockScoped && !is.kind(qc.SourceFile, this.valueDeclaration)) {
       const ls = this.getLinks();
       if (ls.isDeclarationWithCollidingName === undefined) {
         const container = qf.get.enclosingBlockScopeContainer(this.valueDeclaration);
-        if (qf.is.statementWithLocals(container) || this.isSymbolOfDestructuredElementOfCatchBinding()) {
+        if (qf.is.statementWithLocals(container) || this.isSymbolOfDestructuredElemOfCatchBinding()) {
           const nodeLinks = getNodeLinks(this.valueDeclaration);
           if (resolveName(container.parent, this.escName, qt.SymbolFlags.Value, undefined, undefined, false)) ls.isDeclarationWithCollidingName = true;
           else if (nodeLinks.flags & NodeCheckFlags.CapturedBlockScopedBinding) {

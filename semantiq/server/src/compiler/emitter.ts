@@ -1184,12 +1184,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitObjectBindingPattern(<ObjectBindingPattern>node);
         case Syntax.ArrayBindingPattern:
           return emitArrayBindingPattern(<ArrayBindingPattern>node);
-        case Syntax.BindingElement:
-          return emitBindingElement(<BindingElement>node);
+        case Syntax.BindingElem:
+          return emitBindingElem(<BindingElem>node);
         case Syntax.TemplateSpan:
           return emitTemplateSpan(<TemplateSpan>node);
-        case Syntax.SemicolonClassElement:
-          return emitSemicolonClassElement();
+        case Syntax.SemicolonClassElem:
+          return emitSemicolonClassElem();
         case Syntax.Block:
           return emitBlock(<Block>node);
         case Syntax.VariableStatement:
@@ -1278,12 +1278,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitExternalModuleReference(<ExternalModuleReference>node);
         case Syntax.JsxText:
           return emitJsxText(<JsxText>node);
-        case Syntax.JsxOpeningElement:
+        case Syntax.JsxOpeningElem:
         case Syntax.JsxOpeningFragment:
-          return emitJsxOpeningElementOrFragment(<JsxOpeningElement>node);
-        case Syntax.JsxClosingElement:
+          return emitJsxOpeningElemOrFragment(<JsxOpeningElem>node);
+        case Syntax.JsxClosingElem:
         case Syntax.JsxClosingFragment:
-          return emitJsxClosingElementOrFragment(<JsxClosingElement>node);
+          return emitJsxClosingElemOrFragment(<JsxClosingElem>node);
         case Syntax.JsxAttribute:
           return emitJsxAttribute(<JsxAttribute>node);
         case Syntax.JsxAttributes:
@@ -1369,8 +1369,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitObjectLiteralExpression(<ObjectLiteralExpression>node);
         case Syntax.PropertyAccessExpression:
           return emitPropertyAccessExpression(<PropertyAccessExpression>node);
-        case Syntax.ElementAccessExpression:
-          return emitElementAccessExpression(<ElementAccessExpression>node);
+        case Syntax.ElemAccessExpression:
+          return emitElemAccessExpression(<ElemAccessExpression>node);
         case Syntax.CallExpression:
           return emitCallExpression(<CallExpression>node);
         case Syntax.NewExpression:
@@ -1405,8 +1405,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitTemplateExpression(<TemplateExpression>node);
         case Syntax.YieldExpression:
           return emitYieldExpression(<YieldExpression>node);
-        case Syntax.SpreadElement:
-          return emitSpreadExpression(<SpreadElement>node);
+        case Syntax.SpreadElem:
+          return emitSpreadExpression(<SpreadElem>node);
         case Syntax.ClassExpression:
           return emitClassExpression(<ClassExpression>node);
         case Syntax.OmittedExpression:
@@ -1417,10 +1417,10 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitNonNullExpression(<NonNullExpression>node);
         case Syntax.MetaProperty:
           return emitMetaProperty(<MetaProperty>node);
-        case Syntax.JsxElement:
-          return emitJsxElement(<JsxElement>node);
-        case Syntax.JsxSelfClosingElement:
-          return emitJsxSelfClosingElement(<JsxSelfClosingElement>node);
+        case Syntax.JsxElem:
+          return emitJsxElem(<JsxElem>node);
+        case Syntax.JsxSelfClosingElem:
+          return emitJsxSelfClosingElem(<JsxSelfClosingElem>node);
         case Syntax.JsxFragment:
           return emitJsxFragment(<JsxFragment>node);
         case Syntax.PartiallyEmittedExpression:
@@ -1685,7 +1685,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitTypeAnnotation(node.type);
     writeTrailingSemicolon();
   }
-  function emitSemicolonClassElement() {
+  function emitSemicolonClassElem() {
     writeTrailingSemicolon();
   }
   function emitTypePredicate(node: TypePredicateNode) {
@@ -1757,7 +1757,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writePunctuation('}');
   }
   function emitArrayType(node: ArrayTypeNode) {
-    emit(node.elementType);
+    emit(node.elemType);
     writePunctuation('[');
     writePunctuation(']');
   }
@@ -1767,9 +1767,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitTupleType(node: TupleTypeNode) {
     emitTokenWithComment(Syntax.OpenBracketToken, node.pos, writePunctuation, node);
-    const flags = qc.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
-    emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
-    emitTokenWithComment(Syntax.CloseBracketToken, node.elements.end, writePunctuation, node);
+    const flags = qc.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElems : ListFormat.MultiLineTupleTypeElems;
+    emitList(node, node.elems, flags | ListFormat.NoSpaceIfEmpty);
+    emitTokenWithComment(Syntax.CloseBracketToken, node.elems.end, writePunctuation, node);
   }
   function emitNamedTupleMember(node: NamedTupleMember) {
     emit(node.dot3Token);
@@ -1885,15 +1885,15 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitObjectBindingPattern(node: ObjectBindingPattern) {
     writePunctuation('{');
-    emitList(node, node.elements, ListFormat.ObjectBindingPatternElements);
+    emitList(node, node.elems, ListFormat.ObjectBindingPatternElems);
     writePunctuation('}');
   }
   function emitArrayBindingPattern(node: ArrayBindingPattern) {
     writePunctuation('[');
-    emitList(node, node.elements, ListFormat.ArrayBindingPatternElements);
+    emitList(node, node.elems, ListFormat.ArrayBindingPatternElems);
     writePunctuation(']');
   }
-  function emitBindingElement(node: BindingElement) {
+  function emitBindingElem(node: BindingElem) {
     emit(node.dot3Token);
     if (node.propertyName) {
       emit(node.propertyName);
@@ -1904,9 +1904,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitIniter(node.initer, node.name.end, node);
   }
   function emitArrayLiteralExpression(node: ArrayLiteralExpression) {
-    const elements = node.elements;
+    const elems = node.elems;
     const preferNewLine = node.multiLine ? ListFormat.PreferNewLine : ListFormat.None;
-    emitExpressionList(node, elements, ListFormat.ArrayLiteralExpressionElements | preferNewLine);
+    emitExpressionList(node, elems, ListFormat.ArrayLiteralExpressionElems | preferNewLine);
   }
   function emitObjectLiteralExpression(node: ObjectLiteralExpression) {
     forEach(node.properties, generateMemberNames);
@@ -1951,7 +1951,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
     return;
   }
-  function emitElementAccessExpression(node: ElementAccessExpression) {
+  function emitElemAccessExpression(node: ElemAccessExpression) {
     emitExpression(node.expression);
     emit(node.questionDotToken);
     emitTokenWithComment(Syntax.OpenBracketToken, node.expression.end, writePunctuation, node);
@@ -2130,7 +2130,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.asteriskToken);
     emitExpressionWithLeadingSpace(node.expression);
   }
-  function emitSpreadExpression(node: SpreadElement) {
+  function emitSpreadExpression(node: SpreadElem) {
     emitTokenWithComment(Syntax.Dot3Token, node.pos, writePunctuation, node);
     emitExpression(node.expression);
   }
@@ -2668,7 +2668,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitNamedImportsOrExports(node: NamedImportsOrExports) {
     writePunctuation('{');
-    emitList(node, node.elements, ListFormat.NamedImportsOrExportsElements);
+    emitList(node, node.elems, ListFormat.NamedImportsOrExportsElems);
     writePunctuation('}');
   }
   function emitImportOrExportSpecifier(node: ImportOrExportSpecifier) {
@@ -2686,12 +2686,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
     writePunctuation(')');
   }
-  function emitJsxElement(node: JsxElement) {
-    emit(node.openingElement);
-    emitList(node, node.children, ListFormat.JsxElementOrFragmentChildren);
-    emit(node.closingElement);
+  function emitJsxElem(node: JsxElem) {
+    emit(node.openingElem);
+    emitList(node, node.children, ListFormat.JsxElemOrFragmentChildren);
+    emit(node.closingElem);
   }
-  function emitJsxSelfClosingElement(node: JsxSelfClosingElement) {
+  function emitJsxSelfClosingElem(node: JsxSelfClosingElem) {
     writePunctuation('<');
     emitJsxTagName(node.tagName);
     emitTypeArguments(node, node.typeArguments);
@@ -2701,12 +2701,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitJsxFragment(node: JsxFragment) {
     emit(node.openingFragment);
-    emitList(node, node.children, ListFormat.JsxElementOrFragmentChildren);
+    emitList(node, node.children, ListFormat.JsxElemOrFragmentChildren);
     emit(node.closingFragment);
   }
-  function emitJsxOpeningElementOrFragment(node: JsxOpeningElement | JsxOpeningFragment) {
+  function emitJsxOpeningElemOrFragment(node: JsxOpeningElem | JsxOpeningFragment) {
     writePunctuation('<');
-    if (qc.is.kind(qc.JsxOpeningElement, node)) {
+    if (qc.is.kind(qc.JsxOpeningElem, node)) {
       const indented = writeLineSeparatorsAndIndentBefore(node.tagName, node);
       emitJsxTagName(node.tagName);
       emitTypeArguments(node, node.typeArguments);
@@ -2722,15 +2722,15 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitJsxText(node: JsxText) {
     writer.writeLiteral(node.text);
   }
-  function emitJsxClosingElementOrFragment(node: JsxClosingElement | JsxClosingFragment) {
+  function emitJsxClosingElemOrFragment(node: JsxClosingElem | JsxClosingFragment) {
     writePunctuation('</');
-    if (qc.is.kind(qc.JsxClosingElement, node)) {
+    if (qc.is.kind(qc.JsxClosingElem, node)) {
       emitJsxTagName(node.tagName);
     }
     writePunctuation('>');
   }
   function emitJsxAttributes(node: JsxAttributes) {
-    emitList(node, node.properties, ListFormat.JsxElementAttributes);
+    emitList(node, node.properties, ListFormat.JsxElemAttributes);
   }
   function emitJsxAttribute(node: JsxAttribute) {
     emit(node.name);
@@ -2842,7 +2842,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitDocTagName(tag.tagName);
     emitDocTypeExpression(tag.constraint);
     writeSpace();
-    emitList(tag, tag.typeParameters, ListFormat.CommaListElements);
+    emitList(tag, tag.typeParameters, ListFormat.CommaListElems);
     emitDocComment(tag.comment);
   }
   function emitDocTypedefTag(tag: DocTypedefTag) {
@@ -3012,7 +3012,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
   }
   function emitCommaList(node: CommaListExpression) {
-    emitExpressionList(node, node.elements, ListFormat.CommaListElements);
+    emitExpressionList(node, node.elems, ListFormat.CommaListElems);
   }
   function emitPrologueDirectives(statements: readonly Node[], sourceFile?: SourceFile, seenPrologueDirectives?: qu.QMap<true>, recordBundleFileSection?: true): number {
     let needsToSetSourceFile = !!sourceFile;
@@ -3654,7 +3654,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         break;
       case Syntax.VariableDeclaration:
       case Syntax.Parameter:
-      case Syntax.BindingElement:
+      case Syntax.BindingElem:
       case Syntax.ClassDeclaration:
         generateNameIfNeeded((<NamedDobj>node).name);
         break;
@@ -3667,7 +3667,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         break;
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
-        forEach((<BindingPattern>node).elements, generateNames);
+        forEach((<BindingPattern>node).elems, generateNames);
         break;
       case Syntax.ImportDeclaration:
         generateNames((<ImportDeclaration>node).importClause);
@@ -3683,7 +3683,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         generateNameIfNeeded((<NamespaceExport>node).name);
         break;
       case Syntax.NamedImports:
-        forEach((<NamedImports>node).elements, generateNames);
+        forEach((<NamedImports>node).elems, generateNames);
         break;
       case Syntax.ImportSpecifier:
         generateNameIfNeeded((<ImportSpecifier>node).propertyName || (<ImportSpecifier>node).name);

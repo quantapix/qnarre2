@@ -20,7 +20,7 @@ export interface ExternalModuleInfo {
 function containsDefaultReference(node: NamedImportBindings | undefined) {
   if (!node) return false;
   if (!qc.is.kind(qc.NamedImports, node)) return false;
-  return some(node.elements, isNamedDefaultReference);
+  return some(node.elems, isNamedDefaultReference);
 }
 function isNamedDefaultReference(e: ImportSpecifier): boolean {
   return e.propertyName !== undefined && e.propertyName.escapedText === InternalSymbol.Default;
@@ -43,12 +43,12 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
   if (!bindings) return false;
   if (!qc.is.kind(qc.NamedImports, bindings)) return false;
   let defaultRefCount = 0;
-  for (const binding of bindings.elements) {
+  for (const binding of bindings.elems) {
     if (isNamedDefaultReference(binding)) {
       defaultRefCount++;
     }
   }
-  return (defaultRefCount > 0 && defaultRefCount !== bindings.elements.length) || (!!(bindings.elements.length - defaultRefCount) && qf.is.defaultImport(node));
+  return (defaultRefCount > 0 && defaultRefCount !== bindings.elems.length) || (!!(bindings.elems.length - defaultRefCount) && qf.is.defaultImport(node));
 }
 export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
   return (
@@ -92,7 +92,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
             externalImports.push(<ExportDeclaration>node);
           }
         } else {
-          for (const specifier of cast((<ExportDeclaration>node).exportClause, isNamedExports).elements) {
+          for (const specifier of cast((<ExportDeclaration>node).exportClause, isNamedExports).elems) {
             if (!uniqueExports.get(idText(specifier.name))) {
               const name = specifier.propertyName || specifier.name;
               exportSpecifiers.add(idText(name), specifier);
@@ -168,11 +168,11 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
     externalHelpersImportDeclaration,
   };
 }
-function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
+function collectExportedVariableInfo(decl: VariableDeclaration | BindingElem, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
   if (qc.is.kind(qc.BindingPattern, decl.name)) {
-    for (const element of decl.name.elements) {
-      if (!qc.is.kind(qc.OmittedExpression, element)) {
-        exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);
+    for (const elem of decl.name.elems) {
+      if (!qc.is.kind(qc.OmittedExpression, elem)) {
+        exportedNames = collectExportedVariableInfo(elem, uniqueExports, exportedNames);
       }
     }
   } else if (!qc.is.generatedIdentifier(decl.name)) {
@@ -260,9 +260,9 @@ export function helperString(input: TemplateStringsArray, ...args: string[]) {
 export function getProperties(node: ClassExpression | ClassDeclaration, requireIniter: boolean, isStatic: boolean): readonly PropertyDeclaration[] {
   return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as PropertyDeclaration[];
 }
-function isInitializedOrStaticProperty(member: ClassElement, requireIniter: boolean, isStatic: boolean) {
+function isInitializedOrStaticProperty(member: ClassElem, requireIniter: boolean, isStatic: boolean) {
   return qc.is.kind(qc.PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qc.has.staticModifier(member) === isStatic;
 }
-export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initer: Expression } {
+export function isInitializedProperty(member: ClassElem): member is PropertyDeclaration & { initer: Expression } {
   return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initer !== undefined;
 }

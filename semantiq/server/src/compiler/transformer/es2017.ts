@@ -22,7 +22,7 @@ export function transformES2017(context: TransformationContext) {
   let enclosingSuperContainerFlags: NodeCheckFlags = 0;
   let enclosingFunctionParameterNames: EscapedMap<true>;
   let capturedSuperProperties: EscapedMap<true>;
-  let hasSuperElementAccess: boolean;
+  let hasSuperElemAccess: boolean;
   const substitutedSuperAccessors: boolean[] = [];
   let contextFlags: ContextFlags = 0;
   const previousOnEmitNode = context.onEmitNode;
@@ -83,9 +83,9 @@ export function transformES2017(context: TransformationContext) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
-      case Syntax.ElementAccessExpression:
-        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === Syntax.SuperKeyword) {
-          hasSuperElementAccess = true;
+      case Syntax.ElemAccessExpression:
+        if (capturedSuperProperties && (<ElemAccessExpression>node).expression.kind === Syntax.SuperKeyword) {
+          hasSuperElemAccess = true;
         }
         return visitEachChild(node, visitor, context);
       case Syntax.GetAccessor:
@@ -234,13 +234,13 @@ export function transformES2017(context: TransformationContext) {
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
-  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: EscapedMap<true>) {
+  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElem, names: EscapedMap<true>) {
     if (qc.is.kind(qc.Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
-      for (const element of name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element)) {
-          recordDeclarationName(element, names);
+      for (const elem of name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+          recordDeclarationName(elem, names);
         }
       }
     }
@@ -252,7 +252,7 @@ export function transformES2017(context: TransformationContext) {
     hoistVariableDeclarationList(node);
     const variables = qf.get.initializedVariables(node);
     if (variables.length === 0) {
-      if (hasReceiver) return visitNode(convertToAssignmentElementTarget(node.declarations[0].name), visitor, isExpression);
+      if (hasReceiver) return visitNode(convertToAssignmentElemTarget(node.declarations[0].name), visitor, isExpression);
       return;
     }
     return inlineExpressions(map(variables, transformInitializedVariable));
@@ -260,26 +260,26 @@ export function transformES2017(context: TransformationContext) {
   function hoistVariableDeclarationList(node: VariableDeclarationList) {
     forEach(node.declarations, hoistVariable);
   }
-  function hoistVariable({ name }: VariableDeclaration | BindingElement) {
+  function hoistVariable({ name }: VariableDeclaration | BindingElem) {
     if (qc.is.kind(qc.Identifier, name)) {
       hoistVariableDeclaration(name);
     } else {
-      for (const element of name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element)) {
-          hoistVariable(element);
+      for (const elem of name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+          hoistVariable(elem);
         }
       }
     }
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    const converted = setSourceMapRange(qf.create.assignment(convertToAssignmentElementTarget(node.name), node.initer!), node);
+    const converted = setSourceMapRange(qf.create.assignment(convertToAssignmentElemTarget(node.name), node.initer!), node);
     return visitNode(converted, visitor, isExpression);
   }
-  function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
+  function collidesWithParameterName({ name }: VariableDeclaration | BindingElem): boolean {
     if (qc.is.kind(qc.Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
     else {
-      for (const element of name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element) && collidesWithParameterName(element)) return true;
+      for (const elem of name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem) && collidesWithParameterName(elem)) return true;
       }
     }
     return false;
@@ -299,10 +299,10 @@ export function transformES2017(context: TransformationContext) {
       recordDeclarationName(parameter, enclosingFunctionParameterNames);
     }
     const savedCapturedSuperProperties = capturedSuperProperties;
-    const savedHasSuperElementAccess = hasSuperElementAccess;
+    const savedHasSuperElemAccess = hasSuperElemAccess;
     if (!isArrowFunction) {
       capturedSuperProperties = qb.createEscapedMap<true>();
-      hasSuperElementAccess = false;
+      hasSuperElemAccess = false;
     }
     let result: ConciseBody;
     if (!isArrowFunction) {
@@ -323,7 +323,7 @@ export function transformES2017(context: TransformationContext) {
       }
       const block = new Block(statements, true);
       setRange(block, node.body);
-      if (emitSuperHelpers && hasSuperElementAccess) {
+      if (emitSuperHelpers && hasSuperElemAccess) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
           addEmitHelper(block, advancedAsyncSuperHelper);
         } else if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuper) {
@@ -344,7 +344,7 @@ export function transformES2017(context: TransformationContext) {
     enclosingFunctionParameterNames = savedEnclosingFunctionParameterNames;
     if (!isArrowFunction) {
       capturedSuperProperties = savedCapturedSuperProperties;
-      hasSuperElementAccess = savedHasSuperElementAccess;
+      hasSuperElemAccess = savedHasSuperElemAccess;
     }
     return result;
   }
@@ -365,7 +365,7 @@ export function transformES2017(context: TransformationContext) {
       enabledSubstitutions |= ES2017SubstitutionFlags.AsyncMethodsWithSuper;
       context.enableSubstitution(Syntax.CallExpression);
       context.enableSubstitution(Syntax.PropertyAccessExpression);
-      context.enableSubstitution(Syntax.ElementAccessExpression);
+      context.enableSubstitution(Syntax.ElemAccessExpression);
       context.enableEmitNotification(Syntax.ClassDeclaration);
       context.enableEmitNotification(Syntax.MethodDeclaration);
       context.enableEmitNotification(Syntax.GetAccessor);
@@ -402,8 +402,8 @@ export function transformES2017(context: TransformationContext) {
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
         return substitutePropertyAccessExpression(<PropertyAccessExpression>node);
-      case Syntax.ElementAccessExpression:
-        return substituteElementAccessExpression(<ElementAccessExpression>node);
+      case Syntax.ElemAccessExpression:
+        return substituteElemAccessExpression(<ElemAccessExpression>node);
       case Syntax.CallExpression:
         return substituteCallExpression(<CallExpression>node);
     }
@@ -413,14 +413,14 @@ export function transformES2017(context: TransformationContext) {
     if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name), node);
     return node;
   }
-  function substituteElementAccessExpression(node: ElementAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
+  function substituteElemAccessExpression(node: ElemAccessExpression) {
+    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argumentExpression, node);
     return node;
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
     if (qc.is.superProperty(expression)) {
-      const argumentExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+      const argumentExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
       return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;
@@ -429,7 +429,7 @@ export function transformES2017(context: TransformationContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
+  function createSuperElemAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
       return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), 'value'), location);
     return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);

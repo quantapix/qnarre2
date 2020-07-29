@@ -341,8 +341,8 @@ export function transformGenerators(context: TransformationContext) {
         return visitArrayLiteralExpression(<ArrayLiteralExpression>node);
       case Syntax.ObjectLiteralExpression:
         return visitObjectLiteralExpression(<ObjectLiteralExpression>node);
-      case Syntax.ElementAccessExpression:
-        return visitElementAccessExpression(<ElementAccessExpression>node);
+      case Syntax.ElemAccessExpression:
+        return visitElemAccessExpression(<ElemAccessExpression>node);
       case Syntax.CallExpression:
         return visitCallExpression(<CallExpression>node);
       case Syntax.NewExpression:
@@ -530,7 +530,7 @@ export function transformGenerators(context: TransformationContext) {
             (<PropertyAccessExpression>left).name
           );
           break;
-        case Syntax.ElementAccessExpression:
+        case Syntax.ElemAccessExpression:
           // [source]
           //      a[b] = yield;
           //
@@ -541,10 +541,10 @@ export function transformGenerators(context: TransformationContext) {
           //  .yield resumeLabel
           //  .mark resumeLabel
           //      _a[_b] = %sent%;
-          target = updateElementAccess(
-            <ElementAccessExpression>left,
-            cacheExpression(visitNode((<ElementAccessExpression>left).expression, visitor, isLeftHandSideExpression)),
-            cacheExpression(visitNode((<ElementAccessExpression>left).argumentExpression, visitor, isExpression))
+          target = updateElemAccess(
+            <ElemAccessExpression>left,
+            cacheExpression(visitNode((<ElemAccessExpression>left).expression, visitor, isLeftHandSideExpression)),
+            cacheExpression(visitNode((<ElemAccessExpression>left).argumentExpression, visitor, isExpression))
           );
           break;
         default:
@@ -702,9 +702,9 @@ export function transformGenerators(context: TransformationContext) {
     return createGeneratorResume(node);
   }
   function visitArrayLiteralExpression(node: ArrayLiteralExpression) {
-    return visitElements(node.elements, undefined, node.multiLine);
+    return visitElems(node.elems, undefined, node.multiLine);
   }
-  function visitElements(elements: Nodes<Expression>, leadingElement?: Expression, location?: TextRange, multiLine?: boolean) {
+  function visitElems(elems: Nodes<Expression>, leadingElem?: Expression, location?: TextRange, multiLine?: boolean) {
     // [source]
     //      ar = [1, yield, 2];
     //
@@ -714,20 +714,20 @@ export function transformGenerators(context: TransformationContext) {
     //  .yield resumeLabel
     //  .mark resumeLabel
     //      ar = _a.concat([%sent%, 2]);
-    const numInitialElements = countInitialNodesWithoutYield(elements);
+    const numInitialElems = countInitialNodesWithoutYield(elems);
     let temp: Identifier | undefined;
-    if (numInitialElements > 0) {
+    if (numInitialElems > 0) {
       temp = declareLocal();
-      const initialElements = Nodes.visit(elements, visitor, isExpression, 0, numInitialElements);
-      emitAssignment(temp, new ArrayLiteralExpression(leadingElement ? [leadingElement, ...initialElements] : initialElements));
-      leadingElement = undefined;
+      const initialElems = Nodes.visit(elems, visitor, isExpression, 0, numInitialElems);
+      emitAssignment(temp, new ArrayLiteralExpression(leadingElem ? [leadingElem, ...initialElems] : initialElems));
+      leadingElem = undefined;
     }
-    const expressions = reduceLeft(elements, reduceElement, <Expression[]>[], numInitialElements);
+    const expressions = reduceLeft(elems, reduceElem, <Expression[]>[], numInitialElems);
     return temp
       ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
-      : setRange(new ArrayLiteralExpression(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine), location);
-    function reduceElement(expressions: Expression[], element: Expression) {
-      if (containsYield(element) && expressions.length > 0) {
+      : setRange(new ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine), location);
+    function reduceElem(expressions: Expression[], elem: Expression) {
+      if (containsYield(elem) && expressions.length > 0) {
         const hasAssignedTemp = temp !== undefined;
         if (!temp) {
           temp = declareLocal();
@@ -736,12 +736,12 @@ export function transformGenerators(context: TransformationContext) {
           temp,
           hasAssignedTemp
             ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
-            : new ArrayLiteralExpression(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine)
+            : new ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine)
         );
-        leadingElement = undefined;
+        leadingElem = undefined;
         expressions = [];
       }
-      expressions.push(visitNode(element, visitor, isExpression));
+      expressions.push(visitNode(elem, visitor, isExpression));
       return expressions;
     }
   }
@@ -767,16 +767,16 @@ export function transformGenerators(context: TransformationContext) {
     const multiLine = node.multiLine;
     const numInitialProperties = countInitialNodesWithoutYield(properties);
     const temp = declareLocal();
-    emitAssignment(temp, new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
+    emitAssignment(temp, new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElemLike, 0, numInitialProperties), multiLine));
     const expressions = reduceLeft(properties, reduceProperty, <Expression[]>[], numInitialProperties);
     expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);
     return inlineExpressions(expressions);
-    function reduceProperty(expressions: Expression[], property: ObjectLiteralElementLike) {
+    function reduceProperty(expressions: Expression[], property: ObjectLiteralElemLike) {
       if (containsYield(property) && expressions.length > 0) {
         emitStatement(new qc.ExpressionStatement(inlineExpressions(expressions)));
         expressions = [];
       }
-      const expression = createExpressionForObjectLiteralElementLike(node, property, temp);
+      const expression = createExpressionForObjectLiteralElemLike(node, property, temp);
       const visited = visitNode(expression, visitor, isExpression);
       if (visited) {
         if (multiLine) {
@@ -787,7 +787,7 @@ export function transformGenerators(context: TransformationContext) {
       return expressions;
     }
   }
-  function visitElementAccessExpression(node: ElementAccessExpression) {
+  function visitElemAccessExpression(node: ElemAccessExpression) {
     if (containsYield(node.argumentExpression)) {
       // [source]
       //      a = x[yield];
@@ -818,7 +818,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
       const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
-      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), node).setOriginal(node);
+      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElems(node.arguments), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -837,7 +837,7 @@ export function transformGenerators(context: TransformationContext) {
       const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
         setRange(
-          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qc.VoidExpression.zero())), undefined, []),
+          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElems(node.arguments!, qc.VoidExpression.zero())), undefined, []),
           node
         ),
         node
@@ -1168,7 +1168,7 @@ export function transformGenerators(context: TransformationContext) {
         variable = visitNode(initer, visitor, isExpression);
         assert(qc.is.leftHandSideExpression(variable));
       }
-      emitAssignment(variable, new qc.ElementAccessExpression(keysArray, keysIndex));
+      emitAssignment(variable, new qc.ElemAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
       markLabel(incrementLabel);
       emitStatement(new qc.ExpressionStatement(qf.create.increment(keysIndex)));

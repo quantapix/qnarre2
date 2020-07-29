@@ -15,7 +15,7 @@ export type DeclarationDiagnosticProducing =
   | qt.VariableDeclaration
   | qt.PropertyDeclaration
   | qt.PropertySignature
-  | qt.BindingElement
+  | qt.BindingElem
   | qt.SetAccessorDeclaration
   | qt.GetAccessorDeclaration
   | qt.ConstructSignatureDeclaration
@@ -36,7 +36,7 @@ export function canProduceDiagnostics(node: Node): node is DeclarationDiagnostic
     qf.is.kind(qc.VariableDeclaration, node) ||
     qf.is.kind(qc.PropertyDeclaration, node) ||
     qf.is.kind(qc.PropertySignature, node) ||
-    qf.is.kind(qc.BindingElement, node) ||
+    qf.is.kind(qc.BindingElem, node) ||
     qf.is.kind(qc.SetAccessorDeclaration, node) ||
     qf.is.kind(qc.GetAccessorDeclaration, node) ||
     qf.is.kind(qc.ConstructSignatureDeclaration, node) ||
@@ -119,7 +119,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     qf.is.kind(qc.PropertyDeclaration, node) ||
     qf.is.kind(qc.PropertySignature, node) ||
     qf.is.kind(qc.PropertyAccessExpression, node) ||
-    qf.is.kind(qc.BindingElement, node) ||
+    qf.is.kind(qc.BindingElem, node) ||
     qf.is.kind(qc.ConstructorDeclaration, node)
   ) {
     return getVariableDeclarationTypeVisibilityError;
@@ -145,7 +145,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   if (qf.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
   return qc.assert.never(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
   function getVariableDeclarationTypeVisibilityMessage(r: qt.SymbolAccessibilityResult) {
-    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
+    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElem) {
       return r.errorModuleName
         ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
           ? qd.msgs.Exported_variable_0_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named

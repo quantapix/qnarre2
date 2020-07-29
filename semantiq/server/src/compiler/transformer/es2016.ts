@@ -36,18 +36,18 @@ export function transformES2016(context: TransformationContext) {
     let value: Expression;
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);
-    if (qc.is.kind(qc.ElementAccessExpression, left)) {
+    if (qc.is.kind(qc.ElemAccessExpression, left)) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
       target = setRange(
-        new qs.ElementAccessExpression(
+        new qs.ElemAccessExpression(
           setRange(qf.create.assignment(expressionTemp, left.expression), left.expression),
           setRange(qf.create.assignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
         ),
         left
       );
-      value = setRange(new qs.ElementAccessExpression(expressionTemp, argumentExpressionTemp), left);
+      value = setRange(new qs.ElemAccessExpression(expressionTemp, argumentExpressionTemp), left);
     } else if (qc.is.kind(qc.PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);

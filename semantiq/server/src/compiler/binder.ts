@@ -48,7 +48,7 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
       const exportDeclaration = node as ExportDeclaration;
       if (!exportDeclaration.moduleSpecifier && exportDeclaration.exportClause && exportDeclaration.exportClause.kind === Syntax.NamedExports) {
         let state = ModuleInstanceState.NonInstantiated;
-        for (const specifier of exportDeclaration.exportClause.elements) {
+        for (const specifier of exportDeclaration.exportClause.elems) {
           const specifierState = getModuleInstanceStateForAliasTarget(specifier, visited);
           if (specifierState > state) {
             state = specifierState;
@@ -578,7 +578,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         bindVariableDeclarationFlow(<VariableDeclaration>node);
         break;
       case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
         bindAccessExpressionFlow(<AccessExpression>node);
         break;
       case Syntax.CallExpression:
@@ -612,7 +612,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.Identifier:
       case Syntax.ThisKeyword:
       case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
         return containsNarrowableReference(expr);
       case Syntax.CallExpression:
         return hasNarrowableArgument(<CallExpression>expr);
@@ -633,7 +633,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       expr.kind === Syntax.ThisKeyword ||
       expr.kind === Syntax.SuperKeyword ||
       ((qf.is.kind(qc.PropertyAccessExpression, expr) || qf.is.kind(qc.NonNullExpression, expr) || qf.is.kind(qc.ParenthesizedExpression, expr)) && isNarrowableReference(expr.expression)) ||
-      (qf.is.kind(qc.ElementAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
+      (qf.is.kind(qc.ElemAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
     );
   }
   function containsNarrowableReference(expr: Expression): boolean {
@@ -722,7 +722,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags: FlowFlags.SwitchClause, antecedent, switchStatement, clauseStart, clauseEnd });
   }
-  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | VariableDeclaration | ArrayBindingElement): FlowNode {
+  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | VariableDeclaration | ArrayBindingElem): FlowNode {
     setFlowNodeReferenced(antecedent);
     const result = initFlowNode({ flags, antecedent, node });
     if (currentExceptionTarget) {
@@ -1042,9 +1042,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (isNarrowableReference(node)) {
       currentFlow = createFlowMutation(FlowFlags.Assignment, currentFlow, node);
     } else if (node.kind === Syntax.ArrayLiteralExpression) {
-      for (const e of (<ArrayLiteralExpression>node).elements) {
-        if (e.kind === Syntax.SpreadElement) {
-          bindAssignmentTargetFlow((<SpreadElement>e).expression);
+      for (const e of (<ArrayLiteralExpression>node).elems) {
+        if (e.kind === Syntax.SpreadElem) {
+          bindAssignmentTargetFlow((<SpreadElem>e).expression);
         } else {
           bindDestructuringTargetFlow(e);
         }
@@ -1168,9 +1168,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           const operator = node.operatorToken.kind;
           if (qy.is.assignmentOperator(operator) && !qf.is.assignmentTarget(node)) {
             bindAssignmentTargetFlow(node.left);
-            if (operator === Syntax.EqualsToken && node.left.kind === Syntax.ElementAccessExpression) {
-              const elementAccess = <ElementAccessExpression>node.left;
-              if (isNarrowableOperand(elementAccess.expression)) {
+            if (operator === Syntax.EqualsToken && node.left.kind === Syntax.ElemAccessExpression) {
+              const elemAccess = <ElemAccessExpression>node.left;
+              if (isNarrowableOperand(elemAccess.expression)) {
                 currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
               }
             }
@@ -1241,10 +1241,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     addAntecedent(postExpressionLabel, currentFlow);
     currentFlow = finishFlowLabel(postExpressionLabel);
   }
-  function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElement) {
+  function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElem) {
     const name = !qf.is.kind(qc.OmittedExpression, node) ? node.name : undefined;
     if (qf.is.kind(qc.BindingPattern, name)) {
-      for (const child of name.elements) {
+      for (const child of name.elems) {
         bindInitializedVariableFlow(child);
       }
     } else {
@@ -1283,7 +1283,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         bind(node.questionDotToken);
         bind(node.name);
         break;
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
         bind(node.questionDotToken);
         bind(node.argumentExpression);
         break;
@@ -1322,7 +1322,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       bindEachChild(node);
     }
   }
-  function bindAccessExpressionFlow(node: AccessExpression | PropertyAccessChain | ElementAccessChain) {
+  function bindAccessExpressionFlow(node: AccessExpression | PropertyAccessChain | ElemAccessChain) {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
@@ -1513,25 +1513,25 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     typeLiteralSymbol.members.set(symbol.escName, symbol);
   }
   function bindObjectLiteralExpression(node: ObjectLiteralExpression) {
-    const enum ElementKind {
+    const enum ElemKind {
       Property = 1,
       Accessor = 2,
     }
     if (inStrictMode && !qf.is.assignmentTarget(node)) {
-      const seen = qu.createEscapedMap<ElementKind>();
+      const seen = qu.createEscapedMap<ElemKind>();
       for (const prop of node.properties) {
         if (prop.kind === Syntax.SpreadAssignment || prop.name.kind !== Syntax.Identifier) {
           continue;
         }
         const identifier = prop.name;
         const currentKind =
-          prop.kind === Syntax.PropertyAssignment || prop.kind === Syntax.ShorthandPropertyAssignment || prop.kind === Syntax.MethodDeclaration ? ElementKind.Property : ElementKind.Accessor;
+          prop.kind === Syntax.PropertyAssignment || prop.kind === Syntax.ShorthandPropertyAssignment || prop.kind === Syntax.MethodDeclaration ? ElemKind.Property : ElemKind.Accessor;
         const existingKind = seen.get(identifier.escapedText);
         if (!existingKind) {
           seen.set(identifier.escapedText, currentKind);
           continue;
         }
-        if (currentKind === ElementKind.Property && existingKind === ElementKind.Property) {
+        if (currentKind === ElemKind.Property && existingKind === ElemKind.Property) {
           const span = qf.get.errorSpanForNode(file, identifier);
           file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
         }
@@ -1844,8 +1844,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.PrivateIdentifier:
         return checkPrivateIdentifier(node as PrivateIdentifier);
       case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
-        const expr = node as PropertyAccessExpression | ElementAccessExpression;
+      case Syntax.ElemAccessExpression:
+        const expr = node as PropertyAccessExpression | ElemAccessExpression;
         if (currentFlow && isNarrowableReference(expr)) {
           expr.flowNode = currentFlow;
         }
@@ -1907,10 +1907,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.Parameter:
         return bindParameter(<ParameterDeclaration>node);
       case Syntax.VariableDeclaration:
-        return bindVariableDeclarationOrBindingElement(<VariableDeclaration>node);
-      case Syntax.BindingElement:
+        return bindVariableDeclarationOrBindingElem(<VariableDeclaration>node);
+      case Syntax.BindingElem:
         node.flowNode = currentFlow;
-        return bindVariableDeclarationOrBindingElement(<BindingElement>node);
+        return bindVariableDeclarationOrBindingElem(<BindingElem>node);
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
         return bindPropertyWorker(node as PropertyDeclaration | PropertySignature);
@@ -2140,7 +2140,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const symbol = declareSymbol(file.symbol.exports!, file.symbol, node, flags | SymbolFlags.Assignment, SymbolFlags.None);
     setValueDeclaration(symbol, node);
   }
-  function bindThisNode(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElementAccessExpression) {
+  function bindThisNode(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     qu.assert(qf.is.inJSFile(node));
     const hasPrivateIdentifier =
       (qf.is.kind(qc.node, BinaryExpression) && qf.is.kind(qc.PropertyAccessExpression, node.left) && qf.is.kind(qc.PrivateIdentifier, node.left.name)) ||
@@ -2205,7 +2205,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       members.set('' + qf.get.nodeId(node), node);
     }
   }
-  function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElementAccessExpression) {
+  function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     if (node.expression.kind === Syntax.ThisKeyword) {
       bindThisNode(PropertyAssignment, node);
     } else if (qf.is.bindableStaticAccessExpression(node) && node.parent.parent.kind === Syntax.SourceFile) {
@@ -2369,7 +2369,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qf.is.kind(qc.Identifier, node)) return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
     else {
       const symbol = lookupSymbolForPropertyAccess(node.expression);
-      return symbol && symbol.exports && symbol.exports.get(qf.get.elementOrPropertyAccessName(node));
+      return symbol && symbol.exports && symbol.exports.get(qf.get.elemOrPropertyAccessName(node));
     }
   }
   function forEachIdentifierInEntityName(
@@ -2385,7 +2385,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       if (qf.is.kind(qc.PrivateIdentifier, name)) {
         fail('unexpected PrivateIdentifier');
       }
-      return action(name, s && s.exports && s.exports.get(qf.get.elementOrPropertyAccessName(e)), s);
+      return action(name, s && s.exports && s.exports.get(qf.get.elemOrPropertyAccessName(e)), s);
     }
   }
   function bindCallExpression(node: CallExpression) {
@@ -2420,7 +2420,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       ? bindBlockScopedDeclaration(node, SymbolFlags.ConstEnum, SymbolFlags.ConstEnumExcludes)
       : bindBlockScopedDeclaration(node, SymbolFlags.RegularEnum, SymbolFlags.RegularEnumExcludes);
   }
-  function bindVariableDeclarationOrBindingElement(node: VariableDeclaration | BindingElement) {
+  function bindVariableDeclarationOrBindingElem(node: VariableDeclaration | BindingElem) {
     if (inStrictMode) {
       checkStrictModeEvalOrArguments(node, node.name);
     }
@@ -2658,11 +2658,11 @@ export function computeTransformFlagsForNode(node: Node, subtreeFlags: Transform
       return computeImportEquals(<ImportEqualsDeclaration>node, subtreeFlags);
     case Syntax.PropertyAccessExpression:
       return computePropertyAccess(<PropertyAccessExpression>node, subtreeFlags);
-    case Syntax.ElementAccessExpression:
-      return computeElementAccess(<ElementAccessExpression>node, subtreeFlags);
-    case Syntax.JsxSelfClosingElement:
-    case Syntax.JsxOpeningElement:
-      return computeJsxOpeningLikeElement(<JsxOpeningLikeElement>node, subtreeFlags);
+    case Syntax.ElemAccessExpression:
+      return computeElemAccess(<ElemAccessExpression>node, subtreeFlags);
+    case Syntax.JsxSelfClosingElem:
+    case Syntax.JsxOpeningElem:
+      return computeJsxOpeningLikeElem(<JsxOpeningLikeElem>node, subtreeFlags);
     default:
       return computeOther(node, kind, subtreeFlags);
   }
@@ -2700,7 +2700,7 @@ function computeNewExpression(node: NewExpression, subtreeFlags: TransformFlags)
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
   return transformFlags & ~TransformFlags.ArrayLiteralOrCallOrNewExcludes;
 }
-function computeJsxOpeningLikeElement(node: JsxOpeningLikeElement, subtreeFlags: TransformFlags) {
+function computeJsxOpeningLikeElem(node: JsxOpeningLikeElem, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.AssertJsx;
   if (node.typeArguments) {
     transformFlags |= TransformFlags.AssertTypeScript;
@@ -2925,7 +2925,7 @@ function computePropertyAccess(node: PropertyAccessExpression, subtreeFlags: Tra
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
   return transformFlags & ~TransformFlags.PropertyAccessExcludes;
 }
-function computeElementAccess(node: ElementAccessExpression, subtreeFlags: TransformFlags) {
+function computeElemAccess(node: ElemAccessExpression, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
   if (node.flags & NodeFlags.OptionalChain) {
     transformFlags |= TransformFlags.ContainsES2020;
@@ -3031,9 +3031,9 @@ function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
     case Syntax.ReadonlyKeyword:
       transformFlags |= TransformFlags.AssertTypeScript;
       break;
-    case Syntax.JsxElement:
+    case Syntax.JsxElem:
     case Syntax.JsxText:
-    case Syntax.JsxClosingElement:
+    case Syntax.JsxClosingElem:
     case Syntax.JsxFragment:
     case Syntax.JsxOpeningFragment:
     case Syntax.JsxClosingFragment:
@@ -3128,7 +3128,7 @@ function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
     case Syntax.ComputedPropertyName:
       transformFlags |= TransformFlags.ContainsComputedPropertyName;
       break;
-    case Syntax.SpreadElement:
+    case Syntax.SpreadElem:
       transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsRestOrSpread;
       break;
     case Syntax.SpreadAssignment:
@@ -3152,9 +3152,9 @@ function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
       transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
       excludeFlags = TransformFlags.BindingPatternExcludes;
       break;
-    case Syntax.BindingElement:
+    case Syntax.BindingElem:
       transformFlags |= TransformFlags.AssertES2015;
-      if ((<BindingElement>node).dot3Token) {
+      if ((<BindingElem>node).dot3Token) {
         transformFlags |= TransformFlags.ContainsRestOrSpread;
       }
       break;
@@ -3262,7 +3262,7 @@ export function getTransformFlagsSubtreeExclusions(kind: Syntax) {
     case Syntax.SuperKeyword:
       return TransformFlags.OuterExpressionExcludes;
     case Syntax.PropertyAccessExpression:
-    case Syntax.ElementAccessExpression:
+    case Syntax.ElemAccessExpression:
       return TransformFlags.PropertyAccessExcludes;
     default:
       return TransformFlags.NodeExcludes;
@@ -3272,12 +3272,12 @@ function setParentPointers(parent: Node, child: Node): void {
   child.parent = parent;
   qf.each.child(child, (grandchild) => setParentPointers(child, grandchild));
 }
-function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
+function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElemAccessExpression): expr is PropertyAccessExpression | LiteralLikeElemAccessExpression {
   return (
     qf.is.inJSFile(expr) &&
     expr.parent &&
     expr.parent.kind === Syntax.ExpressionStatement &&
-    (!qf.is.kind(qc.ElementAccessExpression, expr) || qf.is.literalLikeElementAccess(expr)) &&
+    (!qf.is.kind(qc.ElemAccessExpression, expr) || qf.is.literalLikeElemAccess(expr)) &&
     !!qc.getDoc.typeTag(expr.parent)
   );
 }

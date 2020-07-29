@@ -16,7 +16,7 @@ export function transformES2020(context: TransformationContext) {
     if ((node.transformFlags & TransformFlags.ContainsES2020) === 0) return node;
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
       case Syntax.CallExpression:
         if (node.flags & NodeFlags.OptionalChain) {
           const updated = visitOptionalExpression(node as OptionalChain, false, false);
@@ -52,7 +52,7 @@ export function transformES2020(context: TransformationContext) {
     }
     return node.update(expression);
   }
-  function visitNonOptionalPropertyOrElementAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
+  function visitNonOptionalPropertyOrElemAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
     if (qc.is.optionalChain(node)) {
       // If `node` is an optional chain, then it is the outermost chain of an optional expression.
       return visitOptionalExpression(node, captureThisArg, isDelete);
@@ -84,8 +84,8 @@ export function transformES2020(context: TransformationContext) {
       case Syntax.ParenthesizedExpression:
         return visitNonOptionalParenthesizedExpression(node as ParenthesizedExpression, captureThisArg, isDelete);
       case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
-        return visitNonOptionalPropertyOrElementAccessExpression(node as AccessExpression, captureThisArg, isDelete);
+      case Syntax.ElemAccessExpression:
+        return visitNonOptionalPropertyOrElemAccessExpression(node as AccessExpression, captureThisArg, isDelete);
       case Syntax.CallExpression:
         return visitNonOptionalCallExpression(node as CallExpression, captureThisArg);
       default:
@@ -109,7 +109,7 @@ export function transformES2020(context: TransformationContext) {
       const segment = chain[i];
       switch (segment.kind) {
         case Syntax.PropertyAccessExpression:
-        case Syntax.ElementAccessExpression:
+        case Syntax.ElemAccessExpression:
           if (i === chain.length - 1 && captureThisArg) {
             if (shouldCaptureInTempVariable(rightExpression)) {
               thisArg = createTempVariable(hoistVariableDeclaration);
@@ -122,7 +122,7 @@ export function transformES2020(context: TransformationContext) {
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
               ? new qc.PropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier))
-              : new qs.ElementAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
+              : new qs.ElemAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {

@@ -77,13 +77,13 @@ export function newCreate(f: qt.Frame) {
       if (o && qf.is.outerExpression(o, ks) && !qf.is.ignorableParen(o)) return o.update(this.recreateOuterExpressions(o.expression, i));
       return i;
     }
-    reactNamespace(react: string, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment) {
+    reactNamespace(react: string, p: qt.JsxOpeningLikeElem | qt.JsxOpeningFragment) {
       const r = new qc.Identifier(react || 'React');
       r.flags &= ~NodeFlags.Synthesized;
       r.parent = qf.get.parseTreeOf(p);
       return r;
     }
-    jsxFactoryExpressionFromEntityName(e: qt.EntityName, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment): qt.Expression {
+    jsxFactoryExpressionFromEntityName(e: qt.EntityName, p: qt.JsxOpeningLikeElem | qt.JsxOpeningFragment): qt.Expression {
       if (e.kind === Syntax.QualifiedName) {
         const l = this.jsxFactoryExpressionFromEntityName(e.left, p);
         const r = new qc.Identifier(qb.idText(e.right));
@@ -92,8 +92,8 @@ export function newCreate(f: qt.Frame) {
       }
       return this.reactNamespace(qb.idText(e), p);
     }
-    jsxFactoryExpression(e: qt.EntityName | undefined, react: string, p: qt.JsxOpeningLikeElement | qt.JsxOpeningFragment): qt.Expression {
-      return e ? this.jsxFactoryExpressionFromEntityName(e, p) : new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'createElement');
+    jsxFactoryExpression(e: qt.EntityName | undefined, react: string, p: qt.JsxOpeningLikeElem | qt.JsxOpeningFragment): qt.Expression {
+      return e ? this.jsxFactoryExpressionFromEntityName(e, p) : new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'createElem');
     }
     expressionForJsxFragment(e: qt.EntityName | undefined, react: string, cs: readonly qt.Expression[], p: qt.JsxOpeningFragment, r: qu.TextRange): qt.LeftHandSideExpression {
       const t = new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'Fragment');
@@ -107,15 +107,7 @@ export function newCreate(f: qt.Frame) {
       } else args.push(cs[0]);
       return new qc.CallExpression(this.jsxFactoryExpression(e, react, p), undefined, args).setRange(r);
     }
-    expression(
-      e: qt.EntityName | undefined,
-      react: string,
-      t: qt.Expression,
-      ps: qt.Expression,
-      cs: readonly qt.Expression[],
-      p: qt.JsxOpeningLikeElement,
-      r: qu.TextRange
-    ): qt.LeftHandSideExpression {
+    expression(e: qt.EntityName | undefined, react: string, t: qt.Expression, ps: qt.Expression, cs: readonly qt.Expression[], p: qt.JsxOpeningLikeElem, r: qu.TextRange): qt.LeftHandSideExpression {
       const args = [t];
       if (ps) args.push(ps);
       if (cs.length) {
@@ -178,18 +170,18 @@ export function newCreate(f: qt.Frame) {
             }
             break;
           }
-          case Syntax.ElementAccessExpression: {
-            if (qf.is.toBeCapturedInTempVariable((<qt.ElementAccessExpression>callee).expression, cacheIdentifiers)) {
+          case Syntax.ElemAccessExpression: {
+            if (qf.is.toBeCapturedInTempVariable((<qt.ElemAccessExpression>callee).expression, cacheIdentifiers)) {
               // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
-              target = new qc.ElementAccessExpression(
-                this.assignment(thisArg, (<qt.ElementAccessExpression>callee).expression).setRange((<qt.ElementAccessExpression>callee).expression),
-                (<qt.ElementAccessExpression>callee).argumentExpression
+              target = new qc.ElemAccessExpression(
+                this.assignment(thisArg, (<qt.ElemAccessExpression>callee).expression).setRange((<qt.ElemAccessExpression>callee).expression),
+                (<qt.ElemAccessExpression>callee).argumentExpression
               );
               target.setRange(callee);
             } else {
-              thisArg = (<qt.ElementAccessExpression>callee).expression;
-              target = <qt.ElementAccessExpression>callee;
+              thisArg = (<qt.ElemAccessExpression>callee).expression;
+              target = <qt.ElemAccessExpression>callee;
             }
             break;
           }
@@ -336,7 +328,7 @@ export function newCreate(f: qt.Frame) {
       else if (qf.is.kind(qc.ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
       return getMutableClone(memberName);
     }
-    createExpressionForObjectLiteralElementLike(n: qt.ObjectLiteralExpression, property: qt.ObjectLiteralElementLike, receiver: qt.Expression): qt.Expression | undefined {
+    createExpressionForObjectLiteralElemLike(n: qt.ObjectLiteralExpression, property: qt.ObjectLiteralElemLike, receiver: qt.Expression): qt.Expression | undefined {
       if (property.name && qf.is.kind(qc.PrivateIdentifier, property.name)) qc.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
       function createExpressionForAccessorDeclaration(
         properties: Nodes<qt.Declaration>,
@@ -346,7 +338,7 @@ export function newCreate(f: qt.Frame) {
       ) {
         const { firstAccessor, getAccessor, setAccessor } = qf.get.allAccessorDeclarations(properties, property);
         if (property === firstAccessor) {
-          const properties: ObjectLiteralElementLike[] = [];
+          const properties: ObjectLiteralElemLike[] = [];
           if (getAccessor) {
             const getterFunction = new qc.FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
             setRange(getterFunction, getAccessor);
@@ -414,12 +406,10 @@ export function newCreate(f: qt.Frame) {
       return tag === 'undefined' ? this.strictEquality(value, qc.VoidExpression.zero()) : this.strictEquality(new qc.TypeOfExpression(value), qc.asLiteral(tag));
     }
     createMemberAccessForPropertyName(target: qt.Expression, memberName: qt.PropertyName, location?: qu.TextRange): qt.MemberExpression {
-      if (qf.is.kind(qc.ComputedPropertyName, memberName)) return setRange(new qc.ElementAccessExpression(target, memberName.expression), location);
+      if (qf.is.kind(qc.ComputedPropertyName, memberName)) return setRange(new qc.ElemAccessExpression(target, memberName.expression), location);
       else {
         const expression = setRange(
-          qf.is.kind(qc.Identifier, memberName) || qf.is.kind(qc.PrivateIdentifier, memberName)
-            ? new qc.PropertyAccessExpression(target, memberName)
-            : new qc.ElementAccessExpression(target, memberName),
+          qf.is.kind(qc.Identifier, memberName) || qf.is.kind(qc.PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new qc.ElemAccessExpression(target, memberName),
           memberName
         );
         getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -585,7 +575,7 @@ export function newEach(f: qt.Frame) {
           return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.initer.visit(cb);
         case Syntax.VariableDeclaration:
           return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.exclamationToken?.visit(cb) || n.type?.visit(cb) || n.initer?.visit(cb);
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
           return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.dot3Token?.visit(cb) || n.propertyName?.visit(cb) || n.name.visit(cb) || n.initer?.visit(cb);
         case Syntax.FunctionType:
         case Syntax.ConstructorType:
@@ -623,9 +613,9 @@ export function newEach(f: qt.Frame) {
         case Syntax.TypeLiteral:
           return n.members.visit(cb, cbs);
         case Syntax.ArrayType:
-          return n.elementType.visit(cb);
+          return n.elemType.visit(cb);
         case Syntax.TupleType:
-          return n.elements.visit(cb, cbs);
+          return n.elems.visit(cb, cbs);
         case Syntax.UnionType:
         case Syntax.IntersectionType:
           return n.types.visit(cb, cbs);
@@ -648,14 +638,14 @@ export function newEach(f: qt.Frame) {
           return n.dot3Token?.visit(cb) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.type.visit(cb);
         case Syntax.ObjectBindingPattern:
         case Syntax.ArrayBindingPattern:
-          return n.elements.visit(cb, cbs);
+          return n.elems.visit(cb, cbs);
         case Syntax.ArrayLiteralExpression:
-          return n.elements.visit(cb, cbs);
+          return n.elems.visit(cb, cbs);
         case Syntax.ObjectLiteralExpression:
           return n.properties.visit(cb, cbs);
         case Syntax.PropertyAccessExpression:
           return n.expression.visit(cb) || n.questionDotToken?.visit(cb) || n.name.visit(cb);
-        case Syntax.ElementAccessExpression:
+        case Syntax.ElemAccessExpression:
           return n.expression.visit(cb) || n.questionDotToken?.visit(cb) || n.argumentExpression.visit(cb);
         case Syntax.CallExpression:
         case Syntax.NewExpression:
@@ -690,7 +680,7 @@ export function newEach(f: qt.Frame) {
           return n.name.visit(cb);
         case Syntax.ConditionalExpression:
           return n.condition.visit(cb) || n.questionToken.visit(cb) || n.whenTrue.visit(cb) || n.colonToken.visit(cb) || n.whenFalse.visit(cb);
-        case Syntax.SpreadElement:
+        case Syntax.SpreadElem:
           return n.expression.visit(cb);
         case Syntax.Block:
         case Syntax.ModuleBlock:
@@ -767,7 +757,7 @@ export function newEach(f: qt.Frame) {
           return n.name.visit(cb);
         case Syntax.NamedImports:
         case Syntax.NamedExports:
-          return n.elements.visit(cb, cbs);
+          return n.elems.visit(cb, cbs);
         case Syntax.ExportDeclaration:
           return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.exportClause?.visit(cb) || n.moduleSpecifier?.visit(cb);
         case Syntax.ImportSpecifier:
@@ -790,13 +780,13 @@ export function newEach(f: qt.Frame) {
         case Syntax.MissingDeclaration:
           return n.decorators?.visit(cb, cbs);
         case Syntax.CommaListExpression:
-          return n.elements.visit(cb, cbs);
-        case Syntax.JsxElement:
-          return n.openingElement.visit(cb) || n.children.visit(cb, cbs) || n.closingElement.visit(cb);
+          return n.elems.visit(cb, cbs);
+        case Syntax.JsxElem:
+          return n.openingElem.visit(cb) || n.children.visit(cb, cbs) || n.closingElem.visit(cb);
         case Syntax.JsxFragment:
           return n.openingFragment.visit(cb) || n.children.visit(cb, cbs) || n.closingFragment.visit(cb);
-        case Syntax.JsxSelfClosingElement:
-        case Syntax.JsxOpeningElement:
+        case Syntax.JsxSelfClosingElem:
+        case Syntax.JsxOpeningElem:
           return n.tagName.visit(cb) || n.typeArguments?.visit(cb, cbs) || n.attributes.visit(cb);
         case Syntax.JsxAttributes:
           return n.properties.visit(cb, cbs);
@@ -806,7 +796,7 @@ export function newEach(f: qt.Frame) {
           return n.expression.visit(cb);
         case Syntax.JsxExpression:
           return n.dot3Token?.visit(cb) || n.expression?.visit(cb);
-        case Syntax.JsxClosingElement:
+        case Syntax.JsxClosingElem:
           return n.tagName.visit(cb);
         case Syntax.OptionalType:
         case Syntax.RestType:
@@ -915,7 +905,7 @@ export function newEach(f: qt.Frame) {
       }
       const b = n.namedBindings;
       if (b) {
-        const r = b.kind === Syntax.NamespaceImport ? cb(b) : qu.each(b.elements, cb);
+        const r = b.kind === Syntax.NamespaceImport ? cb(b) : qu.each(b.elems, cb);
         if (r) return r;
       }
       return;
@@ -973,7 +963,7 @@ export function newIs(f: qt.Frame) {
         case Syntax.ThisKeyword:
           return false;
         case Syntax.ArrayLiteralExpression:
-          return n.elements.length !== 0;
+          return n.elems.length !== 0;
         case Syntax.ObjectLiteralExpression:
           return n.properties.length > 0;
       }
@@ -1004,8 +994,7 @@ export function newIs(f: qt.Frame) {
           return this.sameEntityName(name, a);
         }
       }
-      if (this.literalLikeAccess(n) && this.literalLikeAccess(i))
-        return qf.get.elementOrPropertyAccessName(n) === qf.get.elementOrPropertyAccessName(i) && this.sameEntityName(n.expression, i.expression);
+      if (this.literalLikeAccess(n) && this.literalLikeAccess(i)) return qf.get.elemOrPropertyAccessName(n) === qf.get.elemOrPropertyAccessName(i) && this.sameEntityName(n.expression, i.expression);
       return false;
     }
     defaultedExpandoIniter(n: qt.BinaryExpression) {
@@ -1051,7 +1040,7 @@ export function newIs(f: qt.Frame) {
             return n?.kind === Syntax.TypeQuery || n?.kind === Syntax.TypeReference;
           }
           return false;
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.ImportSpecifier:
           return n.propertyName === i;
         case Syntax.ExportSpecifier:
@@ -1121,12 +1110,12 @@ export function newIs(f: qt.Frame) {
       );
     }
     blockOrCatchScoped(d: qt.Declaration) {
-      return (qf.get.combinedFlagsOf(d as Node) & NodeFlags.BlockScoped) !== 0 || this.catchClauseVariableDeclarationOrBindingElement(d);
+      return (qf.get.combinedFlagsOf(d as Node) & NodeFlags.BlockScoped) !== 0 || this.catchClauseVariableDeclarationOrBindingElem(d);
     }
     declarationReadonly(d: qt.Declaration) {
       return !!(qf.get.combinedModifierFlags(d) & ModifierFlags.Readonly && !this.parameterPropertyDeclaration(d as Node, d.parent));
     }
-    catchClauseVariableDeclarationOrBindingElement(d: qt.Declaration) {
+    catchClauseVariableDeclarationOrBindingElem(d: qt.Declaration) {
       const r = qf.get.rootDeclaration(d as Node);
       return r?.kind === Syntax.VariableDeclaration && r?.parent?.kind === Syntax.CatchClause;
     }
@@ -1179,12 +1168,12 @@ export function newIs(f: qt.Frame) {
         case Syntax.ClassExpression:
         case Syntax.ConditionalExpression:
         case Syntax.DeleteExpression:
-        case Syntax.ElementAccessExpression:
+        case Syntax.ElemAccessExpression:
         case Syntax.FalseKeyword:
         case Syntax.FunctionExpression:
-        case Syntax.JsxElement:
+        case Syntax.JsxElem:
         case Syntax.JsxFragment:
-        case Syntax.JsxSelfClosingElement:
+        case Syntax.JsxSelfClosingElem:
         case Syntax.MetaProperty:
         case Syntax.NewExpression:
         case Syntax.NonNullExpression:
@@ -1196,7 +1185,7 @@ export function newIs(f: qt.Frame) {
         case Syntax.PrefixUnaryExpression:
         case Syntax.PropertyAccessExpression:
         case Syntax.RegexLiteral:
-        case Syntax.SpreadElement:
+        case Syntax.SpreadElem:
         case Syntax.SuperKeyword:
         case Syntax.TaggedTemplateExpression:
         case Syntax.TemplateExpression:
@@ -1227,7 +1216,7 @@ export function newIs(f: qt.Frame) {
     inExpressionContext(n: Node): boolean {
       const p = n.parent as Node | undefined;
       switch (p?.kind) {
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.EnumMember:
         case Syntax.Parameter:
         case Syntax.PropertyAssignment:
@@ -1292,7 +1281,7 @@ export function newIs(f: qt.Frame) {
     }
     deleteTarget(n?: Node) {
       const k = n?.kind;
-      if (k === Syntax.PropertyAccessExpression || k === Syntax.ElementAccessExpression) {
+      if (k === Syntax.PropertyAccessExpression || k === Syntax.ElemAccessExpression) {
         n = qb.walkUpParenthesizedExpressions(n?.parent);
         return n?.kind === Syntax.DeleteExpression;
       }
@@ -1306,11 +1295,11 @@ export function newIs(f: qt.Frame) {
     typeAlias(n: Node): n is qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag | qt.TypeAliasDeclaration {
       return this.doc.typeAlias(n) || n.kind === Syntax.TypeAliasDeclaration;
     }
-    literalLikeAccess(n: Node): n is qt.LiteralLikeElementAccessExpression | qt.PropertyAccessExpression {
-      return n.kind === Syntax.PropertyAccessExpression || this.literalLikeElementAccess(n);
+    literalLikeAccess(n: Node): n is qt.LiteralLikeElemAccessExpression | qt.PropertyAccessExpression {
+      return n.kind === Syntax.PropertyAccessExpression || this.literalLikeElemAccess(n);
     }
-    literalLikeElementAccess(n: Node): n is qt.LiteralLikeElementAccessExpression {
-      if (n.kind === Syntax.ElementAccessExpression) {
+    literalLikeElemAccess(n: Node): n is qt.LiteralLikeElemAccessExpression {
+      if (n.kind === Syntax.ElemAccessExpression) {
         const e = n.argumentExpression as Node;
         return this.stringOrNumericLiteralLike(e) || this.wellKnownSymbolSyntactically(e);
       }
@@ -1328,8 +1317,8 @@ export function newIs(f: qt.Frame) {
     moduleIdentifier(n: Node) {
       return n.kind === Syntax.Identifier && n.escapedText === 'module';
     }
-    moduleExportsAccessExpression(n: Node): n is qt.LiteralLikeElementAccessExpression & { expression: qt.Identifier } {
-      return (n.kind === Syntax.PropertyAccessExpression || this.literalLikeElementAccess(n)) && this.moduleIdentifier(n.expression as Node) && qf.get.elementOrPropertyAccessName(n) === 'exports';
+    moduleExportsAccessExpression(n: Node): n is qt.LiteralLikeElemAccessExpression & { expression: qt.Identifier } {
+      return (n.kind === Syntax.PropertyAccessExpression || this.literalLikeElemAccess(n)) && this.moduleIdentifier(n.expression as Node) && qf.get.elemOrPropertyAccessName(n) === 'exports';
     }
     partOfTypeQuery(n?: Node) {
       while (n?.kind === Syntax.QualifiedName || n?.kind === Syntax.Identifier) {
@@ -1414,10 +1403,10 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.SuperKeyword || this.superProperty(n);
     }
     superProperty(n: Node): n is qt.SuperProperty {
-      return (n.kind === Syntax.PropertyAccessExpression || n.kind === Syntax.ElementAccessExpression) && n.expression.kind === Syntax.SuperKeyword;
+      return (n.kind === Syntax.PropertyAccessExpression || n.kind === Syntax.ElemAccessExpression) && n.expression.kind === Syntax.SuperKeyword;
     }
     thisProperty(n: Node) {
-      return (n.kind === Syntax.PropertyAccessExpression || n.kind === Syntax.ElementAccessExpression) && n.expression.kind === Syntax.ThisKeyword;
+      return (n.kind === Syntax.PropertyAccessExpression || n.kind === Syntax.ElemAccessExpression) && n.expression.kind === Syntax.ThisKeyword;
     }
     validESSymbolDeclaration(n: Node): n is qt.VariableDeclaration | qt.PropertyDeclaration | qt.SignatureDeclaration {
       return n.kind === Syntax.VariableDeclaration
@@ -1439,7 +1428,7 @@ export function newIs(f: qt.Frame) {
     }
     variableLike(n?: Node): n is qt.VariableLikeDeclaration {
       switch (n?.kind) {
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.EnumMember:
         case Syntax.Parameter:
         case Syntax.PropertyAssignment:
@@ -1639,7 +1628,7 @@ export function newIs(f: qt.Frame) {
     }
     withOnlyExpressionIniter(n: Node): n is qt.HasExpressionIniter {
       switch (n.kind) {
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.EnumMember:
         case Syntax.Parameter:
         case Syntax.PropertyAssignment:
@@ -1656,8 +1645,8 @@ export function newIs(f: qt.Frame) {
     propertyAccessChain(n: Node): n is qt.PropertyAccessChain {
       return n.kind === Syntax.PropertyAccessExpression && !!(n.flags & NodeFlags.OptionalChain);
     }
-    elementAccessChain(n: Node): n is qt.ElementAccessChain {
-      return n.kind === Syntax.ElementAccessExpression && !!(n.flags & NodeFlags.OptionalChain);
+    elemAccessChain(n: Node): n is qt.ElemAccessChain {
+      return n.kind === Syntax.ElemAccessExpression && !!(n.flags & NodeFlags.OptionalChain);
     }
     callChain(n: Node): n is qt.CallChain {
       return n.kind === Syntax.CallExpression && !!(n.flags & NodeFlags.OptionalChain);
@@ -1729,14 +1718,14 @@ export function newIs(f: qt.Frame) {
       const p = n.parent as Node | undefined;
       return k === Syntax.SourceFile || k === Syntax.ModuleBlock || (k === Syntax.Block && p && this.functionLike(p));
     }
-    classElement(n?: Node): n is qt.ClassElement {
+    classElem(n?: Node): n is qt.ClassElem {
       switch (n?.kind) {
         case Syntax.Constructor:
         case Syntax.GetAccessor:
         case Syntax.IndexSignature:
         case Syntax.MethodDeclaration:
         case Syntax.PropertyDeclaration:
-        case Syntax.SemicolonClassElement:
+        case Syntax.SemicolonClassElem:
         case Syntax.SetAccessor:
           return true;
       }
@@ -1754,10 +1743,10 @@ export function newIs(f: qt.Frame) {
       const k = n?.kind;
       return k === Syntax.MethodDeclaration || k === Syntax.GetAccessor || k === Syntax.SetAccessor;
     }
-    classOrTypeElement(n?: Node): n is qt.ClassElement | qt.TypeElement {
-      return this.typeElement(n) || this.classElement(n);
+    classOrTypeElem(n?: Node): n is qt.ClassElem | qt.TypeElem {
+      return this.typeElem(n) || this.classElem(n);
     }
-    objectLiteralElementLike(n?: Node): n is qt.ObjectLiteralElementLike {
+    objectLiteralElemLike(n?: Node): n is qt.ObjectLiteralElemLike {
       switch (n?.kind) {
         case Syntax.GetAccessor:
         case Syntax.MethodDeclaration:
@@ -1780,8 +1769,8 @@ export function newIs(f: qt.Frame) {
       switch (n.kind) {
         case Syntax.CallExpression:
         case Syntax.Decorator:
-        case Syntax.JsxOpeningElement:
-        case Syntax.JsxSelfClosingElement:
+        case Syntax.JsxOpeningElem:
+        case Syntax.JsxSelfClosingElem:
         case Syntax.NewExpression:
         case Syntax.TaggedTemplateExpression:
           return true;
@@ -1864,11 +1853,11 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.Identifier || k === Syntax.PrivateIdentifier;
     }
-    optionalChain(n?: Node): n is qt.PropertyAccessChain | qt.ElementAccessChain | qt.CallChain | qt.NonNullChain {
+    optionalChain(n?: Node): n is qt.PropertyAccessChain | qt.ElemAccessChain | qt.CallChain | qt.NonNullChain {
       if (n && !!(n.flags & NodeFlags.OptionalChain)) {
         switch (n.kind) {
           case Syntax.PropertyAccessExpression:
-          case Syntax.ElementAccessExpression:
+          case Syntax.ElemAccessExpression:
           case Syntax.CallExpression:
           case Syntax.NonNullExpression:
             return true;
@@ -1907,7 +1896,7 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.Identifier || k === Syntax.ObjectBindingPattern || k === Syntax.ArrayBindingPattern;
     }
-    typeElement(n?: Node): n is qt.TypeElement {
+    typeElem(n?: Node): n is qt.TypeElem {
       switch (n?.kind) {
         case Syntax.CallSignature:
         case Syntax.ConstructSignature:
@@ -1918,9 +1907,9 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    arrayBindingElement(n: Node): n is qt.ArrayBindingElement {
+    arrayBindingElem(n: Node): n is qt.ArrayBindingElem {
       const k = n.kind;
-      return k === Syntax.BindingElement || k === Syntax.OmittedExpression;
+      return k === Syntax.BindingElem || k === Syntax.OmittedExpression;
     }
     propertyAccessOrQualifiedNameOrImportTypeNode(n: Node): n is qt.PropertyAccessExpression | qt.QualifiedName | qt.ImportTypeNode {
       const k = n.kind;
@@ -1970,9 +1959,9 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.CaseClause || k === Syntax.DefaultClause;
     }
-    objectLiteralElement(n: Node): n is qt.ObjectLiteralElement {
+    objectLiteralElem(n: Node): n is qt.ObjectLiteralElem {
       const k = n.kind;
-      return k === Syntax.JsxAttribute || k === Syntax.JsxSpreadAttribute || this.objectLiteralElementLike(n);
+      return k === Syntax.JsxAttribute || k === Syntax.JsxSpreadAttribute || this.objectLiteralElemLike(n);
     }
     typeReferenceType(n: Node): n is qt.TypeReferenceType {
       const k = n.kind;
@@ -2053,7 +2042,7 @@ export function newIs(f: qt.Frame) {
     }
     accessExpression(n: Node): n is qt.AccessExpression {
       const k = n.kind;
-      return k === Syntax.PropertyAccessExpression || k === Syntax.ElementAccessExpression;
+      return k === Syntax.PropertyAccessExpression || k === Syntax.ElemAccessExpression;
     }
     namedImportsOrExports(n: Node): n is qt.NamedImportsOrExports {
       return n.kind === Syntax.NamedImports || n.kind === Syntax.NamedExports;
@@ -2102,7 +2091,7 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.TypeReference && n.typeName.kind === Syntax.Identifier;
     }
     prototypeAccess(n: Node): n is qt.BindableStaticAccessExpression {
-      return this.bindableStaticAccessExpression(n) && qf.get.elementOrPropertyAccessName(n) === 'prototype';
+      return this.bindableStaticAccessExpression(n) && qf.get.elemOrPropertyAccessName(n) === 'prototype';
     }
     rightSideOfQualifiedNameOrPropertyAccess(n: Node) {
       const p = n.parent as Node | undefined;
@@ -2112,7 +2101,7 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.ObjectLiteralExpression && n.properties.length === 0;
     }
     emptyArrayLiteral(n: Node) {
-      return n.kind === Syntax.ArrayLiteralExpression && n.elements.length === 0;
+      return n.kind === Syntax.ArrayLiteralExpression && n.elems.length === 0;
     }
     propertyNameLiteral(n: Node): n is qt.PropertyNameLiteral {
       switch (n.kind) {
@@ -2154,10 +2143,10 @@ export function newIs(f: qt.Frame) {
         const e = n.expression as Node;
         return (!noThis && e.kind === Syntax.ThisKeyword) || (n.name.kind === Syntax.Identifier && this.bindableStaticNameExpression(e, true));
       }
-      return this.bindableStaticElementAccessExpression(n, noThis);
+      return this.bindableStaticElemAccessExpression(n, noThis);
     }
-    bindableStaticElementAccessExpression(n: Node, noThis?: boolean): n is qt.BindableStaticElementAccessExpression {
-      if (this.literalLikeElementAccess(n)) {
+    bindableStaticElemAccessExpression(n: Node, noThis?: boolean): n is qt.BindableStaticElemAccessExpression {
+      if (this.literalLikeElemAccess(n)) {
         const e = n.expression as Node;
         return (!noThis && e.kind === Syntax.ThisKeyword) || this.entityNameExpression(e) || this.bindableStaticAccessExpression(e, true);
       }
@@ -2269,19 +2258,19 @@ export function newIs(f: qt.Frame) {
       const n = s as Node;
       return this.anyImportOrReExport(n as Node) || n.kind === Syntax.ExportAssignment || qf.has.syntacticModifier(n, ModifierFlags.Export);
     }
-    declarationBindingElement(n: qt.BindingOrAssignmentElement): n is qt.VariableDeclaration | qt.ParameterDeclaration | qt.BindingElement {
+    declarationBindingElem(n: qt.BindingOrAssignmentElem): n is qt.VariableDeclaration | qt.ParameterDeclaration | qt.BindingElem {
       switch (n.kind) {
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.Parameter:
         case Syntax.VariableDeclaration:
           return true;
       }
       return false;
     }
-    bindingOrAssignmentPattern(n: qt.BindingOrAssignmentElementTarget): n is qt.BindingOrAssignmentPattern {
+    bindingOrAssignmentPattern(n: qt.BindingOrAssignmentElemTarget): n is qt.BindingOrAssignmentPattern {
       return this.objectBindingOrAssignmentPattern(n) || this.arrayBindingOrAssignmentPattern(n);
     }
-    objectBindingOrAssignmentPattern(n: qt.BindingOrAssignmentElementTarget): n is qt.ObjectBindingOrAssignmentPattern {
+    objectBindingOrAssignmentPattern(n: qt.BindingOrAssignmentElemTarget): n is qt.ObjectBindingOrAssignmentPattern {
       switch (n.kind) {
         case Syntax.ObjectBindingPattern:
         case Syntax.ObjectLiteralExpression:
@@ -2289,7 +2278,7 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    arrayBindingOrAssignmentPattern(n: qt.BindingOrAssignmentElementTarget): n is qt.ArrayBindingOrAssignmentPattern {
+    arrayBindingOrAssignmentPattern(n: qt.BindingOrAssignmentElemTarget): n is qt.ArrayBindingOrAssignmentPattern {
       switch (n.kind) {
         case Syntax.ArrayBindingPattern:
         case Syntax.ArrayLiteralExpression:
@@ -2301,13 +2290,13 @@ export function newIs(f: qt.Frame) {
       const p = c.parent;
       return !this.optionalChain(p) || this.optionalChainRoot(p) || c !== p.expression;
     }
-    emptyBindingElement(e: qt.BindingElement) {
+    emptyBindingElem(e: qt.BindingElem) {
       const n = e as Node;
       if (n.kind === Syntax.OmittedExpression) return true;
       return this.emptyBindingPattern(e.name);
     }
     emptyBindingPattern(n: qt.BindingName): n is qt.BindingPattern {
-      if (this.kind(qc.BindingPattern, n)) return qu.every(n.elements, this.emptyBindingElement);
+      if (this.kind(qc.BindingPattern, n)) return qu.every(n.elems, this.emptyBindingElem);
       return false;
     }
     variableDeclarationInVariableStatement(n: qt.VariableDeclaration) {
@@ -2395,8 +2384,8 @@ export function newIs(f: qt.Frame) {
       tagName(n: Node) {
         const p = n.parent as Node | undefined;
         switch (p?.kind) {
-          case Syntax.JsxOpeningElement:
-          case Syntax.JsxSelfClosingElement:
+          case Syntax.JsxOpeningElem:
+          case Syntax.JsxSelfClosingElem:
             return p?.tagName === n;
         }
         return false;
@@ -2407,9 +2396,9 @@ export function newIs(f: qt.Frame) {
       }
       child(n: Node): n is qt.JsxChild {
         switch (n.kind) {
-          case Syntax.JsxElement:
+          case Syntax.JsxElem:
           case Syntax.JsxExpression:
-          case Syntax.JsxSelfClosingElement:
+          case Syntax.JsxSelfClosingElem:
           case Syntax.JsxText:
           case Syntax.JsxFragment:
             return true;
@@ -2420,9 +2409,9 @@ export function newIs(f: qt.Frame) {
         const k = n.kind;
         return k === Syntax.JsxAttribute || k === Syntax.JsxSpreadAttribute;
       }
-      openingLikeElement(n: Node): n is qt.JsxOpeningLikeElement {
+      openingLikeElem(n: Node): n is qt.JsxOpeningLikeElem {
         const k = n.kind;
-        return k === Syntax.JsxOpeningElement || k === Syntax.JsxSelfClosingElement;
+        return k === Syntax.JsxOpeningElem || k === Syntax.JsxSelfClosingElem;
       }
     })();
   })());
@@ -2437,8 +2426,8 @@ export function newHas(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.has = new (class {
     dynamicName(n: qt.DeclarationName) {
-      if (!(n.kind === Syntax.ComputedPropertyName || n.kind === Syntax.ElementAccessExpression)) return false;
-      const e = (n.kind === Syntax.ElementAccessExpression ? n.argumentExpression : n.expression) as Node;
+      if (!(n.kind === Syntax.ComputedPropertyName || n.kind === Syntax.ElemAccessExpression)) return false;
+      const e = (n.kind === Syntax.ElemAccessExpression ? n.argumentExpression : n.expression) as Node;
       return !qf.is.stringOrNumericLiteralLike(e) && !qf.is.signedNumericLiteral(e) && !qf.is.wellKnownSymbolSyntactically(e);
     }
     docInheritDocTag(n: Node) {
@@ -2525,7 +2514,7 @@ export function newGet(f: qt.Frame) {
         }
         return;
       }
-      members(d?: qt.Declaration): Nodes<qt.ClassElement> | Nodes<qt.TypeElement> | Nodes<qt.ObjectLiteralElement> | undefined {
+      members(d?: qt.Declaration): Nodes<qt.ClassElem> | Nodes<qt.TypeElem> | Nodes<qt.ObjectLiteralElem> | undefined {
         const n = d as Node | undefined;
         switch (n?.kind) {
           case Syntax.InterfaceDeclaration:
@@ -2677,7 +2666,7 @@ export function newGet(f: qt.Frame) {
           case Syntax.CallExpression:
             if (stopAtCallExpressions) return n;
           case Syntax.AsExpression:
-          case Syntax.ElementAccessExpression:
+          case Syntax.ElemAccessExpression:
           case Syntax.NonNullExpression:
           case Syntax.PartiallyEmittedExpression:
           case Syntax.PropertyAccessExpression:
@@ -2764,7 +2753,7 @@ export function newGet(f: qt.Frame) {
     }
     nameOfAccessExpression(n: qt.AccessExpression) {
       if (n.kind === Syntax.PropertyAccessExpression) return n.name;
-      qu.assert(n.kind === Syntax.ElementAccessExpression);
+      qu.assert(n.kind === Syntax.ElemAccessExpression);
       return n.argumentExpression;
     }
     namespaceMemberName(ns: qt.Identifier, i: qt.Identifier, comments?: boolean, sourceMaps?: boolean): qc.PropertyAccessExpression {
@@ -2895,14 +2884,14 @@ export function newGet(f: qt.Frame) {
       return n.kind === Syntax.ShorthandPropertyAssignment ? n.name : n.kind === Syntax.PropertyAssignment ? n.initer : (n.parent as qt.BinaryExpression).right;
     }
     effectiveBaseTypeNode(n: qt.ClassLikeDeclaration | qt.InterfaceDeclaration) {
-      const b = this.classExtendsHeritageElement(n);
+      const b = this.classExtendsHeritageElem(n);
       if (b && qf.is.inJSFile(n)) {
         const t = this.doc.augmentsTag(n);
         if (t) return t.class;
       }
       return b;
     }
-    classExtendsHeritageElement(n: qt.ClassLikeDeclaration | qt.InterfaceDeclaration) {
+    classExtendsHeritageElem(n: qt.ClassLikeDeclaration | qt.InterfaceDeclaration) {
       const c = this.heritageClause(n.heritageClauses, Syntax.ExtendsKeyword);
       return c && c.types.length > 0 ? c.types[0] : undefined;
     }
@@ -2987,7 +2976,7 @@ export function newGet(f: qt.Frame) {
           const pos = qy.skipTrivia(s.text, 0, false);
           if (pos === s.text.length) return new qu.TextSpan();
           return getSpanOfTokenAtPosition(s, pos);
-        case Syntax.BindingElement:
+        case Syntax.BindingElem:
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
         case Syntax.EnumDeclaration:
@@ -3026,26 +3015,25 @@ export function newGet(f: qt.Frame) {
       }
       return qu.TextSpan.from(pos, e.end);
     }
-    nameOrArgument(n: qt.PropertyAccessExpression | qt.LiteralLikeElementAccessExpression) {
+    nameOrArgument(n: qt.PropertyAccessExpression | qt.LiteralLikeElemAccessExpression) {
       if (n.kind === Syntax.PropertyAccessExpression) return n.name;
       return n.argumentExpression;
     }
-    elementOrPropertyAccessArgumentExpressionOrName(n: qt.AccessExpression): qt.Identifier | qt.PrivateIdentifier | qt.StringLiteralLike | qt.NumericLiteral | qt.ElementAccessExpression | undefined {
+    elemOrPropertyAccessArgumentExpressionOrName(n: qt.AccessExpression): qt.Identifier | qt.PrivateIdentifier | qt.StringLiteralLike | qt.NumericLiteral | qt.ElemAccessExpression | undefined {
       if (n.kind === Syntax.PropertyAccessExpression) return n.name;
       const a = qb.skip.parentheses(n.argumentExpression) as Node;
       if (a.kind === Syntax.NumericLiteral || qf.is.stringLiteralLike(a)) return a;
       return n;
     }
-    elementOrPropertyAccessName(n: qt.LiteralLikeElementAccessExpression | qt.PropertyAccessExpression): qu.__String;
-    elementOrPropertyAccessName(n: qt.AccessExpression): qu.__String | undefined;
-    elementOrPropertyAccessName(n: qt.AccessExpression): qu.__String | undefined {
-      const name = this.elementOrPropertyAccessArgumentExpressionOrName(n);
+    elemOrPropertyAccessName(n: qt.LiteralLikeElemAccessExpression | qt.PropertyAccessExpression): qu.__String;
+    elemOrPropertyAccessName(n: qt.AccessExpression): qu.__String | undefined;
+    elemOrPropertyAccessName(n: qt.AccessExpression): qu.__String | undefined {
+      const name = this.elemOrPropertyAccessArgumentExpressionOrName(n);
       if (name) {
         if (name.kind === Syntax.Identifier) return name.escapedText;
         if (qf.is.stringLiteralLike(name) || name.kind === Syntax.NumericLiteral) return qy.get.escUnderscores(name.text);
       }
-      if (n.kind === Syntax.ElementAccessExpression && qf.is.wellKnownSymbolSyntactically(n.argumentExpression as Node))
-        return qu.getPropertyNameForKnownSymbolName(qb.idText(n.argumentExpression.name));
+      if (n.kind === Syntax.ElemAccessExpression && qf.is.wellKnownSymbolSyntactically(n.argumentExpression as Node)) return qu.getPropertyNameForKnownSymbolName(qb.idText(n.argumentExpression.name));
       return;
     }
     assignmentDeclarationPropertyAccessKind(e: qt.AccessExpression): qt.AssignmentDeclarationKind {
@@ -3058,9 +3046,9 @@ export function newGet(f: qt.Frame) {
           nextToLast = nextToLast.expression as Exclude<qt.BindableStaticNameExpression, qt.Identifier>;
         }
         const id = nextToLast.expression;
-        if ((id.escapedText === 'exports' || (id.escapedText === 'module' && this.elementOrPropertyAccessName(nextToLast) === 'exports')) && qf.is.bindableStaticAccessExpression(e))
+        if ((id.escapedText === 'exports' || (id.escapedText === 'module' && this.elemOrPropertyAccessName(nextToLast) === 'exports')) && qf.is.bindableStaticAccessExpression(e))
           return qt.AssignmentDeclarationKind.ExportsProperty;
-        if (qf.is.bindableStaticNameExpression(e, true) || (e.kind === Syntax.ElementAccessExpression && qf.is.dynamicName(e))) return qt.AssignmentDeclarationKind.Property;
+        if (qf.is.bindableStaticNameExpression(e, true) || (e.kind === Syntax.ElemAccessExpression && qf.is.dynamicName(e))) return qt.AssignmentDeclarationKind.Property;
       }
       return qt.AssignmentDeclarationKind.None;
     }
@@ -3095,13 +3083,13 @@ export function newGet(f: qt.Frame) {
           if (!qf.is.bindableObjectDefinePropertyCall(e)) return qt.AssignmentDeclarationKind.None;
           const n = e.arguments[0] as Node;
           if (qf.is.exportsIdentifier(n) || qf.is.moduleExportsAccessExpression(n)) return qt.AssignmentDeclarationKind.ObjectDefinePropertyExports;
-          if (qf.is.bindableStaticAccessExpression(n) && this.elementOrPropertyAccessName(n) === 'prototype') return qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty;
+          if (qf.is.bindableStaticAccessExpression(n) && this.elemOrPropertyAccessName(n) === 'prototype') return qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty;
           return qt.AssignmentDeclarationKind.ObjectDefinePropertyValue;
         }
         if (e.operatorToken.kind !== Syntax.EqualsToken || !qf.is.accessExpression(e.left as Node)) return qt.AssignmentDeclarationKind.None;
         if (
           qf.is.bindableStaticNameExpression(e.left.expression as Node, true) &&
-          this.elementOrPropertyAccessName(e.left) === 'prototype' &&
+          this.elemOrPropertyAccessName(e.left) === 'prototype' &&
           this.initerOfBinaryExpression(e).kind === Syntax.ObjectLiteralExpression
         ) {
           return qt.AssignmentDeclarationKind.Prototype;
@@ -3114,9 +3102,9 @@ export function newGet(f: qt.Frame) {
     nameFromIndexInfo(i: qt.IndexInfo): string | undefined {
       return i.declaration ? declarationNameToString(i.declaration.parameters[0].name) : undefined;
     }
-    restParameterElementType(t?: qt.TypeNode) {
+    restParameterElemType(t?: qt.TypeNode) {
       const n = t as Node | undefined;
-      if (n?.kind === Syntax.ArrayType) return n.elementType;
+      if (n?.kind === Syntax.ArrayType) return n.elemType;
       else if (n?.kind === Syntax.TypeReference) return qu.singleOrUndefined(n.typeArguments);
       return;
     }
@@ -3135,9 +3123,9 @@ export function newGet(f: qt.Frame) {
         return qu.tryCast(e, isObjectLiteralExpression);
       }
     }
-    tsConfigPropArrayElementValue(s: qt.TsConfigSourceFile | undefined, k: string, v: string): qt.StringLiteral | undefined {
+    tsConfigPropArrayElemValue(s: qt.TsConfigSourceFile | undefined, k: string, v: string): qt.StringLiteral | undefined {
       return qu.firstDefined(this.tsConfigPropArray(s, k), (p) =>
-        isArrayLiteralExpression(p.initer) ? qu.find(p.initer.elements, (e): e is qt.StringLiteral => e.kind === Syntax.StringLiteral && e.text === v) : undefined
+        isArrayLiteralExpression(p.initer) ? qu.find(p.initer.elems, (e): e is qt.StringLiteral => e.kind === Syntax.StringLiteral && e.text === v) : undefined
       );
     }
     tsConfigPropArray(s: qt.TsConfigSourceFile | undefined, k: string): readonly qt.PropertyAssignment[] {
@@ -3161,8 +3149,8 @@ export function newGet(f: qt.Frame) {
       switch (n.kind) {
         case Syntax.TaggedTemplateExpression:
           return n.tag;
-        case Syntax.JsxOpeningElement:
-        case Syntax.JsxSelfClosingElement:
+        case Syntax.JsxOpeningElem:
+        case Syntax.JsxSelfClosingElem:
           return n.tagName;
       }
       return n.expression;
@@ -3221,8 +3209,8 @@ export function newGet(f: qt.Frame) {
             n = p;
             break;
           case Syntax.Decorator:
-            if (p?.kind === Syntax.Parameter && qf.is.classElement(p?.parent)) n = p.parent;
-            else if (qf.is.classElement(n.parent)) n = n.parent;
+            if (p?.kind === Syntax.Parameter && qf.is.classElem(p?.parent)) n = p.parent;
+            else if (qf.is.classElem(n.parent)) n = n.parent;
             break;
           case Syntax.ArrowFunction:
             if (!arrowFunctions) continue;
@@ -3277,8 +3265,8 @@ export function newGet(f: qt.Frame) {
             return n;
           case Syntax.Decorator:
             const p = n.parent as Node | undefined;
-            if (p?.kind === Syntax.Parameter && qf.is.classElement(p.parent)) n = p.parent;
-            else if (p && qf.is.classElement(p)) n = p;
+            if (p?.kind === Syntax.Parameter && qf.is.classElem(p.parent)) n = p.parent;
+            else if (p && qf.is.classElem(p)) n = p;
             break;
         }
       }
@@ -3340,7 +3328,7 @@ export function newGet(f: qt.Frame) {
       return qu.fail(`Literal kind '${n.kind}' not accounted for.`);
     }
     combinedFlags(n: Node | undefined, cb: (n?: Node) => number): number {
-      if (n?.kind === Syntax.BindingElement) n = qb.walkUpBindingElementsAndPatterns(n);
+      if (n?.kind === Syntax.BindingElem) n = qb.walkUpBindingElemsAndPatterns(n);
       let flags = cb(n);
       if (n?.kind === Syntax.VariableDeclaration) n = n.parent;
       if (n?.kind === Syntax.VariableDeclarationList) {
@@ -3375,10 +3363,10 @@ export function newGet(f: qt.Frame) {
     }
     assignedName(n: Node): qt.DeclarationName | undefined {
       if (!n.parent) return;
-      if (n.parent.kind === Syntax.PropertyAssignment || n.parent.kind === Syntax.BindingElement) return n.parent.name;
+      if (n.parent.kind === Syntax.PropertyAssignment || n.parent.kind === Syntax.BindingElem) return n.parent.name;
       if (n.parent.kind === Syntax.BinaryExpression && n === n.parent.right) {
         if (n.parent.left.kind === Syntax.Identifier) return n.parent.left;
-        if (qf.is.accessExpression(n.parent.left)) return this.elementOrPropertyAccessArgumentExpressionOrName(n.parent.left);
+        if (qf.is.accessExpression(n.parent.left)) return this.elemOrPropertyAccessArgumentExpressionOrName(n.parent.left);
       } else if (n.parent.kind === Syntax.VariableDeclaration && n.parent.name.kind === Syntax.Identifier) return n.parent.name;
       return;
     }
@@ -3402,7 +3390,7 @@ export function newGet(f: qt.Frame) {
       return last;
     }
     rootDeclaration(n?: Node): Node | undefined {
-      while (n?.kind === Syntax.BindingElement) {
+      while (n?.kind === Syntax.BindingElem) {
         n = n.parent?.parent;
       }
       return n;
@@ -3466,7 +3454,7 @@ export function newGet(f: qt.Frame) {
           case Syntax.ArrayLiteralExpression:
           case Syntax.NonNullExpression:
           case Syntax.ParenthesizedExpression:
-          case Syntax.SpreadElement:
+          case Syntax.SpreadElem:
             n = p;
             break;
           case Syntax.ShorthandPropertyAssignment:
@@ -3544,7 +3532,7 @@ export function newGet(f: qt.Frame) {
       return n.kind === Syntax.InterfaceDeclaration
         ? this.interfaceBaseTypeNodes(n) || qu.empty
         : qf.is.classLike(n)
-        ? qu.concatenate(qu.singleElementArray(this.effectiveBaseTypeNode(n)), this.effectiveImplementsTypeNodes(n)) || qu.empty
+        ? qu.concatenate(qu.singleElemArray(this.effectiveBaseTypeNode(n)), this.effectiveImplementsTypeNodes(n)) || qu.empty
         : qu.empty;
     }
     externalModuleImportEqualsDeclarationExpression(n: Node) {
@@ -3601,7 +3589,7 @@ export function newGet(f: qt.Frame) {
             case qt.AssignmentDeclarationKind.Property:
             case qt.AssignmentDeclarationKind.PrototypeProperty:
             case qt.AssignmentDeclarationKind.ThisProperty:
-              return this.elementOrPropertyAccessArgumentExpressionOrName(n.left);
+              return this.elemOrPropertyAccessArgumentExpressionOrName(n.left);
             case qt.AssignmentDeclarationKind.ObjectDefinePropertyExports:
             case qt.AssignmentDeclarationKind.ObjectDefinePropertyValue:
             case qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
@@ -3618,8 +3606,8 @@ export function newGet(f: qt.Frame) {
           const { expression } = n;
           return expression.kind === Syntax.Identifier ? expression : undefined;
         }
-        case Syntax.ElementAccessExpression:
-          if (qf.is.bindableStaticElementAccessExpression(n)) return n.argumentExpression;
+        case Syntax.ElemAccessExpression:
+          if (qf.is.bindableStaticElemAccessExpression(n)) return n.argumentExpression;
       }
       return n.name;
     }
@@ -3691,7 +3679,7 @@ export function newGet(f: qt.Frame) {
             switch (e.kind) {
               case Syntax.PropertyAccessExpression:
                 return e.name;
-              case Syntax.ElementAccessExpression:
+              case Syntax.ElemAccessExpression:
                 const a = e.argumentExpression as Node;
                 if (a.kind === Syntax.Identifier) return a;
             }

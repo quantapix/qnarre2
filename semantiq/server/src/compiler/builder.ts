@@ -618,7 +618,7 @@ function convertToReusableCompilerOptionValue(option: CommandLineOption | undefi
   if (option) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
-      if (option.element.isFilePath && values.length) return values.map(relativeToBuildInfo);
+      if (option.elem.isFilePath && values.length) return values.map(relativeToBuildInfo);
     } else if (option.isFilePath) {
       return relativeToBuildInfo(value as string);
     }

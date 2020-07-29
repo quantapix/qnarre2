@@ -1386,8 +1386,8 @@ export function createProgram(
           case Syntax.CallExpression:
           case Syntax.NewExpression:
           case Syntax.ExpressionWithTypeArguments:
-          case Syntax.JsxSelfClosingElement:
-          case Syntax.JsxOpeningElement:
+          case Syntax.JsxSelfClosingElem:
+          case Syntax.JsxOpeningElem:
           case Syntax.TaggedTemplateExpression:
             if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
               diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_arguments_can_only_be_used_in_TypeScript_files));
@@ -2342,7 +2342,7 @@ export function createProgram(
   }
   function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
-    const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elementAt(refPaths, 0);
+    const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elemAt(refPaths, 0);
     programqd.add(refPathToReportErrorOn ? qf.create.fileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
   }
   function verifyProjectReferences() {
@@ -2384,8 +2384,8 @@ export function createProgram(
       if (qc.is.kind(qc.ObjectLiteralExpression, pathProp.initer)) {
         for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
-          if (isArrayLiteralExpression(initer) && initer.elements.length > valueIndex) {
-            programqd.add(qf.create.diagnosticForNodeInSourceFile(options.configFile!, initer.elements[valueIndex], message, arg0, arg1, arg2));
+          if (isArrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
+            programqd.add(qf.create.diagnosticForNodeInSourceFile(options.configFile!, initer.elems[valueIndex], message, arg0, arg1, arg2));
             needCompilerDiagnostic = false;
           }
         }
@@ -2425,8 +2425,8 @@ export function createProgram(
     const referencesSyntax = firstDefined(qf.get.tsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
-    if (referencesSyntax && referencesSyntax.elements.length > index) {
-      programqd.add(qf.create.diagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
+    if (referencesSyntax && referencesSyntax.elems.length > index) {
+      programqd.add(qf.create.diagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elems[index], message, arg0, arg1));
     } else {
       programqd.add(createCompilerDiagnostic(message, arg0, arg1));
     }

@@ -353,10 +353,10 @@ export function transformDeclarations(context: TransformationContext) {
   }
   function filterBindingPatternIniters(name: BindingName) {
     if (name.kind === Syntax.Identifier) return name;
-    if (name.is(ArrayBindingPattern)) return name.update(name, Nodes.visit(name.elements, visitBindingElement));
-    return name.update(Nodes.visit(name.elements, visitBindingElement));
-    function visitBindingElement<T extends ArrayBindingElement>(elem: T): T;
-    function visitBindingElement(elem: ArrayBindingElement): ArrayBindingElement {
+    if (name.is(ArrayBindingPattern)) return name.update(name, Nodes.visit(name.elems, visitBindingElem));
+    return name.update(Nodes.visit(name.elems, visitBindingElem));
+    function visitBindingElem<T extends ArrayBindingElem>(elem: T): T;
+    function visitBindingElem(elem: ArrayBindingElem): ArrayBindingElem {
       if (elem.kind === Syntax.OmittedExpression) return elem;
       return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternIniters(elem.name), shouldPrintWithIniter(elem) ? elem.initer : undefined);
     }
@@ -392,7 +392,7 @@ export function transformDeclarations(context: TransformationContext) {
     | MethodDeclaration
     | GetAccessorDeclaration
     | SetAccessorDeclaration
-    | BindingElement
+    | BindingElem
     | ConstructSignatureDeclaration
     | VariableDeclaration
     | MethodSignature
@@ -413,7 +413,7 @@ export function transformDeclarations(context: TransformationContext) {
       oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(node);
     }
-    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement)
+    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElem)
       return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
     if (node.kind === Syntax.Parameter || node.kind === Syntax.PropertyDeclaration || node.kind === Syntax.PropertySignature) {
       if (!node.initer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
@@ -449,9 +449,9 @@ export function transformDeclarations(context: TransformationContext) {
     }
     return false;
   }
-  function getBindingNameVisible(elem: BindingElement | VariableDeclaration | OmittedExpression): boolean {
+  function getBindingNameVisible(elem: BindingElem | VariableDeclaration | OmittedExpression): boolean {
     if (qc.is.kind(qc.OmittedExpression, elem)) return false;
-    if (qc.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elements, getBindingNameVisible);
+    if (qc.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elems, getBindingNameVisible);
     return resolver.isDeclarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
@@ -559,7 +559,7 @@ export function transformDeclarations(context: TransformationContext) {
           )
         : undefined;
     }
-    const bindingList = mapDefined(decl.importClause.namedBindings.elements, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
+    const bindingList = mapDefined(decl.importClause.namedBindings.elems, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
     if ((bindingList && bindingList.length) || visibleDefaultBinding) {
       return decl.update(
         undefined,
@@ -611,7 +611,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (qf.has.dynamicName(input) && !resolver.isLateBound(qc.get.parseTreeOf(input) as Declaration)) return;
     }
     if (qc.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
-    if (qc.is.kind(qc.SemicolonClassElement, input)) return;
+    if (qc.is.kind(qc.SemicolonClassElem, input)) return;
     let previousEnclosingDeclaration: typeof enclosingDeclaration;
     if (isEnclosingDeclaration(input)) {
       previousEnclosingDeclaration = enclosingDeclaration;
@@ -931,7 +931,7 @@ export function transformDeclarations(context: TransformationContext) {
               return walkBindingPattern(param.name);
               function walkBindingPattern(pattern: BindingPattern) {
                 let elems: PropertyDeclaration[] | undefined;
-                for (const elem of pattern.elements) {
+                for (const elem of pattern.elems) {
                   if (qc.is.kind(qc.OmittedExpression, elem)) continue;
                   if (qc.is.kind(qc.BindingPattern, elem.name)) elems = concatenate(elems, walkBindingPattern(elem.name));
                   elems = elems || [];
@@ -1018,9 +1018,9 @@ export function transformDeclarations(context: TransformationContext) {
     return input.update(new Nodes(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
   }
   function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
-    return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => recreateBindingElement(e)));
+    return flatten<VariableDeclaration>(mapDefined(d.elems, (e) => recreateBindingElem(e)));
   }
-  function recreateBindingElement(e: ArrayBindingElement) {
+  function recreateBindingElem(e: ArrayBindingElem) {
     if (e.kind === Syntax.OmittedExpression) return;
     if (e.name) {
       if (!getBindingNameVisible(e)) return;

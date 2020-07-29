@@ -320,11 +320,11 @@ export const enum Syntax {
   ImportType,
   ObjectBindingPattern,
   ArrayBindingPattern,
-  BindingElement,
+  BindingElem,
   ArrayLiteralExpression,
   ObjectLiteralExpression,
   PropertyAccessExpression,
-  ElementAccessExpression,
+  ElemAccessExpression,
   CallExpression,
   NewExpression,
   TaggedTemplateExpression,
@@ -342,7 +342,7 @@ export const enum Syntax {
   ConditionalExpression,
   TemplateExpression,
   YieldExpression,
-  SpreadElement,
+  SpreadElem,
   ClassExpression,
   OmittedExpression,
   ExpressionWithTypeArguments,
@@ -351,7 +351,7 @@ export const enum Syntax {
   MetaProperty,
   SyntheticExpression,
   TemplateSpan,
-  SemicolonClassElement,
+  SemicolonClassElem,
   Block,
   EmptyStatement,
   VariableStatement,
@@ -395,10 +395,10 @@ export const enum Syntax {
   ExportSpecifier,
   MissingDeclaration,
   ExternalModuleReference,
-  JsxElement,
-  JsxSelfClosingElement,
-  JsxOpeningElement,
-  JsxClosingElement,
+  JsxElem,
+  JsxSelfClosingElem,
+  JsxOpeningElem,
+  JsxClosingElem,
   JsxFragment,
   JsxOpeningFragment,
   JsxClosingFragment,
@@ -705,7 +705,7 @@ export const is = new (class {
   declaration(k?: Syntax) {
     switch (k) {
       case Syntax.ArrowFunction:
-      case Syntax.BindingElement:
+      case Syntax.BindingElem:
       case Syntax.ClassDeclaration:
       case Syntax.ClassExpression:
       case Syntax.Constructor:
@@ -778,7 +778,7 @@ export const is = new (class {
       case Syntax.ConditionalExpression:
       case Syntax.OmittedExpression:
       case Syntax.PartiallyEmittedExpression:
-      case Syntax.SpreadElement:
+      case Syntax.SpreadElem:
       case Syntax.YieldExpression:
         return true;
     }
@@ -858,14 +858,14 @@ export const is = new (class {
       case Syntax.BigIntLiteral:
       case Syntax.CallExpression:
       case Syntax.ClassExpression:
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
       case Syntax.FalseKeyword:
       case Syntax.FunctionExpression:
       case Syntax.Identifier:
       case Syntax.ImportKeyword:
-      case Syntax.JsxElement:
+      case Syntax.JsxElem:
       case Syntax.JsxFragment:
-      case Syntax.JsxSelfClosingElement:
+      case Syntax.JsxSelfClosingElem:
       case Syntax.MetaProperty:
       case Syntax.NewExpression:
       case Syntax.NonNullExpression:
@@ -1290,7 +1290,7 @@ export const get = new (class {
     switch (k) {
       case Syntax.CommaListExpression:
         return 0;
-      case Syntax.SpreadElement:
+      case Syntax.SpreadElem:
         return 1;
       case Syntax.YieldExpression:
         return 2;
@@ -1329,7 +1329,7 @@ export const get = new (class {
         return 18;
       case Syntax.NewExpression:
         return args ? 19 : 18;
-      case Syntax.ElementAccessExpression:
+      case Syntax.ElemAccessExpression:
       case Syntax.PropertyAccessExpression:
       case Syntax.TaggedTemplateExpression:
         return 19;
@@ -1340,9 +1340,9 @@ export const get = new (class {
       case Syntax.FalseKeyword:
       case Syntax.FunctionExpression:
       case Syntax.Identifier:
-      case Syntax.JsxElement:
+      case Syntax.JsxElem:
       case Syntax.JsxFragment:
-      case Syntax.JsxSelfClosingElement:
+      case Syntax.JsxSelfClosingElem:
       case Syntax.NoSubstitutionLiteral:
       case Syntax.NullKeyword:
       case Syntax.NumericLiteral:

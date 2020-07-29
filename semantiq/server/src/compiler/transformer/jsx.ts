@@ -22,10 +22,10 @@ export function transformJsx(context: TransformationContext) {
   }
   function visitorWorker(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case Syntax.JsxElement:
-        return visitJsxElement(<JsxElement>node, false);
-      case Syntax.JsxSelfClosingElement:
-        return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, false);
+      case Syntax.JsxElem:
+        return visitJsxElem(<JsxElem>node, false);
+      case Syntax.JsxSelfClosingElem:
+        return visitJsxSelfClosingElem(<JsxSelfClosingElem>node, false);
       case Syntax.JsxFragment:
         return visitJsxFragment(<JsxFragment>node, false);
       case Syntax.JsxExpression:
@@ -40,26 +40,26 @@ export function transformJsx(context: TransformationContext) {
         return visitJsxText(node);
       case Syntax.JsxExpression:
         return visitJsxExpression(node);
-      case Syntax.JsxElement:
-        return visitJsxElement(node, true);
-      case Syntax.JsxSelfClosingElement:
-        return visitJsxSelfClosingElement(node, true);
+      case Syntax.JsxElem:
+        return visitJsxElem(node, true);
+      case Syntax.JsxSelfClosingElem:
+        return visitJsxSelfClosingElem(node, true);
       case Syntax.JsxFragment:
         return visitJsxFragment(node, true);
       default:
         return Debug.failBadSyntax(node);
     }
   }
-  function visitJsxElement(node: JsxElement, isChild: boolean) {
-    return visitJsxOpeningLikeElement(node.openingElement, node.children, isChild, node);
+  function visitJsxElem(node: JsxElem, isChild: boolean) {
+    return visitJsxOpeningLikeElem(node.openingElem, node.children, isChild, node);
   }
-  function visitJsxSelfClosingElement(node: JsxSelfClosingElement, isChild: boolean) {
-    return visitJsxOpeningLikeElement(node, node);
+  function visitJsxSelfClosingElem(node: JsxSelfClosingElem, isChild: boolean) {
+    return visitJsxOpeningLikeElem(node, node);
   }
   function visitJsxFragment(node: JsxFragment, isChild: boolean) {
     return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, node);
   }
-  function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
+  function visitJsxOpeningLikeElem(node: JsxOpeningLikeElem, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
     const tagName = getTagName(node);
     let objectProperties: Expression | undefined;
     const attrs = node.attributes.properties;
@@ -68,7 +68,7 @@ export function transformJsx(context: TransformationContext) {
     } else {
       const segments = flatten<Expression | ObjectLiteralExpression>(
         spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
-          isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElement))
+          isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElem))
         )
       );
       if (qc.is.kind(qc.JsxSpreadAttribute, attrs[0])) {
@@ -79,7 +79,7 @@ export function transformJsx(context: TransformationContext) {
         objectProperties = createAssignHelper(context, segments);
       }
     }
-    const element = qs.JsxElement.qf.create.expression(
+    const elem = qs.JsxElem.qf.create.expression(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!,
       tagName,
@@ -89,12 +89,12 @@ export function transformJsx(context: TransformationContext) {
       location
     );
     if (isChild) {
-      startOnNewLine(element);
+      startOnNewLine(elem);
     }
-    return element;
+    return elem;
   }
   function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
-    const element = qf.create.expressionForJsxFragment(
+    const elem = qf.create.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!,
       mapDefined(children, transformJsxChildToExpression),
@@ -102,14 +102,14 @@ export function transformJsx(context: TransformationContext) {
       location
     );
     if (isChild) {
-      startOnNewLine(element);
+      startOnNewLine(elem);
     }
-    return element;
+    return elem;
   }
   function transformJsxSpreadAttributeToExpression(node: JsxSpreadAttribute) {
     return visitNode(node.expression, visitor, isExpression);
   }
-  function transformJsxAttributeToObjectLiteralElement(node: JsxAttribute) {
+  function transformJsxAttributeToObjectLiteralElem(node: JsxAttribute) {
     const name = getAttributeName(node);
     const expression = transformJsxAttributeIniter(node.initer);
     return new qc.PropertyAssignment(name, expression);
@@ -166,8 +166,8 @@ export function transformJsx(context: TransformationContext) {
     const decoded = decodeEntities(text);
     return decoded === text ? undefined : decoded;
   }
-  function getTagName(node: JsxElement | JsxOpeningLikeElement): Expression {
-    if (node.kind === Syntax.JsxElement) return getTagName(node.openingElement);
+  function getTagName(node: JsxElem | JsxOpeningLikeElem): Expression {
+    if (node.kind === Syntax.JsxElem) return getTagName(node.openingElem);
     else {
       const name = node.tagName;
       if (qc.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));

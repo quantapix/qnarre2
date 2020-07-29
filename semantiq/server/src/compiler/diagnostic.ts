@@ -209,12 +209,7 @@ export const msgs = {
   ),
   Trailing_comma_not_allowed: new Message(1009, Category.Error, 'Trailing_comma_not_allowed_1009', 'Trailing comma not allowed.'),
   Asterisk_Slash_expected: new Message(1010, Category.Error, 'Asterisk_Slash_expected_1010', "'*/' expected."),
-  An_element_access_expression_should_take_an_argument: new Message(
-    1011,
-    Category.Error,
-    'An_element_access_expression_should_take_an_argument_1011',
-    'An element access expression should take an argument.'
-  ),
+  An_elem_access_expression_should_take_an_argument: new Message(1011, Category.Error, 'An_elem_access_expression_should_take_an_argument_1011', 'An elem access expression should take an argument.'),
   Unexpected_token: new Message(1012, Category.Error, 'Unexpected_token_1012', 'Unexpected token.'),
   A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma: new Message(
     1013,
@@ -272,7 +267,7 @@ export const msgs = {
   Accessibility_modifier_already_seen: new Message(1028, Category.Error, 'Accessibility_modifier_already_seen_1028', 'Accessibility modifier already seen.'),
   _0_modifier_must_precede_1_modifier: new Message(1029, Category.Error, '_0_modifier_must_precede_1_modifier_1029', "'{0}' modifier must precede '{1}' modifier."),
   _0_modifier_already_seen: new Message(1030, Category.Error, '_0_modifier_already_seen_1030', "'{0}' modifier already seen."),
-  _0_modifier_cannot_appear_on_a_class_element: new Message(1031, Category.Error, '_0_modifier_cannot_appear_on_a_class_element_1031', "'{0}' modifier cannot appear on a class element."),
+  _0_modifier_cannot_appear_on_a_class_elem: new Message(1031, Category.Error, '_0_modifier_cannot_appear_on_a_class_elem_1031', "'{0}' modifier cannot appear on a class elem."),
   super_must_be_followed_by_an_argument_list_or_member_access: new Message(
     1034,
     Category.Error,
@@ -297,11 +292,11 @@ export const msgs = {
   ),
   _0_modifier_cannot_be_used_here: new Message(1042, Category.Error, '_0_modifier_cannot_be_used_here_1042', "'{0}' modifier cannot be used here."),
   _0_modifier_cannot_appear_on_a_data_property: new Message(1043, Category.Error, '_0_modifier_cannot_appear_on_a_data_property_1043', "'{0}' modifier cannot appear on a data property."),
-  _0_modifier_cannot_appear_on_a_module_or_namespace_element: new Message(
+  _0_modifier_cannot_appear_on_a_module_or_namespace_elem: new Message(
     1044,
     Category.Error,
-    '_0_modifier_cannot_appear_on_a_module_or_namespace_element_1044',
-    "'{0}' modifier cannot appear on a module or namespace element."
+    '_0_modifier_cannot_appear_on_a_module_or_namespace_elem_1044',
+    "'{0}' modifier cannot appear on a module or namespace elem."
   ),
   A_0_modifier_cannot_be_used_with_an_interface_declaration: new Message(
     1045,
@@ -632,7 +627,7 @@ export const msgs = {
   Octal_digit_expected: new Message(1178, Category.Error, 'Octal_digit_expected_1178', 'Octal digit expected.'),
   Unexpected_token_expected: new Message(1179, Category.Error, 'Unexpected_token_expected_1179', "Unexpected token. '{' expected."),
   Property_destructuring_pattern_expected: new Message(1180, Category.Error, 'Property_destructuring_pattern_expected_1180', 'Property destructuring pattern expected.'),
-  Array_element_destructuring_pattern_expected: new Message(1181, Category.Error, 'Array_element_destructuring_pattern_expected_1181', 'Array element destructuring pattern expected.'),
+  Array_elem_destructuring_pattern_expected: new Message(1181, Category.Error, 'Array_elem_destructuring_pattern_expected_1181', 'Array elem destructuring pattern expected.'),
   A_destructuring_declaration_must_have_an_initer: new Message(1182, Category.Error, 'A_destructuring_declaration_must_have_an_initer_1182', 'A destructuring declaration must have an initer.'),
   An_implementation_cannot_be_declared_in_ambient_contexts: new Message(
     1183,
@@ -642,7 +637,7 @@ export const msgs = {
   ),
   Modifiers_cannot_appear_here: new Message(1184, Category.Error, 'Modifiers_cannot_appear_here_1184', 'Modifiers cannot appear here.'),
   Merge_conflict_marker_encountered: new Message(1185, Category.Error, 'Merge_conflict_marker_encountered_1185', 'Merge conflict marker encountered.'),
-  A_rest_element_cannot_have_an_initer: new Message(1186, Category.Error, 'A_rest_element_cannot_have_an_initer_1186', 'A rest element cannot have an initer.'),
+  A_rest_elem_cannot_have_an_initer: new Message(1186, Category.Error, 'A_rest_elem_cannot_have_an_initer_1186', 'A rest elem cannot have an initer.'),
   A_parameter_property_may_not_be_declared_using_a_binding_pattern: new Message(
     1187,
     Category.Error,
@@ -812,11 +807,11 @@ export const msgs = {
     'A_type_predicate_cannot_reference_a_rest_parameter_1229',
     'A type predicate cannot reference a rest parameter.'
   ),
-  A_type_predicate_cannot_reference_element_0_in_a_binding_pattern: new Message(
+  A_type_predicate_cannot_reference_elem_0_in_a_binding_pattern: new Message(
     1230,
     Category.Error,
-    'A_type_predicate_cannot_reference_element_0_in_a_binding_pattern_1230',
-    "A type predicate cannot reference element '{0}' in a binding pattern."
+    'A_type_predicate_cannot_reference_elem_0_in_a_binding_pattern_1230',
+    "A type predicate cannot reference elem '{0}' in a binding pattern."
   ),
   An_export_assignment_can_only_be_used_in_a_module: new Message(1231, Category.Error, 'An_export_assignment_can_only_be_used_in_a_module_1231', 'An export assignment can only be used in a module.'),
   An_import_declaration_can_only_be_used_in_a_namespace_or_module: new Message(
@@ -943,13 +938,8 @@ export const msgs = {
     'A_definite_assignment_assertion_is_not_permitted_in_this_context_1255',
     "A definite assignment assertion '!' is not permitted in this context."
   ),
-  A_rest_element_must_be_last_in_a_tuple_type: new Message(1256, Category.Error, 'A_rest_element_must_be_last_in_a_tuple_type_1256', 'A rest element must be last in a tuple type.'),
-  A_required_element_cannot_follow_an_optional_element: new Message(
-    1257,
-    Category.Error,
-    'A_required_element_cannot_follow_an_optional_element_1257',
-    'A required element cannot follow an optional element.'
-  ),
+  A_rest_elem_must_be_last_in_a_tuple_type: new Message(1256, Category.Error, 'A_rest_elem_must_be_last_in_a_tuple_type_1256', 'A rest elem must be last in a tuple type.'),
+  A_required_elem_cannot_follow_an_optional_elem: new Message(1257, Category.Error, 'A_required_elem_cannot_follow_an_optional_elem_1257', 'A required elem cannot follow an optional elem.'),
   Definite_assignment_assertions_can_only_be_used_along_with_a_type_annotation: new Message(
     1258,
     Category.Error,
@@ -1041,11 +1031,11 @@ export const msgs = {
     'Type_of_yield_operand_in_an_async_generator_must_either_be_a_valid_promise_or_must_not_contain_a_cal_1321',
     "Type of 'yield' operand in an async generator must either be a valid promise or must not contain a callable 'then' member."
   ),
-  Type_of_iterated_elements_of_a_yield_Asterisk_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member: new Message(
+  Type_of_iterated_elems_of_a_yield_Asterisk_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member: new Message(
     1322,
     Category.Error,
-    'Type_of_iterated_elements_of_a_yield_Asterisk_operand_must_either_be_a_valid_promise_or_must_not_con_1322',
-    "Type of iterated elements of a 'yield*' operand must either be a valid promise or must not contain a callable 'then' member."
+    'Type_of_iterated_elems_of_a_yield_Asterisk_operand_must_either_be_a_valid_promise_or_must_not_con_1322',
+    "Type of iterated elems of a 'yield*' operand must either be a valid promise or must not contain a callable 'then' member."
   ),
   Dynamic_imports_are_only_supported_when_the_module_flag_is_set_to_es2020_esnext_commonjs_amd_system_or_umd: new Message(
     1323,
@@ -1059,12 +1049,7 @@ export const msgs = {
     'Dynamic_import_must_have_one_specifier_as_an_argument_1324',
     'Dynamic import must have one specifier as an argument.'
   ),
-  Specifier_of_dynamic_import_cannot_be_spread_element: new Message(
-    1325,
-    Category.Error,
-    'Specifier_of_dynamic_import_cannot_be_spread_element_1325',
-    'Specifier of dynamic import cannot be spread element.'
-  ),
+  Specifier_of_dynamic_import_cannot_be_spread_elem: new Message(1325, Category.Error, 'Specifier_of_dynamic_import_cannot_be_spread_elem_1325', 'Specifier of dynamic import cannot be spread elem.'),
   Dynamic_import_cannot_have_type_arguments: new Message(1326, Category.Error, 'Dynamic_import_cannot_have_type_arguments_1326', 'Dynamic import cannot have type arguments'),
   String_literal_with_double_quotes_expected: new Message(1327, Category.Error, 'String_literal_with_double_quotes_expected_1327', 'String literal with double quotes expected.'),
   Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal: new Message(
@@ -1365,11 +1350,11 @@ export const msgs = {
     'Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambig_2308',
     "Module {0} has already exported a member named '{1}'. Consider explicitly re-exporting to resolve the ambiguity."
   ),
-  An_export_assignment_cannot_be_used_in_a_module_with_other_exported_elements: new Message(
+  An_export_assignment_cannot_be_used_in_a_module_with_other_exported_elems: new Message(
     2309,
     Category.Error,
-    'An_export_assignment_cannot_be_used_in_a_module_with_other_exported_elements_2309',
-    'An export assignment cannot be used in a module with other exported elements.'
+    'An_export_assignment_cannot_be_used_in_a_module_with_other_exported_elems_2309',
+    'An export assignment cannot be used in a module with other exported elems.'
   ),
   Type_0_recursively_references_itself_as_a_base_type: new Message(
     2310,
@@ -1869,11 +1854,11 @@ export const msgs = {
   ),
   Interface_0_incorrectly_extends_interface_1: new Message(2430, Category.Error, 'Interface_0_incorrectly_extends_interface_1_2430', "Interface '{0}' incorrectly extends interface '{1}'."),
   Enum_name_cannot_be_0: new Message(2431, Category.Error, 'Enum_name_cannot_be_0_2431', "Enum name cannot be '{0}'."),
-  In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enum_element: new Message(
+  In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enum_elem: new Message(
     2432,
     Category.Error,
     'In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enu_2432',
-    'In an enum with multiple declarations, only one declaration can omit an initer for its first enum element.'
+    'In an enum with multiple declarations, only one declaration can omit an initer for its first enum elem.'
   ),
   A_namespace_declaration_cannot_be_in_a_different_file_from_a_class_or_function_with_which_it_is_merged: new Message(
     2433,
@@ -2004,11 +1989,11 @@ export const msgs = {
     "Module '{0}' declares '{1}' locally, but it is exported as '{2}'."
   ),
   Type_0_is_not_an_array_type: new Message(2461, Category.Error, 'Type_0_is_not_an_array_type_2461', "Type '{0}' is not an array type."),
-  A_rest_element_must_be_last_in_a_destructuring_pattern: new Message(
+  A_rest_elem_must_be_last_in_a_destructuring_pattern: new Message(
     2462,
     Category.Error,
-    'A_rest_element_must_be_last_in_a_destructuring_pattern_2462',
-    'A rest element must be last in a destructuring pattern.'
+    'A_rest_elem_must_be_last_in_a_destructuring_pattern_2462',
+    'A rest elem must be last in a destructuring pattern.'
   ),
   A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature: new Message(
     2463,
@@ -2142,11 +2127,11 @@ export const msgs = {
     "The left-hand side of a 'for...in' statement cannot be a destructuring pattern."
   ),
   Cannot_redeclare_identifier_0_in_catch_clause: new Message(2492, Category.Error, 'Cannot_redeclare_identifier_0_in_catch_clause_2492', "Cannot redeclare identifier '{0}' in catch clause."),
-  Tuple_type_0_of_length_1_has_no_element_at_index_2: new Message(
+  Tuple_type_0_of_length_1_has_no_elem_at_index_2: new Message(
     2493,
     Category.Error,
-    'Tuple_type_0_of_length_1_has_no_element_at_index_2_2493',
-    "Tuple type '{0}' of length '{1}' has no element at index '{2}'."
+    'Tuple_type_0_of_length_1_has_no_elem_at_index_2_2493',
+    "Tuple type '{0}' of length '{1}' has no elem at index '{2}'."
   ),
   Using_a_string_in_a_for_of_statement_is_only_supported_in_ECMAScript_5_and_higher: new Message(
     2494,
@@ -2185,7 +2170,7 @@ export const msgs = {
     'A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments_2500',
     'A class can only implement an identifier/qualified-name with optional type arguments.'
   ),
-  A_rest_element_cannot_contain_a_binding_pattern: new Message(2501, Category.Error, 'A_rest_element_cannot_contain_a_binding_pattern_2501', 'A rest element cannot contain a binding pattern.'),
+  A_rest_elem_cannot_contain_a_binding_pattern: new Message(2501, Category.Error, 'A_rest_elem_cannot_contain_a_binding_pattern_2501', 'A rest elem cannot contain a binding pattern.'),
   _0_is_referenced_directly_or_indirectly_in_its_own_type_annotation: new Message(
     2502,
     Category.Error,
@@ -2299,11 +2284,11 @@ export const msgs = {
     'await_expressions_cannot_be_used_in_a_parameter_initer_2524',
     "'await' expressions cannot be used in a parameter initer."
   ),
-  Initer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value: new Message(
+  Initer_provides_no_value_for_this_binding_elem_and_the_binding_elem_has_no_default_value: new Message(
     2525,
     Category.Error,
-    'Initer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value_2525',
-    'Initer provides no value for this binding element and the binding element has no default value.'
+    'Initer_provides_no_value_for_this_binding_elem_and_the_binding_elem_has_no_default_value_2525',
+    'Initer provides no value for this binding elem and the binding elem has no default value.'
   ),
   A_this_type_is_available_only_in_a_non_static_member_of_a_class_or_interface: new Message(
     2526,
@@ -2448,7 +2433,7 @@ export const msgs = {
     "Property '{0}' has no initer and is not definitely assigned in the constructor."
   ),
   Property_0_is_used_before_being_assigned: new Message(2565, Category.Error, 'Property_0_is_used_before_being_assigned_2565', "Property '{0}' is used before being assigned."),
-  A_rest_element_cannot_have_a_property_name: new Message(2566, Category.Error, 'A_rest_element_cannot_have_a_property_name_2566', 'A rest element cannot have a property name.'),
+  A_rest_elem_cannot_have_a_property_name: new Message(2566, Category.Error, 'A_rest_elem_cannot_have_a_property_name_2566', 'A rest elem cannot have a property name.'),
   Enum_declarations_can_only_merge_with_namespace_or_other_enum_declarations: new Message(
     2567,
     Category.Error,
@@ -2463,13 +2448,8 @@ export const msgs = {
   ),
   Object_is_of_type_unknown: new Message(2571, Category.Error, 'Object_is_of_type_unknown_2571', "Object is of type 'unknown'."),
   Rest_signatures_are_incompatible: new Message(2572, Category.Error, 'Rest_signatures_are_incompatible_2572', 'Rest signatures are incompatible.'),
-  Property_0_is_incompatible_with_rest_element_type: new Message(
-    2573,
-    Category.Error,
-    'Property_0_is_incompatible_with_rest_element_type_2573',
-    "Property '{0}' is incompatible with rest element type."
-  ),
-  A_rest_element_type_must_be_an_array_type: new Message(2574, Category.Error, 'A_rest_element_type_must_be_an_array_type_2574', 'A rest element type must be an array type.'),
+  Property_0_is_incompatible_with_rest_elem_type: new Message(2573, Category.Error, 'Property_0_is_incompatible_with_rest_elem_type_2573', "Property '{0}' is incompatible with rest elem type."),
+  A_rest_elem_type_must_be_an_array_type: new Message(2574, Category.Error, 'A_rest_elem_type_must_be_an_array_type_2574', 'A rest elem type must be an array type.'),
   No_overload_expects_0_arguments_but_overloads_do_exist_that_expect_either_1_or_2_arguments: new Message(
     2575,
     Category.Error,
@@ -2583,23 +2563,23 @@ export const msgs = {
     '_0_can_only_be_imported_by_using_a_require_call_or_by_turning_on_the_esModuleInterop_flag_and_using__2598',
     "'{0}' can only be imported by using a 'require' call or by turning on the 'esModuleInterop' flag and using a default import."
   ),
-  JSX_element_attributes_type_0_may_not_be_a_union_type: new Message(
+  JSX_elem_attributes_type_0_may_not_be_a_union_type: new Message(
     2600,
     Category.Error,
-    'JSX_element_attributes_type_0_may_not_be_a_union_type_2600',
-    "JSX element attributes type '{0}' may not be a union type."
+    'JSX_elem_attributes_type_0_may_not_be_a_union_type_2600',
+    "JSX elem attributes type '{0}' may not be a union type."
   ),
-  The_return_type_of_a_JSX_element_constructor_must_return_an_object_type: new Message(
+  The_return_type_of_a_JSX_elem_constructor_must_return_an_object_type: new Message(
     2601,
     Category.Error,
-    'The_return_type_of_a_JSX_element_constructor_must_return_an_object_type_2601',
-    'The return type of a JSX element constructor must return an object type.'
+    'The_return_type_of_a_JSX_elem_constructor_must_return_an_object_type_2601',
+    'The return type of a JSX elem constructor must return an object type.'
   ),
-  JSX_element_implicitly_has_type_any_because_the_global_type_JSX_Element_does_not_exist: new Message(
+  JSX_elem_implicitly_has_type_any_because_the_global_type_JSX_Elem_does_not_exist: new Message(
     2602,
     Category.Error,
-    'JSX_element_implicitly_has_type_any_because_the_global_type_JSX_Element_does_not_exist_2602',
-    "JSX element implicitly has type 'any' because the global type 'JSX.Element' does not exist."
+    'JSX_elem_implicitly_has_type_any_because_the_global_type_JSX_Elem_does_not_exist_2602',
+    "JSX elem implicitly has type 'any' because the global type 'JSX.Elem' does not exist."
   ),
   Property_0_in_type_1_is_not_assignable_to_type_2: new Message(
     2603,
@@ -2607,17 +2587,17 @@ export const msgs = {
     'Property_0_in_type_1_is_not_assignable_to_type_2_2603',
     "Property '{0}' in type '{1}' is not assignable to type '{2}'."
   ),
-  JSX_element_type_0_does_not_have_any_construct_or_call_signatures: new Message(
+  JSX_elem_type_0_does_not_have_any_construct_or_call_signatures: new Message(
     2604,
     Category.Error,
-    'JSX_element_type_0_does_not_have_any_construct_or_call_signatures_2604',
-    "JSX element type '{0}' does not have any construct or call signatures."
+    'JSX_elem_type_0_does_not_have_any_construct_or_call_signatures_2604',
+    "JSX elem type '{0}' does not have any construct or call signatures."
   ),
-  JSX_element_type_0_is_not_a_constructor_function_for_JSX_elements: new Message(
+  JSX_elem_type_0_is_not_a_constructor_function_for_JSX_elems: new Message(
     2605,
     Category.Error,
-    'JSX_element_type_0_is_not_a_constructor_function_for_JSX_elements_2605',
-    "JSX element type '{0}' is not a constructor function for JSX elements."
+    'JSX_elem_type_0_is_not_a_constructor_function_for_JSX_elems_2605',
+    "JSX elem type '{0}' is not a constructor function for JSX elems."
   ),
   Property_0_of_JSX_spread_attribute_is_not_assignable_to_target_property: new Message(
     2606,
@@ -2625,11 +2605,11 @@ export const msgs = {
     'Property_0_of_JSX_spread_attribute_is_not_assignable_to_target_property_2606',
     "Property '{0}' of JSX spread attribute is not assignable to target property."
   ),
-  JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property: new Message(
+  JSX_elem_class_does_not_support_attributes_because_it_does_not_have_a_0_property: new Message(
     2607,
     Category.Error,
-    'JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property_2607',
-    "JSX element class does not support attributes because it does not have a '{0}' property."
+    'JSX_elem_class_does_not_support_attributes_because_it_does_not_have_a_0_property_2607',
+    "JSX elem class does not support attributes because it does not have a '{0}' property."
   ),
   The_global_type_JSX_0_may_not_have_more_than_one_property: new Message(
     2608,
@@ -2722,7 +2702,7 @@ export const msgs = {
     'Exported_external_package_typings_file_0_is_not_a_module_Please_contact_the_package_author_to_update_2656',
     "Exported external package typings file '{0}' is not a module. Please contact the package author to update the package definition."
   ),
-  JSX_expressions_must_have_one_parent_element: new Message(2657, Category.Error, 'JSX_expressions_must_have_one_parent_element_2657', 'JSX expressions must have one parent element.'),
+  JSX_expressions_must_have_one_parent_elem: new Message(2657, Category.Error, 'JSX_expressions_must_have_one_parent_elem_2657', 'JSX expressions must have one parent elem.'),
   Type_0_provides_no_match_for_the_signature_1: new Message(2658, Category.Error, 'Type_0_provides_no_match_for_the_signature_1_2658', "Type '{0}' provides no match for the signature '{1}'."),
   super_is_only_allowed_in_members_of_object_literal_expressions_when_option_target_is_ES2015_or_higher: new Message(
     2659,
@@ -3152,11 +3132,11 @@ export const msgs = {
     'This_JSX_tag_s_0_prop_expects_a_single_child_of_type_1_but_multiple_children_were_provided_2746',
     "This JSX tag's '{0}' prop expects a single child of type '{1}', but multiple children were provided."
   ),
-  _0_components_don_t_accept_text_as_child_elements_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2: new Message(
+  _0_components_don_t_accept_text_as_child_elems_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2: new Message(
     2747,
     Category.Error,
-    '_0_components_don_t_accept_text_as_child_elements_Text_in_JSX_has_the_type_string_but_the_expected_t_2747',
-    "'{0}' components don't accept text as child elements. Text in JSX has the type 'string', but the expected type of '{1}' is '{2}'."
+    '_0_components_don_t_accept_text_as_child_elems_Text_in_JSX_has_the_type_string_but_the_expected_t_2747',
+    "'{0}' components don't accept text as child elems. Text in JSX has the type 'string', but the expected type of '{1}' is '{2}'."
   ),
   Cannot_access_ambient_const_enums_when_the_isolatedModules_flag_is_provided: new Message(
     2748,
@@ -3292,9 +3272,9 @@ export const msgs = {
   ),
   This_spread_always_overwrites_this_property: new Message(2785, Category.Error, 'This_spread_always_overwrites_this_property_2785', 'This spread always overwrites this property.'),
   _0_cannot_be_used_as_a_JSX_component: new Message(2786, Category.Error, '_0_cannot_be_used_as_a_JSX_component_2786', "'{0}' cannot be used as a JSX component."),
-  Its_return_type_0_is_not_a_valid_JSX_element: new Message(2787, Category.Error, 'Its_return_type_0_is_not_a_valid_JSX_element_2787', "Its return type '{0}' is not a valid JSX element."),
-  Its_instance_type_0_is_not_a_valid_JSX_element: new Message(2788, Category.Error, 'Its_instance_type_0_is_not_a_valid_JSX_element_2788', "Its instance type '{0}' is not a valid JSX element."),
-  Its_element_type_0_is_not_a_valid_JSX_element: new Message(2789, Category.Error, 'Its_element_type_0_is_not_a_valid_JSX_element_2789', "Its element type '{0}' is not a valid JSX element."),
+  Its_return_type_0_is_not_a_valid_JSX_elem: new Message(2787, Category.Error, 'Its_return_type_0_is_not_a_valid_JSX_elem_2787', "Its return type '{0}' is not a valid JSX elem."),
+  Its_instance_type_0_is_not_a_valid_JSX_elem: new Message(2788, Category.Error, 'Its_instance_type_0_is_not_a_valid_JSX_elem_2788', "Its instance type '{0}' is not a valid JSX elem."),
+  Its_elem_type_0_is_not_a_valid_JSX_elem: new Message(2789, Category.Error, 'Its_elem_type_0_is_not_a_valid_JSX_elem_2789', "Its elem type '{0}' is not a valid JSX elem."),
   The_operand_of_a_delete_operator_must_be_optional: new Message(
     2790,
     Category.Error,
@@ -4035,17 +4015,17 @@ export const msgs = {
     'Tuple members must all have names or all not have names.'
   ),
   A_tuple_member_cannot_be_both_optional_and_rest: new Message(5085, Category.Error, 'A_tuple_member_cannot_be_both_optional_and_rest_5085', 'A tuple member cannot be both optional and rest.'),
-  A_labeled_tuple_element_is_declared_as_optional_with_a_question_mark_after_the_name_and_before_the_colon_rather_than_after_the_type: new Message(
+  A_labeled_tuple_elem_is_declared_as_optional_with_a_question_mark_after_the_name_and_before_the_colon_rather_than_after_the_type: new Message(
     5086,
     Category.Error,
-    'A_labeled_tuple_element_is_declared_as_optional_with_a_question_mark_after_the_name_and_before_the_c_5086',
-    'A labeled tuple element is declared as optional with a question mark after the name and before the colon, rather than after the type.'
+    'A_labeled_tuple_elem_is_declared_as_optional_with_a_question_mark_after_the_name_and_before_the_c_5086',
+    'A labeled tuple elem is declared as optional with a question mark after the name and before the colon, rather than after the type.'
   ),
-  A_labeled_tuple_element_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type: new Message(
+  A_labeled_tuple_elem_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type: new Message(
     5087,
     Category.Error,
-    'A_labeled_tuple_element_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type_5087',
-    'A labeled tuple element is declared as rest with a `...` before the name, rather than before the type.'
+    'A_labeled_tuple_elem_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type_5087',
+    'A labeled tuple elem is declared as rest with a `...` before the name, rather than before the type.'
   ),
   Generates_a_sourcemap_for_each_corresponding_d_ts_file: new Message(
     6000,
@@ -4284,11 +4264,11 @@ export const msgs = {
     'Base_directory_to_resolve_non_absolute_module_names_6083',
     'Base directory to resolve non-absolute module names.'
   ),
-  Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElement_when_targeting_react_JSX_emit: new Message(
+  Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElem_when_targeting_react_JSX_emit: new Message(
     6084,
     Category.Message,
-    'Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElement_when_targeting_react__6084',
-    "[Deprecated] Use '--jsxFactory' instead. Specify the object invoked for createElement when targeting 'react' JSX emit"
+    'Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElem_when_targeting_react__6084',
+    "[Deprecated] Use '--jsxFactory' instead. Specify the object invoked for createElem when targeting 'react' JSX emit"
   ),
   Enable_tracing_of_the_name_resolution_process: new Message(6085, Category.Message, 'Enable_tracing_of_the_name_resolution_process_6085', 'Enable tracing of the name resolution process.'),
   Resolving_module_0_from_1: new Message(6086, Category.Message, 'Resolving_module_0_from_1_6086', "======== Resolving module '{0}' from '{1}'. ========"),
@@ -4515,11 +4495,11 @@ export const msgs = {
     'Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified_6145',
     "Module '{0}' was resolved as ambient module declared in '{1}' since this file was not modified."
   ),
-  Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h: new Message(
+  Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElem_or_h: new Message(
     6146,
     Category.Message,
-    'Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h_6146',
-    "Specify the JSX factory function to use when targeting 'react' JSX emit, e.g. 'React.createElement' or 'h'."
+    'Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElem_or_h_6146',
+    "Specify the JSX factory function to use when targeting 'react' JSX emit, e.g. 'React.createElem' or 'h'."
   ),
   Resolution_for_module_0_was_found_in_cache_from_location_1: new Message(
     6147,
@@ -4681,7 +4661,7 @@ export const msgs = {
   ),
   _0_is_declared_but_never_used: new Message(6196, Category.Error, '_0_is_declared_but_never_used_6196', "'{0}' is declared but never used.", true),
   Include_modules_imported_with_json_extension: new Message(6197, Category.Message, 'Include_modules_imported_with_json_extension_6197', "Include modules imported with '.json' extension"),
-  All_destructured_elements_are_unused: new Message(6198, Category.Error, 'All_destructured_elements_are_unused_6198', 'All destructured elements are unused.', true),
+  All_destructured_elems_are_unused: new Message(6198, Category.Error, 'All_destructured_elems_are_unused_6198', 'All destructured elems are unused.', true),
   All_variables_are_unused: new Message(6199, Category.Error, 'All_variables_are_unused_6199', 'All variables are unused.', true),
   Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0: new Message(
     6200,
@@ -5084,11 +5064,11 @@ export const msgs = {
     'Function_type_which_lacks_return_type_annotation_implicitly_has_an_0_return_type_7014',
     "Function type, which lacks return-type annotation, implicitly has an '{0}' return type."
   ),
-  Element_implicitly_has_an_any_type_because_index_expression_is_not_of_type_number: new Message(
+  Elem_implicitly_has_an_any_type_because_index_expression_is_not_of_type_number: new Message(
     7015,
     Category.Error,
-    'Element_implicitly_has_an_any_type_because_index_expression_is_not_of_type_number_7015',
-    "Element implicitly has an 'any' type because index expression is not of type 'number'."
+    'Elem_implicitly_has_an_any_type_because_index_expression_is_not_of_type_number_7015',
+    "Elem implicitly has an 'any' type because index expression is not of type 'number'."
   ),
   Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type: new Message(
     7016,
@@ -5096,11 +5076,11 @@ export const msgs = {
     'Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type_7016',
     "Could not find a declaration file for module '{0}'. '{1}' implicitly has an 'any' type."
   ),
-  Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature: new Message(
+  Elem_implicitly_has_an_any_type_because_type_0_has_no_index_signature: new Message(
     7017,
     Category.Error,
-    'Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature_7017',
-    "Element implicitly has an 'any' type because type '{0}' has no index signature."
+    'Elem_implicitly_has_an_any_type_because_type_0_has_no_index_signature_7017',
+    "Elem implicitly has an 'any' type because type '{0}' has no index signature."
   ),
   Object_literal_s_property_0_implicitly_has_an_1_type: new Message(
     7018,
@@ -5139,17 +5119,17 @@ export const msgs = {
     'Generator_implicitly_has_yield_type_0_because_it_does_not_yield_any_values_Consider_supplying_a_retu_7025',
     "Generator implicitly has yield type '{0}' because it does not yield any values. Consider supplying a return type annotation."
   ),
-  JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists: new Message(
+  JSX_elem_implicitly_has_type_any_because_no_interface_JSX_0_exists: new Message(
     7026,
     Category.Error,
-    'JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists_7026',
-    "JSX element implicitly has type 'any' because no interface 'JSX.{0}' exists."
+    'JSX_elem_implicitly_has_type_any_because_no_interface_JSX_0_exists_7026',
+    "JSX elem implicitly has type 'any' because no interface 'JSX.{0}' exists."
   ),
   Unreachable_code_detected: new Message(7027, Category.Error, 'Unreachable_code_detected_7027', 'Unreachable code detected.', true),
   Unused_label: new Message(7028, Category.Error, 'Unused_label_7028', 'Unused label.', true),
   Fallthrough_case_in_switch: new Message(7029, Category.Error, 'Fallthrough_case_in_switch_7029', 'Fallthrough case in switch.'),
   Not_all_code_paths_return_a_value: new Message(7030, Category.Error, 'Not_all_code_paths_return_a_value_7030', 'Not all code paths return a value.'),
-  Binding_element_0_implicitly_has_an_1_type: new Message(7031, Category.Error, 'Binding_element_0_implicitly_has_an_1_type_7031', "Binding element '{0}' implicitly has an '{1}' type."),
+  Binding_elem_0_implicitly_has_an_1_type: new Message(7031, Category.Error, 'Binding_elem_0_implicitly_has_an_1_type_7031', "Binding elem '{0}' implicitly has an '{1}' type."),
   Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_parameter_type_annotation: new Message(
     7032,
     Category.Error,
@@ -5270,17 +5250,17 @@ export const msgs = {
     'Parameter_has_a_name_but_no_type_Did_you_mean_0_Colon_1_7051',
     "Parameter has a name but no type. Did you mean '{0}: {1}'?"
   ),
-  Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1: new Message(
+  Elem_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1: new Message(
     7052,
     Category.Error,
-    'Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1_7052',
-    "Element implicitly has an 'any' type because type '{0}' has no index signature. Did you mean to call '{1}'?"
+    'Elem_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1_7052',
+    "Elem implicitly has an 'any' type because type '{0}' has no index signature. Did you mean to call '{1}'?"
   ),
-  Element_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1: new Message(
+  Elem_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1: new Message(
     7053,
     Category.Error,
-    'Element_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1_7053',
-    "Element implicitly has an 'any' type because expression of type '{0}' can't be used to index type '{1}'."
+    'Elem_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1_7053',
+    "Elem implicitly has an 'any' type because expression of type '{0}' can't be used to index type '{1}'."
   ),
   No_index_signature_with_a_parameter_of_type_0_was_found_on_type_1: new Message(
     7054,
@@ -5294,12 +5274,12 @@ export const msgs = {
     '_0_which_lacks_return_type_annotation_implicitly_has_an_1_yield_type_7055',
     "'{0}', which lacks return-type annotation, implicitly has an '{1}' yield type."
   ),
-  You_cannot_rename_this_element: new Message(8000, Category.Error, 'You_cannot_rename_this_element_8000', 'You cannot rename this element.'),
-  You_cannot_rename_elements_that_are_defined_in_the_standard_TypeScript_library: new Message(
+  You_cannot_rename_this_elem: new Message(8000, Category.Error, 'You_cannot_rename_this_elem_8000', 'You cannot rename this elem.'),
+  You_cannot_rename_elems_that_are_defined_in_the_standard_TypeScript_library: new Message(
     8001,
     Category.Error,
-    'You_cannot_rename_elements_that_are_defined_in_the_standard_TypeScript_library_8001',
-    'You cannot rename elements that are defined in the standard TypeScript library.'
+    'You_cannot_rename_elems_that_are_defined_in_the_standard_TypeScript_library_8001',
+    'You cannot rename elems that are defined in the standard TypeScript library.'
   ),
   import_can_only_be_used_in_TypeScript_files: new Message(8002, Category.Error, 'import_can_only_be_used_in_TypeScript_files_8002', "'import ... =' can only be used in TypeScript files."),
   export_can_only_be_used_in_TypeScript_files: new Message(8003, Category.Error, 'export_can_only_be_used_in_TypeScript_files_8003', "'export =' can only be used in TypeScript files."),
@@ -5467,11 +5447,11 @@ export const msgs = {
     'JSX_attributes_must_only_be_assigned_a_non_empty_expression_17000',
     "JSX attributes must only be assigned a non-empty 'expression'."
   ),
-  JSX_elements_cannot_have_multiple_attributes_with_the_same_name: new Message(
+  JSX_elems_cannot_have_multiple_attributes_with_the_same_name: new Message(
     17001,
     Category.Error,
-    'JSX_elements_cannot_have_multiple_attributes_with_the_same_name_17001',
-    'JSX elements cannot have multiple attributes with the same name.'
+    'JSX_elems_cannot_have_multiple_attributes_with_the_same_name_17001',
+    'JSX elems cannot have multiple attributes with the same name.'
   ),
   Expected_corresponding_JSX_closing_tag_for_0: new Message(17002, Category.Error, 'Expected_corresponding_JSX_closing_tag_for_0_17002', "Expected corresponding JSX closing tag for '{0}'."),
   JSX_attribute_expected: new Message(17003, Category.Error, 'JSX_attribute_expected_17003', 'JSX attribute expected.'),
@@ -5494,7 +5474,7 @@ export const msgs = {
     'A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Con_17007',
     'A type assertion expression is not allowed in the left-hand side of an exponentiation expression. Consider enclosing the expression in parentheses.'
   ),
-  JSX_element_0_has_no_corresponding_closing_tag: new Message(17008, Category.Error, 'JSX_element_0_has_no_corresponding_closing_tag_17008', "JSX element '{0}' has no corresponding closing tag."),
+  JSX_elem_0_has_no_corresponding_closing_tag: new Message(17008, Category.Error, 'JSX_elem_0_has_no_corresponding_closing_tag_17008', "JSX elem '{0}' has no corresponding closing tag."),
   super_must_be_called_before_accessing_this_in_the_constructor_of_a_derived_class: new Message(
     17009,
     Category.Error,
@@ -5860,7 +5840,7 @@ export const msgs = {
     'Remove braces from all arrow function bodies with relevant issues'
   ),
   Wrap_all_object_literal_with_parentheses: new Message(95116, Category.Message, 'Wrap_all_object_literal_with_parentheses_95116', 'Wrap all object literal with parentheses'),
-  Move_labeled_tuple_element_modifiers_to_labels: new Message(95117, Category.Message, 'Move_labeled_tuple_element_modifiers_to_labels_95117', 'Move labeled tuple element modifiers to labels'),
+  Move_labeled_tuple_elem_modifiers_to_labels: new Message(95117, Category.Message, 'Move_labeled_tuple_elem_modifiers_to_labels_95117', 'Move labeled tuple elem modifiers to labels'),
   Convert_overload_list_to_single_signature: new Message(95118, Category.Message, 'Convert_overload_list_to_single_signature_95118', 'Convert overload list to single signature'),
   Generate_get_and_set_accessors_for_all_overriding_properties: new Message(
     95119,

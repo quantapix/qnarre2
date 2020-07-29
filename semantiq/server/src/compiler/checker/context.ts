@@ -532,7 +532,7 @@ export class QContext {
           expression = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
           expression.symbol = symbol;
         }
-        return new qs.ElementAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
+        return new qs.ElemAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
       }
     }
   }
@@ -556,7 +556,7 @@ export class QContext {
       if (nameType.flags & TypeFlags.UniqueESSymbol) return new qc.ComputedPropertyName(this.symbolToExpression((<UniqueESSymbolType>nameType).symbol, SymbolFlags.Value));
     }
   }
-  addPropertyToElementList(propertySymbol: Symbol, typeElements: TypeElement[]) {
+  addPropertyToElemList(propertySymbol: Symbol, typeElems: TypeElem[]) {
     const propertyIsReverseMapped = !!(getCheckFlags(propertySymbol) & CheckFlags.ReverseMapped);
     const propertyType = propertyIsReverseMapped && this.flags & NodeBuilderFlags.InReverseMappedType ? anyType : getTypeOfSymbol(propertySymbol);
     const saveEnclosingDeclaration = this.enclosingDeclaration;
@@ -566,7 +566,7 @@ export class QContext {
       if (hasLateBindableName(decl)) {
         if (qf.is.kind(qc.BinaryExpression, decl)) {
           const name = qf.get.declaration.nameOf(decl);
-          if (name && qf.is.kind(qc.ElementAccessExpression, name) && qf.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
+          if (name && qf.is.kind(qc.ElemAccessExpression, name) && qf.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
             this.trackComputedName(name.argumentExpression, saveEnclosingDeclaration);
           }
         } else {
@@ -587,7 +587,7 @@ export class QContext {
         const methodDeclaration = <MethodSignature>this.signatureToSignatureDeclarationHelper(signature, Syntax.MethodSignature);
         methodDeclaration.name = propertyName;
         methodDeclaration.questionToken = optionalToken;
-        typeElements.push(preserveCommentsOn(methodDeclaration));
+        typeElems.push(preserveCommentsOn(methodDeclaration));
       }
     } else {
       const savedFlags = this.flags;
@@ -602,7 +602,7 @@ export class QContext {
       const modifiers = isReadonlySymbol(propertySymbol) ? [new Token(Syntax.ReadonlyKeyword)] : undefined;
       if (modifiers) this.approximateLength += 9;
       const propertySignature = new qc.PropertySignature(modifiers, propertyName, optionalToken, propertyTypeNode, undefined);
-      typeElements.push(preserveCommentsOn(propertySignature));
+      typeElems.push(preserveCommentsOn(propertySignature));
     }
     function preserveCommentsOn<T extends Node>(node: T) {
       if (some(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)) {
@@ -747,7 +747,7 @@ export class QContext {
         }
         const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTransformationContext, undefined, elideIniterAndSetEmitFlags)!;
         const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
-        if (clone.kind === Syntax.BindingElement) (<BindingElement>clone).initer = undefined;
+        if (clone.kind === Syntax.BindingElem) (<BindingElem>clone).initer = undefined;
         return setEmitFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
       return <BindingName>elideIniterAndSetEmitFlags(node as Node);
@@ -1087,7 +1087,7 @@ export class QContext {
       return valueDecl && qf.is.namedDeclaration(valueDecl) && qf.is.kind(qc.PrivateIdentifier, valueDecl.name);
     });
     const privateProperties = hasPrivateIdentifier ? [new qc.PropertyDeclaration(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : empty;
-    const publicProperties = flatMap<Symbol, ClassElement>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, false, baseTypes[0]));
+    const publicProperties = flatMap<Symbol, ClassElem>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, false, baseTypes[0]));
     const staticMembers = flatMap(
       filter(getPropertiesOfType(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
       (p) => serializePropertySymbolForClass(p, true, staticBaseType)
@@ -1191,14 +1191,14 @@ export class QContext {
       }
       const savedFlags = this.flags;
       this.flags |= NodeBuilderFlags.InObjectTypeLiteral;
-      const createTypeNodesFromResolvedType = (resolvedType: ResolvedType): TypeElement[] | undefined => {
+      const createTypeNodesFromResolvedType = (resolvedType: ResolvedType): TypeElem[] | undefined => {
         if (this.checkTruncationLength()) return [new qc.PropertySignature(undefined, '...', undefined, undefined, undefined)];
-        const typeElements: TypeElement[] = [];
+        const typeElems: TypeElem[] = [];
         for (const signature of resolvedType.callSignatures) {
-          typeElements.push(<CallSignatureDeclaration>this.signatureToSignatureDeclarationHelper(signature, Syntax.CallSignature));
+          typeElems.push(<CallSignatureDeclaration>this.signatureToSignatureDeclarationHelper(signature, Syntax.CallSignature));
         }
         for (const signature of resolvedType.constructSignatures) {
-          typeElements.push(<ConstructSignatureDeclaration>this.signatureToSignatureDeclarationHelper(signature, Syntax.ConstructSignature));
+          typeElems.push(<ConstructSignatureDeclaration>this.signatureToSignatureDeclarationHelper(signature, Syntax.ConstructSignature));
         }
         if (resolvedType.stringIndexInfo) {
           let indexSignature: IndexSignatureDeclaration;
@@ -1212,13 +1212,13 @@ export class QContext {
           } else {
             indexSignature = this.indexInfoToIndexSignatureDeclarationHelper(resolvedType.stringIndexInfo, IndexKind.String);
           }
-          typeElements.push(indexSignature);
+          typeElems.push(indexSignature);
         }
         if (resolvedType.numberIndexInfo) {
-          typeElements.push(this.indexInfoToIndexSignatureDeclarationHelper(resolvedType.numberIndexInfo, IndexKind.Number));
+          typeElems.push(this.indexInfoToIndexSignatureDeclarationHelper(resolvedType.numberIndexInfo, IndexKind.Number));
         }
         const properties = resolvedType.properties;
-        if (!properties) return typeElements;
+        if (!properties) return typeElems;
         let i = 0;
         for (const propertySymbol of properties) {
           i++;
@@ -1229,13 +1229,13 @@ export class QContext {
             }
           }
           if (this.checkTruncationLength() && i + 2 < properties.length - 1) {
-            typeElements.push(new qc.PropertySignature(undefined, `... ${properties.length - i} more ...`, undefined, undefined, undefined));
-            this.addPropertyToElementList(properties[properties.length - 1], typeElements);
+            typeElems.push(new qc.PropertySignature(undefined, `... ${properties.length - i} more ...`, undefined, undefined, undefined));
+            this.addPropertyToElemList(properties[properties.length - 1], typeElems);
             break;
           }
-          this.addPropertyToElementList(propertySymbol, typeElements);
+          this.addPropertyToElemList(propertySymbol, typeElems);
         }
-        return typeElements.length ? typeElements : undefined;
+        return typeElems.length ? typeElems : undefined;
       };
       const members = createTypeNodesFromResolvedType(resolved);
       this.flags = savedFlags;
@@ -1283,30 +1283,30 @@ export class QContext {
         const typeArgumentNode = this.typeToTypeNodeHelper(typeArguments[0]);
         return new qc.TypeReferenceNode(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
       }
-      const elementType = this.typeToTypeNodeHelper(typeArguments[0]);
-      const arrayType = new ArrayTypeNode(elementType);
+      const elemType = this.typeToTypeNodeHelper(typeArguments[0]);
+      const arrayType = new ArrayTypeNode(elemType);
       return type.target === globalArrayType ? arrayType : new qc.TypeOperatorNode(Syntax.ReadonlyKeyword, arrayType);
     } else if (type.target.objectFlags & ObjectFlags.Tuple) {
       if (typeArguments.length > 0) {
         const arity = getTypeReferenceArity(type);
         const tupleConstituentNodes = this.mapToTypeNodes(typeArguments.slice(0, arity));
-        const hasRestElement = (<TupleType>type.target).hasRestElement;
+        const hasRestElem = (<TupleType>type.target).hasRestElem;
         if (tupleConstituentNodes) {
-          if ((type.target as TupleType).labeledElementDeclarations) {
+          if ((type.target as TupleType).labeledElemDeclarations) {
             for (let i = 0; i < tupleConstituentNodes.length; i++) {
               const isOptionalOrRest = i >= (<TupleType>type.target).minLength;
-              const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
+              const isRest = isOptionalOrRest && hasRestElem && i === arity - 1;
               const isOptional = isOptionalOrRest && !isRest;
               tupleConstituentNodes[i] = new qc.NamedTupleMember(
                 isRest ? new Token(Syntax.Dot3Token) : undefined,
-                new Identifier(qy.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
+                new Identifier(qy.get.unescUnderscores(getTupleElemLabel((type.target as TupleType).labeledElemDeclarations![i]))),
                 isOptional ? new Token(Syntax.QuestionToken) : undefined,
                 isRest ? new ArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
               );
             }
           } else {
             for (let i = (<TupleType>type.target).minLength; i < Math.min(arity, tupleConstituentNodes.length); i++) {
-              tupleConstituentNodes[i] = hasRestElement && i === arity - 1 ? new qc.RestTypeNode(new ArrayTypeNode(tupleConstituentNodes[i])) : new qc.OptionalTypeNode(tupleConstituentNodes[i]);
+              tupleConstituentNodes[i] = hasRestElem && i === arity - 1 ? new qc.RestTypeNode(new ArrayTypeNode(tupleConstituentNodes[i])) : new qc.OptionalTypeNode(tupleConstituentNodes[i]);
             }
           }
           const tupleTypeNode = setEmitFlags(new qc.TupleTypeNode(tupleConstituentNodes), EmitFlags.SingleLine);
@@ -1521,8 +1521,8 @@ export class QContext {
     };
   }
   symbolTableToDeclarationSobjs(symbolTable: SymbolTable, bundled?: boolean): Statement[] {
-    const serializePropertySymbolForClass = this.makeSerializePropertySymbol<ClassElement>(createProperty, Syntax.MethodDeclaration, true);
-    const serializePropertySymbolForInterfaceWorker = this.makeSerializePropertySymbol<TypeElement>(
+    const serializePropertySymbolForClass = this.makeSerializePropertySymbol<ClassElem>(createProperty, Syntax.MethodDeclaration, true);
+    const serializePropertySymbolForInterfaceWorker = this.makeSerializePropertySymbol<TypeElem>(
       (_decorators, mods, name, question, type, initer) => new qc.PropertySignature(mods, name, question, type, initer),
       Syntax.MethodSignature,
       false
@@ -1614,7 +1614,7 @@ export class QContext {
       const exports = filter(ss, (d) => qf.is.kind(qc.ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause && qf.is.kind(qc.NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(exports) > 1) {
         const nonExports = filter(ss, (d) => !qf.is.kind(qc.ExportDeclaration, d) || !!d.moduleSpecifier || !d.exportClause);
-        ss = [...nonExports, new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elements)), undefined)];
+        ss = [...nonExports, new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elems)), undefined)];
       }
       const reexports = filter(ss, (d) => qf.is.kind(qc.ExportDeclaration, d) && !!d.moduleSpecifier && !!d.exportClause && qf.is.kind(qc.NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(reexports) > 1) {
@@ -1624,7 +1624,7 @@ export class QContext {
             if (g.length > 1) {
               ss = [
                 ...filter(ss, (s) => g.indexOf(s as ExportDeclaration) === -1),
-                new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(g, (e) => cast(e.exportClause, isNamedExports).elements)), g[0].moduleSpecifier),
+                new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(g, (e) => cast(e.exportClause, isNamedExports).elems)), g[0].moduleSpecifier),
               ];
             }
           }
@@ -1635,7 +1635,7 @@ export class QContext {
     const inlineExportModifiers = (ss: Statement[]) => {
       const exportDecl = find(ss, (d) => qf.is.kind(qc.ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause) as ExportDeclaration | undefined;
       if (exportDecl && exportDecl.exportClause && qf.is.kind(qc.NamedExports, exportDecl.exportClause)) {
-        const replacements = mapDefined(exportDecl.exportClause.elements, (e) => {
+        const replacements = mapDefined(exportDecl.exportClause.elems, (e) => {
           if (!e.propertyName) {
             const associated = filter(ss, (s) => qf.is.withName(s, e.name));
             if (length(associated) && every(associated, canHaveExportModifier)) {
@@ -1651,7 +1651,7 @@ export class QContext {
           return e;
         });
         if (!length(replacements)) ss = filter(ss, (s) => s !== exportDecl);
-        else exportDecl.exportClause.elements = new Nodes(replacements);
+        else exportDecl.exportClause.elems = new Nodes(replacements);
       }
       return ss;
     };

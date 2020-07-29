@@ -12,9 +12,9 @@ export function transformES5(context: TransformationContext) {
   if (compilerOptions.jsx === JsxEmit.Preserve || compilerOptions.jsx === JsxEmit.ReactNative) {
     previousOnEmitNode = context.onEmitNode;
     context.onEmitNode = onEmitNode;
-    context.enableEmitNotification(Syntax.JsxOpeningElement);
-    context.enableEmitNotification(Syntax.JsxClosingElement);
-    context.enableEmitNotification(Syntax.JsxSelfClosingElement);
+    context.enableEmitNotification(Syntax.JsxOpeningElem);
+    context.enableEmitNotification(Syntax.JsxClosingElem);
+    context.enableEmitNotification(Syntax.JsxSelfClosingElem);
     noSubstitution = [];
   }
   const previousOnSubstituteNode = context.onSubstituteNode;
@@ -27,10 +27,10 @@ export function transformES5(context: TransformationContext) {
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
     switch (node.kind) {
-      case Syntax.JsxOpeningElement:
-      case Syntax.JsxClosingElement:
-      case Syntax.JsxSelfClosingElement:
-        const tagName = (<JsxOpeningElement | JsxClosingElement | JsxSelfClosingElement>node).tagName;
+      case Syntax.JsxOpeningElem:
+      case Syntax.JsxClosingElem:
+      case Syntax.JsxSelfClosingElem:
+        const tagName = (<JsxOpeningElem | JsxClosingElem | JsxSelfClosingElem>node).tagName;
         noSubstitution[getOriginalNodeId(tagName)] = true;
         break;
     }
@@ -46,7 +46,7 @@ export function transformES5(context: TransformationContext) {
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
     if (qc.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
-    if (literalName) return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
+    if (literalName) return setRange(new qs.ElemAccessExpression(node.expression, literalName), node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {

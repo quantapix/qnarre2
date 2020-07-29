@@ -84,19 +84,19 @@ export function transformClassFields(context: TransformationContext) {
     if (!shouldTransformPrivateFields) return node;
     return new Identifier('').setOriginal(node);
   }
-  function classElementVisitor(node: Node): VisitResult<Node> {
+  function classElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.Constructor:
         return;
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
       case Syntax.MethodDeclaration:
-        return visitEachChild(node, classElementVisitor, context);
+        return visitEachChild(node, classElemVisitor, context);
       case Syntax.PropertyDeclaration:
         return visitPropertyDeclaration(node as PropertyDeclaration);
       case Syntax.ComputedPropertyName:
         return visitComputedPropertyName(node as ComputedPropertyName);
-      case Syntax.SemicolonClassElement:
+      case Syntax.SemicolonClassElem:
         return node;
       default:
         return visitor(node);
@@ -285,13 +285,13 @@ export function transformClassFields(context: TransformationContext) {
     pendingExpressions = savedPendingExpressions;
     return result;
   }
-  function doesClassElementNeedTransform(node: ClassElement) {
+  function doesClassElemNeedTransform(node: ClassElem) {
     return qc.is.kind(qc.PropertyDeclaration, node) || (shouldTransformPrivateFields && node.name && qc.is.kind(qc.PrivateIdentifier, node.name));
   }
   function visitClassDeclaration(node: ClassDeclaration) {
-    if (!forEach(node.members, doesClassElementNeedTransform)) return visitEachChild(node, visitor, context);
-    const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
+    if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
+    const extendsClauseElem = qf.get.effectiveBaseTypeNode(node);
+    const isDerivedClass = !!(extendsClauseElem && qc.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword);
     const statements: Statement[] = [
       node.update(undefined, node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass)),
     ];
@@ -305,11 +305,11 @@ export function transformClassFields(context: TransformationContext) {
     return statements;
   }
   function visitClassExpression(node: ClassExpression): Expression {
-    if (!forEach(node.members, doesClassElementNeedTransform)) return visitEachChild(node, visitor, context);
+    if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
     const isDecoratedClassDeclaration = qc.is.kind(qc.ClassDeclaration, qc.get.originalOf(node));
     const staticProperties = getProperties(node, true);
-    const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
+    const extendsClauseElem = qf.get.effectiveBaseTypeNode(node);
+    const isDerivedClass = !!(extendsClauseElem && qc.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword);
     const classExpression = node.update(node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
     if (some(staticProperties) || some(pendingExpressions)) {
       if (isDecoratedClassDeclaration) {
@@ -347,13 +347,13 @@ export function transformClassFields(context: TransformationContext) {
         if (m.qc.is.privateIdentifierPropertyDeclaration()) addPrivateIdentifierToEnvironment(m.name);
       }
     }
-    const ms: ClassElement[] = [];
+    const ms: ClassElem[] = [];
     const constructor = transformConstructor(n, isDerivedClass);
     if (constructor) ms.push(constructor);
-    addRange(ms, Nodes.visit(n.members, classElementVisitor, isClassElement));
+    addRange(ms, Nodes.visit(n.members, classElemVisitor, isClassElem));
     return setRange(new Nodes(ms), n.members);
   }
-  function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
+  function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElem): member is PropertyDeclaration {
     if (!qc.is.kind(qc.PropertyDeclaration, member) || qc.has.staticModifier(member)) return false;
     if (context.getCompilerOptions().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
     return isInitializedProperty(member) || (shouldTransformPrivateFields && member.qc.is.privateIdentifierPropertyDeclaration());
@@ -380,7 +380,7 @@ export function transformClassFields(context: TransformationContext) {
     let indexOfFirstStatement = 0;
     let statements: Statement[] = [];
     if (!constructor && isDerivedClass) {
-      statements.push(new qc.ExpressionStatement(new qs.CallExpression(new qc.SuperExpression(), undefined, [new qc.SpreadElement(new Identifier('arguments'))])));
+      statements.push(new qc.ExpressionStatement(new qs.CallExpression(new qc.SuperExpression(), undefined, [new qc.SpreadElem(new Identifier('arguments'))])));
     }
     if (constructor) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
@@ -581,21 +581,21 @@ export function transformClassFields(context: TransformationContext) {
       'value'
     );
   }
-  function visitArrayAssignmentTarget(node: BindingOrAssignmentElement) {
-    const target = getTargetOfBindingOrAssignmentElement(node);
+  function visitArrayAssignmentTarget(node: BindingOrAssignmentElem) {
+    const target = getTargetOfBindingOrAssignmentElem(node);
     if (target && qc.is.privateIdentifierPropertyAccessExpression(target)) {
       const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
       if (qc.is.assignmentExpression(node)) return node.update(wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
-      if (qc.is.kind(qc.SpreadElement, node)) return node.update(wrapped);
+      if (qc.is.kind(qc.SpreadElem, node)) return node.update(wrapped);
       return wrapped;
     }
     return visitNode(node, visitorDestructuringTarget);
   }
-  function visitObjectAssignmentTarget(node: ObjectLiteralElementLike) {
+  function visitObjectAssignmentTarget(node: ObjectLiteralElemLike) {
     if (qc.is.kind(qc.PropertyAssignment, node)) {
-      const target = getTargetOfBindingOrAssignmentElement(node);
+      const target = getTargetOfBindingOrAssignmentElem(node);
       if (target && qc.is.privateIdentifierPropertyAccessExpression(target)) {
-        const initer = getIniterOfBindingOrAssignmentElement(node);
+        const initer = getIniterOfBindingOrAssignmentElem(node);
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
         return node.update(visitNode(node.name, visitor), initer ? qf.create.assignment(wrapped, visitNode(initer, visitor)) : wrapped);
       }
@@ -604,8 +604,8 @@ export function transformClassFields(context: TransformationContext) {
     return visitNode(node, visitor);
   }
   function visitAssignmentPattern(node: AssignmentPattern) {
-    if (node.is(ArrayLiteralExpression)) return node.update(Nodes.visit(node.elements, visitArrayAssignmentTarget, isExpression));
-    return node.update(Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElementLike));
+    if (node.is(ArrayLiteralExpression)) return node.update(Nodes.visit(node.elems, visitArrayAssignmentTarget, isExpression));
+    return node.update(Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElemLike));
   }
 }
 function createPrivateInstanceFieldIniter(receiver: LeftHandSideExpression, initer: Expression | undefined, weakMapName: Identifier) {

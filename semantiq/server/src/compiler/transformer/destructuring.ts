@@ -11,10 +11,10 @@ interface FlattenContext {
   downlevelIteration: boolean;
   hoistTempVariables: boolean;
   emitExpression: (value: Expression) => void;
-  emitBindingOrAssignment: (target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange, original: Node | undefined) => void;
-  createArrayBindingOrAssignmentPattern: (elements: BindingOrAssignmentElement[]) => ArrayBindingOrAssignmentPattern;
-  createObjectBindingOrAssignmentPattern: (elements: BindingOrAssignmentElement[]) => ObjectBindingOrAssignmentPattern;
-  createArrayBindingOrAssignmentElement: (node: Identifier) => BindingOrAssignmentElement;
+  emitBindingOrAssignment: (target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange, original: Node | undefined) => void;
+  createArrayBindingOrAssignmentPattern: (elems: BindingOrAssignmentElem[]) => ArrayBindingOrAssignmentPattern;
+  createObjectBindingOrAssignmentPattern: (elems: BindingOrAssignmentElem[]) => ObjectBindingOrAssignmentPattern;
+  createArrayBindingOrAssignmentElem: (node: Identifier) => BindingOrAssignmentElem;
   visitor?: (node: Node) => VisitResult<Node>;
 }
 export const enum FlattenLevel {
@@ -52,12 +52,12 @@ export function flattenDestructuringAssignment(
     emitBindingOrAssignment,
     createArrayBindingOrAssignmentPattern: makeArrayAssignmentPattern,
     createObjectBindingOrAssignmentPattern: makeObjectAssignmentPattern,
-    createArrayBindingOrAssignmentElement: makeAssignmentElement,
+    createArrayBindingOrAssignmentElem: makeAssignmentElem,
     visitor,
   };
   if (value) {
     value = visitNode(value, visitor, isExpression);
-    if ((qc.is.kind(qc.Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+    if ((qc.is.kind(qc.Identifier, value) && bindingOrAssignmentElemAssignsToName(node, value.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node)) {
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
       value = ensureIdentifier(flattenContext, value, true, location);
@@ -65,7 +65,7 @@ export function flattenDestructuringAssignment(
       location = value;
     }
   }
-  flattenBindingOrAssignmentElement(flattenContext, node, value, location, qc.is.destructuringAssignment(node));
+  flattenBindingOrAssignmentElem(flattenContext, node, value, location, qc.is.destructuringAssignment(node));
   if (value && needsValue) {
     if (!some(expressions)) return value;
     expressions.push(value);
@@ -75,7 +75,7 @@ export function flattenDestructuringAssignment(
     aggregateTransformFlags(expression);
     expressions = append(expressions, expression);
   }
-  function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange, original: Node) {
+  function emitBindingOrAssignment(target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange, original: Node) {
     qc.assert.node(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
     const expression = qf.create.assignmentCallback
       ? qf.create.assignmentCallback(<Identifier>target, value, location)
@@ -84,27 +84,27 @@ export function flattenDestructuringAssignment(
     emitExpression(expression);
   }
 }
-function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escName: __String): boolean {
-  const target = getTargetOfBindingOrAssignmentElement(element)!;
+function bindingOrAssignmentElemAssignsToName(elem: BindingOrAssignmentElem, escName: __String): boolean {
+  const target = getTargetOfBindingOrAssignmentElem(elem)!;
   if (qc.is.bindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
   if (qc.is.kind(qc.Identifier, target)) return target.escapedText === escName;
   return false;
 }
 function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escName: __String): boolean {
-  const elements = getElementsOfBindingOrAssignmentPattern(pattern);
-  for (const element of elements) {
-    if (bindingOrAssignmentElementAssignsToName(element, escName)) return true;
+  const elems = getElemsOfBindingOrAssignmentPattern(pattern);
+  for (const elem of elems) {
+    if (bindingOrAssignmentElemAssignsToName(elem, escName)) return true;
   }
   return false;
 }
-function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
-  const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
+function bindingOrAssignmentElemContainsNonLiteralComputedName(elem: BindingOrAssignmentElem): boolean {
+  const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(elem);
   if (propertyName && qc.is.kind(qc.ComputedPropertyName, propertyName) && !qc.is.literalExpression(propertyName.expression)) return true;
-  const target = getTargetOfBindingOrAssignmentElement(element);
+  const target = getTargetOfBindingOrAssignmentElem(elem);
   return !!target && qc.is.bindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
 function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: BindingOrAssignmentPattern): boolean {
-  return !!forEach(getElementsOfBindingOrAssignmentPattern(pattern), bindingOrAssignmentElementContainsNonLiteralComputedName);
+  return !!forEach(getElemsOfBindingOrAssignmentPattern(pattern), bindingOrAssignmentElemContainsNonLiteralComputedName);
 }
 export function flattenDestructuringBinding(
   node: VariableDeclaration | ParameterDeclaration,
@@ -133,17 +133,17 @@ export function flattenDestructuringBinding(
     emitBindingOrAssignment,
     createArrayBindingOrAssignmentPattern: makeArrayBindingPattern,
     createObjectBindingOrAssignmentPattern: makeObjectBindingPattern,
-    createArrayBindingOrAssignmentElement: makeBindingElement,
+    createArrayBindingOrAssignmentElem: makeBindingElem,
     visitor,
   };
   if (qc.is.kind(qc.VariableDeclaration, node)) {
-    let initer = getIniterOfBindingOrAssignmentElement(node);
-    if (initer && ((qc.is.kind(qc.Identifier, initer) && bindingOrAssignmentElementAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
+    let initer = getIniterOfBindingOrAssignmentElem(node);
+    if (initer && ((qc.is.kind(qc.Identifier, initer) && bindingOrAssignmentElemAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node))) {
       initer = ensureIdentifier(flattenContext, initer, false, initer);
       node = node.update(node.name, node.type, initer);
     }
   }
-  flattenBindingOrAssignmentElement(flattenContext, node, rval, node, skipIniter);
+  flattenBindingOrAssignmentElem(flattenContext, node, rval, node, skipIniter);
   if (pendingExpressions) {
     const temp = createTempVariable(undefined);
     if (hoistTempVariables) {
@@ -169,7 +169,7 @@ export function flattenDestructuringBinding(
   function emitExpression(value: Expression) {
     pendingExpressions = append(pendingExpressions, value);
   }
-  function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange | undefined, original: Node | undefined) {
+  function emitBindingOrAssignment(target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange | undefined, original: Node | undefined) {
     qc.assert.node(target, isBindingName);
     if (pendingExpressions) {
       value = inlineExpressions(append(pendingExpressions, value));
@@ -178,119 +178,119 @@ export function flattenDestructuringBinding(
     pendingDeclarations.push({ pendingExpressions, name: target, value, location, original });
   }
 }
-function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: BindingOrAssignmentElement, value: Expression | undefined, location: TextRange, skipIniter?: boolean) {
+function flattenBindingOrAssignmentElem(flattenContext: FlattenContext, elem: BindingOrAssignmentElem, value: Expression | undefined, location: TextRange, skipIniter?: boolean) {
   if (!skipIniter) {
-    const initer = visitNode(getIniterOfBindingOrAssignmentElement(element), flattenContext.visitor, isExpression);
+    const initer = visitNode(getIniterOfBindingOrAssignmentElem(elem), flattenContext.visitor, isExpression);
     if (initer) {
       value = value ? createDefaultValueCheck(flattenContext, value, initer, location) : initer;
     } else if (!value) {
       value = qs.VoidExpression.zero();
     }
   }
-  const bindingTarget = getTargetOfBindingOrAssignmentElement(element)!;
+  const bindingTarget = getTargetOfBindingOrAssignmentElem(elem)!;
   if (qc.is.objectBindingOrAssignmentPattern(bindingTarget)) {
-    flattenObjectBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value!, location);
+    flattenObjectBindingOrAssignmentPattern(flattenContext, elem, bindingTarget, value!, location);
   } else if (qc.is.arrayBindingOrAssignmentPattern(bindingTarget)) {
-    flattenArrayBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value!, location);
+    flattenArrayBindingOrAssignmentPattern(flattenContext, elem, bindingTarget, value!, location);
   } else {
-    flattenContext.emitBindingOrAssignment(bindingTarget, value!, location, element);
+    flattenContext.emitBindingOrAssignment(bindingTarget, value!, location, elem);
   }
 }
 function flattenObjectBindingOrAssignmentPattern(
   flattenContext: FlattenContext,
-  parent: BindingOrAssignmentElement,
+  parent: BindingOrAssignmentElem,
   pattern: ObjectBindingOrAssignmentPattern,
   value: Expression,
   location: TextRange
 ) {
-  const elements = getElementsOfBindingOrAssignmentPattern(pattern);
-  const numElements = elements.length;
-  if (numElements !== 1) {
-    const reuseIdentifierExpressions = !qc.is.declarationBindingElement(parent) || numElements !== 0;
+  const elems = getElemsOfBindingOrAssignmentPattern(pattern);
+  const numElems = elems.length;
+  if (numElems !== 1) {
+    const reuseIdentifierExpressions = !qc.is.declarationBindingElem(parent) || numElems !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElements: BindingOrAssignmentElement[] | undefined;
+  let bindingElems: BindingOrAssignmentElem[] | undefined;
   let computedTempVariables: Expression[] | undefined;
-  for (let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
-      const propertyName = getPropertyNameOfBindingOrAssignmentElement(element)!;
+  for (let i = 0; i < numElems; i++) {
+    const elem = elems[i];
+    if (!getRestIndicatorOfBindingOrAssignmentElem(elem)) {
+      const propertyName = getPropertyNameOfBindingOrAssignmentElem(elem)!;
       if (
         flattenContext.level >= FlattenLevel.ObjectRest &&
-        !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
+        !(elem.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
+        !(getTargetOfBindingOrAssignmentElem(elem)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
         !qc.is.kind(qc.ComputedPropertyName, propertyName)
       ) {
-        bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
+        bindingElems = append(bindingElems, visitNode(elem, flattenContext.visitor));
       } else {
-        if (bindingElements) {
-          flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElements), value, location, pattern);
-          bindingElements = undefined;
+        if (bindingElems) {
+          flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElems), value, location, pattern);
+          bindingElems = undefined;
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
         if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
-          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
+          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElemAccessExpression).argumentExpression);
         }
-        flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
+        flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
       }
-    } else if (i === numElements - 1) {
-      if (bindingElements) {
-        flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElements), value, location, pattern);
-        bindingElements = undefined;
+    } else if (i === numElems - 1) {
+      if (bindingElems) {
+        flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElems), value, location, pattern);
+        bindingElems = undefined;
       }
-      const rhsValue = createRestCall(flattenContext.context, value, elements, computedTempVariables!, pattern);
-      flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
+      const rhsValue = createRestCall(flattenContext.context, value, elems, computedTempVariables!, pattern);
+      flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
     }
   }
-  if (bindingElements) {
-    flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElements), value, location, pattern);
+  if (bindingElems) {
+    flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElems), value, location, pattern);
   }
 }
-function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElement, pattern: ArrayBindingOrAssignmentPattern, value: Expression, location: TextRange) {
-  const elements = getElementsOfBindingOrAssignmentPattern(pattern);
-  const numElements = elements.length;
+function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElem, pattern: ArrayBindingOrAssignmentPattern, value: Expression, location: TextRange) {
+  const elems = getElemsOfBindingOrAssignmentPattern(pattern);
+  const numElems = elems.length;
   if (flattenContext.level < FlattenLevel.ObjectRest && flattenContext.downlevelIteration) {
     value = ensureIdentifier(
       flattenContext,
-      createReadHelper(flattenContext.context, value, numElements > 0 && getRestIndicatorOfBindingOrAssignmentElement(elements[numElements - 1]) ? undefined : numElements, location),
+      createReadHelper(flattenContext.context, value, numElems > 0 && getRestIndicatorOfBindingOrAssignmentElem(elems[numElems - 1]) ? undefined : numElems, location),
       false,
       location
     );
-  } else if ((numElements !== 1 && (flattenContext.level < FlattenLevel.ObjectRest || numElements === 0)) || every(elements, isOmittedExpression)) {
-    const reuseIdentifierExpressions = !qc.is.declarationBindingElement(parent) || numElements !== 0;
+  } else if ((numElems !== 1 && (flattenContext.level < FlattenLevel.ObjectRest || numElems === 0)) || every(elems, isOmittedExpression)) {
+    const reuseIdentifierExpressions = !qc.is.declarationBindingElem(parent) || numElems !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElements: BindingOrAssignmentElement[] | undefined;
-  let restContainingElements: [Identifier, BindingOrAssignmentElement][] | undefined;
-  for (let i = 0; i < numElements; i++) {
-    const element = elements[i];
+  let bindingElems: BindingOrAssignmentElem[] | undefined;
+  let restContainingElems: [Identifier, BindingOrAssignmentElem][] | undefined;
+  for (let i = 0; i < numElems; i++) {
+    const elem = elems[i];
     if (flattenContext.level >= FlattenLevel.ObjectRest) {
-      if (element.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (elem.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const temp = createTempVariable(undefined);
         if (flattenContext.hoistTempVariables) {
           flattenContext.context.hoistVariableDeclaration(temp);
         }
-        restContainingElements = append(restContainingElements, <[Identifier, BindingOrAssignmentElement]>[temp, element]);
-        bindingElements = append(bindingElements, flattenContext.createArrayBindingOrAssignmentElement(temp));
+        restContainingElems = append(restContainingElems, <[Identifier, BindingOrAssignmentElem]>[temp, elem]);
+        bindingElems = append(bindingElems, flattenContext.createArrayBindingOrAssignmentElem(temp));
       } else {
-        bindingElements = append(bindingElements, element);
+        bindingElems = append(bindingElems, elem);
       }
-    } else if (qc.is.kind(qc.OmittedExpression, element)) {
+    } else if (qc.is.kind(qc.OmittedExpression, elem)) {
       continue;
-    } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
-      const rhsValue = new qs.ElementAccessExpression(value, i);
-      flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
-    } else if (i === numElements - 1) {
+    } else if (!getRestIndicatorOfBindingOrAssignmentElem(elem)) {
+      const rhsValue = new qs.ElemAccessExpression(value, i);
+      flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
+    } else if (i === numElems - 1) {
       const rhsValue = createArraySlice(value, i);
-      flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
+      flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
     }
   }
-  if (bindingElements) {
-    flattenContext.emitBindingOrAssignment(flattenContext.createArrayBindingOrAssignmentPattern(bindingElements), value, location, pattern);
+  if (bindingElems) {
+    flattenContext.emitBindingOrAssignment(flattenContext.createArrayBindingOrAssignmentPattern(bindingElems), value, location, pattern);
   }
-  if (restContainingElements) {
-    for (const [id, element] of restContainingElements) {
-      flattenBindingOrAssignmentElement(flattenContext, element, id, element);
+  if (restContainingElems) {
+    for (const [id, elem] of restContainingElems) {
+      flattenBindingOrAssignmentElem(flattenContext, elem, id, elem);
     }
   }
 }
@@ -301,11 +301,11 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
   if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
-    return new qs.ElementAccessExpression(value, argumentExpression);
+    return new qs.ElemAccessExpression(value, argumentExpression);
   } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
     const argumentExpression = getSynthesizedClone(propertyName);
     argumentExpression.text = argumentExpression.text;
-    return new qs.ElementAccessExpression(value, argumentExpression);
+    return new qs.ElemAccessExpression(value, argumentExpression);
   } else {
     const name = new Identifier(idText(propertyName));
     return new qc.PropertyAccessExpression(value, name);
@@ -324,24 +324,24 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
     return temp;
   }
 }
-function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
-  qc.assert.eachNode(elements, isArrayBindingElement);
-  return new ArrayBindingPattern(<ArrayBindingElement[]>elements);
+function makeArrayBindingPattern(elems: BindingOrAssignmentElem[]) {
+  qc.assert.eachNode(elems, isArrayBindingElem);
+  return new ArrayBindingPattern(<ArrayBindingElem[]>elems);
 }
-function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
-  return new ArrayLiteralExpression(map(elements, convertToArrayAssignmentElement));
+function makeArrayAssignmentPattern(elems: BindingOrAssignmentElem[]) {
+  return new ArrayLiteralExpression(map(elems, convertToArrayAssignmentElem));
 }
-function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
-  qc.assert.eachNode(elements, BindingElement.kind);
-  return ObjectBindingPattern.create(<BindingElement[]>elements);
+function makeObjectBindingPattern(elems: BindingOrAssignmentElem[]) {
+  qc.assert.eachNode(elems, BindingElem.kind);
+  return ObjectBindingPattern.create(<BindingElem[]>elems);
 }
-function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {
-  return new qc.ObjectLiteralExpression(map(elements, convertToObjectAssignmentElement));
+function makeObjectAssignmentPattern(elems: BindingOrAssignmentElem[]) {
+  return new qc.ObjectLiteralExpression(map(elems, convertToObjectAssignmentElem));
 }
-function makeBindingElement(name: Identifier) {
-  return new BindingElement(undefined, name);
+function makeBindingElem(name: Identifier) {
+  return new BindingElem(undefined, name);
 }
-function makeAssignmentElement(name: Identifier) {
+function makeAssignmentElem(name: Identifier) {
   return name;
 }
 export const restHelper: UnscopedEmitHelper = {
@@ -364,15 +364,15 @@ export const restHelper: UnscopedEmitHelper = {
 function createRestCall(
   context: TransformationContext,
   value: Expression,
-  elements: readonly BindingOrAssignmentElement[],
+  elems: readonly BindingOrAssignmentElem[],
   computedTempVariables: readonly Expression[],
   location: TextRange
 ): Expression {
   context.requestEmitHelper(restHelper);
   const propertyNames: Expression[] = [];
   let computedTempVariableOffset = 0;
-  for (let i = 0; i < elements.length - 1; i++) {
-    const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);
+  for (let i = 0; i < elems.length - 1; i++) {
+    const propertyName = getPropertyNameOfBindingOrAssignmentElem(elems[i]);
     if (propertyName) {
       if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];

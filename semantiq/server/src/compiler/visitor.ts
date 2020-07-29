@@ -1,9 +1,11 @@
-import { Node, Nodes, Token } from './core';
+import { MutableNodes, Nodes } from './core';
 import * as qc from './core';
-import * as qu from './util';
+import { qf } from './core';
+import { EmitFlags, Modifier, Node, Token } from './type';
 import * as qt from './type';
+import * as qu from './util';
+import { Syntax } from './syntax';
 import * as qy from './syntax';
-import { Modifier, Syntax } from './syntax';
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
 const isTypeNodeOrTypeParameterDeclaration = qu.or(isTypeNode, isTypeParameterDeclaration);
@@ -57,7 +59,7 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (
   }
   return updated || ns;
 }
-export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: TransformationContext, start?: number, strict?: boolean) {
+export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt.TransformationContext, start?: number, strict?: boolean) {
   c.startLexicalEnvironment();
   ss = visitNodes(ss, cb, isStatement, start);
   if (strict) ss = ensureUseStrict(ss);
@@ -66,16 +68,16 @@ export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: Tr
 export function visitParameterList<T extends Node>(
   ns: Nodes<T>,
   cb: Visitor,
-  c: TransformationContext,
+  c: qt.TransformationContext,
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T>
 ): Nodes<T>;
 export function visitParameterList<T extends Node>(
   ns: Nodes<T> | undefined,
   cb: Visitor,
-  c: TransformationContext,
+  c: qt.TransformationContext,
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T> | undefined
 ): Nodes<T> | undefined;
-export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: TransformationContext, v = visitNodes) {
+export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TransformationContext, v = visitNodes) {
   let updated: Nodes<ParameterDeclaration> | undefined;
   c.startLexicalEnvironment();
   if (ns) {
@@ -87,7 +89,7 @@ export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb:
   c.suspendLexicalEnvironment();
   return updated;
 }
-function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: TransformationContext) {
+function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.TransformationContext) {
   let r: qc.ParameterDeclaration[] | undefined;
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
@@ -100,10 +102,10 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: Transformati
   if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
   return ps;
 }
-function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: TransformationContext) {
-  return p.dot3Token ? p : qc.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
+function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: qt.TransformationContext) {
+  return p.dot3Token ? p : qf.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
-function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationContext) {
+function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TransformationContext) {
   c.addInitializationStatement(
     new qc.VariableStatement(
       undefined,
@@ -120,13 +122,13 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
+function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: qt.TransformationContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       setEmitFlags(
         setRange(
-          new Block([
+          new qc.Block([
             new qc.ExpressionStatement(
               setEmitFlags(
                 setRange(
@@ -145,10 +147,10 @@ function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expres
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
 }
-export function visitFunctionBody(n: FunctionBody, cb: Visitor, c: TransformationContext): FunctionBody;
-export function visitFunctionBody(n: FunctionBody | undefined, cb: Visitor, c: TransformationContext): FunctionBody | undefined;
-export function visitFunctionBody(n: ConciseBody, cb: Visitor, c: TransformationContext): ConciseBody;
-export function visitFunctionBody(n: ConciseBody | undefined, cb: Visitor, c: TransformationContext): ConciseBody | undefined {
+export function visitFunctionBody(n: qt.FunctionBody, cb: Visitor, c: qt.TransformationContext): qt.FunctionBody;
+export function visitFunctionBody(n: qt.FunctionBody | undefined, cb: Visitor, c: qt.TransformationContext): qt.FunctionBody | undefined;
+export function visitFunctionBody(n: qt.ConciseBody, cb: Visitor, c: qt.TransformationContext): qt.ConciseBody;
+export function visitFunctionBody(n: qt.ConciseBody | undefined, cb: Visitor, c: qt.TransformationContext): qt.ConciseBody | undefined {
   c.resumeLexicalEnvironment();
   const updated = visitNode(n, cb, isConciseBody);
   const declarations = c.endLexicalEnvironment();
@@ -159,13 +161,13 @@ export function visitFunctionBody(n: ConciseBody | undefined, cb: Visitor, c: Tr
   }
   return updated;
 }
-const isExpression = (n: Node) => qc.is.expressionNode(n);
-const isTypeNode = (n: Node) => qc.is.typeNode(n);
-const isDecorator = (n: Node) => qc.is.decorator(n);
-const isModifier = (n: Node) => qc.is.modifier(n);
-export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: TransformationContext): T;
-export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
-export function visitEachChild(node: Node | undefined, cb: Visitor, c: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
+const isExpression = (n: Node) => qf.is.expressionNode(n);
+const isTypeNode = (n: Node) => qf.is.typeNode(n);
+const isDecorator = (n: Node) => qf.is.decorator(n);
+const isModifier = (n: Node) => qf.is.modifier(n);
+export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: qt.TransformationContext): T;
+export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: qt.TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
+export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
   if (!node) return;
   const k = node.kind;
   if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisType) return node;
@@ -269,11 +271,11 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.TypeQuery:
       return n.update(visitNode(n.exprName, cb, isEntityName));
     case Syntax.TypeLiteral:
-      return n.update(nodesVisitor(n.members, cb, isTypeElement));
+      return n.update(nodesVisitor(n.members, cb, isTypeElem));
     case Syntax.ArrayType:
-      return n.update(visitNode(n.elementType, cb, isTypeNode));
+      return n.update(visitNode(n.elemType, cb, isTypeNode));
     case Syntax.TupleType:
-      return n.update(nodesVisitor(n.elements, cb, isTypeNode));
+      return n.update(nodesVisitor(n.elems, cb, isTypeNode));
     case Syntax.OptionalType:
       return n.update(visitNode(n.type, cb, isTypeNode));
     case Syntax.RestType:
@@ -306,19 +308,19 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.LiteralType:
       return n.update(visitNode(n.literal, cb, isExpression));
     case Syntax.ObjectBindingPattern:
-      return n.update(nodesVisitor(n.elements, cb, BindingElement.kind));
+      return n.update(nodesVisitor(n.elems, cb, BindingElem.kind));
     case Syntax.ArrayBindingPattern:
-      return n.update(nodesVisitor(n.elements, cb, isArrayBindingElement));
-    case Syntax.BindingElement:
+      return n.update(nodesVisitor(n.elems, cb, isArrayBindingElem));
+    case Syntax.BindingElem:
       return n.update(visitNode(n.dot3Token, tokenVisitor, isToken), visitNode(n.propertyName, cb, isPropertyName), visitNode(n.name, cb, isBindingName), visitNode(n.initer, cb, isExpression));
     case Syntax.ArrayLiteralExpression:
-      return n.update(nodesVisitor(n.elements, cb, isExpression));
+      return n.update(nodesVisitor(n.elems, cb, isExpression));
     case Syntax.ObjectLiteralExpression:
-      return n.update(nodesVisitor(n.properties, cb, isObjectLiteralElementLike));
+      return n.update(nodesVisitor(n.properties, cb, isObjectLiteralElemLike));
     case Syntax.PropertyAccessExpression:
       if (node.flags & NodeFlags.OptionalChain) return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.name, cb, isIdentifier));
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.name, cb, isIdentifierOrPrivateIdentifier));
-    case Syntax.ElementAccessExpression:
+    case Syntax.ElemAccessExpression:
       if (node.flags & NodeFlags.OptionalChain)
         return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.argumentExpression, cb, isExpression));
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.argumentExpression, cb, isExpression));
@@ -385,7 +387,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
       return n.update(visitNode(n.head, cb, TemplateHead.kind), nodesVisitor(n.templateSpans, cb, isTemplateSpan));
     case Syntax.YieldExpression:
       return n.update(visitNode(n.asteriskToken, tokenVisitor, isToken), visitNode(n.expression, cb, isExpression));
-    case Syntax.SpreadElement:
+    case Syntax.SpreadElem:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.ClassExpression:
       return n.update(
@@ -393,7 +395,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isIdentifier),
         nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
-        nodesVisitor(n.members, cb, isClassElement)
+        nodesVisitor(n.members, cb, isClassElem)
       );
     case Syntax.ExpressionWithTypeArguments:
       return n.update(nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
@@ -466,7 +468,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isIdentifier),
         nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
-        nodesVisitor(n.members, cb, isClassElement)
+        nodesVisitor(n.members, cb, isClassElem)
       );
     case Syntax.InterfaceDeclaration:
       return n.update(
@@ -475,7 +477,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isIdentifier),
         nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
-        nodesVisitor(n.members, cb, isTypeElement)
+        nodesVisitor(n.members, cb, isTypeElem)
       );
     case Syntax.TypeAliasDeclaration:
       return n.update(
@@ -511,7 +513,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.NamespaceExport:
       return n.update(visitNode(n.name, cb, isIdentifier));
     case Syntax.NamedImports:
-      return n.update(nodesVisitor(n.elements, cb, isImportSpecifier));
+      return n.update(nodesVisitor(n.elems, cb, isImportSpecifier));
     case Syntax.ImportSpecifier:
       return n.update(visitNode(n.propertyName, cb, isIdentifier), visitNode(n.name, cb, isIdentifier));
     case Syntax.ExportAssignment:
@@ -525,18 +527,18 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         (node as ExportDeclaration).isTypeOnly
       );
     case Syntax.NamedExports:
-      return n.update(nodesVisitor(n.elements, cb, isExportSpecifier));
+      return n.update(nodesVisitor(n.elems, cb, isExportSpecifier));
     case Syntax.ExportSpecifier:
       return n.update(visitNode(n.propertyName, cb, isIdentifier), visitNode(n.name, cb, isIdentifier));
     case Syntax.ExternalModuleReference:
       return n.update(visitNode(n.expression, cb, isExpression));
-    case Syntax.JsxElement:
-      return n.update(visitNode(n.openingElement, cb, isJsxOpeningElement), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingElement, cb, isJsxClosingElement));
-    case Syntax.JsxSelfClosingElement:
+    case Syntax.JsxElem:
+      return n.update(visitNode(n.openingElem, cb, isJsxOpeningElem), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingElem, cb, isJsxClosingElem));
+    case Syntax.JsxSelfClosingElem:
       return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
-    case Syntax.JsxOpeningElement:
+    case Syntax.JsxOpeningElem:
       return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
-    case Syntax.JsxClosingElement:
+    case Syntax.JsxClosingElem:
       return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression));
     case Syntax.JsxFragment:
       return n.update(visitNode(n.openingFragment, cb, isJsxOpeningFragment), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingFragment, cb, isJsxClosingFragment));
@@ -569,7 +571,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.PartiallyEmittedExpression:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.CommaListExpression:
-      return n.update(nodesVisitor(n.elements, cb, isExpression));
+      return n.update(nodesVisitor(n.elems, cb, isExpression));
     default:
       return node;
   }
@@ -594,7 +596,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
   let r = initial;
   const n = node as qc.NodeTypes;
   switch (n.kind) {
-    case Syntax.SemicolonClassElement:
+    case Syntax.SemicolonClassElem:
     case Syntax.EmptyStatement:
     case Syntax.OmittedExpression:
     case Syntax.DebuggerStatement:
@@ -662,15 +664,15 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.ObjectBindingPattern:
     case Syntax.ArrayBindingPattern:
-      r = reduceNodes(n.elements, cbs, r);
+      r = reduceNodes(n.elems, cbs, r);
       break;
-    case Syntax.BindingElement:
+    case Syntax.BindingElem:
       r = reduceNode(n.propertyName, cb, r);
       r = reduceNode(n.name, cb, r);
       r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.ArrayLiteralExpression:
-      r = reduceNodes(n.elements, cbs, r);
+      r = reduceNodes(n.elems, cbs, r);
       break;
     case Syntax.ObjectLiteralExpression:
       r = reduceNodes(n.properties, cbs, r);
@@ -679,7 +681,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNode(n.expression, cb, r);
       r = reduceNode(n.name, cb, r);
       break;
-    case Syntax.ElementAccessExpression:
+    case Syntax.ElemAccessExpression:
       r = reduceNode(n.expression, cb, r);
       r = reduceNode(n.argumentExpression, cb, r);
       break;
@@ -723,7 +725,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.VoidExpression:
     case Syntax.AwaitExpression:
     case Syntax.YieldExpression:
-    case Syntax.SpreadElement:
+    case Syntax.SpreadElem:
     case Syntax.NonNullExpression:
       r = reduceNode(n.expression, cb, r);
       break;
@@ -883,7 +885,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.NamedImports:
     case Syntax.NamedExports:
-      r = reduceNodes(n.elements, cbs, r);
+      r = reduceNodes(n.elems, cbs, r);
       break;
     case Syntax.ImportSpecifier:
     case Syntax.ExportSpecifier:
@@ -904,18 +906,18 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.ExternalModuleReference:
       r = reduceNode(n.expression, cb, r);
       break;
-    case Syntax.JsxElement:
-      r = reduceNode(n.openingElement, cb, r);
+    case Syntax.JsxElem:
+      r = reduceNode(n.openingElem, cb, r);
       r = reduceLeft(n.children, cb, r);
-      r = reduceNode(n.closingElement, cb, r);
+      r = reduceNode(n.closingElem, cb, r);
       break;
     case Syntax.JsxFragment:
       r = reduceNode(n.openingFragment, cb, r);
       r = reduceLeft(n.children, cb, r);
       r = reduceNode(n.closingFragment, cb, r);
       break;
-    case Syntax.JsxSelfClosingElement:
-    case Syntax.JsxOpeningElement:
+    case Syntax.JsxSelfClosingElem:
+    case Syntax.JsxOpeningElem:
       r = reduceNode(n.tagName, cb, r);
       r = reduceNodes(n.typeArguments, cb, r);
       r = reduceNode(n.attributes, cb, r);
@@ -923,7 +925,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.JsxAttributes:
       r = reduceNodes(n.properties, cbs, r);
       break;
-    case Syntax.JsxClosingElement:
+    case Syntax.JsxClosingElem:
       r = reduceNode(n.tagName, cb, r);
       break;
     case Syntax.JsxAttribute:
@@ -970,7 +972,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNode(n.expression, cb, r);
       break;
     case Syntax.CommaListExpression:
-      r = reduceNodes(n.elements, cbs, r);
+      r = reduceNodes(n.elems, cbs, r);
       break;
     default:
       break;

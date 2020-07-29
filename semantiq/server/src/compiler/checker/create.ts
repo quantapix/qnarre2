@@ -260,19 +260,19 @@ export function newCreate(f: qt.Frame) {
     iterableType(iteratedType: Type): Type {
       return this.typeFromGenericGlobalType(getGlobalIterableType(true), [iteratedType]);
     }
-    arrayType(elementType: Type, readonly?: boolean): ObjectType {
-      return this.typeFromGenericGlobalType(readonly ? globalReadonlyArrayType : globalArrayType, [elementType]);
+    arrayType(elemType: Type, readonly?: boolean): ObjectType {
+      return this.typeFromGenericGlobalType(readonly ? globalReadonlyArrayType : globalArrayType, [elemType]);
     }
     tupleTypeOfArity(
       arity: number,
       minLength: number,
-      hasRestElement: boolean,
+      hasRestElem: boolean,
       readonly: boolean,
       namedMemberDeclarations: readonly (NamedTupleMember | ParameterDeclaration)[] | undefined
     ): TupleType {
       let typeParameters: TypeParameter[] | undefined;
       const properties: Symbol[] = [];
-      const maxLength = hasRestElement ? arity - 1 : arity;
+      const maxLength = hasRestElem ? arity - 1 : arity;
       if (arity) {
         typeParameters = new Array(arity);
         for (let i = 0; i < arity; i++) {
@@ -288,7 +288,7 @@ export function newCreate(f: qt.Frame) {
       const literalTypes = [];
       for (let i = minLength; i <= maxLength; i++) literalTypes.push(getLiteralType(i));
       const lengthSymbol = new Symbol(SymbolFlags.Property, 'length' as qu.__String);
-      lengthSymbol.type = hasRestElement ? numberType : getUnionType(literalTypes);
+      lengthSymbol.type = hasRestElem ? numberType : getUnionType(literalTypes);
       properties.push(lengthSymbol);
       const type = <TupleType & InterfaceTypeWithDeclaredMembers>this.objectType(ObjectFlags.Tuple | ObjectFlags.Reference);
       type.typeParameters = typeParameters;
@@ -307,22 +307,22 @@ export function newCreate(f: qt.Frame) {
       type.declaredStringIndexInfo = undefined;
       type.declaredNumberIndexInfo = undefined;
       type.minLength = minLength;
-      type.hasRestElement = hasRestElement;
+      type.hasRestElem = hasRestElem;
       type.readonly = readonly;
-      type.labeledElementDeclarations = namedMemberDeclarations;
+      type.labeledElemDeclarations = namedMemberDeclarations;
       return type;
     }
     tupleType(
-      elementTypes: readonly Type[],
-      minLength = elementTypes.length,
-      hasRestElement = false,
+      elemTypes: readonly Type[],
+      minLength = elemTypes.length,
+      hasRestElem = false,
       readonly = false,
       namedMemberDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[]
     ) {
-      const arity = elementTypes.length;
-      if (arity === 1 && hasRestElement) return this.arrayType(elementTypes[0], readonly);
-      const tupleType = getTupleTypeOfArity(arity, minLength, arity > 0 && hasRestElement, readonly, namedMemberDeclarations);
-      return elementTypes.length ? this.typeReference(tupleType, elementTypes) : tupleType;
+      const arity = elemTypes.length;
+      if (arity === 1 && hasRestElem) return this.arrayType(elemTypes[0], readonly);
+      const tupleType = getTupleTypeOfArity(arity, minLength, arity > 0 && hasRestElem, readonly, namedMemberDeclarations);
+      return elemTypes.length ? this.typeReference(tupleType, elemTypes) : tupleType;
     }
     intersectionType(types: Type[], aliasSymbol?: Symbol, aliasTypeArguments?: readonly Type[]) {
       const result = <IntersectionType>this.type(TypeFlags.Intersection);
@@ -418,9 +418,9 @@ export function newCreate(f: qt.Frame) {
       if (!(getIndexInfoOfType(source, IndexKind.String) || (getPropertiesOfType(source).length !== 0 && isPartiallyInferableType(source)))) return;
       if (isArrayType(source)) return this.arrayType(inferReverseMappedType(getTypeArguments(<TypeReference>source)[0], target, constraint), isReadonlyArrayType(source));
       if (isTupleType(source)) {
-        const elementTypes = map(getTypeArguments(source), (t) => inferReverseMappedType(t, target, constraint));
-        const minLength = getMappedTypeModifiers(target) & MappedTypeModifiers.IncludeOptional ? getTypeReferenceArity(source) - (source.target.hasRestElement ? 1 : 0) : source.target.minLength;
-        return this.tupleType(elementTypes, minLength, source.target.hasRestElement, source.target.readonly, source.target.labeledElementDeclarations);
+        const elemTypes = map(getTypeArguments(source), (t) => inferReverseMappedType(t, target, constraint));
+        const minLength = getMappedTypeModifiers(target) & MappedTypeModifiers.IncludeOptional ? getTypeReferenceArity(source) - (source.target.hasRestElem ? 1 : 0) : source.target.minLength;
+        return this.tupleType(elemTypes, minLength, source.target.hasRestElem, source.target.readonly, source.target.labeledElemDeclarations);
       }
       const reversed = this.objectType(ObjectFlags.ReverseMapped | ObjectFlags.Anonymous, undefined) as ReverseMappedType;
       reversed.source = source;
@@ -431,15 +431,15 @@ export function newCreate(f: qt.Frame) {
     flowType(type: Type, incomplete: boolean): FlowType {
       return incomplete ? { flags: 0, type } : type;
     }
-    evolvingArrayType(elementType: Type): EvolvingArrayType {
+    evolvingArrayType(elemType: Type): EvolvingArrayType {
       const result = <EvolvingArrayType>this.objectType(ObjectFlags.EvolvingArray);
-      result.elementType = elementType;
+      result.elemType = elemType;
       return result;
     }
-    finalArrayType(elementType: Type) {
-      return elementType.flags & qt.TypeFlags.Never
+    finalArrayType(elemType: Type) {
+      return elemType.flags & qt.TypeFlags.Never
         ? autoArrayType
-        : this.arrayType(elementType.flags & qt.TypeFlags.Union ? getUnionType((<UnionType>elementType).types, UnionReduction.Subtype) : elementType);
+        : this.arrayType(elemType.flags & qt.TypeFlags.Union ? getUnionType((<UnionType>elemType).types, UnionReduction.Subtype) : elemType);
     }
     arrayLiteralType(type: ObjectType) {
       if (!(getObjectFlags(type) & ObjectFlags.Reference)) return type;
@@ -450,8 +450,8 @@ export function newCreate(f: qt.Frame) {
       }
       return literalType;
     }
-    jsxAttributesTypeFromAttributesProperty(openingLikeElement: JsxOpeningLikeElement, checkMode: CheckMode | undefined) {
-      const attributes = openingLikeElement.attributes;
+    jsxAttributesTypeFromAttributesProperty(openingLikeElem: JsxOpeningLikeElem, checkMode: CheckMode | undefined) {
+      const attributes = openingLikeElem.attributes;
       const allAttributesTable = strictNullChecks ? new SymbolTable() : undefined;
       let attributesTable = new SymbolTable();
       let spread: Type = emptyJsxObjectType;
@@ -459,7 +459,7 @@ export function newCreate(f: qt.Frame) {
       let typeToIntersect: Type | undefined;
       let explicitlySpecifyChildrenAttribute = false;
       let objectFlags: ObjectFlags = ObjectFlags.JsxAttributes;
-      const jsxChildrenPropertyName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(openingLikeElement));
+      const jsxChildrenPropertyName = getJsxElemChildrenPropertyName(getJsxNamespaceAt(openingLikeElem));
       for (const attributeDecl of attributes.properties) {
         const member = attributeDecl.symbol;
         if (qf.is.kind(qc.JsxAttribute, attributeDecl)) {
@@ -493,12 +493,12 @@ export function newCreate(f: qt.Frame) {
       if (!hasSpreadAnyType) {
         if (attributesTable.size > 0) spread = getSpreadType(spread, this.jsxAttributesType(), attributes.symbol, objectFlags, false);
       }
-      const parent = openingLikeElement.parent.kind === Syntax.JsxElement ? (openingLikeElement.parent as JsxElement) : undefined;
-      if (parent && parent.openingElement === openingLikeElement && parent.children.length > 0) {
+      const parent = openingLikeElem.parent.kind === Syntax.JsxElem ? (openingLikeElem.parent as JsxElem) : undefined;
+      if (parent && parent.openingElem === openingLikeElem && parent.children.length > 0) {
         const childrenTypes: Type[] = check.jsxChildren(parent, checkMode);
         if (!hasSpreadAnyType && jsxChildrenPropertyName && jsxChildrenPropertyName !== '') {
           if (explicitlySpecifyChildrenAttribute) error(attributes, qd.msgs._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, qy.get.unescUnderscores(jsxChildrenPropertyName));
-          const contextualType = getApparentTypeOfContextualType(openingLikeElement.attributes);
+          const contextualType = getApparentTypeOfContextualType(openingLikeElem.attributes);
           const childrenContextualType = contextualType && getTypeOfPropertyOfContextualType(contextualType, jsxChildrenPropertyName);
           const childrenPropSymbol = new Symbol(SymbolFlags.Property | qt.SymbolFlags.Transient, jsxChildrenPropertyName);
           childrenPropSymbol.type =
@@ -563,10 +563,10 @@ export function newCreate(f: qt.Frame) {
     combinedSymbolForOverloadFailure(sources: readonly Symbol[], type: Type): Symbol {
       return this.symbolWithType(first(sources), type);
     }
-    signatureForJSXIntrinsic(node: JsxOpeningLikeElement, result: Type): Signature {
+    signatureForJSXIntrinsic(node: JsxOpeningLikeElem, result: Type): Signature {
       const namespace = getJsxNamespaceAt(node);
       const exports = namespace && namespace.getExportsOfSymbol();
-      const typeSymbol = exports && getSymbol(exports, JsxNames.Element, qt.SymbolFlags.Type);
+      const typeSymbol = exports && getSymbol(exports, JsxNames.Elem, qt.SymbolFlags.Type);
       const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, qt.SymbolFlags.Type, node);
       const declaration = FunctionTypeNode.create(
         undefined,
@@ -762,7 +762,7 @@ export function newCreate(f: qt.Frame) {
         isBindingCapturedByNode: (node, decl) => {
           const parseNode = qf.get.parseTreeOf(node);
           const parseDecl = qf.get.parseTreeOf(decl);
-          return !!parseNode && !!parseDecl && (qf.is.kind(qc.VariableDeclaration, parseDecl) || qf.is.kind(qc.BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+          return !!parseNode && !!parseDecl && (qf.is.kind(qc.VariableDeclaration, parseDecl) || qf.is.kind(qc.BindingElem, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
         },
         getDeclarationSobjsForSourceFile: (node, flags, tracker, bundled) => {
           const n = qf.get.parseTreeOf(node) as SourceFile;
@@ -925,21 +925,21 @@ export function newInstantiate(f: qt.Frame) {
       return this.anonymousType(type, mapper);
     }
     mappedArrayType(arrayType: Type, mappedType: MappedType, mapper: TypeMapper) {
-      const elementType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
-      return elementType === errorType ? errorType : qf.create.arrayType(elementType, getModifiedReadonlyState(isReadonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
+      const elemType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
+      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(isReadonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
     }
     mappedTupleType(tupleType: TupleTypeReference, mappedType: MappedType, mapper: TypeMapper) {
       const minLength = tupleType.target.minLength;
-      const elementTypes = map(getTypeArguments(tupleType), (_, i) => this.mappedTypeTemplate(mappedType, getLiteralType('' + i), i >= minLength, mapper));
+      const elemTypes = map(getTypeArguments(tupleType), (_, i) => this.mappedTypeTemplate(mappedType, getLiteralType('' + i), i >= minLength, mapper));
       const modifiers = getMappedTypeModifiers(mappedType);
       const newMinLength =
         modifiers & MappedTypeModifiers.IncludeOptional
           ? 0
           : modifiers & MappedTypeModifiers.ExcludeOptional
-          ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElement ? 1 : 0)
+          ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElem ? 1 : 0)
           : minLength;
       const newReadonly = getModifiedReadonlyState(tupleType.target.readonly, modifiers);
-      return contains(elementTypes, errorType) ? errorType : qf.create.tupleType(elementTypes, newMinLength, tupleType.target.hasRestElement, newReadonly, tupleType.target.labeledElementDeclarations);
+      return contains(elemTypes, errorType) ? errorType : qf.create.tupleType(elemTypes, newMinLength, tupleType.target.hasRestElem, newReadonly, tupleType.target.labeledElemDeclarations);
     }
     mappedTypeTemplate(type: MappedType, key: Type, isOptional: boolean, mapper: TypeMapper) {
       const templateMapper = appendTypeMapping(mapper, getTypeParameterFromMappedType(type), key);
@@ -1150,7 +1150,7 @@ export function newResolve(f: qt.Frame) {
       let lastLocation: Node | undefined;
       let lastSelfReferenceLocation: Node | undefined;
       let propertyWithInvalidIniter: Node | undefined;
-      let associatedDeclarationForContainingIniterOrBindingName: ParameterDeclaration | BindingElement | undefined;
+      let associatedDeclarationForContainingIniterOrBindingName: ParameterDeclaration | BindingElem | undefined;
       let withinDeferredContext = false;
       const errorLocation = location;
       let grandparent: Node;
@@ -1288,7 +1288,7 @@ export function newResolve(f: qt.Frame) {
             break;
           case Syntax.Decorator:
             if (location.parent && location.parent.kind === Syntax.Parameter) location = location.parent;
-            if (location.parent && (qf.is.classElement(location.parent) || location.parent.kind === Syntax.ClassDeclaration)) location = location.parent;
+            if (location.parent && (qf.is.classElem(location.parent) || location.parent.kind === Syntax.ClassDeclaration)) location = location.parent;
             break;
           case Syntax.DocTypedefTag:
           case Syntax.DocCallbackTag:
@@ -1303,11 +1303,11 @@ export function newResolve(f: qt.Frame) {
               if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as ParameterDeclaration;
             }
             break;
-          case Syntax.BindingElement:
-            if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qf.is.kind(qc.BindingPattern, lastLocation)))) {
+          case Syntax.BindingElem:
+            if (lastLocation && (lastLocation === (location as BindingElem).initer || (lastLocation === (location as BindingElem).name && qf.is.kind(qc.BindingPattern, lastLocation)))) {
               const root = qf.get.rootDeclaration(location);
               if (root.kind === Syntax.Parameter) {
-                if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElement;
+                if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElem;
               }
             }
             break;
@@ -1913,9 +1913,9 @@ export function newResolve(f: qt.Frame) {
       return getTypeReferenceType(node, resolvedSymbol);
     }
     untypedCall(node: CallLikeExpression): Signature {
-      if (callLikeExpressionMayHaveTypeArguments(node)) forEach(node.typeArguments, checkSourceElement);
+      if (callLikeExpressionMayHaveTypeArguments(node)) forEach(node.typeArguments, checkSourceElem);
       if (node.kind === Syntax.TaggedTemplateExpression) check.expression(node.template);
-      else if (qc.isJsx.openingLikeElement(node)) {
+      else if (qc.isJsx.openingLikeElem(node)) {
         check.expression(node.attributes);
       } else if (node.kind !== Syntax.Decorator) {
         forEach((<CallExpression>node).arguments, (argument) => {
@@ -1938,12 +1938,12 @@ export function newResolve(f: qt.Frame) {
     ): Signature {
       const isTaggedTemplate = node.kind === Syntax.TaggedTemplateExpression;
       const isDecorator = node.kind === Syntax.Decorator;
-      const isJsxOpeningOrSelfClosingElement = qc.isJsx.openingLikeElement(node);
+      const isJsxOpeningOrSelfClosingElem = qc.isJsx.openingLikeElem(node);
       const reportErrors = !candidatesOutArray;
       let typeArguments: Nodes<TypeNode> | undefined;
       if (!isDecorator) {
         typeArguments = (<CallExpression>node).typeArguments;
-        if (isTaggedTemplate || isJsxOpeningOrSelfClosingElement || (<CallExpression>node).expression.kind !== Syntax.SuperKeyword) forEach(typeArguments, checkSourceElement);
+        if (isTaggedTemplate || isJsxOpeningOrSelfClosingElem || (<CallExpression>node).expression.kind !== Syntax.SuperKeyword) forEach(typeArguments, checkSourceElem);
       }
       const candidates = candidatesOutArray || [];
       reorderCandidates(signatures, candidates, callChainFlags);
@@ -2018,7 +2018,7 @@ export function newResolve(f: qt.Frame) {
         } else if (candidateForArgumentArityError) {
           diagnostics.add(getArgumentArityError(node, [candidateForArgumentArityError], args));
         } else if (candidateForTypeArgumentError) {
-          check.typeArguments(candidateForTypeArgumentError, (node as CallExpression | TaggedTemplateExpression | JsxOpeningLikeElement).typeArguments!, true, fallbackError);
+          check.typeArguments(candidateForTypeArgumentError, (node as CallExpression | TaggedTemplateExpression | JsxOpeningLikeElem).typeArguments!, true, fallbackError);
         } else {
           const signaturesWithCorrectTypeArgumentArity = filter(signatures, (s) => hasCorrectTypeArgumentArity(s, typeArguments));
           if (signaturesWithCorrectTypeArgumentArity.length === 0) diagnostics.add(getTypeArgumentArityError(node, signatures, typeArguments!));
@@ -2223,9 +2223,9 @@ export function newResolve(f: qt.Frame) {
       }
       return this.call(node, callSignatures, candidatesOutArray, checkMode, SignatureFlags.None, headMessage);
     }
-    jsxOpeningLikeElement(node: JsxOpeningLikeElement, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
+    jsxOpeningLikeElem(node: JsxOpeningLikeElem, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
       if (isJsxIntrinsicIdentifier(node.tagName)) {
-        const result = getIntrinsicAttributesTypeFromJsxOpeningLikeElement(node);
+        const result = getIntrinsicAttributesTypeFromJsxOpeningLikeElem(node);
         const fakeSignature = qf.create.signatureForJSXIntrinsic(node, result);
         check.typeAssignableToAndOptionallyElaborate(
           check.expressionWithContextualType(node.attributes, getEffectiveFirstArgumentForJsxSignature(fakeSignature, node), undefined, CheckMode.Normal),
@@ -2241,7 +2241,7 @@ export function newResolve(f: qt.Frame) {
       const signatures = getUninstantiatedJsxSignaturesOfType(exprTypes, node);
       if (isUntypedFunctionCall(exprTypes, apparentType, signatures.length, 0)) return this.untypedCall(node);
       if (signatures.length === 0) {
-        error(node.tagName, qd.msgs.JSX_element_type_0_does_not_have_any_construct_or_call_signatures, qf.get.textOf(node.tagName));
+        error(node.tagName, qd.msgs.JSX_elem_type_0_does_not_have_any_construct_or_call_signatures, qf.get.textOf(node.tagName));
         return this.errorCall(node);
       }
       return this.call(node, signatures, candidatesOutArray, checkMode, SignatureFlags.None);
@@ -2256,9 +2256,9 @@ export function newResolve(f: qt.Frame) {
           return this.taggedTemplateExpression(node, candidatesOutArray, checkMode);
         case Syntax.Decorator:
           return this.decorator(node, candidatesOutArray, checkMode);
-        case Syntax.JsxOpeningElement:
-        case Syntax.JsxSelfClosingElement:
-          return this.jsxOpeningLikeElement(node, candidatesOutArray, checkMode);
+        case Syntax.JsxOpeningElem:
+        case Syntax.JsxSelfClosingElem:
+          return this.jsxOpeningLikeElem(node, candidatesOutArray, checkMode);
       }
       throw qc.assert.never(node, "Branch in 'this.signature' should be unreachable.");
     }

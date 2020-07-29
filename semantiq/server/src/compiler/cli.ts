@@ -294,7 +294,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'lib',
     type: 'list',
-    element: {
+    elem: {
       name: 'lib',
       type: libMap,
     },
@@ -599,7 +599,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'rootDirs',
     type: 'list',
     isTSConfigOnly: true,
-    element: {
+    elem: {
       name: 'rootDirs',
       type: 'string',
       isFilePath: true,
@@ -612,7 +612,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'typeRoots',
     type: 'list',
-    element: {
+    elem: {
       name: 'typeRoots',
       type: 'string',
       isFilePath: true,
@@ -624,7 +624,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'types',
     type: 'list',
-    element: {
+    elem: {
       name: 'types',
       type: 'string',
     },
@@ -712,7 +712,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'jsxFactory',
     type: 'string',
     category: qd.Advanced_Options,
-    description: qd.Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h,
+    description: qd.Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElem_or_h,
   },
   {
     name: 'resolveJsonModule',
@@ -736,7 +736,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     category: qd.Advanced_Options,
-    description: qd.Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElement_when_targeting_react_JSX_emit,
+    description: qd.Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElem_when_targeting_react_JSX_emit,
   },
   {
     name: 'skipDefaultLibCheck',
@@ -933,7 +933,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'plugins',
     type: 'list',
     isTSConfigOnly: true,
-    element: {
+    elem: {
       name: 'plugin',
       type: 'object',
     },
@@ -989,7 +989,7 @@ export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'include',
     type: 'list',
-    element: {
+    elem: {
       name: 'include',
       type: 'string',
     },
@@ -997,7 +997,7 @@ export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'exclude',
     type: 'list',
-    element: {
+    elem: {
       name: 'exclude',
       type: 'string',
     },
@@ -1059,13 +1059,13 @@ export function parseListTypeOption(opt: qt.CommandLineOptionOfListType, value =
   }
   if (value === '') return [];
   const values = value.split(',');
-  switch (opt.element.type) {
+  switch (opt.elem.type) {
     case 'number':
       return map(values, parseInt);
     case 'string':
       return map(values, (v) => v || '');
     default:
-      return mapDefined(values, (v) => parseCustomTypeOption(<CommandLineOptionOfCustomType>opt.element, v, errors));
+      return mapDefined(values, (v) => parseCustomTypeOption(<CommandLineOptionOfCustomType>opt.elem, v, errors));
   }
 }
 export interface OptionsBase {
@@ -1382,29 +1382,29 @@ function getTsconfigRootOptionsMap() {
     _tsconfigRootOptions = {
       name: undefined!,
       type: 'object',
-      elementOptions: commandLineOptionsToMap([
+      elemOptions: commandLineOptionsToMap([
         {
           name: 'compilerOptions',
           type: 'object',
-          elementOptions: getCommandLineCompilerOptionsMap(),
+          elemOptions: getCommandLineCompilerOptionsMap(),
           extraKeyDiagnostics: compilerOptionsDidYouMeanDiagnostics,
         },
         {
           name: 'watchOptions',
           type: 'object',
-          elementOptions: getCommandLineWatchOptionsMap(),
+          elemOptions: getCommandLineWatchOptionsMap(),
           extraKeyDiagnostics: watchOptionsDidYouMeanDiagnostics,
         },
         {
           name: 'typingOptions',
           type: 'object',
-          elementOptions: getCommandLineTypeAcquisitionMap(),
+          elemOptions: getCommandLineTypeAcquisitionMap(),
           extraKeyDiagnostics: typeAcquisitionDidYouMeanDiagnostics,
         },
         {
           name: 'typeAcquisition',
           type: 'object',
-          elementOptions: getCommandLineTypeAcquisitionMap(),
+          elemOptions: getCommandLineTypeAcquisitionMap(),
           extraKeyDiagnostics: typeAcquisitionDidYouMeanDiagnostics,
         },
         {
@@ -1414,7 +1414,7 @@ function getTsconfigRootOptionsMap() {
         {
           name: 'references',
           type: 'list',
-          element: {
+          elem: {
             name: 'references',
             type: 'object',
           },
@@ -1422,7 +1422,7 @@ function getTsconfigRootOptionsMap() {
         {
           name: 'files',
           type: 'list',
-          element: {
+          elem: {
             name: 'files',
             type: 'string',
           },
@@ -1430,7 +1430,7 @@ function getTsconfigRootOptionsMap() {
         {
           name: 'include',
           type: 'list',
-          element: {
+          elem: {
             name: 'include',
             type: 'string',
           },
@@ -1438,7 +1438,7 @@ function getTsconfigRootOptionsMap() {
         {
           name: 'exclude',
           type: 'list',
-          element: {
+          elem: {
             name: 'exclude',
             type: 'string',
           },
@@ -1467,7 +1467,7 @@ export function convertToObjectWorker(
   if (!sourceFile.statements.length) return returnValue ? {} : undefined;
   return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
   function isRootOptionMap(knownOptions: qu.QMap<CommandLineOption> | undefined) {
-    return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elementOptions === knownOptions;
+    return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elemOptions === knownOptions;
   }
   function convertObjectLiteralExpressionToJson(
     node: ObjectLiteralExpression,
@@ -1476,28 +1476,28 @@ export function convertToObjectWorker(
     parentOption: string | undefined
   ): any {
     const result: any = returnValue ? {} : undefined;
-    for (const element of node.properties) {
-      if (element.kind !== Syntax.PropertyAssignment) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, element, qd.Property_assignment_expected));
+    for (const elem of node.properties) {
+      if (elem.kind !== Syntax.PropertyAssignment) {
+        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem, qd.Property_assignment_expected));
         continue;
       }
-      if (element.questionToken) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, element.questionToken, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+      if (elem.questionToken) {
+        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.questionToken, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
       }
-      if (!isDoubleQuotedString(element.name)) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, element.name, qd.String_literal_with_double_quotes_expected));
+      if (!isDoubleQuotedString(elem.name)) {
+        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, qd.String_literal_with_double_quotes_expected));
       }
-      const textOfKey = qf.is.computedNonLiteralName(element.name) ? undefined : qc.get.textOfPropertyName(element.name);
+      const textOfKey = qf.is.computedNonLiteralName(elem.name) ? undefined : qc.get.textOfPropertyName(elem.name);
       const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
       const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
         if (knownOptions) {
-          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qf.create.diagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)));
+          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, message, arg0, arg1)));
         } else {
-          errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyqd.unknownOptionDiagnostic, keyText));
+          errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, extraKeyqd.unknownOptionDiagnostic, keyText));
         }
       }
-      const value = convertPropertyValueToJson(element.initer, option);
+      const value = convertPropertyValueToJson(elem.initer, option);
       if (typeof keyText !== 'undefined') {
         if (returnValue) {
           result[keyText] = value;
@@ -1510,9 +1510,9 @@ export function convertToObjectWorker(
             }
           } else if (isRootOptionMap(knownOptions)) {
             if (isValidOptionValue) {
-              jsonConversionNotifier.onSetValidOptionKeyValueInRoot(keyText, element.name, value, element.initer);
+              jsonConversionNotifier.onSetValidOptionKeyValueInRoot(keyText, elem.name, value, elem.initer);
             } else if (!option) {
-              jsonConversionNotifier.onSetUnknownOptionKeyValueInRoot(keyText, element.name, value, element.initer);
+              jsonConversionNotifier.onSetUnknownOptionKeyValueInRoot(keyText, elem.name, value, elem.initer);
             }
           }
         }
@@ -1520,10 +1520,10 @@ export function convertToObjectWorker(
     }
     return result;
   }
-  function convertArrayLiteralExpressionToJson(elements: Nodes<Expression>, elementOption: qt.CommandLineOption | undefined): any[] | void {
-    if (!returnValue) return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
+  function convertArrayLiteralExpressionToJson(elems: Nodes<Expression>, elemOption: qt.CommandLineOption | undefined): any[] | void {
+    if (!returnValue) return elems.forEach((elem) => convertPropertyValueToJson(elem, elemOption));
     return filter(
-      elements.map((element) => convertPropertyValueToJson(element, elementOption)),
+      elems.map((elem) => convertPropertyValueToJson(elem, elemOption)),
       (v) => v !== undefined
     );
   }
@@ -1564,14 +1564,14 @@ export function convertToObjectWorker(
         reportInvalidOptionValue(option && option.type !== 'object');
         const objectLiteralExpression = <ObjectLiteralExpression>valueExpression;
         if (option) {
-          const { elementOptions, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
-          return convertObjectLiteralExpressionToJson(objectLiteralExpression, elementOptions, extraKeyDiagnostics, optionName);
+          const { elemOptions, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
+          return convertObjectLiteralExpressionToJson(objectLiteralExpression, elemOptions, extraKeyDiagnostics, optionName);
         } else {
           return convertObjectLiteralExpressionToJson(objectLiteralExpression, undefined);
         }
       case Syntax.ArrayLiteralExpression:
         reportInvalidOptionValue(option && option.type !== 'list');
-        return convertArrayLiteralExpressionToJson((<ArrayLiteralExpression>valueExpression).elements, option && (<CommandLineOptionOfListType>option).element);
+        return convertArrayLiteralExpressionToJson((<ArrayLiteralExpression>valueExpression).elems, option && (<CommandLineOptionOfListType>option).elem);
     }
     if (option) {
       reportInvalidOptionValue(true);
@@ -1677,7 +1677,7 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOpt
   if (optionDefinition.type === 'string' || optionDefinition.type === 'number' || optionDefinition.type === 'boolean' || optionDefinition.type === 'object') {
     return;
   } else if (optionDefinition.type === 'list') {
-    return getCustomTypeMapOfCommandLineOption(optionDefinition.element);
+    return getCustomTypeMapOfCommandLineOption(optionDefinition.elem);
   } else {
     return (<CommandLineOptionOfCustomType>optionDefinition).type;
   }
@@ -1720,7 +1720,7 @@ function serializeOptionBaseObject(
           if (optionDefinition.type === 'list') {
             result.set(
               name,
-              (value as readonly (string | number)[]).map((element) => getNameOfCompilerOptionValue(element, customTypeMap)!)
+              (value as readonly (string | number)[]).map((elem) => getNameOfCompilerOptionValue(elem, customTypeMap)!)
             );
           } else {
             result.set(name, getNameOfCompilerOptionValue(value, customTypeMap));
@@ -1830,7 +1830,7 @@ function convertToOptionValueWithAbsolutePaths(option: qt.CommandLineOption | un
   if (option && !isNullOrUndefined(value)) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
-      if (option.element.isFilePath && values.length) return values.map(toAbsolutePath);
+      if (option.elem.isFilePath && values.length) return values.map(toAbsolutePath);
     } else if (option.isFilePath) {
       return toAbsolutePath(value as string);
     }
@@ -2232,9 +2232,9 @@ function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, va
   if (isNullOrUndefined(value)) return;
   if (option.type === 'list') {
     const listOption = option;
-    if (listOption.element.isFilePath || !isString(listOption.element.type)) {
+    if (listOption.elem.isFilePath || !isString(listOption.elem.type)) {
       return <CompilerOptionsValue>filter(
-        map(value, (v) => normalizeOptionValue(listOption.element, basePath, v)),
+        map(value, (v) => normalizeOptionValue(listOption.elem, basePath, v)),
         (v) => !!v
       );
     }
@@ -2265,7 +2265,7 @@ function convertJsonOptionOfCustomType(opt: qt.CommandLineOptionOfCustomType, va
 }
 function convertJsonOptionOfListType(option: qt.CommandLineOptionOfListType, values: readonly any[], basePath: string, errors: Push<Diagnostic>): any[] {
   return filter(
-    map(values, (v) => convertJsonOption(option.element, v, basePath, errors)),
+    map(values, (v) => convertJsonOption(option.elem, v, basePath, errors)),
     (v) => !!v
   );
 }
@@ -2365,8 +2365,8 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
     return diag === undefined;
   });
   function createDiagnostic(message: qd.Message, spec: string): Diagnostic {
-    const element = qf.get.tsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
-    return element ? qf.create.diagnosticForNodeInSourceFile(jsonSourceFile!, element, message, spec) : createCompilerDiagnostic(message, spec);
+    const elem = qf.get.tsConfigPropArrayElemValue(jsonSourceFile, specKey, spec);
+    return elem ? qf.create.diagnosticForNodeInSourceFile(jsonSourceFile!, elem, message, spec) : createCompilerDiagnostic(message, spec);
   }
 }
 function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): qd.Message | undefined {
@@ -2463,8 +2463,8 @@ function getOptionValueWithEmptyStrings(value: any, option: qt.CommandLineOption
     case 'boolean':
       return typeof value === 'boolean' ? value : '';
     case 'list':
-      const elementType = option.element;
-      return isArray(value) ? value.map((v) => getOptionValueWithEmptyStrings(v, elementType)) : '';
+      const elemType = option.elem;
+      return isArray(value) ? value.map((v) => getOptionValueWithEmptyStrings(v, elemType)) : '';
     default:
       return qu.forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
         if (optionEnumValue === value) return optionStringValue;

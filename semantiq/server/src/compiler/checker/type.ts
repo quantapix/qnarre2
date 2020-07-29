@@ -15,7 +15,7 @@ export const enum IterationUse {
   YieldStarFlag = 1 << 4,
   SpreadFlag = 1 << 5,
   DestructuringFlag = 1 << 6,
-  Element = AllowsSyncIterablesFlag,
+  Elem = AllowsSyncIterablesFlag,
   Spread = AllowsSyncIterablesFlag | SpreadFlag,
   Destructuring = AllowsSyncIterablesFlag | DestructuringFlag,
   ForOf = AllowsSyncIterablesFlag | AllowsStringInputFlag | ForOfFlag,

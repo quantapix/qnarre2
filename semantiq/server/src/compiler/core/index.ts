@@ -8,11 +8,12 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-export { assert, format, skip } from './base';
+export { assert, format, skip, MutableNodes, Nodes } from './base';
 export * from './classes';
-export namespace BindingOrAssignmentElement {
-  export function getIniterOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.Expression | undefined {
-    if (qf.is.declarationBindingElement(e)) {
+export { qf } from './frame';
+export namespace BindingOrAssignmentElem {
+  export function getIniterOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.Expression | undefined {
+    if (qf.is.declarationBindingElem(e)) {
       // `1` in `let { a = 1 } = ...`
       // `1` in `let { a: b = 1 } = ...`
       // `1` in `let { a: {b} = 1 } = ...`
@@ -39,11 +40,11 @@ export namespace BindingOrAssignmentElement {
       // `1` in `[[a] = 1] = ...`
       return e.right;
     }
-    if (qf.is.kind(qc.SpreadElement, e)) return getIniterOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
+    if (qf.is.kind(qc.SpreadElem, e)) return getIniterOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
     return;
   }
-  export function getTargetOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.BindingOrAssignmentElementTarget | undefined {
-    if (qf.is.declarationBindingElement(e)) {
+  export function getTargetOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.BindingOrAssignmentElemTarget | undefined {
+    if (qf.is.declarationBindingElem(e)) {
       // `a` in `let { a } = ...`
       // `a` in `let { a = 1 } = ...`
       // `b` in `let { a: b } = ...`
@@ -62,7 +63,7 @@ export namespace BindingOrAssignmentElement {
       // `[a]` in `let [[a] = 1] = ...`
       return e.name;
     }
-    if (qf.is.objectLiteralElementLike(e)) {
+    if (qf.is.objectLiteralElemLike(e)) {
       switch (e.kind) {
         case Syntax.PropertyAssignment:
           // `b` in `({ a: b } = ...)`
@@ -75,14 +76,14 @@ export namespace BindingOrAssignmentElement {
           // `b.c` in `({ a: b.c = 1 } = ...)`
           // `b[0]` in `({ a: b[0] } = ...)`
           // `b[0]` in `({ a: b[0] = 1 } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.initer);
+          return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.initer);
         case Syntax.ShorthandPropertyAssignment:
           // `a` in `({ a } = ...)`
           // `a` in `({ a = 1 } = ...)`
           return e.name;
         case Syntax.SpreadAssignment:
           // `a` in `({ ...a } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
+          return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
       }
       // no target
       return;
@@ -93,11 +94,11 @@ export namespace BindingOrAssignmentElement {
       // `[a]` in `[[a] = 1] = ...`
       // `a.b` in `[a.b = 1] = ...`
       // `a[0]` in `[a[0] = 1] = ...`
-      return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.left);
+      return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.left);
     }
-    if (qf.is.kind(qc.SpreadElement, e)) {
+    if (qf.is.kind(qc.SpreadElem, e)) {
       // `a` in `[...a] = ...`
-      return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
+      return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
     }
     // `a` in `[a] = ...`
     // `{a}` in `[{a}] = ...`
@@ -106,27 +107,27 @@ export namespace BindingOrAssignmentElement {
     // `a[0]` in `[a[0]] = ...`
     return e;
   }
-  export function getRestIndicatorOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.BindingOrAssignmentElementRestIndicator | undefined {
+  export function getRestIndicatorOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.BindingOrAssignmentElemRestIndicator | undefined {
     switch (e.kind) {
       case Syntax.Parameter:
-      case Syntax.BindingElement:
+      case Syntax.BindingElem:
         // `...` in `let [...a] = ...`
         return e.dot3Token;
-      case Syntax.SpreadElement:
+      case Syntax.SpreadElem:
       case Syntax.SpreadAssignment:
         // `...` in `[...a] = ...`
         return e;
     }
     return;
   }
-  export function getPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
-    const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(e);
+  export function getPropertyNameOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
+    const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(e);
     qu.assert(!!propertyName || qf.is.kind(qc.SpreadAssignment, e));
     return propertyName;
   }
-  export function tryGetPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
+  export function tryGetPropertyNameOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
     switch (e.kind) {
-      case Syntax.BindingElement:
+      case Syntax.BindingElem:
         // `a` in `let { a: b } = ...`
         // `[a]` in `let { [a]: b } = ...`
         // `"a"` in `let { "a": b } = ...`
@@ -153,51 +154,51 @@ export namespace BindingOrAssignmentElement {
         if (e.name && qf.is.kind(qc.PrivateIdentifier, e.name)) return qc.failBadSyntax(e.name);
         return e.name;
     }
-    const target = getTargetOfBindingOrAssignmentElement(e);
+    const target = getTargetOfBindingOrAssignmentElem(e);
     if (target && qf.is.propertyName(target)) return target;
     return;
   }
-  export function convertToArrayAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qf.is.kind(qc.BindingElement, e)) {
+  export function convertToArrayAssignmentElem(e: qc.BindingOrAssignmentElem) {
+    if (qf.is.kind(qc.BindingElem, e)) {
       if (e.dot3Token) {
         qc.assert.node(e.name, isIdentifier);
-        return new qc.SpreadElement(e.name).setRange(e).setOriginal(e);
+        return new qc.SpreadElem(e.name).setRange(e).setOriginal(e);
       }
-      const e2 = convertToAssignmentElementTarget(e.name);
+      const e2 = convertToAssignmentElemTarget(e.name);
       return e.initer ? qf.create.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
     }
     qc.assert.node(e, isExpression);
     return <qc.Expression>e;
   }
-  export function convertToObjectAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qf.is.kind(qc.BindingElement, e)) {
+  export function convertToObjectAssignmentElem(e: qc.BindingOrAssignmentElem) {
+    if (qf.is.kind(qc.BindingElem, e)) {
       if (e.dot3Token) {
         qc.assert.node(e.name, isIdentifier);
         return new qc.SpreadAssignment(e.name).setRange(e).setOriginal(e);
       }
       if (e.propertyName) {
-        const e2 = convertToAssignmentElementTarget(e.name);
+        const e2 = convertToAssignmentElemTarget(e.name);
         return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
       qc.assert.node(e.name, isIdentifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);
     }
-    qc.assert.node(e, isObjectLiteralElementLike);
-    return <qc.ObjectLiteralElementLike>e;
+    qc.assert.node(e, isObjectLiteralElemLike);
+    return <qc.ObjectLiteralElemLike>e;
   }
 }
 export namespace BindingOrAssignmentPattern {
-  export function getElementsOfBindingOrAssignmentPattern(name: qc.BindingOrAssignmentPattern): readonly qc.BindingOrAssignmentElement[] {
+  export function getElemsOfBindingOrAssignmentPattern(name: qc.BindingOrAssignmentPattern): readonly qc.BindingOrAssignmentElem[] {
     switch (name.kind) {
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
         // `a` in `{a}`
         // `a` in `[a]`
-        return <readonly qc.BindingOrAssignmentElement[]>name.elements;
+        return <readonly qc.BindingOrAssignmentElem[]>name.elems;
       case Syntax.ObjectLiteralExpression:
         // `a` in `{a}`
-        return <readonly qc.BindingOrAssignmentElement[]>name.properties;
+        return <readonly qc.BindingOrAssignmentElem[]>name.properties;
     }
   }
   export function convertToAssignmentPattern(n: qc.BindingOrAssignmentPattern): qc.AssignmentPattern {
@@ -211,16 +212,16 @@ export namespace BindingOrAssignmentPattern {
     }
   }
   export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
-    if (qf.is.kind(qc.ObjectBindingPattern, n)) return new qc.ObjectLiteralExpression(qu.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
+    if (qf.is.kind(qc.ObjectBindingPattern, n)) return new qc.ObjectLiteralExpression(qu.map(n.elems, convertToObjectAssignmentElem)).setOriginal(n).setRange(n);
     qc.assert.node(n, isObjectLiteralExpression);
     return n;
   }
   export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
-    if (qf.is.kind(qc.ArrayBindingPattern, n)) return new qc.ArrayLiteralExpression(qu.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
+    if (qf.is.kind(qc.ArrayBindingPattern, n)) return new qc.ArrayLiteralExpression(qu.map(n.elems, convertToArrayAssignmentElem)).setOriginal(n).setRange(n);
     qc.assert.node(n, isArrayLiteralExpression);
     return n;
   }
-  export function convertToAssignmentElementTarget(n: qc.BindingOrAssignmentElementTarget): qc.Expression {
+  export function convertToAssignmentElemTarget(n: qc.BindingOrAssignmentElemTarget): qc.Expression {
     if (qf.is.kind(qc.BindingPattern, n)) return convertToAssignmentPattern(n);
     qc.assert.node(n, isExpression);
     return n;

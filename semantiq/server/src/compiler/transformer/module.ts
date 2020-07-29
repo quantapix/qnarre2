@@ -72,7 +72,7 @@ export function transformModule(context: TransformationContext) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
-    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qc.is.jsonSourceFile(node), sourceElementVisitor);
+    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qc.is.jsonSourceFile(node), sourceElemVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
     }
@@ -88,8 +88,8 @@ export function transformModule(context: TransformationContext) {
         )
       );
     }
-    append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
-    addRange(statements, Nodes.visit(node.statements, sourceElementVisitor, isStatement, statementOffset));
+    append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElemVisitor, isStatement));
+    addRange(statements, Nodes.visit(node.statements, sourceElemVisitor, isStatement, statementOffset));
     addExportEqualsIfNeeded(statements, false);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const updated = qp_updateSourceNode(node, setRange(new Nodes(statements), node.statements));
@@ -242,7 +242,7 @@ export function transformModule(context: TransformationContext) {
   function transformAsynchronousModuleBody(node: SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
-    const statementOffset = addPrologue(statements, node.statements, !compilerOptions.noImplicitUseStrict, sourceElementVisitor);
+    const statementOffset = addPrologue(statements, node.statements, !compilerOptions.noImplicitUseStrict, sourceElemVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
     }
@@ -258,11 +258,11 @@ export function transformModule(context: TransformationContext) {
         )
       );
     }
-    append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
+    append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElemVisitor, isStatement));
     if (moduleKind === ModuleKind.AMD) {
       addRange(statements, mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
     }
-    addRange(statements, Nodes.visit(node.statements, sourceElementVisitor, isStatement, statementOffset));
+    addRange(statements, Nodes.visit(node.statements, sourceElemVisitor, isStatement, statementOffset));
     addExportEqualsIfNeeded(statements, true);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const body = new Block(statements, true);
@@ -273,7 +273,7 @@ export function transformModule(context: TransformationContext) {
   }
   function addExportEqualsIfNeeded(statements: Statement[], emitAsReturn: boolean) {
     if (currentModuleInfo.exportEquals) {
-      const expressionResult = visitNode(currentModuleInfo.exportEquals.expression, moduleExpressionElementVisitor);
+      const expressionResult = visitNode(currentModuleInfo.exportEquals.expression, moduleExpressionElemVisitor);
       if (expressionResult) {
         if (emitAsReturn) {
           const statement = new qc.ReturnStatement(expressionResult);
@@ -289,7 +289,7 @@ export function transformModule(context: TransformationContext) {
       }
     }
   }
-  function sourceElementVisitor(node: Node): VisitResult<Node> {
+  function sourceElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.ImportDeclaration:
         return visitImportDeclaration(<ImportDeclaration>node);
@@ -310,14 +310,14 @@ export function transformModule(context: TransformationContext) {
       case Syntax.EndOfDeclarationMarker:
         return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
       default:
-        return visitEachChild(node, moduleExpressionElementVisitor, context);
+        return visitEachChild(node, moduleExpressionElemVisitor, context);
     }
   }
-  function moduleExpressionElementVisitor(node: Expression): VisitResult<Expression> {
+  function moduleExpressionElemVisitor(node: Expression): VisitResult<Expression> {
     if (!(node.transformFlags & TransformFlags.ContainsDynamicImport) && !(node.transformFlags & TransformFlags.ContainsDestructuringAssignment)) return node;
     if (qc.is.importCall(node)) return visitImportCallExpression(node);
     if (qc.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
-    return visitEachChild(node, moduleExpressionElementVisitor, context);
+    return visitEachChild(node, moduleExpressionElemVisitor, context);
   }
   function destructuringNeedsFlattening(node: Expression): boolean {
     if (qc.is.kind(qc.ObjectLiteralExpression, node)) {
@@ -341,8 +341,8 @@ export function transformModule(context: TransformationContext) {
         }
       }
     } else if (isArrayLiteralExpression(node)) {
-      for (const elem of node.elements) {
-        if (qc.is.kind(qc.SpreadElement, elem)) {
+      for (const elem of node.elems) {
+        if (qc.is.kind(qc.SpreadElem, elem)) {
           if (destructuringNeedsFlattening(elem.expression)) return true;
         } else if (destructuringNeedsFlattening(elem)) return true;
       }
@@ -352,11 +352,11 @@ export function transformModule(context: TransformationContext) {
     return false;
   }
   function visitDestructuringAssignment(node: DestructuringAssignment): Expression {
-    if (destructuringNeedsFlattening(node.left)) return flattenDestructuringAssignment(node, moduleExpressionElementVisitor, context, FlattenLevel.All, false, createAllExportExpressions);
-    return visitEachChild(node, moduleExpressionElementVisitor, context);
+    if (destructuringNeedsFlattening(node.left)) return flattenDestructuringAssignment(node, moduleExpressionElemVisitor, context, FlattenLevel.All, false, createAllExportExpressions);
+    return visitEachChild(node, moduleExpressionElemVisitor, context);
   }
   function visitImportCallExpression(node: ImportCall): Expression {
-    const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElementVisitor);
+    const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElemVisitor);
     const containsLexicalThis = !!(node.transformFlags & TransformFlags.ContainsLexicalThis);
     switch (compilerOptions.module) {
       case ModuleKind.AMD:
@@ -542,7 +542,7 @@ export function transformModule(context: TransformationContext) {
           setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node).setOriginal(node)
         );
       }
-      for (const specifier of node.exportClause.elements) {
+      for (const specifier of node.exportClause.elems) {
         if (languageVersion === ScriptTarget.ES3) {
           statements.push(
             setOriginalNode(
@@ -589,9 +589,9 @@ export function transformModule(context: TransformationContext) {
     const original = node.original;
     if (original && hasAssociatedEndOfDeclarationMarker(original)) {
       const id = getOriginalNodeId(node);
-      deferredExports[id] = appendExportStatement(deferredExports[id], new Identifier('default'), visitNode(node.expression, moduleExpressionElementVisitor), node, true);
+      deferredExports[id] = appendExportStatement(deferredExports[id], new Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), node, true);
     } else {
-      statements = appendExportStatement(statements, new Identifier('default'), visitNode(node.expression, moduleExpressionElementVisitor), true);
+      statements = appendExportStatement(statements, new Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), true);
     }
     return singleOrMany(statements);
   }
@@ -608,9 +608,9 @@ export function transformModule(context: TransformationContext) {
               node.asteriskToken,
               qf.get.declaration.name(node, true),
               undefined,
-              Nodes.visit(node.parameters, moduleExpressionElementVisitor),
+              Nodes.visit(node.parameters, moduleExpressionElemVisitor),
               undefined,
-              visitEachChild(node.body, moduleExpressionElementVisitor, context)
+              visitEachChild(node.body, moduleExpressionElemVisitor, context)
             ),
             node
           ),
@@ -618,7 +618,7 @@ export function transformModule(context: TransformationContext) {
         )
       );
     } else {
-      statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
+      statements = append(statements, visitEachChild(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -640,8 +640,8 @@ export function transformModule(context: TransformationContext) {
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
               qf.get.declaration.name(node, true),
               undefined,
-              Nodes.visit(node.heritageClauses, moduleExpressionElementVisitor),
-              Nodes.visit(node.members, moduleExpressionElementVisitor)
+              Nodes.visit(node.heritageClauses, moduleExpressionElemVisitor),
+              Nodes.visit(node.members, moduleExpressionElemVisitor)
             ),
             node
           ),
@@ -649,7 +649,7 @@ export function transformModule(context: TransformationContext) {
         )
       );
     } else {
-      statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
+      statements = append(statements, visitEachChild(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -682,7 +682,7 @@ export function transformModule(context: TransformationContext) {
         statements = append(statements, setRange(new qc.ExpressionStatement(inlineExpressions(expressions)), node).setOriginal(node));
       }
     } else {
-      statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
+      statements = append(statements, visitEachChild(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -705,11 +705,11 @@ export function transformModule(context: TransformationContext) {
     return qf.create.assignment(name, value);
   }
   function transformInitializedVariable(node: VariableDeclaration): Expression {
-    if (qc.is.kind(qc.BindingPattern, node.name)) return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), false, createAllExportExpressions);
+    if (qc.is.kind(qc.BindingPattern, node.name)) return flattenDestructuringAssignment(visitNode(node, moduleExpressionElemVisitor), false, createAllExportExpressions);
     else {
       return qf.create.assignment(
         setRange(new qc.PropertyAccessExpression(new Identifier('exports'), node.name), node.name),
-        node.initer ? visitNode(node.initer, moduleExpressionElementVisitor) : qs.VoidExpression.zero()
+        node.initer ? visitNode(node.initer, moduleExpressionElemVisitor) : qs.VoidExpression.zero()
       );
     }
   }
@@ -746,7 +746,7 @@ export function transformModule(context: TransformationContext) {
           statements = appendExportsOfDeclaration(statements, namedBindings);
           break;
         case Syntax.NamedImports:
-          for (const importBinding of namedBindings.elements) {
+          for (const importBinding of namedBindings.elems) {
             statements = appendExportsOfDeclaration(statements, importBinding, true);
           }
           break;
@@ -761,16 +761,16 @@ export function transformModule(context: TransformationContext) {
   function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     for (const decl of node.declarationList.declarations) {
-      statements = appendExportsOfBindingElement(statements, decl);
+      statements = appendExportsOfBindingElem(statements, decl);
     }
     return statements;
   }
-  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement): Statement[] | undefined {
+  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElem): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     if (qc.is.kind(qc.BindingPattern, decl.name)) {
-      for (const element of decl.name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element)) {
-          statements = appendExportsOfBindingElement(statements, element);
+      for (const elem of decl.name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+          statements = appendExportsOfBindingElem(statements, elem);
         }
       }
     } else if (!qc.is.generatedIdentifier(decl.name)) {
@@ -877,7 +877,7 @@ export function transformModule(context: TransformationContext) {
     else if (qc.is.kind(qc.ShorthandPropertyAssignment, node)) return substituteShorthandPropertyAssignment(node);
     return node;
   }
-  function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElementLike {
+  function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElemLike {
     const name = node.name;
     const exportedOrImportedName = substituteExpressionIdentifier(name);
     if (exportedOrImportedName !== name) {
@@ -1232,15 +1232,15 @@ export function transformSystemModule(context: TransformationContext) {
     const statements: Statement[] = [];
     startLexicalEnvironment();
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
-    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
+    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElemVisitor);
     statements.push(
       new qc.VariableStatement(
         undefined,
         new qc.VariableDeclarationList([new qc.VariableDeclaration('__moduleName', undefined, qf.create.logicalAnd(contextObject, new qc.PropertyAccessExpression(contextObject, 'id')))])
       )
     );
-    visitNode(moduleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement);
-    const executeStatements = Nodes.visit(node.statements, sourceElementVisitor, isStatement, statementOffset);
+    visitNode(moduleInfo.externalHelpersImportDeclaration, sourceElemVisitor, isStatement);
+    const executeStatements = Nodes.visit(node.statements, sourceElemVisitor, isStatement, statementOffset);
     addRange(statements, hoistedStatements);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const exportStarFunction = addExportStarIfNeeded(statements)!;
@@ -1271,7 +1271,7 @@ export function transformSystemModule(context: TransformationContext) {
         return exportStarFunction.name;
       }
     }
-    const exportedNames: ObjectLiteralElementLike[] = [];
+    const exportedNames: ObjectLiteralElemLike[] = [];
     if (moduleInfo.exportedNames) {
       for (const exportedLocalName of moduleInfo.exportedNames) {
         if (exportedLocalName.escapedText === 'default') {
@@ -1288,8 +1288,8 @@ export function transformSystemModule(context: TransformationContext) {
         continue;
       }
       if (qc.is.kind(qc.NamedExports, externalImport.exportClause)) {
-        for (const element of externalImport.exportClause.elements) {
-          exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(element.name || element.propertyName)), new qc.BooleanLiteral(true)));
+        for (const elem of externalImport.exportClause.elems) {
+          exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(elem.name || elem.propertyName)), new qc.BooleanLiteral(true)));
         }
       } else {
         exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(externalImport.exportClause.name)), new qc.BooleanLiteral(true)));
@@ -1328,7 +1328,7 @@ export function transformSystemModule(context: TransformationContext) {
             m,
             new Block([
               setEmitFlags(
-                new qc.IfStatement(condition, new qc.ExpressionStatement(qf.create.assignment(new qs.ElementAccessExpression(exports, n), new qs.ElementAccessExpression(m, n)))),
+                new qc.IfStatement(condition, new qc.ExpressionStatement(qf.create.assignment(new qs.ElemAccessExpression(exports, n), new qs.ElemAccessExpression(m, n)))),
                 EmitFlags.SingleLine
               ),
             ])
@@ -1361,8 +1361,8 @@ export function transformSystemModule(context: TransformationContext) {
             if (entry.exportClause) {
               if (qc.is.kind(qc.NamedExports, entry.exportClause)) {
                 const properties: PropertyAssignment[] = [];
-                for (const e of entry.exportClause.elements) {
-                  properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qs.ElementAccessExpression(parameterName, qc.asLiteral(idText(e.propertyName || e.name)))));
+                for (const e of entry.exportClause.elems) {
+                  properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qs.ElemAccessExpression(parameterName, qc.asLiteral(idText(e.propertyName || e.name)))));
                 }
                 statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, true)));
               } else {
@@ -1378,7 +1378,7 @@ export function transformSystemModule(context: TransformationContext) {
     }
     return new ArrayLiteralExpression(setters, true);
   }
-  function sourceElementVisitor(node: Node): VisitResult<Node> {
+  function sourceElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.ImportDeclaration:
         return visitImportDeclaration(<ImportDeclaration>node);
@@ -1389,7 +1389,7 @@ export function transformSystemModule(context: TransformationContext) {
       case Syntax.ExportAssignment:
         return visitExportAssignment(<ExportAssignment>node);
       default:
-        return nestedElementVisitor(node);
+        return nestedElemVisitor(node);
     }
   }
   function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
@@ -1475,7 +1475,7 @@ export function transformSystemModule(context: TransformationContext) {
                 node.name,
                 undefined,
                 Nodes.visit(node.heritageClauses, destructuringAndImportCallVisitor, isHeritageClause),
-                Nodes.visit(node.members, destructuringAndImportCallVisitor, isClassElement)
+                Nodes.visit(node.members, destructuringAndImportCallVisitor, isClassElem)
               ),
               node
             )
@@ -1501,7 +1501,7 @@ export function transformSystemModule(context: TransformationContext) {
       if (variable.initer) {
         expressions = append(expressions, transformInitializedVariable(variable, isExportedDeclaration && !isMarkedDeclaration));
       } else {
-        hoistBindingElement(variable);
+        hoistBindingElem(variable);
       }
     }
     let statements: Statement[] | undefined;
@@ -1516,11 +1516,11 @@ export function transformSystemModule(context: TransformationContext) {
     }
     return singleOrMany(statements);
   }
-  function hoistBindingElement(node: VariableDeclaration | BindingElement): void {
+  function hoistBindingElem(node: VariableDeclaration | BindingElem): void {
     if (qc.is.kind(qc.BindingPattern, node.name)) {
-      for (const element of node.name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element)) {
-          hoistBindingElement(element);
+      for (const elem of node.name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+          hoistBindingElem(elem);
         }
       }
     } else {
@@ -1587,7 +1587,7 @@ export function transformSystemModule(context: TransformationContext) {
           statements = appendExportsOfDeclaration(statements, namedBindings);
           break;
         case Syntax.NamedImports:
-          for (const importBinding of namedBindings.elements) {
+          for (const importBinding of namedBindings.elems) {
             statements = appendExportsOfDeclaration(statements, importBinding);
           }
           break;
@@ -1603,17 +1603,17 @@ export function transformSystemModule(context: TransformationContext) {
     if (moduleInfo.exportEquals) return statements;
     for (const decl of node.declarationList.declarations) {
       if (decl.initer || exportSelf) {
-        statements = appendExportsOfBindingElement(statements, decl, exportSelf);
+        statements = appendExportsOfBindingElem(statements, decl, exportSelf);
       }
     }
     return statements;
   }
-  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement, exportSelf: boolean): Statement[] | undefined {
+  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElem, exportSelf: boolean): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     if (qc.is.kind(qc.BindingPattern, decl.name)) {
-      for (const element of decl.name.elements) {
-        if (!qc.is.kind(qc.OmittedExpression, element)) {
-          statements = appendExportsOfBindingElement(statements, element, exportSelf);
+      for (const elem of decl.name.elems) {
+        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+          statements = appendExportsOfBindingElem(statements, elem, exportSelf);
         }
       }
     } else if (!qc.is.generatedIdentifier(decl.name)) {
@@ -1669,7 +1669,7 @@ export function transformSystemModule(context: TransformationContext) {
     setEmitFlags(value, qc.get.emitFlags(value) | EmitFlags.NoComments);
     return setCommentRange(new qs.CallExpression(exportFunction, undefined, [exportName, value]), value);
   }
-  function nestedElementVisitor(node: Node): VisitResult<Node> {
+  function nestedElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.VariableStatement:
         return visitVariableStatement(<VariableStatement>node);
@@ -1721,7 +1721,7 @@ export function transformSystemModule(context: TransformationContext) {
       node.initer && visitForIniter(node.initer),
       visitNode(node.condition, destructuringAndImportCallVisitor, isExpression),
       visitNode(node.incrementor, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement)
+      visitNode(node.statement, nestedElemVisitor, isStatement)
     );
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1733,7 +1733,7 @@ export function transformSystemModule(context: TransformationContext) {
       node,
       visitForIniter(node.initer),
       visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
+      visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock)
     );
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1746,7 +1746,7 @@ export function transformSystemModule(context: TransformationContext) {
       node.awaitModifier,
       visitForIniter(node.initer),
       visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
+      visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock)
     );
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1760,55 +1760,55 @@ export function transformSystemModule(context: TransformationContext) {
       for (const variable of node.declarations) {
         expressions = append(expressions, transformInitializedVariable(variable, false));
         if (!variable.initer) {
-          hoistBindingElement(variable);
+          hoistBindingElem(variable);
         }
       }
       return expressions ? inlineExpressions(expressions) : new qc.OmittedExpression();
     }
-    return visitEachChild(node, nestedElementVisitor, context);
+    return visitEachChild(node, nestedElemVisitor, context);
   }
   function visitDoStatement(node: DoStatement): VisitResult<Statement> {
-    return node.update(visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression));
+    return node.update(visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression));
   }
   function visitWhileStatement(node: WhileStatement): VisitResult<Statement> {
-    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
+    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock));
   }
   function visitLabeledStatement(node: LabeledStatement): VisitResult<Statement> {
-    return node.update(node.label, visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
+    return node.update(node.label, visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock));
   }
   function visitWithStatement(node: WithStatement): VisitResult<Statement> {
-    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
+    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElemVisitor, isStatement, liftToBlock));
   }
   function visitSwitchStatement(node: SwitchStatement): VisitResult<Statement> {
-    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.caseBlock, nestedElementVisitor, isCaseBlock));
+    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.caseBlock, nestedElemVisitor, isCaseBlock));
   }
   function visitCaseBlock(node: CaseBlock): CaseBlock {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
-    node = node.update(Nodes.visit(node.clauses, nestedElementVisitor, isCaseOrDefaultClause));
+    node = node.update(Nodes.visit(node.clauses, nestedElemVisitor, isCaseOrDefaultClause));
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
   function visitCaseClause(node: CaseClause): VisitResult<CaseOrDefaultClause> {
-    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), Nodes.visit(node.statements, nestedElementVisitor, isStatement));
+    return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), Nodes.visit(node.statements, nestedElemVisitor, isStatement));
   }
   function visitDefaultClause(node: DefaultClause): VisitResult<CaseOrDefaultClause> {
-    return visitEachChild(node, nestedElementVisitor, context);
+    return visitEachChild(node, nestedElemVisitor, context);
   }
   function visitTryStatement(node: TryStatement): VisitResult<Statement> {
-    return visitEachChild(node, nestedElementVisitor, context);
+    return visitEachChild(node, nestedElemVisitor, context);
   }
   function visitCatchClause(node: CatchClause): CatchClause {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
-    node = node.update(node.variableDeclaration, visitNode(node.block, nestedElementVisitor, isBlock));
+    node = node.update(node.variableDeclaration, visitNode(node.block, nestedElemVisitor, isBlock));
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
   function visitBlock(node: Block): Block {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
-    node = visitEachChild(node, nestedElementVisitor, context);
+    node = visitEachChild(node, nestedElemVisitor, context);
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
@@ -1830,11 +1830,11 @@ export function transformSystemModule(context: TransformationContext) {
     if (hasExportedReferenceInDestructuringTarget(node.left)) return flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, true);
     return visitEachChild(node, destructuringAndImportCallVisitor, context);
   }
-  function hasExportedReferenceInDestructuringTarget(node: Expression | ObjectLiteralElementLike): boolean {
+  function hasExportedReferenceInDestructuringTarget(node: Expression | ObjectLiteralElemLike): boolean {
     if (qc.is.assignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
-    if (qc.is.kind(qc.SpreadElement, node)) return hasExportedReferenceInDestructuringTarget(node.expression);
+    if (qc.is.kind(qc.SpreadElem, node)) return hasExportedReferenceInDestructuringTarget(node.expression);
     if (qc.is.kind(qc.ObjectLiteralExpression, node)) return some(node.properties, hasExportedReferenceInDestructuringTarget);
-    if (isArrayLiteralExpression(node)) return some(node.elements, hasExportedReferenceInDestructuringTarget);
+    if (isArrayLiteralExpression(node)) return some(node.elems, hasExportedReferenceInDestructuringTarget);
     if (qc.is.kind(qc.ShorthandPropertyAssignment, node)) return hasExportedReferenceInDestructuringTarget(node.name);
     if (qc.is.kind(qc.PropertyAssignment, node)) return hasExportedReferenceInDestructuringTarget(node.initer);
     if (qc.is.kind(qc.Identifier, node)) {
