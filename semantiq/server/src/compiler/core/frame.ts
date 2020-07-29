@@ -95,7 +95,7 @@ export function newCreate(f: qt.Frame) {
     jsxFactoryExpression(e: qt.EntityName | undefined, react: string, p: qt.JsxOpeningLikeElem | qt.JsxOpeningFragment): qt.Expression {
       return e ? this.jsxFactoryExpressionFromEntityName(e, p) : new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'createElem');
     }
-    expressionForJsxFragment(e: qt.EntityName | undefined, react: string, cs: readonly qt.Expression[], p: qt.JsxOpeningFragment, r: qu.TextRange): qt.LeftHandSideExpression {
+    expressionForJsxFragment(e: qt.EntityName | undefined, react: string, cs: readonly qt.Expression[], p: qt.JsxOpeningFragment, r: qu.TextRange): qt.LeftExpression {
       const t = new qc.PropertyAccessExpression(this.reactNamespace(react, p), 'Fragment');
       const args = [t as qt.Expression];
       args.push(new qc.NullLiteral());
@@ -107,7 +107,7 @@ export function newCreate(f: qt.Frame) {
       } else args.push(cs[0]);
       return new qc.CallExpression(this.jsxFactoryExpression(e, react, p), undefined, args).setRange(r);
     }
-    expression(e: qt.EntityName | undefined, react: string, t: qt.Expression, ps: qt.Expression, cs: readonly qt.Expression[], p: qt.JsxOpeningLikeElem, r: qu.TextRange): qt.LeftHandSideExpression {
+    expression(e: qt.EntityName | undefined, react: string, t: qt.Expression, ps: qt.Expression, cs: readonly qt.Expression[], p: qt.JsxOpeningLikeElem, r: qu.TextRange): qt.LeftExpression {
       const args = [t];
       if (ps) args.push(ps);
       if (cs.length) {
@@ -143,7 +143,7 @@ export function newCreate(f: qt.Frame) {
     callBinding(e: qc.Expression, recordTempVariable: (temp: qt.Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): qc.CallBinding {
       const callee = qb.skip.outerExpressions(e, qc.OuterExpressionKinds.All);
       let thisArg: qc.Expression;
-      let target: qc.LeftHandSideExpression;
+      let target: qc.LeftExpression;
       if (qf.is.superProperty(callee)) {
         thisArg = new qc.ThisExpression();
         target = callee;
@@ -1777,7 +1777,7 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    leftHandSideExpression(n: Node): n is qt.LeftHandSideExpression {
+    leftHandSideExpression(n: Node): n is qt.LeftExpression {
       return qy.is.leftHandSideExpression(qb.skip.partiallyEmittedExpressions(n).kind);
     }
     unaryExpression(n: Node): n is qt.UnaryExpression {

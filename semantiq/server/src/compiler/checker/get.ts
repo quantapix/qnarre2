@@ -507,7 +507,7 @@ export function newGet(f: qt.Frame) {
         if (propName) {
           const result = <ElemAccessExpression>createNode(Syntax.ElemAccessExpression, node.pos, node.end);
           result.parent = node;
-          result.expression = <LeftHandSideExpression>parentAccess;
+          result.expression = <LeftExpression>parentAccess;
           const literal = <StringLiteral>createNode(Syntax.StringLiteral, node.pos, node.end);
           literal.parent = result;
           literal.text = propName;
@@ -5897,7 +5897,7 @@ export function newGet(f: qt.Frame) {
         }
       }
     }
-    thisArgumentOfCall(node: CallLikeExpression): LeftHandSideExpression | undefined {
+    thisArgumentOfCall(node: CallLikeExpression): LeftExpression | undefined {
       if (node.kind === Syntax.CallExpression) {
         const callee = qc.skip.outerExpressions(node.expression);
         if (qf.is.accessExpression(callee)) return callee.expression;

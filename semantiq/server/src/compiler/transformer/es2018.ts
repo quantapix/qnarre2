@@ -664,7 +664,7 @@ export function transformES2018(context: TransformationContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElemAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
+  function createSuperElemAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
       return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
     return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);

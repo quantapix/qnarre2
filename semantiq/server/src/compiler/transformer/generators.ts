@@ -526,7 +526,7 @@ export function transformGenerators(context: TransformationContext) {
           //      _a.b = %sent%;
           target = updatePropertyAccess(
             <PropertyAccessExpression>left,
-            cacheExpression(visitNode((<PropertyAccessExpression>left).expression, visitor, isLeftHandSideExpression)),
+            cacheExpression(visitNode((<PropertyAccessExpression>left).expression, visitor, isLeftExpression)),
             (<PropertyAccessExpression>left).name
           );
           break;
@@ -543,7 +543,7 @@ export function transformGenerators(context: TransformationContext) {
           //      _a[_b] = %sent%;
           target = updateElemAccess(
             <ElemAccessExpression>left,
-            cacheExpression(visitNode((<ElemAccessExpression>left).expression, visitor, isLeftHandSideExpression)),
+            cacheExpression(visitNode((<ElemAccessExpression>left).expression, visitor, isLeftExpression)),
             cacheExpression(visitNode((<ElemAccessExpression>left).argumentExpression, visitor, isExpression))
           );
           break;
@@ -682,7 +682,7 @@ export function transformGenerators(context: TransformationContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitYieldExpression(node: YieldExpression): LeftHandSideExpression {
+  function visitYieldExpression(node: YieldExpression): LeftExpression {
     // [source]
     //      x = yield a();
     //
@@ -799,7 +799,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .mark resumeLabel
       //      a = _a[%sent%]
       const clone = getMutableClone(node);
-      clone.expression = cacheExpression(visitNode(node.expression, visitor, isLeftHandSideExpression));
+      clone.expression = cacheExpression(visitNode(node.expression, visitor, isLeftExpression));
       clone.argumentExpression = visitNode(node.argumentExpression, visitor, isExpression);
       return clone;
     }
@@ -818,7 +818,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
       const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
-      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElems(node.arguments), node).setOriginal(node);
+      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftExpression)), thisArg, visitElems(node.arguments), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -1770,7 +1770,7 @@ export function transformGenerators(context: TransformationContext) {
   function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
     return setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
-  function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
+  function createGeneratorResume(location?: TextRange): LeftExpression {
     return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []), location);
   }
   function emitNop() {

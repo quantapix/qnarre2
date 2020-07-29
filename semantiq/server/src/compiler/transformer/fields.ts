@@ -404,7 +404,7 @@ export function transformClassFields(context: TransformationContext) {
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
     return setRange(new Block(setRange(new Nodes(statements), constructor ? constructor.body!.statements : node.members), true), constructor ? constructor.body : undefined);
   }
-  function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
+  function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftExpression) {
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
       if (!expression) continue;
@@ -415,7 +415,7 @@ export function transformClassFields(context: TransformationContext) {
       statements.push(statement);
     }
   }
-  function generateInitializedPropertyExpressions(properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
+  function generateInitializedPropertyExpressions(properties: readonly PropertyDeclaration[], receiver: LeftExpression) {
     const expressions: Expression[] = [];
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
@@ -428,7 +428,7 @@ export function transformClassFields(context: TransformationContext) {
     }
     return expressions;
   }
-  function transformProperty(property: PropertyDeclaration, receiver: LeftHandSideExpression) {
+  function transformProperty(property: PropertyDeclaration, receiver: LeftExpression) {
     const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
     const propertyName =
       qc.is.kind(qc.ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(qf.get.generatedNameForNode(property.name)) : property.name;
@@ -608,7 +608,7 @@ export function transformClassFields(context: TransformationContext) {
     return node.update(Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElemLike));
   }
 }
-function createPrivateInstanceFieldIniter(receiver: LeftHandSideExpression, initer: Expression | undefined, weakMapName: Identifier) {
+function createPrivateInstanceFieldIniter(receiver: LeftExpression, initer: Expression | undefined, weakMapName: Identifier) {
   return new qs.CallExpression(new qc.PropertyAccessExpression(weakMapName, 'set'), undefined, [receiver, initer || qs.VoidExpression.zero()]);
 }
 export const classPrivateFieldGetHelper: UnscopedEmitHelper = {

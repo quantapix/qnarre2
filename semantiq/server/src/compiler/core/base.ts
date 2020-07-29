@@ -403,25 +403,25 @@ export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDobj im
   }
   _typeNodeBrand: any;
 }
-export abstract class Expression extends Nobj implements qt.Expression {
+export abstract class Eobj extends Nobj implements qt.Eobj {
   _expressionBrand: any;
 }
-export abstract class UnaryExpression extends Expression implements qt.UnaryExpression {
+export abstract class UnaryEobj extends Eobj implements qt.UnaryEobj {
   _unaryExpressionBrand: any;
 }
-export abstract class UpdateExpression extends UnaryExpression implements qt.UpdateExpression {
+export abstract class UpdateEobj extends UnaryEobj implements qt.UpdateEobj {
   _updateExpressionBrand: any;
 }
-export abstract class LeftHandSideExpression extends UpdateExpression implements qt.LeftHandSideExpression {
+export abstract class LeftEobj extends UpdateEobj implements qt.LeftEobj {
   _leftHandSideExpressionBrand: any;
 }
-export abstract class MemberExpression extends LeftHandSideExpression implements qt.MemberExpression {
+export abstract class MemberEobj extends LeftEobj implements qt.MemberEobj {
   _memberExpressionBrand: any;
 }
-export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
+export abstract class PrimaryEobj extends MemberEobj implements qt.PrimaryEobj {
   _primaryExpressionBrand: any;
 }
-export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElem> extends PrimaryExpression implements qt.ObjectLiteralEobj<T> {
+export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElem> extends PrimaryEobj implements qt.ObjectLiteralEobj<T> {
   properties!: Nodes<T>;
   _declarationBrand: any;
 }
@@ -583,7 +583,7 @@ export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements
     }
   }
 }
-export abstract class LiteralExpression extends PrimaryExpression implements qt.LiteralExpression {
+export abstract class LiteralEobj extends PrimaryEobj implements qt.LiteralEobj {
   text!: string;
   isUnterminated?: boolean;
   hasExtendedEscape?: boolean;

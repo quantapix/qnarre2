@@ -760,7 +760,7 @@ export function transformES2015(context: TransformationContext) {
   function transformSemicolonClassElemToStatement(member: SemicolonClassElem) {
     return setRange(new qc.EmptyStatement(), member);
   }
-  function transformClassMethodDeclarationToStatement(receiver: LeftHandSideExpression, member: MethodDeclaration, container: Node) {
+  function transformClassMethodDeclarationToStatement(receiver: LeftExpression, member: MethodDeclaration, container: Node) {
     const commentRange = getCommentRange(member);
     const sourceMapRange = getSourceMapRange(member);
     const memberFunction = transformFunctionLikeToExpression(member, undefined, container);
@@ -785,18 +785,13 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(statement, EmitFlags.NoSourceMap);
     return statement;
   }
-  function transformAccessorsToStatement(receiver: LeftHandSideExpression, accessors: AllAccessorDeclarations, container: Node): qc.Statement {
+  function transformAccessorsToStatement(receiver: LeftExpression, accessors: AllAccessorDeclarations, container: Node): qc.Statement {
     const statement = new qc.ExpressionStatement(transformAccessorsToExpression(receiver, accessors, container, false));
     setEmitFlags(statement, EmitFlags.NoComments);
     setSourceMapRange(statement, getSourceMapRange(accessors.firstAccessor));
     return statement;
   }
-  function transformAccessorsToExpression(
-    receiver: LeftHandSideExpression,
-    { firstAccessor, getAccessor, setAccessor }: AllAccessorDeclarations,
-    container: Node,
-    startsOnNewLine: boolean
-  ): qc.Expression {
+  function transformAccessorsToExpression(receiver: LeftExpression, { firstAccessor, getAccessor, setAccessor }: AllAccessorDeclarations, container: Node, startsOnNewLine: boolean): qc.Expression {
     const target = getMutableClone(receiver);
     setEmitFlags(target, EmitFlags.NoComments | EmitFlags.NoTrailingSourceMap);
     setSourceMapRange(target, firstAccessor.name);
@@ -1952,7 +1947,7 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
   }
   return visitEachChild(node, visitor, context);
 }
-function visitNewExpression(node: NewExpression): LeftHandSideExpression {
+function visitNewExpression(node: NewExpression): LeftExpression {
   if (some(node.arguments, isSpreadElem)) {
     const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
     return new qc.NewExpression(
@@ -2009,7 +2004,7 @@ function visitSpreadElem(node: SpreadElem) {
 function visitExpressionOfSpread(node: SpreadElem) {
   return visitNode(node.expression, visitor, isExpression);
 }
-function visitTemplateLiteral(node: LiteralExpression): LeftHandSideExpression {
+function visitTemplateLiteral(node: LiteralExpression): LeftExpression {
   return setRange(qc.asLiteral(node.text), node);
 }
 function visitStringLiteral(node: StringLiteral) {
@@ -2052,7 +2047,7 @@ function addTemplateSpans(expressions: qc.Expression[], node: TemplateExpression
     }
   }
 }
-function visitSuperKeyword(isExpressionOfCall: boolean): LeftHandSideExpression {
+function visitSuperKeyword(isExpressionOfCall: boolean): LeftExpression {
   return hierarchyFacts & HierarchyFacts.NonStaticClassElem && !isExpressionOfCall
     ? new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), 'prototype')
     : createFileLevelUniqueName('_super');

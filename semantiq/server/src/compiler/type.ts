@@ -29,7 +29,7 @@ export interface ArrayBindingPattern extends Nobj {
 export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
   left: ArrayLiteralExpression;
 }
-export interface ArrayLiteralExpression extends PrimaryExpression {
+export interface ArrayLiteralExpression extends PrimaryEobj {
   kind: Syntax.ArrayLiteralExpression;
   elems: Nodes<Expression>;
   multiLine?: boolean;
@@ -38,13 +38,13 @@ export interface ArrayTypeNode extends TypeNode {
   kind: Syntax.ArrayType;
   elemType: TypeNode;
 }
-export interface ArrowFunction extends FunctionLikeDobj, Expression, DocContainer {
+export interface ArrowFunction extends FunctionLikeDobj, Eobj, DocContainer {
   kind: Syntax.ArrowFunction;
   equalsGreaterThanToken: EqualsGreaterThanToken;
   body: ConciseBody;
   name: never;
 }
-export interface AsExpression extends Expression {
+export interface AsExpression extends Eobj {
   kind: Syntax.AsExpression;
   expression: Expression;
   type: TypeNode;
@@ -62,20 +62,20 @@ export interface AssertsThisTypePredicate extends TypePredicateBase {
   type?: Type;
 }
 export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
-  left: LeftHandSideExpression;
+  left: LeftExpression;
   operatorToken: TOperator;
 }
-export interface AwaitExpression extends UnaryExpression {
+export interface AwaitExpression extends UnaryEobj {
   kind: Syntax.AwaitExpression;
   expression: UnaryExpression;
 }
-export interface BigIntLiteral extends LiteralExpression {
+export interface BigIntLiteral extends LiteralEobj {
   kind: Syntax.BigIntLiteral;
 }
 export interface BigIntLiteralType extends LiteralType {
   value: PseudoBigInt;
 }
-export interface BinaryExpression extends Expression, Dobj {
+export interface BinaryExpression extends Eobj, Dobj {
   kind: Syntax.BinaryExpression;
   left: Expression;
   operatorToken: BinaryOperatorToken;
@@ -100,7 +100,7 @@ export interface Block extends Sobj {
   statements: Nodes<Statement>;
   multiLine?: boolean;
 }
-export interface BooleanLiteral extends PrimaryExpression, TypeNode {
+export interface BooleanLiteral extends PrimaryEobj, TypeNode {
   kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
 }
 export interface BreakStatement extends Sobj {
@@ -164,9 +164,9 @@ export interface CallChain extends CallExpression {
 export interface CallChainRoot extends CallChain {
   questionDotToken: QuestionDotToken;
 }
-export interface CallExpression extends LeftHandSideExpression, Dobj {
+export interface CallExpression extends LeftEobj, Dobj {
   kind: Syntax.CallExpression;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
   typeArguments?: Nodes<TypeNode>;
   arguments: Nodes<Expression>;
@@ -207,7 +207,7 @@ export interface ClassElem extends NamedDobj {
   _classElemBrand: any;
   name?: PropertyName;
 }
-export interface ClassExpression extends ClassLikeDobj, PrimaryExpression {
+export interface ClassExpression extends ClassLikeDobj, PrimaryEobj {
   kind: Syntax.ClassExpression;
 }
 export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
@@ -221,7 +221,7 @@ export interface ClassLikeDobj extends NamedDobj, DocContainer {
   heritageClauses?: Nodes<HeritageClause>;
   members: Nodes<ClassElem>;
 }
-export interface CommaListExpression extends Expression {
+export interface CommaListExpression extends Eobj {
   kind: Syntax.CommaListExpression;
   elems: Nodes<Expression>;
 }
@@ -413,7 +413,7 @@ export interface ComputedPropertyName extends Nobj {
   kind: Syntax.ComputedPropertyName;
   expression: Expression;
 }
-export interface ConditionalExpression extends Expression {
+export interface ConditionalExpression extends Eobj {
   kind: Syntax.ConditionalExpression;
   condition: Expression;
   questionToken: QuestionToken;
@@ -500,7 +500,7 @@ export interface DeclarationSobj extends NamedDobj, Sobj {
 }
 export interface Decorator extends Nobj {
   kind: Syntax.Decorator;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
 }
 export interface DefaultClause extends Nobj {
   kind: Syntax.DefaultClause;
@@ -512,7 +512,7 @@ export interface DeferredTypeReference extends TypeReference {
   node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
   mapper?: TypeMapper;
 }
-export interface DeleteExpression extends UnaryExpression {
+export interface DeleteExpression extends UnaryEobj {
   kind: Syntax.DeleteExpression;
   expression: UnaryExpression;
 }
@@ -698,9 +698,9 @@ export interface ElemAccessChain extends ElemAccessExpression {
 export interface ElemAccessChainRoot extends ElemAccessChain {
   questionDotToken: QuestionDotToken;
 }
-export interface ElemAccessExpression extends MemberExpression {
+export interface ElemAccessExpression extends MemberEobj {
   kind: Syntax.ElemAccessExpression;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
   argumentExpression: Expression;
 }
@@ -832,6 +832,9 @@ export interface EnumMember extends NamedDobj, DocContainer {
   initer?: Expression;
 }
 export interface EnumType extends Type {}
+export interface Eobj extends Nobj {
+  _expressionBrand: any;
+}
 export interface EvolvingArrayType extends ObjectType {
   elemType: Type;
   finalArrayType?: Type;
@@ -860,9 +863,7 @@ export interface ExportSpecifier extends NamedDobj {
   propertyName?: Identifier;
   name: Identifier;
 }
-export interface Expression extends Nobj {
-  _expressionBrand: any;
-}
+
 export interface ExpressionStatement extends Sobj, DocContainer {
   kind: Syntax.ExpressionStatement;
   expression: Expression;
@@ -870,7 +871,7 @@ export interface ExpressionStatement extends Sobj, DocContainer {
 export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
   kind: Syntax.ExpressionWithTypeArguments;
   parent?: HeritageClause | DocAugmentsTag | DocImplementsTag;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
 }
 export interface ExternalModuleReference extends Nobj {
   kind: Syntax.ExternalModuleReference;
@@ -958,7 +959,7 @@ export interface FunctionDeclaration extends FunctionLikeDobj, DeclarationSobj {
   name?: Identifier;
   body?: FunctionBody;
 }
-export interface FunctionExpression extends PrimaryExpression, FunctionLikeDobj, DocContainer {
+export interface FunctionExpression extends PrimaryEobj, FunctionLikeDobj, DocContainer {
   kind: Syntax.FunctionExpression;
   name?: Identifier;
   body: FunctionBody;
@@ -1002,7 +1003,7 @@ export interface HeritageClause extends Nobj {
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
   types: Nodes<ExpressionWithTypeArguments>;
 }
-export interface Identifier extends PrimaryExpression, Dobj {
+export interface Identifier extends PrimaryEobj, Dobj {
   kind: Syntax.Identifier;
   escapedText: qu.__String;
   originalKeywordKind?: Syntax;
@@ -1046,7 +1047,7 @@ export interface ImportEqualsDeclaration extends DeclarationSobj, DocContainer {
   name: Identifier;
   moduleReference: ModuleReference;
 }
-export interface ImportExpression extends PrimaryExpression {
+export interface ImportExpression extends PrimaryEobj {
   kind: Syntax.ImportKeyword;
 }
 export interface ImportMetaProperty extends MetaProperty {
@@ -1212,40 +1213,40 @@ export interface JsxClosingElem extends Nobj {
   parent?: JsxElem;
   tagName: JsxTagNameExpression;
 }
-export interface JsxClosingFragment extends Expression {
+export interface JsxClosingFragment extends Eobj {
   kind: Syntax.JsxClosingFragment;
   parent?: JsxFragment;
 }
-export interface JsxElem extends PrimaryExpression {
+export interface JsxElem extends PrimaryEobj {
   kind: Syntax.JsxElem;
   openingElem: JsxOpeningElem;
   children: Nodes<JsxChild>;
   closingElem: JsxClosingElem;
 }
-export interface JsxExpression extends Expression {
+export interface JsxExpression extends Eobj {
   kind: Syntax.JsxExpression;
   parent?: JsxElem | JsxAttributeLike;
   dot3Token?: Token<Syntax.Dot3Token>;
   expression?: Expression;
 }
-export interface JsxFragment extends PrimaryExpression {
+export interface JsxFragment extends PrimaryEobj {
   kind: Syntax.JsxFragment;
   openingFragment: JsxOpeningFragment;
   children: Nodes<JsxChild>;
   closingFragment: JsxClosingFragment;
 }
-export interface JsxOpeningElem extends Expression {
+export interface JsxOpeningElem extends Eobj {
   kind: Syntax.JsxOpeningElem;
   parent?: JsxElem;
   tagName: JsxTagNameExpression;
   typeArguments?: Nodes<TypeNode>;
   attributes: JsxAttributes;
 }
-export interface JsxOpeningFragment extends Expression {
+export interface JsxOpeningFragment extends Eobj {
   kind: Syntax.JsxOpeningFragment;
   parent?: JsxFragment;
 }
-export interface JsxSelfClosingElem extends PrimaryExpression {
+export interface JsxSelfClosingElem extends PrimaryEobj {
   kind: Syntax.JsxSelfClosingElem;
   tagName: JsxTagNameExpression;
   typeArguments?: Nodes<TypeNode>;
@@ -1297,10 +1298,10 @@ export interface LateBoundElemAccessExpression extends ElemAccessExpression {
 export interface LateBoundName extends ComputedPropertyName {
   expression: EntityNameExpression;
 }
-export interface LeftHandSideExpression extends UpdateExpression {
+export interface LeftEobj extends UpdateEobj {
   _leftHandSideExpressionBrand: any;
 }
-export interface LiteralExpression extends LiteralLikeNode, PrimaryExpression {
+export interface LiteralEobj extends PrimaryEobj, LiteralLikeNode {
   _literalExpressionBrand: any;
 }
 export interface LiteralLikeNode extends Nobj {
@@ -1336,13 +1337,13 @@ export interface MappedTypeNode extends TypeNode, Dobj {
   questionToken?: QuestionToken | PlusToken | MinusToken;
   type?: TypeNode;
 }
-export interface MemberExpression extends LeftHandSideExpression {
+export interface MemberEobj extends LeftEobj {
   _memberExpressionBrand: any;
 }
 export interface MergeDeclarationMarker extends Sobj {
   kind: Syntax.MergeDeclarationMarker;
 }
-export interface MetaProperty extends PrimaryExpression {
+export interface MetaProperty extends PrimaryEobj {
   kind: Syntax.MetaProperty;
   keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
   name: Identifier;
@@ -1432,9 +1433,9 @@ export interface NamespaceImport extends NamedDobj {
   parent?: ImportClause;
   name: Identifier;
 }
-export interface NewExpression extends PrimaryExpression, Dobj {
+export interface NewExpression extends PrimaryEobj, Dobj {
   kind: Syntax.NewExpression;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
   typeArguments?: Nodes<TypeNode>;
   arguments?: Nodes<Expression>;
 }
@@ -1498,11 +1499,11 @@ export interface NodeWithTypeArguments extends TypeNode {
 export interface NonNullChain extends NonNullExpression {
   _optionalChainBrand: any;
 }
-export interface NonNullExpression extends LeftHandSideExpression {
+export interface NonNullExpression extends LeftEobj {
   kind: Syntax.NonNullExpression;
   expression: Expression;
 }
-export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Dobj {
+export interface NoSubstitutionLiteral extends LiteralEobj, TemplateLiteralLikeNode, Dobj {
   kind: Syntax.NoSubstitutionLiteral;
   templateFlags?: qt.TokenFlags;
 }
@@ -1512,13 +1513,13 @@ export interface NotEmittedStatement extends Sobj {
 export interface NullableType extends IntrinsicType {
   objectFlags: qt.ObjectFlags;
 }
-export interface NullLiteral extends PrimaryExpression, TypeNode {
+export interface NullLiteral extends PrimaryEobj, TypeNode {
   kind: Syntax.NullKeyword;
 }
 export interface NumberLiteralType extends LiteralType {
   value: number;
 }
-export interface NumericLiteral extends LiteralExpression, Dobj {
+export interface NumericLiteral extends LiteralEobj, Dobj {
   kind: Syntax.NumericLiteral;
   numericLiteralFlags: qt.TokenFlags;
 }
@@ -1538,7 +1539,7 @@ export interface ObjectLiteralExpression extends ObjectLiteralEobj<ObjectLiteral
   kind: Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
 }
-export interface ObjectLiteralEobj<T extends ObjectLiteralElem> extends PrimaryExpression, Dobj {
+export interface ObjectLiteralEobj<T extends ObjectLiteralElem> extends PrimaryEobj, Dobj {
   properties: Nodes<T>;
 }
 export interface ObjectType extends Type {
@@ -1550,7 +1551,7 @@ export interface ObjectType extends Type {
   stringIndexInfo?: IndexInfo;
   numberIndexInfo?: IndexInfo;
 }
-export interface OmittedExpression extends Expression {
+export interface OmittedExpression extends Eobj {
   kind: Syntax.OmittedExpression;
 }
 export class OperationCanceledException {}
@@ -1572,7 +1573,7 @@ export interface ParameterDeclaration extends NamedDobj, DocContainer {
   type?: TypeNode;
   initer?: Expression;
 }
-export interface ParenthesizedExpression extends PrimaryExpression, DocContainer {
+export interface ParenthesizedExpression extends PrimaryEobj, DocContainer {
   kind: Syntax.ParenthesizedExpression;
   expression: Expression;
 }
@@ -1599,7 +1600,7 @@ export interface ParsedCommandLine {
   compileOnSave?: boolean;
   configFileSpecs?: ConfigFileSpecs;
 }
-export interface PartiallyEmittedExpression extends LeftHandSideExpression {
+export interface PartiallyEmittedExpression extends LeftEobj {
   kind: Syntax.PartiallyEmittedExpression;
   expression: Expression;
 }
@@ -1610,9 +1611,9 @@ export interface PatternAmbientModule {
 export interface PluginImport {
   name: string;
 }
-export interface PostfixUnaryExpression extends UpdateExpression {
+export interface PostfixUnaryExpression extends UpdateEobj {
   kind: Syntax.PostfixUnaryExpression;
-  operand: LeftHandSideExpression;
+  operand: LeftExpression;
   operator: PostfixUnaryOperator;
 }
 export interface PragmaDefinition<T1 extends string = string, T2 extends string = string, T3 extends string = string, T4 extends string = string> {
@@ -1628,12 +1629,12 @@ export interface PragmaMap extends qu.QMap<PragmaPseudoMap[keyof PragmaPseudoMap
   get<K extends keyof PragmaPseudoMap>(k: K): PragmaPseudoMap[K] | PragmaPseudoMap[K][];
   forEach(action: <K extends keyof PragmaPseudoMap>(v: PragmaPseudoMap[K] | PragmaPseudoMap[K][], k: K) => void): void;
 }
-export interface PrefixUnaryExpression extends UpdateExpression {
+export interface PrefixUnaryExpression extends UpdateEobj {
   kind: Syntax.PrefixUnaryExpression;
   operator: PrefixUnaryOperator;
   operand: UnaryExpression;
 }
-export interface PrimaryExpression extends MemberExpression {
+export interface PrimaryEobj extends MemberEobj {
   _primaryExpressionBrand: any;
 }
 export interface Printer {
@@ -1783,9 +1784,9 @@ export interface PropertyAccessEntityNameExpression extends PropertyAccessExpres
   expression: EntityNameExpression;
   name: Identifier;
 }
-export interface PropertyAccessExpression extends MemberExpression, NamedDobj {
+export interface PropertyAccessExpression extends MemberEobj, NamedDobj {
   kind: Syntax.PropertyAccessExpression;
-  expression: LeftHandSideExpression;
+  expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
   name: Identifier | PrivateIdentifier;
 }
@@ -1855,7 +1856,7 @@ export interface RefFile {
   index: number;
   file: Path;
 }
-export interface RegexLiteral extends LiteralExpression {
+export interface RegexLiteral extends LiteralEobj {
   kind: Syntax.RegexLiteral;
 }
 export interface RequireVariableDeclaration extends VariableDeclaration {
@@ -2079,12 +2080,12 @@ export interface SpreadAssignment extends ObjectLiteralElem, DocContainer {
   kind: Syntax.SpreadAssignment;
   expression: Expression;
 }
-export interface SpreadElem extends Expression {
+export interface SpreadElem extends Eobj {
   kind: Syntax.SpreadElem;
   parent?: ArrayLiteralExpression | CallExpression | NewExpression;
   expression: Expression;
 }
-export interface StringLiteral extends LiteralExpression, Dobj {
+export interface StringLiteral extends LiteralEobj, Dobj {
   kind: Syntax.StringLiteral;
   textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
   singleQuote?: boolean;
@@ -2102,7 +2103,7 @@ export interface SuperCall extends CallExpression {
 export interface SuperElemAccessExpression extends ElemAccessExpression {
   expression: SuperExpression;
 }
-export interface SuperExpression extends PrimaryExpression {
+export interface SuperExpression extends PrimaryEobj {
   kind: Syntax.SuperKeyword;
 }
 export interface SuperPropertyAccessExpression extends PropertyAccessExpression {
@@ -2210,25 +2211,25 @@ export interface SynthesizedComment extends CommentRange {
 export interface SyntheticDefaultModuleType extends Type {
   syntheticType?: Type;
 }
-export interface SyntheticExpression extends Expression {
+export interface SyntheticExpression extends Eobj {
   kind: Syntax.SyntheticExpression;
   isSpread: boolean;
   type: Type;
   tupleNameSource?: ParameterDeclaration | NamedTupleMember;
 }
-export interface SyntheticReferenceExpression extends LeftHandSideExpression {
+export interface SyntheticReferenceExpression extends LeftEobj {
   kind: Syntax.SyntheticReferenceExpression;
   expression: Expression;
   thisArg: Expression;
 }
-export interface TaggedTemplateExpression extends MemberExpression {
+export interface TaggedTemplateExpression extends MemberEobj {
   kind: Syntax.TaggedTemplateExpression;
-  tag: LeftHandSideExpression;
+  tag: LeftExpression;
   typeArguments?: Nodes<TypeNode>;
   template: TemplateLiteral;
   questionDotToken?: QuestionDotToken;
 }
-export interface TemplateExpression extends PrimaryExpression {
+export interface TemplateExpression extends PrimaryEobj {
   kind: Syntax.TemplateExpression;
   head: TemplateHead;
   templateSpans: Nodes<TemplateSpan>;
@@ -2257,7 +2258,7 @@ export interface TemplateTail extends TemplateLiteralLikeNode {
   parent?: TemplateSpan;
   templateFlags?: qt.TokenFlags;
 }
-export interface ThisExpression extends PrimaryExpression, KeywordTypeNode {
+export interface ThisExpression extends PrimaryEobj, KeywordTypeNode {
   kind: Syntax.ThisKeyword;
 }
 export interface ThisTypeNode extends TypeNode {
@@ -2337,7 +2338,7 @@ export interface TypeAliasDeclaration extends DeclarationSobj, DocContainer {
   typeParameters?: Nodes<TypeParameterDeclaration>;
   type: TypeNode;
 }
-export interface TypeAssertion extends UnaryExpression {
+export interface TypeAssertion extends UnaryEobj {
   kind: Syntax.TypeAssertionExpression;
   type: TypeNode;
   expression: UnaryExpression;
@@ -2537,7 +2538,7 @@ export interface TypeLiteralNode extends TypeNode, Dobj {
 export interface TypeNode extends Nobj {
   _typeNodeBrand: any;
 }
-export interface TypeOfExpression extends UnaryExpression {
+export interface TypeOfExpression extends UnaryEobj {
   kind: Syntax.TypeOfExpression;
   expression: UnaryExpression;
 }
@@ -2588,9 +2589,10 @@ export interface TypeReferenceNode extends NodeWithTypeArguments {
   kind: Syntax.TypeReference;
   typeName: EntityName;
 }
-export interface UnaryExpression extends Expression {
+export interface UnaryEobj extends Eobj {
   _unaryExpressionBrand: any;
 }
+
 export interface UnionOrIntersectionType extends Type {
   types: Type[];
   objectFlags: qt.ObjectFlags;
@@ -2663,7 +2665,7 @@ export interface UnscopedEmitHelper extends EmitHelper {
   readonly importName?: string;
   readonly text: string;
 }
-export interface UpdateExpression extends UnaryExpression {
+export interface UpdateEobj extends UnaryEobj {
   _updateExpressionBrand: any;
 }
 export interface UserPreferences {
@@ -2697,7 +2699,7 @@ export interface VariableStatement extends Sobj, DocContainer {
   kind: Syntax.VariableStatement;
   declarationList: VariableDeclarationList;
 }
-export interface VoidExpression extends UnaryExpression {
+export interface VoidExpression extends UnaryEobj {
   kind: Syntax.VoidExpression;
   expression: UnaryExpression;
 }
@@ -2727,7 +2729,7 @@ export interface WithStatement extends Sobj {
   expression: Expression;
   statement: Statement;
 }
-export interface YieldExpression extends Expression {
+export interface YieldExpression extends Eobj {
   kind: Syntax.YieldExpression;
   asteriskToken?: AsteriskToken;
   expression?: Expression;
@@ -2896,6 +2898,26 @@ export type ErrorCallback = (m: qd.Message, length: number) => void;
 export type ExclamationToken = Token<Syntax.ExclamationToken>;
 export type ExponentiationOperator = Syntax.Asterisk2Token;
 export type ExportedModulesFromDeclarationEmit = readonly Symbol[];
+export type Expression =
+  | ArrowFunction
+  | AsExpression
+  | AwaitExpression
+  | BinaryExpression
+  | CommaListExpression
+  | ConditionalExpression
+  | DeleteExpression
+  | JsxClosingFragment
+  | JsxExpression
+  | JsxOpeningElem
+  | JsxOpeningFragment
+  | OmittedExpression
+  | SpreadElem
+  | SyntheticExpression
+  | TypeAssertion
+  | TypeOfExpression
+  | UnaryExpression
+  | VoidExpression
+  | YieldExpression;
 export type FlowNode = FlowStart | FlowLabel | FlowAssignment | FlowCall | FlowCondition | FlowSwitchClause | FlowArrayMutation | FlowCall | FlowReduceLabel;
 export type FlowType = Type | IncompleteType;
 export type ForIniter = VariableDeclarationList | Expression;
@@ -2973,11 +2995,14 @@ export type LateVisibilityPaintedStatement =
   | ModuleDeclaration
   | TypeAliasDeclaration
   | VariableStatement;
+export type LeftExpression = CallExpression | MemberExpression | NonNullExpression | PartiallyEmittedExpression | SyntheticReferenceExpression;
+export type LiteralExpression = BigIntLiteral | NoSubstitutionLiteral | NumericLiteral | RegexLiteral | StringLiteral;
 export type LiteralImportTypeNode = ImportTypeNode & { argument: LiteralTypeNode & { literal: StringLiteral } };
 export type LiteralLikeElemAccessExpression = ElemAccessExpression & Declaration & { argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression };
 export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
 export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
 export type MatchingKeys<TRecord, TMatch, K extends keyof TRecord = keyof TRecord> = K extends (TRecord[K] extends TMatch ? K : never) ? K : never;
+export type MemberExpression = ElemAccessExpression | PrimaryExpression | PropertyAccessExpression | TaggedTemplateExpression;
 export type MinusToken = Token<Syntax.MinusToken>;
 export type Modifier =
   | Token<Syntax.AbstractKeyword>
@@ -3038,6 +3063,7 @@ export type Node =
   | ConstructSignatureDeclaration
   | ContinueStatement
   | DebuggerStatement
+  | Declaration
   | Decorator
   | DefaultClause
   | DeleteExpression
@@ -3086,6 +3112,7 @@ export type Node =
   | ExportAssignment
   | ExportDeclaration
   | ExportSpecifier
+  | Expression
   | ExpressionStatement
   | ExpressionWithTypeArguments
   | ExternalModuleReference
@@ -3176,6 +3203,7 @@ export type Node =
   | SourceFile
   | SpreadAssignment
   | SpreadElem
+  | Statement
   | StringLiteral
   | SuperExpression
   | SwitchStatement
@@ -3245,6 +3273,26 @@ export type PostfixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token;
 export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { arguments: PragmaArgumentType<K>; range: CommentRange } };
 export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
 export type PrefixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token | Syntax.PlusToken | Syntax.MinusToken | Syntax.TildeToken | Syntax.ExclamationToken;
+export type PrimaryExpression =
+  | ArrayLiteralExpression
+  | BooleanLiteral
+  | ClassExpression
+  | FunctionExpression
+  | Identifier
+  | ImportExpression
+  | JsxAttributes
+  | JsxElem
+  | JsxFragment
+  | JsxSelfClosingElem
+  | LiteralExpression
+  | MetaProperty
+  | NewExpression
+  | NullLiteral
+  | ObjectLiteralExpression
+  | ParenthesizedExpression
+  | SuperExpression
+  | TemplateExpression
+  | ThisExpression;
 export type PropertyName = Identifier | StringLiteral | NumericLiteral | ComputedPropertyName | PrivateIdentifier;
 export type PropertyNameLiteral = Identifier | StringLiteralLike | NumericLiteral;
 export type QuestionDotToken = Token<Syntax.QuestionDotToken>;
@@ -3327,10 +3375,12 @@ export type TypeOnlyCompatibleAliasDeclaration = ImportClause | NamespaceImport 
 export type TypePredicate = ThisTypePredicate | IdentifierTypePredicate | AssertsThisTypePredicate | AssertsIdentifierTypePredicate;
 export type TypeReferenceType = TypeReferenceNode | ExpressionWithTypeArguments;
 export type TypeVariable = TypeParameter | IndexedAccessType;
+export type UnaryExpression = AwaitExpression | DeleteExpression | TypeAssertion | TypeOfExpression | UpdateExpression | VoidExpression;
 export type UnionOrIntersectionTypeNode = UnionTypeNode | IntersectionTypeNode;
 export type UniqueNameHandler = (baseName: string, checkFn?: (name: string) => boolean, optimistic?: boolean) => string;
 export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
 export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
+export type UpdateExpression = PostfixUnaryExpression | PrefixUnaryExpression | LeftExpression;
 export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression;
 export type VariableLikeDeclaration =
   | BindingElem

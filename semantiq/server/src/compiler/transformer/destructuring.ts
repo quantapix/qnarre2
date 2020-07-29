@@ -298,7 +298,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
   value = ensureIdentifier(flattenContext, value, true, location);
   return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
-function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
+function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftExpression {
   if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
     return new qs.ElemAccessExpression(value, argumentExpression);

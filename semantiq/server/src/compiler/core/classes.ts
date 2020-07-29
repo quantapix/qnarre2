@@ -244,12 +244,12 @@ export class Bundle extends Nobj implements qt.Bundle {
 }
 Bundle.prototype.kind = Bundle.kind;
 export class CallBinding extends Nobj {
-  target!: qt.LeftHandSideExpression;
+  target!: qt.LeftExpression;
   thisArg!: qt.Expression;
 }
-export class CallExpression extends qc.LeftHandSideExpression implements qt.CallExpression {
+export class CallExpression extends qc.LeftExpression implements qt.CallExpression {
   static readonly kind = Syntax.CallExpression;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
   typeArguments?: qt.Nodes<qt.TypeNode>;
   arguments: qt.Nodes<qt.Expression>;
@@ -542,7 +542,7 @@ DebuggerStatement.prototype.kind = DebuggerStatement.kind;
 export class Decorator extends Nobj implements qt.Decorator {
   static readonly kind = Syntax.Decorator;
   parent?: qt.NamedDobj;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   constructor(e: qt.Expression) {
     super();
     this.expression = parenthesize.forAccess(e);
@@ -869,7 +869,7 @@ export class DoStatement extends qc.IterationSobj implements qt.DoStatement {
 DoStatement.prototype.kind = DoStatement.kind;
 export class ElemAccessExpression extends qc.MemberExpression implements qt.ElemAccessExpression {
   static readonly kind = Syntax.ElemAccessExpression;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
   argumentExpression: qt.Expression;
   constructor(e: qt.Expression, i: number | qt.Expression) {
@@ -1016,7 +1016,7 @@ qu.addMixins(ExpressionStatement, [qc.DocContainer]);
 export class ExpressionWithTypeArguments extends qc.NodeWithTypeArguments implements qt.ExpressionWithTypeArguments {
   static readonly kind = Syntax.ExpressionWithTypeArguments;
   parent?: qt.HeritageClause | qt.DocAugmentsTag | qt.DocImplementsTag;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   constructor(ts: readonly qt.TypeNode[] | undefined, e: qt.Expression) {
     super(true);
     this.expression = parenthesize.forAccess(e);
@@ -2020,7 +2020,7 @@ export class NamespaceImport extends qc.NamedDobj implements qt.NamespaceImport 
 NamespaceImport.prototype.kind = NamespaceImport.kind;
 export class NewExpression extends qc.PrimaryExpression implements qt.NewExpression {
   static readonly kind = Syntax.NewExpression;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   typeArguments?: qt.Nodes<qt.TypeNode>;
   arguments?: qt.Nodes<qt.Expression>;
   constructor(e: qt.Expression, ts?: readonly qt.TypeNode[], a?: readonly qt.Expression[]) {
@@ -2036,7 +2036,7 @@ export class NewExpression extends qc.PrimaryExpression implements qt.NewExpress
 }
 NewExpression.prototype.kind = NewExpression.kind;
 qu.addMixins(NewExpression, [qc.Declaration]);
-export class NonNullExpression extends qc.LeftHandSideExpression implements qt.NonNullExpression {
+export class NonNullExpression extends qc.LeftExpression implements qt.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
   expression: qt.Expression;
   constructor(e: qt.Expression) {
@@ -2223,7 +2223,7 @@ export class ParenthesizedTypeNode extends qc.TypeNode implements qt.Parenthesiz
   }
 }
 ParenthesizedTypeNode.prototype.kind = ParenthesizedTypeNode.kind;
-export class PartiallyEmittedExpression extends qc.LeftHandSideExpression implements qt.PartiallyEmittedExpression {
+export class PartiallyEmittedExpression extends qc.LeftExpression implements qt.PartiallyEmittedExpression {
   static readonly kind = Syntax.PartiallyEmittedExpression;
   expression: qt.Expression;
   constructor(e: qt.Expression, o?: Node) {
@@ -2239,7 +2239,7 @@ export class PartiallyEmittedExpression extends qc.LeftHandSideExpression implem
 PartiallyEmittedExpression.prototype.kind = PartiallyEmittedExpression.kind;
 export class PostfixUnaryExpression extends qc.UpdateExpression implements qt.PostfixUnaryExpression {
   static readonly kind = Syntax.PostfixUnaryExpression;
-  operand: qt.LeftHandSideExpression;
+  operand: qt.LeftExpression;
   operator: qt.PostfixUnaryOperator;
   constructor(e: qt.Expression, o: qt.PostfixUnaryOperator) {
     super(true);
@@ -2280,7 +2280,7 @@ export class PrivateIdentifier extends qc.TokenOrIdentifier implements qt.Privat
 PrivateIdentifier.prototype.kind = PrivateIdentifier.kind;
 export class PropertyAccessExpression extends qc.MemberExpression implements qt.PropertyAccessExpression {
   static readonly kind = Syntax.PropertyAccessExpression;
-  expression: qt.LeftHandSideExpression;
+  expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
   name: qt.Identifier | qt.PrivateIdentifier;
   constructor(e: qt.Expression, n: string | qt.Identifier | qt.PrivateIdentifier) {
@@ -2550,7 +2550,7 @@ export class SwitchStatement extends qc.Statement implements qt.SwitchStatement 
   }
 }
 SwitchStatement.prototype.kind = SwitchStatement.kind;
-export class SyntheticReferenceExpression extends qc.LeftHandSideExpression implements qt.SyntheticReferenceExpression {
+export class SyntheticReferenceExpression extends qc.LeftExpression implements qt.SyntheticReferenceExpression {
   static readonly kind = Syntax.SyntheticReferenceExpression;
   expression: qt.Expression;
   thisArg: qt.Expression;
@@ -2566,7 +2566,7 @@ export class SyntheticReferenceExpression extends qc.LeftHandSideExpression impl
 SyntheticReferenceExpression.prototype.kind = SyntheticReferenceExpression.kind;
 export class TaggedTemplateExpression extends qc.MemberExpression implements qt.TaggedTemplateExpression {
   static readonly kind = Syntax.TaggedTemplateExpression;
-  tag: qt.LeftHandSideExpression;
+  tag: qt.LeftExpression;
   typeArguments?: qt.Nodes<qt.TypeNode>;
   template: qt.TemplateLiteral;
   questionDotToken?: qt.QuestionDotToken;
@@ -3198,10 +3198,10 @@ export namespace parenthesize {
     const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     return qf.is.commaSequence(e2) ? new ParenthesizedExpression(e) : e;
   }
-  export function forAccess(e: qt.Expression): qt.LeftHandSideExpression {
+  export function forAccess(e: qt.Expression): qt.LeftExpression {
     const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     const n = e2 as Node;
-    if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.arguments)) return e as qt.LeftHandSideExpression;
+    if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.arguments)) return e as qt.LeftExpression;
     return new ParenthesizedExpression(e).setRange(e);
   }
   export function postfixOperand(e: qt.Expression) {
@@ -3291,13 +3291,13 @@ export namespace parenthesize {
     }
     return needsParens ? new ParenthesizedExpression(e) : e;
   }
-  export function forNew(e: qt.Expression): qt.LeftHandSideExpression {
+  export function forNew(e: qt.Expression): qt.LeftExpression {
     const n = qf.get.leftmostExpression(e, true) as Node;
     switch (n.kind) {
       case Syntax.CallExpression:
         return new ParenthesizedExpression(e);
       case Syntax.NewExpression:
-        return !n.arguments ? new ParenthesizedExpression(e) : (e as qt.LeftHandSideExpression);
+        return !n.arguments ? new ParenthesizedExpression(e) : (e as qt.LeftExpression);
     }
     return forAccess(e);
   }

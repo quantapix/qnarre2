@@ -923,7 +923,7 @@ export function transformTypeScript(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitExpressionWithTypeArguments(node: ExpressionWithTypeArguments): ExpressionWithTypeArguments {
-    return node.update(undefined, visitNode(node.expression, visitor, isLeftHandSideExpression));
+    return node.update(undefined, visitNode(node.expression, visitor, isLeftExpression));
   }
   function shouldEmitFunctionLikeDeclaration<T extends FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
     return !qc.is.missing(node.body);
@@ -1121,7 +1121,7 @@ export function transformTypeScript(context: TransformationContext) {
     return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitNonNullExpression(node: NonNullExpression): Expression {
-    const expression = visitNode(node.expression, visitor, isLeftHandSideExpression);
+    const expression = visitNode(node.expression, visitor, isLeftExpression);
     return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitCallExpression(node: CallExpression) {
@@ -1614,7 +1614,7 @@ export function transformTypeScript(context: TransformationContext) {
   function substituteElemAccessExpression(node: ElemAccessExpression) {
     return substituteConstantValue(node);
   }
-  function substituteConstantValue(node: PropertyAccessExpression | ElemAccessExpression): LeftHandSideExpression {
+  function substituteConstantValue(node: PropertyAccessExpression | ElemAccessExpression): LeftExpression {
     const constantValue = tryGetConstEnumValue(node);
     if (constantValue !== undefined) {
       setConstantValue(node, constantValue);

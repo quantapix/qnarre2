@@ -276,7 +276,7 @@ function create() {
       }
     }
     startOfExpression() {
-      if (this.startOfLeftHandSideExpression()) return true;
+      if (this.startOfLeftExpression()) return true;
       switch (tok()) {
         case Syntax.PlusToken:
         case Syntax.MinusToken:
@@ -301,7 +301,7 @@ function create() {
           return this.identifier();
       }
     }
-    startOfLeftHandSideExpression() {
+    startOfLeftExpression() {
       switch (tok()) {
         case Syntax.ThisKeyword:
         case Syntax.SuperKeyword:
@@ -963,7 +963,7 @@ function create() {
             if (tok() === Syntax.ImplementsKeyword || tok() === Syntax.ExtendsKeyword) return lookAhead(next.isStartOfExpression);
             return false;
           };
-          if (!error) return is.startOfLeftHandSideExpression() && !isExtendsOrImplementsKeyword();
+          if (!error) return is.startOfLeftExpression() && !isExtendsOrImplementsKeyword();
           return is.identifier() && !isExtendsOrImplementsKeyword();
         case Context.VariableDeclarations:
           return is.identifierOrPrivateIdentifierOrPattern();
@@ -2175,7 +2175,7 @@ function create() {
       }
       return expression;
     }
-    leftHandSideExpressionOrHigher(): qc.LeftHandSideExpression {
+    leftHandSideExpressionOrHigher(): qc.LeftExpression {
       let expression: qc.MemberExpression;
       if (tok() === Syntax.ImportKeyword) {
         if (lookAhead(next.isOpenParenOrLessThan)) {
@@ -2224,7 +2224,7 @@ function create() {
       n.expression = this.simpleUnaryExpression();
       return finishNode(n);
     }
-    propertyAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
+    propertyAccessExpressionRest(expression: qc.LeftExpression, questionDotToken: qc.QuestionDotToken | undefined) {
       const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
       n.expression = expression;
       n.questionDotToken = questionDotToken;
@@ -2235,7 +2235,7 @@ function create() {
       }
       return finishNode(n);
     }
-    elemAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
+    elemAccessExpressionRest(expression: qc.LeftExpression, questionDotToken: qc.QuestionDotToken | undefined) {
       const n = create.node(Syntax.ElemAccessExpression, expression.pos);
       n.expression = expression;
       n.questionDotToken = questionDotToken;
@@ -2250,7 +2250,7 @@ function create() {
       if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
-    memberExpressionRest(expression: qc.LeftHandSideExpression, allowOptionalChain: boolean): qc.MemberExpression {
+    memberExpressionRest(expression: qc.LeftExpression, allowOptionalChain: boolean): qc.MemberExpression {
       while (true) {
         let questionDotToken: qc.QuestionDotToken | undefined;
         let isPropertyAccess = false;
@@ -2283,7 +2283,7 @@ function create() {
         return <MemberExpression>expression;
       }
     }
-    taggedTemplateRest(tag: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
+    taggedTemplateRest(tag: qc.LeftExpression, questionDotToken: qc.QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
       const n = create.node(Syntax.TaggedTemplateExpression, tag.pos);
       n.tag = tag;
       n.questionDotToken = questionDotToken;
@@ -2292,7 +2292,7 @@ function create() {
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
-    callExpressionRest(expression: qc.LeftHandSideExpression): qc.LeftHandSideExpression {
+    callExpressionRest(expression: qc.LeftExpression): qc.LeftExpression {
       while (true) {
         expression = this.memberExpressionRest(expression, true);
         const questionDotToken = this.optionalToken(Syntax.QuestionDotToken);
