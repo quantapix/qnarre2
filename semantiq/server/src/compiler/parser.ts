@@ -774,7 +774,7 @@ function create() {
       };
       if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
       const n = syntaxCursor.currentNode(scanner.getStartPos());
-      if (qc.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
+      if (qc.is.missing(n) || n.intersectsChange || qf.has.parseError(n)) return;
       const fs = n.flags & NodeFlags.ContextFlags;
       if (fs !== flags.value) return;
       const canReuse = () => {
@@ -3449,7 +3449,7 @@ function create() {
         case Syntax.LessThanToken:
           return this.elementOrSelfClosingElementOrFragment(false);
         default:
-          return Debug.assertNever(token);
+          return qc.assert.never(token);
       }
     }
     attributes(): JsxAttributes {

@@ -608,7 +608,7 @@ export function newCheck(f: qt.Frame) {
                   let suggestion;
                   if (prop.valueDeclaration && qc.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) && objectLiteralDeclaration.sourceFile === errorNode.sourceFile) {
                     const propDeclaration = prop.valueDeclaration as ObjectLiteralElementLike;
-                    qg.assertNode(propDeclaration, isObjectLiteralElementLike);
+                    qg.assert.node(propDeclaration, isObjectLiteralElementLike);
                     errorNode = propDeclaration;
                     const name = propDeclaration.name!;
                     if (qf.is.kind(qc.Identifier, name)) suggestion = getSuggestionForNonexistentProperty(name, errorTarget);
@@ -2505,7 +2505,7 @@ export function newCheck(f: qt.Frame) {
       checkGrammar.metaProperty(n);
       if (n.keywordToken === Syntax.NewKeyword) return this.newTargetMetaProperty(n);
       if (n.keywordToken === Syntax.ImportKeyword) return this.importMetaProperty(n);
-      return qg.assertNever(n.keywordToken);
+      return qc.assert.never(n.keywordToken);
     }
     newTargetMetaProperty(n: qc.MetaProperty) {
       const container = qf.get.newTargetContainer(n);
@@ -2640,7 +2640,7 @@ export function newCheck(f: qt.Frame) {
       return true;
     }
     referenceExpression(expr: Expression, invalidReferenceMessage: qd.Message, invalidOptionalChainMessage: qd.Message): boolean {
-      const n = skipOuterExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
+      const n = qc.skip.outerExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
       if (n.kind !== Syntax.qc.Identifier && !qf.is.accessExpression(n)) {
         error(expr, invalidReferenceMessage);
         return false;
@@ -2653,7 +2653,7 @@ export function newCheck(f: qt.Frame) {
     }
     deleteExpression(n: qc.DeleteExpression): qc.Type {
       this.expression(n.expression);
-      const expr = skipParentheses(n.expression);
+      const expr = qc.skip.parentheses(n.expression);
       if (!qf.is.accessExpression(expr)) {
         error(expr, qd.msgs.The_operand_of_a_delete_operator_must_be_a_property_reference);
         return booleanType;
@@ -4318,7 +4318,7 @@ export function newCheck(f: qt.Frame) {
             this.unusedInferTypeParameter(n, addDiagnostic);
             break;
           default:
-            qg.assertNever(n, 'Node should not have been registered for unused identifiers check');
+            qc.assert.never(n, 'Node should not have been registered for unused identifiers check');
         }
       }
     }
@@ -5893,7 +5893,7 @@ export function newCheck(f: qt.Frame) {
         if (qf.is.externalOrCommonJsModule(n)) registerForUnusedIdentifiersCheck(n);
         if (!n.isDeclarationFile && (compilerOptions.noUnusedLocals || compilerOptions.noUnusedParameters)) {
           this.unusedIdentifiers(getPotentiallyUnusedIdentifiers(n), (containingNode, kind, diag) => {
-            if (!containsParseError(containingNode) && unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) diagnostics.add(diag);
+            if (!qf.has.parseError(containingNode) && unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) diagnostics.add(diag);
           });
         }
         if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !n.isDeclarationFile && qf.is.externalModule(n)) this.importsForTypeOnlyConversion(n);
@@ -6322,7 +6322,7 @@ export function newCheck(f: qt.Frame) {
         for (const prop of n.properties) {
           if (prop.kind === Syntax.SpreadAssignment) {
             if (inDestructuring) {
-              const expression = skipParentheses(prop.expression);
+              const expression = qc.skip.parentheses(prop.expression);
               if (isArrayLiteralExpression(expression) || qf.is.kind(qc.ObjectLiteralExpression, expression))
                 return grammarErrorOnNode(prop.expression, qd.msgs.A_rest_element_cannot_contain_a_binding_pattern);
             }
@@ -6357,7 +6357,7 @@ export function newCheck(f: qt.Frame) {
               currentKind = DeclarationMeaning.SetAccessor;
               break;
             default:
-              throw qg.assertNever(prop, 'Unexpected syntax kind:' + (<Node>prop).kind);
+              throw qc.assert.never(prop, 'Unexpected syntax kind:' + (<Node>prop).kind);
           }
           if (!inDestructuring) {
             const effectiveName = qf.get.propertyNameForPropertyNameNode(name);

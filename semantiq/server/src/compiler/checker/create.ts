@@ -1447,7 +1447,7 @@ export function newResolve(f: qt.Frame) {
           if (!ignoreErrors) error(right, qd.msgs.Namespace_0_has_no_exported_member_1, getFullyQualifiedName(namespace), declarationNameToString(right));
           return;
         }
-      } else throw Debug.assertNever(name, 'Unknown entity name kind.');
+      } else throw qc.assert.never(name, 'Unknown entity name kind.');
       assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
       if (!isSynthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
         markSymbolOfAliasDeclarationIfTypeOnly(qf.get.aliasDeclarationFromName(name), symbol, undefined, true);
@@ -2260,7 +2260,7 @@ export function newResolve(f: qt.Frame) {
         case Syntax.JsxSelfClosingElement:
           return this.jsxOpeningLikeElement(node, candidatesOutArray, checkMode);
       }
-      throw Debug.assertNever(node, "Branch in 'this.signature' should be unreachable.");
+      throw qc.assert.never(node, "Branch in 'this.signature' should be unreachable.");
     }
     helpersModule(node: SourceFile, errorNode: Node) {
       if (!externalHelpersModule)

@@ -18,7 +18,7 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) 
   if (!r) return;
   if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
-  qc.assertNode(n2, test);
+  qc.assert.node(n2, test);
   aggregateTransformFlags(n2!);
   return n2 as T;
 }
@@ -43,12 +43,12 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (
       if (r) {
         if (qu.isArray(r)) {
           for (const n2 of r) {
-            qc.assertNode(n2, test);
+            qc.assert.node(n2, test);
             aggregateTransformFlags(n2);
             updated.push(n2 as T);
           }
         } else {
-          qc.assertNode(r, test);
+          qc.assert.node(r, test);
           aggregateTransformFlags(r);
           updated.push(r as T);
         }

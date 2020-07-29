@@ -124,7 +124,7 @@ export function transformES2017(context: TransformationContext) {
         case Syntax.LabeledStatement:
           return visitEachChild(node, asyncBodyVisitor, context);
         default:
-          return Debug.assertNever(node, 'Unhandled node.');
+          return qc.assert.never(node, 'Unhandled node.');
       }
     }
     return visitor(node);

@@ -484,7 +484,7 @@ export function transformES2015(context: TransformationContext) {
     extendsClauseElement: qc.ExpressionWithTypeArguments | undefined,
     hasSynthesizedSuper: boolean
   ) {
-    const isDerivedClass = !!extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword;
+    const isDerivedClass = !!extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword;
     if (!constructor) return createDefaultConstructorBody(node, isDerivedClass);
     const prologue: qc.Statement[] = [];
     const statements: qc.Statement[] = [];
@@ -1866,12 +1866,12 @@ function visitArrayLiteralExpression(node: ArrayLiteralExpression): qc.Expressio
 }
 function visitCallExpression(node: CallExpression) {
   if (qf.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) return visitTypeScriptClassWrapper(node);
-  const expression = skipOuterExpressions(node.expression);
+  const expression = qc.skip.outerExpressions(node.expression);
   if (expression.kind === Syntax.SuperKeyword || qf.is.superProperty(expression) || some(node.arguments, isSpreadElement)) return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
   return node.update(visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
-  const body = cast(cast(skipOuterExpressions(node.expression), isArrowFunction).body, isBlock);
+  const body = cast(cast(qc.skip.outerExpressions(node.expression), isArrowFunction).body, isBlock);
   const isVariableStatementWithIniter = (stmt: qc.Statement) => qf.is.kind(qc.VariableStatement, stmt) && !!first(stmt.declarationList.declarations).initer;
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
@@ -1881,10 +1881,10 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
   const remainingStatements = filter(bodyStatements, (stmt) => !isVariableStatementWithIniter(stmt));
   const varStatement = cast(first(classStatements), isVariableStatement);
   const variable = varStatement.declarationList.declarations[0];
-  const initer = skipOuterExpressions(variable.initer!);
+  const initer = qc.skip.outerExpressions(variable.initer!);
   const aliasAssignment = qu.tryCast(initer, isAssignmentExpression);
-  const call = cast(aliasAssignment ? skipOuterExpressions(aliasAssignment.right) : initer, isCallExpression);
-  const func = cast(skipOuterExpressions(call.expression), isFunctionExpression);
+  const call = cast(aliasAssignment ? qc.skip.outerExpressions(aliasAssignment.right) : initer, isCallExpression);
+  const func = cast(qc.skip.outerExpressions(call.expression), isFunctionExpression);
   const funcStatements = func.body.statements;
   let classBodyStart = 0;
   let classBodyEnd = -1;
@@ -1928,7 +1928,7 @@ function visitImmediateSuperCallInBody(node: CallExpression) {
   return visitCallExpressionWithPotentialCapturedThisAssignment(node, false);
 }
 function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | BinaryExpression {
-  if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qf.is.superProperty(skipOuterExpressions(node.expression))) {
+  if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qf.is.superProperty(qc.skip.outerExpressions(node.expression))) {
     const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration);
     if (node.expression.kind === Syntax.SuperKeyword) {
       setEmitFlags(thisArg, EmitFlags.NoSubstitution);

@@ -594,7 +594,7 @@ export function transformDeclarations(context: TransformationContext) {
           const result = lateStatementReplacementMap.get(key);
           lateStatementReplacementMap.delete(key);
           if (result) {
-            if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) needsScopeFixMarker = true;
+            if (isArray(result) ? some(result, qf.is.scopeMarkerNeeded) : qf.is.scopeMarkerNeeded(result)) needsScopeFixMarker = true;
             if (qc.is.kind(qc.SourceFile, statement.parent) && (isArray(result) ? some(result, isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
@@ -743,7 +743,7 @@ export function transformDeclarations(context: TransformationContext) {
           );
         }
         default:
-          Debug.assertNever(input, `Attempted to process unhandled node kind: ${(ts as any).SyntaxKind[(input as any).kind]}`);
+          qc.assert.never(input, `Attempted to process unhandled node kind: ${(ts as any).SyntaxKind[(input as any).kind]}`);
       }
     }
     if (qc.is.kind(qc.TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
@@ -1002,7 +1002,7 @@ export function transformDeclarations(context: TransformationContext) {
         );
       }
     }
-    return Debug.assertNever(input, `Unhandled top-level node in declaration emit: ${(ts as any).SyntaxKind[(input as any).kind]}`);
+    return qc.assert.never(input, `Unhandled top-level node in declaration emit: ${(ts as any).SyntaxKind[(input as any).kind]}`);
     function cleanup<T extends Node>(node: T | undefined): T | undefined {
       if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;
       if (canProdiceDiagnostic) getSymbolAccessibilityDiagnostic = oldDiag;

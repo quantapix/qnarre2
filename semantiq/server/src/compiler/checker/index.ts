@@ -382,7 +382,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         assert(!!(getNodeLinks(file).flags & NodeCheckFlags.TypeChecked));
         diagnostics = addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
         check.unusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
-          if (!containsParseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
+          if (!qf.has.parseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
             (diagnostics || (diagnostics = [])).push({ ...diag, category: qd.msgs.Category.Suggestion });
         });
         return diagnostics || empty;
@@ -2044,7 +2044,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           };
           break;
         default:
-          Debug.assertNever(prop);
+          qc.assert.never(prop);
       }
     }
   }
@@ -3782,7 +3782,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       case Syntax.ObjectBindingPattern:
         return bindingNameText(cast(first(name.elements), BindingElement.kind).name);
       default:
-        return Debug.assertNever(name);
+        return qc.assert.never(name);
     }
   }
   type ImportedDeclaration = ImportClause | ImportSpecifier | NamespaceImport;
@@ -4048,7 +4048,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       case UnusedKind.Parameter:
         return !!compilerOptions.noUnusedParameters;
       default:
-        return Debug.assertNever(kind);
+        return qc.assert.never(kind);
     }
   }
   function throwIfNonDiagnosticsProducing() {

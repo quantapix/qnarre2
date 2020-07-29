@@ -2564,7 +2564,7 @@ export function newGet(f: qt.Frame) {
             links.resolvedType = getTypeFromTypeNode(node.type);
             break;
           default:
-            throw Debug.assertNever(node.operator);
+            throw qc.assert.never(node.operator);
         }
       }
       return links.resolvedType;
@@ -3425,7 +3425,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.JsxFragment:
           return { errorNode: child, innerExpression: child, nameType };
         default:
-          return Debug.assertNever(child, 'Found invalid jsx child');
+          return qc.assert.never(child, 'Found invalid jsx child');
       }
       return;
     }
@@ -4262,8 +4262,8 @@ export function newGet(f: qt.Frame) {
     }
     typePredicateArgument(predicate: TypePredicate, callExpression: CallExpression) {
       if (predicate.kind === TypePredicateKind.Identifier || predicate.kind === TypePredicateKind.AssertsIdentifier) return callExpression.arguments[predicate.parameterIndex];
-      const invokedExpression = skipParentheses(callExpression.expression);
-      return qf.is.accessExpression(invokedExpression) ? skipParentheses(invokedExpression.expression) : undefined;
+      const invokedExpression = qc.skip.parentheses(callExpression.expression);
+      return qf.is.accessExpression(invokedExpression) ? qc.skip.parentheses(invokedExpression.expression) : undefined;
     }
     flowTypeOfReference(reference: Node, declaredType: Type, initialType = declaredType, flowContainer?: Node, couldBeUninitialized?: boolean) {
       let key: string | undefined;
@@ -4401,7 +4401,7 @@ export function newGet(f: qt.Frame) {
         return;
       }
       function narrowTypeByAssertion(type: Type, expr: Expression): Type {
-        const node = skipParentheses(expr);
+        const node = qc.skip.parentheses(expr);
         if (node.kind === Syntax.FalseKeyword) return unreachableNeverType;
         if (node.kind === Syntax.BinaryExpression) {
           if ((<BinaryExpression>node).operatorToken.kind === Syntax.Ampersand2Token)
@@ -5218,7 +5218,7 @@ export function newGet(f: qt.Frame) {
         case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
           return qu.fail('Does not apply');
         default:
-          return Debug.assertNever(kind);
+          return qc.assert.never(kind);
       }
     }
     typeOfPropertyOfContextualType(type: Type, name: qu.__String) {
@@ -5901,7 +5901,7 @@ export function newGet(f: qt.Frame) {
     }
     thisArgumentOfCall(node: CallLikeExpression): LeftHandSideExpression | undefined {
       if (node.kind === Syntax.CallExpression) {
-        const callee = skipOuterExpressions(node.expression);
+        const callee = qc.skip.outerExpressions(node.expression);
         if (qf.is.accessExpression(callee)) return callee.expression;
       }
     }
@@ -6460,7 +6460,7 @@ export function newGet(f: qt.Frame) {
       return type;
     }
     quickTypeOfExpression(node: Expression) {
-      const expr = skipParentheses(node);
+      const expr = qc.skip.parentheses(node);
       if (qf.is.kind(qc.CallExpression, expr) && expr.expression.kind !== Syntax.SuperKeyword && !qf.is.requireCall(expr, true) && !isSymbolOrSymbolForCall(expr)) {
         const type = qf.is.callChain(expr) ? getReturnTypeOfSingleNonGenericSignatureOfCallChain(expr) : getReturnTypeOfSingleNonGenericCallSignature(check.nonNullExpression(expr.expression));
         if (type) return type;

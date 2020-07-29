@@ -291,7 +291,7 @@ export function transformClassFields(context: TransformationContext) {
   function visitClassDeclaration(node: ClassDeclaration) {
     if (!forEach(node.members, doesClassElementNeedTransform)) return visitEachChild(node, visitor, context);
     const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
+    const isDerivedClass = !!(extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
     const statements: Statement[] = [
       node.update(undefined, node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass)),
     ];
@@ -309,7 +309,7 @@ export function transformClassFields(context: TransformationContext) {
     const isDecoratedClassDeclaration = qc.is.kind(qc.ClassDeclaration, qc.get.originalOf(node));
     const staticProperties = getProperties(node, true);
     const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
+    const isDerivedClass = !!(extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
     const classExpression = node.update(node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
     if (some(staticProperties) || some(pendingExpressions)) {
       if (isDecoratedClassDeclaration) {
@@ -512,7 +512,7 @@ export function transformClassFields(context: TransformationContext) {
   function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
     if (qc.is.kind(qc.ComputedPropertyName, name)) {
       const expression = visitNode(name.expression, visitor, isExpression);
-      const innerExpression = skipPartiallyEmittedExpressions(expression);
+      const innerExpression = qc.skip.partiallyEmittedExpressions(expression);
       const inlinable = isSimpleInlineableExpression(innerExpression);
       const alreadyTransformed = qc.is.assignmentExpression(innerExpression) && qc.is.generatedIdentifier(innerExpression.left);
       if (!alreadyTransformed && !inlinable && shouldHoist) {

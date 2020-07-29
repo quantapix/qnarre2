@@ -2336,7 +2336,7 @@ export function createProgram(
         ({ pos, end } = refFile.typeReferenceDirectives[index]);
         break;
       default:
-        return Debug.assertNever(kind);
+        return qc.assert.never(kind);
     }
     return qf.create.fileDiagnostic(refFile, pos, end - pos, message, ...args);
   }

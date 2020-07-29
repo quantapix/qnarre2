@@ -97,12 +97,15 @@ export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Dia
     qu.Comparison.EqualTo
   );
 }
+export function sortAndDeduplicateDiagnostics<T extends Diagnostic>(ds: readonly T[]): qu.ReadonlySorteds<T> {
+  return qu.sortAndDeduplicate<T>(ds, compareDiagnostics);
+}
 function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): qu.Comparison {
   if (!d1.relatedInformation && !d2.relatedInformation) return qu.Comparison.EqualTo;
   if (d1.relatedInformation && d2.relatedInformation) {
     return (
       qu.compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
-      qu.forEach(d1.relatedInformation, (d1i, index) => {
+      qu.each(d1.relatedInformation, (d1i, index) => {
         const d2i = d2.relatedInformation![index];
         return compareDiagnostics(d1i, d2i);
       }) ||
@@ -150,7 +153,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     reattachFileDiagnostics,
   };
   function reattachFileDiagnostics(s: SourceFile) {
-    qu.forEach(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
+    qu.each(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
   }
   function lookup(d: Diagnostic): Diagnostic | undefined {
     let ds: qu.Sorteds<Diagnostic> | undefined;

@@ -1662,7 +1662,7 @@ export class QContext {
       if (
         enclosingDeclaration &&
         ((qf.is.kind(qc.SourceFile, enclosingDeclaration) && qf.is.externalOrCommonJsModule(enclosingDeclaration)) || qf.is.kind(qc.ModuleDeclaration, enclosingDeclaration)) &&
-        (!some(ss, isExternalModuleIndicator) || (!qf.has.scopeMarker(ss) && some(ss, needsScopeMarker)))
+        (!some(ss, isExternalModuleIndicator) || (!qf.has.scopeMarker(ss) && some(ss, qf.is.scopeMarkerNeeded)))
       ) {
         ss.push(qf.create.emptyExports());
       }

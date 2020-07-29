@@ -72,7 +72,7 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
             state = ModuleInstanceState.Instantiated;
             return true;
           default:
-            Debug.assertNever(childState);
+            qc.assert.never(childState);
         }
       });
       return state;
@@ -1333,7 +1333,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
-      const expr = skipParentheses(node.expression);
+      const expr = qc.skip.parentheses(node.expression);
       if (expr.kind === Syntax.FunctionExpression || expr.kind === Syntax.ArrowFunction) {
         bindEach(node.typeArguments);
         bindEach(node.arguments);
@@ -2669,7 +2669,7 @@ export function computeTransformFlagsForNode(node: Node, subtreeFlags: Transform
 }
 function computeCallExpression(node: CallExpression, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
-  const callee = skipOuterExpressions(node.expression);
+  const callee = qc.skip.outerExpressions(node.expression);
   const expression = node.expression;
   if (node.flags & NodeFlags.OptionalChain) {
     transformFlags |= TransformFlags.ContainsES2020;

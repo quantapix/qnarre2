@@ -337,7 +337,7 @@ export function transformModule(context: TransformationContext) {
           case Syntax.SetAccessor:
             return false;
           default:
-            Debug.assertNever(elem, 'Unhandled object member kind');
+            qc.assert.never(elem, 'Unhandled object member kind');
         }
       }
     } else if (isArrayLiteralExpression(node)) {

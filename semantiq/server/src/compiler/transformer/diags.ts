@@ -143,7 +143,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   if (qf.is.kind(qc.ExpressionWithTypeArguments, node)) return getHeritageClauseVisibilityError;
   if (qf.is.kind(qc.ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
   if (qf.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
-  return qu.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
+  return qc.assert.never(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
   function getVariableDeclarationTypeVisibilityMessage(r: qt.SymbolAccessibilityResult) {
     if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
       return r.errorModuleName

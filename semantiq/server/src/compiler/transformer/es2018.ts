@@ -326,7 +326,7 @@ export function transformES2018(context: TransformationContext) {
     return result;
   }
   function transformForOfStatementWithObjectRest(node: ForOfStatement) {
-    const initerWithoutParens = skipParentheses(node.initer) as ForIniter;
+    const initerWithoutParens = qc.skip.parentheses(node.initer) as ForIniter;
     if (qc.is.kind(qc.VariableDeclarationList, initerWithoutParens) || qc.is.kind(qc.AssignmentPattern, initerWithoutParens)) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;

@@ -1,4 +1,4 @@
-import { Node } from './type';
+import { FlowNode, Node } from './type';
 import * as qu from './util';
 export let isDebugging = false;
 let isDebugInfoEnabled = false;
@@ -14,16 +14,16 @@ function extendedDebug() {
   }
   return extendedDebugModule;
 }
-export function printControlFlowGraph(flowNode: FlowNode) {
-  return console.log(formatControlFlowGraph(flowNode));
+export function printControlFlowGraph(n: FlowNode) {
+  return console.log(formatControlFlowGraph(n));
 }
-export function formatControlFlowGraph(flowNode: FlowNode) {
-  return extendedDebug().formatControlFlowGraph(flowNode);
+export function formatControlFlowGraph(n: FlowNode) {
+  return extendedDebug().formatControlFlowGraph(n);
 }
-export function attachFlowNodeDebugInfo(flowNode: FlowNode) {
+export function attachFlowNodeDebugInfo(n: FlowNode) {
   if (isDebugInfoEnabled) {
-    if (!('__debugFlowFlags' in flowNode)) {
-      Object.defineProperties(flowNode, {
+    if (!('__debugFlowFlags' in n)) {
+      Object.defineProperties(n, {
         __debugFlowFlags: {
           get(this: FlowNode) {
             return formatEnum(this.flags, (ts as any).FlowFlags, true);

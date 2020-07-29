@@ -1,12 +1,11 @@
 import { Nodes, Token } from './base';
 import * as qc from './base';
+import { qf } from './frame';
 import { DocTag, Modifier, Node, NodeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { qf } from './frame';
-export * from './base';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 export class Nobj extends qc.Nobj {
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
@@ -3101,7 +3100,7 @@ export namespace parenthesize {
     cachedLiteralKind: Syntax;
   }
   function getLiteralKindOfBinaryPlusOperand(e: qt.Expression): Syntax {
-    e = qc.skipPartiallyEmittedExpressions(e);
+    e = qc.qc.skip.partiallyEmittedExpressions(e);
     if (qy.is.literal(e.kind)) return e.kind;
     const n = e as Node;
     if (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.PlusToken) {
@@ -3115,7 +3114,7 @@ export namespace parenthesize {
     return Syntax.Unknown;
   }
   export function binaryOperand(binaryOperator: Syntax, operand: qt.Expression, isLeft: boolean, leftOperand?: qt.Expression) {
-    const skipped = qc.skipPartiallyEmittedExpressions(operand);
+    const skipped = qc.qc.skip.partiallyEmittedExpressions(operand);
     if (skipped.kind === Syntax.ParenthesizedExpression) return operand;
     function operatorHasAssociativeProperty(binaryOperator: Syntax) {
       // The following operators are associative in JavaScript:
@@ -3131,7 +3130,7 @@ export namespace parenthesize {
     function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: qt.Expression, isLeft: boolean, leftOperand: qt.Expression | undefined) {
       const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
       const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
-      const emittedOperand = qc.skipPartiallyEmittedExpressions(operand);
+      const emittedOperand = qc.qc.skip.partiallyEmittedExpressions(operand);
       if (!isLeft && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) return true;
       const operandPrecedence = qf.get.expressionPrecedence(emittedOperand);
       switch (qu.compareNumbers(operandPrecedence, binaryOperatorPrecedence)) {
@@ -3190,17 +3189,17 @@ export namespace parenthesize {
   }
   export function forConditionalHead(c: qt.Expression) {
     const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, qt.QuestionToken);
-    const emittedCondition = qc.skipPartiallyEmittedExpressions(c);
+    const emittedCondition = qc.qc.skip.partiallyEmittedExpressions(c);
     const conditionPrecedence = qf.get.expressionPrecedence(emittedCondition);
     if (compareNumbers(conditionPrecedence, conditionalPrecedence) !== qu.Comparison.GreaterThan) return new ParenthesizedExpression(c);
     return c;
   }
   export function subexpressionOfConditionalExpression(e: qt.Expression): qt.Expression {
-    const e2 = qc.skipPartiallyEmittedExpressions(e);
+    const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     return qf.is.commaSequence(e2) ? new ParenthesizedExpression(e) : e;
   }
   export function forAccess(e: qt.Expression): qt.LeftHandSideExpression {
-    const e2 = qc.skipPartiallyEmittedExpressions(e);
+    const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     const n = e2 as Node;
     if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.arguments)) return e as qt.LeftHandSideExpression;
     return new ParenthesizedExpression(e).setRange(e);
@@ -3223,17 +3222,17 @@ export namespace parenthesize {
     return r ? new Nodes(r, es.trailingComma).setRange(es) : es;
   }
   export function expressionForList(e: qt.Expression) {
-    const e2 = qc.skipPartiallyEmittedExpressions(e);
+    const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     const expressionPrecedence = qf.get.expressionPrecedence(e2);
     const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
     return expressionPrecedence > commaPrecedence ? e : new ParenthesizedExpression(e).setRange(e);
   }
   export function expressionForExpressionStatement(e: qt.Expression) {
-    const e2 = qc.skipPartiallyEmittedExpressions(e);
+    const e2 = qc.qc.skip.partiallyEmittedExpressions(e);
     const n = e2 as Node;
     if (n.kind === Syntax.CallExpression) {
       const callee = n.expression;
-      const k = qc.skipPartiallyEmittedExpressions(callee).kind;
+      const k = qc.qc.skip.partiallyEmittedExpressions(callee).kind;
       if (k === Syntax.FunctionExpression || k === Syntax.ArrowFunction) {
         const c = getMutableClone(e2);
         c.expression = new ParenthesizedExpression(callee).setRange(callee);
@@ -3281,7 +3280,7 @@ export namespace parenthesize {
     return;
   }
   export function defaultExpression(e: qt.Expression) {
-    const check = qc.skipPartiallyEmittedExpressions(e);
+    const check = qc.qc.skip.partiallyEmittedExpressions(e);
     let needsParens = qf.is.commaSequence(check);
     if (!needsParens) {
       switch (qf.get.leftmostExpression(check, false).kind) {

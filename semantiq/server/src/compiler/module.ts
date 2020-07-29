@@ -116,7 +116,7 @@ function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName,
   const fromPaths = paths && tryGetModuleNameFromPaths(removeFileExtension(relativeToBaseUrl), importRelativeToBaseUrl, paths);
   const nonRelative = fromPaths === undefined ? importRelativeToBaseUrl : fromPaths;
   if (relativePreference === RelativePreference.NonRelative) return nonRelative;
-  if (relativePreference !== RelativePreference.Auto) qu.assertNever(relativePreference);
+  if (relativePreference !== RelativePreference.Auto) qc.assert.never(relativePreference);
   return isPathRelativeToParent(nonRelative) || countPathComponents(relativePath) < countPathComponents(nonRelative) ? relativePath : nonRelative;
 }
 export function countPathComponents(path: string): number {
@@ -406,7 +406,7 @@ function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, option
     case Ending.JsExtension:
       return noExtension + getJSExtensionForFile(fileName, options);
     default:
-      return qu.assertNever(ending);
+      return qc.assert.never(ending);
   }
 }
 function getJSExtensionForFile(fileName: string, options: CompilerOptions): Extension {
@@ -424,7 +424,7 @@ function getJSExtensionForFile(fileName: string, options: CompilerOptions): Exte
     case Extension.TsBuildInfo:
       return fail(`Extension ${Extension.TsBuildInfo} is unsupported:: FileName:: ${fileName}`);
     default:
-      return qu.assertNever(ext);
+      return qc.assert.never(ext);
   }
 }
 function getRelativePathIfInDirectory(path: string, directoryPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
@@ -1364,7 +1364,7 @@ function loadNodeModuleFromDirectoryWorker(
         packageFile = readPackageJsonTSConfigField(jsonContent, candidate, state);
         break;
       default:
-        return qu.assertNever(extensions);
+        return qc.assert.never(extensions);
     }
   }
   const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) => {

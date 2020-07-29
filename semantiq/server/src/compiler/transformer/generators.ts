@@ -506,7 +506,7 @@ export function transformGenerators(context: TransformationContext) {
       case Associativity.Right:
         return visitRightAssociativeBinaryExpression(node);
       default:
-        return Debug.assertNever(assoc);
+        return qc.assert.never(assoc);
     }
   }
   function visitRightAssociativeBinaryExpression(node: BinaryExpression) {

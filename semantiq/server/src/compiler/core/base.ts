@@ -1,13 +1,12 @@
 import * as qc from './index';
 import * as qd from '../diagnostic';
+import { qf } from './frame';
 import { Node } from '../type';
 import { CheckFlags, EmitFlags, ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { qf } from './frame';
-export * from '../type';
 export interface ReadonlyNodeSet<T extends Node> {
   has(n: T): boolean;
   forEach(cb: (n: T) => void): void;
@@ -1534,7 +1533,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
           (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
           break;
         default:
-          qg.assertNever(section);
+          qc.assert.never(section);
       }
     }
     this.prologues = prologues || empty;
@@ -1566,7 +1565,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
         case BundleFileSectionKind.Prepend:
           break;
         default:
-          qg.assertNever(section);
+          qc.assert.never(section);
       }
     }
     this.texts = texts || empty;
@@ -1765,36 +1764,106 @@ qu.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qu.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qu.addMixins(LiteralExpression, [LiteralLikeNode]);
-let currentAssertionLevel = qu.AssertionLevel.None;
-type AssertionKeys = qt.MatchingKeys<typeof Debug, qu.AnyFunction>;
-const assertionCache: Partial<Record<AssertionKeys, { level: qu.AssertionLevel; assertion: qu.AnyFunction }>> = {};
-export function getAssertionLevel() {
-  return currentAssertionLevel;
+export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
+  return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
-export function setAssertionLevel(l: qu.AssertionLevel) {
-  const prevAssertionLevel = currentAssertionLevel;
-  currentAssertionLevel = l;
-  if (l > prevAssertionLevel) {
-    for (const k of qu.getOwnKeys(assertionCache) as AssertionKeys[]) {
-      const f = assertionCache[k];
-      if (f !== undefined && Debug[k] !== f.assertion && l >= f.level) {
-        (Debug as any)[k] = f;
-        assertionCache[k] = undefined;
+type AssertionKeys = qt.MatchingKeys<typeof Debug, qu.AnyFunction>;
+export const assert = new (class {
+  level = qu.AssertionLevel.None;
+  cache: Partial<Record<AssertionKeys, { level: qu.AssertionLevel; assertion: qu.AnyFunction }>> = {};
+  setLevel(l: qu.AssertionLevel) {
+    const old = this.level;
+    this.level = l;
+    if (l > old) {
+      for (const k of qu.getOwnKeys(this.cache) as AssertionKeys[]) {
+        const f = this.cache[k];
+        if (f !== undefined && Debug[k] !== f.assertion && l >= f.level) {
+          (Debug as any)[k] = f;
+          this.cache[k] = undefined;
+        }
       }
     }
   }
-}
-export function shouldAssert(l: qu.AssertionLevel): boolean {
-  return currentAssertionLevel >= l;
-}
-function shouldAssertFunction<K extends AssertionKeys>(l: qu.AssertionLevel, name: K): boolean {
-  if (!shouldAssert(l)) {
-    assertionCache[name] = { level: l, assertion: Debug[name] };
-    (Debug as any)[name] = qu.noop;
-    return false;
+  shouldAssert(l: qu.AssertionLevel): boolean {
+    return this.level >= l;
   }
-  return true;
-}
+  shouldAssertFunction<K extends AssertionKeys>(l: qu.AssertionLevel, name: K): boolean {
+    if (!this.shouldAssert(l)) {
+      this.cache[name] = { level: l, assertion: Debug[name] };
+      (Debug as any)[name] = qu.noop;
+      return false;
+    }
+    return true;
+  }
+  never(x: never, msg = 'Illegal value:', mark?: qu.AnyFunction): never {
+    const v = typeof x === 'object' && qu.hasProperty(x, 'kind') && qu.hasProperty(x, 'pos') && format.syntaxKind ? 'SyntaxKind: ' + format.syntax((x as Node).kind) : JSON.stringify(x);
+    return qu.fail(`${msg} ${v}`, mark || this.never);
+  }
+  eachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is Nodes<U>;
+  eachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is readonly U[];
+  eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+  eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.eachNode')) {
+      qu.assert(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || this.eachNode);
+    }
+  }
+  node<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
+  node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+  node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.node')) {
+      qu.assert(
+        n !== undefined && (test === undefined || test(n)),
+        msg || 'Unexpected node.',
+        () => `Node ${format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
+        mark || this.node
+      );
+    }
+  }
+  notNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is Exclude<T, U>;
+  notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+  notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.notNode')) {
+      qu.assert(
+        n === undefined || test === undefined || !test(n),
+        msg || 'Unexpected node.',
+        () => `Node ${format.syntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
+        mark || this.notNode
+      );
+    }
+  }
+  optionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
+  optionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U | undefined;
+  optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+  optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalNode')) {
+      qu.assert(
+        test === undefined || n === undefined || test(n),
+        msg || 'Unexpected node.',
+        () => `Node ${format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
+        mark || this.optionalNode
+      );
+    }
+  }
+  optionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
+  optionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
+  optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction): void;
+  optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalToken')) {
+      qu.assert(
+        k === undefined || n === undefined || n.kind === k,
+        msg || 'Unexpected node.',
+        () => `Node ${format.syntax(n!.kind)} was not a '${format.syntax(k)}' token.`,
+        mark || this.optionalToken
+      );
+    }
+  }
+  missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction): asserts n is undefined;
+  missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction) {
+    if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.missingNode')) {
+      qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${format.syntax(n!.kind)} was unexpected'.`, mark || this.missingNode);
+    }
+  }
+})();
 export const format = new (class {
   emitFlags(f?: qt.EmitFlags): string {
     return qu.formatEnum(f, (qt as any).EmitFlags, true);
@@ -1824,77 +1893,31 @@ export const format = new (class {
     return qu.formatEnum(f, (qt as any).TypeFlags, true);
   }
 })();
-export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
-  return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
-}
-export function assertNever(x: never, msg = 'Illegal value:', mark?: qu.AnyFunction): never {
-  const v = typeof x === 'object' && qu.hasProperty(x, 'kind') && qu.hasProperty(x, 'pos') && format.syntaxKind ? 'SyntaxKind: ' + format.syntax((x as Node).kind) : JSON.stringify(x);
-  return qu.fail(`${msg} ${v}`, mark || assertNever);
-}
-export function assertEachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is Nodes<U>;
-export function assertEachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is readonly U[];
-export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertEachNode')) {
-    qu.assert(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || assertEachNode);
+export const skip = new (class {
+  outerExpressions(n: qt.Expression, ks?: qt.OuterExpressionKinds): qt.Expression;
+  outerExpressions(n: Node, ks?: qt.OuterExpressionKinds): Node;
+  outerExpressions(n: Node | qt.Expression, ks = qt.OuterExpressionKinds.All): Node | qt.Expression {
+    while (qf.is.outerExpression(n, ks)) {
+      n = n.expression;
+    }
+    return n;
   }
-}
-export function assertNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
-export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertNode')) {
-    qu.assert(
-      n !== undefined && (test === undefined || test(n)),
-      msg || 'Unexpected node.',
-      () => `Node ${format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-      mark || assertNode
-    );
+  assertions(n: qt.Expression): qt.Expression;
+  assertions(n: Node): Node;
+  assertions(n: Node | qt.Expression) {
+    return this.outerExpressions(n, qt.OuterExpressionKinds.Assertions);
   }
-}
-export function assertNotNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is Exclude<T, U>;
-export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertNotNode')) {
-    qu.assert(
-      n === undefined || test === undefined || !test(n),
-      msg || 'Unexpected node.',
-      () => `Node ${format.syntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
-      mark || assertNotNode
-    );
+  parentheses(n: qt.Expression): qt.Expression;
+  parentheses(n: Node): Node;
+  parentheses(n: Node | qt.Expression) {
+    return this.outerExpressions(n, qt.OuterExpressionKinds.Parentheses);
   }
-}
-export function assertOptionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
-export function assertOptionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U | undefined;
-export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertOptionalNode')) {
-    qu.assert(
-      test === undefined || n === undefined || test(n),
-      msg || 'Unexpected node.',
-      () => `Node ${format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-      mark || assertOptionalNode
-    );
+  partiallyEmittedExpressions(n: qt.Expression): qt.Expression;
+  partiallyEmittedExpressions(n: Node): Node;
+  partiallyEmittedExpressions(n: Node | qt.Expression) {
+    return this.outerExpressions(n, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
   }
-}
-export function assertOptionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
-export function assertOptionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
-export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction): void;
-export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertOptionalToken')) {
-    qu.assert(
-      k === undefined || n === undefined || n.kind === k,
-      msg || 'Unexpected node.',
-      () => `Node ${format.syntax(n!.kind)} was not a '${format.syntax(k)}' token.`,
-      mark || assertOptionalToken
-    );
-  }
-}
-export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction): asserts n is undefined;
-export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction) {
-  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertMissingNode')) {
-    qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${format.syntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
-  }
-}
+})();
 export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
 export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
 export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
@@ -1905,29 +1928,6 @@ export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'qu
     n = n.parent;
   }
   return;
-}
-export function skipOuterExpressions(n: qt.Expression, ks?: qt.OuterExpressionKinds): qt.Expression;
-export function skipOuterExpressions(n: Node, ks?: qt.OuterExpressionKinds): Node;
-export function skipOuterExpressions(n: Node | qt.Expression, ks = qt.OuterExpressionKinds.All): Node | qt.Expression {
-  while (qf.is.outerExpression(n, ks)) {
-    n = n.expression;
-  }
-  return n;
-}
-export function skipAssertions(n: qt.Expression): qt.Expression;
-export function skipAssertions(n: Node): Node;
-export function skipAssertions(n: Node | qt.Expression) {
-  return skipOuterExpressions(n, qt.OuterExpressionKinds.Assertions);
-}
-export function skipParentheses(n: qt.Expression): qt.Expression;
-export function skipParentheses(n: Node): Node;
-export function skipParentheses(n: Node | qt.Expression) {
-  return skipOuterExpressions(n, qt.OuterExpressionKinds.Parentheses);
-}
-export function skipPartiallyEmittedExpressions(n: qt.Expression): qt.Expression;
-export function skipPartiallyEmittedExpressions(n: Node): Node;
-export function skipPartiallyEmittedExpressions(n: Node | qt.Expression) {
-  return skipOuterExpressions(n, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
 }
 export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
   return n.kind === Syntax.ExpressionWithTypeArguments && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)

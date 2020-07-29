@@ -401,17 +401,17 @@ export function newIs(f: qt.Frame) {
         case TypeSystemPropertyName.ResolvedTypeArguments:
           return !!(target as TypeReference).resolvedTypeArguments;
       }
-      return Debug.assertNever(propertyName);
+      return qc.assert.never(propertyName);
     }
     typeAny(type: Type | undefined) {
       return type && (type.flags & qt.TypeFlags.Any) !== 0;
     }
     nullOrUndefined(node: Expression) {
-      const expr = skipParentheses(node);
+      const expr = qc.skip.parentheses(node);
       return expr.kind === Syntax.NullKeyword || (expr.kind === Syntax.Identifier && getResolvedSymbol(<Identifier>expr) === undefinedSymbol);
     }
     emptyArrayLiteral(node: Expression) {
-      const expr = skipParentheses(node);
+      const expr = qc.skip.parentheses(node);
       return expr.kind === Syntax.ArrayLiteralExpression && (<ArrayLiteralExpression>expr).elements.length === 0;
     }
     declarationInConstructor(expression: Expression) {
@@ -1249,7 +1249,7 @@ export function newIs(f: qt.Frame) {
       return result;
     }
     falseExpression(expr: Expression): boolean {
-      const node = skipParentheses(expr);
+      const node = qc.skip.parentheses(expr);
       return (
         node.kind === Syntax.FalseKeyword ||
         (node.kind === Syntax.BinaryExpression &&
@@ -1543,7 +1543,7 @@ export function newIs(f: qt.Frame) {
       return this.inJSFile(node) && (type.flags & qt.TypeFlags.Union) !== 0 && (<UnionType>type).types.some((elementType) => isValidPropertyAccessWithType(node, isSuper, propertyName, elementType));
     }
     forInVariableForNumericPropertyNames(expr: Expression) {
-      const e = skipParentheses(expr);
+      const e = qc.skip.parentheses(expr);
       if (e.kind === Syntax.Identifier) {
         const symbol = getResolvedSymbol(<Identifier>e);
         if (symbol.flags & qt.SymbolFlags.Variable) {
@@ -1714,7 +1714,7 @@ export function newIs(f: qt.Frame) {
         return true;
       }
       if (this.accessExpression(expr)) {
-        const node = skipParentheses(expr.expression);
+        const node = qc.skip.parentheses(expr.expression);
         if (node.kind === Syntax.Identifier) {
           const symbol = getNodeLinks(node).resolvedSymbol!;
           if (symbol.flags & qt.SymbolFlags.Alias) {
@@ -1749,7 +1749,7 @@ export function newIs(f: qt.Frame) {
       return !!(getObjectFlags(type) & ObjectFlags.Anonymous) && !!type.symbol && isConstEnumSymbol(type.symbol);
     }
     sideEffectFree(node: Node): boolean {
-      node = skipParentheses(node);
+      node = qc.skip.parentheses(node);
       switch (node.kind) {
         case Syntax.Identifier:
         case Syntax.StringLiteral:
@@ -1799,7 +1799,7 @@ export function newIs(f: qt.Frame) {
       return (target.flags & qt.TypeFlags.Nullable) !== 0 || isTypeComparableTo(source, target);
     }
     nodekind(TypeAssertion, node: Expression) {
-      node = skipParentheses(node);
+      node = qc.skip.parentheses(node);
       return node.kind === Syntax.TypeAssertionExpression || node.kind === Syntax.AsExpression;
     }
     literalOfContextualType(candidateType: Type, contextualType: Type | undefined): boolean {

@@ -668,6 +668,7 @@ const slash3Ref = /^(\/\/\/\s*<reference\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
 const slash3TypeRef = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
 const slash3AMDRef = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
 const defaultLibRef = /^(\/\/\/\s*<reference\s+no-default-lib\s*=\s*)('|")(.+?)\2\s*\/>/;
+const MAX_SMI_X86 = 0x3fff_ffff;
 export const is = new (class {
   assignmentOperator(k: Syntax) {
     return k >= Syntax.FirstAssignment && k <= Syntax.LastAssignment;
@@ -1171,6 +1172,19 @@ export const get = new (class {
       if (eq(e, ext)) return e;
     }
     return;
+  }
+  indentation(ls: string[]) {
+    let i = MAX_SMI_X86;
+    for (const l of ls) {
+      if (!l.length) continue;
+      let i = 0;
+      for (; i < l.length && i < i; i++) {
+        if (!is.whiteSpaceLike(l.charCodeAt(i))) break;
+      }
+      if (i < i) i = i;
+      if (i === 0) return 0;
+    }
+    return i === MAX_SMI_X86 ? undefined : i;
   }
   leadingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
     return each.reduceLeadingCommentRange(s, pos, appendCommentRange, undefined, undefined);

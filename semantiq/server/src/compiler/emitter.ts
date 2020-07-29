@@ -1047,7 +1047,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case PipelinePhase.Emit:
         return pipelineEmitWithHint;
       default:
-        return Debug.assertNever(phase);
+        return qc.assert.never(phase);
     }
   }
   function getNextPipelinePhase(currentPhase: PipelinePhase, emitHint: EmitHint, node: Node) {
@@ -1066,7 +1066,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, isStringLiteral), true);
     if (hint === EmitHint.MappedTypeParameter) return emitMappedTypeParameter(cast(node, isTypeParameterDeclaration));
     if (hint === EmitHint.EmbeddedStatement) {
-      Debug.assertNode(node, isEmptyStatement);
+      qc.assert.node(node, isEmptyStatement);
       return emitEmptyStatement(true);
     }
     if (hint === EmitHint.Unspecified) {
@@ -1941,7 +1941,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     decreaseIndentIf(linesBeforeDot, linesAfterDot);
   }
   function mayNeedDotDotForPropertyAccess(expression: Expression) {
-    expression = skipPartiallyEmittedExpressions(expression);
+    expression = qc.skip.partiallyEmittedExpressions(expression);
     if (qc.is.kind(qc.NumericLiteral, expression)) {
       const text = getLiteralTextOfNode(<LiteralExpression>expression, false);
       return !expression.numericLiteralFlags && !stringContains(text, Token.toString(Syntax.DotToken)!);
@@ -3102,7 +3102,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       }
     } else {
       for (const prepend of sourceFileOrBundle.prepends) {
-        Debug.assertNode(prepend, isUnparsedSource);
+        qc.assert.node(prepend, isUnparsedSource);
         if (emitShebangIfNeeded(prepend)) return true;
       }
       for (const sourceFile of sourceFileOrBundle.sourceFiles) {
@@ -3438,7 +3438,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function writeLines(text: string): void {
     const lines = text.split(/\r\n?|\n/g);
-    const indentation = guessIndentation(lines);
+    const indentation = qy.get.indentation(lines);
     for (const lineText of lines) {
       const line = indentation ? lineText.slice(indentation) : lineText;
       if (line.length) {

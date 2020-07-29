@@ -320,7 +320,7 @@ export function transformTypeScript(context: TransformationContext) {
     let facts = ClassFacts.None;
     if (some(staticProperties)) facts |= ClassFacts.HasStaticInitializedProperties;
     const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
-    if (extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword) facts |= ClassFacts.IsDerivedClass;
+    if (extendsClauseElement && qc.skip.outerExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword) facts |= ClassFacts.IsDerivedClass;
     if (shouldEmitDecorateCallForClass(node)) facts |= ClassFacts.HasConstructorDecorators;
     if (childIsDecorated(node)) facts |= ClassFacts.HasMemberDecorators;
     if (isExportOfNamespace(node)) facts |= ClassFacts.IsExportOfNamespace;
@@ -854,7 +854,7 @@ export function transformTypeScript(context: TransformationContext) {
       case TypeReferenceSerializationKind.ObjectType:
         return new Identifier('Object');
       default:
-        return Debug.assertNever(kind);
+        return qc.assert.never(kind);
     }
   }
   function createCheckedValue(left: Expression, right: Expression) {
@@ -907,7 +907,7 @@ export function transformTypeScript(context: TransformationContext) {
     const name = member.name!;
     if (qc.is.kind(qc.ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
       const expression = visitNode(name.expression, visitor, isExpression);
-      const innerExpression = skipPartiallyEmittedExpressions(expression);
+      const innerExpression = qc.skip.partiallyEmittedExpressions(expression);
       if (!isSimpleInlineableExpression(innerExpression)) {
         const generatedName = qf.get.generatedNameForNode(name);
         hoistVariableDeclaration(generatedName);
@@ -1108,7 +1108,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node.update(visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
   }
   function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
-    const innerExpression = skipOuterExpressions(node.expression, ~OuterExpressionKinds.Assertions);
+    const innerExpression = qc.skip.outerExpressions(node.expression, ~OuterExpressionKinds.Assertions);
     if (qc.is.assertionExpression(innerExpression)) {
       const expression = visitNode(node.expression, visitor, isExpression);
       if (length(syntax.get.leadingCommentRangesOfNode(expression, currentSourceFile))) return node.update(expression);
@@ -1244,7 +1244,7 @@ export function transformTypeScript(context: TransformationContext) {
     return true;
   }
   function declaredNameInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration): __String {
-    Debug.assertNode(node.name, isIdentifier);
+    qc.assert.node(node.name, isIdentifier);
     return node.name.escapedText;
   }
   function addVarForEnumOrModuleDeclaration(statements: Statement[], node: ModuleDeclaration | EnumDeclaration) {
@@ -1273,7 +1273,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function visitModuleDeclaration(node: ModuleDeclaration): VisitResult<Statement> {
     if (!shouldEmitModuleDeclaration(node)) return new qc.NotEmittedStatement(node);
-    Debug.assertNode(node.name, isIdentifier, 'A TypeScript namespace should have an Identifier name.');
+    qc.assert.node(node.name, isIdentifier, 'A TypeScript namespace should have an Identifier name.');
     enableSubstitutionForNamespaceExports();
     const statements: Statement[] = [];
     let emitFlags = EmitFlags.AdviseOnEmitNode;

@@ -1,5 +1,6 @@
-import { NodeType } from './tree';
-import * as qc from './tree';
+import * as qb from './base';
+import { NodeType } from './classes';
+import * as qc from './classes';
 import * as qd from '../diagnostic';
 import { qf } from './frame';
 import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, Nodes, TokenFlags } from '../type';
@@ -7,8 +8,8 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-export * from './tree';
-export { qf } from './frame';
+export { assert, format, skip } from './base';
+export * from './classes';
 export namespace BindingOrAssignmentElement {
   export function getIniterOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.Expression | undefined {
     if (qf.is.declarationBindingElement(e)) {
@@ -159,29 +160,29 @@ export namespace BindingOrAssignmentElement {
   export function convertToArrayAssignmentElement(e: qc.BindingOrAssignmentElement) {
     if (qf.is.kind(qc.BindingElement, e)) {
       if (e.dot3Token) {
-        qc.assertNode(e.name, isIdentifier);
+        qc.assert.node(e.name, isIdentifier);
         return new qc.SpreadElement(e.name).setRange(e).setOriginal(e);
       }
       const e2 = convertToAssignmentElementTarget(e.name);
       return e.initer ? qf.create.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
     }
-    qc.assertNode(e, isExpression);
+    qc.assert.node(e, isExpression);
     return <qc.Expression>e;
   }
   export function convertToObjectAssignmentElement(e: qc.BindingOrAssignmentElement) {
     if (qf.is.kind(qc.BindingElement, e)) {
       if (e.dot3Token) {
-        qc.assertNode(e.name, isIdentifier);
+        qc.assert.node(e.name, isIdentifier);
         return new qc.SpreadAssignment(e.name).setRange(e).setOriginal(e);
       }
       if (e.propertyName) {
         const e2 = convertToAssignmentElementTarget(e.name);
         return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
-      qc.assertNode(e.name, isIdentifier);
+      qc.assert.node(e.name, isIdentifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);
     }
-    qc.assertNode(e, isObjectLiteralElementLike);
+    qc.assert.node(e, isObjectLiteralElementLike);
     return <qc.ObjectLiteralElementLike>e;
   }
 }
@@ -211,17 +212,17 @@ export namespace BindingOrAssignmentPattern {
   }
   export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
     if (qf.is.kind(qc.ObjectBindingPattern, n)) return new qc.ObjectLiteralExpression(qu.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
-    qc.assertNode(n, isObjectLiteralExpression);
+    qc.assert.node(n, isObjectLiteralExpression);
     return n;
   }
   export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
     if (qf.is.kind(qc.ArrayBindingPattern, n)) return new qc.ArrayLiteralExpression(qu.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
-    qc.assertNode(n, isArrayLiteralExpression);
+    qc.assert.node(n, isArrayLiteralExpression);
     return n;
   }
   export function convertToAssignmentElementTarget(n: qc.BindingOrAssignmentElementTarget): qc.Expression {
     if (qf.is.kind(qc.BindingPattern, n)) return convertToAssignmentPattern(n);
-    qc.assertNode(n, isExpression);
+    qc.assert.node(n, isExpression);
     return n;
   }
 }

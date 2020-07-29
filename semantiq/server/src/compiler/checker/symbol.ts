@@ -801,7 +801,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       type = this.getTypeOfEnumMember();
     } else if (qf.is.accessor(declaration)) {
       type = resolveTypeOfAccessors(symbol);
-    } else return qu.fail('Unhandled declaration kind! ' + Debug.qc.format.syntax(declaration.kind) + ' for ' + Debug.qc.format.symbol(symbol));
+    } else return qu.fail('Unhandled declaration kind! ' + qc.format.syntax(declaration.kind) + ' for ' + qc.format.symbol(symbol));
     if (!popTypeResolution()) {
       if (symbol.flags & qt.SymbolFlags.ValueModule && !(symbol.flags & qt.SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
       return reportCircularityError(symbol);

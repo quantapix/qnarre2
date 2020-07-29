@@ -76,7 +76,7 @@ export function flattenDestructuringAssignment(
     expressions = append(expressions, expression);
   }
   function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange, original: Node) {
-    Debug.assertNode(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
+    qc.assert.node(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
     const expression = qf.create.assignmentCallback
       ? qf.create.assignmentCallback(<Identifier>target, value, location)
       : setRange(qf.create.assignment(visitNode(<Expression>target, visitor, isExpression), value), location);
@@ -170,7 +170,7 @@ export function flattenDestructuringBinding(
     pendingExpressions = append(pendingExpressions, value);
   }
   function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange | undefined, original: Node | undefined) {
-    Debug.assertNode(target, isBindingName);
+    qc.assert.node(target, isBindingName);
     if (pendingExpressions) {
       value = inlineExpressions(append(pendingExpressions, value));
       pendingExpressions = undefined;
@@ -325,14 +325,14 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
   }
 }
 function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
-  Debug.assertEachNode(elements, isArrayBindingElement);
+  qc.assert.eachNode(elements, isArrayBindingElement);
   return new ArrayBindingPattern(<ArrayBindingElement[]>elements);
 }
 function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
   return new ArrayLiteralExpression(map(elements, convertToArrayAssignmentElement));
 }
 function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
-  Debug.assertEachNode(elements, BindingElement.kind);
+  qc.assert.eachNode(elements, BindingElement.kind);
   return ObjectBindingPattern.create(<BindingElement[]>elements);
 }
 function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {

@@ -1,6 +1,8 @@
-import * as qu from './util';
+import * as qc from './core';
+import * as qd from './diagnostic';
 import { Node } from './type';
 import * as qt from './type';
+import * as qu from './util';
 import { Syntax } from './syntax';
 import * as qy from './syntax';
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
@@ -601,7 +603,7 @@ export function createSystemWatchFunctions({
         }
         return nonPollingWatchFile(fileName, callback, pollingInterval, getFallbackOptions(options));
       default:
-        Debug.assertNever(watchFileKind);
+        qc.assert.never(watchFileKind);
     }
   }
   function ensureDynamicPollingWatchFile() {
@@ -676,7 +678,7 @@ export function createSystemWatchFunctions({
           getFallbackOptions(options)
         );
       default:
-        Debug.assertNever(watchDirectoryKind);
+        qc.assert.never(watchDirectoryKind);
     }
   }
   function updateOptionsForWatchDirectory(options: WatchOptions | undefined): WatchOptions {
@@ -1299,8 +1301,54 @@ export let sys: System = (() => {
 })();
 if (sys && sys.getEnvironmentVariable) {
   setCustomPollingValues(sys);
-  Debug.setAssertionLevel(/^development$/i.test(sys.getEnvironmentVariable('NODE_ENV')) ? AssertionLevel.Normal : AssertionLevel.None);
+  qc.assert.setLevel(/^development$/i.test(sys.getEnvironmentVariable('NODE_ENV')) ? AssertionLevel.Normal : AssertionLevel.None);
 }
 if (sys && sys.debugMode) {
   Debug.isDebugging = true;
+}
+export function validateLocaleAndSetLanguage(
+  locale: string,
+  sys: {
+    getExecutingFilePath(): string;
+    resolvePath(path: string): string;
+    fileExists(fileName: string): boolean;
+    readFile(fileName: string): string | undefined;
+  },
+  errors?: qu.Push<qd.Diagnostic>
+) {
+  const matchResult = /^([a-z]+)([_\-]([a-z]+))?$/.exec(locale.toLowerCase());
+  if (!matchResult) {
+    if (errors) {
+      errors.push(qd.createCompilerDiagnostic(qd.msgs.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp'));
+    }
+    return;
+  }
+  const language = matchResult[1];
+  const territory = matchResult[3];
+  if (!trySetLanguageAndTerritory(language, territory, errors)) {
+    trySetLanguageAndTerritory(language, undefined, errors);
+  }
+  setUILocale(locale);
+  function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qu.Push<qd.Diagnostic>) {
+    const compilerFilePath = normalizePath(sys.getExecutingFilePath());
+    const containingDirectoryPath = getDirectoryPath(compilerFilePath);
+    let filePath = combinePaths(containingDirectoryPath, language);
+    if (territory) filePath = filePath + '-' + territory;
+    filePath = sys.resolvePath(combinePaths(filePath, 'diagnosticMessages.generated.json'));
+    if (!sys.fileExists(filePath)) return false;
+    let fileContents: string | undefined = '';
+    try {
+      fileContents = sys.readFile(filePath);
+    } catch (e) {
+      if (errors) errors.push(qd.createCompilerDiagnostic(qd.msgs.Unable_to_open_file_0, filePath));
+      return false;
+    }
+    try {
+      qd.setLocalizedMessages(JSON.parse(fileContents!));
+    } catch {
+      if (errors) errors.push(qd.createCompilerDiagnostic(qd.msgs.Corrupted_locale_file_0, filePath));
+      return false;
+    }
+    return true;
+  }
 }
