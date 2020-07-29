@@ -1463,7 +1463,7 @@ export function newResolve(f: qt.Frame) {
       return this.externalModuleNameWorker(location, moduleReferenceExpression, ignoreErrors ? undefined : qd.msgs.Cannot_find_module_0_or_its_corresponding_type_declarations);
     }
     externalModuleNameWorker(location: Node, moduleReferenceExpression: Expression, moduleNotFoundError: qd.Message | undefined, isForAugmentation = false): Symbol | undefined {
-      return StringLiteral.like(moduleReferenceExpression)
+      return qf.is.stringLiteralLike(moduleReferenceExpression)
         ? this.externalModule(location, moduleReferenceExpression.text, moduleNotFoundError, moduleReferenceExpression, isForAugmentation)
         : undefined;
     }

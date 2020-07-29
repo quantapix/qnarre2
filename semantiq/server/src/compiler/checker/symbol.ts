@@ -629,7 +629,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         serializeExportSpecifier(
           qy.get.unescUnderscores(this.escName),
           specifier ? verbatimTargetName : targetName,
-          specifier && StringLiteral.like(specifier) ? qc.asLiteral(specifier.text) : undefined
+          specifier && qf.is.stringLiteralLike(specifier) ? qc.asLiteral(specifier.text) : undefined
         );
         break;
       case Syntax.ExportAssignment:
@@ -707,7 +707,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
             (declaration) =>
               qf.is.kind(qc.BinaryExpression, declaration) &&
               qf.get.assignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
-              (declaration.left.kind !== Syntax.ElementAccessExpression || StringLiteral.orNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
+              (declaration.left.kind !== Syntax.ElementAccessExpression || qf.is.stringOrNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
               !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
           );
       }
@@ -769,7 +769,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       qf.is.kind(qc.PropertyAccessExpression, declaration) ||
       qf.is.kind(qc.ElementAccessExpression, declaration) ||
       qf.is.kind(qc.Identifier, declaration) ||
-      StringLiteral.like(declaration) ||
+      qf.is.stringLiteralLike(declaration) ||
       qf.is.kind(qc.NumericLiteral, declaration) ||
       qf.is.kind(qc.ClassDeclaration, declaration) ||
       qf.is.kind(qc.FunctionDeclaration, declaration) ||
@@ -1041,7 +1041,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     for (const d of this.declarations ?? []) {
       if (d.kind === Syntax.EnumDeclaration) {
         for (const m of (<EnumDeclaration>d).members) {
-          if (m.initer && StringLiteral.like(m.initer)) return (ls.enumKind = EnumKind.Literal);
+          if (m.initer && qf.is.stringLiteralLike(m.initer)) return (ls.enumKind = EnumKind.Literal);
           if (!isLiteralEnumMember(m)) hasNonLiteralMember = true;
         }
       }

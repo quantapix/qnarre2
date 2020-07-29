@@ -2243,7 +2243,7 @@ function create() {
         n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_element_access_expression_should_take_an_argument);
       } else {
         const argument = flags.withoutDisallowIn(this.expression);
-        if (StringLiteral.orNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
+        if (qf.is.stringOrNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
         n.argumentExpression = argument;
       }
       this.expected(Syntax.CloseBracketToken);

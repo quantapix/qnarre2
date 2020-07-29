@@ -2106,7 +2106,7 @@ function onSubstituteNode(hint: EmitHint, node: Node) {
   return node;
 }
 function substituteIdentifier(node: qc.Identifier) {
-  if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
+  if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !qf.is.internalName(node)) {
     const original = qf.get.parseTreeOf(node, isIdentifier);
     if (original && isNameOfDeclarationWithCollidingName(original)) return setRange(qf.get.generatedNameForNode(original), node);
   }
@@ -2132,7 +2132,7 @@ function substituteExpression(node: Node) {
   return node;
 }
 function substituteExpressionIdentifier(node: qc.Identifier): qc.Identifier {
-  if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
+  if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !qf.is.internalName(node)) {
     const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
     if (declaration && !(qf.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(qf.get.generatedNameForNode(qf.get.declaration.nameOf(declaration)), node);
   }

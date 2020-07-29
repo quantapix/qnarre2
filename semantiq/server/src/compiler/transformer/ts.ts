@@ -1598,7 +1598,7 @@ export function transformTypeScript(context: TransformationContext) {
     return;
   }
   function trySubstituteNamespaceExportedName(node: Identifier): Expression | undefined {
-    if (enabledSubstitutions & applicableSubstitutions && !qc.is.generatedIdentifier(node) && !isLocalName(node)) {
+    if (enabledSubstitutions & applicableSubstitutions && !qc.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const container = resolver.getReferencedExportContainer(node, false);
       if (container && container.kind !== Syntax.SourceFile) {
         const substitute =

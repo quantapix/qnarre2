@@ -347,7 +347,7 @@ export function transformModule(context: TransformationContext) {
         } else if (destructuringNeedsFlattening(elem)) return true;
       }
     } else if (qc.is.kind(qc.Identifier, node)) {
-      return length(getExports(node)) > (isExportName(node) ? 1 : 0);
+      return length(getExports(node)) > (qf.is.exportName(node) ? 1 : 0);
     }
     return false;
   }
@@ -666,7 +666,7 @@ export function transformModule(context: TransformationContext) {
     if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       let modifiers: Nodes<Modifier> | undefined;
       for (const variable of node.declarationList.declarations) {
-        if (qc.is.kind(qc.Identifier, variable.name) && isLocalName(variable.name)) {
+        if (qc.is.kind(qc.Identifier, variable.name) && qf.is.localName(variable.name)) {
           if (!modifiers) {
             modifiers = Nodes.visit(node.modifiers, modifierVisitor, isModifier);
           }
@@ -695,7 +695,7 @@ export function transformModule(context: TransformationContext) {
   function createAllExportExpressions(name: Identifier, value: Expression, location?: TextRange) {
     const exportedNames = getExports(name);
     if (exportedNames) {
-      let expression: Expression = isExportName(name) ? value : qf.create.assignment(name, value);
+      let expression: Expression = qf.is.exportName(name) ? value : qf.create.assignment(name, value);
       for (const exportName of exportedNames) {
         setEmitFlags(expression, EmitFlags.NoSubstitution);
         expression = createExportExpression(exportName, expression, location);
@@ -907,8 +907,8 @@ export function transformModule(context: TransformationContext) {
       if (externalHelpersModuleName) return new qc.PropertyAccessExpression(externalHelpersModuleName, node);
       return node;
     }
-    if (!qc.is.generatedIdentifier(node) && !isLocalName(node)) {
-      const exportContainer = resolver.getReferencedExportContainer(node, isExportName(node));
+    if (!qc.is.generatedIdentifier(node) && !qf.is.localName(node)) {
+      const exportContainer = resolver.getReferencedExportContainer(node, qf.is.exportName(node));
       if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new Identifier('exports'), getSynthesizedClone(node)), node);
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
@@ -926,7 +926,7 @@ export function transformModule(context: TransformationContext) {
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
       qc.is.kind(qc.Identifier, node.left) &&
       !qc.is.generatedIdentifier(node.left) &&
-      !isLocalName(node.left) &&
+      !qf.is.localName(node.left) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.left)
     ) {
       const exportedNames = getExports(node.left);
@@ -946,7 +946,7 @@ export function transformModule(context: TransformationContext) {
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
       qc.is.kind(qc.Identifier, node.operand) &&
       !qc.is.generatedIdentifier(node.operand) &&
-      !isLocalName(node.operand) &&
+      !qf.is.localName(node.operand) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.operand)
     ) {
       const exportedNames = getExports(node.operand);
@@ -1888,7 +1888,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
   function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment) {
     const name = node.name;
-    if (!qc.is.generatedIdentifier(name) && !isLocalName(name)) {
+    if (!qc.is.generatedIdentifier(name) && !qf.is.localName(name)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(name);
       if (importDeclaration) {
         if (qc.is.kind(qc.ImportClause, importDeclaration))
@@ -1929,7 +1929,7 @@ export function transformSystemModule(context: TransformationContext) {
       if (externalHelpersModuleName) return new qc.PropertyAccessExpression(externalHelpersModuleName, node);
       return node;
     }
-    if (!qc.is.generatedIdentifier(node) && !isLocalName(node)) {
+    if (!qc.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
         if (qc.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new Identifier('default')), node);
@@ -1947,7 +1947,7 @@ export function transformSystemModule(context: TransformationContext) {
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
       qc.is.kind(qc.Identifier, node.left) &&
       !qc.is.generatedIdentifier(node.left) &&
-      !isLocalName(node.left) &&
+      !qf.is.localName(node.left) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.left)
     ) {
       const exportedNames = getExports(node.left);
@@ -1966,7 +1966,7 @@ export function transformSystemModule(context: TransformationContext) {
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
       qc.is.kind(qc.Identifier, node.operand) &&
       !qc.is.generatedIdentifier(node.operand) &&
-      !isLocalName(node.operand) &&
+      !qf.is.localName(node.operand) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.operand)
     ) {
       const exportedNames = getExports(node.operand);

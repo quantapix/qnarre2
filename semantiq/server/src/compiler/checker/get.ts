@@ -3969,7 +3969,7 @@ export function newGet(f: qt.Frame) {
     accessedPropertyName(access: AccessExpression): qu.__String | undefined {
       return access.kind === Syntax.PropertyAccessExpression
         ? access.name.escapedText
-        : StringLiteral.orNumericLiteralLike(access.argumentExpression)
+        : qf.is.stringOrNumericLiteralLike(access.argumentExpression)
         ? qy.get.escUnderscores(access.argumentExpression.text)
         : undefined;
     }
@@ -4178,7 +4178,7 @@ export function newGet(f: qt.Frame) {
       const witnesses: (string | undefined)[] = [];
       for (const clause of switchStatement.caseBlock.clauses) {
         if (clause.kind === Syntax.CaseClause) {
-          if (StringLiteral.like(clause.expression)) {
+          if (qf.is.stringLiteralLike(clause.expression)) {
             witnesses.push(clause.expression.text);
             continue;
           }
@@ -4607,8 +4607,8 @@ export function newGet(f: qt.Frame) {
             const operator = expr.operatorToken.kind;
             const left = getReferenceCandidate(expr.left);
             const right = getReferenceCandidate(expr.right);
-            if (left.kind === Syntax.TypeOfExpression && StringLiteral.like(right)) return narrowTypeByTypeof(type, <TypeOfExpression>left, operator, right, assumeTrue);
-            if (right.kind === Syntax.TypeOfExpression && StringLiteral.like(left)) return narrowTypeByTypeof(type, <TypeOfExpression>right, operator, left, assumeTrue);
+            if (left.kind === Syntax.TypeOfExpression && qf.is.stringLiteralLike(right)) return narrowTypeByTypeof(type, <TypeOfExpression>left, operator, right, assumeTrue);
+            if (right.kind === Syntax.TypeOfExpression && qf.is.stringLiteralLike(left)) return narrowTypeByTypeof(type, <TypeOfExpression>right, operator, left, assumeTrue);
             if (isMatchingReference(reference, left)) return narrowTypeByEquality(type, operator, right, assumeTrue);
             if (isMatchingReference(reference, right)) return narrowTypeByEquality(type, operator, left, assumeTrue);
             if (strictNullChecks) {
@@ -4626,7 +4626,7 @@ export function newGet(f: qt.Frame) {
             return narrowTypeByInstanceof(type, expr, assumeTrue);
           case Syntax.InKeyword:
             const target = getReferenceCandidate(expr.right);
-            if (StringLiteral.like(expr.left) && isMatchingReference(reference, target)) return narrowByInKeyword(type, expr.left, assumeTrue);
+            if (qf.is.stringLiteralLike(expr.left) && isMatchingReference(reference, target)) return narrowByInKeyword(type, expr.left, assumeTrue);
             break;
           case Syntax.CommaToken:
             return narrowType(type, expr.right, assumeTrue);
@@ -4779,7 +4779,7 @@ export function newGet(f: qt.Frame) {
       function isMatchingConstructorReference(expr: Expression) {
         return (
           ((qf.is.kind(qc.PropertyAccessExpression, expr) && idText(expr.name) === 'constructor') ||
-            (qf.is.kind(qc.ElementAccessExpression, expr) && StringLiteral.like(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
+            (qf.is.kind(qc.ElementAccessExpression, expr) && qf.is.stringLiteralLike(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
           isMatchingReference(reference, expr.expression)
         );
       }

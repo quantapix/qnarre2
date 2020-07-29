@@ -302,7 +302,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
   if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
     return new qs.ElementAccessExpression(value, argumentExpression);
-  } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
+  } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
     const argumentExpression = getSynthesizedClone(propertyName);
     argumentExpression.text = argumentExpression.text;
     return new qs.ElementAccessExpression(value, argumentExpression);

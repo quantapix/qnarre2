@@ -541,7 +541,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.JsxFragment:
       return n.update(visitNode(n.openingFragment, cb, isJsxOpeningFragment), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingFragment, cb, isJsxClosingFragment));
     case Syntax.JsxAttribute:
-      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.initer, cb, StringLiteral.orJsxExpressionKind));
+      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.initer, cb, qf.is.stringLiteralOrJsxExpressionKind));
     case Syntax.JsxAttributes:
       return n.update(nodesVisitor(n.properties, cb, isJsxAttributeLike));
     case Syntax.JsxSpreadAttribute:

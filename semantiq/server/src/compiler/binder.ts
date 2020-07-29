@@ -241,7 +241,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
       if (name.kind === Syntax.ComputedPropertyName) {
         const nameExpression = name.expression;
-        if (StringLiteral.orNumericLiteralLike(nameExpression)) return qy.get.escUnderscores(nameExpression.text);
+        if (qf.is.stringOrNumericLiteralLike(nameExpression)) return qy.get.escUnderscores(nameExpression.text);
         if (qf.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as qu.__String;
         qu.assert(qf.is.wellKnownSymbolSyntactically(nameExpression));
         return qu.getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
@@ -633,7 +633,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       expr.kind === Syntax.ThisKeyword ||
       expr.kind === Syntax.SuperKeyword ||
       ((qf.is.kind(qc.PropertyAccessExpression, expr) || qf.is.kind(qc.NonNullExpression, expr) || qf.is.kind(qc.ParenthesizedExpression, expr)) && isNarrowableReference(expr.expression)) ||
-      (qf.is.kind(qc.ElementAccessExpression, expr) && StringLiteral.orNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
+      (qf.is.kind(qc.ElementAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
     );
   }
   function containsNarrowableReference(expr: Expression): boolean {
@@ -649,10 +649,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return false;
   }
   function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
-    return qf.is.kind(qc.TypeOfExpression, expr1) && isNarrowableOperand(expr1.expression) && StringLiteral.like(expr2);
+    return qf.is.kind(qc.TypeOfExpression, expr1) && isNarrowableOperand(expr1.expression) && qf.is.stringLiteralLike(expr2);
   }
   function isNarrowableInOperands(left: Expression, right: Expression) {
-    return StringLiteral.like(left) && isNarrowingExpression(right);
+    return qf.is.stringLiteralLike(left) && isNarrowingExpression(right);
   }
   function isNarrowingBinaryExpression(expr: BinaryExpression) {
     switch (expr.operatorToken.kind) {

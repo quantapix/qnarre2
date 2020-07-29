@@ -1543,7 +1543,7 @@ export function createProgram(
         const node = getNodeAtPosition(file, r.lastIndex);
         if (qf.is.requireCall(node, true)) {
           imports = append(imports, node.arguments[0]);
-        } else if (qc.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
+        } else if (qc.is.importCall(node) && node.arguments.length === 1 && qf.is.stringLiteralLike(node.arguments[0])) {
           imports = append(imports, node.arguments[0] as StringLiteralLike);
         } else if (qc.is.literalImportTypeNode(node)) {
           imports = append(imports, node.argument.literal);

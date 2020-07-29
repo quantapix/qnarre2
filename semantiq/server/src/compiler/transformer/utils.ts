@@ -194,7 +194,7 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
   return values;
 }
 export function isSimpleCopiableExpression(expression: Expression) {
-  return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qc.is.kind(qc.Identifier, expression);
+  return qf.is.stringLiteralLike(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qc.is.kind(qc.Identifier, expression);
 }
 export function isSimpleInlineableExpression(expression: Expression) {
   return (!qc.is.kind(qc.Identifier, expression) && isSimpleCopiableExpression(expression)) || qc.is.wellKnownSymbolSyntactically(expression);

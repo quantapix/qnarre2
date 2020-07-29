@@ -452,7 +452,7 @@ export function newIs(f: qt.Frame) {
       );
     }
     stringConcatExpression(expr: Node): boolean {
-      if (StringLiteral.like(expr)) return true;
+      if (qf.is.stringLiteralLike(expr)) return true;
       else if (expr.kind === Syntax.BinaryExpression) return isStringConcatExpression((<BinaryExpression>expr).left) && isStringConcatExpression((<BinaryExpression>expr).right);
       return false;
     }
@@ -1902,7 +1902,7 @@ export function newIs(f: qt.Frame) {
       return (
         node.kind === Syntax.Identifier ||
         (node.kind === Syntax.PropertyAccessExpression && isConstantMemberAccess((<PropertyAccessExpression>node).expression)) ||
-        (node.kind === Syntax.ElementAccessExpression && isConstantMemberAccess((<ElementAccessExpression>node).expression) && StringLiteral.like((<ElementAccessExpression>node).argumentExpression))
+        (node.kind === Syntax.ElementAccessExpression && isConstantMemberAccess((<ElementAccessExpression>node).expression) && qf.is.stringLiteralLike((<ElementAccessExpression>node).argumentExpression))
       );
     }
     typeReferenceIdentifier(node: EntityName): boolean {
@@ -2037,7 +2037,7 @@ export function newIs(f: qt.Frame) {
     }
     simpleLiteralEnumReference(expr: Expression) {
       if (
-        (this.kind(qc.PropertyAccessExpression, expr) || (this.kind(qc.ElementAccessExpression, expr) && StringLiteral.orNumberLiteralExpression(expr.argumentExpression))) &&
+        (this.kind(qc.PropertyAccessExpression, expr) || (this.kind(qc.ElementAccessExpression, expr) && qf.is.stringLiteralOrNumberLiteralExpression(expr.argumentExpression))) &&
         this.entityNameExpression(expr.expression)
       ) {
         return !!(check.expressionCached(expr).flags & qt.TypeFlags.EnumLiteral);

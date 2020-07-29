@@ -298,7 +298,7 @@ export function transformDeclarations(context: TransformationContext) {
         for (const importStatement of emittedImports) {
           if (qc.is.kind(qc.ImportEqualsDeclaration, importStatement) && qp_qc.is.kind(qc.ExternalModuleReference, importStatement.moduleReference)) {
             const expr = importStatement.moduleReference.expression;
-            if (StringLiteral.like(expr) && expr.text === typeName) return;
+            if (qf.is.stringLiteralLike(expr) && expr.text === typeName) return;
           } else if (qc.is.kind(qc.ImportDeclaration, importStatement) && qc.is.kind(qc.StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
             return;
           }
@@ -510,7 +510,7 @@ export function transformDeclarations(context: TransformationContext) {
   ): T | StringLiteral {
     if (!input) return undefined!;
     resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== Syntax.ModuleDeclaration && parent.kind !== Syntax.ImportType);
-    if (StringLiteral.like(input)) {
+    if (qf.is.stringLiteralLike(input)) {
       if (isBundledEmit) {
         const newName = qf.get.externalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
         if (newName) return qc.asLiteral(newName);

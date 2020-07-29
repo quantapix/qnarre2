@@ -2283,7 +2283,7 @@ export function newCheck(f: qt.Frame) {
       const indexExpression = n.argumentExpression;
       const indexType = this.expression(indexExpression);
       if (objectType === errorType || objectType === silentNeverType) return objectType;
-      if (isConstEnumObjectType(objectType) && !StringLiteral.like(indexExpression)) {
+      if (isConstEnumObjectType(objectType) && !qf.is.stringLiteralLike(indexExpression)) {
         error(indexExpression, qd.msgs.A_const_enum_member_can_only_be_accessed_using_a_string_literal);
         return errorType;
       }
@@ -5937,7 +5937,7 @@ export function newCheck(f: qt.Frame) {
       const { initer } = n;
       if (initer) {
         const isInvalidIniter = !(
-          StringLiteral.orNumberLiteralExpression(initer) ||
+          qf.is.stringLiteralOrNumberLiteralExpression(initer) ||
           isSimpleLiteralEnumReference(initer) ||
           initer.kind === Syntax.TrueKeyword ||
           initer.kind === Syntax.FalseKeyword ||
