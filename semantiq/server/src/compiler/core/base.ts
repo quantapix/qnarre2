@@ -396,7 +396,7 @@ export abstract class FunctionLikeDobj extends SignatureDobj implements qt.Funct
   _functionLikeDeclarationBrand: any;
 }
 export abstract class FunctionOrConstructorTobj extends SignatureDobj implements qt.FunctionOrConstructorTobj {
-  type!: Typing;
+  type!: qt.Typing;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
     super(s, k, ts, ps, t);
@@ -467,51 +467,43 @@ export abstract class Sobj extends Nobj implements qt.Sobj {
   static insertStatementAfterCustomPrologue<T extends Sobj>(to: T[], statement: T | undefined): T[] {
     return this.insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
   }
-  addPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean, visitor?: (n: Nobj) => VisitResult<Nobj>): number {
-    const offset = addStandardPrologue(target, source, ensureUseStrict);
-    return addCustomPrologue(target, source, offset, visitor);
+  addPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean, cb?: (n: Nobj) => VisitResult<Nobj>): number {
+    const i = addStandardPrologue(to, from, strict);
+    return addCustomPrologue(to, from, i, cb);
   }
-  addStandardPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean): number {
-    qu.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
-    let foundUseStrict = false;
-    let statementOffset = 0;
-    const numStatements = source.length;
-    while (statementOffset < numStatements) {
-      const statement = source[statementOffset];
-      if (qf.is.prologueDirective(statement)) {
-        if (qf.is.useStrictPrologue(statement)) foundUseStrict = true;
-        target.push(statement);
-      } else {
-        break;
-      }
-      statementOffset++;
+  addStandardPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean): number {
+    qu.assert(to.length === 0);
+    let useStrict = false;
+    let i = 0;
+    const l = from.length;
+    while (i < l) {
+      const s = from[i];
+      if (qf.is.prologueDirective(s)) {
+        if (qf.is.useStrictPrologue(s)) useStrict = true;
+        to.push(s);
+      } else break;
+      i++;
     }
-    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))));
-    return statementOffset;
+    if (strict && !useStrict) to.push(startOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))));
+    return i;
   }
-  addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], statementOffset: number, visitor?: (n: Nobj) => VisitResult<Nobj>, filter?: (n: Nobj) => boolean): number;
+  addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], i: number, visitor?: (n: Nobj) => VisitResult<Nobj>, filter?: (n: Nobj) => boolean): number;
+  addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], i: number | undefined, visitor?: (n: Nobj) => VisitResult<Nobj>, filter?: (n: Nobj) => boolean): number | undefined;
   addCustomPrologue(
     target: qt.Statement[],
     source: readonly qt.Statement[],
-    statementOffset: number | undefined,
-    visitor?: (n: Nobj) => VisitResult<Nobj>,
-    filter?: (n: Nobj) => boolean
-  ): number | undefined;
-  addCustomPrologue(
-    target: qt.Statement[],
-    source: readonly qt.Statement[],
-    statementOffset: number | undefined,
+    i: number | undefined,
     visitor?: (n: Nobj) => VisitResult<Nobj>,
     filter: (n: Nobj) => boolean = () => true
   ): number | undefined {
     const numStatements = source.length;
-    while (statementOffset !== undefined && statementOffset < numStatements) {
-      const statement = source[statementOffset];
+    while (i !== undefined && i < numStatements) {
+      const statement = source[i];
       if (qf.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) qu.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       else break;
-      statementOffset++;
+      i++;
     }
-    return statementOffset;
+    return i;
   }
   findUseStrictPrologue(statements: readonly qt.Statement[]): qt.Statement | undefined {
     for (const statement of statements) {
