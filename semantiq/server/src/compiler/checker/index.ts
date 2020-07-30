@@ -275,7 +275,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return node ? getConstantValue(node) : undefined;
     },
     isValidPropertyAccess: (nodeIn, propertyName) => {
-      const node = qf.get.parseTreeOf(nodeIn, isPropertyAccessOrQualifiedNameOrImportTypeNode);
+      const node = qf.get.parseTreeOf(nodeIn, isPropertyAccessOrQualifiedNameOrImportTyping);
       return !!node && isValidPropertyAccess(node, qy.get.escUnderscores(propertyName));
     },
     isValidPropertyAccessForCompletions: (nodeIn, type, property) => {
@@ -978,7 +978,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return writer ? signatureToStringWorker(writer).getText() : usingSingleLineStringWriter(signatureToStringWorker);
     function signatureToStringWorker(writer: EmitTextWriter) {
       let sigOutput: Syntax;
-      if (flags & TypeFormatFlags.WriteArrowStyleSignature) sigOutput = kind === SignatureKind.Construct ? Syntax.ConstructorType : Syntax.FunctionType;
+      if (flags & TypeFormatFlags.WriteArrowStyleSignature) sigOutput = kind === SignatureKind.Construct ? Syntax.ConstructorTyping : Syntax.FunctionTyping;
       else {
         sigOutput = kind === SignatureKind.Construct ? Syntax.ConstructSignature : Syntax.CallSignature;
       }
@@ -1023,9 +1023,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   ): string {
     return writer ? typePredicateToStringWorker(writer).getText() : usingSingleLineStringWriter(typePredicateToStringWorker);
     function typePredicateToStringWorker(writer: EmitTextWriter) {
-      const predicate = new qc.TypePredicateNode(
+      const predicate = new qc.TypingPredicate(
         typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Token(Syntax.AssertsKeyword) : undefined,
-        typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Identifier(typePredicate.parameterName) : ThisTypeNode.create(),
+        typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Identifier(typePredicate.parameterName) : ThisTyping.create(),
         typePredicate.type &&
           nodeBuilder.typeToTypeNode(typePredicate.type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | NodeBuilderFlags.WriteTypeParametersInQualifiedName)!
       );
@@ -1396,7 +1396,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (qf.is.kind(qc.DocSignature, declaration) || !containsArgumentsReference(declaration)) return false;
     const lastParam = lastOrUndefined(declaration.parameters);
     const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParameterTag);
-    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qf.is.kind(qc.DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
+    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qf.is.kind(qc.DocVariadicTyping, p.typeExpression.type) ? p.typeExpression.type : undefined));
     const syntheticArgsSymbol = new Symbol(SymbolFlags.Variable, 'args' as qu.__String, qt.CheckFlags.RestParameter);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(getTypeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) parameters.pop();
@@ -1419,38 +1419,38 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     type.resolvedTypeArguments = source.resolvedTypeArguments;
     return type;
   }
-  function typeArgumentsFromTypeReferenceNode(node: NodeWithTypeArguments): Type[] | undefined {
+  function typeArgumentsFromTypingReference(node: WithArgumentsTobj): Type[] | undefined {
     return map(node.typeArguments, getTypeFromTypeNode);
   }
   function mayResolveTypeAlias(node: Node): boolean {
     switch (node.kind) {
-      case Syntax.TypeReference:
-        return isDocTypeReference(node) || !!(resolveTypeReferenceName((<TypeReferenceNode>node).typeName, qt.SymbolFlags.Type).flags & qt.SymbolFlags.TypeAlias);
-      case Syntax.TypeQuery:
+      case Syntax.TypingReference:
+        return isDocTypeReference(node) || !!(resolveTypeReferenceName((<TypingReference>node).typeName, qt.SymbolFlags.Type).flags & qt.SymbolFlags.TypeAlias);
+      case Syntax.TypingQuery:
         return true;
-      case Syntax.TypeOperator:
-        return (<TypeOperatorNode>node).operator !== Syntax.UniqueKeyword && mayResolveTypeAlias((<TypeOperatorNode>node).type);
-      case Syntax.ParenthesizedType:
-      case Syntax.OptionalType:
+      case Syntax.TypingOperator:
+        return (<TypingOperator>node).operator !== Syntax.UniqueKeyword && mayResolveTypeAlias((<TypingOperator>node).type);
+      case Syntax.ParenthesizedTyping:
+      case Syntax.OptionalTyping:
       case Syntax.NamedTupleMember:
-      case Syntax.DocOptionalType:
-      case Syntax.DocNullableType:
-      case Syntax.DocNonNullableType:
-      case Syntax.DocTypeExpression:
-        return mayResolveTypeAlias((<ParenthesizedTypeNode | OptionalTypeNode | DocTypeReferencingNode | NamedTupleMember>node).type);
-      case Syntax.RestType:
-        return (<RestTypeNode>node).type.kind !== Syntax.ArrayType || mayResolveTypeAlias((<ArrayTypeNode>(<RestTypeNode>node).type).elemType);
-      case Syntax.UnionType:
-      case Syntax.IntersectionType:
-        return some((<UnionOrIntersectionTypeNode>node).types, mayResolveTypeAlias);
-      case Syntax.IndexedAccessType:
-        return mayResolveTypeAlias((<IndexedAccessTypeNode>node).objectType) || mayResolveTypeAlias((<IndexedAccessTypeNode>node).indexType);
-      case Syntax.ConditionalType:
+      case Syntax.DocOptionalTyping:
+      case Syntax.DocNullableTyping:
+      case Syntax.DocNonNullableTyping:
+      case Syntax.DocTypingExpression:
+        return mayResolveTypeAlias((<ParenthesizedTyping | OptionalTyping | DocTypeReferencingNode | NamedTupleMember>node).type);
+      case Syntax.RestTyping:
+        return (<RestTyping>node).type.kind !== Syntax.ArrayTyping || mayResolveTypeAlias((<ArrayTyping>(<RestTyping>node).type).elemType);
+      case Syntax.UnionTyping:
+      case Syntax.IntersectionTyping:
+        return some((<UnionOrIntersectionTyping>node).types, mayResolveTypeAlias);
+      case Syntax.IndexedAccessTyping:
+        return mayResolveTypeAlias((<IndexedAccessTyping>node).objectType) || mayResolveTypeAlias((<IndexedAccessTyping>node).indexType);
+      case Syntax.ConditionalTyping:
         return (
-          mayResolveTypeAlias((<ConditionalTypeNode>node).checkType) ||
-          mayResolveTypeAlias((<ConditionalTypeNode>node).extendsType) ||
-          mayResolveTypeAlias((<ConditionalTypeNode>node).trueType) ||
-          mayResolveTypeAlias((<ConditionalTypeNode>node).falseType)
+          mayResolveTypeAlias((<ConditionalTyping>node).checkType) ||
+          mayResolveTypeAlias((<ConditionalTyping>node).extendsType) ||
+          mayResolveTypeAlias((<ConditionalTyping>node).trueType) ||
+          mayResolveTypeAlias((<ConditionalTyping>node).falseType)
         );
     }
     return false;
@@ -1705,8 +1705,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function maybeTypeParameterReference(node: Node) {
     return !(
       node.kind === Syntax.QualifiedName ||
-      (node.parent.kind === Syntax.TypeReference && (<TypeReferenceNode>node.parent).typeArguments && node === (<TypeReferenceNode>node.parent).typeName) ||
-      (node.parent.kind === Syntax.ImportType && (node.parent as ImportTypeNode).typeArguments && node === (node.parent as ImportTypeNode).qualifier)
+      (node.parent.kind === Syntax.TypingReference && (<TypingReference>node.parent).typeArguments && node === (<TypingReference>node.parent).typeName) ||
+      (node.parent.kind === Syntax.ImportTyping && (node.parent as ImportTyping).typeArguments && node === (node.parent as ImportTyping).qualifier)
     );
   }
   function compareTypesIdentical(source: Type, target: Type): Ternary {
@@ -2406,7 +2406,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const param = declaration as ParameterDeclaration;
         if (
           qf.is.kind(qc.Identifier, param.name) &&
-          (qf.is.kind(qc.CallSignatureDeclaration, param.parent) || qf.is.kind(qc.MethodSignature, param.parent) || qf.is.kind(qc.FunctionTypeNode, param.parent)) &&
+          (qf.is.kind(qc.CallSignatureDeclaration, param.parent) || qf.is.kind(qc.MethodSignature, param.parent) || qf.is.kind(qc.FunctionTyping, param.parent)) &&
           param.parent.parameters.indexOf(param) > -1 &&
           (resolveName(param, param.name.escapedText, qt.SymbolFlags.Type, undefined, param.name.escapedText, true) ||
             (param.name.originalKeywordKind && qy.is.typeNode(param.name.originalKeywordKind)))
@@ -2427,7 +2427,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         diagnostic = qd.msgs.Binding_elem_0_implicitly_has_an_1_type;
         if (!noImplicitAny) return;
         break;
-      case Syntax.DocFunctionType:
+      case Syntax.DocFunctionTyping:
         error(declaration, qd.msgs.Function_type_which_lacks_return_type_annotation_implicitly_has_an_0_return_type, typeAsString);
         return;
       case Syntax.FunctionDeclaration:
@@ -2451,7 +2451,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           ? qd.msgs._0_which_lacks_return_type_annotation_implicitly_has_an_1_yield_type
           : qd.msgs._0_which_lacks_return_type_annotation_implicitly_has_an_1_return_type;
         break;
-      case Syntax.MappedType:
+      case Syntax.MappedTyping:
         if (noImplicitAny) error(declaration, qd.msgs.Mapped_object_type_implicitly_has_an_any_template_type);
         return;
       default:
@@ -3383,7 +3383,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const candidate = candidates[bestIndex];
     const { typeParameters } = candidate;
     if (!typeParameters) return candidate;
-    const typeArgumentNodes: readonly TypeNode[] | undefined = callLikeExpressionMayHaveTypeArguments(node) ? node.typeArguments : undefined;
+    const typeArgumentNodes: readonly Typing[] | undefined = callLikeExpressionMayHaveTypeArguments(node) ? node.typeArguments : undefined;
     const instantiated = typeArgumentNodes
       ? createSignatureInstantiation(candidate, getTypeArgumentsFromNodes(typeArgumentNodes, typeParameters, qf.is.inJSFile(node)))
       : inferSignatureInstantiationForOverloadFailure(node, typeParameters, candidate, args);
@@ -3719,7 +3719,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (!hasInferenceCandidates(target[i]) && hasInferenceCandidates(source[i])) target[i] = source[i];
     }
   }
-  function markTypeNodeAsReferenced(node: TypeNode) {
+  function markTypeNodeAsReferenced(node: Typing) {
     markEntityNameOrEntityExpressionAsReference(node && qf.get.entityNameFromTypeNode(node));
   }
   function markEntityNameOrEntityExpressionAsReference(typeName: EntityNameOrEntityNameExpression | undefined) {
@@ -3730,7 +3730,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (rootSymbol && rootSymbol.flags & qt.SymbolFlags.Alias && symbolIsValue(rootSymbol) && !isConstEnumOrConstEnumOnlyModule(rootSymbol.resolveAlias()) && !rootSymbol.getTypeOnlyAliasDeclaration())
       rootSymbol.markAliasSymbolAsReferenced();
   }
-  function markDecoratorMedataDataTypeNodeAsReferenced(node: TypeNode | undefined): void {
+  function markDecoratorMedataDataTypeNodeAsReferenced(node: Typing | undefined): void {
     const entityName = getEntityNameForDecoratorMetadata(node);
     if (entityName && qf.is.entityName(entityName)) markEntityNameOrEntityExpressionAsReference(entityName);
   }
@@ -3755,9 +3755,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     | ForStatement
     | ForInStatement
     | ForOfStatement
-    | Exclude<SignatureDeclaration, IndexSignatureDeclaration | DocFunctionType>
+    | Exclude<SignatureDeclaration, IndexSignatureDeclaration | DocFunctionTyping>
     | TypeAliasDeclaration
-    | InferTypeNode;
+    | InferTyping;
   function errorUnusedLocal(declaration: Declaration, name: string, addDiagnostic: AddUnusedDiagnostic) {
     const node = qf.get.declaration.nameOf(declaration) || declaration;
     const message = qf.is.typeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;

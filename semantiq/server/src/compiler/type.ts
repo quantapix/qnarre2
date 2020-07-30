@@ -34,9 +34,9 @@ export interface ArrayLiteralExpression extends PrimaryEobj {
   elems: Nodes<Expression>;
   multiLine?: boolean;
 }
-export interface ArrayTypeNode extends TypeNode {
-  kind: Syntax.ArrayType;
-  elemType: TypeNode;
+export interface ArrayTyping extends Tobj {
+  kind: Syntax.ArrayTyping;
+  elemType: Typing;
 }
 export interface ArrowFunction extends FunctionLikeDobj, Eobj, DocContainer {
   kind: Syntax.ArrowFunction;
@@ -47,7 +47,7 @@ export interface ArrowFunction extends FunctionLikeDobj, Eobj, DocContainer {
 export interface AsExpression extends Eobj {
   kind: Syntax.AsExpression;
   expression: Expression;
-  type: TypeNode;
+  type: Typing;
 }
 export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.AssertsIdentifier;
@@ -100,7 +100,7 @@ export interface Block extends Sobj {
   statements: Nodes<Statement>;
   multiLine?: boolean;
 }
-export interface BooleanLiteral extends PrimaryEobj, TypeNode {
+export interface BooleanLiteral extends PrimaryEobj, Tobj {
   kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
 }
 export interface BreakStatement extends Sobj {
@@ -168,7 +168,7 @@ export interface CallExpression extends LeftEobj, Dobj {
   kind: Syntax.CallExpression;
   expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: Nodes<Typing>;
   arguments: Nodes<Expression>;
 }
 export interface CallSignatureDeclaration extends SignatureDobj, TypeElem {
@@ -210,7 +210,7 @@ export interface ClassElem extends NamedDobj {
 export interface ClassExpression extends ClassLikeDobj, PrimaryEobj {
   kind: Syntax.ClassExpression;
 }
-export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
+export interface ClassImplementingOrExtendingExpressionWithTypings {
   readonly class: ClassLikeDeclaration;
   readonly isImplements: boolean;
 }
@@ -422,7 +422,7 @@ export interface ConditionalExpression extends Eobj {
   whenFalse: Expression;
 }
 export interface ConditionalRoot {
-  node: ConditionalTypeNode;
+  node: ConditionalTyping;
   checkType: Type;
   extendsType: Type;
   trueType: Type;
@@ -445,12 +445,12 @@ export interface ConditionalType extends InstantiableType {
   mapper?: TypeMapper;
   combinedMapper?: TypeMapper;
 }
-export interface ConditionalTypeNode extends TypeNode {
-  kind: Syntax.ConditionalType;
-  checkType: TypeNode;
-  extendsType: TypeNode;
-  trueType: TypeNode;
-  falseType: TypeNode;
+export interface ConditionalTyping extends Tobj {
+  kind: Syntax.ConditionalTyping;
+  checkType: Typing;
+  extendsType: Typing;
+  trueType: Typing;
+  falseType: Typing;
 }
 export interface ConfigFileSpecs {
   filesSpecs?: readonly string[];
@@ -465,8 +465,8 @@ export interface ConstructorDeclaration extends FunctionLikeDobj, ClassElem, Doc
   parent?: ClassLikeDeclaration;
   body?: FunctionBody;
 }
-export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
-  kind: Syntax.ConstructorType;
+export interface ConstructorTyping extends FunctionOrConstructorTobj {
+  kind: Syntax.ConstructorTyping;
 }
 export interface ConstructSignatureDeclaration extends SignatureDobj, TypeElem {
   kind: Syntax.ConstructSignature;
@@ -509,7 +509,7 @@ export interface DefaultClause extends Nobj {
   fallthroughFlowNode?: FlowNode;
 }
 export interface DeferredTypeReference extends TypeReference {
-  node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
+  node: TypingReference | ArrayTyping | TupleTyping;
   mapper?: TypeMapper;
 }
 export interface DeleteExpression extends UnaryEobj {
@@ -530,12 +530,12 @@ export interface Doc extends Nobj {
   tags?: Nodes<DocTag>;
   comment?: string;
 }
-export interface DocAllType extends DocType {
-  kind: Syntax.DocAllType;
+export interface DocAllTyping extends DocTobj {
+  kind: Syntax.DocAllTyping;
 }
 export interface DocAugmentsTag extends DocTag {
   kind: Syntax.DocAugmentsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
+  class: ExpressionWithTypings & { expression: Identifier | PropertyAccessEntityNameExpression };
 }
 export interface DocAuthorTag extends DocTag {
   kind: Syntax.DocAuthorTag;
@@ -557,34 +557,34 @@ export interface DocContainer {
 export interface DocEnumTag extends DocTag, Dobj {
   kind: Syntax.DocEnumTag;
   parent?: Doc;
-  typeExpression?: DocTypeExpression;
+  typeExpression?: DocTypingExpression;
 }
-export interface DocFunctionType extends DocType, SignatureDobj {
-  kind: Syntax.DocFunctionType;
+export interface DocFunctionTyping extends DocTobj, SignatureDobj {
+  kind: Syntax.DocFunctionTyping;
 }
 export interface DocImplementsTag extends DocTag {
   kind: Syntax.DocImplementsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
+  class: ExpressionWithTypings & { expression: Identifier | PropertyAccessEntityNameExpression };
 }
-export interface DocNamepathType extends DocType {
-  kind: Syntax.DocNamepathType;
-  type: TypeNode;
+export interface DocNamepathTyping extends DocTobj {
+  kind: Syntax.DocNamepathTyping;
+  type: Typing;
 }
 export interface DocNamespaceDeclaration extends ModuleDeclaration {
   name: Identifier;
   body?: DocNamespaceBody;
 }
-export interface DocNonNullableType extends DocType {
-  kind: Syntax.DocNonNullableType;
-  type: TypeNode;
+export interface DocNonNullableTyping extends DocTobj {
+  kind: Syntax.DocNonNullableTyping;
+  type: Typing;
 }
-export interface DocNullableType extends DocType {
-  kind: Syntax.DocNullableType;
-  type: TypeNode;
+export interface DocNullableTyping extends DocTobj {
+  kind: Syntax.DocNullableTyping;
+  type: Typing;
 }
-export interface DocOptionalType extends DocType {
-  kind: Syntax.DocOptionalType;
-  type: TypeNode;
+export interface DocOptionalTyping extends DocTobj {
+  kind: Syntax.DocOptionalTyping;
+  type: Typing;
 }
 export interface DocParameterTag extends DocPropertyLikeTag {
   kind: Syntax.DocParameterTag;
@@ -595,7 +595,7 @@ export interface DocPrivateTag extends DocTag {
 export interface DocPropertyLikeTag extends DocTag, Dobj {
   parent?: Doc;
   name: EntityName;
-  typeExpression?: DocTypeExpression;
+  typeExpression?: DocTypingExpression;
   isNameFirst: boolean;
   isBracketed: boolean;
 }
@@ -613,51 +613,51 @@ export interface DocReadonlyTag extends DocTag {
 }
 export interface DocReturnTag extends DocTag {
   kind: Syntax.DocReturnTag;
-  typeExpression?: DocTypeExpression;
+  typeExpression?: DocTypingExpression;
 }
-export interface DocSignature extends DocType, Dobj {
+export interface DocSignature extends DocTobj, Dobj {
   kind: Syntax.DocSignature;
   typeParameters?: readonly DocTemplateTag[];
   parameters: readonly DocParameterTag[];
   type?: DocReturnTag;
 }
 export interface DocTag extends Nobj {
-  parent?: Doc | DocTypeLiteral;
+  parent?: Doc | DocTypingLiteral;
   tagName: Identifier;
   comment?: string;
 }
 export interface DocTagInfo {}
 export interface DocTemplateTag extends DocTag {
   kind: Syntax.DocTemplateTag;
-  constraint?: DocTypeExpression;
+  constraint?: DocTypingExpression;
   typeParameters: Nodes<TypeParameterDeclaration>;
 }
 export interface DocThisTag extends DocTag {
   kind: Syntax.DocThisTag;
-  typeExpression?: DocTypeExpression;
-}
-export interface DocType extends TypeNode {
-  _docTypeBrand: any;
+  typeExpression?: DocTypingExpression;
 }
 export interface DocTypedefTag extends DocTag, NamedDobj {
   parent?: Doc;
   kind: Syntax.DocTypedefTag;
   fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
-  typeExpression?: DocTypeExpression | DocTypeLiteral;
+  typeExpression?: DocTypingExpression | DocTypingLiteral;
 }
-export interface DocTypeExpression extends TypeNode {
-  kind: Syntax.DocTypeExpression;
-  type: TypeNode;
+export interface DocTypingExpression extends Tobj {
+  kind: Syntax.DocTypingExpression;
+  type: Typing;
 }
-export interface DocTypeLiteral extends DocType {
-  kind: Syntax.DocTypeLiteral;
+export interface DocTypingLiteral extends DocTobj {
+  kind: Syntax.DocTypingLiteral;
   docPropertyTags?: readonly DocPropertyLikeTag[];
   isArrayType?: boolean;
 }
 export interface DocTypeTag extends DocTag {
   kind: Syntax.DocTypeTag;
-  typeExpression: DocTypeExpression;
+  typeExpression: DocTypingExpression;
+}
+export interface DocTobj extends Tobj {
+  _docTypeBrand: any;
 }
 export interface DocumentPosition {
   fileName: string;
@@ -673,14 +673,14 @@ export interface DocumentPositionMapperHost {
   log(text: string): void;
 }
 export interface DocUnknownTag extends DocTag {
-  kind: Syntax.DocTag;
+  kind: Syntax.DocUnknownTag;
 }
-export interface DocUnknownType extends DocType {
-  kind: Syntax.DocUnknownType;
+export interface DocUnknownTyping extends DocTobj {
+  kind: Syntax.DocUnknownTyping;
 }
-export interface DocVariadicType extends DocType {
-  kind: Syntax.DocVariadicType;
-  type: TypeNode;
+export interface DocVariadicTyping extends DocTobj {
+  kind: Syntax.DocVariadicTyping;
+  type: Typing;
 }
 export interface DoStatement extends IterationSobj {
   kind: Syntax.DoStatement;
@@ -764,9 +764,9 @@ export interface EmitResolver {
     flags: qt.NodeBuilderFlags,
     tracker: SymbolTracker,
     addUndefined?: boolean
-  ): TypeNode | undefined;
-  createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
-  createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
+  ): Typing | undefined;
+  createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
+  createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
   createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker): Expression;
   isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags | undefined, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
   isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult;
@@ -776,7 +776,7 @@ export interface EmitResolver {
   isOptionalParameter(node: ParameterDeclaration): boolean;
   moduleExportsSomeValue(moduleReferenceExpression: Expression): boolean;
   isArgumentsLocalBinding(node: Identifier): boolean;
-  getExternalModuleFileFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode): SourceFile | undefined;
+  getExternalModuleFileFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping): SourceFile | undefined;
   getTypeReferenceDirectivesForEntityName(name: EntityNameOrEntityNameExpression): string[] | undefined;
   getTypeReferenceDirectivesForSymbol(symbol: Symbol, meaning?: qt.SymbolFlags): string[] | undefined;
   isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean;
@@ -863,13 +863,12 @@ export interface ExportSpecifier extends NamedDobj {
   propertyName?: Identifier;
   name: Identifier;
 }
-
 export interface ExpressionStatement extends Sobj, DocContainer {
   kind: Syntax.ExpressionStatement;
   expression: Expression;
 }
-export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
-  kind: Syntax.ExpressionWithTypeArguments;
+export interface ExpressionWithTypings extends WithArgumentsTobj {
+  kind: Syntax.ExpressionWithTypings;
   parent?: HeritageClause | DocAugmentsTag | DocImplementsTag;
   expression: LeftExpression;
 }
@@ -973,12 +972,12 @@ export interface FunctionLikeDobj extends SignatureDobj {
   endFlowNode?: FlowNode;
   returnFlowNode?: FlowNode;
 }
-export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDobj {
-  kind: Syntax.FunctionType | Syntax.ConstructorType;
-  type: TypeNode;
+export interface FunctionOrConstructorTobj extends Tobj, SignatureDobj {
+  kind: Syntax.FunctionTyping | Syntax.ConstructorTyping;
+  type: Typing;
 }
-export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
-  kind: Syntax.FunctionType;
+export interface FunctionTyping extends FunctionOrConstructorTobj {
+  kind: Syntax.FunctionTyping;
 }
 export interface GeneratedIdentifier extends Identifier {
   autoGenerateFlags: qt.GeneratedIdentifierFlags;
@@ -1001,7 +1000,7 @@ export interface HeritageClause extends Nobj {
   kind: Syntax.HeritageClause;
   parent?: InterfaceDeclaration | ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-  types: Nodes<ExpressionWithTypeArguments>;
+  types: Nodes<ExpressionWithTypings>;
 }
 export interface Identifier extends PrimaryEobj, Dobj {
   kind: Syntax.Identifier;
@@ -1010,7 +1009,7 @@ export interface Identifier extends PrimaryEobj, Dobj {
   autoGenerateFlags?: qt.GeneratedIdentifierFlags;
   autoGenerateId?: number;
   isInDocNamespace?: boolean;
-  typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>;
+  typeArguments?: Nodes<Typing | TypeParameterDeclaration>;
   jsdocDotPos?: number;
 }
 export interface IdentifierTypePredicate extends TypePredicateBase {
@@ -1060,10 +1059,10 @@ export interface ImportSpecifier extends NamedDobj {
   propertyName?: Identifier;
   name: Identifier;
 }
-export interface ImportTypeNode extends NodeWithTypeArguments {
-  kind: Syntax.ImportType;
+export interface ImportTyping extends WithArgumentsTobj {
+  kind: Syntax.ImportTyping;
   isTypeOf?: boolean;
-  argument: TypeNode;
+  argument: Typing;
   qualifier?: EntityName;
 }
 export interface IncompleteType {
@@ -1077,10 +1076,10 @@ export interface IndexedAccessType extends InstantiableType {
   simplifiedForReading?: Type;
   simplifiedForWriting?: Type;
 }
-export interface IndexedAccessTypeNode extends TypeNode {
-  kind: Syntax.IndexedAccessType;
-  objectType: TypeNode;
-  indexType: TypeNode;
+export interface IndexedAccessTyping extends Tobj {
+  kind: Syntax.IndexedAccessTyping;
+  objectType: Typing;
+  indexType: Typing;
 }
 export interface IndexInfo {
   type: Type;
@@ -1114,8 +1113,8 @@ export interface InferenceInfo {
   topLevel: boolean;
   isFixed: boolean;
 }
-export interface InferTypeNode extends TypeNode {
-  kind: Syntax.InferType;
+export interface InferTyping extends Tobj {
+  kind: Syntax.InferTyping;
   typeParameter: TypeParameterDeclaration;
 }
 export interface InputFiles extends Nobj {
@@ -1162,9 +1161,9 @@ export interface InterfaceTypeWithDeclaredMembers extends InterfaceType {
 export interface IntersectionType extends UnionOrIntersectionType {
   resolvedApparentType: Type;
 }
-export interface IntersectionTypeNode extends TypeNode {
-  kind: Syntax.IntersectionType;
-  types: Nodes<TypeNode>;
+export interface IntersectionTyping extends Tobj {
+  kind: Syntax.IntersectionTyping;
+  types: Nodes<Typing>;
 }
 export interface IntrinsicType extends Type {
   intrinsicName: string;
@@ -1239,7 +1238,7 @@ export interface JsxOpeningElem extends Eobj {
   kind: Syntax.JsxOpeningElem;
   parent?: JsxElem;
   tagName: JsxTagNameExpression;
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: Nodes<Typing>;
   attributes: JsxAttributes;
 }
 export interface JsxOpeningFragment extends Eobj {
@@ -1249,7 +1248,7 @@ export interface JsxOpeningFragment extends Eobj {
 export interface JsxSelfClosingElem extends PrimaryEobj {
   kind: Syntax.JsxSelfClosingElem;
   tagName: JsxTagNameExpression;
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: Nodes<Typing>;
   attributes: JsxAttributes;
 }
 export interface JsxSpreadAttribute extends ObjectLiteralElem {
@@ -1265,7 +1264,7 @@ export interface JsxText extends LiteralLikeNode {
   onlyTriviaWhiteSpaces: boolean;
   parent?: JsxElem;
 }
-export interface KeywordTypeNode extends TypeNode {
+export interface KeywordTyping extends Tobj {
   kind:
     | Syntax.AnyKeyword
     | Syntax.BigIntKeyword
@@ -1314,8 +1313,8 @@ export interface LiteralType extends Type {
   freshType: LiteralType;
   regularType: LiteralType;
 }
-export interface LiteralTypeNode extends TypeNode {
-  kind: Syntax.LiteralType;
+export interface LiteralTyping extends Tobj {
+  kind: Syntax.LiteralTyping;
   literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
 }
 export interface MappedSymbol extends TransientSymbol {
@@ -1323,19 +1322,19 @@ export interface MappedSymbol extends TransientSymbol {
   mapper: TypeMapper;
 }
 export interface MappedType extends AnonymousType {
-  declaration: MappedTypeNode;
+  declaration: MappedTyping;
   typeParameter?: TypeParameter;
   constraintType?: Type;
   templateType?: Type;
   modifiersType?: Type;
   resolvedApparentType?: Type;
 }
-export interface MappedTypeNode extends TypeNode, Dobj {
-  kind: Syntax.MappedType;
+export interface MappedTyping extends Tobj, Dobj {
+  kind: Syntax.MappedTyping;
   readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
   typeParameter: TypeParameterDeclaration;
   questionToken?: QuestionToken | PlusToken | MinusToken;
-  type?: TypeNode;
+  type?: Typing;
 }
 export interface MemberEobj extends LeftEobj {
   _memberExpressionBrand: any;
@@ -1408,12 +1407,12 @@ export interface NamedImports extends Nobj {
   parent?: ImportClause;
   elems: Nodes<ImportSpecifier>;
 }
-export interface NamedTupleMember extends TypeNode, DocContainer, Dobj {
+export interface NamedTupleMember extends Tobj, DocContainer, Dobj {
   kind: Syntax.NamedTupleMember;
   dot3Token?: Token<Syntax.Dot3Token>;
   name: Identifier;
   questionToken?: Token<Syntax.QuestionToken>;
-  type: TypeNode;
+  type: Typing;
 }
 export interface NamespaceDeclaration extends ModuleDeclaration {
   name: Identifier;
@@ -1436,7 +1435,7 @@ export interface NamespaceImport extends NamedDobj {
 export interface NewExpression extends PrimaryEobj, Dobj {
   kind: Syntax.NewExpression;
   expression: LeftExpression;
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: Nodes<Typing>;
   arguments?: Nodes<Expression>;
 }
 export interface Nobj extends qu.Range {
@@ -1493,8 +1492,8 @@ export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range
   transformFlags: qt.TransformFlags;
   visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: Nodes) => V | undefined): V | undefined;
 }
-export interface NodeWithTypeArguments extends TypeNode {
-  typeArguments?: Nodes<TypeNode>;
+export interface WithArgumentsTobj extends Tobj {
+  typeArguments?: Nodes<Typing>;
 }
 export interface NonNullChain extends NonNullExpression {
   _optionalChainBrand: any;
@@ -1513,7 +1512,7 @@ export interface NotEmittedStatement extends Sobj {
 export interface NullableType extends IntrinsicType {
   objectFlags: qt.ObjectFlags;
 }
-export interface NullLiteral extends PrimaryEobj, TypeNode {
+export interface NullLiteral extends PrimaryEobj, Tobj {
   kind: Syntax.NullKeyword;
 }
 export interface NumberLiteralType extends LiteralType {
@@ -1555,9 +1554,9 @@ export interface OmittedExpression extends Eobj {
   kind: Syntax.OmittedExpression;
 }
 export class OperationCanceledException {}
-export interface OptionalTypeNode extends TypeNode {
-  kind: Syntax.OptionalType;
-  type: TypeNode;
+export interface OptionalTyping extends Tobj {
+  kind: Syntax.OptionalTyping;
+  type: Typing;
 }
 export interface PackageId {
   name: string;
@@ -1570,16 +1569,16 @@ export interface ParameterDeclaration extends NamedDobj, DocContainer {
   dot3Token?: Dot3Token;
   name: BindingName;
   questionToken?: QuestionToken;
-  type?: TypeNode;
+  type?: Typing;
   initer?: Expression;
 }
 export interface ParenthesizedExpression extends PrimaryEobj, DocContainer {
   kind: Syntax.ParenthesizedExpression;
   expression: Expression;
 }
-export interface ParenthesizedTypeNode extends TypeNode {
-  kind: Syntax.ParenthesizedType;
-  type: TypeNode;
+export interface ParenthesizedTyping extends Tobj {
+  kind: Syntax.ParenthesizedTyping;
+  type: Typing;
 }
 export interface ParseConfigHost {
   useCaseSensitiveFileNames: boolean;
@@ -1803,7 +1802,7 @@ export interface PropertyDeclaration extends ClassElem, DocContainer {
   name: PropertyName;
   questionToken?: QuestionToken;
   exclamationToken?: ExclamationToken;
-  type?: TypeNode;
+  type?: Typing;
   initer?: Expression;
 }
 export interface PropertyDescriptorAttributes {
@@ -1821,7 +1820,7 @@ export interface PropertySignature extends TypeElem, DocContainer {
   kind: Syntax.PropertySignature;
   name: PropertyName;
   questionToken?: QuestionToken;
-  type?: TypeNode;
+  type?: Typing;
   initer?: Expression;
 }
 export interface PseudoBigInt {
@@ -1900,9 +1899,9 @@ export interface ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
   readonly resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective;
   readonly failedLookupLocations: string[];
 }
-export interface RestTypeNode extends TypeNode {
-  kind: Syntax.RestType;
-  type: TypeNode;
+export interface RestTyping extends Tobj {
+  kind: Syntax.RestTyping;
+  type: Typing;
 }
 export interface ReturnStatement extends Sobj {
   kind: Syntax.ReturnStatement;
@@ -1967,8 +1966,8 @@ export interface SignatureDobj extends NamedDobj, DocContainer {
   name?: PropertyName;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   parameters: Nodes<ParameterDeclaration>;
-  type?: TypeNode;
-  typeArguments?: Nodes<TypeNode>;
+  type?: Typing;
+  typeArguments?: Nodes<Typing>;
 }
 export interface Sobj extends Nobj {
   _statementBrand: any;
@@ -2186,7 +2185,7 @@ export interface SymbolTracker {
   reportLikelyUnsafeImportRequiredError?(specifier: string): void;
   moduleResolverHost?: ModuleSpecifierResolutionHost & { getCommonSourceDirectory(): string };
   trackReferencedAmbientModule?(decl: ModuleDeclaration, symbol: Symbol): void;
-  trackExternalModuleSymbolOfImportTypeNode?(symbol: Symbol): void;
+  trackExternalModuleSymbolOfImportTyping?(symbol: Symbol): void;
   reportNonlocalAugmentation?(containingFile: SourceFile, parentSymbol: Symbol, augmentingSymbol: Symbol): void;
 }
 export interface SymbolVisibilityResult {
@@ -2225,7 +2224,7 @@ export interface SyntheticReferenceExpression extends LeftEobj {
 export interface TaggedTemplateExpression extends MemberEobj {
   kind: Syntax.TaggedTemplateExpression;
   tag: LeftExpression;
-  typeArguments?: Nodes<TypeNode>;
+  typeArguments?: Nodes<Typing>;
   template: TemplateLiteral;
   questionDotToken?: QuestionDotToken;
 }
@@ -2258,11 +2257,11 @@ export interface TemplateTail extends TemplateLiteralLikeNode {
   parent?: TemplateSpan;
   templateFlags?: qt.TokenFlags;
 }
-export interface ThisExpression extends PrimaryEobj, KeywordTypeNode {
+export interface ThisExpression extends PrimaryEobj, KeywordTyping {
   kind: Syntax.ThisKeyword;
 }
-export interface ThisTypeNode extends TypeNode {
-  kind: Syntax.ThisType;
+export interface ThisTyping extends Tobj {
+  kind: Syntax.ThisTyping;
 }
 export interface ThisTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.This;
@@ -2304,9 +2303,9 @@ export interface TupleType extends GenericType {
   readonly: boolean;
   labeledElemDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[];
 }
-export interface TupleTypeNode extends TypeNode {
-  kind: Syntax.TupleType;
-  elems: Nodes<TypeNode | NamedTupleMember>;
+export interface TupleTyping extends Tobj {
+  kind: Syntax.TupleTyping;
+  elems: Nodes<Typing | NamedTupleMember>;
 }
 export interface TupleTypeReference extends TypeReference {
   target: TupleType;
@@ -2336,11 +2335,11 @@ export interface TypeAliasDeclaration extends DeclarationSobj, DocContainer {
   kind: Syntax.TypeAliasDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
-  type: TypeNode;
+  type: Typing;
 }
 export interface TypeAssertion extends UnaryEobj {
   kind: Syntax.TypeAssertionExpression;
-  type: TypeNode;
+  type: Typing;
   expression: UnaryExpression;
 }
 export interface TypeChecker {
@@ -2365,21 +2364,21 @@ export interface TypeChecker {
   getNonOptionalType(type: Type): Type;
   isNullableType(type: Type): boolean;
   getTypeArguments(type: TypeReference): readonly Type[];
-  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): TypeNode | undefined;
-  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined, tracker?: SymbolTracker): TypeNode | undefined;
+  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): Typing | undefined;
+  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined, tracker?: SymbolTracker): Typing | undefined;
   signatureToSignatureDeclaration(
     signature: Signature,
     kind: Syntax,
     enclosingDeclaration: Node | undefined,
     flags: qt.NodeBuilderFlags | undefined
-  ): (SignatureDeclaration & { typeArguments?: Nodes<TypeNode> }) | undefined;
+  ): (SignatureDeclaration & { typeArguments?: Nodes<Typing> }) | undefined;
   signatureToSignatureDeclaration(
     signature: Signature,
     kind: Syntax,
     enclosingDeclaration: Node | undefined,
     flags: qt.NodeBuilderFlags | undefined,
     tracker?: SymbolTracker
-  ): (SignatureDeclaration & { typeArguments?: Nodes<TypeNode> }) | undefined;
+  ): (SignatureDeclaration & { typeArguments?: Nodes<Typing> }) | undefined;
   indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: qt.IndexKind, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): IndexSignatureDeclaration | undefined;
   indexInfoToIndexSignatureDeclaration(
     indexInfo: IndexInfo,
@@ -2402,7 +2401,7 @@ export interface TypeChecker {
   getPropertySymbolOfDestructuringAssignment(location: Identifier): Symbol | undefined;
   getTypeOfAssignmentPattern(pattern: AssignmentPattern): Type;
   getTypeAtLocation(node: Node): Type;
-  getTypeFromTypeNode(node: TypeNode): Type;
+  getTypeFromTypeNode(node: Typing): Type;
   signatureToString(signature: Signature, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, kind?: qt.SignatureKind): string;
   typeToString(type: Type, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags): string;
   symbolToString(s: Symbol, decl?: Node, meaning?: qt.SymbolFlags, flags?: qt.SymbolFormatFlags): string;
@@ -2431,8 +2430,8 @@ export interface TypeChecker {
   isUnknownSymbol(symbol: Symbol): boolean;
   getMergedSymbol(symbol: Symbol): Symbol;
   getConstantValue(node: EnumMember | PropertyAccessExpression | ElemAccessExpression): string | number | undefined;
-  isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: string): boolean;
-  isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean;
+  isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTyping, propertyName: string): boolean;
+  isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTyping | QualifiedName, type: Type, property: Symbol): boolean;
   getAliasedSymbol(symbol: Symbol): Symbol;
   getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined;
   getExportsOfModule(moduleSymbol: Symbol): Symbol[];
@@ -2511,7 +2510,7 @@ export interface TypeChecker {
   resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
   resolveExternalModuleSymbol(symbol: Symbol): Symbol;
   tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): Type | undefined;
-  getTypeArgumentConstraint(node: TypeNode): Type | undefined;
+  getTypeArgumentConstraint(node: Typing): Type | undefined;
   getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
   runWithCancellationToken<T>(token: CancellationToken, cb: (checker: TypeChecker) => T): T;
   getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
@@ -2531,21 +2530,18 @@ export interface TypeElem extends NamedDobj {
   name?: PropertyName;
   questionToken?: QuestionToken;
 }
-export interface TypeLiteralNode extends TypeNode, Dobj {
-  kind: Syntax.TypeLiteral;
+export interface TypingLiteral extends Tobj, Dobj {
+  kind: Syntax.TypingLiteral;
   members: Nodes<TypeElem>;
-}
-export interface TypeNode extends Nobj {
-  _typeNodeBrand: any;
 }
 export interface TypeOfExpression extends UnaryEobj {
   kind: Syntax.TypeOfExpression;
   expression: UnaryExpression;
 }
-export interface TypeOperatorNode extends TypeNode {
-  kind: Syntax.TypeOperator;
+export interface TypingOperator extends Tobj {
+  kind: Syntax.TypingOperator;
   operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
-  type: TypeNode;
+  type: Typing;
 }
 export interface TypeParameter extends InstantiableType {
   constraint?: Type;
@@ -2557,42 +2553,44 @@ export interface TypeParameter extends InstantiableType {
 }
 export interface TypeParameterDeclaration extends NamedDobj {
   kind: Syntax.TypeParameter;
-  parent?: DeclarationWithTypeParameterChildren | InferTypeNode;
+  parent?: DeclarationWithTypeParameterChildren | InferTyping;
   name: Identifier;
-  constraint?: TypeNode;
-  default?: TypeNode;
+  constraint?: Typing;
+  default?: Typing;
   expression?: Expression;
 }
 export interface TypePredicateBase {
   kind: qt.TypePredicateKind;
   type?: Type;
 }
-export interface TypePredicateNode extends TypeNode {
-  kind: Syntax.TypePredicate;
-  parent?: SignatureDeclaration | DocTypeExpression;
+export interface TypingPredicate extends Tobj {
+  kind: Syntax.TypingPredicate;
+  parent?: SignatureDeclaration | DocTypingExpression;
   assertsModifier?: AssertsToken;
-  parameterName: Identifier | ThisTypeNode;
-  type?: TypeNode;
+  parameterName: Identifier | ThisTyping;
+  type?: Typing;
 }
-export interface TypeQueryNode extends TypeNode {
-  kind: Syntax.TypeQuery;
+export interface TypingQuery extends Tobj {
+  kind: Syntax.TypingQuery;
   exprName: EntityName;
 }
 export interface TypeReference extends ObjectType {
   target: GenericType;
-  node?: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
+  node?: TypingReference | ArrayTyping | TupleTyping;
   mapper?: TypeMapper;
   resolvedTypeArguments?: readonly Type[];
   literalType?: TypeReference;
 }
-export interface TypeReferenceNode extends NodeWithTypeArguments {
-  kind: Syntax.TypeReference;
+export interface TypingReference extends WithArgumentsTobj {
+  kind: Syntax.TypingReference;
   typeName: EntityName;
+}
+export interface Tobj extends Nobj {
+  _typingBrand: any;
 }
 export interface UnaryEobj extends Eobj {
   _unaryExpressionBrand: any;
 }
-
 export interface UnionOrIntersectionType extends Type {
   types: Type[];
   objectFlags: qt.ObjectFlags;
@@ -2606,15 +2604,15 @@ export interface UnionType extends UnionOrIntersectionType {
   resolvedReducedType: Type;
   regularType: UnionType;
 }
-export interface UnionTypeNode extends TypeNode {
-  kind: Syntax.UnionType;
-  types: Nodes<TypeNode>;
+export interface UnionTyping extends Tobj {
+  kind: Syntax.UnionTyping;
+  types: Nodes<Typing>;
 }
 export interface UniqueESSymbolType extends Type {
   symbol: Symbol;
   escName: qu.__String;
 }
-export interface UniqueTypeOperatorNode extends TypeOperatorNode {
+export interface UniqueTypingOperator extends TypingOperator {
   operator: Syntax.UniqueKeyword;
 }
 export interface UnparsedPrepend extends UnparsedSection {
@@ -2679,15 +2677,15 @@ export interface UserPreferences {
   readonly allowTextChangesInNewFiles?: boolean;
   readonly providePrefixAndSuffixTextForRename?: boolean;
 }
-export interface ValidImportTypeNode extends ImportTypeNode {
-  argument: LiteralTypeNode & { literal: StringLiteral };
+export interface ValidImportTyping extends ImportTyping {
+  argument: LiteralTyping & { literal: StringLiteral };
 }
 export interface VariableDeclaration extends NamedDobj {
   kind: Syntax.VariableDeclaration;
   parent?: VariableDeclarationList | CatchClause;
   name: BindingName;
   exclamationToken?: ExclamationToken;
-  type?: TypeNode;
+  type?: Typing;
   initer?: Expression;
 }
 export interface VariableDeclarationList extends Nobj {
@@ -2750,7 +2748,7 @@ export type AnyValidImportOrReExport =
   | ((ImportDeclaration | ExportDeclaration) & { moduleSpecifier: StringLiteral })
   | (ImportEqualsDeclaration & { moduleReference: ExternalModuleReference & { expression: StringLiteral } })
   | RequireOrImportCall
-  | ValidImportTypeNode;
+  | ValidImportTyping;
 export type ArrayBindingElem = BindingElem | OmittedExpression;
 export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
 export type AssertionExpression = TypeAssertion | AsExpression;
@@ -2827,11 +2825,11 @@ export type Declaration =
   | ClassDeclaration
   | ClassExpression
   | ConstructorDeclaration
-  | ConstructorTypeNode
+  | ConstructorTyping
   | ConstructSignatureDeclaration
   | DocCallbackTag
   | DocEnumTag
-  | DocFunctionType
+  | DocFunctionTyping
   | DocParameterTag
   | DocPropertyTag
   | DocSignature
@@ -2843,7 +2841,7 @@ export type Declaration =
   | ExportSpecifier
   | FunctionDeclaration
   | FunctionExpression
-  | FunctionTypeNode
+  | FunctionTyping
   | GetAccessorDeclaration
   | Identifier
   | ImportClause
@@ -2852,7 +2850,7 @@ export type Declaration =
   | IndexSignatureDeclaration
   | InterfaceDeclaration
   | JsxAttributes
-  | MappedTypeNode
+  | MappedTyping
   | MethodDeclaration
   | MethodSignature
   | MissingDeclaration
@@ -2873,7 +2871,7 @@ export type Declaration =
   | SourceFile
   | StringLiteral
   | TypeAliasDeclaration
-  | TypeLiteralNode
+  | TypingLiteral
   | TypeParameterDeclaration
   | VariableDeclaration;
 export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElemAccessExpression | BindingPattern | EntityNameExpression;
@@ -2882,7 +2880,18 @@ export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren
 export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
 export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
 export type DocNamespaceBody = Identifier | DocNamespaceDeclaration;
-export type DocTypeReferencingNode = DocVariadicType | DocOptionalType | DocNullableType | DocNonNullableType;
+export type DocTypeReferencingNode = DocVariadicTyping | DocOptionalTyping | DocNullableTyping | DocNonNullableTyping;
+export type DocTyping =
+  | DocAllTyping
+  | DocFunctionTyping
+  | DocNamepathTyping
+  | DocNonNullableTyping
+  | DocNullableTyping
+  | DocOptionalTyping
+  | DocSignature
+  | DocTypingLiteral
+  | DocUnknownTyping
+  | DocVariadicTyping;
 export type Dot3Token = Token<Syntax.Dot3Token>;
 export type DotToken = Token<Syntax.DotToken>;
 export type EmitHelperUniqueNameCallback = (name: string) => string;
@@ -2925,16 +2934,16 @@ export type ForInOrOfStatement = ForInStatement | ForOfStatement;
 export type FreshableType = LiteralType | FreshableIntrinsicType;
 export type FunctionBody = Block;
 export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
-export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
+export type FunctionOrConstructorTyping = FunctionTyping | ConstructorTyping;
 export type HasDoc =
   | AccessorDeclaration
   | ArrowFunction
   | CallSignatureDeclaration
   | ClassLikeDeclaration
   | ConstructorDeclaration
-  | ConstructorTypeNode
+  | ConstructorTyping
   | ConstructSignatureDeclaration
-  | DocFunctionType
+  | DocFunctionTyping
   | EndOfFileToken
   | EnumDeclaration
   | EnumMember
@@ -2942,7 +2951,7 @@ export type HasDoc =
   | ExpressionStatement
   | FunctionDeclaration
   | FunctionExpression
-  | FunctionTypeNode
+  | FunctionTyping
   | ImportEqualsDeclaration
   | IndexSignatureDeclaration
   | InterfaceDeclaration
@@ -2965,20 +2974,20 @@ export type HasIniter = HasExpressionIniter | ForStatement | ForInStatement | Fo
 export type HasInvalidatedResolution = (sourceFile: Path) => boolean;
 export type HasType =
   | AssertionExpression
-  | DocNonNullableType
-  | DocNullableType
-  | DocOptionalType
-  | DocTypeExpression
-  | DocVariadicType
-  | MappedTypeNode
+  | DocNonNullableTyping
+  | DocNullableTyping
+  | DocOptionalTyping
+  | DocTypingExpression
+  | DocVariadicTyping
+  | MappedTyping
   | ParameterDeclaration
-  | ParenthesizedTypeNode
+  | ParenthesizedTyping
   | PropertyDeclaration
   | PropertySignature
   | SignatureDeclaration
   | TypeAliasDeclaration
-  | TypeOperatorNode
-  | TypePredicateNode
+  | TypingOperator
+  | TypingPredicate
   | VariableDeclaration;
 export type HasTypeArguments = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElem | JsxSelfClosingElem;
 export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
@@ -2997,7 +3006,7 @@ export type LateVisibilityPaintedStatement =
   | VariableStatement;
 export type LeftExpression = CallExpression | MemberExpression | NonNullExpression | PartiallyEmittedExpression | SyntheticReferenceExpression;
 export type LiteralExpression = BigIntLiteral | NoSubstitutionLiteral | NumericLiteral | RegexLiteral | StringLiteral;
-export type LiteralImportTypeNode = ImportTypeNode & { argument: LiteralTypeNode & { literal: StringLiteral } };
+export type LiteralImportTyping = ImportTyping & { argument: LiteralTyping & { literal: StringLiteral } };
 export type LiteralLikeElemAccessExpression = ElemAccessExpression & Declaration & { argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression };
 export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
 export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
@@ -3030,7 +3039,7 @@ export type NamespaceBody = ModuleBlock | NamespaceDeclaration;
 export type Node =
   | ArrayBindingPattern
   | ArrayLiteralExpression
-  | ArrayTypeNode
+  | ArrayTyping
   | ArrowFunction
   | AsExpression
   | AssertsToken
@@ -3057,9 +3066,9 @@ export type Node =
   | CommaListExpression
   | ComputedPropertyName
   | ConditionalExpression
-  | ConditionalTypeNode
+  | ConditionalTyping
   | ConstructorDeclaration
-  | ConstructorTypeNode
+  | ConstructorTyping
   | ConstructSignatureDeclaration
   | ContinueStatement
   | DebuggerStatement
@@ -3068,18 +3077,18 @@ export type Node =
   | DefaultClause
   | DeleteExpression
   | Doc
-  | DocAllType
+  | DocAllTyping
   | DocAugmentsTag
   | DocAuthorTag
   | DocCallbackTag
   | DocClassTag
   | DocEnumTag
-  | DocFunctionType
+  | DocFunctionTyping
   | DocImplementsTag
-  | DocNamepathType
-  | DocNonNullableType
-  | DocNullableType
-  | DocOptionalType
+  | DocNamepathTyping
+  | DocNonNullableTyping
+  | DocNullableTyping
+  | DocOptionalTyping
   | DocParameterTag
   | DocPrivateTag
   | DocPropertyTag
@@ -3091,12 +3100,12 @@ export type Node =
   | DocTemplateTag
   | DocThisTag
   | DocTypedefTag
-  | DocTypeExpression
-  | DocTypeLiteral
+  | DocTypingExpression
+  | DocTypingLiteral
   | DocTypeTag
   | DocUnknownTag
-  | DocUnknownType
-  | DocVariadicType
+  | DocUnknownTyping
+  | DocVariadicTyping
   | DoStatement
   | Dot3Token
   | DotToken
@@ -3114,7 +3123,7 @@ export type Node =
   | ExportSpecifier
   | Expression
   | ExpressionStatement
-  | ExpressionWithTypeArguments
+  | ExpressionWithTypings
   | ExternalModuleReference
   | ForInStatement
   | ForOfStatement
@@ -3122,7 +3131,7 @@ export type Node =
   | FunctionDeclaration
   | FunctionExpression
   | FunctionLikeDeclaration
-  | FunctionTypeNode
+  | FunctionTyping
   | GetAccessorDeclaration
   | HeritageClause
   | Identifier
@@ -3132,13 +3141,13 @@ export type Node =
   | ImportEqualsDeclaration
   | ImportExpression
   | ImportSpecifier
-  | ImportTypeNode
-  | IndexedAccessTypeNode
+  | ImportTyping
+  | IndexedAccessTyping
   | IndexSignatureDeclaration
-  | InferTypeNode
+  | InferTyping
   | InputFiles
   | InterfaceDeclaration
-  | IntersectionTypeNode
+  | IntersectionTyping
   | JsxAttribute
   | JsxAttributes
   | JsxClosingElem
@@ -3151,10 +3160,10 @@ export type Node =
   | JsxSelfClosingElem
   | JsxSpreadAttribute
   | JsxText
-  | KeywordTypeNode
+  | KeywordTyping
   | LabeledStatement
-  | LiteralTypeNode
-  | MappedTypeNode
+  | LiteralTyping
+  | MappedTyping
   | MergeDeclarationMarker
   | MetaProperty
   | MethodDeclaration
@@ -3177,10 +3186,10 @@ export type Node =
   | ObjectBindingPattern
   | ObjectLiteralExpression
   | OmittedExpression
-  | OptionalTypeNode
+  | OptionalTyping
   | ParameterDeclaration
   | ParenthesizedExpression
-  | ParenthesizedTypeNode
+  | ParenthesizedTyping
   | PartiallyEmittedExpression
   | PlusToken
   | PostfixUnaryExpression
@@ -3195,7 +3204,7 @@ export type Node =
   | QuestionToken
   | ReadonlyToken
   | RegexLiteral
-  | RestTypeNode
+  | RestTyping
   | ReturnStatement
   | SemicolonClassElem
   | SetAccessorDeclaration
@@ -3215,21 +3224,21 @@ export type Node =
   | TemplateMiddle
   | TemplateSpan
   | TemplateTail
-  | ThisTypeNode
+  | ThisTyping
   | ThrowStatement
   | TryStatement
-  | TupleTypeNode
+  | TupleTyping
   | TypeAliasDeclaration
   | TypeAssertion
-  | TypeLiteralNode
+  | TypingLiteral
   | TypeOfExpression
-  | TypeOperatorNode
+  | TypingOperator
   | TypeParameterDeclaration
-  | TypePredicateNode
-  | TypeQueryNode
-  | TypeReferenceNode
-  | UnionTypeNode
-  | UniqueTypeOperatorNode
+  | TypingPredicate
+  | TypingQuery
+  | TypingReference
+  | UnionTyping
+  | UniqueTypingOperator
   | UnparsedPrepend
   | UnparsedPrologue
   | UnparsedSource
@@ -3262,7 +3271,7 @@ export type NodeWithPossibleHoistedDeclaration =
 export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
 export type ObjectFlagsType = NullableType | ObjectType | UnionType | IntersectionType;
 export type ObjectLiteralElemLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
-export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
+export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypingLiteral;
 export type OptionalChain = PropertyAccessChain | ElemAccessChain | CallChain | NonNullChain;
 export type OptionalChainRoot = PropertyAccessChainRoot | ElemAccessChainRoot | CallChainRoot;
 export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
@@ -3311,12 +3320,12 @@ export type SignatureDeclaration =
   | ArrowFunction
   | CallSignatureDeclaration
   | ConstructorDeclaration
-  | ConstructorTypeNode
+  | ConstructorTyping
   | ConstructSignatureDeclaration
-  | DocFunctionType
+  | DocFunctionTyping
   | FunctionDeclaration
   | FunctionExpression
-  | FunctionTypeNode
+  | FunctionTyping
   | IndexSignatureDeclaration
   | MethodDeclaration
   | MethodSignature;
@@ -3373,10 +3382,39 @@ export type TypeMapper =
 export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
 export type TypeOnlyCompatibleAliasDeclaration = ImportClause | NamespaceImport | ImportOrExportSpecifier;
 export type TypePredicate = ThisTypePredicate | IdentifierTypePredicate | AssertsThisTypePredicate | AssertsIdentifierTypePredicate;
-export type TypeReferenceType = TypeReferenceNode | ExpressionWithTypeArguments;
+export type TypeReferenceType = TypingReference | ExpressionWithTypings;
 export type TypeVariable = TypeParameter | IndexedAccessType;
+export type Typing =
+  | ArrayTyping
+  | BooleanLiteral
+  | ConditionalTyping
+  | ConstructorTyping
+  | DocTyping
+  | DocTypingExpression
+  | ExpressionWithTypings
+  | FunctionTyping
+  | ImportTyping
+  | IndexedAccessTyping
+  | InferTyping
+  | IntersectionTyping
+  | KeywordTyping
+  | LiteralTyping
+  | MappedTyping
+  | NamedTupleMember
+  | NullLiteral
+  | OptionalTyping
+  | ParenthesizedTyping
+  | RestTyping
+  | ThisTyping
+  | TupleTyping
+  | TypingLiteral
+  | TypingOperator
+  | TypingPredicate
+  | TypingQuery
+  | TypingReference
+  | UnionTyping;
 export type UnaryExpression = AwaitExpression | DeleteExpression | TypeAssertion | TypeOfExpression | UpdateExpression | VoidExpression;
-export type UnionOrIntersectionTypeNode = UnionTypeNode | IntersectionTypeNode;
+export type UnionOrIntersectionTyping = UnionTyping | IntersectionTyping;
 export type UniqueNameHandler = (baseName: string, checkFn?: (name: string) => boolean, optimistic?: boolean) => string;
 export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
 export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;

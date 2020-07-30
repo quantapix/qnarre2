@@ -1333,7 +1333,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     for (const current of declarations) {
       const node = <SignatureDeclaration | ClassDeclaration | ClassExpression>current;
       const inAmbientContext = node.flags & NodeFlags.Ambient;
-      const inAmbientContextOrInterface = node.parent.kind === Syntax.InterfaceDeclaration || node.parent.kind === Syntax.TypeLiteral || inAmbientContext;
+      const inAmbientContextOrInterface = node.parent.kind === Syntax.InterfaceDeclaration || node.parent.kind === Syntax.TypingLiteral || inAmbientContext;
       if (inAmbientContextOrInterface) previousDeclaration = undefined;
       if ((node.kind === Syntax.ClassDeclaration || node.kind === Syntax.ClassExpression) && !inAmbientContext) hasNonAmbientClass = true;
       if (node.kind === Syntax.FunctionDeclaration || node.kind === Syntax.MethodDeclaration || node.kind === Syntax.MethodSignature || node.kind === Syntax.Constructor) {

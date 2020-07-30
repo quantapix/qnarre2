@@ -16,7 +16,7 @@ export interface EmitFileNames {
 export function getExternalModuleNameFromDeclaration(
   host: ResolveModuleNameResolutionHost,
   resolver: EmitResolver,
-  declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
+  declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping
 ): string | undefined {
   const file = resolver.getExternalModuleFileFromDeclaration(declaration);
   if (!file || file.isDeclarationFile) {
@@ -806,7 +806,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeUnparsedSource(unparsed, beginPrint());
     return endPrint();
   }
-  function writeNode(hint: EmitHint, node: TypeNode, sourceFile: undefined, output: EmitTextWriter): void;
+  function writeNode(hint: EmitHint, node: Typing, sourceFile: undefined, output: EmitTextWriter): void;
   function writeNode(hint: EmitHint, node: Node, sourceFile: SourceFile, output: EmitTextWriter): void;
   function writeNode(hint: EmitHint, node: Node, sourceFile: SourceFile | undefined, output: EmitTextWriter) {
     const previousWriter = writer;
@@ -1119,65 +1119,65 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitConstructSignature(<ConstructSignatureDeclaration>node);
         case Syntax.IndexSignature:
           return emitIndexSignature(<IndexSignatureDeclaration>node);
-        case Syntax.TypePredicate:
-          return emitTypePredicate(<TypePredicateNode>node);
-        case Syntax.TypeReference:
-          return emitTypeReference(<TypeReferenceNode>node);
-        case Syntax.FunctionType:
-          return emitFunctionType(<FunctionTypeNode>node);
-        case Syntax.DocFunctionType:
-          return emitDocFunctionType(node as DocFunctionType);
-        case Syntax.ConstructorType:
-          return emitConstructorType(<ConstructorTypeNode>node);
-        case Syntax.TypeQuery:
-          return emitTypeQuery(<TypeQueryNode>node);
-        case Syntax.TypeLiteral:
-          return emitTypeLiteral(<TypeLiteralNode>node);
-        case Syntax.ArrayType:
-          return emitArrayType(<ArrayTypeNode>node);
-        case Syntax.TupleType:
-          return emitTupleType(<TupleTypeNode>node);
-        case Syntax.OptionalType:
-          return emitOptionalType(<OptionalTypeNode>node);
-        case Syntax.UnionType:
-          return emitUnionType(<UnionTypeNode>node);
-        case Syntax.IntersectionType:
-          return emitIntersectionType(<IntersectionTypeNode>node);
-        case Syntax.ConditionalType:
-          return emitConditionalType(<ConditionalTypeNode>node);
-        case Syntax.InferType:
-          return emitInferType(<InferTypeNode>node);
-        case Syntax.ParenthesizedType:
-          return emitParenthesizedType(<ParenthesizedTypeNode>node);
-        case Syntax.ExpressionWithTypeArguments:
-          return emitExpressionWithTypeArguments(<ExpressionWithTypeArguments>node);
-        case Syntax.ThisType:
+        case Syntax.TypingPredicate:
+          return emitTypePredicate(<TypingPredicate>node);
+        case Syntax.TypingReference:
+          return emitTypeReference(<TypingReference>node);
+        case Syntax.FunctionTyping:
+          return emitFunctionType(<FunctionTyping>node);
+        case Syntax.DocFunctionTyping:
+          return emitDocFunctionTyping(node as DocFunctionTyping);
+        case Syntax.ConstructorTyping:
+          return emitConstructorType(<ConstructorTyping>node);
+        case Syntax.TypingQuery:
+          return emitTypeQuery(<TypingQuery>node);
+        case Syntax.TypingLiteral:
+          return emitTypeLiteral(<TypingLiteral>node);
+        case Syntax.ArrayTyping:
+          return emitArrayType(<ArrayTyping>node);
+        case Syntax.TupleTyping:
+          return emitTupleType(<TupleTyping>node);
+        case Syntax.OptionalTyping:
+          return emitOptionalType(<OptionalTyping>node);
+        case Syntax.UnionTyping:
+          return emitUnionType(<UnionTyping>node);
+        case Syntax.IntersectionTyping:
+          return emitIntersectionType(<IntersectionTyping>node);
+        case Syntax.ConditionalTyping:
+          return emitConditionalType(<ConditionalTyping>node);
+        case Syntax.InferTyping:
+          return emitInferType(<InferTyping>node);
+        case Syntax.ParenthesizedTyping:
+          return emitParenthesizedType(<ParenthesizedTyping>node);
+        case Syntax.ExpressionWithTypings:
+          return emitExpressionWithTypings(<ExpressionWithTypings>node);
+        case Syntax.ThisTyping:
           return emitThisType();
-        case Syntax.TypeOperator:
-          return emitTypeOperator(<TypeOperatorNode>node);
-        case Syntax.IndexedAccessType:
-          return emitIndexedAccessType(<IndexedAccessTypeNode>node);
-        case Syntax.MappedType:
-          return emitMappedType(<MappedTypeNode>node);
-        case Syntax.LiteralType:
-          return emitLiteralType(<LiteralTypeNode>node);
-        case Syntax.ImportType:
-          return emitImportTypeNode(<ImportTypeNode>node);
-        case Syntax.DocAllType:
+        case Syntax.TypingOperator:
+          return emitTypeOperator(<TypingOperator>node);
+        case Syntax.IndexedAccessTyping:
+          return emitIndexedAccessType(<IndexedAccessTyping>node);
+        case Syntax.MappedTyping:
+          return emitMappedType(<MappedTyping>node);
+        case Syntax.LiteralTyping:
+          return emitLiteralType(<LiteralTyping>node);
+        case Syntax.ImportTyping:
+          return emitImportTyping(<ImportTyping>node);
+        case Syntax.DocAllTyping:
           writePunctuation('*');
           return;
-        case Syntax.DocUnknownType:
+        case Syntax.DocUnknownTyping:
           writePunctuation('?');
           return;
-        case Syntax.DocNullableType:
-          return emitDocNullableType(node as DocNullableType);
-        case Syntax.DocNonNullableType:
-          return emitDocNonNullableType(node as DocNonNullableType);
-        case Syntax.DocOptionalType:
-          return emitDocOptionalType(node as DocOptionalType);
-        case Syntax.RestType:
-        case Syntax.DocVariadicType:
-          return emitRestOrDocVariadicType(node as RestTypeNode | DocVariadicType);
+        case Syntax.DocNullableTyping:
+          return emitDocNullableTyping(node as DocNullableTyping);
+        case Syntax.DocNonNullableTyping:
+          return emitDocNonNullableTyping(node as DocNonNullableTyping);
+        case Syntax.DocOptionalTyping:
+          return emitDocOptionalTyping(node as DocOptionalTyping);
+        case Syntax.RestTyping:
+        case Syntax.DocVariadicTyping:
+          return emitRestOrDocVariadicTyping(node as RestTyping | DocVariadicTyping);
         case Syntax.NamedTupleMember:
           return emitNamedTupleMember(node as NamedTupleMember);
         case Syntax.ObjectBindingPattern:
@@ -1327,10 +1327,10 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitDocCallbackTag(node as DocCallbackTag);
         case Syntax.DocSignature:
           return emitDocSignature(node as DocSignature);
-        case Syntax.DocTypeLiteral:
-          return emitDocTypeLiteral(node as DocTypeLiteral);
+        case Syntax.DocTypingLiteral:
+          return emitDocTypingLiteral(node as DocTypingLiteral);
         case Syntax.DocClassTag:
-        case Syntax.DocTag:
+        case Syntax.DocUnknownTag:
           return emitDocSimpleTag(node as DocTag);
         case Syntax.DocComment:
           return emitDoc(node as Doc);
@@ -1590,7 +1590,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.dot3Token);
     emitNodeWithWriter(node.name, writeParameter);
     emit(node.questionToken);
-    if (node.parent && node.parent.kind === Syntax.DocFunctionType && !node.name) {
+    if (node.parent && node.parent.kind === Syntax.DocFunctionTyping && !node.name) {
       emit(node.type);
     } else {
       emitTypeAnnotation(node.type);
@@ -1688,7 +1688,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitSemicolonClassElem() {
     writeTrailingSemicolon();
   }
-  function emitTypePredicate(node: TypePredicateNode) {
+  function emitTypePredicate(node: TypingPredicate) {
     if (node.assertsModifier) {
       emit(node.assertsModifier);
       writeSpace();
@@ -1701,11 +1701,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(node.type);
     }
   }
-  function emitTypeReference(node: TypeReferenceNode) {
+  function emitTypeReference(node: TypingReference) {
     emit(node.typeName);
     emitTypeArguments(node, node.typeArguments);
   }
-  function emitFunctionType(node: FunctionTypeNode) {
+  function emitFunctionType(node: FunctionTyping) {
     pushNameGenerationScope(node);
     emitTypeParameters(node, node.typeParameters);
     emitParametersForArrow(node, node.parameters);
@@ -1715,25 +1715,25 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.type);
     popNameGenerationScope(node);
   }
-  function emitDocFunctionType(node: DocFunctionType) {
+  function emitDocFunctionTyping(node: DocFunctionTyping) {
     writeKeyword('function');
     emitParameters(node, node.parameters);
     writePunctuation(':');
     emit(node.type);
   }
-  function emitDocNullableType(node: DocNullableType) {
+  function emitDocNullableTyping(node: DocNullableTyping) {
     writePunctuation('?');
     emit(node.type);
   }
-  function emitDocNonNullableType(node: DocNonNullableType) {
+  function emitDocNonNullableTyping(node: DocNonNullableTyping) {
     writePunctuation('!');
     emit(node.type);
   }
-  function emitDocOptionalType(node: DocOptionalType) {
+  function emitDocOptionalTyping(node: DocOptionalTyping) {
     emit(node.type);
     writePunctuation('=');
   }
-  function emitConstructorType(node: ConstructorTypeNode) {
+  function emitConstructorType(node: ConstructorTyping) {
     pushNameGenerationScope(node);
     writeKeyword('new');
     writeSpace();
@@ -1745,27 +1745,27 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.type);
     popNameGenerationScope(node);
   }
-  function emitTypeQuery(node: TypeQueryNode) {
+  function emitTypeQuery(node: TypingQuery) {
     writeKeyword('typeof');
     writeSpace();
     emit(node.exprName);
   }
-  function emitTypeLiteral(node: TypeLiteralNode) {
+  function emitTypeLiteral(node: TypingLiteral) {
     writePunctuation('{');
     const flags = qc.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
     emitList(node, node.members, flags | ListFormat.NoSpaceIfEmpty);
     writePunctuation('}');
   }
-  function emitArrayType(node: ArrayTypeNode) {
+  function emitArrayType(node: ArrayTyping) {
     emit(node.elemType);
     writePunctuation('[');
     writePunctuation(']');
   }
-  function emitRestOrDocVariadicType(node: RestTypeNode | DocVariadicType) {
+  function emitRestOrDocVariadicTyping(node: RestTyping | DocVariadicTyping) {
     writePunctuation('...');
     emit(node.type);
   }
-  function emitTupleType(node: TupleTypeNode) {
+  function emitTupleType(node: TupleTyping) {
     emitTokenWithComment(Syntax.OpenBracketToken, node.pos, writePunctuation, node);
     const flags = qc.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElems : ListFormat.MultiLineTupleTypeElems;
     emitList(node, node.elems, flags | ListFormat.NoSpaceIfEmpty);
@@ -1779,17 +1779,17 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeSpace();
     emit(node.type);
   }
-  function emitOptionalType(node: OptionalTypeNode) {
+  function emitOptionalType(node: OptionalTyping) {
     emit(node.type);
     writePunctuation('?');
   }
-  function emitUnionType(node: UnionTypeNode) {
+  function emitUnionType(node: UnionTyping) {
     emitList(node, node.types, ListFormat.UnionTypeConstituents);
   }
-  function emitIntersectionType(node: IntersectionTypeNode) {
+  function emitIntersectionType(node: IntersectionTyping) {
     emitList(node, node.types, ListFormat.IntersectionTypeConstituents);
   }
-  function emitConditionalType(node: ConditionalTypeNode) {
+  function emitConditionalType(node: ConditionalTyping) {
     emit(node.checkType);
     writeSpace();
     writeKeyword('extends');
@@ -1804,12 +1804,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeSpace();
     emit(node.falseType);
   }
-  function emitInferType(node: InferTypeNode) {
+  function emitInferType(node: InferTyping) {
     writeKeyword('infer');
     writeSpace();
     emit(node.typeParameter);
   }
-  function emitParenthesizedType(node: ParenthesizedTypeNode) {
+  function emitParenthesizedType(node: ParenthesizedTyping) {
     writePunctuation('(');
     emit(node.type);
     writePunctuation(')');
@@ -1817,18 +1817,18 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitThisType() {
     writeKeyword('this');
   }
-  function emitTypeOperator(node: TypeOperatorNode) {
+  function emitTypeOperator(node: TypingOperator) {
     writeTokenText(node.operator, writeKeyword);
     writeSpace();
     emit(node.type);
   }
-  function emitIndexedAccessType(node: IndexedAccessTypeNode) {
+  function emitIndexedAccessType(node: IndexedAccessTyping) {
     emit(node.objectType);
     writePunctuation('[');
     emit(node.indexType);
     writePunctuation(']');
   }
-  function emitMappedType(node: MappedTypeNode) {
+  function emitMappedType(node: MappedTyping) {
     const emitFlags = qc.get.emitFlags(node);
     writePunctuation('{');
     if (emitFlags & EmitFlags.SingleLine) {
@@ -1865,10 +1865,10 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
     writePunctuation('}');
   }
-  function emitLiteralType(node: LiteralTypeNode) {
+  function emitLiteralType(node: LiteralTyping) {
     emitExpression(node.literal);
   }
-  function emitImportTypeNode(node: ImportTypeNode) {
+  function emitImportTyping(node: ImportTyping) {
     if (node.isTypeOf) {
       writeKeyword('typeof');
       writeSpace();
@@ -2138,7 +2138,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     generateNameIfNeeded(node.name);
     emitClassDeclarationOrExpression(node);
   }
-  function emitExpressionWithTypeArguments(node: ExpressionWithTypeArguments) {
+  function emitExpressionWithTypings(node: ExpressionWithTypings) {
     emitExpression(node.expression);
     emitTypeArguments(node, node.typeArguments);
   }
@@ -2827,7 +2827,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitDocSimpleTypedTag(tag: DocTypeTag | DocThisTag | DocEnumTag | DocReturnTag) {
     emitDocTagName(tag.tagName);
-    emitDocTypeExpression(tag.typeExpression);
+    emitDocTypingExpression(tag.typeExpression);
     emitDocComment(tag.comment);
   }
   function emitDocHeritageTag(tag: DocImplementsTag | DocAugmentsTag) {
@@ -2840,7 +2840,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitDocTemplateTag(tag: DocTemplateTag) {
     emitDocTagName(tag.tagName);
-    emitDocTypeExpression(tag.constraint);
+    emitDocTypingExpression(tag.constraint);
     writeSpace();
     emitList(tag, tag.typeParameters, ListFormat.CommaListElems);
     emitDocComment(tag.comment);
@@ -2848,8 +2848,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitDocTypedefTag(tag: DocTypedefTag) {
     emitDocTagName(tag.tagName);
     if (tag.typeExpression) {
-      if (tag.typeExpression.kind === Syntax.DocTypeExpression) {
-        emitDocTypeExpression(tag.typeExpression);
+      if (tag.typeExpression.kind === Syntax.DocTypingExpression) {
+        emitDocTypingExpression(tag.typeExpression);
       } else {
         writeSpace();
         writePunctuation('{');
@@ -2866,8 +2866,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(tag.fullName);
     }
     emitDocComment(tag.comment);
-    if (tag.typeExpression && tag.typeExpression.kind === Syntax.DocTypeLiteral) {
-      emitDocTypeLiteral(tag.typeExpression);
+    if (tag.typeExpression && tag.typeExpression.kind === Syntax.DocTypingLiteral) {
+      emitDocTypingLiteral(tag.typeExpression);
     }
   }
   function emitDocCallbackTag(tag: DocCallbackTag) {
@@ -2883,7 +2883,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitDocTagName(tag.tagName);
     emitDocComment(tag.comment);
   }
-  function emitDocTypeLiteral(lit: DocTypeLiteral) {
+  function emitDocTypingLiteral(lit: DocTypingLiteral) {
     emitList(lit, new Nodes(lit.docPropertyTags), ListFormat.DocComment);
   }
   function emitDocSignature(sig: DocSignature) {
@@ -2903,7 +2903,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitDocPropertyLikeTag(param: DocPropertyLikeTag) {
     emitDocTagName(param.tagName);
-    emitDocTypeExpression(param.typeExpression);
+    emitDocTypingExpression(param.typeExpression);
     writeSpace();
     if (param.isBracketed) {
       writePunctuation('[');
@@ -2924,7 +2924,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       write(comment);
     }
   }
-  function emitDocTypeExpression(typeExpression: DocTypeExpression | undefined) {
+  function emitDocTypingExpression(typeExpression: DocTypingExpression | undefined) {
     if (typeExpression) {
       writeSpace();
       writePunctuation('{');
@@ -3123,7 +3123,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       writeSpace();
     }
   }
-  function emitTypeAnnotation(node: TypeNode | undefined) {
+  function emitTypeAnnotation(node: Typing | undefined) {
     if (node) {
       writePunctuation(':');
       writeSpace();
@@ -3180,7 +3180,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitDecorators(parentNode: Node, decorators: Nodes<Decorator> | undefined) {
     emitList(parentNode, decorators, ListFormat.Decorators);
   }
-  function emitTypeArguments(parentNode: Node, typeArguments: Nodes<TypeNode> | undefined) {
+  function emitTypeArguments(parentNode: Node, typeArguments: Nodes<Typing> | undefined) {
     emitList(parentNode, typeArguments, ListFormat.TypeArguments);
   }
   function emitTypeParameters(
@@ -3193,7 +3193,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitParameters(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
     emitList(parentNode, parameters, ListFormat.Parameters);
   }
-  function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
+  function canEmitSimpleArrowHead(parentNode: FunctionTyping | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
     const parameter = singleOrUndefined(parameters);
     return (
       parameter &&
@@ -3212,7 +3212,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       qc.is.kind(qc.Identifier, parameter.name)
     );
   }
-  function emitParametersForArrow(parentNode: FunctionTypeNode | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
+  function emitParametersForArrow(parentNode: FunctionTyping | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
     if (canEmitSimpleArrowHead(parentNode, parameters)) {
       emitList(parentNode, parameters, ListFormat.Parameters & ~ListFormat.Parenthesis);
     } else {

@@ -1385,11 +1385,11 @@ export function createProgram(
             break;
           case Syntax.CallExpression:
           case Syntax.NewExpression:
-          case Syntax.ExpressionWithTypeArguments:
+          case Syntax.ExpressionWithTypings:
           case Syntax.JsxSelfClosingElem:
           case Syntax.JsxOpeningElem:
           case Syntax.TaggedTemplateExpression:
-            if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
+            if (nodes === (<WithArgumentsTobj>parent).typeArguments) {
               diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_arguments_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1545,7 +1545,7 @@ export function createProgram(
           imports = append(imports, node.arguments[0]);
         } else if (qc.is.importCall(node) && node.arguments.length === 1 && qf.is.stringLiteralLike(node.arguments[0])) {
           imports = append(imports, node.arguments[0] as StringLiteralLike);
-        } else if (qc.is.literalImportTypeNode(node)) {
+        } else if (qc.is.literalImportTyping(node)) {
           imports = append(imports, node.argument.literal);
         }
       }

@@ -273,7 +273,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
       return sub;
     };
     const subtree = (n: Nobj): TransformFlags => {
-      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TransformFlags.None;
       return reduceEachChild(n, TransformFlags.None, child, children);
     };
     const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
@@ -296,11 +296,11 @@ export class SyntaxList extends Nobj implements qt.SyntaxList {
   children!: Nobj[];
 }
 SyntaxList.prototype.kind = SyntaxList.kind;
-export abstract class TypeNode extends Nobj implements qt.TypeNode {
-  _typeNodeBrand: any;
+export abstract class Tobj extends Nobj implements qt.Tobj {
+  _typingBrand: any;
 }
-export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeWithTypeArguments {
-  typeArguments?: qt.Nodes<qt.TypeNode>;
+export abstract class WithArgumentsTobj extends Tobj implements qt.WithArgumentsTobj {
+  typeArguments?: qt.Nodes<qt.Typing>;
 }
 export abstract class Dobj extends Nobj implements qt.Dobj {
   _declarationBrand: any;
@@ -362,15 +362,15 @@ export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDob
   name?: qt.PropertyName;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   parameters!: qt.Nodes<qt.ParameterDeclaration>;
-  type?: qt.TypeNode;
-  typeArguments?: qt.Nodes<qt.TypeNode>;
+  type?: qt.Typing;
+  typeArguments?: qt.Nodes<qt.Typing>;
   constructor(
     s: boolean,
     k: qt.SignatureDeclaration['kind'],
     ts: readonly qt.TypeParameterDeclaration[] | undefined,
     ps?: readonly qt.ParameterDeclaration[],
-    t?: qt.TypeNode,
-    ta?: readonly qt.TypeNode[]
+    t?: qt.Typing,
+    ta?: readonly qt.Typing[]
   ) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
@@ -380,7 +380,7 @@ export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDob
   }
 
   /*
-  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode): T {
+  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.Typing): T {
     return this.typeParameters !== ts || this.parameters !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
   }
   */
@@ -395,13 +395,13 @@ export abstract class FunctionLikeDobj extends SignatureDobj implements qt.Funct
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDobj implements qt.FunctionOrConstructorTypeNodeBase {
-  type!: TypeNode;
+export abstract class FunctionOrConstructorTobj extends SignatureDobj implements qt.FunctionOrConstructorTobj {
+  type!: Typing;
   docCache?: readonly qt.DocTag[];
-  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.TypeNode) {
+  constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
     super(s, k, ts, ps, t);
   }
-  _typeNodeBrand: any;
+  _typingBrand: any;
 }
 export abstract class Eobj extends Nobj implements qt.Eobj {
   _expressionBrand: any;
@@ -589,11 +589,11 @@ export abstract class LiteralEobj extends PrimaryEobj implements qt.LiteralEobj 
   hasExtendedEscape?: boolean;
   _literalExpressionBrand: any;
 }
-export abstract class DocType extends TypeNode implements qt.DocType {
+export abstract class DocTobj extends Tobj implements qt.DocTobj {
   _docTypeBrand: any;
 }
 export abstract class DocTag extends Nobj implements qt.DocTag {
-  parent?: qt.Doc | qt.DocTypeLiteral;
+  parent?: qt.Doc | qt.DocTypingLiteral;
   tagName: qt.Identifier;
   comment?: string;
   constructor(k: Syntax, n: string, c?: string) {
@@ -1311,7 +1311,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         case Syntax.NamespaceImport:
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
-        case Syntax.TypeLiteral:
+        case Syntax.TypingLiteral:
           addDeclaration(<qt.Declaration>node);
           forEach.child(node, visit);
           break;
@@ -1728,8 +1728,8 @@ export function createGetSymbolWalker(
       visitType(t);
       if (s.exports) s.exports.forEach(visitSymbol);
       forEach(s.declarations, (d) => {
-        if ((d as any).type && (d as any).type.kind === Syntax.TypeQuery) {
-          const query = (d as any).type as TypeQueryNode;
+        if ((d as any).type && (d as any).type.kind === Syntax.TypingQuery) {
+          const query = (d as any).type as TypingQuery;
           const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));
           visitSymbol(entity);
         }
@@ -1761,7 +1761,7 @@ export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], po
   return Scanner.lineOf(lineMap, pos);
 }
 qu.addMixins(ClassLikeDobj, [DocContainer]);
-qu.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
+qu.addMixins(FunctionOrConstructorTobj, [Tobj]);
 qu.addMixins(ObjectLiteralEobj, [Dobj]);
 qu.addMixins(LiteralExpression, [LiteralLikeNode]);
 export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
@@ -1929,8 +1929,8 @@ export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'qu
   }
   return;
 }
-export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
-  return n.kind === Syntax.ExpressionWithTypeArguments && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)
+export function tryGetClassImplementingOrExtendingExpressionWithTypings(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypings | undefined {
+  return n.kind === Syntax.ExpressionWithTypings && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)
     ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
     : undefined;
 }
@@ -1941,7 +1941,7 @@ function walkUp(n: Node | undefined, k: Syntax) {
   return n;
 }
 export function walkUpParenthesizedTypes(n?: Node) {
-  return walkUp(n, Syntax.ParenthesizedType);
+  return walkUp(n, Syntax.ParenthesizedTyping);
 }
 export function walkUpParenthesizedExpressions(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedExpression);

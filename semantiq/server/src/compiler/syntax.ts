@@ -296,28 +296,28 @@ export const enum Syntax {
   CallSignature,
   ConstructSignature,
   IndexSignature,
-  TypePredicate,
-  TypeReference,
-  FunctionType,
-  ConstructorType,
-  TypeQuery,
-  TypeLiteral,
-  ArrayType,
-  TupleType,
-  OptionalType,
-  RestType,
-  UnionType,
-  IntersectionType,
-  ConditionalType,
-  InferType,
-  ParenthesizedType,
-  ThisType,
-  TypeOperator,
-  IndexedAccessType,
-  MappedType,
-  LiteralType,
+  TypingPredicate,
+  TypingReference,
+  FunctionTyping,
+  ConstructorTyping,
+  TypingQuery,
+  TypingLiteral,
+  ArrayTyping,
+  TupleTyping,
+  OptionalTyping,
+  RestTyping,
+  UnionTyping,
+  IntersectionTyping,
+  ConditionalTyping,
+  InferTyping,
+  ParenthesizedTyping,
+  ThisTyping,
+  TypingOperator,
+  IndexedAccessTyping,
+  MappedTyping,
+  LiteralTyping,
   NamedTupleMember,
-  ImportType,
+  ImportTyping,
   ObjectBindingPattern,
   ArrayBindingPattern,
   BindingElem,
@@ -345,7 +345,7 @@ export const enum Syntax {
   SpreadElem,
   ClassExpression,
   OmittedExpression,
-  ExpressionWithTypeArguments,
+  ExpressionWithTypings,
   AsExpression,
   NonNullExpression,
   MetaProperty,
@@ -423,19 +423,19 @@ export const enum Syntax {
   Bundle,
   UnparsedSource,
   InputFiles,
-  DocTypeExpression,
-  DocAllType,
-  DocUnknownType,
-  DocNullableType,
-  DocNonNullableType,
-  DocOptionalType,
-  DocFunctionType,
-  DocVariadicType,
-  DocNamepathType,
+  DocTypingExpression,
+  DocAllTyping,
+  DocUnknownTyping,
+  DocNullableTyping,
+  DocNonNullableTyping,
+  DocOptionalTyping,
+  DocFunctionTyping,
+  DocVariadicTyping,
+  DocNamepathTyping,
   DocComment,
-  DocTypeLiteral,
+  DocTypingLiteral,
   DocSignature,
-  DocTag,
+  DocUnknownTag,
   DocAugmentsTag,
   DocImplementsTag,
   DocAuthorTag,
@@ -471,8 +471,8 @@ export const enum Syntax {
   LastKeyword = OfKeyword,
   FirstFutureReservedWord = ImplementsKeyword,
   LastFutureReservedWord = YieldKeyword,
-  FirstTypeNode = TypePredicate,
-  LastTypeNode = ImportType,
+  FirstTypeNode = TypingPredicate,
+  LastTypeNode = ImportTyping,
   FirstPunctuation = OpenBraceToken,
   LastPunctuation = CaretEqualsToken,
   FirstToken = Unknown,
@@ -488,9 +488,9 @@ export const enum Syntax {
   FirstStatement = VariableStatement,
   LastStatement = DebuggerStatement,
   FirstNode = QualifiedName,
-  FirstDocNode = DocTypeExpression,
+  FirstDocNode = DocTypingExpression,
   LastDocNode = DocPropertyTag,
-  FirstDocTagNode = DocTag,
+  FirstDocTagNode = DocUnknownTag,
   LastDocTagNode = DocPropertyTag,
   FirstContextualKeyword = AbstractKeyword,
   LastContextualKeyword = OfKeyword,
@@ -787,11 +787,11 @@ export const is = new (class {
   functionLike(k?: Syntax) {
     switch (k) {
       case Syntax.CallSignature:
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
       case Syntax.ConstructSignature:
-      case Syntax.DocFunctionType:
+      case Syntax.DocFunctionTyping:
       case Syntax.DocSignature:
-      case Syntax.FunctionType:
+      case Syntax.FunctionTyping:
       case Syntax.IndexSignature:
       case Syntax.MethodSignature:
         return true;
@@ -1022,14 +1022,14 @@ export const is = new (class {
       case Syntax.AnyKeyword:
       case Syntax.BigIntKeyword:
       case Syntax.BooleanKeyword:
-      case Syntax.DocAllType:
-      case Syntax.DocFunctionType:
-      case Syntax.DocNonNullableType:
-      case Syntax.DocNullableType:
-      case Syntax.DocOptionalType:
-      case Syntax.DocUnknownType:
-      case Syntax.DocVariadicType:
-      case Syntax.ExpressionWithTypeArguments:
+      case Syntax.DocAllTyping:
+      case Syntax.DocFunctionTyping:
+      case Syntax.DocNonNullableTyping:
+      case Syntax.DocNullableTyping:
+      case Syntax.DocOptionalTyping:
+      case Syntax.DocUnknownTyping:
+      case Syntax.DocVariadicTyping:
+      case Syntax.ExpressionWithTypings:
       case Syntax.NeverKeyword:
       case Syntax.NullKeyword:
       case Syntax.NumberKeyword:

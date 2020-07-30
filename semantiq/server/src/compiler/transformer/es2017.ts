@@ -352,7 +352,7 @@ export function transformES2017(context: TransformationContext) {
     if (qc.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
-  function getPromiseConstructor(type: TypeNode | undefined) {
+  function getPromiseConstructor(type: Typing | undefined) {
     const typeName = type && qf.get.entityNameFromTypeNode(type);
     if (typeName && qc.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);

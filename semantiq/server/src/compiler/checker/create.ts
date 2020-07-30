@@ -197,10 +197,10 @@ export function newCreate(f: qt.Frame) {
     typePredicate(kind: TypePredicateKind, parameterName: string | undefined, parameterIndex: number | undefined, type: Type | undefined): TypePredicate {
       return { kind, parameterName, parameterIndex, type } as TypePredicate;
     }
-    typePredicateFromTypePredicateNode(node: TypePredicateNode, signature: Signature): TypePredicate {
+    typePredicateFromTypingPredicate(node: TypingPredicate, signature: Signature): TypePredicate {
       const parameterName = node.parameterName;
       const type = node.type && getTypeFromTypeNode(node.type);
-      return parameterName.kind === Syntax.ThisType
+      return parameterName.kind === Syntax.ThisTyping
         ? this.typePredicate(node.assertsModifier ? TypePredicateKind.AssertsThis : TypePredicateKind.This, undefined, type)
         : this.typePredicate(
             node.assertsModifier ? TypePredicateKind.AssertsIdentifier : TypePredicateKind.Identifier,
@@ -240,7 +240,7 @@ export function newCreate(f: qt.Frame) {
       }
       return type;
     }
-    deferredTypeReference(target: GenericType, node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode, mapper?: TypeMapper): DeferredTypeReference {
+    deferredTypeReference(target: GenericType, node: TypingReference | ArrayTyping | TupleTyping, mapper?: TypeMapper): DeferredTypeReference {
       const aliasSymbol = getAliasSymbolForTypeNode(node);
       const aliasTypeArguments = getTypeArgumentsForAliasSymbol(aliasSymbol);
       const type = <DeferredTypeReference>this.objectType(ObjectFlags.Reference, target.symbol);
@@ -568,10 +568,10 @@ export function newCreate(f: qt.Frame) {
       const exports = namespace && namespace.getExportsOfSymbol();
       const typeSymbol = exports && getSymbol(exports, JsxNames.Elem, qt.SymbolFlags.Type);
       const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, qt.SymbolFlags.Type, node);
-      const declaration = FunctionTypeNode.create(
+      const declaration = FunctionTyping.create(
         undefined,
         [new qc.ParameterDeclaration(undefined, undefined, undefined, 'props', undefined, nodeBuilder.typeToTypeNode(result, node))],
-        returnNode ? TypeReferenceNode.create(returnNode, undefined) : new qc.KeywordTypeNode(Syntax.AnyKeyword)
+        returnNode ? TypingReference.create(returnNode, undefined) : new qc.KeywordTyping(Syntax.AnyKeyword)
       );
       const parameterSymbol = new Symbol(SymbolFlags.FunctionScopedVariable, 'props' as qu.__String);
       parameterSymbol.type = result;
@@ -658,7 +658,7 @@ export function newCreate(f: qt.Frame) {
       addUndefined?: boolean
     ) {
       const declaration = qf.get.parseTreeOf(declarationIn, isVariableLikeOrAccessor);
-      if (!declaration) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
+      if (!declaration) return new Token(Syntax.AnyKeyword) as KeywordTyping;
       const symbol = getSymbolOfNode(declaration);
       let type = symbol && !(symbol.flags & (SymbolFlags.TypeLiteral | qt.SymbolFlags.Signature)) ? getWidenedLiteralType(this.getTypeOfSymbol()) : errorType;
       if (type.flags & qt.TypeFlags.UniqueESSymbol && type.symbol === symbol) flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
@@ -667,13 +667,13 @@ export function newCreate(f: qt.Frame) {
     }
     returnTypeOfSignatureDeclaration(signatureDeclarationIn: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
       const signatureDeclaration = qf.get.parseTreeOf(signatureDeclarationIn, isFunctionLike);
-      if (!signatureDeclaration) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
+      if (!signatureDeclaration) return new Token(Syntax.AnyKeyword) as KeywordTyping;
       const signature = getSignatureFromDeclaration(signatureDeclaration);
       return nodeBuilder.typeToTypeNode(getReturnTypeOfSignature(signature), enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
     typeOfExpression(exprIn: Expression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
       const expr = qf.get.parseTreeOf(exprIn, isExpression);
-      if (!expr) return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
+      if (!expr) return new Token(Syntax.AnyKeyword) as KeywordTyping;
       const type = getWidenedType(getRegularTypeOfExpression(expr));
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
@@ -792,7 +792,7 @@ export function newCreate(f: qt.Frame) {
         return false;
       }
       function isInHeritageClause(node: PropertyAccessEntityNameExpression) {
-        return node.parent && node.parent.kind === Syntax.ExpressionWithTypeArguments && node.parent.parent && node.parent.parent.kind === Syntax.HeritageClause;
+        return node.parent && node.parent.kind === Syntax.ExpressionWithTypings && node.parent.parent && node.parent.parent.kind === Syntax.HeritageClause;
       }
       function getTypeReferenceDirectivesForEntityName(node: EntityNameOrEntityNameExpression): string[] | undefined {
         if (!fileToDirective) return;
@@ -1172,8 +1172,8 @@ export function newResolve(f: qt.Frame) {
                   useResult = lastLocation.kind === Syntax.Parameter || (lastLocation === (<FunctionLikeDeclaration>location).type && !!qc.findAncestor(result.valueDeclaration, isParameter));
                 }
               }
-            } else if (location.kind === Syntax.ConditionalType) {
-              useResult = lastLocation === (<ConditionalTypeNode>location).trueType;
+            } else if (location.kind === Syntax.ConditionalTyping) {
+              useResult = lastLocation === (<ConditionalTyping>location).trueType;
             }
             if (useResult) break loop;
             else {
@@ -1243,8 +1243,8 @@ export function newResolve(f: qt.Frame) {
               }
             }
             break;
-          case Syntax.ExpressionWithTypeArguments:
-            if (lastLocation === (<ExpressionWithTypeArguments>location).expression && (<HeritageClause>location.parent).token === Syntax.ExtendsKeyword) {
+          case Syntax.ExpressionWithTypings:
+            if (lastLocation === (<ExpressionWithTypings>location).expression && (<HeritageClause>location.parent).token === Syntax.ExtendsKeyword) {
               const container = location.parent.parent;
               if (qf.is.classLike(container) && (result = lookup(getSymbolOfNode(container).members!, name, meaning & qt.SymbolFlags.Type))) {
                 if (nameNotFoundMessage) error(errorLocation, qd.msgs.Base_class_expressions_cannot_reference_class_type_parameters);
@@ -1906,7 +1906,7 @@ export function newResolve(f: qt.Frame) {
       if (!typeReferenceName) return unknownSymbol;
       return this.entityName(typeReferenceName, meaning, ignoreErrors) || unknownSymbol;
     }
-    importSymbolType(node: ImportTypeNode, links: NodeLinks, symbol: Symbol, meaning: qt.SymbolFlags) {
+    importSymbolType(node: ImportTyping, links: NodeLinks, symbol: Symbol, meaning: qt.SymbolFlags) {
       const resolvedSymbol = symbol.resolve.symbol();
       links.resolvedSymbol = resolvedSymbol;
       if (meaning === qt.SymbolFlags.Value) return this.getTypeOfSymbol();
@@ -1940,7 +1940,7 @@ export function newResolve(f: qt.Frame) {
       const isDecorator = node.kind === Syntax.Decorator;
       const isJsxOpeningOrSelfClosingElem = qc.isJsx.openingLikeElem(node);
       const reportErrors = !candidatesOutArray;
-      let typeArguments: Nodes<TypeNode> | undefined;
+      let typeArguments: Nodes<Typing> | undefined;
       if (!isDecorator) {
         typeArguments = (<CallExpression>node).typeArguments;
         if (isTaggedTemplate || isJsxOpeningOrSelfClosingElem || (<CallExpression>node).expression.kind !== Syntax.SuperKeyword) forEach(typeArguments, checkSourceElem);

@@ -412,7 +412,7 @@ export function transformES2015(context: TransformationContext) {
     addSyntheticLeadingComment(result, Syntax.MultiLineCommentTrivia, '* @class ');
     return result;
   }
-  function transformClassBody(node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypeArguments | undefined): Block {
+  function transformClassBody(node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypings | undefined): Block {
     const statements: qc.Statement[] = [];
     startLexicalEnvironment();
     addExtendsHelperIfNeeded(statements, node, extendsClauseElem);
@@ -432,12 +432,12 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(block, EmitFlags.NoComments);
     return block;
   }
-  function addExtendsHelperIfNeeded(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypeArguments | undefined): void {
+  function addExtendsHelperIfNeeded(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypings | undefined): void {
     if (extendsClauseElem) {
       statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, qf.get.declaration.internalName(node))), extendsClauseElem));
     }
   }
-  function addConstructor(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypeArguments | undefined): void {
+  function addConstructor(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypings | undefined): void {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
     const ancestorFacts = enterSubtree(HierarchyFacts.ConstructorExcludes, HierarchyFacts.ConstructorIncludes);
@@ -481,7 +481,7 @@ export function transformES2015(context: TransformationContext) {
   function transformConstructorBody(
     constructor: (ConstructorDeclaration & { body: FunctionBody }) | undefined,
     node: ClassDeclaration | ClassExpression,
-    extendsClauseElem: qc.ExpressionWithTypeArguments | undefined,
+    extendsClauseElem: qc.ExpressionWithTypings | undefined,
     hasSynthesizedSuper: boolean
   ) {
     const isDerivedClass = !!extendsClauseElem && qc.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword;

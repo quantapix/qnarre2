@@ -210,12 +210,12 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.ConstKeyword:
       case Syntax.DeclareKeyword:
       case Syntax.ReadonlyKeyword:
-      case Syntax.ArrayType:
-      case Syntax.TupleType:
-      case Syntax.OptionalType:
-      case Syntax.RestType:
-      case Syntax.TypeLiteral:
-      case Syntax.TypePredicate:
+      case Syntax.ArrayTyping:
+      case Syntax.TupleTyping:
+      case Syntax.OptionalTyping:
+      case Syntax.RestTyping:
+      case Syntax.TypingLiteral:
+      case Syntax.TypingPredicate:
       case Syntax.TypeParameter:
       case Syntax.AnyKeyword:
       case Syntax.UnknownKeyword:
@@ -225,19 +225,19 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.NeverKeyword:
       case Syntax.VoidKeyword:
       case Syntax.SymbolKeyword:
-      case Syntax.ConstructorType:
-      case Syntax.FunctionType:
-      case Syntax.TypeQuery:
-      case Syntax.TypeReference:
-      case Syntax.UnionType:
-      case Syntax.IntersectionType:
-      case Syntax.ConditionalType:
-      case Syntax.ParenthesizedType:
-      case Syntax.ThisType:
-      case Syntax.TypeOperator:
-      case Syntax.IndexedAccessType:
-      case Syntax.MappedType:
-      case Syntax.LiteralType:
+      case Syntax.ConstructorTyping:
+      case Syntax.FunctionTyping:
+      case Syntax.TypingQuery:
+      case Syntax.TypingReference:
+      case Syntax.UnionTyping:
+      case Syntax.IntersectionTyping:
+      case Syntax.ConditionalTyping:
+      case Syntax.ParenthesizedTyping:
+      case Syntax.ThisTyping:
+      case Syntax.TypingOperator:
+      case Syntax.IndexedAccessTyping:
+      case Syntax.MappedTyping:
+      case Syntax.LiteralTyping:
       case Syntax.IndexSignature:
       case Syntax.Decorator:
       case Syntax.TypeAliasDeclaration:
@@ -256,8 +256,8 @@ export function transformTypeScript(context: TransformationContext) {
         return visitClassExpression(<ClassExpression>node);
       case Syntax.HeritageClause:
         return visitHeritageClause(<HeritageClause>node);
-      case Syntax.ExpressionWithTypeArguments:
-        return visitExpressionWithTypeArguments(<ExpressionWithTypeArguments>node);
+      case Syntax.ExpressionWithTypings:
+        return visitExpressionWithTypings(<ExpressionWithTypings>node);
       case Syntax.MethodDeclaration:
         return visitMethodDeclaration(<MethodDeclaration>node);
       case Syntax.GetAccessor:
@@ -722,7 +722,7 @@ export function transformTypeScript(context: TransformationContext) {
     else if (qc.is.asyncFunction(node)) return new Identifier('Promise');
     return qc.VoidExpression.zero();
   }
-  function serializeTypeNode(node: TypeNode | undefined): SerializedTypeNode {
+  function serializeTypeNode(node: Typing | undefined): SerializedTypeNode {
     if (node === undefined) return new Identifier('Object');
     switch (node.kind) {
       case Syntax.VoidKeyword:
@@ -730,23 +730,23 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.NullKeyword:
       case Syntax.NeverKeyword:
         return qc.VoidExpression.zero();
-      case Syntax.ParenthesizedType:
-        return serializeTypeNode((<ParenthesizedTypeNode>node).type);
-      case Syntax.FunctionType:
-      case Syntax.ConstructorType:
+      case Syntax.ParenthesizedTyping:
+        return serializeTypeNode((<ParenthesizedTyping>node).type);
+      case Syntax.FunctionTyping:
+      case Syntax.ConstructorTyping:
         return new Identifier('Function');
-      case Syntax.ArrayType:
-      case Syntax.TupleType:
+      case Syntax.ArrayTyping:
+      case Syntax.TupleTyping:
         return new Identifier('Array');
-      case Syntax.TypePredicate:
+      case Syntax.TypingPredicate:
       case Syntax.BooleanKeyword:
         return new Identifier('Boolean');
       case Syntax.StringKeyword:
         return new Identifier('String');
       case Syntax.ObjectKeyword:
         return new Identifier('Object');
-      case Syntax.LiteralType:
-        switch ((<LiteralTypeNode>node).literal.kind) {
+      case Syntax.LiteralTyping:
+        switch ((<LiteralTyping>node).literal.kind) {
           case Syntax.StringLiteral:
             return new Identifier('String');
           case Syntax.PrefixUnaryExpression:
@@ -758,7 +758,7 @@ export function transformTypeScript(context: TransformationContext) {
           case Syntax.FalseKeyword:
             return new Identifier('Boolean');
           default:
-            return Debug.failBadSyntax((<LiteralTypeNode>node).literal);
+            return Debug.failBadSyntax((<LiteralTyping>node).literal);
         }
       case Syntax.NumberKeyword:
         return new Identifier('Number');
@@ -766,45 +766,45 @@ export function transformTypeScript(context: TransformationContext) {
         return getGlobalBigIntNameWithFallback();
       case Syntax.SymbolKeyword:
         return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new Identifier('Symbol');
-      case Syntax.TypeReference:
-        return serializeTypeReferenceNode(<TypeReferenceNode>node);
-      case Syntax.IntersectionType:
-      case Syntax.UnionType:
-        return serializeTypeList((<UnionOrIntersectionTypeNode>node).types);
-      case Syntax.ConditionalType:
-        return serializeTypeList([(<ConditionalTypeNode>node).trueType, (<ConditionalTypeNode>node).falseType]);
-      case Syntax.TypeOperator:
-        if ((<TypeOperatorNode>node).operator === Syntax.ReadonlyKeyword) return serializeTypeNode((<TypeOperatorNode>node).type);
+      case Syntax.TypingReference:
+        return serializeTypingReference(<TypingReference>node);
+      case Syntax.IntersectionTyping:
+      case Syntax.UnionTyping:
+        return serializeTypeList((<UnionOrIntersectionTyping>node).types);
+      case Syntax.ConditionalTyping:
+        return serializeTypeList([(<ConditionalTyping>node).trueType, (<ConditionalTyping>node).falseType]);
+      case Syntax.TypingOperator:
+        if ((<TypingOperator>node).operator === Syntax.ReadonlyKeyword) return serializeTypeNode((<TypingOperator>node).type);
         break;
-      case Syntax.TypeQuery:
-      case Syntax.IndexedAccessType:
-      case Syntax.MappedType:
-      case Syntax.TypeLiteral:
+      case Syntax.TypingQuery:
+      case Syntax.IndexedAccessTyping:
+      case Syntax.MappedTyping:
+      case Syntax.TypingLiteral:
       case Syntax.AnyKeyword:
       case Syntax.UnknownKeyword:
-      case Syntax.ThisType:
-      case Syntax.ImportType:
+      case Syntax.ThisTyping:
+      case Syntax.ImportTyping:
         break;
-      case Syntax.DocAllType:
-      case Syntax.DocUnknownType:
-      case Syntax.DocFunctionType:
-      case Syntax.DocVariadicType:
-      case Syntax.DocNamepathType:
+      case Syntax.DocAllTyping:
+      case Syntax.DocUnknownTyping:
+      case Syntax.DocFunctionTyping:
+      case Syntax.DocVariadicTyping:
+      case Syntax.DocNamepathTyping:
         break;
-      case Syntax.DocNullableType:
-      case Syntax.DocNonNullableType:
-      case Syntax.DocOptionalType:
-        return serializeTypeNode((<DocNullableType | DocNonNullableType | DocOptionalType>node).type);
+      case Syntax.DocNullableTyping:
+      case Syntax.DocNonNullableTyping:
+      case Syntax.DocOptionalTyping:
+        return serializeTypeNode((<DocNullableTyping | DocNonNullableTyping | DocOptionalTyping>node).type);
       default:
         return Debug.failBadSyntax(node);
     }
     return new Identifier('Object');
   }
-  function serializeTypeList(types: readonly TypeNode[]): SerializedTypeNode {
+  function serializeTypeList(types: readonly Typing[]): SerializedTypeNode {
     let serializedUnion: SerializedTypeNode | undefined;
     for (let typeNode of types) {
-      while (typeNode.kind === Syntax.ParenthesizedType) {
-        typeNode = (typeNode as ParenthesizedTypeNode).type;
+      while (typeNode.kind === Syntax.ParenthesizedTyping) {
+        typeNode = (typeNode as ParenthesizedTyping).type;
       }
       if (typeNode.kind === Syntax.NeverKeyword) {
         continue;
@@ -823,11 +823,11 @@ export function transformTypeScript(context: TransformationContext) {
     }
     return serializedUnion || qc.VoidExpression.zero();
   }
-  function serializeTypeReferenceNode(node: TypeReferenceNode): SerializedTypeNode {
+  function serializeTypingReference(node: TypingReference): SerializedTypeNode {
     const kind = resolver.getTypeReferenceSerializationKind(node.typeName, currentNameScope || currentLexicalScope);
     switch (kind) {
       case TypeReferenceSerializationKind.Unknown:
-        if (qc.findAncestor(node, (n) => n.parent && qc.is.kind(qc.ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) return new Identifier('Object');
+        if (qc.findAncestor(node, (n) => n.parent && qc.is.kind(qc.ConditionalTyping, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) return new Identifier('Object');
         const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
         const temp = createTempVariable(hoistVariableDeclaration);
         return new qc.ConditionalExpression(createTypeCheck(qf.create.assignment(temp, serialized), 'function'), temp, new Identifier('Object'));
@@ -922,7 +922,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitExpressionWithTypeArguments(node: ExpressionWithTypeArguments): ExpressionWithTypeArguments {
+  function visitExpressionWithTypings(node: ExpressionWithTypings): ExpressionWithTypings {
     return node.update(undefined, visitNode(node.expression, visitor, isLeftExpression));
   }
   function shouldEmitFunctionLikeDeclaration<T extends FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {

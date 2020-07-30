@@ -260,11 +260,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     switch (node.kind) {
       case Syntax.Constructor:
         return InternalSymbol.Constructor;
-      case Syntax.FunctionType:
+      case Syntax.FunctionTyping:
       case Syntax.CallSignature:
       case Syntax.DocSignature:
         return InternalSymbol.Call;
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
       case Syntax.ConstructSignature:
         return InternalSymbol.New;
       case Syntax.IndexSignature:
@@ -277,15 +277,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         if (qf.get.assignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
-      case Syntax.DocFunctionType:
+      case Syntax.DocFunctionTyping:
         return qf.is.doc.constructSignature(node) ? InternalSymbol.New : InternalSymbol.Call;
       case Syntax.Parameter:
         qu.assert(
-          node.parent.kind === Syntax.DocFunctionType,
+          node.parent.kind === Syntax.DocFunctionTyping,
           'Impossible parameter parent kind',
-          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected DocFunctionType`
+          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected DocFunctionTyping`
         );
-        const functionType = <DocFunctionType>node.parent;
+        const functionType = <DocFunctionTyping>node.parent;
         const index = functionType.parameters.indexOf(node as ParameterDeclaration);
         return ('arg' + index) as qu.__String;
     }
@@ -1358,15 +1358,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.ClassDeclaration:
       case Syntax.EnumDeclaration:
       case Syntax.ObjectLiteralExpression:
-      case Syntax.TypeLiteral:
-      case Syntax.DocTypeLiteral:
+      case Syntax.TypingLiteral:
+      case Syntax.DocTypingLiteral:
       case Syntax.JsxAttributes:
         return ContainerFlags.IsContainer;
       case Syntax.InterfaceDeclaration:
         return ContainerFlags.IsContainer | ContainerFlags.IsInterface;
       case Syntax.ModuleDeclaration:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.MappedType:
+      case Syntax.MappedTyping:
         return ContainerFlags.IsContainer | ContainerFlags.HasLocals;
       case Syntax.SourceFile:
         return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals;
@@ -1380,11 +1380,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.SetAccessor:
       case Syntax.CallSignature:
       case Syntax.DocSignature:
-      case Syntax.DocFunctionType:
-      case Syntax.FunctionType:
+      case Syntax.DocFunctionTyping:
+      case Syntax.FunctionTyping:
       case Syntax.ConstructSignature:
       case Syntax.IndexSignature:
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
         return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike;
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
@@ -1421,14 +1421,14 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return declareClassMember(node, symbolFlags, symbolExcludes);
       case Syntax.EnumDeclaration:
         return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
-      case Syntax.TypeLiteral:
-      case Syntax.DocTypeLiteral:
+      case Syntax.TypingLiteral:
+      case Syntax.DocTypingLiteral:
       case Syntax.ObjectLiteralExpression:
       case Syntax.InterfaceDeclaration:
       case Syntax.JsxAttributes:
         return declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
-      case Syntax.FunctionType:
-      case Syntax.ConstructorType:
+      case Syntax.FunctionTyping:
+      case Syntax.ConstructorTyping:
       case Syntax.CallSignature:
       case Syntax.ConstructSignature:
       case Syntax.DocSignature:
@@ -1441,11 +1441,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
-      case Syntax.DocFunctionType:
+      case Syntax.DocFunctionTyping:
       case Syntax.DocTypedefTag:
       case Syntax.DocCallbackTag:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.MappedType:
+      case Syntax.MappedTyping:
         return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
     }
   }
@@ -1897,10 +1897,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return checkStrictModeWithStatement(<WithStatement>node);
       case Syntax.LabeledStatement:
         return checkStrictModeLabeledStatement(<LabeledStatement>node);
-      case Syntax.ThisType:
+      case Syntax.ThisTyping:
         seenThisKeyword = true;
         return;
-      case Syntax.TypePredicate:
+      case Syntax.TypingPredicate:
         break;
       case Syntax.TypeParameter:
         return bindTypeParameter(node as TypeParameterDeclaration);
@@ -1938,15 +1938,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.GetAccessor, SymbolFlags.GetAccessorExcludes);
       case Syntax.SetAccessor:
         return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.SetAccessor, SymbolFlags.SetAccessorExcludes);
-      case Syntax.FunctionType:
-      case Syntax.DocFunctionType:
+      case Syntax.FunctionTyping:
+      case Syntax.DocFunctionTyping:
       case Syntax.DocSignature:
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
         return bindFunctionOrConstructorType(<SignatureDeclaration | DocSignature>node);
-      case Syntax.TypeLiteral:
-      case Syntax.DocTypeLiteral:
-      case Syntax.MappedType:
-        return bindAnonymousTypeWorker(node as TypeLiteralNode | MappedTypeNode | DocTypeLiteral);
+      case Syntax.TypingLiteral:
+      case Syntax.DocTypingLiteral:
+      case Syntax.MappedTyping:
+        return bindAnonymousTypeWorker(node as TypingLiteral | MappedTyping | DocTypingLiteral);
       case Syntax.DocClassTag:
         return bindDocClassTag(node as DocClassTag);
       case Syntax.ObjectLiteralExpression:
@@ -2012,13 +2012,13 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
       case Syntax.DocParameterTag:
         if (node.parent.kind === Syntax.DocSignature) return bindParameter(node as DocParameterTag);
-        if (node.parent.kind !== Syntax.DocTypeLiteral) {
+        if (node.parent.kind !== Syntax.DocTypingLiteral) {
           break;
         }
       case Syntax.DocPropertyTag:
         const propTag = node as DocPropertyLikeTag;
         const flags =
-          propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.DocOptionalType) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
+          propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.DocOptionalTyping) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
         return declareSymbolAndAddToSymbolTable(propTag, flags, SymbolFlags.PropertyExcludes);
       case Syntax.DocTypedefTag:
       case Syntax.DocCallbackTag:
@@ -2029,7 +2029,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindPropertyWorker(node: PropertyDeclaration | PropertySignature) {
     return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Property | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), SymbolFlags.PropertyExcludes);
   }
-  function bindAnonymousTypeWorker(node: TypeLiteralNode | MappedTypeNode | DocTypeLiteral) {
+  function bindAnonymousTypeWorker(node: TypingLiteral | MappedTyping | DocTypingLiteral) {
     return bindAnonymousDeclaration(<Declaration>node, SymbolFlags.TypeLiteral, InternalSymbol.Type);
   }
   function bindSourceFileIfExternalModule() {
@@ -2493,9 +2493,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     return qf.has.dynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbol.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
-  function getInferTypeContainer(node: Node): ConditionalTypeNode | undefined {
-    const extendsType = qc.findAncestor(node, (n) => n.parent && qf.is.kind(qc.ConditionalTypeNode, n.parent) && n.parent.extendsType === n);
-    return extendsType && (extendsType.parent as ConditionalTypeNode);
+  function getInferTypeContainer(node: Node): ConditionalTyping | undefined {
+    const extendsType = qc.findAncestor(node, (n) => n.parent && qf.is.kind(qc.ConditionalTyping, n.parent) && n.parent.extendsType === n);
+    return extendsType && (extendsType.parent as ConditionalTyping);
   }
   function bindTypeParameter(node: TypeParameterDeclaration) {
     if (qf.is.kind(qc.DocTemplateTag, node.parent)) {
@@ -2508,7 +2508,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       } else {
         declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
       }
-    } else if (node.parent.kind === Syntax.InferType) {
+    } else if (node.parent.kind === Syntax.InferTyping) {
       const container = getInferTypeContainer(node.parent);
       if (container) {
         if (!container.locals) {
@@ -2643,8 +2643,8 @@ export function computeTransformFlagsForNode(node: Node, subtreeFlags: Transform
       return computeHeritageClause(<HeritageClause>node, subtreeFlags);
     case Syntax.CatchClause:
       return computeCatchClause(<CatchClause>node, subtreeFlags);
-    case Syntax.ExpressionWithTypeArguments:
-      return computeExpressionWithTypeArguments(<ExpressionWithTypeArguments>node, subtreeFlags);
+    case Syntax.ExpressionWithTypings:
+      return computeExpressionWithTypings(<ExpressionWithTypings>node, subtreeFlags);
     case Syntax.Constructor:
       return computeConstructor(<ConstructorDeclaration>node, subtreeFlags);
     case Syntax.PropertyDeclaration:
@@ -2801,7 +2801,7 @@ function computeCatchClause(node: CatchClause, subtreeFlags: TransformFlags) {
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
   return transformFlags & ~TransformFlags.CatchClauseExcludes;
 }
-function computeExpressionWithTypeArguments(node: ExpressionWithTypeArguments, subtreeFlags: TransformFlags) {
+function computeExpressionWithTypings(node: ExpressionWithTypings, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
   if (node.typeArguments) {
     transformFlags |= TransformFlags.AssertTypeScript;
@@ -3099,28 +3099,28 @@ function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
     case Syntax.CallSignature:
     case Syntax.ConstructSignature:
     case Syntax.IndexSignature:
-    case Syntax.TypePredicate:
-    case Syntax.TypeReference:
-    case Syntax.FunctionType:
-    case Syntax.ConstructorType:
-    case Syntax.TypeQuery:
-    case Syntax.TypeLiteral:
-    case Syntax.ArrayType:
-    case Syntax.TupleType:
-    case Syntax.OptionalType:
-    case Syntax.RestType:
-    case Syntax.UnionType:
-    case Syntax.IntersectionType:
-    case Syntax.ConditionalType:
-    case Syntax.InferType:
-    case Syntax.ParenthesizedType:
+    case Syntax.TypingPredicate:
+    case Syntax.TypingReference:
+    case Syntax.FunctionTyping:
+    case Syntax.ConstructorTyping:
+    case Syntax.TypingQuery:
+    case Syntax.TypingLiteral:
+    case Syntax.ArrayTyping:
+    case Syntax.TupleTyping:
+    case Syntax.OptionalTyping:
+    case Syntax.RestTyping:
+    case Syntax.UnionTyping:
+    case Syntax.IntersectionTyping:
+    case Syntax.ConditionalTyping:
+    case Syntax.InferTyping:
+    case Syntax.ParenthesizedTyping:
     case Syntax.InterfaceDeclaration:
     case Syntax.TypeAliasDeclaration:
-    case Syntax.ThisType:
-    case Syntax.TypeOperator:
-    case Syntax.IndexedAccessType:
-    case Syntax.MappedType:
-    case Syntax.LiteralType:
+    case Syntax.ThisTyping:
+    case Syntax.TypingOperator:
+    case Syntax.IndexedAccessTyping:
+    case Syntax.MappedTyping:
+    case Syntax.LiteralTyping:
     case Syntax.NamespaceExportDeclaration:
       transformFlags = TransformFlags.AssertTypeScript;
       excludeFlags = TransformFlags.TypeExcludes;

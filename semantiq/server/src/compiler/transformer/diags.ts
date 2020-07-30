@@ -25,7 +25,7 @@ export type DeclarationDiagnosticProducing =
   | qt.FunctionDeclaration
   | qt.ParameterDeclaration
   | qt.TypeParameterDeclaration
-  | qt.ExpressionWithTypeArguments
+  | qt.ExpressionWithTypings
   | qt.ImportEqualsDeclaration
   | qt.TypeAliasDeclaration
   | qt.ConstructorDeclaration
@@ -46,7 +46,7 @@ export function canProduceDiagnostics(node: Node): node is DeclarationDiagnostic
     qf.is.kind(qc.FunctionDeclaration, node) ||
     qf.is.kind(qc.ParameterDeclaration, node) ||
     qf.is.kind(qc.TypeParameterDeclaration, node) ||
-    qf.is.kind(qc.ExpressionWithTypeArguments, node) ||
+    qf.is.kind(qc.ExpressionWithTypings, node) ||
     qf.is.kind(qc.ImportEqualsDeclaration, node) ||
     qf.is.kind(qc.TypeAliasDeclaration, node) ||
     qf.is.kind(qc.ConstructorDeclaration, node) ||
@@ -140,7 +140,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return getParameterDeclarationTypeVisibilityError;
   }
   if (qf.is.kind(qc.TypeParameterDeclaration, node)) return getTypeParameterConstraintVisibilityError;
-  if (qf.is.kind(qc.ExpressionWithTypeArguments, node)) return getHeritageClauseVisibilityError;
+  if (qf.is.kind(qc.ExpressionWithTypings, node)) return getHeritageClauseVisibilityError;
   if (qf.is.kind(qc.ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
   if (qf.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
   return qc.assert.never(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
@@ -290,7 +290,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
             : qd.msgs.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2
           : qd.msgs.Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1;
       case Syntax.ConstructSignature:
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
         return r.errorModuleName
           ? qd.msgs.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
           : qd.msgs.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
@@ -322,7 +322,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
             : qd.msgs.Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
         }
       case Syntax.FunctionDeclaration:
-      case Syntax.FunctionType:
+      case Syntax.FunctionTyping:
         return r.errorModuleName
           ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
             ? qd.msgs.Parameter_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -348,10 +348,10 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       case Syntax.InterfaceDeclaration:
         diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_interface_has_or_is_using_private_name_1;
         break;
-      case Syntax.MappedType:
+      case Syntax.MappedTyping:
         diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_mapped_object_type_is_using_private_name_1;
         break;
-      case Syntax.ConstructorType:
+      case Syntax.ConstructorTyping:
       case Syntax.ConstructSignature:
         diagnosticMessage = qd.msgs.Type_parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
         break;
@@ -368,7 +368,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
           diagnosticMessage = qd.msgs.Type_parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
         }
         break;
-      case Syntax.FunctionType:
+      case Syntax.FunctionTyping:
       case Syntax.FunctionDeclaration:
         diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_function_has_or_is_using_private_name_1;
         break;

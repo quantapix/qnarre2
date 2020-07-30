@@ -170,7 +170,7 @@ export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor,
 export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
   if (!node) return;
   const k = node.kind;
-  if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisType) return node;
+  if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisTyping) return node;
   const n = node as qc.NodeTypes;
   switch (n.kind) {
     case Syntax.Identifier:
@@ -260,52 +260,52 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.Transf
         nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration),
         visitNode(n.type, cb, isTypeNode)
       );
-    case Syntax.TypePredicate:
+    case Syntax.TypingPredicate:
       return n.update(visitNode(n.assertsModifier, cb), visitNode(n.parameterName, cb), visitNode(n.type, cb, isTypeNode));
-    case Syntax.TypeReference:
+    case Syntax.TypingReference:
       return n.update(visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArguments, cb, isTypeNode));
-    case Syntax.FunctionType:
+    case Syntax.FunctionTyping:
       return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
-    case Syntax.ConstructorType:
+    case Syntax.ConstructorTyping:
       return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
-    case Syntax.TypeQuery:
+    case Syntax.TypingQuery:
       return n.update(visitNode(n.exprName, cb, isEntityName));
-    case Syntax.TypeLiteral:
+    case Syntax.TypingLiteral:
       return n.update(nodesVisitor(n.members, cb, isTypeElem));
-    case Syntax.ArrayType:
+    case Syntax.ArrayTyping:
       return n.update(visitNode(n.elemType, cb, isTypeNode));
-    case Syntax.TupleType:
+    case Syntax.TupleTyping:
       return n.update(nodesVisitor(n.elems, cb, isTypeNode));
-    case Syntax.OptionalType:
+    case Syntax.OptionalTyping:
       return n.update(visitNode(n.type, cb, isTypeNode));
-    case Syntax.RestType:
+    case Syntax.RestTyping:
       return n.update(visitNode(n.type, cb, isTypeNode));
-    case Syntax.UnionType:
+    case Syntax.UnionTyping:
       return n.update(nodesVisitor(n.types, cb, isTypeNode));
-    case Syntax.IntersectionType:
+    case Syntax.IntersectionTyping:
       return n.update(nodesVisitor(n.types, cb, isTypeNode));
-    case Syntax.ConditionalType:
+    case Syntax.ConditionalTyping:
       return n.update(visitNode(n.checkType, cb, isTypeNode), visitNode(n.extendsType, cb, isTypeNode), visitNode(n.trueType, cb, isTypeNode), visitNode(n.falseType, cb, isTypeNode));
-    case Syntax.InferType:
+    case Syntax.InferTyping:
       return n.update(visitNode(n.typeParameter, cb, isTypeParameterDeclaration));
-    case Syntax.ImportType:
+    case Syntax.ImportTyping:
       return n.update(visitNode(n.argument, cb, isTypeNode), visitNode(n.qualifier, cb, isEntityName), Nodes.visit(n.typeArguments, cb, isTypeNode), n.isTypeOf);
     case Syntax.NamedTupleMember:
       return n.update(visitNode(n.dot3Token, cb, isToken), visitNode(n.name, cb, isIdentifier), visitNode(n.questionToken, cb, isToken), visitNode(n.type, cb, isTypeNode));
-    case Syntax.ParenthesizedType:
+    case Syntax.ParenthesizedTyping:
       return n.update(visitNode(n.type, cb, isTypeNode));
-    case Syntax.TypeOperator:
+    case Syntax.TypingOperator:
       return n.update(visitNode(n.type, cb, isTypeNode));
-    case Syntax.IndexedAccessType:
+    case Syntax.IndexedAccessTyping:
       return n.update(visitNode(n.objectType, cb, isTypeNode), visitNode(n.indexType, cb, isTypeNode));
-    case Syntax.MappedType:
+    case Syntax.MappedTyping:
       return n.update(
         visitNode(n.readonlyToken, tokenVisitor, isToken),
         visitNode(n.typeParameter, cb, isTypeParameterDeclaration),
         visitNode(n.questionToken, tokenVisitor, isToken),
         visitNode(n.type, cb, isTypeNode)
       );
-    case Syntax.LiteralType:
+    case Syntax.LiteralTyping:
       return n.update(visitNode(n.literal, cb, isExpression));
     case Syntax.ObjectBindingPattern:
       return n.update(nodesVisitor(n.elems, cb, BindingElem.kind));
@@ -397,7 +397,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.Transf
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
         nodesVisitor(n.members, cb, isClassElem)
       );
-    case Syntax.ExpressionWithTypeArguments:
+    case Syntax.ExpressionWithTypings:
       return n.update(nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
     case Syntax.AsExpression:
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.type, cb, isTypeNode));
@@ -555,7 +555,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.Transf
     case Syntax.DefaultClause:
       return n.update(nodesVisitor(n.statements, cb, isStatement));
     case Syntax.HeritageClause:
-      return n.update(nodesVisitor(n.types, cb, isExpressionWithTypeArguments));
+      return n.update(nodesVisitor(n.types, cb, isExpressionWithTypings));
     case Syntax.CatchClause:
       return n.update(visitNode(n.variableDeclaration, cb, isVariableDeclaration), visitNode(n.block, cb, isBlock));
     case Syntax.PropertyAssignment:
@@ -592,7 +592,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
   cbs = cbs || cb;
   const kind = node.kind;
   if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) return initial;
-  if (kind >= Syntax.TypePredicate && kind <= Syntax.LiteralType) return initial;
+  if (kind >= Syntax.TypingPredicate && kind <= Syntax.LiteralTyping) return initial;
   let r = initial;
   const n = node as qc.NodeTypes;
   switch (n.kind) {
@@ -753,7 +753,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.heritageClauses, cbs, r);
       r = reduceNodes(n.members, cbs, r);
       break;
-    case Syntax.ExpressionWithTypeArguments:
+    case Syntax.ExpressionWithTypings:
       r = reduceNode(n.expression, cb, r);
       r = reduceNodes(n.typeArguments, cbs, r);
       break;

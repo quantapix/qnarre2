@@ -162,9 +162,9 @@ export function newCheck(f: qt.Frame) {
         addRelatedInfo(error(n.moduleReference, message), qf.create.diagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
       }
     }
-    noTypeArguments(n: NodeWithTypeArguments, symbol?: Symbol) {
+    noTypeArguments(n: WithArgumentsTobj, symbol?: Symbol) {
       if (n.typeArguments) {
-        error(n, qd.msgs.Type_0_is_not_generic, symbol ? symbol.symbolToString() : (<TypeReferenceNode>n).typeName ? declarationNameToString((<TypeReferenceNode>n).typeName) : anon);
+        error(n, qd.msgs.Type_0_is_not_generic, symbol ? symbol.symbolToString() : (<TypingReference>n).typeName ? declarationNameToString((<TypingReference>n).typeName) : anon);
         return false;
       }
       return true;
@@ -2049,7 +2049,7 @@ export function newCheck(f: qt.Frame) {
         | PropertyAccessExpression
         | VariableDeclaration
         | ParameterDeclaration
-        | ImportTypeNode
+        | ImportTyping
         | PropertyAssignment
         | ShorthandPropertyAssignment
         | BindingElem,
@@ -2058,7 +2058,7 @@ export function newCheck(f: qt.Frame) {
       prop: Symbol
     ): boolean {
       const flags = getDeclarationModifierFlagsFromSymbol(prop);
-      const errorNode = n.kind === Syntax.QualifiedName ? n.right : n.kind === Syntax.ImportType ? n : n.name;
+      const errorNode = n.kind === Syntax.QualifiedName ? n.right : n.kind === Syntax.ImportTyping ? n : n.name;
       if (isSuper) {
         if (flags & ModifierFlags.Abstract) {
           error(errorNode, qd.msgs.Abstract_method_0_in_class_1_cannot_be_accessed_via_super_expression, prop.symbolToString(), typeToString(getDeclaringClass(prop)!));
@@ -2262,7 +2262,7 @@ export function newCheck(f: qt.Frame) {
         diagnosticMessage = error(right, qd.msgs.Property_0_is_used_before_its_initialization, declarationName);
       } else if (
         valueDeclaration.kind === Syntax.ClassDeclaration &&
-        n.parent.kind !== Syntax.TypeReference &&
+        n.parent.kind !== Syntax.TypingReference &&
         !(valueDeclaration.flags & NodeFlags.Ambient) &&
         !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right)
       ) {
@@ -2312,7 +2312,7 @@ export function newCheck(f: qt.Frame) {
       }
       return true;
     }
-    typeArguments(signature: Signature, typeArgumentNodes: readonly TypeNode[], reportErrors: boolean, headMessage?: qd.Message): qc.Type[] | undefined {
+    typeArguments(signature: Signature, typeArgumentNodes: readonly Typing[], reportErrors: boolean, headMessage?: qd.Message): qc.Type[] | undefined {
       const isJavascript = qf.is.inJSFile(signature.declaration);
       const typeParameters = signature.typeParameters!;
       const typeArgumentTypes = fillMissingTypeArguments(map(typeArgumentNodes, getTypeFromTypeNode), typeParameters, getMinTypeArgumentCount(typeParameters), isJavascript);
@@ -2415,7 +2415,7 @@ export function newCheck(f: qt.Frame) {
           declaration &&
           declaration.kind !== Syntax.Constructor &&
           declaration.kind !== Syntax.ConstructSignature &&
-          declaration.kind !== Syntax.ConstructorType &&
+          declaration.kind !== Syntax.ConstructorTyping &&
           !qc.isDoc.constructSignature(declaration) &&
           !isJSConstructor(declaration)
         ) {
@@ -2470,7 +2470,7 @@ export function newCheck(f: qt.Frame) {
     assertion(n: qc.AssertionExpression) {
       return this.assertionWorker(n, n.type, n.expression);
     }
-    assertionWorker(errNode: Node, type: TypeNode, expression: UnaryExpression | Expression, checkMode?: CheckMode) {
+    assertionWorker(errNode: Node, type: Typing, expression: UnaryExpression | Expression, checkMode?: CheckMode) {
       let exprType = this.expression(expression, checkMode);
       if (qf.is.constTypeReference(type)) {
         if (!isValidConstAssertionArgument(expression))
@@ -2531,7 +2531,7 @@ export function newCheck(f: qt.Frame) {
       const yieldTypes: qc.Type[] = [];
       const nextTypes: qc.Type[] = [];
       const isAsync = (qf.get.functionFlags(func) & FunctionFlags.Async) !== 0;
-      forEachYieldExpression(<Block>func.body, (yieldExpression) => {
+      qf.each.yieldExpression(<Block>func.body, (yieldExpression) => {
         const yieldExpressionType = yieldExpression.expression ? this.expression(yieldExpression.expression, checkMode) : undefinedWideningType;
         pushIfUnique(yieldTypes, getYieldedTypeOfYieldExpression(yieldExpression, yieldExpressionType, anyType, isAsync));
         let nextType: qc.Type | undefined;
@@ -2548,7 +2548,7 @@ export function newCheck(f: qt.Frame) {
       const aggregatedTypes: qc.Type[] = [];
       let hasReturnWithNoExpression = functionHasImplicitReturn(func);
       let hasReturnOfTypeNever = false;
-      forEachReturnStatement(<Block>func.body, (returnStatement) => {
+      qf.each.returnStatement(<Block>func.body, (returnStatement) => {
         const expr = returnStatement.expression;
         if (expr) {
           let type = this.expressionCached(expr, checkMode && checkMode & ~CheckMode.SkipGenericFunctions);
@@ -3374,7 +3374,7 @@ export function newCheck(f: qt.Frame) {
         (n.parent.kind === Syntax.PropertyAccessExpression && (<PropertyAccessExpression>n.parent).expression === n) ||
         (n.parent.kind === Syntax.ElemAccessExpression && (<ElemAccessExpression>n.parent).expression === n) ||
         ((n.kind === Syntax.qc.Identifier || n.kind === Syntax.QualifiedName) && isInRightSideOfImportOrExportAssignment(<qc.Identifier>n)) ||
-        (n.parent.kind === Syntax.TypeQuery && (<TypeQueryNode>n.parent).exprName === n) ||
+        (n.parent.kind === Syntax.TypingQuery && (<TypingQuery>n.parent).exprName === n) ||
         n.parent.kind === Syntax.ExportSpecifier;
       if (!ok) error(n, qd.const_enums_can_only_be_used_in_property_or_index_access_expressions_or_the_right_hand_side_of_an_import_declaration_or_export_assignment_or_type_query);
       if (compilerOptions.isolatedModules) {
@@ -3524,14 +3524,14 @@ export function newCheck(f: qt.Frame) {
         error(n, qd.msgs.A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature);
       if (n.name && qf.is.kind(qc.Identifier, n.name) && (n.name.escapedText === 'this' || n.name.escapedText === 'new')) {
         if (func.parameters.indexOf(n) !== 0) error(n, qd.msgs.A_0_parameter_must_be_the_first_parameter, n.name.escapedText as string);
-        if (func.kind === Syntax.Constructor || func.kind === Syntax.ConstructSignature || func.kind === Syntax.ConstructorType) error(n, qd.msgs.A_constructor_cannot_have_a_this_parameter);
+        if (func.kind === Syntax.Constructor || func.kind === Syntax.ConstructSignature || func.kind === Syntax.ConstructorTyping) error(n, qd.msgs.A_constructor_cannot_have_a_this_parameter);
         if (func.kind === Syntax.ArrowFunction) error(n, qd.msgs.An_arrow_function_cannot_have_a_this_parameter);
         if (func.kind === Syntax.GetAccessor || func.kind === Syntax.SetAccessor) error(n, qd.get_and_set_accessors_cannot_declare_this_parameters);
       }
       if (n.dot3Token && !qf.is.kind(qc.BindingPattern, n.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(n.symbol)), anyReadonlyArrayType))
         error(n, qd.msgs.A_rest_parameter_must_be_of_an_array_type);
     }
-    typePredicate(n: qc.TypePredicateNode): void {
+    typePredicate(n: qc.TypingPredicate): void {
       const parent = getTypePredicateParent(n);
       if (!parent) {
         error(n, qd.msgs.A_type_predicate_is_only_allowed_in_return_type_position_for_functions_and_methods);
@@ -3542,7 +3542,7 @@ export function newCheck(f: qt.Frame) {
       if (!typePredicate) return;
       this.sourceElem(n.type);
       const { parameterName } = n;
-      if (typePredicate.kind === TypePredicateKind.This || typePredicate.kind === TypePredicateKind.AssertsThis) getTypeFromThisNodeTypeNode(parameterName as ThisTypeNode);
+      if (typePredicate.kind === TypePredicateKind.This || typePredicate.kind === TypePredicateKind.AssertsThis) getTypeFromThisNodeTypeNode(parameterName as ThisTyping);
       else {
         if (typePredicate.parameterIndex >= 0) {
           if (signatureHasRestParameter(signature) && typePredicate.parameterIndex === signature.parameters.length - 1)
@@ -3580,9 +3580,9 @@ export function newCheck(f: qt.Frame) {
     signatureDeclaration(n: qc.SignatureDeclaration) {
       if (n.kind === Syntax.IndexSignature) checkGrammar.indexSignature(<SignatureDeclaration>n);
       else if (
-        n.kind === Syntax.FunctionType ||
+        n.kind === Syntax.FunctionTyping ||
         n.kind === Syntax.FunctionDeclaration ||
-        n.kind === Syntax.ConstructorType ||
+        n.kind === Syntax.ConstructorTyping ||
         n.kind === Syntax.CallSignature ||
         n.kind === Syntax.Constructor ||
         n.kind === Syntax.ConstructSignature
@@ -3626,7 +3626,7 @@ export function newCheck(f: qt.Frame) {
             this.asyncFunctionReturnType(<FunctionLikeDeclaration>n, returnTypeNode);
           }
         }
-        if (n.kind !== Syntax.IndexSignature && n.kind !== Syntax.DocFunctionType) registerForUnusedIdentifiersCheck(n);
+        if (n.kind !== Syntax.IndexSignature && n.kind !== Syntax.DocFunctionTyping) registerForUnusedIdentifiersCheck(n);
       }
     }
     classForDuplicateDeclarations(n: qc.ClassLikeDeclaration) {
@@ -3698,7 +3698,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
     }
-    objectTypeForDuplicateDeclarations(n: qc.TypeLiteralNode | InterfaceDeclaration) {
+    objectTypeForDuplicateDeclarations(n: qc.TypingLiteral | InterfaceDeclaration) {
       const names = new qu.QMap<boolean>();
       for (const member of n.members) {
         if (member.kind === Syntax.PropertySignature) {
@@ -3853,7 +3853,7 @@ export function newCheck(f: qt.Frame) {
     missingDeclaration(n: Node) {
       this.decorators(n);
     }
-    typeArgumentConstraints(n: qc.TypeReferenceNode | ExpressionWithTypeArguments, typeParameters: readonly TypeParameter[]): boolean {
+    typeArgumentConstraints(n: qc.TypingReference | ExpressionWithTypings, typeParameters: readonly TypeParameter[]): boolean {
       let typeArguments: qc.Type[] | undefined;
       let mapper: TypeMapper | undefined;
       let result = true;
@@ -3869,9 +3869,9 @@ export function newCheck(f: qt.Frame) {
       }
       return result;
     }
-    typeReferenceNode(n: qc.TypeReferenceNode | ExpressionWithTypeArguments) {
+    typeReferenceNode(n: qc.TypingReference | ExpressionWithTypings) {
       checkGrammar.typeArguments(n, n.typeArguments);
-      if (n.kind === Syntax.TypeReference && n.typeName.jsdocDotPos !== undefined && !qf.is.inJSFile(n) && !qf.is.inDoc(n))
+      if (n.kind === Syntax.TypingReference && n.typeName.jsdocDotPos !== undefined && !qf.is.inJSFile(n) && !qf.is.inDoc(n))
         grammarErrorAtPos(n, n.typeName.jsdocDotPos, 1, qd.msgs.Doc_types_can_only_be_used_inside_documentation_comments);
       forEach(n.typeArguments, checkSourceElem);
       const type = getTypeFromTypeReference(n);
@@ -3884,22 +3884,22 @@ export function newCheck(f: qt.Frame) {
           error(n, qd.msgs.Enum_type_0_has_members_with_initers_that_are_not_literals, typeToString(type));
       }
     }
-    typeQuery(n: qc.TypeQueryNode) {
-      getTypeFromTypeQueryNode(n);
+    typeQuery(n: qc.TypingQuery) {
+      getTypeFromTypingQuery(n);
     }
-    typeLiteral(n: qc.TypeLiteralNode) {
+    typeLiteral(n: qc.TypingLiteral) {
       forEach(n.members, checkSourceElem);
       if (produceDiagnostics) {
-        const type = getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(n);
+        const type = getTypeFromTypeLiteralOrFunctionOrConstructorTyping(n);
         this.indexConstraints(type);
         this.typeForDuplicateIndexSignatures(n);
         this.objectTypeForDuplicateDeclarations(n);
       }
     }
-    arrayType(n: qc.ArrayTypeNode) {
+    arrayType(n: qc.ArrayTyping) {
       this.sourceElem(n.elemType);
     }
-    tupleType(n: qc.TupleTypeNode) {
+    tupleType(n: qc.TupleTyping) {
       const elemTypes = n.elems;
       let seenOptionalElem = false;
       let seenNamedElem = false;
@@ -3915,7 +3915,7 @@ export function newCheck(f: qt.Frame) {
             grammarErrorOnNode(e, qd.msgs.A_rest_elem_must_be_last_in_a_tuple_type);
             break;
           }
-          if (!isArrayType(getTypeFromTypeNode((<RestTypeNode>e).type))) error(e, qd.msgs.A_rest_elem_type_must_be_an_array_type);
+          if (!isArrayType(getTypeFromTypeNode((<RestTyping>e).type))) error(e, qd.msgs.A_rest_elem_type_must_be_an_array_type);
         } else if (isTupleOptionalElem(e)) {
           seenOptionalElem = true;
         } else if (seenOptionalElem) {
@@ -3925,10 +3925,10 @@ export function newCheck(f: qt.Frame) {
       }
       forEach(n.elems, checkSourceElem);
     }
-    unionOrIntersectionType(n: qc.qc.UnionOrIntersectionTypeNode) {
+    unionOrIntersectionType(n: qc.qc.UnionOrIntersectionTyping) {
       forEach(n.types, checkSourceElem);
     }
-    indexedAccessIndexType(type: qc.Type, accessNode: IndexedAccessTypeNode | ElemAccessExpression) {
+    indexedAccessIndexType(type: qc.Type, accessNode: IndexedAccessTyping | ElemAccessExpression) {
       if (!(type.flags & TypeFlags.IndexedAccess)) return type;
       const objectType = (<IndexedAccessType>type).objectType;
       const indexType = (<IndexedAccessType>type).indexType;
@@ -3958,44 +3958,44 @@ export function newCheck(f: qt.Frame) {
       error(accessNode, qd.msgs.Type_0_cannot_be_used_to_index_type_1, typeToString(indexType), typeToString(objectType));
       return errorType;
     }
-    indexedAccessType(n: qc.IndexedAccessTypeNode) {
+    indexedAccessType(n: qc.IndexedAccessTyping) {
       this.sourceElem(n.objectType);
       this.sourceElem(n.indexType);
-      this.indexedAccessIndexType(getTypeFromIndexedAccessTypeNode(n), n);
+      this.indexedAccessIndexType(getTypeFromIndexedAccessTyping(n), n);
     }
-    mappedType(n: qc.MappedTypeNode) {
+    mappedType(n: qc.MappedTyping) {
       this.sourceElem(n.typeParameter);
       this.sourceElem(n.type);
       if (!n.type) reportImplicitAny(n, anyType);
-      const type = <MappedType>getTypeFromMappedTypeNode(n);
+      const type = <MappedType>getTypeFromMappedTyping(n);
       const constraintType = getConstraintTypeFromMappedType(type);
       this.typeAssignableTo(constraintType, keyofConstraintType, qf.get.effectiveConstraintOfTypeParameter(n.typeParameter));
     }
-    thisType(n: qc.ThisTypeNode) {
+    thisType(n: qc.ThisTyping) {
       getTypeFromThisNodeTypeNode(n);
     }
-    typeOperator(n: qc.TypeOperatorNode) {
+    typeOperator(n: qc.TypingOperator) {
       checkGrammar.typeOperatorNode(n);
       this.sourceElem(n.type);
     }
-    conditionalType(n: qc.ConditionalTypeNode) {
+    conditionalType(n: qc.ConditionalTyping) {
       qf.each.child(n, checkSourceElem);
     }
-    inferType(n: qc.InferTypeNode) {
-      if (!qc.findAncestor(n, (x) => x.parent && x.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>x.parent).extendsType === x))
+    inferType(n: qc.InferTyping) {
+      if (!qc.findAncestor(n, (x) => x.parent && x.parent.kind === Syntax.ConditionalTyping && (<ConditionalTyping>x.parent).extendsType === x))
         grammarErrorOnNode(n, qd.infer_declarations_are_only_permitted_in_the_extends_clause_of_a_conditional_type);
       this.sourceElem(n.typeParameter);
       registerForUnusedIdentifiersCheck(n);
     }
-    importType(n: qc.ImportTypeNode) {
+    importType(n: qc.ImportTyping) {
       this.sourceElem(n.argument);
       getTypeFromTypeNode(n);
     }
     namedTupleMember(n: qc.NamedTupleMember) {
       if (n.dot3Token && n.questionToken) grammarErrorOnNode(n, qd.msgs.A_tuple_member_cannot_be_both_optional_and_rest);
-      if (n.type.kind === Syntax.OptionalType)
+      if (n.type.kind === Syntax.OptionalTyping)
         grammarErrorOnNode(n.type, qd.msgs.A_labeled_tuple_elem_is_declared_as_optional_with_a_question_mark_after_the_name_and_before_the_colon_rather_than_after_the_type);
-      if (n.type.kind === Syntax.RestType) grammarErrorOnNode(n.type, qd.msgs.A_labeled_tuple_elem_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type);
+      if (n.type.kind === Syntax.RestTyping) grammarErrorOnNode(n.type, qd.msgs.A_labeled_tuple_elem_is_declared_as_rest_with_a_before_the_name_rather_than_before_the_type);
       this.sourceElem(n.type);
       getTypeFromTypeNode(n);
     }
@@ -4082,7 +4082,7 @@ export function newCheck(f: qt.Frame) {
       const awaitedType = getAwaitedType(type, errorNode, diagnosticMessage, arg0);
       return awaitedType || errorType;
     }
-    asyncFunctionReturnType(n: qc.FunctionLikeDeclaration | MethodSignature, returnTypeNode: TypeNode) {
+    asyncFunctionReturnType(n: qc.FunctionLikeDeclaration | MethodSignature, returnTypeNode: Typing) {
       const returnType = getTypeFromTypeNode(returnTypeNode);
       if (returnType === errorType) return;
       const globalPromiseType = getGlobalPromiseType(true);
@@ -4227,7 +4227,7 @@ export function newCheck(f: qt.Frame) {
     docPropertyTag(n: qc.DocPropertyTag) {
       this.sourceElem(n.typeExpression);
     }
-    docFunctionType(n: qc.DocFunctionType): void {
+    docFunctionType(n: qc.DocFunctionTyping): void {
       if (produceDiagnostics && !n.type && !qc.isDoc.constructSignature(n)) reportImplicitAny(n, anyType);
       this.signatureDeclaration(n);
     }
@@ -4308,13 +4308,13 @@ export function newCheck(f: qt.Frame) {
           case Syntax.MethodSignature:
           case Syntax.CallSignature:
           case Syntax.ConstructSignature:
-          case Syntax.FunctionType:
-          case Syntax.ConstructorType:
+          case Syntax.FunctionTyping:
+          case Syntax.ConstructorTyping:
           case Syntax.TypeAliasDeclaration:
           case Syntax.InterfaceDeclaration:
             this.unusedTypeParameters(n, addDiagnostic);
             break;
-          case Syntax.InferType:
+          case Syntax.InferTyping:
             this.unusedInferTypeParameter(n, addDiagnostic);
             break;
           default:
@@ -4353,7 +4353,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
     }
-    unusedInferTypeParameter(n: qc.InferTypeNode, addDiagnostic: AddUnusedDiagnostic): void {
+    unusedInferTypeParameter(n: qc.InferTyping, addDiagnostic: AddUnusedDiagnostic): void {
       const { typeParameter } = n;
       if (isTypeParameterUnused(typeParameter)) addDiagnostic(n, UnusedKind.Parameter, qf.create.diagnosticForNode(n, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(typeParameter.name)));
     }
@@ -4365,7 +4365,7 @@ export function newCheck(f: qt.Frame) {
         if (!isTypeParameterUnused(typeParameter)) continue;
         const name = idText(typeParameter.name);
         const { parent } = typeParameter;
-        if (parent.kind !== Syntax.InferType && parent.typeParameters!.every(isTypeParameterUnused)) {
+        if (parent.kind !== Syntax.InferTyping && parent.typeParameters!.every(isTypeParameterUnused)) {
           if (seenParentsWithEveryUnused.tryAdd(parent)) {
             const range = qf.is.kind(qc.DocTemplateTag, parent) ? parent.getRange() : parent.typeParameters!.getRange();
             const only = parent.typeParameters!.length === 1;
@@ -4994,11 +4994,11 @@ export function newCheck(f: qt.Frame) {
         }
       }
     }
-    typeParametersNotReferenced(root: TypeNode, typeParameters: readonly TypeParameterDeclaration[], index: number) {
+    typeParametersNotReferenced(root: Typing, typeParameters: readonly TypeParameterDeclaration[], index: number) {
       visit(root);
       function visit(n: Node) {
-        if (n.kind === Syntax.TypeReference) {
-          const type = getTypeFromTypeReference(<TypeReferenceNode>n);
+        if (n.kind === Syntax.TypingReference) {
+          const type = getTypeFromTypeReference(<TypingReference>n);
           if (type.flags & TypeFlags.TypeParameter) {
             for (let i = index; i < typeParameters.length; i++) {
               if (type.symbol === getSymbolOfNode(typeParameters[i])) error(n, qd.msgs.Type_parameter_defaults_can_only_reference_previously_declared_type_parameters);
@@ -5102,7 +5102,7 @@ export function newCheck(f: qt.Frame) {
         this.propertyInitialization(n);
       }
     }
-    baseTypeAccessibility(type: qc.Type, n: ExpressionWithTypeArguments) {
+    baseTypeAccessibility(type: qc.Type, n: ExpressionWithTypings) {
       const signatures = getSignaturesOfType(type, SignatureKind.Construct);
       if (signatures.length) {
         const declaration = signatures[0].declaration;
@@ -5658,8 +5658,8 @@ export function newCheck(f: qt.Frame) {
           return this.propertyDeclaration(<PropertyDeclaration>n);
         case Syntax.PropertySignature:
           return this.propertySignature(<PropertySignature>n);
-        case Syntax.FunctionType:
-        case Syntax.ConstructorType:
+        case Syntax.FunctionTyping:
+        case Syntax.ConstructorTyping:
         case Syntax.CallSignature:
         case Syntax.ConstructSignature:
         case Syntax.IndexSignature:
@@ -5672,35 +5672,35 @@ export function newCheck(f: qt.Frame) {
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
           return this.accessorDeclaration(<AccessorDeclaration>n);
-        case Syntax.TypeReference:
-          return this.typeReferenceNode(<TypeReferenceNode>n);
-        case Syntax.TypePredicate:
-          return this.typePredicate(<TypePredicateNode>n);
-        case Syntax.TypeQuery:
-          return this.typeQuery(<TypeQueryNode>n);
-        case Syntax.TypeLiteral:
-          return this.typeLiteral(<TypeLiteralNode>n);
-        case Syntax.ArrayType:
-          return this.arrayType(<ArrayTypeNode>n);
-        case Syntax.TupleType:
-          return this.tupleType(<TupleTypeNode>n);
-        case Syntax.UnionType:
-        case Syntax.IntersectionType:
-          return this.unionOrIntersectionType(<qc.UnionOrIntersectionTypeNode>n);
-        case Syntax.ParenthesizedType:
-        case Syntax.OptionalType:
-        case Syntax.RestType:
-          return this.sourceElem((<ParenthesizedTypeNode | OptionalTypeNode | RestTypeNode>n).type);
-        case Syntax.ThisType:
-          return this.thisType(<ThisTypeNode>n);
-        case Syntax.TypeOperator:
-          return this.typeOperator(<TypeOperatorNode>n);
-        case Syntax.ConditionalType:
-          return this.conditionalType(<ConditionalTypeNode>n);
-        case Syntax.InferType:
-          return this.inferType(<InferTypeNode>n);
-        case Syntax.ImportType:
-          return this.importType(<ImportTypeNode>n);
+        case Syntax.TypingReference:
+          return this.typeReferenceNode(<TypingReference>n);
+        case Syntax.TypingPredicate:
+          return this.typePredicate(<TypingPredicate>n);
+        case Syntax.TypingQuery:
+          return this.typeQuery(<TypingQuery>n);
+        case Syntax.TypingLiteral:
+          return this.typeLiteral(<TypingLiteral>n);
+        case Syntax.ArrayTyping:
+          return this.arrayType(<ArrayTyping>n);
+        case Syntax.TupleTyping:
+          return this.tupleType(<TupleTyping>n);
+        case Syntax.UnionTyping:
+        case Syntax.IntersectionTyping:
+          return this.unionOrIntersectionType(<qc.UnionOrIntersectionTyping>n);
+        case Syntax.ParenthesizedTyping:
+        case Syntax.OptionalTyping:
+        case Syntax.RestTyping:
+          return this.sourceElem((<ParenthesizedTyping | OptionalTyping | RestTyping>n).type);
+        case Syntax.ThisTyping:
+          return this.thisType(<ThisTyping>n);
+        case Syntax.TypingOperator:
+          return this.typeOperator(<TypingOperator>n);
+        case Syntax.ConditionalTyping:
+          return this.conditionalType(<ConditionalTyping>n);
+        case Syntax.InferTyping:
+          return this.inferType(<InferTyping>n);
+        case Syntax.ImportTyping:
+          return this.importType(<ImportTyping>n);
         case Syntax.NamedTupleMember:
           return this.namedTupleMember(<NamedTupleMember>n);
         case Syntax.DocAugmentsTag:
@@ -5719,25 +5719,25 @@ export function newCheck(f: qt.Frame) {
           return this.docParameterTag(n as DocParameterTag);
         case Syntax.DocPropertyTag:
           return this.docPropertyTag(n as DocPropertyTag);
-        case Syntax.DocFunctionType:
-          this.docFunctionType(n as DocFunctionType);
-        case Syntax.DocNonNullableType:
-        case Syntax.DocNullableType:
-        case Syntax.DocAllType:
-        case Syntax.DocUnknownType:
-        case Syntax.DocTypeLiteral:
+        case Syntax.DocFunctionTyping:
+          this.docFunctionType(n as DocFunctionTyping);
+        case Syntax.DocNonNullableTyping:
+        case Syntax.DocNullableTyping:
+        case Syntax.DocAllTyping:
+        case Syntax.DocUnknownTyping:
+        case Syntax.DocTypingLiteral:
           this.docTypeIsInJsFile(n);
           qf.each.child(n, checkSourceElem);
           return;
-        case Syntax.DocVariadicType:
-          this.docVariadicType(n as DocVariadicType);
+        case Syntax.DocVariadicTyping:
+          this.docVariadicType(n as DocVariadicTyping);
           return;
-        case Syntax.DocTypeExpression:
-          return this.sourceElem((n as DocTypeExpression).type);
-        case Syntax.IndexedAccessType:
-          return this.indexedAccessType(<IndexedAccessTypeNode>n);
-        case Syntax.MappedType:
-          return this.mappedType(<MappedTypeNode>n);
+        case Syntax.DocTypingExpression:
+          return this.sourceElem((n as DocTypingExpression).type);
+        case Syntax.IndexedAccessTyping:
+          return this.indexedAccessType(<IndexedAccessTyping>n);
+        case Syntax.MappedTyping:
+          return this.mappedType(<MappedTyping>n);
         case Syntax.FunctionDeclaration:
           return this.functionDeclaration(<FunctionDeclaration>n);
         case Syntax.Block:
@@ -5807,15 +5807,15 @@ export function newCheck(f: qt.Frame) {
     docTypeIsInJsFile(n: Node): void {
       if (!qf.is.inJSFile(n)) grammarErrorOnNode(n, qd.msgs.Doc_types_can_only_be_used_inside_documentation_comments);
     }
-    docVariadicType(n: qc.DocVariadicType): void {
+    docVariadicType(n: qc.DocVariadicTyping): void {
       this.docTypeIsInJsFile(n);
       this.sourceElem(n.type);
       const { parent } = n;
-      if (qf.is.kind(qc.ParameterDeclaration, parent) && qf.is.kind(qc.DocFunctionType, parent.parent)) {
+      if (qf.is.kind(qc.ParameterDeclaration, parent) && qf.is.kind(qc.DocFunctionTyping, parent.parent)) {
         if (last(parent.parent.parameters) !== parent) error(n, qd.msgs.A_rest_parameter_must_be_last_in_a_parameter_list);
         return;
       }
-      if (!qf.is.kind(qc.DocTypeExpression, parent)) error(n, qd.msgs.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
+      if (!qf.is.kind(qc.DocTypingExpression, parent)) error(n, qd.msgs.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
       const paramTag = n.parent.parent;
       if (!qf.is.kind(qc.DocParameterTag, paramTag)) {
         error(n, qd.msgs.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
@@ -6223,7 +6223,7 @@ export function newCheck(f: qt.Frame) {
       indexSignature(n: qc.SignatureDeclaration) {
         return this.decoratorsAndModifiers(n) || this.indexSignatureParameters(n);
       }
-      forAtLeastOneTypeArgument(n: Node, typeArguments: Nodes<TypeNode> | undefined): boolean {
+      forAtLeastOneTypeArgument(n: Node, typeArguments: Nodes<Typing> | undefined): boolean {
         if (typeArguments && typeArguments.length === 0) {
           const sourceFile = n.sourceFile;
           const start = typeArguments.pos - '<'.length;
@@ -6232,7 +6232,7 @@ export function newCheck(f: qt.Frame) {
         }
         return false;
       }
-      typeArguments(n: Node, typeArguments: Nodes<TypeNode> | undefined): boolean {
+      typeArguments(n: Node, typeArguments: Nodes<Typing> | undefined): boolean {
         return this.forDisallowedTrailingComma(typeArguments) || this.forAtLeastOneTypeArgument(n, typeArguments);
       }
       taggedTemplateChain(n: qc.TaggedTemplateExpression): boolean {
@@ -6259,7 +6259,7 @@ export function newCheck(f: qt.Frame) {
         }
         return some(types, this.expressionWithTypeArguments);
       }
-      expressionWithTypeArguments(n: qc.ExpressionWithTypeArguments) {
+      expressionWithTypeArguments(n: qc.ExpressionWithTypings) {
         return this.typeArguments(n, n.typeArguments);
       }
       classDeclarationHeritageClauses(n: qc.ClassLikeDeclaration) {
@@ -6457,11 +6457,11 @@ export function newCheck(f: qt.Frame) {
         }
         return false;
       }
-      typeOperatorNode(n: qc.TypeOperatorNode) {
+      typeOperatorNode(n: qc.TypingOperator) {
         if (n.operator === Syntax.UniqueKeyword) {
           if (n.type.kind !== Syntax.SymbolKeyword) return grammarErrorOnNode(n.type, qd.msgs._0_expected, Token.toString(Syntax.SymbolKeyword));
           let parent = walkUpParenthesizedTypes(n.parent);
-          if (qf.is.inJSFile(parent) && qf.is.kind(qc.DocTypeExpression, parent)) {
+          if (qf.is.inJSFile(parent) && qf.is.kind(qc.DocTypingExpression, parent)) {
             parent = parent.parent;
             if (qf.is.kind(qc.DocTypeTag, parent)) parent = parent.parent.parent;
           }
@@ -6484,7 +6484,7 @@ export function newCheck(f: qt.Frame) {
               return grammarErrorOnNode(n, qd.unique_symbol_types_are_not_allowed_here);
           }
         } else if (n.operator === Syntax.ReadonlyKeyword) {
-          if (n.type.kind !== Syntax.ArrayType && n.type.kind !== Syntax.TupleType)
+          if (n.type.kind !== Syntax.ArrayTyping && n.type.kind !== Syntax.TupleTyping)
             return grammarErrorOnFirstToken(n, qd.readonly_type_modifier_is_only_permitted_on_array_and_tuple_literal_types, Token.toString(Syntax.SymbolKeyword));
         }
       }
@@ -6510,7 +6510,7 @@ export function newCheck(f: qt.Frame) {
           }
         } else if (n.parent.kind === Syntax.InterfaceDeclaration) {
           return this.forInvalidDynamicName(n.name, qd.msgs.A_computed_property_name_in_an_interface_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type);
-        } else if (n.parent.kind === Syntax.TypeLiteral) {
+        } else if (n.parent.kind === Syntax.TypingLiteral) {
           return this.forInvalidDynamicName(n.name, qd.msgs.A_computed_property_name_in_a_type_literal_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type);
         }
       }
@@ -6639,7 +6639,7 @@ export function newCheck(f: qt.Frame) {
         } else if (n.parent.kind === Syntax.InterfaceDeclaration) {
           if (this.forInvalidDynamicName(n.name, qd.msgs.A_computed_property_name_in_an_interface_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) return true;
           if (n.initer) return grammarErrorOnNode(n.initer, qd.msgs.An_interface_property_cannot_have_an_initer);
-        } else if (n.parent.kind === Syntax.TypeLiteral) {
+        } else if (n.parent.kind === Syntax.TypingLiteral) {
           if (this.forInvalidDynamicName(n.name, qd.msgs.A_computed_property_name_in_a_type_literal_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) return true;
           if (n.initer) return grammarErrorOnNode(n.initer, qd.msgs.A_type_literal_property_cannot_have_an_initer);
         }
@@ -6711,7 +6711,7 @@ export function newCheck(f: qt.Frame) {
         return false;
       }
       bigIntLiteral(n: qc.BigIntLiteral): boolean {
-        const literalType = qf.is.kind(qc.LiteralTypeNode, n.parent) || (qf.is.kind(qc.PrefixUnaryExpression, n.parent) && qf.is.kind(qc.LiteralTypeNode, n.parent.parent));
+        const literalType = qf.is.kind(qc.LiteralTyping, n.parent) || (qf.is.kind(qc.PrefixUnaryExpression, n.parent) && qf.is.kind(qc.LiteralTyping, n.parent.parent));
         return false;
       }
       importClause(n: qc.ImportClause): boolean {

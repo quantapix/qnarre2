@@ -10,7 +10,7 @@ interface Parser {
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
   parseIsolatedEntityName(s: string, languageVersion: ScriptTarget): qc.EntityName | undefined;
   parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: Doc; diagnostics: Diagnostic[] } | undefined;
-  parseDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: DocTypeExpression; diagnostics: Diagnostic[] } | undefined;
+  parseDocTypingExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: DocTypingExpression; diagnostics: Diagnostic[] } | undefined;
 }
 const enum PropertyLike {
   Property = 1 << 0,
@@ -335,14 +335,14 @@ function create() {
     templateStartOfTaggedTemplate() {
       return tok() === Syntax.NoSubstitutionLiteral || tok() === Syntax.TemplateHead;
     }
-    objectOrObjectArrayTypeReference(n: qc.TypeNode): boolean {
+    objectOrObjectArrayTypeReference(n: qc.Typing): boolean {
       switch (n.kind) {
         case Syntax.ObjectKeyword:
           return true;
-        case Syntax.ArrayType:
-          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTypeNode).elemType);
+        case Syntax.ArrayTyping:
+          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTyping).elemType);
         default:
-          return qc.is.kind(qc.TypeReferenceNode, n) && qc.is.kind(qc.Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+          return qc.is.kind(qc.TypingReference, n) && qc.is.kind(qc.Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
       }
     }
   })();
@@ -650,9 +650,9 @@ function create() {
       n.right = name;
       return finishNode(n);
     }
-    postfixType(k: Syntax, type: qc.TypeNode) {
+    postfixType(k: Syntax, type: qc.Typing) {
       next.tok();
-      const n = this.node(k, type.pos) as OptionalTypeNode | DocOptionalType | DocNonNullableType | DocNullableType;
+      const n = this.node(k, type.pos) as OptionalTyping | DocOptionalTyping | DocNonNullableTyping | DocNullableTyping;
       n.type = type;
       return finishNode(n);
     }
@@ -663,7 +663,7 @@ function create() {
       n.right = r;
       return finishNode(n);
     }
-    asExpression(l: qc.Expression, r: qc.TypeNode): qc.AsExpression {
+    asExpression(l: qc.Expression, r: qc.Typing): qc.AsExpression {
       const n = this.node(Syntax.AsExpression, l.pos);
       n.expression = l;
       n.type = r;
@@ -1384,28 +1384,28 @@ function create() {
       finishNode(n);
       return n;
     }
-    typeReference(): qc.TypeReferenceNode {
-      const n = create.node(Syntax.TypeReference);
+    typeReference(): qc.TypingReference {
+      const n = create.node(Syntax.TypingReference);
       n.typeName = this.entityName(true, qd.msgs.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
         n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
       return finishNode(n);
     }
-    thisTypePredicate(lhs: qc.ThisTypeNode): qc.TypePredicateNode {
+    thisTypePredicate(lhs: qc.ThisTyping): qc.TypingPredicate {
       next.tok();
-      const n = create.node(Syntax.TypePredicate, lhs.pos);
+      const n = create.node(Syntax.TypingPredicate, lhs.pos);
       n.parameterName = lhs;
       n.type = this.type();
       return finishNode(n);
     }
-    thisTypeNode(): qc.ThisTypeNode {
-      const n = create.node(Syntax.ThisType);
+    thisTypeNode(): qc.ThisTyping {
+      const n = create.node(Syntax.ThisTyping);
       next.tok();
       return finishNode(n);
     }
-    typeQuery(): qc.TypeQueryNode {
-      const n = create.node(Syntax.TypeQuery);
+    typeQuery(): qc.TypingQuery {
+      const n = create.node(Syntax.TypingQuery);
       this.expected(Syntax.TypeOfKeyword);
       n.exprName = this.entityName(true);
       return finishNode(n);
@@ -1426,7 +1426,7 @@ function create() {
     }
     parameter(): qc.ParameterDeclaration {
       const n = create.nodeWithDoc(Syntax.Parameter);
-      const parameterType = (): qc.TypeNode | undefined => {
+      const parameterType = (): qc.Typing | undefined => {
         if (this.optional(Syntax.ColonToken)) return this.type();
         return;
       };
@@ -1491,8 +1491,8 @@ function create() {
       this.typeMemberSemicolon();
       return finishNode(n);
     }
-    typeLiteral(): qc.TypeLiteralNode {
-      const n = create.node(Syntax.TypeLiteral);
+    typeLiteral(): qc.TypingLiteral {
+      const n = create.node(Syntax.TypingLiteral);
       n.members = this.objectTypeMembers();
       return finishNode(n);
     }
@@ -1520,7 +1520,7 @@ function create() {
       return finishNode(n);
     }
     mappedType() {
-      const n = create.node(Syntax.MappedType);
+      const n = create.node(Syntax.MappedTyping);
       this.expected(Syntax.OpenBraceToken);
       if (tok() === Syntax.ReadonlyKeyword || tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) {
         n.readonlyToken = this.tokenNode<qc.ReadonlyToken | qc.PlusToken | qc.MinusToken>();
@@ -1541,16 +1541,16 @@ function create() {
     tupleElemType() {
       const p = getNodePos();
       if (this.optional(Syntax.Dot3Token)) {
-        const n = create.node(Syntax.RestType, p);
+        const n = create.node(Syntax.RestTyping, p);
         n.type = this.type();
         return finishNode(n);
       }
       const t = this.type();
-      if (!(flags.value & NodeFlags.Doc) && t.kind === Syntax.DocNullableType && t.pos === (<DocNullableType>t).type.pos) t.kind = Syntax.OptionalType;
+      if (!(flags.value & NodeFlags.Doc) && t.kind === Syntax.DocNullableTyping && t.pos === (<DocNullableTyping>t).type.pos) t.kind = Syntax.OptionalTyping;
       return t;
     }
-    tupleType(): qc.TupleTypeNode {
-      const n = create.node(Syntax.TupleType);
+    tupleType(): qc.TupleTyping {
+      const n = create.node(Syntax.TupleTyping);
       const nameOrType = () => {
         const isTupleElemName = () => {
           if (tok() === Syntax.Dot3Token) return qy.is.identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
@@ -1570,26 +1570,26 @@ function create() {
       n.elems = ctx.parseBracketedList(Context.TupleElemTypes, nameOrType, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    parenthesizedType(): qc.TypeNode {
-      const n = create.node(Syntax.ParenthesizedType);
+    parenthesizedType(): qc.Typing {
+      const n = create.node(Syntax.ParenthesizedTyping);
       this.expected(Syntax.OpenParenToken);
       n.type = this.type();
       this.expected(Syntax.CloseParenToken);
       return finishNode(n);
     }
-    functionOrConstructorType(): qc.TypeNode {
+    functionOrConstructorType(): qc.Typing {
       const p = getNodePos();
-      const k = this.optional(Syntax.NewKeyword) ? Syntax.ConstructorType : Syntax.FunctionType;
+      const k = this.optional(Syntax.NewKeyword) ? Syntax.ConstructorTyping : Syntax.FunctionTyping;
       const n = create.nodeWithDoc(k, p);
       fillSignature(Syntax.EqualsGreaterThanToken, SignatureFlags.Type, n);
       return finishNode(n);
     }
-    keywordAndNoDot(): qc.TypeNode | undefined {
-      const n = this.tokenNode<TypeNode>();
+    keywordAndNoDot(): qc.Typing | undefined {
+      const n = this.tokenNode<Typing>();
       return tok() === Syntax.DotToken ? undefined : n;
     }
-    literalTypeNode(negative?: boolean): qc.LiteralTypeNode {
-      const n = create.node(Syntax.LiteralType);
+    literalTypeNode(negative?: boolean): qc.LiteralTyping {
+      const n = create.node(Syntax.LiteralTyping);
       let m!: qc.PrefixUnaryExpression;
       if (negative) {
         m = create.node(Syntax.PrefixUnaryExpression);
@@ -1606,9 +1606,9 @@ function create() {
       n.literal = e;
       return finishNode(n);
     }
-    importType(): qc.ImportTypeNode {
+    importType(): qc.ImportTyping {
       source.flags |= NodeFlags.PossiblyContainsDynamicImport;
-      const n = create.node(Syntax.ImportType);
+      const n = create.node(Syntax.ImportTyping);
       if (this.optional(Syntax.TypeOfKeyword)) n.isTypeOf = true;
       this.expected(Syntax.ImportKeyword);
       this.expected(Syntax.OpenParenToken);
@@ -1620,7 +1620,7 @@ function create() {
       }
       return finishNode(n);
     }
-    nonArrayType(): qc.TypeNode {
+    nonArrayType(): qc.Typing {
       switch (tok()) {
         case Syntax.AnyKeyword:
         case Syntax.UnknownKeyword:
@@ -1656,7 +1656,7 @@ function create() {
           return lookAhead(next.isNumericOrBigIntLiteral) ? this.literalTypeNode(true) : this.typeReference();
         case Syntax.VoidKeyword:
         case Syntax.NullKeyword:
-          return this.tokenNode<qc.TypeNode>();
+          return this.tokenNode<qc.Typing>();
         case Syntax.ThisKeyword: {
           const thisKeyword = this.thisTypeNode();
           if (tok() === Syntax.IsKeyword && !scanner.hasPrecedingLineBreak()) return this.thisTypePredicate(thisKeyword);
@@ -1688,27 +1688,27 @@ function create() {
           return this.typeReference();
       }
     }
-    postfixTypeOrHigher(): qc.TypeNode {
+    postfixTypeOrHigher(): qc.Typing {
       let type = this.nonArrayType();
       while (!scanner.hasPrecedingLineBreak()) {
         switch (tok()) {
           case Syntax.ExclamationToken:
-            type = create.postfixType(Syntax.DocNonNullableType, type);
+            type = create.postfixType(Syntax.DocNonNullableTyping, type);
             break;
           case Syntax.QuestionToken:
             if (!(flags.value & NodeFlags.Doc) && lookAhead(next.isStartOfType)) return type;
-            type = create.postfixType(Syntax.DocNullableType, type);
+            type = create.postfixType(Syntax.DocNullableTyping, type);
             break;
           case Syntax.OpenBracketToken:
             this.expected(Syntax.OpenBracketToken);
             if (is.startOfType()) {
-              const n = create.node(Syntax.IndexedAccessType, type.pos);
+              const n = create.node(Syntax.IndexedAccessTyping, type.pos);
               n.objectType = type;
               n.indexType = this.type();
               this.expected(Syntax.CloseBracketToken);
               type = finishNode(n);
             } else {
-              const n = create.node(Syntax.ArrayType, type.pos);
+              const n = create.node(Syntax.ArrayTyping, type.pos);
               n.elemType = type;
               this.expected(Syntax.CloseBracketToken);
               type = finishNode(n);
@@ -1721,21 +1721,21 @@ function create() {
       return type;
     }
     typeOperator(operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword) {
-      const n = create.node(Syntax.TypeOperator);
+      const n = create.node(Syntax.TypingOperator);
       this.expected(operator);
       n.operator = operator;
       n.type = this.typeOperatorOrHigher();
       return finishNode(n);
     }
-    inferType(): qc.InferTypeNode {
-      const n = create.node(Syntax.InferType);
+    inferType(): qc.InferTyping {
+      const n = create.node(Syntax.InferTyping);
       this.expected(Syntax.InferKeyword);
       const p = create.node(Syntax.TypeParameter);
       p.name = this.identifier();
       n.typeParameter = finishNode(p);
       return finishNode(n);
     }
-    typeOperatorOrHigher(): qc.TypeNode {
+    typeOperatorOrHigher(): qc.Typing {
       const operator = tok();
       switch (operator) {
         case Syntax.KeyOfKeyword:
@@ -1747,7 +1747,7 @@ function create() {
       }
       return this.postfixTypeOrHigher();
     }
-    unionOrIntersectionType(k: Syntax.UnionType | Syntax.IntersectionType, cb: () => qc.TypeNode, o: Syntax.BarToken | Syntax.AmpersandToken): qc.TypeNode {
+    unionOrIntersectionType(k: Syntax.UnionTyping | Syntax.IntersectionTyping, cb: () => qc.Typing, o: Syntax.BarToken | Syntax.AmpersandToken): qc.Typing {
       const start = scanner.getStartPos();
       const hasLeadingOperator = this.optional(o);
       let type = cb();
@@ -1762,17 +1762,17 @@ function create() {
       }
       return type;
     }
-    intersectionTypeOrHigher(): qc.TypeNode {
-      return this.unionOrIntersectionType(Syntax.IntersectionType, this.typeOperatorOrHigher, Syntax.AmpersandToken);
+    intersectionTypeOrHigher(): qc.Typing {
+      return this.unionOrIntersectionType(Syntax.IntersectionTyping, this.typeOperatorOrHigher, Syntax.AmpersandToken);
     }
-    unionTypeOrHigher(): qc.TypeNode {
-      return this.unionOrIntersectionType(Syntax.UnionType, this.intersectionTypeOrHigher, Syntax.BarToken);
+    unionTypeOrHigher(): qc.Typing {
+      return this.unionOrIntersectionType(Syntax.UnionTyping, this.intersectionTypeOrHigher, Syntax.BarToken);
     }
-    typeOrTypePredicate(): qc.TypeNode {
+    typeOrTypePredicate(): qc.Typing {
       const typePredicateVariable = is.identifier() && tryParse(this.typePredicatePrefix);
       const type = this.type();
       if (typePredicateVariable) {
-        const n = create.node(Syntax.TypePredicate, typePredicateVariable.pos);
+        const n = create.node(Syntax.TypingPredicate, typePredicateVariable.pos);
         n.assertsModifier = undefined;
         n.parameterName = typePredicateVariable;
         n.type = type;
@@ -1788,17 +1788,17 @@ function create() {
       }
       return;
     }
-    assertsTypePredicate(): qc.TypeNode {
-      const n = create.node(Syntax.TypePredicate);
+    assertsTypePredicate(): qc.Typing {
+      const n = create.node(Syntax.TypingPredicate);
       n.assertsModifier = this.expectedToken(Syntax.AssertsKeyword);
       n.parameterName = tok() === Syntax.ThisKeyword ? this.thisTypeNode() : this.identifier();
       n.type = this.optional(Syntax.IsKeyword) ? this.type() : undefined;
       return finishNode(n);
     }
-    type(): qc.TypeNode {
+    type(): qc.Typing {
       return flags.withoutContext(NodeFlags.TypeExcludesFlags, this.typeWorker);
     }
-    typeWorker(noConditionalTypes?: boolean): qc.TypeNode {
+    typeWorker(noConditionalTypes?: boolean): qc.Typing {
       const isStartOfFunctionType = () => {
         if (tok() === Syntax.LessThanToken) return true;
         const isUnambiguouslyStartOfFunctionType = () => {
@@ -1831,7 +1831,7 @@ function create() {
       if (isStartOfFunctionType() || tok() === Syntax.NewKeyword) return this.functionOrConstructorType();
       const type = this.unionTypeOrHigher();
       if (!noConditionalTypes && !scanner.hasPrecedingLineBreak() && this.optional(Syntax.ExtendsKeyword)) {
-        const n = create.node(Syntax.ConditionalType, type.pos);
+        const n = create.node(Syntax.ConditionalTyping, type.pos);
         n.checkType = type;
         n.extendsType = this.typeWorker(true);
         this.expected(Syntax.QuestionToken);
@@ -1842,7 +1842,7 @@ function create() {
       }
       return type;
     }
-    typeAnnotation(): qc.TypeNode | undefined {
+    typeAnnotation(): qc.Typing | undefined {
       return this.optional(Syntax.ColonToken) ? this.type() : undefined;
     }
     expression(): qc.Expression {
@@ -2010,8 +2010,8 @@ function create() {
       n.modifiers = this.modifiersForArrowFunction();
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
       if (!fillSignature(Syntax.ColonToken, isAsync, n) && !allowAmbiguity) return;
-      const hasDocFunctionType = n.type && qc.is.kind(qc.DocFunctionType, n.type);
-      if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
+      const hasDocFunctionTyping = n.type && qc.is.kind(qc.DocFunctionTyping, n.type);
+      if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasDocFunctionTyping || tok() !== Syntax.OpenBraceToken)) return;
       return n;
     }
     arrowFunctionExpressionBody(isAsync: boolean): qc.Block | qc.Expression {
@@ -2283,7 +2283,7 @@ function create() {
         return <MemberExpression>expression;
       }
     }
-    taggedTemplateRest(tag: qc.LeftExpression, questionDotToken: qc.QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
+    taggedTemplateRest(tag: qc.LeftExpression, questionDotToken: qc.QuestionDotToken | undefined, typeArguments: Nodes<Typing> | undefined) {
       const n = create.node(Syntax.TaggedTemplateExpression, tag.pos);
       n.tag = tag;
       n.questionDotToken = questionDotToken;
@@ -3100,8 +3100,8 @@ function create() {
       n.types = ctx.parseDelimitedList(Context.HeritageClauseElem, this.expressionWithTypeArguments);
       return finishNode(n);
     }
-    expressionWithTypeArguments(): qc.ExpressionWithTypeArguments {
-      const n = create.node(Syntax.ExpressionWithTypeArguments);
+    expressionWithTypeArguments(): qc.ExpressionWithTypings {
+      const n = create.node(Syntax.ExpressionWithTypings);
       n.expression = this.leftHandSideExpressionOrHigher();
       n.typeArguments = parse.typeArguments();
       return finishNode(n);
@@ -3360,7 +3360,7 @@ function create() {
       }
       return false;
     }
-    typeArguments(): Nodes<TypeNode> | undefined {
+    typeArguments(): Nodes<Typing> | undefined {
       return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Context.TypeArguments, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
     }
   })();
@@ -3679,19 +3679,19 @@ function create() {
       }
       return;
     }
-    allType(postFixEquals: boolean): DocAllType | DocOptionalType {
-      const n = create.node(Syntax.DocAllType);
-      if (postFixEquals) return create.postfixType(Syntax.DocOptionalType, n) as DocOptionalType;
+    allType(postFixEquals: boolean): DocAllTyping | DocOptionalTyping {
+      const n = create.node(Syntax.DocAllTyping);
+      if (postFixEquals) return create.postfixType(Syntax.DocOptionalTyping, n) as DocOptionalTyping;
       next.tok();
       return finishNode(n);
     }
-    nonNullableType(): qc.TypeNode {
-      const n = create.node(Syntax.DocNonNullableType);
+    nonNullableType(): qc.Typing {
+      const n = create.node(Syntax.DocNonNullableTyping);
       next.tok();
       n.type = parse.nonArrayType();
       return finishNode(n);
     }
-    unknownOrNullableType(): DocUnknownType | DocNullableType {
+    unknownOrNullableType(): DocUnknownTyping | DocNullableTyping {
       const p = scanner.getStartPos();
       next.tok();
       if (
@@ -3702,21 +3702,21 @@ function create() {
         tok() === Syntax.EqualsToken ||
         tok() === Syntax.BarToken
       ) {
-        const n = create.node(Syntax.DocUnknownType, p);
+        const n = create.node(Syntax.DocUnknownTyping, p);
         return finishNode(n);
       }
-      const n = create.node(Syntax.DocNullableType, p);
+      const n = create.node(Syntax.DocNullableTyping, p);
       n.type = parse.type();
       return finishNode(n);
     }
-    functionType(): DocFunctionType | qc.TypeReferenceNode {
+    functionType(): DocFunctionTyping | qc.TypingReference {
       if (lookAhead(next.isOpenParen)) {
-        const n = create.nodeWithDoc(Syntax.DocFunctionType);
+        const n = create.nodeWithDoc(Syntax.DocFunctionTyping);
         next.tok();
         fillSignature(Syntax.ColonToken, SignatureFlags.Type | SignatureFlags.Doc, n);
         return finishNode(n);
       }
-      const n = create.node(Syntax.TypeReference);
+      const n = create.node(Syntax.TypingReference);
       n.typeName = parse.identifierName();
       return finishNode(n);
     }
@@ -3729,11 +3729,11 @@ function create() {
       n.type = this.type();
       return finishNode(n);
     }
-    type(): qc.TypeNode {
+    type(): qc.Typing {
       scanner.setInDocType(true);
       const m = parse.optionalToken(Syntax.ModuleKeyword);
       if (m) {
-        const n = create.node(Syntax.DocNamepathType, m.pos);
+        const n = create.node(Syntax.DocNamepathTyping, m.pos);
         terminate: while (true) {
           switch (tok()) {
             case Syntax.CloseBraceToken:
@@ -3752,22 +3752,22 @@ function create() {
       let type = parse.typeOrTypePredicate();
       scanner.setInDocType(false);
       if (d3) {
-        const n = create.node(Syntax.DocVariadicType, d3.pos);
+        const n = create.node(Syntax.DocVariadicTyping, d3.pos);
         n.type = type;
         type = finishNode(n);
       }
-      if (tok() === Syntax.EqualsToken) return create.postfixType(Syntax.DocOptionalType, type);
+      if (tok() === Syntax.EqualsToken) return create.postfixType(Syntax.DocOptionalTyping, type);
       return type;
     }
-    typeExpression(mayOmitBraces?: boolean): DocTypeExpression {
-      const n = create.node(Syntax.DocTypeExpression);
+    typeExpression(mayOmitBraces?: boolean): DocTypingExpression {
+      const n = create.node(Syntax.DocTypingExpression);
       const hasBrace = (mayOmitBraces ? parse.optional : parse.expected)(Syntax.OpenBraceToken);
       n.type = flags.withContext(NodeFlags.Doc, this.type);
       if (!mayOmitBraces || hasBrace) this.expected(Syntax.CloseBraceToken);
       fixupParentReferences(n);
       return finishNode(n);
     }
-    typeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: DocTypeExpression; diagnostics: Diagnostic[] } | undefined {
+    typeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: DocTypingExpression; diagnostics: Diagnostic[] } | undefined {
       initializeState(content, ScriptTarget.ESNext, undefined, ScriptKind.JS);
       source = create.source('file.js', ScriptTarget.ESNext, ScriptKind.JS, false);
       scanner.setText(content, start, length);
@@ -3920,11 +3920,11 @@ function create() {
       return comments.length === 0 ? undefined : comments.join('');
     }
     unknownTag(start: number, tagName: qc.Identifier) {
-      const n = create.node(Syntax.DocTag, start);
+      const n = create.node(Syntax.DocUnknownTag, start);
       n.tagName = tagName;
       return finishNode(n);
     }
-    tryTypeExpression(): DocTypeExpression | undefined {
+    tryTypeExpression(): DocTypingExpression | undefined {
       skipWhitespaceOrAsterisk();
       return tok() === Syntax.OpenBraceToken ? this.typeExpression() : undefined;
     }
@@ -3963,20 +3963,20 @@ function create() {
       n.comment = comment;
       return finishNode(n);
     }
-    nestedTypeLiteral(typeExpression: DocTypeExpression | undefined, name: qc.EntityName, target: PropertyLike, indent: number) {
+    nestedTypeLiteral(typeExpression: DocTypingExpression | undefined, name: qc.EntityName, target: PropertyLike, indent: number) {
       if (typeExpression && is.objectOrObjectArrayTypeReference(typeExpression.type)) {
-        const n = create.node(Syntax.DocTypeExpression, scanner.getTokenPos());
+        const n = create.node(Syntax.DocTypingExpression, scanner.getTokenPos());
         let child: DocPropertyLikeTag | DocTypeTag | false;
-        let n2: DocTypeLiteral;
+        let n2: DocTypingLiteral;
         const start = scanner.getStartPos();
         let children: DocPropertyLikeTag[] | undefined;
         while ((child = tryParse(() => this.childParameterOrPropertyTag(target, indent, name)))) {
           if (child.kind === Syntax.DocParameterTag || child.kind === Syntax.DocPropertyTag) children = append(children, child);
         }
         if (children) {
-          n2 = create.node(Syntax.DocTypeLiteral, start);
+          n2 = create.node(Syntax.DocTypingLiteral, start);
           n2.docPropertyTags = children;
-          if (typeExpression.type.kind === Syntax.ArrayType) n2.isArrayType = true;
+          if (typeExpression.type.kind === Syntax.ArrayTyping) n2.isArrayType = true;
           n.type = finishNode(n2);
           return finishNode(n);
         }
@@ -4054,11 +4054,11 @@ function create() {
       n.class = this.expressionWithTypeArgumentsForAugments();
       return finishNode(n);
     }
-    expressionWithTypeArgumentsForAugments(): qc.ExpressionWithTypeArguments & {
+    expressionWithTypeArgumentsForAugments(): qc.ExpressionWithTypings & {
       expression: qc.Identifier | PropertyAccessEntityNameExpression;
     } {
       const usedBrace = parse.optional(Syntax.OpenBraceToken);
-      const n = create.node(Syntax.ExpressionWithTypeArguments) as qc.ExpressionWithTypeArguments & {
+      const n = create.node(Syntax.ExpressionWithTypings) as qc.ExpressionWithTypings & {
         expression: qc.Identifier | PropertyAccessEntityNameExpression;
       };
       n.expression = this.propertyAccessEntityNameExpression();
@@ -4109,10 +4109,10 @@ function create() {
       let end: number | undefined;
       if (!typeExpression || is.objectOrObjectArrayTypeReference(typeExpression.type)) {
         let child: DocTypeTag | DocPropertyTag | false;
-        let n2: DocTypeLiteral | undefined;
+        let n2: DocTypingLiteral | undefined;
         let childTypeTag: DocTypeTag | undefined;
         while ((child = tryParse(() => this.childPropertyTag(indent)))) {
-          if (!n2) n2 = create.node(Syntax.DocTypeLiteral, start);
+          if (!n2) n2 = create.node(Syntax.DocTypingLiteral, start);
           if (child.kind === Syntax.DocTypeTag) {
             if (childTypeTag) {
               parse.errorAtToken(qd.msgs.A_Doc_typedef_comment_may_not_contain_multiple_type_tags);
@@ -4123,7 +4123,7 @@ function create() {
           } else n2.docPropertyTags = append(n2.docPropertyTags as MutableNodes<DocPropertyTag>, child);
         }
         if (n2) {
-          if (typeExpression && typeExpression.type.kind === Syntax.ArrayType) n2.isArrayType = true;
+          if (typeExpression && typeExpression.type.kind === Syntax.ArrayTyping) n2.isArrayType = true;
           n.typeExpression = childTypeTag && childTypeTag.typeExpression && !is.objectOrObjectArrayTypeReference(childTypeTag.typeExpression.type) ? childTypeTag.typeExpression : finishNode(n2);
           end = n.typeExpression.end;
         }
@@ -4244,7 +4244,7 @@ function create() {
       return this.parameterOrPropertyTag(start, tagName, target, indent);
     }
     templateTag(start: number, tagName: qc.Identifier): DocTemplateTag {
-      let constraint: DocTypeExpression | undefined;
+      let constraint: DocTypingExpression | undefined;
       if (tok() === Syntax.OpenBraceToken) constraint = this.typeExpression();
       const typeParameters = [];
       const typeParametersPos = getNodePos();
@@ -4375,18 +4375,18 @@ function create() {
     };
     if (shouldParseReturnType(!!(f & SignatureFlags.Type))) {
       s.type = parse.typeOrTypePredicate();
-      const hasArrowFunctionBlockingError = (n: qc.TypeNode): boolean => {
+      const hasArrowFunctionBlockingError = (n: qc.Typing): boolean => {
         switch (n.kind) {
-          case Syntax.TypeReference:
-            return qc.is.missing((n as qc.TypeReferenceNode).typeName);
-          case Syntax.FunctionType:
-          case Syntax.ConstructorType: {
-            const { parameters, type } = n as FunctionOrConstructorTypeNode;
+          case Syntax.TypingReference:
+            return qc.is.missing((n as qc.TypingReference).typeName);
+          case Syntax.FunctionTyping:
+          case Syntax.ConstructorTyping: {
+            const { parameters, type } = n as FunctionOrConstructorTyping;
             const isMissingList = (ns: Nodes<Node>) => !!(ns as MissingList<Node>).isMissingList;
             return isMissingList(parameters) || hasArrowFunctionBlockingError(type);
           }
-          case Syntax.ParenthesizedType:
-            return hasArrowFunctionBlockingError((n as ParenthesizedTypeNode).type);
+          case Syntax.ParenthesizedTyping:
+            return hasArrowFunctionBlockingError((n as ParenthesizedTyping).type);
           default:
             return false;
         }
@@ -4499,7 +4499,7 @@ function create() {
     parseJsonText: parse.jsonText.bind(parse),
     parseIsolatedEntityName: parse.isolatedEntityName.bind(parse),
     parseDocIsolatedComment,
-    parseDocTypeExpressionForTests: parseDoc.typeExpressionForTests.bind(parseDoc),
+    parseDocTypingExpressionForTests: parseDoc.typeExpressionForTests.bind(parseDoc),
   } as Parser;
 }
 let parser: Parser;

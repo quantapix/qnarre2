@@ -16,9 +16,9 @@ export function newIs(f: qt.Frame) {
   const qf = f as Frame;
   interface Tis extends ReturnType<typeof qc.newIs> {}
   class Tis {
-    isDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
+    isDocIndexSignature(node: TypingReference | ExpressionWithTypings) {
       return (
-        this.kind(qc.TypeReferenceNode, node) &&
+        this.kind(qc.TypingReference, node) &&
         this.kind(qc.Identifier, node.typeName) &&
         node.typeName.escapedText === 'Object' &&
         node.typeArguments &&
@@ -289,7 +289,7 @@ export function newIs(f: qt.Frame) {
     }
     entityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult {
       let meaning: qt.SymbolFlags;
-      if (entityName.parent.kind === Syntax.TypeQuery || this.expressionWithTypeArgumentsInClassExtendsClause(entityName.parent) || entityName.parent.kind === Syntax.ComputedPropertyName)
+      if (entityName.parent.kind === Syntax.TypingQuery || this.expressionWithTypeArgumentsInClassExtendsClause(entityName.parent) || entityName.parent.kind === Syntax.ComputedPropertyName)
         meaning = qt.SymbolFlags.Value | qt.SymbolFlags.ExportValue;
       else if (entityName.kind === Syntax.QualifiedName || entityName.kind === Syntax.PropertyAccessExpression || entityName.parent.kind === Syntax.ImportEqualsDeclaration) {
         meaning = qt.SymbolFlags.Namespace;
@@ -358,15 +358,15 @@ export function newIs(f: qt.Frame) {
           case Syntax.IndexSignature:
           case Syntax.Parameter:
           case Syntax.ModuleBlock:
-          case Syntax.FunctionType:
-          case Syntax.ConstructorType:
-          case Syntax.TypeLiteral:
-          case Syntax.TypeReference:
-          case Syntax.ArrayType:
-          case Syntax.TupleType:
-          case Syntax.UnionType:
-          case Syntax.IntersectionType:
-          case Syntax.ParenthesizedType:
+          case Syntax.FunctionTyping:
+          case Syntax.ConstructorTyping:
+          case Syntax.TypingLiteral:
+          case Syntax.TypingReference:
+          case Syntax.ArrayTyping:
+          case Syntax.TupleTyping:
+          case Syntax.UnionTyping:
+          case Syntax.IntersectionTyping:
+          case Syntax.ParenthesizedTyping:
           case Syntax.NamedTupleMember:
             return isDeclarationVisible(node.parent);
           case Syntax.ImportClause:
@@ -474,7 +474,7 @@ export function newIs(f: qt.Frame) {
           return false;
       }
     }
-    thislessType(node: TypeNode): boolean {
+    thislessType(node: Typing): boolean {
       switch (node.kind) {
         case Syntax.AnyKeyword:
         case Syntax.UnknownKeyword:
@@ -488,12 +488,12 @@ export function newIs(f: qt.Frame) {
         case Syntax.UndefinedKeyword:
         case Syntax.NullKeyword:
         case Syntax.NeverKeyword:
-        case Syntax.LiteralType:
+        case Syntax.LiteralTyping:
           return true;
-        case Syntax.ArrayType:
-          return isThislessType((<ArrayTypeNode>node).elemType);
-        case Syntax.TypeReference:
-          return !(node as TypeReferenceNode).typeArguments || (node as TypeReferenceNode).typeArguments!.every(isThislessType);
+        case Syntax.ArrayTyping:
+          return isThislessType((<ArrayTyping>node).elemType);
+        case Syntax.TypingReference:
+          return !(node as TypingReference).typeArguments || (node as TypingReference).typeArguments!.every(isThislessType);
       }
       return false;
     }
@@ -531,7 +531,7 @@ export function newIs(f: qt.Frame) {
     }
     mappedTypeWithKeyofConstraintDeclaration(type: MappedType) {
       const constraintDeclaration = getConstraintDeclarationForMappedType(type)!;
-      return constraintDeclaration.kind === Syntax.TypeOperator && (<TypeOperatorNode>constraintDeclaration).operator === Syntax.KeyOfKeyword;
+      return constraintDeclaration.kind === Syntax.TypingOperator && (<TypingOperator>constraintDeclaration).operator === Syntax.KeyOfKeyword;
     }
     partialMappedType(type: Type) {
       return !!(getObjectFlags(type) & ObjectFlags.Mapped && getMappedTypeModifiers(<MappedType>type) & MappedTypeModifiers.IncludeOptional);
@@ -564,8 +564,8 @@ export function newIs(f: qt.Frame) {
     docOptionalParameter(node: ParameterDeclaration) {
       return (
         this.inJSFile(node) &&
-        ((node.type && node.type.kind === Syntax.DocOptionalType) ||
-          qc.getDoc.parameterTags(node).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalType)))
+        ((node.type && node.type.kind === Syntax.DocOptionalTyping) ||
+          qc.getDoc.parameterTags(node).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping)))
       );
     }
     optionalParameter(node: ParameterDeclaration | DocParameterTag) {
@@ -583,30 +583,30 @@ export function newIs(f: qt.Frame) {
     optionalDocParameterTag(node: Node): node is DocParameterTag {
       if (!this.kind(qc.DocParameterTag, node)) return false;
       const { isBracketed, typeExpression } = node;
-      return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalType);
+      return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping);
     }
     resolvingReturnTypeOfSignature(signature: Signature) {
       return !signature.resolvedReturnType && findResolutionCycleStartIndex(signature, TypeSystemPropertyName.ResolvedReturnType) >= 0;
     }
-    unaryTupleTypeNode(node: TypeNode) {
-      return node.kind === Syntax.TupleType && (<TupleTypeNode>node).elems.length === 1;
+    unaryTupleTyping(node: Typing) {
+      return node.kind === Syntax.TupleTyping && (<TupleTyping>node).elems.length === 1;
     }
-    docTypeReference(node: Node): node is TypeReferenceNode {
-      return !!(node.flags & NodeFlags.Doc) && (node.kind === Syntax.TypeReference || node.kind === Syntax.ImportType);
+    docTypeReference(node: Node): node is TypingReference {
+      return !!(node.flags & NodeFlags.Doc) && (node.kind === Syntax.TypingReference || node.kind === Syntax.ImportTyping);
     }
-    tupleRestElem(node: TypeNode) {
-      return node.kind === Syntax.RestType || (node.kind === Syntax.NamedTupleMember && !!(node as NamedTupleMember).dot3Token);
+    tupleRestElem(node: Typing) {
+      return node.kind === Syntax.RestTyping || (node.kind === Syntax.NamedTupleMember && !!(node as NamedTupleMember).dot3Token);
     }
-    tupleOptionalElem(node: TypeNode) {
-      return node.kind === Syntax.OptionalType || (node.kind === Syntax.NamedTupleMember && !!(node as NamedTupleMember).questionToken);
+    tupleOptionalElem(node: Typing) {
+      return node.kind === Syntax.OptionalTyping || (node.kind === Syntax.NamedTupleMember && !!(node as NamedTupleMember).questionToken);
     }
-    deferredTypeReferenceNode(node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode, hasDefaultTypeArguments?: boolean) {
+    deferredTypingReference(node: TypingReference | ArrayTyping | TupleTyping, hasDefaultTypeArguments?: boolean) {
       return (
         !!getAliasSymbolForTypeNode(node) ||
         (isResolvedByTypeAlias(node) &&
-          (node.kind === Syntax.ArrayType
+          (node.kind === Syntax.ArrayTyping
             ? mayResolveTypeAlias(node.elemType)
-            : node.kind === Syntax.TupleType
+            : node.kind === Syntax.TupleTyping
             ? some(node.elems, mayResolveTypeAlias)
             : hasDefaultTypeArguments || some(node.typeArguments, mayResolveTypeAlias)))
       );
@@ -614,16 +614,16 @@ export function newIs(f: qt.Frame) {
     resolvedByTypeAlias(node: Node): boolean {
       const parent = node.parent;
       switch (parent.kind) {
-        case Syntax.ParenthesizedType:
+        case Syntax.ParenthesizedTyping:
         case Syntax.NamedTupleMember:
-        case Syntax.TypeReference:
-        case Syntax.UnionType:
-        case Syntax.IntersectionType:
-        case Syntax.IndexedAccessType:
-        case Syntax.ConditionalType:
-        case Syntax.TypeOperator:
-        case Syntax.ArrayType:
-        case Syntax.TupleType:
+        case Syntax.TypingReference:
+        case Syntax.UnionTyping:
+        case Syntax.IntersectionTyping:
+        case Syntax.IndexedAccessTyping:
+        case Syntax.ConditionalTyping:
+        case Syntax.TypingOperator:
+        case Syntax.ArrayTyping:
+        case Syntax.TupleTyping:
           return isResolvedByTypeAlias(parent);
         case Syntax.TypeAliasDeclaration:
           return true;
@@ -631,7 +631,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     readonlyTypeOperator(node: Node) {
-      return this.kind(qc.TypeOperatorNode, node) && node.operator === Syntax.ReadonlyKeyword;
+      return this.kind(qc.TypingOperator, node) && node.operator === Syntax.ReadonlyKeyword;
     }
     setOfLiteralsFromSameEnum(types: readonly Type[]): boolean {
       const first = types[0];
@@ -718,18 +718,18 @@ export function newIs(f: qt.Frame) {
       if (tp.symbol && tp.symbol.declarations && tp.symbol.declarations.length === 1) {
         const container = tp.symbol.declarations[0].parent;
         for (let n = node; n !== container; n = n.parent) {
-          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalType && qf.each.child((<ConditionalTypeNode>n).extendsType, containsReference))) return true;
+          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalTyping && qf.each.child((<ConditionalTyping>n).extendsType, containsReference))) return true;
         }
         return !!qf.each.child(node, containsReference);
       }
       return true;
       function containsReference(node: Node): boolean {
         switch (node.kind) {
-          case Syntax.ThisType:
+          case Syntax.ThisTyping:
             return !!tp.isThisType;
           case Syntax.Identifier:
-            return !tp.isThisType && this.partOfTypeNode(node) && maybeTypeParameterReference(node) && getTypeFromTypeNodeWorker(<TypeNode>node) === tp;
-          case Syntax.TypeQuery:
+            return !tp.isThisType && this.partOfTypeNode(node) && maybeTypeParameterReference(node) && getTypeFromTypeNodeWorker(<Typing>node) === tp;
+          case Syntax.TypingQuery:
             return true;
         }
         return !!qf.each.child(node, containsReference);
@@ -1127,7 +1127,7 @@ export function newIs(f: qt.Frame) {
       return !!(getObjectFlags(type) & (ObjectFlags.ObjectLiteral | ObjectFlags.ArrayLiteral));
     }
     inTypeQuery(node: Node): boolean {
-      return !!qc.findAncestor(node, (n) => (n.kind === Syntax.TypeQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
+      return !!qc.findAncestor(node, (n) => (n.kind === Syntax.TypingQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
     }
     matchingReference(source: Node, target: Node): boolean {
       switch (target.kind) {
@@ -1499,7 +1499,7 @@ export function newIs(f: qt.Frame) {
           case Syntax.JsxAttributes:
           case Syntax.JsxSpreadAttribute:
           case Syntax.JsxOpeningElem:
-          case Syntax.ExpressionWithTypeArguments:
+          case Syntax.ExpressionWithTypings:
           case Syntax.HeritageClause:
             return false;
           default:
@@ -1517,20 +1517,20 @@ export function newIs(f: qt.Frame) {
         if (superProperty && superProperty.valueDeclaration) return true;
       }
     }
-    validPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: qu.__String): boolean {
+    validPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTyping, propertyName: qu.__String): boolean {
       switch (node.kind) {
         case Syntax.PropertyAccessExpression:
           return isValidPropertyAccessWithType(node, node.expression.kind === Syntax.SuperKeyword, propertyName, getWidenedType(check.expression(node.expression)));
         case Syntax.QualifiedName:
           return isValidPropertyAccessWithType(node, false, propertyName, getWidenedType(check.expression(node.left)));
-        case Syntax.ImportType:
+        case Syntax.ImportTyping:
           return isValidPropertyAccessWithType(node, false, propertyName, getTypeFromTypeNode(node));
       }
     }
-    validPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean {
+    validPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTyping | QualifiedName, type: Type, property: Symbol): boolean {
       return isValidPropertyAccessWithType(node, node.kind === Syntax.PropertyAccessExpression && node.expression.kind === Syntax.SuperKeyword, property.escName, type);
     }
-    validPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, isSuper: boolean, propertyName: qu.__String, type: Type): boolean {
+    validPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTyping, isSuper: boolean, propertyName: qu.__String, type: Type): boolean {
       if (type === errorType || isTypeAny(type)) return true;
       const prop = getPropertyOfType(type, propertyName);
       if (prop) {
@@ -1909,13 +1909,13 @@ export function newIs(f: qt.Frame) {
       while (node.parent.kind === Syntax.QualifiedName) {
         node = node.parent as QualifiedName;
       }
-      return node.parent.kind === Syntax.TypeReference;
+      return node.parent.kind === Syntax.TypingReference;
     }
     heritageClauseElemIdentifier(node: Node): boolean {
       while (node.parent.kind === Syntax.PropertyAccessExpression) {
         node = node.parent;
       }
-      return node.parent.kind === Syntax.ExpressionWithTypeArguments;
+      return node.parent.kind === Syntax.ExpressionWithTypings;
     }
     nodeUsedDuringClassInitialization(node: Node) {
       return !!qc.findAncestor(node, (elem) => {
@@ -1930,13 +1930,13 @@ export function newIs(f: qt.Frame) {
     inRightSideOfImportOrExportAssignment(node: EntityName) {
       return getLeftSideOfImportEqualsOrExportAssignment(node) !== undefined;
     }
-    importTypeQualifierPart(node: EntityName): ImportTypeNode | undefined {
+    importTypeQualifierPart(node: EntityName): ImportTyping | undefined {
       let parent = node.parent;
       while (this.kind(qc.QualifiedName, parent)) {
         node = parent;
         parent = parent.parent;
       }
-      if (parent && parent.kind === Syntax.ImportType && (parent as ImportTypeNode).qualifier === node) return parent as ImportTypeNode;
+      if (parent && parent.kind === Syntax.ImportTyping && (parent as ImportTyping).qualifier === node) return parent as ImportTyping;
       return;
     }
     argumentsLocalBinding(nodeIn: Identifier): boolean {
@@ -2190,7 +2190,7 @@ export function newHas(f: qt.Frame) {
       }
       return true;
     }
-    correctTypeArgumentArity(signature: Signature, typeArguments: Nodes<TypeNode> | undefined) {
+    correctTypeArgumentArity(signature: Signature, typeArguments: Nodes<Typing> | undefined) {
       const numTypeParameters = length(signature.typeParameters);
       const minTypeArgumentCount = getMinTypeArgumentCount(signature.typeParameters);
       return !some(typeArguments) || (typeArguments.length >= minTypeArgumentCount && typeArguments.length <= numTypeParameters);
