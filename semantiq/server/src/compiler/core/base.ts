@@ -9,7 +9,7 @@ import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 export interface ReadonlyNodeSet<T extends Node> {
   has(n: T): boolean;
-  forEach(cb: (n: T) => void): void;
+  each(cb: (n: T) => void): void;
   some(cb: (n: T) => boolean): boolean;
 }
 export class NodeSet<T extends Node> implements ReadonlyNodeSet<T> {
@@ -25,7 +25,7 @@ export class NodeSet<T extends Node> implements ReadonlyNodeSet<T> {
   has(n: T) {
     return this.map.has(String(qf.get.nodeId(n)));
   }
-  forEach(cb: (n: T) => void) {
+  each(cb: (n: T) => void) {
     this.map.forEach(cb);
   }
   some(cb: (n: T) => boolean) {
@@ -55,7 +55,7 @@ export class NodeMap<N extends Node, V> implements ReadonlyNodeMap<N, V> {
   has(n: N) {
     return this.map.has(String(qf.get.nodeId(n)));
   }
-  forEach(cb: (v: V, n: N) => void) {
+  each(cb: (v: V, n: N) => void) {
     this.map.forEach(({ n, v }) => cb(v, n));
   }
 }
@@ -1281,13 +1281,13 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         (isComputedPropertyName(name) && qf.is.kind(qc.PropertyAccessExpression, name.expression) ? name.expression.name.text : qf.is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
       );
     }
-    function visit(node: Node): void {
-      switch (node.kind) {
+    function visit(n: Node) {
+      switch (n.kind) {
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
         case Syntax.MethodDeclaration:
         case Syntax.MethodSignature:
-          const functionDeclaration = <FunctionLikeDeclaration>node;
+          const functionDeclaration = n;
           const declarationName = qf.get.declaration.name(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
@@ -1296,7 +1296,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
               if (functionDeclaration.body && !(<FunctionLikeDeclaration>lastDeclaration).body) declarations[declarations.length - 1] = functionDeclaration;
             } else declarations.push(functionDeclaration);
           }
-          forEach.child(node, visit);
+          qf.each.child(n, visit);
           break;
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
@@ -1312,14 +1312,14 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
         case Syntax.TypingLiteral:
-          addDeclaration(<qt.Declaration>node);
-          forEach.child(node, visit);
+          addDeclaration(n);
+          qf.each.child(n, visit);
           break;
         case Syntax.Parameter:
-          if (!qf.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
+          if (!qf.has.syntacticModifier(n, ModifierFlags.ParameterPropertyModifier)) break;
         case Syntax.VariableDeclaration:
         case Syntax.BindingElem: {
-          const decl = <VariableDeclaration>node;
+          const decl = n;
           if (qf.is.kind(qc.BindingPattern, decl.name)) {
             qf.each.child(decl.name, visit);
             break;
@@ -1329,29 +1329,29 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
         case Syntax.EnumMember:
         case Syntax.PropertyDeclaration:
         case Syntax.PropertySignature:
-          addDeclaration(<qt.Declaration>node);
+          addDeclaration(<qt.Declaration>n);
           break;
         case Syntax.ExportDeclaration:
-          const exportDeclaration = <ExportDeclaration>node;
+          const exportDeclaration = n;
           if (exportDeclaration.exportClause) {
-            if (qf.is.kind(qc.NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elems, visit);
+            if (qf.is.kind(qc.NamedExports, exportDeclaration.exportClause)) qu.each(exportDeclaration.exportClause.elems, visit);
             else visit(exportDeclaration.exportClause.name);
           }
           break;
         case Syntax.ImportDeclaration:
-          const importClause = (<ImportDeclaration>node).importClause;
+          const importClause = n.importClause;
           if (importClause) {
             if (importClause.name) addDeclaration(importClause.name);
             if (importClause.namedBindings) {
               if (importClause.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(importClause.namedBindings);
-              else forEach(importClause.namedBindings.elems, visit);
+              else qu.each(importClause.namedBindings.elems, visit);
             }
           }
           break;
         case Syntax.BinaryExpression:
-          if (qf.get.assignmentDeclarationKind(node as BinaryExpression) !== AssignmentDeclarationKind.None) addDeclaration(node as BinaryExpression);
+          if (qf.get.assignmentDeclarationKind(n as BinaryExpression) !== qt.AssignmentDeclarationKind.None) addDeclaration(n as BinaryExpression);
         default:
-          qf.each.child(node, visit);
+          qf.each.child(n, visit);
       }
     }
   }
@@ -1664,13 +1664,13 @@ export function createGetSymbolWalker(
     }
     function visitTypeReference(t: TypeReference) {
       visitType(t.target);
-      forEach(getTypeArguments(t), visitType);
+      qu.each(getTypeArguments(t), visitType);
     }
     function visitTypeParameter(t: TypeParameter) {
       visitType(getConstraintOfTypeParameter(t));
     }
     function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
-      forEach(t.types, visitType);
+      qu.each(t.types, visitType);
     }
     function visitIndexType(t: IndexType) {
       visitType(t.type);
@@ -1689,7 +1689,7 @@ export function createGetSymbolWalker(
     function visitSignature(signature: Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
       if (typePredicate) visitType(typePredicate.type);
-      forEach(signature.typeParameters, visitType);
+      qu.each(signature.typeParameters, visitType);
       for (const parameter of signature.parameters) {
         visitSymbol(parameter);
       }
@@ -1698,8 +1698,8 @@ export function createGetSymbolWalker(
     }
     function visitInterfaceType(interfaceT: InterfaceType) {
       visitObjectType(interfaceT);
-      forEach(interfaceT.typeParameters, visitType);
-      forEach(getBaseTypes(interfaceT), visitType);
+      qu.each(interfaceT.typeParameters, visitType);
+      qu.each(getBaseTypes(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
     function visitObjectType(t: ObjectType) {
@@ -1727,7 +1727,7 @@ export function createGetSymbolWalker(
       const t = getTypeOfSymbol(s);
       visitType(t);
       if (s.exports) s.exports.forEach(visitSymbol);
-      forEach(s.declarations, (d) => {
+      qu.each(s.declarations, (d) => {
         if ((d as any).type && (d as any).type.kind === Syntax.TypingQuery) {
           const query = (d as any).type as TypingQuery;
           const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));
@@ -1763,7 +1763,7 @@ export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], po
 qu.addMixins(ClassLikeDobj, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTobj, [Tobj]);
 qu.addMixins(ObjectLiteralEobj, [Dobj]);
-qu.addMixins(LiteralExpression, [LiteralLikeNode]);
+qu.addMixins(LiteralEobj, [LiteralLikeNode]);
 export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
   return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
