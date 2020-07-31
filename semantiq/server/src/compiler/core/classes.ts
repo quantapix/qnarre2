@@ -44,7 +44,7 @@ export class ArrayBindingPattern extends Nobj implements qt.ArrayBindingPattern 
   }
 }
 ArrayBindingPattern.prototype.kind = ArrayBindingPattern.kind;
-export class ArrayLiteralExpression extends qb.PrimaryEobj implements qt.ArrayLiteralExpression {
+export class ArrayLiteralExpression extends qb.PrimaryExpr implements qt.ArrayLiteralExpression {
   static readonly kind = Syntax.ArrayLiteralExpression;
   elems: qt.Nodes<qt.Expression>;
   multiLine?: boolean;
@@ -70,7 +70,7 @@ export class ArrayTyping extends qb.Tobj implements qt.ArrayTyping {
   }
 }
 ArrayTyping.prototype.kind = ArrayTyping.kind;
-export class ArrowFunction extends qb.FunctionLikeDobj implements qt.ArrowFunction {
+export class ArrowFunction extends qb.FunctionLikeDecl implements qt.ArrowFunction {
   static readonly kind = Syntax.ArrowFunction;
   equalsGreaterThanToken: qt.EqualsGreaterThanToken;
   body: qt.ConciseBody;
@@ -103,8 +103,8 @@ export class ArrowFunction extends qb.FunctionLikeDobj implements qt.ArrowFuncti
   _expressionBrand: any;
 }
 ArrowFunction.prototype.kind = ArrowFunction.kind;
-qu.addMixins(ArrowFunction, [qb.Eobj, qb.DocContainer]);
-export class AsExpression extends qb.Eobj implements qt.AsExpression {
+qu.addMixins(ArrowFunction, [qb.Expr, qb.DocContainer]);
+export class AsExpression extends qb.Expr implements qt.AsExpression {
   static readonly kind = Syntax.AsExpression;
   expression: qt.Expression;
   type: qt.Typing;
@@ -122,7 +122,7 @@ export namespace AssignmentPattern {
   export const kind = Syntax.ArrayLiteralExpression;
   export const also = [Syntax.ObjectLiteralExpression];
 }
-export class AwaitExpression extends qb.UnaryEobj implements qt.AwaitExpression {
+export class AwaitExpression extends qb.UnaryExpr implements qt.AwaitExpression {
   static readonly kind = Syntax.AwaitExpression;
   expression: qt.UnaryExpression;
   constructor(e: qt.Expression) {
@@ -134,7 +134,7 @@ export class AwaitExpression extends qb.UnaryEobj implements qt.AwaitExpression 
   }
 }
 AwaitExpression.prototype.kind = AwaitExpression.kind;
-export class BigIntLiteral extends qb.LiteralEobj implements qt.BigIntLiteral {
+export class BigIntLiteral extends qb.LiteralExpr implements qt.BigIntLiteral {
   static readonly kind: Syntax.BigIntLiteral;
   constructor(public text: string) {
     super(true);
@@ -144,7 +144,7 @@ export class BigIntLiteral extends qb.LiteralEobj implements qt.BigIntLiteral {
   }
 }
 BigIntLiteral.prototype.kind = BigIntLiteral.kind;
-export class BinaryExpression extends qb.Eobj implements qt.BinaryExpression {
+export class BinaryExpression extends qb.Expr implements qt.BinaryExpression {
   static readonly kind = Syntax.BinaryExpression;
   left: qt.Expression;
   operatorToken: qt.BinaryOperatorToken;
@@ -163,8 +163,8 @@ export class BinaryExpression extends qb.Eobj implements qt.BinaryExpression {
   _declarationBrand: any;
 }
 BinaryExpression.prototype.kind = BinaryExpression.kind;
-qu.addMixins(BinaryExpression, [qb.Dobj]);
-export class BindingElem extends qb.NamedDobj implements qt.BindingElem {
+qu.addMixins(BinaryExpression, [qb.Decl]);
+export class BindingElem extends qb.NamedDecl implements qt.BindingElem {
   static readonly kind = Syntax.BindingElem;
   parent?: qt.BindingPattern;
   propertyName?: qt.PropertyName;
@@ -187,7 +187,7 @@ export namespace BindingPattern {
   export const kind = Syntax.ArrayBindingPattern;
   export const also = [Syntax.ObjectBindingPattern];
 }
-export class Block extends qb.Sobj implements qt.Block {
+export class Block extends qb.Stmt implements qt.Block {
   static readonly kind = Syntax.Block;
   statements: qt.Nodes<qt.Statement>;
   multiLine?: boolean;
@@ -201,7 +201,7 @@ export class Block extends qb.Sobj implements qt.Block {
   }
 }
 Block.prototype.kind = Block.kind;
-export class BooleanLiteral extends qb.PrimaryEobj implements qt.BooleanLiteral {
+export class BooleanLiteral extends qb.PrimaryExpr implements qt.BooleanLiteral {
   static readonly kind = Syntax.NullKeyword;
   constructor(k: boolean) {
     super(true, k ? Syntax.TrueKeyword : Syntax.FalseKeyword);
@@ -209,7 +209,7 @@ export class BooleanLiteral extends qb.PrimaryEobj implements qt.BooleanLiteral 
   _typingBrand: any;
 }
 BooleanLiteral.prototype.kind = BooleanLiteral.kind;
-export class BreakStatement extends qb.Sobj implements qt.BreakStatement {
+export class BreakStatement extends qb.Stmt implements qt.BreakStatement {
   static readonly kind = Syntax.BreakStatement;
   label?: qt.Identifier;
   constructor(l?: string | qt.Identifier) {
@@ -244,7 +244,7 @@ export class CallBinding extends Nobj {
   target!: qt.LeftExpression;
   thisArg!: qt.Expression;
 }
-export class CallExpression extends qb.LeftEobj implements qt.CallExpression {
+export class CallExpression extends qb.LeftExpr implements qt.CallExpression {
   static readonly kind = Syntax.CallExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
@@ -263,7 +263,7 @@ export class CallExpression extends qb.LeftEobj implements qt.CallExpression {
   _declarationBrand: any;
 }
 CallExpression.prototype.kind = CallExpression.kind;
-qu.addMixins(CallExpression, [qb.Dobj]);
+qu.addMixins(CallExpression, [qb.Decl]);
 export class CallChain extends CallExpression implements qt.CallChain {
   _optionalChainBrand: any;
   constructor(e: qt.Expression, q?: qt.QuestionDotToken, ts?: readonly qt.Typing[], es?: readonly qt.Expression[]) {
@@ -277,7 +277,7 @@ export class CallChain extends CallExpression implements qt.CallChain {
   }
 }
 CallChain.prototype.kind = CallChain.kind;
-export class CallSignatureDeclaration extends qb.SignatureDobj implements qt.CallSignatureDeclaration {
+export class CallSignatureDeclaration extends qb.SignatureDecl implements qt.CallSignatureDeclaration {
   static readonly kind = Syntax.CallSignature;
   docCache?: readonly qt.DocTag[];
   questionToken?: qt.QuestionToken;
@@ -334,7 +334,7 @@ export class CatchClause extends Nobj implements qt.CatchClause {
   }
 }
 CatchClause.prototype.kind = CatchClause.kind;
-export class ClassDeclaration extends qb.ClassLikeDobj implements qt.ClassDeclaration {
+export class ClassDeclaration extends qb.ClassLikeDecl implements qt.ClassDeclaration {
   static readonly kind = Syntax.ClassDeclaration;
   name?: qt.Identifier;
   docCache?: readonly qt.DocTag[];
@@ -366,8 +366,8 @@ export class ClassDeclaration extends qb.ClassLikeDobj implements qt.ClassDeclar
   _statementBrand: any;
 }
 ClassDeclaration.prototype.kind = ClassDeclaration.kind;
-qu.addMixins(ClassDeclaration, [qb.DeclarationSobj]);
-export class ClassExpression extends qb.ClassLikeDobj implements qt.ClassExpression {
+qu.addMixins(ClassDeclaration, [qb.DeclarationStmt]);
+export class ClassExpression extends qb.ClassLikeDecl implements qt.ClassExpression {
   static readonly kind = Syntax.ClassExpression;
   docCache?: readonly qt.DocTag[];
   constructor(
@@ -401,8 +401,8 @@ export class ClassExpression extends qb.ClassLikeDobj implements qt.ClassExpress
   _expressionBrand: any;
 }
 ClassExpression.prototype.kind = ClassExpression.kind;
-qu.addMixins(ClassExpression, [qb.PrimaryEobj]);
-export class CommaListExpression extends qb.Eobj implements qt.CommaListExpression {
+qu.addMixins(ClassExpression, [qb.PrimaryExpr]);
+export class CommaListExpression extends qb.Expr implements qt.CommaListExpression {
   static readonly kind: Syntax.CommaListExpression;
   elems: qt.Nodes<qt.Expression>;
   constructor(es: readonly qt.Expression[]) {
@@ -435,7 +435,7 @@ export class ComputedPropertyName extends Nobj implements qt.ComputedPropertyNam
   }
 }
 ComputedPropertyName.prototype.kind = ComputedPropertyName.kind;
-export class ConditionalExpression extends qb.Eobj implements qt.ConditionalExpression {
+export class ConditionalExpression extends qb.Expr implements qt.ConditionalExpression {
   static readonly kind = Syntax.ConditionalExpression;
   condition: qt.Expression;
   questionToken: qt.QuestionToken;
@@ -443,7 +443,7 @@ export class ConditionalExpression extends qb.Eobj implements qt.ConditionalExpr
   colonToken: qt.ColonToken;
   whenFalse: qt.Expression;
   constructor(c: qt.Expression, q: qt.QuestionToken, t: qt.Expression, s: qt.ColonToken, f: qt.Expression);
-  constructor(c: qt.Expression, q: qt.QuestionToken | qb.Eobj, t: qt.Expression, s?: qt.ColonToken, f?: qt.Expression) {
+  constructor(c: qt.Expression, q: qt.QuestionToken | qb.Expr, t: qt.Expression, s?: qt.ColonToken, f?: qt.Expression) {
     super(true);
     this.condition = parenthesize.forConditionalHead(c);
     this.questionToken = f ? q : new qb.Token(Syntax.QuestionToken);
@@ -474,7 +474,7 @@ export class ConditionalTyping extends qb.Tobj implements qt.ConditionalTyping {
   }
 }
 ConditionalTyping.prototype.kind = ConditionalTyping.kind;
-export class ConstructorDeclaration extends qb.FunctionLikeDobj implements qt.ConstructorDeclaration {
+export class ConstructorDeclaration extends qb.FunctionLikeDecl implements qt.ConstructorDeclaration {
   static readonly kind = Syntax.Constructor;
   parent?: qt.ClassLikeDeclaration;
   body?: qt.FunctionBody;
@@ -503,7 +503,7 @@ export class ConstructorTyping extends qb.FunctionOrConstructorTobj implements q
   _typingBrand: any;
 }
 ConstructorTyping.prototype.kind = ConstructorTyping.kind;
-export class ConstructSignatureDeclaration extends qb.SignatureDobj implements qt.ConstructSignatureDeclaration {
+export class ConstructSignatureDeclaration extends qb.SignatureDecl implements qt.ConstructSignatureDeclaration {
   static readonly kind = Syntax.ConstructSignature;
   questionToken?: qt.QuestionToken;
   docCache?: readonly qt.DocTag[];
@@ -517,7 +517,7 @@ export class ConstructSignatureDeclaration extends qb.SignatureDobj implements q
 }
 ConstructSignatureDeclaration.prototype.kind = ConstructSignatureDeclaration.kind;
 qu.addMixins(ConstructSignatureDeclaration, [qb.TypeElem]);
-export class ContinueStatement extends qb.Sobj implements qt.ContinueStatement {
+export class ContinueStatement extends qb.Stmt implements qt.ContinueStatement {
   static readonly kind = Syntax.ContinueStatement;
   label?: qt.Identifier;
   constructor(l?: string | qt.Identifier) {
@@ -529,7 +529,7 @@ export class ContinueStatement extends qb.Sobj implements qt.ContinueStatement {
   }
 }
 ContinueStatement.prototype.kind = ContinueStatement.kind;
-export class DebuggerStatement extends qb.Sobj implements qt.DebuggerStatement {
+export class DebuggerStatement extends qb.Stmt implements qt.DebuggerStatement {
   static readonly kind = Syntax.DebuggerStatement;
   constructor() {
     super(true);
@@ -538,7 +538,7 @@ export class DebuggerStatement extends qb.Sobj implements qt.DebuggerStatement {
 DebuggerStatement.prototype.kind = DebuggerStatement.kind;
 export class Decorator extends Nobj implements qt.Decorator {
   static readonly kind = Syntax.Decorator;
-  parent?: qt.NamedDobj;
+  parent?: qt.NamedDecl;
   expression: qt.LeftExpression;
   constructor(e: qt.Expression) {
     super();
@@ -563,7 +563,7 @@ export class DefaultClause extends Nobj implements qt.DefaultClause {
   }
 }
 DefaultClause.prototype.kind = DefaultClause.kind;
-export class DeleteExpression extends qb.UnaryEobj implements qt.DeleteExpression {
+export class DeleteExpression extends qb.UnaryExpr implements qt.DeleteExpression {
   static readonly kind = Syntax.DeleteExpression;
   expression: qt.UnaryExpression;
   constructor(e: qt.Expression) {
@@ -622,7 +622,7 @@ export class DocCallbackTag extends qb.DocTag implements qt.DocCallbackTag {
   _declarationBrand: any;
 }
 DocCallbackTag.prototype.kind = DocCallbackTag.kind;
-qu.addMixins(DocCallbackTag, [qb.NamedDobj]);
+qu.addMixins(DocCallbackTag, [qb.NamedDecl]);
 export class DocClassTag extends qb.DocTag implements qt.DocClassTag {
   static readonly kind = Syntax.DocClassTag;
   constructor(c?: string) {
@@ -641,8 +641,8 @@ export class DocEnumTag extends qb.DocTag implements qt.DocEnumTag {
   _declarationBrand: any;
 }
 DocEnumTag.prototype.kind = DocEnumTag.kind;
-qu.addMixins(DocEnumTag, [qb.Dobj]);
-export class DocFunctionTyping extends qb.SignatureDobj implements qt.DocFunctionTyping {
+qu.addMixins(DocEnumTag, [qb.Decl]);
+export class DocFunctionTyping extends qb.SignatureDecl implements qt.DocFunctionTyping {
   docCache?: readonly qt.DocTag[];
   static readonly kind = Syntax.DocFunctionTyping;
   _docTypeBrand: any;
@@ -689,7 +689,7 @@ export class DocPropertyLikeTag extends qb.DocTag implements qt.DocPropertyLikeT
   }
   _declarationBrand: any;
 }
-qu.addMixins(DocPropertyLikeTag, [qb.Dobj]);
+qu.addMixins(DocPropertyLikeTag, [qb.Decl]);
 export class DocParameterTag extends DocPropertyLikeTag implements qt.DocParameterTag {
   static readonly kind = Syntax.DocParameterTag;
   constructor(e: qt.DocTypingExpression | undefined, n: qt.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
@@ -755,7 +755,7 @@ export class DocSignature extends qb.DocTobj implements qt.DocSignature {
   _declarationBrand: any;
 }
 DocSignature.prototype.kind = DocSignature.kind;
-qu.addMixins(DocSignature, [qb.Dobj]);
+qu.addMixins(DocSignature, [qb.Decl]);
 export class DocTemplateTag extends qb.DocTag implements qt.DocTemplateTag {
   static readonly kind = Syntax.DocTemplateTag;
   constraint?: qt.DocTypingExpression;
@@ -791,7 +791,7 @@ export class DocTypedefTag extends qb.DocTag implements qt.DocTypedefTag {
   _declarationBrand: any;
 }
 DocTypedefTag.prototype.kind = DocTypedefTag.kind;
-qu.addMixins(DocTypedefTag, [qb.NamedDobj]);
+qu.addMixins(DocTypedefTag, [qb.NamedDecl]);
 export class DocTypingExpression extends qb.Tobj implements qt.DocTypingExpression {
   static readonly kind = Syntax.DocTypingExpression;
   type: qt.Typing;
@@ -851,7 +851,7 @@ export class JsxAttribute extends qb.ObjectLiteralElem implements qt.JsxAttribut
     return this.name !== n || this.initer !== i ? new JsxAttribute(n, i).updateFrom(this) : this;
   }
 }
-export class DoStatement extends qb.IterationSobj implements qt.DoStatement {
+export class DoStatement extends qb.IterationStmt implements qt.DoStatement {
   static readonly kind = Syntax.DoStatement;
   expression: qt.Expression;
   constructor(s: qt.Statement, e: qt.Expression) {
@@ -864,7 +864,7 @@ export class DoStatement extends qb.IterationSobj implements qt.DoStatement {
   }
 }
 DoStatement.prototype.kind = DoStatement.kind;
-export class ElemAccessExpression extends qb.MemberEobj implements qt.ElemAccessExpression {
+export class ElemAccessExpression extends qb.MemberExpr implements qt.ElemAccessExpression {
   static readonly kind = Syntax.ElemAccessExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
@@ -893,11 +893,11 @@ export class ElemAccessChain extends ElemAccessExpression implements qt.ElemAcce
   }
 }
 ElemAccessChain.prototype.kind = ElemAccessChain.kind;
-export class EmptyStatement extends qb.Sobj implements qt.EmptyStatement {
+export class EmptyStatement extends qb.Stmt implements qt.EmptyStatement {
   static readonly kind = Syntax.EmptyStatement;
 }
 EmptyStatement.prototype.kind = EmptyStatement.kind;
-export class EndOfDeclarationMarker extends qb.Sobj implements qt.EndOfDeclarationMarker {
+export class EndOfDeclarationMarker extends qb.Stmt implements qt.EndOfDeclarationMarker {
   static readonly kind = Syntax.EndOfDeclarationMarker;
   constructor(o: Node) {
     super();
@@ -906,7 +906,7 @@ export class EndOfDeclarationMarker extends qb.Sobj implements qt.EndOfDeclarati
   }
 }
 EndOfDeclarationMarker.prototype.kind = EndOfDeclarationMarker.kind;
-export class EnumDeclaration extends qb.DeclarationSobj implements qt.EnumDeclaration {
+export class EnumDeclaration extends qb.DeclarationStmt implements qt.EnumDeclaration {
   static readonly kind = Syntax.EnumDeclaration;
   name: qt.Identifier;
   members: qt.Nodes<qt.EnumMember>;
@@ -925,7 +925,7 @@ export class EnumDeclaration extends qb.DeclarationSobj implements qt.EnumDeclar
 }
 EnumDeclaration.prototype.kind = EnumDeclaration.kind;
 qu.addMixins(EnumDeclaration, [qb.DocContainer]);
-export class EnumMember extends qb.NamedDobj implements qt.EnumMember {
+export class EnumMember extends qb.NamedDecl implements qt.EnumMember {
   static readonly kind = Syntax.EnumMember;
   parent?: EnumDeclaration;
   name: qt.PropertyName;
@@ -941,7 +941,7 @@ export class EnumMember extends qb.NamedDobj implements qt.EnumMember {
 }
 EnumMember.prototype.kind = EnumMember.kind;
 qu.addMixins(EnumMember, [qb.DocContainer]);
-export class ExportAssignment extends qb.DeclarationSobj implements qt.ExportAssignment {
+export class ExportAssignment extends qb.DeclarationStmt implements qt.ExportAssignment {
   static readonly kind = Syntax.ExportAssignment;
   parent?: qt.SourceFile;
   isExportEquals?: boolean;
@@ -958,7 +958,7 @@ export class ExportAssignment extends qb.DeclarationSobj implements qt.ExportAss
   }
 }
 ExportAssignment.prototype.kind = ExportAssignment.kind;
-export class ExportDeclaration extends qb.DeclarationSobj implements qt.ExportDeclaration {
+export class ExportDeclaration extends qb.DeclarationStmt implements qt.ExportDeclaration {
   static readonly kind = Syntax.ExportDeclaration;
   parent?: qt.SourceFile | qt.ModuleBlock;
   isTypeOnly: boolean;
@@ -982,7 +982,7 @@ export class ExportDeclaration extends qb.DeclarationSobj implements qt.ExportDe
 }
 ExportDeclaration.prototype.kind = ExportDeclaration.kind;
 qu.addMixins(ExportDeclaration, [qb.DocContainer]);
-export class ExportSpecifier extends qb.NamedDobj implements qt.ExportSpecifier {
+export class ExportSpecifier extends qb.NamedDecl implements qt.ExportSpecifier {
   static readonly kind = Syntax.ExportSpecifier;
   parent?: qt.NamedExports;
   propertyName?: qt.Identifier;
@@ -997,7 +997,7 @@ export class ExportSpecifier extends qb.NamedDobj implements qt.ExportSpecifier 
   }
 }
 ExportSpecifier.prototype.kind = ExportSpecifier.kind;
-export class ExpressionStatement extends qb.Sobj implements qt.ExpressionStatement {
+export class ExpressionStatement extends qb.Stmt implements qt.ExpressionStatement {
   static readonly kind = Syntax.ExpressionStatement;
   expression: qt.Expression;
   constructor(e: qt.Expression) {
@@ -1037,7 +1037,7 @@ export class ExternalModuleReference extends Nobj implements qt.ExternalModuleRe
   }
 }
 ExternalModuleReference.prototype.kind = ExternalModuleReference.kind;
-export class ForInStatement extends qb.IterationSobj implements qt.ForInStatement {
+export class ForInStatement extends qb.IterationStmt implements qt.ForInStatement {
   static readonly kind = Syntax.ForInStatement;
   initer: qt.ForIniter;
   expression: qt.Expression;
@@ -1052,7 +1052,7 @@ export class ForInStatement extends qb.IterationSobj implements qt.ForInStatemen
   }
 }
 ForInStatement.prototype.kind = ForInStatement.kind;
-export class ForOfStatement extends qb.IterationSobj implements qt.ForOfStatement {
+export class ForOfStatement extends qb.IterationStmt implements qt.ForOfStatement {
   static readonly kind = Syntax.ForOfStatement;
   awaitModifier?: qt.AwaitKeywordToken;
   initer: qt.ForIniter;
@@ -1069,7 +1069,7 @@ export class ForOfStatement extends qb.IterationSobj implements qt.ForOfStatemen
   }
 }
 ForOfStatement.prototype.kind = ForOfStatement.kind;
-export class ForStatement extends qb.IterationSobj implements qt.ForStatement {
+export class ForStatement extends qb.IterationStmt implements qt.ForStatement {
   static readonly kind = Syntax.ForStatement;
   initer?: qt.ForIniter;
   condition?: qt.Expression;
@@ -1086,7 +1086,7 @@ export class ForStatement extends qb.IterationSobj implements qt.ForStatement {
   }
 }
 ForStatement.prototype.kind = ForStatement.kind;
-export class FunctionDeclaration extends qb.FunctionLikeDobj implements qt.FunctionDeclaration {
+export class FunctionDeclaration extends qb.FunctionLikeDecl implements qt.FunctionDeclaration {
   static readonly kind = Syntax.FunctionDeclaration;
   name?: qt.Identifier;
   body?: qt.FunctionBody;
@@ -1131,8 +1131,8 @@ export class FunctionDeclaration extends qb.FunctionLikeDobj implements qt.Funct
   _statementBrand: any;
 }
 FunctionDeclaration.prototype.kind = FunctionDeclaration.kind;
-qu.addMixins(FunctionDeclaration, [qb.DeclarationSobj]);
-export class FunctionExpression extends qb.FunctionLikeDobj implements qt.FunctionExpression {
+qu.addMixins(FunctionDeclaration, [qb.DeclarationStmt]);
+export class FunctionExpression extends qb.FunctionLikeDecl implements qt.FunctionExpression {
   static readonly kind = Syntax.FunctionExpression;
   name?: qt.Identifier;
   body: qt.FunctionBody;
@@ -1172,7 +1172,7 @@ export class FunctionExpression extends qb.FunctionLikeDobj implements qt.Functi
   _expressionBrand: any;
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
-qu.addMixins(FunctionExpression, [qb.PrimaryEobj, qb.DocContainer]);
+qu.addMixins(FunctionExpression, [qb.PrimaryExpr, qb.DocContainer]);
 export class FunctionTyping extends qb.FunctionOrConstructorTobj implements qt.FunctionTyping {
   static readonly kind = Syntax.FunctionTyping;
   docCache?: readonly qt.DocTag[];
@@ -1185,7 +1185,7 @@ export class FunctionTyping extends qb.FunctionOrConstructorTobj implements qt.F
   _typingBrand: any;
 }
 FunctionTyping.prototype.kind = FunctionTyping.kind;
-export class GetAccessorDeclaration extends qb.FunctionLikeDobj implements qt.GetAccessorDeclaration {
+export class GetAccessorDeclaration extends qb.FunctionLikeDecl implements qt.GetAccessorDeclaration {
   static readonly kind = Syntax.GetAccessor;
   parent?: qt.ClassLikeDeclaration | ObjectLiteralExpression;
   name: qt.PropertyName;
@@ -1264,9 +1264,9 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   _declarationBrand: any;
 }
 Identifier.prototype.kind = Identifier.kind;
-qu.addMixins(Identifier, [qb.Dobj, qb.PrimaryEobj]);
+qu.addMixins(Identifier, [qb.Decl, qb.PrimaryExpr]);
 export class GeneratedIdentifier extends Identifier implements qt.GeneratedIdentifier {}
-export class IfStatement extends qb.Sobj implements qt.IfStatement {
+export class IfStatement extends qb.Stmt implements qt.IfStatement {
   static readonly kind = Syntax.IfStatement;
   expression: qt.Expression;
   thenStatement: qt.Statement;
@@ -1282,7 +1282,7 @@ export class IfStatement extends qb.Sobj implements qt.IfStatement {
   }
 }
 IfStatement.prototype.kind = IfStatement.kind;
-export class ImportClause extends qb.NamedDobj implements qt.ImportClause {
+export class ImportClause extends qb.NamedDecl implements qt.ImportClause {
   static readonly kind = Syntax.ImportClause;
   parent?: qt.ImportDeclaration;
   isTypeOnly: boolean;
@@ -1299,7 +1299,7 @@ export class ImportClause extends qb.NamedDobj implements qt.ImportClause {
   }
 }
 ImportClause.prototype.kind = ImportClause.kind;
-export class ImportDeclaration extends qb.Sobj implements qt.ImportDeclaration {
+export class ImportDeclaration extends qb.Stmt implements qt.ImportDeclaration {
   static readonly kind = Syntax.ImportDeclaration;
   parent?: qt.SourceFile | qt.ModuleBlock;
   importClause?: qt.ImportClause;
@@ -1316,7 +1316,7 @@ export class ImportDeclaration extends qb.Sobj implements qt.ImportDeclaration {
   }
 }
 ImportDeclaration.prototype.kind = ImportDeclaration.kind;
-export class ImportEqualsDeclaration extends qb.DeclarationSobj implements qt.ImportEqualsDeclaration {
+export class ImportEqualsDeclaration extends qb.DeclarationStmt implements qt.ImportEqualsDeclaration {
   static readonly kind = Syntax.ImportEqualsDeclaration;
   parent?: qt.SourceFile | qt.ModuleBlock;
   name: qt.Identifier;
@@ -1335,7 +1335,7 @@ export class ImportEqualsDeclaration extends qb.DeclarationSobj implements qt.Im
   _statementBrand: any;
 }
 ImportEqualsDeclaration.prototype.kind = ImportEqualsDeclaration.kind;
-export class ImportSpecifier extends qb.NamedDobj implements qt.ImportSpecifier {
+export class ImportSpecifier extends qb.NamedDecl implements qt.ImportSpecifier {
   static readonly kind = Syntax.ImportSpecifier;
   parent?: qt.NamedImports;
   propertyName?: qt.Identifier;
@@ -1381,7 +1381,7 @@ export class IndexedAccessTyping extends qb.Tobj implements qt.IndexedAccessTypi
   }
 }
 IndexedAccessTyping.prototype.kind = IndexedAccessTyping.kind;
-export class IndexSignatureDeclaration extends qb.SignatureDobj implements qt.IndexSignatureDeclaration {
+export class IndexSignatureDeclaration extends qb.SignatureDecl implements qt.IndexSignatureDeclaration {
   static readonly kind = Syntax.IndexSignature;
   parent?: qt.ObjectTypeDeclaration;
   questionToken?: qt.QuestionToken;
@@ -1539,7 +1539,7 @@ export class InputFiles extends Nobj implements qt.InputFiles {
   }
 }
 InputFiles.prototype.kind = InputFiles.kind;
-export class InterfaceDeclaration extends qb.DeclarationSobj implements qt.InterfaceDeclaration {
+export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.InterfaceDeclaration {
   static readonly kind = Syntax.InterfaceDeclaration;
   name: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
@@ -1589,7 +1589,7 @@ export class IntersectionTyping extends UnionOrIntersectionTyping implements qt.
 }
 IntersectionTyping.prototype.kind = IntersectionTyping.kind;
 JsxAttribute.prototype.kind = JsxAttribute.kind;
-export class JsxAttributes extends qb.ObjectLiteralEobj<qt.JsxAttributeLike> implements qt.JsxAttributes {
+export class JsxAttributes extends qb.ObjectLiteralExpr<qt.JsxAttributeLike> implements qt.JsxAttributes {
   static readonly kind = Syntax.JsxAttributes;
   parent?: qt.JsxOpeningLikeElem;
   constructor(ps: readonly qt.JsxAttributeLike[]) {
@@ -1615,7 +1615,7 @@ export class JsxClosingElem extends Nobj implements qt.JsxClosingElem {
   }
 }
 JsxClosingElem.prototype.kind = JsxClosingElem.kind;
-export class JsxClosingFragment extends qb.Eobj implements qt.JsxClosingFragment {
+export class JsxClosingFragment extends qb.Expr implements qt.JsxClosingFragment {
   static readonly kind = Syntax.JsxClosingFragment;
   parent?: qt.JsxFragment;
   constructor() {
@@ -1623,7 +1623,7 @@ export class JsxClosingFragment extends qb.Eobj implements qt.JsxClosingFragment
   }
 }
 JsxClosingFragment.prototype.kind = JsxClosingFragment.kind;
-export class JsxElem extends qb.PrimaryEobj implements qt.JsxElem {
+export class JsxElem extends qb.PrimaryExpr implements qt.JsxElem {
   static readonly kind = Syntax.JsxElem;
   openingElem: qt.JsxOpeningElem;
   children: qt.Nodes<qt.JsxChild>;
@@ -1639,7 +1639,7 @@ export class JsxElem extends qb.PrimaryEobj implements qt.JsxElem {
   }
 }
 JsxElem.prototype.kind = JsxElem.kind;
-export class JsxExpression extends qb.Eobj implements qt.JsxExpression {
+export class JsxExpression extends qb.Expr implements qt.JsxExpression {
   static readonly kind = Syntax.JsxExpression;
   parent?: qt.JsxElem | qt.JsxAttributeLike;
   dot3Token?: qt.Dot3Token;
@@ -1654,7 +1654,7 @@ export class JsxExpression extends qb.Eobj implements qt.JsxExpression {
   }
 }
 JsxExpression.prototype.kind = JsxExpression.kind;
-export class JsxFragment extends qb.PrimaryEobj implements qt.JsxFragment {
+export class JsxFragment extends qb.PrimaryExpr implements qt.JsxFragment {
   static readonly kind = Syntax.JsxFragment;
   openingFragment: qt.JsxOpeningFragment;
   children: qt.Nodes<qt.JsxChild>;
@@ -1670,7 +1670,7 @@ export class JsxFragment extends qb.PrimaryEobj implements qt.JsxFragment {
   }
 }
 JsxFragment.prototype.kind = JsxFragment.kind;
-export class JsxOpeningElem extends qb.Eobj implements qt.JsxOpeningElem {
+export class JsxOpeningElem extends qb.Expr implements qt.JsxOpeningElem {
   static readonly kind = Syntax.JsxOpeningElem;
   parent?: qt.JsxElem;
   tagName: qt.JsxTagNameExpression;
@@ -1687,7 +1687,7 @@ export class JsxOpeningElem extends qb.Eobj implements qt.JsxOpeningElem {
   }
 }
 JsxOpeningElem.prototype.kind = JsxOpeningElem.kind;
-export class JsxOpeningFragment extends qb.Eobj implements qt.JsxOpeningFragment {
+export class JsxOpeningFragment extends qb.Expr implements qt.JsxOpeningFragment {
   static readonly kind = Syntax.JsxOpeningFragment;
   parent?: qt.JsxFragment;
   constructor() {
@@ -1695,7 +1695,7 @@ export class JsxOpeningFragment extends qb.Eobj implements qt.JsxOpeningFragment
   }
 }
 JsxOpeningFragment.prototype.kind = JsxOpeningFragment.kind;
-export class JsxSelfClosingElem extends qb.PrimaryEobj implements qt.JsxSelfClosingElem {
+export class JsxSelfClosingElem extends qb.PrimaryExpr implements qt.JsxSelfClosingElem {
   static readonly kind = Syntax.JsxSelfClosingElem;
   tagName: qt.JsxTagNameExpression;
   typeArguments?: qt.Nodes<qt.Typing>;
@@ -1745,7 +1745,7 @@ export class KeywordTyping extends qb.Tobj implements qt.KeywordTyping {
     super(true, k);
   }
 }
-export class LabeledStatement extends qb.Sobj implements qt.LabeledStatement {
+export class LabeledStatement extends qb.Stmt implements qt.LabeledStatement {
   static readonly kind = Syntax.LabeledStatement;
   label: qt.Identifier;
   statement: qt.Statement;
@@ -1791,8 +1791,8 @@ export class MappedTyping extends qb.Tobj implements qt.MappedTyping {
   _declarationBrand: any;
 }
 MappedTyping.prototype.kind = MappedTyping.kind;
-qu.addMixins(MappedTyping, [qb.Dobj]);
-export class MergeDeclarationMarker extends qb.Sobj implements qt.MergeDeclarationMarker {
+qu.addMixins(MappedTyping, [qb.Decl]);
+export class MergeDeclarationMarker extends qb.Stmt implements qt.MergeDeclarationMarker {
   static readonly kind: Syntax.MergeDeclarationMarker;
   constructor(o: Node) {
     super(true);
@@ -1801,7 +1801,7 @@ export class MergeDeclarationMarker extends qb.Sobj implements qt.MergeDeclarati
   }
 }
 MergeDeclarationMarker.prototype.kind = MergeDeclarationMarker.kind;
-export class MetaProperty extends qb.PrimaryEobj implements qt.MetaProperty {
+export class MetaProperty extends qb.PrimaryExpr implements qt.MetaProperty {
   static readonly kind = Syntax.MetaProperty;
   keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
   name: qt.Identifier;
@@ -1815,7 +1815,7 @@ export class MetaProperty extends qb.PrimaryEobj implements qt.MetaProperty {
   }
 }
 MetaProperty.prototype.kind = MetaProperty.kind;
-export class MethodDeclaration extends qb.FunctionLikeDobj implements qt.MethodDeclaration {
+export class MethodDeclaration extends qb.FunctionLikeDecl implements qt.MethodDeclaration {
   static readonly kind = Syntax.MethodDeclaration;
   parent?: qt.ClassLikeDeclaration | qt.ObjectLiteralExpression;
   name: qt.PropertyName;
@@ -1867,7 +1867,7 @@ export class MethodDeclaration extends qb.FunctionLikeDobj implements qt.MethodD
 }
 MethodDeclaration.prototype.kind = MethodDeclaration.kind;
 qu.addMixins(MethodDeclaration, [qb.ClassElem, qb.ObjectLiteralElem, qb.DocContainer]);
-export class MethodSignature extends qb.SignatureDobj implements qt.MethodSignature {
+export class MethodSignature extends qb.SignatureDecl implements qt.MethodSignature {
   static readonly kind = Syntax.MethodSignature;
   parent?: qt.ObjectTypeDeclaration;
   name: qt.PropertyName;
@@ -1885,13 +1885,13 @@ export class MethodSignature extends qb.SignatureDobj implements qt.MethodSignat
 }
 MethodSignature.prototype.kind = MethodSignature.kind;
 qu.addMixins(MethodSignature, [qb.TypeElem]);
-export class MissingDeclaration extends qb.DeclarationSobj implements qt.MissingDeclaration {
+export class MissingDeclaration extends qb.DeclarationStmt implements qt.MissingDeclaration {
   static readonly kind = Syntax.MissingDeclaration;
   name?: qt.Identifier;
   _statementBrand: any;
 }
 MissingDeclaration.prototype.kind = MissingDeclaration.kind;
-export class ModuleBlock extends qb.Sobj implements qt.ModuleBlock {
+export class ModuleBlock extends qb.Stmt implements qt.ModuleBlock {
   static readonly kind = Syntax.ModuleBlock;
   parent?: qt.ModuleDeclaration;
   statements: qt.Nodes<qt.Statement>;
@@ -1904,7 +1904,7 @@ export class ModuleBlock extends qb.Sobj implements qt.ModuleBlock {
   }
 }
 ModuleBlock.prototype.kind = ModuleBlock.kind;
-export class ModuleDeclaration extends qb.DeclarationSobj implements qt.ModuleDeclaration {
+export class ModuleDeclaration extends qb.DeclarationStmt implements qt.ModuleDeclaration {
   static readonly kind = Syntax.ModuleDeclaration;
   parent?: qt.ModuleBody | qt.SourceFile;
   name: qt.ModuleName;
@@ -1975,8 +1975,8 @@ export class NamedTupleMember extends qb.Tobj implements qt.NamedTupleMember {
   _declarationBrand: any;
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
-qu.addMixins(NamedTupleMember, [qb.Dobj, qb.DocContainer]);
-export class NamespaceExport extends qb.NamedDobj implements qt.NamespaceExport {
+qu.addMixins(NamedTupleMember, [qb.Decl, qb.DocContainer]);
+export class NamespaceExport extends qb.NamedDecl implements qt.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent?: qt.ExportDeclaration;
   name: qt.Identifier;
@@ -1989,7 +1989,7 @@ export class NamespaceExport extends qb.NamedDobj implements qt.NamespaceExport 
   }
 }
 NamespaceExport.prototype.kind = NamespaceExport.kind;
-export class NamespaceExportDeclaration extends qb.DeclarationSobj implements qt.NamespaceExportDeclaration {
+export class NamespaceExportDeclaration extends qb.DeclarationStmt implements qt.NamespaceExportDeclaration {
   static readonly kind = Syntax.NamespaceExportDeclaration;
   name: qt.Identifier;
   constructor(n: string | qt.Identifier) {
@@ -2002,7 +2002,7 @@ export class NamespaceExportDeclaration extends qb.DeclarationSobj implements qt
   _statementBrand: any;
 }
 NamespaceExportDeclaration.prototype.kind = NamespaceExportDeclaration.kind;
-export class NamespaceImport extends qb.NamedDobj implements qt.NamespaceImport {
+export class NamespaceImport extends qb.NamedDecl implements qt.NamespaceImport {
   static readonly kind = Syntax.NamespaceImport;
   parent?: qt.ImportClause;
   name: qt.Identifier;
@@ -2015,7 +2015,7 @@ export class NamespaceImport extends qb.NamedDobj implements qt.NamespaceImport 
   }
 }
 NamespaceImport.prototype.kind = NamespaceImport.kind;
-export class NewExpression extends qb.PrimaryEobj implements qt.NewExpression {
+export class NewExpression extends qb.PrimaryExpr implements qt.NewExpression {
   static readonly kind = Syntax.NewExpression;
   expression: qt.LeftExpression;
   typeArguments?: qt.Nodes<qt.Typing>;
@@ -2032,8 +2032,8 @@ export class NewExpression extends qb.PrimaryEobj implements qt.NewExpression {
   _declarationBrand: any;
 }
 NewExpression.prototype.kind = NewExpression.kind;
-qu.addMixins(NewExpression, [qb.Dobj]);
-export class NonNullExpression extends qb.LeftEobj implements qt.NonNullExpression {
+qu.addMixins(NewExpression, [qb.Decl]);
+export class NonNullExpression extends qb.LeftExpr implements qt.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
   expression: qt.Expression;
   constructor(e: qt.Expression) {
@@ -2074,8 +2074,8 @@ export class NoSubstitutionLiteral extends qb.TemplateLiteralLikeNode implements
   _declarationBrand: any;
 }
 NoSubstitutionLiteral.prototype.kind = NoSubstitutionLiteral.kind;
-qu.addMixins(NoSubstitutionLiteral, [qb.LiteralEobj, qb.Dobj]);
-export class NotEmittedStatement extends qb.Sobj implements qt.NotEmittedStatement {
+qu.addMixins(NoSubstitutionLiteral, [qb.LiteralExpr, qb.Decl]);
+export class NotEmittedStatement extends qb.Stmt implements qt.NotEmittedStatement {
   static readonly kind = Syntax.NotEmittedStatement;
   constructor(o: Node) {
     super(true);
@@ -2084,7 +2084,7 @@ export class NotEmittedStatement extends qb.Sobj implements qt.NotEmittedStateme
   }
 }
 NotEmittedStatement.prototype.kind = NotEmittedStatement.kind;
-export class NumericLiteral extends qb.LiteralEobj implements qt.NumericLiteral {
+export class NumericLiteral extends qb.LiteralExpr implements qt.NumericLiteral {
   static readonly kind = Syntax.NumericLiteral;
   numericLiteralFlags: qt.TokenFlags;
   constructor(t: string, fs: qt.TokenFlags = qt.TokenFlags.None) {
@@ -2097,7 +2097,7 @@ export class NumericLiteral extends qb.LiteralEobj implements qt.NumericLiteral 
   }
   _declarationBrand: any;
 }
-export class NullLiteral extends qb.PrimaryEobj implements qt.NullLiteral {
+export class NullLiteral extends qb.PrimaryExpr implements qt.NullLiteral {
   static readonly kind = Syntax.NullKeyword;
   constructor() {
     super(true);
@@ -2106,7 +2106,7 @@ export class NullLiteral extends qb.PrimaryEobj implements qt.NullLiteral {
 }
 NullLiteral.prototype.kind = NullLiteral.kind;
 NumericLiteral.prototype.kind = NumericLiteral.kind;
-qu.addMixins(NumericLiteral, [qb.Dobj]);
+qu.addMixins(NumericLiteral, [qb.Decl]);
 export class ObjectBindingPattern extends Nobj implements qt.ObjectBindingPattern {
   static readonly kind = Syntax.ObjectBindingPattern;
   parent?: qt.VariableDeclaration | qt.ParameterDeclaration | qt.BindingElem;
@@ -2120,7 +2120,7 @@ export class ObjectBindingPattern extends Nobj implements qt.ObjectBindingPatter
   }
 }
 ObjectBindingPattern.prototype.kind = ObjectBindingPattern.kind;
-export class ObjectLiteralExpression extends qb.ObjectLiteralEobj<qt.ObjectLiteralElemLike> implements qt.ObjectLiteralExpression {
+export class ObjectLiteralExpression extends qb.ObjectLiteralExpr<qt.ObjectLiteralElemLike> implements qt.ObjectLiteralExpression {
   static readonly kind = Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
   constructor(ps?: readonly qt.ObjectLiteralElemLike[], multiLine?: boolean) {
@@ -2133,7 +2133,7 @@ export class ObjectLiteralExpression extends qb.ObjectLiteralEobj<qt.ObjectLiter
   }
 }
 ObjectLiteralExpression.prototype.kind = ObjectLiteralExpression.kind;
-export class OmittedExpression extends qb.Eobj implements qt.OmittedExpression {
+export class OmittedExpression extends qb.Expr implements qt.OmittedExpression {
   static readonly kind = Syntax.OmittedExpression;
   constructor() {
     super(true);
@@ -2153,7 +2153,7 @@ export class OptionalTyping extends qb.Tobj implements qt.OptionalTyping {
 }
 OptionalTyping.prototype.kind = OptionalTyping.kind;
 export namespace OuterExpression {}
-export class ParameterDeclaration extends qb.NamedDobj implements qt.ParameterDeclaration {
+export class ParameterDeclaration extends qb.NamedDecl implements qt.ParameterDeclaration {
   static readonly kind = Syntax.Parameter;
   parent?: qt.SignatureDeclaration;
   dot3Token?: qt.Dot3Token;
@@ -2195,7 +2195,7 @@ export class ParameterDeclaration extends qb.NamedDobj implements qt.ParameterDe
 }
 ParameterDeclaration.prototype.kind = ParameterDeclaration.kind;
 qu.addMixins(ParameterDeclaration, [qb.DocContainer]);
-export class ParenthesizedExpression extends qb.PrimaryEobj implements qt.ParenthesizedExpression {
+export class ParenthesizedExpression extends qb.PrimaryExpr implements qt.ParenthesizedExpression {
   static readonly kind = Syntax.ParenthesizedExpression;
   expression: qt.Expression;
   constructor(e: qt.Expression) {
@@ -2220,7 +2220,7 @@ export class ParenthesizedTyping extends qb.Tobj implements qt.ParenthesizedTypi
   }
 }
 ParenthesizedTyping.prototype.kind = ParenthesizedTyping.kind;
-export class PartiallyEmittedExpression extends qb.LeftEobj implements qt.PartiallyEmittedExpression {
+export class PartiallyEmittedExpression extends qb.LeftExpr implements qt.PartiallyEmittedExpression {
   static readonly kind = Syntax.PartiallyEmittedExpression;
   expression: qt.Expression;
   constructor(e: qt.Expression, o?: Node) {
@@ -2234,7 +2234,7 @@ export class PartiallyEmittedExpression extends qb.LeftEobj implements qt.Partia
   }
 }
 PartiallyEmittedExpression.prototype.kind = PartiallyEmittedExpression.kind;
-export class PostfixUnaryExpression extends qb.UpdateEobj implements qt.PostfixUnaryExpression {
+export class PostfixUnaryExpression extends qb.UpdateExpr implements qt.PostfixUnaryExpression {
   static readonly kind = Syntax.PostfixUnaryExpression;
   operand: qt.LeftExpression;
   operator: qt.PostfixUnaryOperator;
@@ -2248,7 +2248,7 @@ export class PostfixUnaryExpression extends qb.UpdateEobj implements qt.PostfixU
   }
 }
 PostfixUnaryExpression.prototype.kind = PostfixUnaryExpression.kind;
-export class PrefixUnaryExpression extends qb.UpdateEobj implements qt.PrefixUnaryExpression {
+export class PrefixUnaryExpression extends qb.UpdateExpr implements qt.PrefixUnaryExpression {
   static readonly kind = Syntax.PrefixUnaryExpression;
   operator: qt.PrefixUnaryOperator;
   operand: qt.UnaryExpression;
@@ -2275,7 +2275,7 @@ export class PrivateIdentifier extends qb.TokenOrIdentifier implements qt.Privat
   }
 }
 PrivateIdentifier.prototype.kind = PrivateIdentifier.kind;
-export class PropertyAccessExpression extends qb.MemberEobj implements qt.PropertyAccessExpression {
+export class PropertyAccessExpression extends qb.MemberExpr implements qt.PropertyAccessExpression {
   static readonly kind = Syntax.PropertyAccessExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
@@ -2293,7 +2293,7 @@ export class PropertyAccessExpression extends qb.MemberEobj implements qt.Proper
   _declarationBrand: any;
 }
 PropertyAccessExpression.prototype.kind = PropertyAccessExpression.kind;
-qu.addMixins(PropertyAccessExpression, [qb.NamedDobj]);
+qu.addMixins(PropertyAccessExpression, [qb.NamedDecl]);
 export class PropertyAccessChain extends PropertyAccessExpression implements qt.PropertyAccessChain {
   name!: qt.Identifier;
   constructor(e: qt.Expression, q: qt.QuestionDotToken | undefined, n: string | qt.Identifier) {
@@ -2399,7 +2399,7 @@ export class QualifiedName extends Nobj implements qt.QualifiedName {
   }
 }
 QualifiedName.prototype.kind = QualifiedName.kind;
-export class RegexLiteral extends qb.LiteralEobj implements qt.RegexLiteral {
+export class RegexLiteral extends qb.LiteralExpr implements qt.RegexLiteral {
   static readonly kind = Syntax.RegexLiteral;
   constructor(t: string) {
     super(true);
@@ -2419,7 +2419,7 @@ export class RestTyping extends qb.Tobj implements qt.RestTyping {
   }
 }
 RestTyping.prototype.kind = RestTyping.kind;
-export class ReturnStatement extends qb.Sobj implements qt.ReturnStatement {
+export class ReturnStatement extends qb.Stmt implements qt.ReturnStatement {
   static readonly kind = Syntax.ReturnStatement;
   expression?: qt.Expression;
   constructor(e?: qt.Expression) {
@@ -2439,7 +2439,7 @@ export class SemicolonClassElem extends qb.ClassElem implements qt.SemicolonClas
   }
 }
 SemicolonClassElem.prototype.kind = SemicolonClassElem.kind;
-export class SetAccessorDeclaration extends qb.FunctionLikeDobj implements qt.SetAccessorDeclaration {
+export class SetAccessorDeclaration extends qb.FunctionLikeDecl implements qt.SetAccessorDeclaration {
   static readonly kind = Syntax.SetAccessor;
   parent?: qt.ClassLikeDeclaration | qt.ObjectLiteralExpression;
   name: qt.PropertyName;
@@ -2479,7 +2479,7 @@ export class ShorthandPropertyAssignment extends qb.ObjectLiteralElem implements
 }
 ShorthandPropertyAssignment.prototype.kind = ShorthandPropertyAssignment.kind;
 qu.addMixins(ShorthandPropertyAssignment, [qb.DocContainer]);
-export class SpreadElem extends qb.Eobj implements qt.SpreadElem {
+export class SpreadElem extends qb.Expr implements qt.SpreadElem {
   static readonly kind = Syntax.SpreadElem;
   parent?: qt.ArrayLiteralExpression | qt.CallExpression | qt.NewExpression;
   expression: qt.Expression;
@@ -2506,7 +2506,7 @@ export class SpreadAssignment extends qb.ObjectLiteralElem implements qt.SpreadA
 }
 SpreadAssignment.prototype.kind = SpreadAssignment.kind;
 qu.addMixins(SpreadAssignment, [qb.DocContainer]);
-export class StringLiteral extends qb.LiteralEobj implements qt.StringLiteral {
+export class StringLiteral extends qb.LiteralExpr implements qt.StringLiteral {
   static readonly kind = Syntax.StringLiteral;
   textSourceNode?: qt.Identifier | qt.StringLiteralLike | qt.NumericLiteral;
   singleQuote?: boolean;
@@ -2517,15 +2517,15 @@ export class StringLiteral extends qb.LiteralEobj implements qt.StringLiteral {
   _declarationBrand: any;
 }
 StringLiteral.prototype.kind = StringLiteral.kind;
-qu.addMixins(StringLiteral, [qb.Dobj]);
-export class SuperExpression extends qb.PrimaryEobj implements qt.SuperExpression {
+qu.addMixins(StringLiteral, [qb.Decl]);
+export class SuperExpression extends qb.PrimaryExpr implements qt.SuperExpression {
   static readonly kind = Syntax.SuperKeyword;
   constructor() {
     super(true);
   }
 }
 SuperExpression.prototype.kind = SuperExpression.kind;
-export class SwitchStatement extends qb.Sobj implements qt.SwitchStatement {
+export class SwitchStatement extends qb.Stmt implements qt.SwitchStatement {
   static readonly kind = Syntax.SwitchStatement;
   expression: qt.Expression;
   caseBlock: qt.CaseBlock;
@@ -2540,7 +2540,7 @@ export class SwitchStatement extends qb.Sobj implements qt.SwitchStatement {
   }
 }
 SwitchStatement.prototype.kind = SwitchStatement.kind;
-export class SyntheticReferenceExpression extends qb.LeftEobj implements qt.SyntheticReferenceExpression {
+export class SyntheticReferenceExpression extends qb.LeftExpr implements qt.SyntheticReferenceExpression {
   static readonly kind = Syntax.SyntheticReferenceExpression;
   expression: qt.Expression;
   thisArg: qt.Expression;
@@ -2554,7 +2554,7 @@ export class SyntheticReferenceExpression extends qb.LeftEobj implements qt.Synt
   }
 }
 SyntheticReferenceExpression.prototype.kind = SyntheticReferenceExpression.kind;
-export class TaggedTemplateExpression extends qb.MemberEobj implements qt.TaggedTemplateExpression {
+export class TaggedTemplateExpression extends qb.MemberExpr implements qt.TaggedTemplateExpression {
   static readonly kind = Syntax.TaggedTemplateExpression;
   tag: qt.LeftExpression;
   typeArguments?: qt.Nodes<qt.Typing>;
@@ -2581,7 +2581,7 @@ export class TaggedTemplateExpression extends qb.MemberEobj implements qt.Tagged
   }
 }
 TaggedTemplateExpression.prototype.kind = TaggedTemplateExpression.kind;
-export class TemplateExpression extends qb.PrimaryEobj implements qt.TemplateExpression {
+export class TemplateExpression extends qb.PrimaryExpr implements qt.TemplateExpression {
   static readonly kind = Syntax.TemplateExpression;
   head: qt.TemplateHead;
   templateSpans: qt.Nodes<qt.TemplateSpan>;
@@ -2637,7 +2637,7 @@ export class TemplateTail extends qb.TemplateLiteralLikeNode implements qt.Templ
   }
 }
 TemplateTail.prototype.kind = TemplateTail.kind;
-export class ThisExpression extends qb.PrimaryEobj implements qt.ThisExpression {
+export class ThisExpression extends qb.PrimaryExpr implements qt.ThisExpression {
   static readonly kind = Syntax.ThisKeyword;
   constructor() {
     super(true);
@@ -2653,7 +2653,7 @@ export class ThisTyping extends qb.Tobj implements qt.ThisTyping {
   }
 }
 ThisTyping.prototype.kind = ThisTyping.kind;
-export class ThrowStatement extends qb.Sobj implements qt.ThrowStatement {
+export class ThrowStatement extends qb.Stmt implements qt.ThrowStatement {
   static readonly kind = Syntax.ThrowStatement;
   expression?: qt.Expression;
   constructor(e: qt.Expression) {
@@ -2665,7 +2665,7 @@ export class ThrowStatement extends qb.Sobj implements qt.ThrowStatement {
   }
 }
 ThrowStatement.prototype.kind = ThrowStatement.kind;
-export class TryStatement extends qb.Sobj implements qt.TryStatement {
+export class TryStatement extends qb.Stmt implements qt.TryStatement {
   static readonly kind = Syntax.TryStatement;
   tryBlock: qt.Block;
   catchClause?: qt.CatchClause;
@@ -2693,7 +2693,7 @@ export class TupleTyping extends qb.Tobj implements qt.TupleTyping {
   }
 }
 TupleTyping.prototype.kind = TupleTyping.kind;
-export class TypeAliasDeclaration extends qb.DeclarationSobj implements qt.TypeAliasDeclaration {
+export class TypeAliasDeclaration extends qb.DeclarationStmt implements qt.TypeAliasDeclaration {
   static readonly kind = Syntax.TypeAliasDeclaration;
   name: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
@@ -2714,7 +2714,7 @@ export class TypeAliasDeclaration extends qb.DeclarationSobj implements qt.TypeA
 }
 TypeAliasDeclaration.prototype.kind = TypeAliasDeclaration.kind;
 qu.addMixins(TypeAliasDeclaration, [qb.DocContainer]);
-export class TypeAssertion extends qb.UnaryEobj implements qt.TypeAssertion {
+export class TypeAssertion extends qb.UnaryExpr implements qt.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
   type: qt.Typing;
   expression: qt.UnaryExpression;
@@ -2741,8 +2741,8 @@ export class TypingLiteral extends qb.Tobj implements qt.TypingLiteral {
   _declarationBrand: any;
 }
 TypingLiteral.prototype.kind = TypingLiteral.kind;
-qu.addMixins(TypingLiteral, [qb.Dobj]);
-export class TypeOfExpression extends qb.UnaryEobj implements qt.TypeOfExpression {
+qu.addMixins(TypingLiteral, [qb.Decl]);
+export class TypeOfExpression extends qb.UnaryExpr implements qt.TypeOfExpression {
   static readonly kind = Syntax.TypeOfExpression;
   expression: qt.UnaryExpression;
   constructor(e: qt.Expression) {
@@ -2770,7 +2770,7 @@ export class TypingOperator extends qb.Tobj implements qt.TypingOperator {
   }
 }
 TypingOperator.prototype.kind = TypingOperator.kind;
-export class TypeParameterDeclaration extends qb.NamedDobj implements qt.TypeParameterDeclaration {
+export class TypeParameterDeclaration extends qb.NamedDecl implements qt.TypeParameterDeclaration {
   static readonly kind = Syntax.TypeParameter;
   parent?: qt.DeclarationWithTypeParameterChildren | qt.InferTyping;
   name: qt.Identifier;
@@ -2864,7 +2864,7 @@ export class UnparsedSyntheticReference extends Nobj implements qt.UnparsedSynth
   }
 }
 UnparsedSyntheticReference.prototype.kind = UnparsedSyntheticReference.kind;
-export class VariableDeclaration extends qb.NamedDobj implements qt.VariableDeclaration {
+export class VariableDeclaration extends qb.NamedDecl implements qt.VariableDeclaration {
   static readonly kind = Syntax.VariableDeclaration;
   parent?: qt.VariableDeclarationList | qt.CatchClause;
   name: qt.BindingName;
@@ -2897,7 +2897,7 @@ export class VariableDeclarationList extends Nobj implements qt.VariableDeclarat
   }
 }
 VariableDeclarationList.prototype.kind = VariableDeclarationList.kind;
-export class VariableStatement extends qb.Sobj implements qt.VariableStatement {
+export class VariableStatement extends qb.Stmt implements qt.VariableStatement {
   static readonly kind = Syntax.VariableStatement;
   declarationList: qt.VariableDeclarationList;
   constructor(ms: readonly Modifier[] | undefined, ds: qt.VariableDeclarationList | readonly qt.VariableDeclaration[]) {
@@ -2912,7 +2912,7 @@ export class VariableStatement extends qb.Sobj implements qt.VariableStatement {
 }
 VariableStatement.prototype.kind = VariableStatement.kind;
 qu.addMixins(VariableStatement, [qb.DocContainer]);
-export class VoidExpression extends qb.UnaryEobj implements qt.VoidExpression {
+export class VoidExpression extends qb.UnaryExpr implements qt.VoidExpression {
   static readonly kind = Syntax.VoidExpression;
   expression: qt.UnaryExpression;
   constructor(e: qt.Expression) {
@@ -2927,7 +2927,7 @@ export class VoidExpression extends qb.UnaryEobj implements qt.VoidExpression {
   }
 }
 VoidExpression.prototype.kind = VoidExpression.kind;
-export class WhileStatement extends qb.IterationSobj implements qt.WhileStatement {
+export class WhileStatement extends qb.IterationStmt implements qt.WhileStatement {
   static readonly kind = Syntax.WhileStatement;
   expression: qt.Expression;
   constructor(e: qt.Expression, s: qt.Statement) {
@@ -2940,7 +2940,7 @@ export class WhileStatement extends qb.IterationSobj implements qt.WhileStatemen
   }
 }
 WhileStatement.prototype.kind = WhileStatement.kind;
-export class WithStatement extends qb.Sobj implements qt.WithStatement {
+export class WithStatement extends qb.Stmt implements qt.WithStatement {
   static readonly kind = Syntax.WithStatement;
   expression: qt.Expression;
   statement: qt.Statement;
@@ -2954,7 +2954,7 @@ export class WithStatement extends qb.Sobj implements qt.WithStatement {
   }
 }
 WithStatement.prototype.kind = WithStatement.kind;
-export class YieldExpression extends qb.Eobj implements qt.YieldExpression {
+export class YieldExpression extends qb.Expr implements qt.YieldExpression {
   static readonly kind = Syntax.YieldExpression;
   asteriskToken?: qt.AsteriskToken;
   expression?: qt.Expression;
@@ -3635,8 +3635,8 @@ export function asLiteral(v: string | number, singleQuote: boolean): StringLiter
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
 export function asLiteral(v: number | qt.PseudoBigInt): NumericLiteral;
 export function asLiteral(v: boolean): BooleanLiteral;
-export function asLiteral(v: string | number | qt.PseudoBigInt | boolean): qb.PrimaryEobj;
-export function asLiteral(v: string | number | qt.PseudoBigInt | boolean | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote?: boolean): qb.PrimaryEobj {
+export function asLiteral(v: string | number | qt.PseudoBigInt | boolean): qb.PrimaryExpr;
+export function asLiteral(v: string | number | qt.PseudoBigInt | boolean | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote?: boolean): qb.PrimaryExpr {
   if (typeof v === 'number') return new NumericLiteral(v + '');
   if (typeof v === 'object' && 'base10Value' in v) return new BigIntLiteral(pseudoBigIntToString(v) + 'n');
   if (typeof v === 'boolean') return v ? new BooleanLiteral(true) : new BooleanLiteral(false);

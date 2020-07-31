@@ -1068,7 +1068,7 @@ export function newIs(f: qt.Frame) {
     exportName(i: qt.Identifier) {
       return (qf.get.emitFlags(i) & qt.EmitFlags.ExportName) !== 0;
     }
-    dynamicName(d: qt.Declaration): d is qt.DynamicNamedDobj | qt.DynamicNamedBinaryExpression {
+    dynamicName(d: qt.Declaration): d is qt.DynamicNamedDecl | qt.DynamicNamedBinaryExpression {
       const n = qf.get.declaration.nameOf(d);
       return !!n && qf.has.dynamicName(n);
     }
@@ -1633,8 +1633,8 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    namedDeclaration(n: Node): n is qt.NamedDobj & { name: qt.DeclarationName } {
-      return !!(n as qt.NamedDobj).name;
+    namedDeclaration(n: Node): n is qt.NamedDecl & { name: qt.DeclarationName } {
+      return !!(n as qt.NamedDecl).name;
     }
     propertyAccessChain(n: Node): n is qt.PropertyAccessChain {
       return n.kind === Syntax.PropertyAccessExpression && !!(n.flags & NodeFlags.OptionalChain);
@@ -1795,9 +1795,9 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.NotEmittedStatement || k === Syntax.PartiallyEmittedExpression;
     }
-    iterationStatement(n: Node, look: false): n is qt.IterationSobj;
-    iterationStatement(n: Node, look: boolean): n is qt.IterationSobj | qt.LabeledStatement;
-    iterationStatement(n: Node, look: boolean): n is qt.IterationSobj {
+    iterationStatement(n: Node, look: false): n is qt.IterationStmt;
+    iterationStatement(n: Node, look: boolean): n is qt.IterationStmt | qt.LabeledStatement;
+    iterationStatement(n: Node, look: boolean): n is qt.IterationStmt {
       switch (n.kind) {
         case Syntax.DoStatement:
         case Syntax.ForInStatement:
@@ -1823,11 +1823,11 @@ export function newIs(f: qt.Frame) {
     forIniter(n: qt.Nobj): n is qt.ForIniter {
       return n.kind === Syntax.VariableDeclarationList || this.expression(n as Node);
     }
-    declaration(n?: Node): n is qt.NamedDobj {
+    declaration(n?: Node): n is qt.NamedDecl {
       if (n?.kind === Syntax.TypeParameter) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || this.inJSFile(n);
       return qy.is.declaration(n?.kind);
     }
-    declarationStatement(n: Node): n is qt.DeclarationSobj {
+    declarationStatement(n: Node): n is qt.DeclarationStmt {
       return qy.is.declarationStatement(n.kind);
     }
     statementButNotDeclaration(n: Node): n is qt.Statement {
@@ -2313,7 +2313,7 @@ export function newIs(f: qt.Frame) {
       if (n.kind === Syntax.VariableDeclaration) return this.requireCall(n.initer as Node | undefined, literal);
       return false;
     }
-    requireVariableDeclarationSobj(n: Node, literal = true): n is qt.VariableStatement {
+    requireVariableDeclarationStmt(n: Node, literal = true): n is qt.VariableStatement {
       if (n.kind === Syntax.VariableStatement) return qu.every(n.declarationList.declarations, (d) => this.requireVariableDeclaration(d, literal));
       return false;
     }

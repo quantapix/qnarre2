@@ -64,7 +64,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as qt.NamedDobj).name,
+          typeName: (node as qt.NamedDecl).name,
         }
       : undefined;
   }
@@ -91,7 +91,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as qt.NamedDobj).name,
+          typeName: (node as qt.NamedDecl).name,
         }
       : undefined;
   }
@@ -181,7 +181,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as qt.NamedDobj).name,
+          typeName: (node as qt.NamedDecl).name,
         }
       : undefined;
   }
@@ -214,8 +214,8 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     }
     return {
       diagnosticMessage,
-      errorNode: (node as qt.NamedDobj).name!,
-      typeName: (node as qt.NamedDobj).name,
+      errorNode: (node as qt.NamedDecl).name!,
+      typeName: (node as qt.NamedDecl).name,
     };
   }
   function getReturnTypeVisibilityError(r: qt.SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
@@ -268,7 +268,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     }
     return {
       diagnosticMessage,
-      errorNode: (node as qt.NamedDobj).name || node,
+      errorNode: (node as qt.NamedDecl).name || node,
     };
   }
   function getParameterDeclarationTypeVisibilityError(r: qt.SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
@@ -277,7 +277,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as qt.NamedDobj).name,
+          typeName: (node as qt.NamedDecl).name,
         }
       : undefined;
   }
@@ -381,7 +381,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return {
       diagnosticMessage,
       errorNode: node,
-      typeName: (node as qt.NamedDobj).name,
+      typeName: (node as qt.NamedDecl).name,
     };
   }
   function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
@@ -404,7 +404,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return {
       diagnosticMessage: qd.msgs.Import_declaration_0_is_using_private_name_1,
       errorNode: node,
-      typeName: (node as qt.NamedDobj).name,
+      typeName: (node as qt.NamedDecl).name,
     };
   }
   function getTypeAliasDeclarationVisibilityError(): SymbolAccessibilityDiagnostic {

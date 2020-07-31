@@ -548,7 +548,7 @@ export const notImplementedResolver: EmitResolver = {
   isTopLevelValueImportEqualsWithEntityName: notImplemented,
   getNodeCheckFlags: notImplemented,
   isDeclarationVisible: notImplemented,
-  isLateBound: (_node): _node is LateBoundDobj => false,
+  isLateBound: (_node): _node is LateBoundDecl => false,
   collectLinkedAliases: notImplemented,
   isImplementationOfOverload: notImplemented,
   isRequiredInitializedParameter: notImplemented,
@@ -575,7 +575,7 @@ export const notImplementedResolver: EmitResolver = {
   qf.get.allAccessorDeclarations: notImplemented,
   getSymbolOfExternalModuleSpecifier: notImplemented,
   isBindingCapturedByNode: notImplemented,
-  getDeclarationSobjsForSourceFile: notImplemented,
+  getDeclarationStmtsForSourceFile: notImplemented,
   isImportRequiredByAugmentation: notImplemented,
 };
 export type EmitUsingBuildInfoResult = string | readonly OutputFile[];
@@ -3656,7 +3656,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case Syntax.Parameter:
       case Syntax.BindingElem:
       case Syntax.ClassDeclaration:
-        generateNameIfNeeded((<NamedDobj>node).name);
+        generateNameIfNeeded((<NamedDecl>node).name);
         break;
       case Syntax.FunctionDeclaration:
         generateNameIfNeeded((<FunctionDeclaration>node).name);
@@ -3699,7 +3699,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case Syntax.MethodDeclaration:
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
-        generateNameIfNeeded((<NamedDobj>node).name);
+        generateNameIfNeeded((<NamedDecl>node).name);
         break;
     }
   }

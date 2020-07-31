@@ -737,7 +737,7 @@ export function newCreate(f: qt.Frame) {
         getTypeReferenceDirectivesForEntityName,
         getTypeReferenceDirectivesForSymbol,
         isLiteralConstDeclaration,
-        isLateBound: (nodeIn: Declaration): nodeIn is LateBoundDobj => {
+        isLateBound: (nodeIn: Declaration): nodeIn is LateBoundDecl => {
           const node = qf.get.parseTreeOf(nodeIn, isDeclaration);
           const symbol = node && getSymbolOfNode(node);
           return !!(symbol && this.getCheckFlags() & qt.CheckFlags.Late);
@@ -764,12 +764,12 @@ export function newCreate(f: qt.Frame) {
           const parseDecl = qf.get.parseTreeOf(decl);
           return !!parseNode && !!parseDecl && (qf.is.kind(qc.VariableDeclaration, parseDecl) || qf.is.kind(qc.BindingElem, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
         },
-        getDeclarationSobjsForSourceFile: (node, flags, tracker, bundled) => {
+        getDeclarationStmtsForSourceFile: (node, flags, tracker, bundled) => {
           const n = qf.get.parseTreeOf(node) as SourceFile;
           assert(n && n.kind === Syntax.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
           const sym = getSymbolOfNode(node);
-          if (!sym) return !node.locals ? [] : nodeBuilder.symbolTableToDeclarationSobjs(node.locals, node, flags, tracker, bundled);
-          return !sym.exports ? [] : nodeBuilder.symbolTableToDeclarationSobjs(sym.exports, node, flags, tracker, bundled);
+          if (!sym) return !node.locals ? [] : nodeBuilder.symbolTableToDeclarationStmts(node.locals, node, flags, tracker, bundled);
+          return !sym.exports ? [] : nodeBuilder.symbolTableToDeclarationStmts(sym.exports, node, flags, tracker, bundled);
         },
         isImportRequiredByAugmentation,
       };

@@ -2077,7 +2077,7 @@ export function newHas(f: qt.Frame) {
         return false;
       }
     }
-    lateBindableName(node: Declaration): node is LateBoundDobj | LateBoundBinaryExpressionDeclaration {
+    lateBindableName(node: Declaration): node is LateBoundDecl | LateBoundBinaryExpressionDeclaration {
       const name = qf.get.declaration.nameOf(node);
       return !!name && isLateBindableName(name);
     }
@@ -2248,7 +2248,7 @@ export function newHas(f: qt.Frame) {
           case Syntax.MethodDeclaration:
           case Syntax.GetAccessor:
           case Syntax.SetAccessor:
-            return (<NamedDobj>node).name!.kind === Syntax.ComputedPropertyName && traverse((<NamedDobj>node).name!);
+            return (<NamedDecl>node).name!.kind === Syntax.ComputedPropertyName && traverse((<NamedDecl>node).name!);
           default:
             return !nodeStartsNewLexicalEnvironment(node) && !qf.is.partOfTypeNode(node) && !!qf.each.child(node, traverse);
         }

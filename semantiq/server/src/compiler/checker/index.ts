@@ -1171,7 +1171,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (!symbols.has(s.escName) && !isStaticPrivateIdentifierProperty(s)) symbols.set(s.escName, s);
     }
   }
-  function addDeclarationToLateBoundSymbol(symbol: Symbol, member: LateBoundDobj | BinaryExpression, symbolFlags: qt.SymbolFlags) {
+  function addDeclarationToLateBoundSymbol(symbol: Symbol, member: LateBoundDecl | BinaryExpression, symbolFlags: qt.SymbolFlags) {
     assert(!!(this.getCheckFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
     symbol.flags |= symbolFlags;
     s.getLinks(member.symbol).lateSymbol = symbol;
@@ -1183,7 +1183,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (!symbol.valueDeclaration || symbol.valueDeclaration.kind !== member.kind) symbol.valueDeclaration = member;
     }
   }
-  function lateBindMember(parent: Symbol, earlySymbols: SymbolTable | undefined, lateSymbols: EscapedMap<TransientSymbol>, decl: LateBoundDobj | LateBoundBinaryExpressionDeclaration) {
+  function lateBindMember(parent: Symbol, earlySymbols: SymbolTable | undefined, lateSymbols: EscapedMap<TransientSymbol>, decl: LateBoundDecl | LateBoundBinaryExpressionDeclaration) {
     assert(!!decl.symbol, 'The member is expected to have a symbol.');
     const ls = getNodeLinks(decl);
     if (!ls.resolvedSymbol) {
@@ -2437,7 +2437,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       case Syntax.SetAccessor:
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
-        if (noImplicitAny && !(declaration as NamedDobj).name) {
+        if (noImplicitAny && !(declaration as NamedDecl).name) {
           if (wideningKind === WideningKind.GeneratorYield)
             error(declaration, qd.msgs.Generator_implicitly_has_yield_type_0_because_it_does_not_yield_any_values_Consider_supplying_a_return_type_annotation, typeAsString);
           else {

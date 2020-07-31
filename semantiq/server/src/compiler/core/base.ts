@@ -302,7 +302,7 @@ export abstract class Tobj extends Nobj implements qt.Tobj {
 export abstract class WithArgumentsTobj extends Tobj implements qt.WithArgumentsTobj {
   typeArguments?: qt.Nodes<qt.Typing>;
 }
-export abstract class Dobj extends Nobj implements qt.Dobj {
+export abstract class Decl extends Nobj implements qt.Decl {
   _declarationBrand: any;
   getName(comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
     const n = qf.get.declaration.nameOf(this);
@@ -317,18 +317,18 @@ export abstract class Dobj extends Nobj implements qt.Dobj {
     return qf.get.generatedNameForNode(this);
   }
 }
-export abstract class NamedDobj extends Dobj implements qt.NamedDobj {
+export abstract class NamedDecl extends Decl implements qt.NamedDecl {
   name?: qt.DeclarationName;
 }
-export abstract class DeclarationSobj extends NamedDobj implements qt.DeclarationSobj {
+export abstract class DeclarationStmt extends NamedDecl implements qt.DeclarationStmt {
   name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
   _statementBrand: any;
 }
-export abstract class ClassElem extends NamedDobj implements qt.ClassElem {
+export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
   name?: qt.PropertyName;
   _classElemBrand: any;
 }
-export abstract class ClassLikeDobj extends NamedDobj implements qt.ClassLikeDobj {
+export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDecl {
   name?: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
@@ -346,19 +346,19 @@ export abstract class ClassLikeDobj extends NamedDobj implements qt.ClassLikeDob
     this.members = new Nodes(es);
   }
 }
-export abstract class ObjectLiteralElem extends NamedDobj implements qt.ObjectLiteralElem {
+export abstract class ObjectLiteralElem extends NamedDecl implements qt.ObjectLiteralElem {
   name?: qt.PropertyName;
   _objectLiteralBrand: any;
 }
-export abstract class PropertyLikeDobj extends NamedDobj implements qt.PropertyLikeDobj {
+export abstract class PropertyLikeDecl extends NamedDecl implements qt.PropertyLikeDecl {
   name!: qt.PropertyName;
 }
-export abstract class TypeElem extends NamedDobj implements qt.TypeElem {
+export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
   name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
   _typeElemBrand: any;
 }
-export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDobj {
+export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDecl {
   name?: qt.PropertyName;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   parameters!: qt.Nodes<qt.ParameterDeclaration>;
@@ -385,7 +385,7 @@ export abstract class SignatureDobj extends NamedDobj implements qt.SignatureDob
   }
   */
 }
-export abstract class FunctionLikeDobj extends SignatureDobj implements qt.FunctionLikeDobj {
+export abstract class FunctionLikeDecl extends SignatureDecl implements qt.FunctionLikeDecl {
   docCache?: readonly qt.DocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
@@ -395,7 +395,7 @@ export abstract class FunctionLikeDobj extends SignatureDobj implements qt.Funct
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTobj extends SignatureDobj implements qt.FunctionOrConstructorTobj {
+export abstract class FunctionOrConstructorTobj extends SignatureDecl implements qt.FunctionOrConstructorTobj {
   type!: qt.Typing;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
@@ -403,25 +403,25 @@ export abstract class FunctionOrConstructorTobj extends SignatureDobj implements
   }
   _typingBrand: any;
 }
-export abstract class Eobj extends Nobj implements qt.Eobj {
+export abstract class Expr extends Nobj implements qt.Expr {
   _expressionBrand: any;
 }
-export abstract class UnaryEobj extends Eobj implements qt.UnaryEobj {
+export abstract class UnaryExpr extends Expr implements qt.UnaryExpr {
   _unaryExpressionBrand: any;
 }
-export abstract class UpdateEobj extends UnaryEobj implements qt.UpdateEobj {
+export abstract class UpdateExpr extends UnaryExpr implements qt.UpdateExpr {
   _updateExpressionBrand: any;
 }
-export abstract class LeftEobj extends UpdateEobj implements qt.LeftEobj {
+export abstract class LeftExpr extends UpdateExpr implements qt.LeftExpr {
   _leftHandSideExpressionBrand: any;
 }
-export abstract class MemberEobj extends LeftEobj implements qt.MemberEobj {
+export abstract class MemberExpr extends LeftExpr implements qt.MemberExpr {
   _memberExpressionBrand: any;
 }
-export abstract class PrimaryEobj extends MemberEobj implements qt.PrimaryEobj {
+export abstract class PrimaryExpr extends MemberExpr implements qt.PrimaryExpr {
   _primaryExpressionBrand: any;
 }
-export abstract class ObjectLiteralEobj<T extends qt.ObjectLiteralElem> extends PrimaryEobj implements qt.ObjectLiteralEobj<T> {
+export abstract class ObjectLiteralExpr<T extends qt.ObjectLiteralElem> extends PrimaryExpr implements qt.ObjectLiteralExpr<T> {
   properties!: Nodes<T>;
   _declarationBrand: any;
 }
@@ -435,9 +435,9 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
     super(undefined, k, pos, end);
   }
 }
-export abstract class Sobj extends Nobj implements qt.Sobj {
+export abstract class Stmt extends Nobj implements qt.Stmt {
   _statementBrand: any;
-  static insertStatementsAfterPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+  static insertStatementsAfterPrologue<T extends Stmt>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
     if (from === undefined || from.length === 0) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
@@ -446,7 +446,7 @@ export abstract class Sobj extends Nobj implements qt.Sobj {
     to.splice(statementIndex, 0, ...from);
     return to;
   }
-  static insertStatementAfterPrologue<T extends Sobj>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+  static insertStatementAfterPrologue<T extends Stmt>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
     if (statement === undefined) return to;
     let statementIndex = 0;
     for (; statementIndex < to.length; ++statementIndex) {
@@ -455,16 +455,16 @@ export abstract class Sobj extends Nobj implements qt.Sobj {
     to.splice(statementIndex, 0, statement);
     return to;
   }
-  static insertStatementsAfterStandardPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined): T[] {
+  static insertStatementsAfterStandardPrologue<T extends Stmt>(to: T[], from: readonly T[] | undefined): T[] {
     return this.insertStatementsAfterPrologue(to, from, isPrologueDirective);
   }
-  static insertStatementsAfterCustomPrologue<T extends Sobj>(to: T[], from: readonly T[] | undefined): T[] {
+  static insertStatementsAfterCustomPrologue<T extends Stmt>(to: T[], from: readonly T[] | undefined): T[] {
     return this.insertStatementsAfterPrologue(to, from, isAnyPrologueDirective);
   }
-  static insertStatementAfterStandardPrologue<T extends Sobj>(to: T[], statement: T | undefined): T[] {
+  static insertStatementAfterStandardPrologue<T extends Stmt>(to: T[], statement: T | undefined): T[] {
     return this.insertStatementAfterPrologue(to, statement, isPrologueDirective);
   }
-  static insertStatementAfterCustomPrologue<T extends Sobj>(to: T[], statement: T | undefined): T[] {
+  static insertStatementAfterCustomPrologue<T extends Stmt>(to: T[], statement: T | undefined): T[] {
     return this.insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
   }
   addPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean, cb?: (n: Nobj) => VisitResult<Nobj>): number {
@@ -553,7 +553,7 @@ export abstract class Sobj extends Nobj implements qt.Sobj {
     );
   }
 }
-export abstract class IterationSobj extends Sobj implements qt.IterationSobj {
+export abstract class IterationStmt extends Stmt implements qt.IterationStmt {
   statement!: qt.Statement;
 }
 export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
@@ -575,7 +575,7 @@ export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements
     }
   }
 }
-export abstract class LiteralEobj extends PrimaryEobj implements qt.LiteralEobj {
+export abstract class LiteralExpr extends PrimaryExpr implements qt.LiteralExpr {
   text!: string;
   isUnterminated?: boolean;
   hasExtendedEscape?: boolean;
@@ -940,7 +940,7 @@ export class Signature implements qt.Signature {
     return !!(s.flags & SignatureFlags.HasLiteralTypes);
   }
 }
-export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
+export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
   static readonly kind = Syntax.SourceFile;
   kind: Syntax.SourceFile;
   statements: Nodes<qt.Statement>;
@@ -1125,9 +1125,9 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
     const fullText = this.getFullText();
     return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
   }
-  getNamedDobjs(): qu.QMap<qt.Declaration[]> {
+  getNamedDecls(): qu.QMap<qt.Declaration[]> {
     if (!this.namedDeclarations) {
-      this.namedDeclarations = this.computeNamedDobjs();
+      this.namedDeclarations = this.computeNamedDecls();
     }
     return this.namedDeclarations;
   }
@@ -1253,7 +1253,7 @@ export class SourceFile extends Dobj implements qy.SourceFile, qt.SourceFile {
     }
     return node;
   }
-  private computeNamedDobjs(): qu.QMap<qt.Declaration[]> {
+  private computeNamedDecls(): qu.QMap<qt.Declaration[]> {
     const r = new qu.MultiMap<qt.Declaration>();
     qf.each.child(visit);
     return r;
@@ -1752,10 +1752,10 @@ function getDocComment(ds?: readonly qt.Declaration[], tc?: qt.TypeChecker): qt.
 export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
   return Scanner.lineOf(lineMap, pos);
 }
-qu.addMixins(ClassLikeDobj, [DocContainer]);
+qu.addMixins(ClassLikeDecl, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTobj, [Tobj]);
-qu.addMixins(ObjectLiteralEobj, [Dobj]);
-qu.addMixins(LiteralEobj, [LiteralLikeNode]);
+qu.addMixins(ObjectLiteralExpr, [Decl]);
+qu.addMixins(LiteralExpr, [LiteralLikeNode]);
 export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
   return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
