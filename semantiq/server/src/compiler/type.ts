@@ -2276,7 +2276,29 @@ export interface ThrowStatement extends Stmt {
 export interface Token<T extends Syntax> extends Nobj {
   kind: T;
 }
-export interface TransformationContext {}
+export interface TransformationContext {
+  getEmitResolver(): EmitResolver;
+  getEmitHost(): EmitHost;
+  getCompilerOptions(): CompilerOptions;
+  startLexicalEnvironment(): void;
+  setLexicalEnvironmentFlags(flags: qt.LexicalEnvironmentFlags, value: boolean): void;
+  getLexicalEnvironmentFlags(): qt.LexicalEnvironmentFlags;
+  suspendLexicalEnvironment(): void;
+  resumeLexicalEnvironment(): void;
+  endLexicalEnvironment(): Statement[] | undefined;
+  hoistFunctionDeclaration(node: FunctionDeclaration): void;
+  hoistVariableDeclaration(node: Identifier): void;
+  addInitializationStatement(node: Statement): void;
+  requestEmitHelper(helper: EmitHelper): void;
+  readEmitHelpers(): EmitHelper[] | undefined;
+  enableSubstitution(kind: Syntax): void;
+  isSubstitutionEnabled(node: Node): boolean;
+  onSubstituteNode: (hint: qt.EmitHint, node: Node) => Node;
+  enableEmitNotification(kind: Syntax): void;
+  isEmitNotificationEnabled(node: Node): boolean;
+  onEmitNode: (hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) => void;
+  addDiagnostic(diag: qd.DiagnosticWithLocation): void;
+}
 export interface TransientIdentifier extends Identifier {
   resolvedSymbol: Symbol;
 }

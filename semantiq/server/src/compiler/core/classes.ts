@@ -1,7 +1,7 @@
-import { Nodes, Token } from './base';
+import { Nodes } from './base';
 import * as qb from './base';
 import { qf } from './frame';
-import { DocTag, Modifier, Node, NodeFlags, ObjectFlags } from '../type';
+import { DocTag, Modifier, NodeFlags, ObjectFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
@@ -408,7 +408,7 @@ export class CommaListExpression extends qb.Expr implements qt.CommaListExpressi
   constructor(es: readonly qt.Expression[]) {
     super(true);
     const flatten = (e: qt.Expression): qt.Expression | readonly qt.Expression[] => {
-      const n = e as Node;
+      const n = e as qt.Node;
       if (qu.isSynthesized(n) && !qf.is.parseTreeNode(n) && !n.original && !n.emitNode && !n.id) {
         if (n.kind === Syntax.CommaListExpression) return n.elems;
         if (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.CommaToken) return [n.left, n.right];
@@ -899,7 +899,7 @@ export class EmptyStatement extends qb.Stmt implements qt.EmptyStatement {
 EmptyStatement.prototype.kind = EmptyStatement.kind;
 export class EndOfDeclarationMarker extends qb.Stmt implements qt.EndOfDeclarationMarker {
   static readonly kind = Syntax.EndOfDeclarationMarker;
-  constructor(o: Node) {
+  constructor(o: qt.Node) {
     super();
     this.emitNode = {} as qt.EmitNode;
     this.original = o;
@@ -1794,7 +1794,7 @@ MappedTyping.prototype.kind = MappedTyping.kind;
 qu.addMixins(MappedTyping, [qb.Decl]);
 export class MergeDeclarationMarker extends qb.Stmt implements qt.MergeDeclarationMarker {
   static readonly kind: Syntax.MergeDeclarationMarker;
-  constructor(o: Node) {
+  constructor(o: qt.Node) {
     super(true);
     this.emitNode = {} as qt.EmitNode;
     this.original = o;
@@ -2077,7 +2077,7 @@ NoSubstitutionLiteral.prototype.kind = NoSubstitutionLiteral.kind;
 qu.addMixins(NoSubstitutionLiteral, [qb.LiteralExpr, qb.Decl]);
 export class NotEmittedStatement extends qb.Stmt implements qt.NotEmittedStatement {
   static readonly kind = Syntax.NotEmittedStatement;
-  constructor(o: Node) {
+  constructor(o: qt.Node) {
     super(true);
     this.original = o;
     this.setRange(o);
@@ -2223,14 +2223,14 @@ ParenthesizedTyping.prototype.kind = ParenthesizedTyping.kind;
 export class PartiallyEmittedExpression extends qb.LeftExpr implements qt.PartiallyEmittedExpression {
   static readonly kind = Syntax.PartiallyEmittedExpression;
   expression: qt.Expression;
-  constructor(e: qt.Expression, o?: Node) {
+  constructor(e: qt.Expression, o?: qt.Node) {
     super(true);
     this.expression = e;
     this.original = o;
     this.setRange(o);
   }
   update(e: qt.Expression) {
-    return this.expression !== e ? new PartiallyEmittedExpression(e, this.original as Node).updateFrom(this) : this;
+    return this.expression !== e ? new PartiallyEmittedExpression(e, this.original as qt.Node).updateFrom(this) : this;
   }
 }
 PartiallyEmittedExpression.prototype.kind = PartiallyEmittedExpression.kind;
@@ -2972,119 +2972,6 @@ export class YieldExpression extends qb.Expr implements qt.YieldExpression {
   }
 }
 YieldExpression.prototype.kind = YieldExpression.kind;
-// prettier-ignore
-export type NodeTypes =
-  | ArrayBindingPattern
-  | ArrayLiteralExpression
-  | ArrayTyping
-  | AsExpression
-  | AwaitExpression
-  | BinaryExpression
-  | BindingElem
-  | Block
-  | CallExpression
-  | CaseBlock
-  | CaseClause
-  | CatchClause
-  | CommaListExpression
-  | ComputedPropertyName
-  | ConditionalExpression
-  | ConditionalTyping
-  | Decorator
-  | DefaultClause
-  | DeleteExpression
-  | DeleteExpression
-  | DoStatement
-  | ElemAccessExpression
-  | EnumDeclaration
-  | EnumMember
-  | ExportAssignment
-  | ExportDeclaration
-  | ExpressionStatement
-  | ExpressionWithTypings
-  | ExternalModuleReference
-  | ForInStatement
-  | ForOfStatement
-  | ForStatement
-  | HeritageClause
-  | Identifier
-  | IfStatement
-  | ImportClause
-  | ImportDeclaration
-  | ImportEqualsDeclaration
-  | ImportTyping
-  | IndexedAccessTyping
-  | InferTyping
-  | InterfaceDeclaration
-  | Doc
-  | DocAugmentsTag
-  | DocAuthorTag
-  | DocFunctionTyping
-  | DocImplementsTag
-  | DocSignature
-  | DocTemplateTag
-  | DocTypedefTag
-  | DocTypingExpression
-  | DocTypingLiteral
-  | JsxAttribute
-  | JsxAttributes
-  | JsxClosingElem
-  | JsxElem
-  | JsxExpression
-  | JsxFragment
-  | JsxSpreadAttribute
-  | LabeledStatement
-  | LiteralTyping
-  | MappedTyping
-  | MetaProperty
-  | MissingDeclaration
-  | ModuleDeclaration
-  | NamedTupleMember
-  | NamespaceExport
-  | NamespaceExportDeclaration
-  | NamespaceImport
-  | NonNullExpression
-  | ObjectLiteralExpression
-  | OptionalTyping
-  | ParameterDeclaration
-  | ParenthesizedExpression
-  | ParenthesizedTyping
-  | PartiallyEmittedExpression
-  | PostfixUnaryExpression
-  | PrefixUnaryExpression
-  | PropertyAccessExpression
-  | PropertyAssignment
-  | PropertyDeclaration
-  | PropertySignature
-  | QualifiedName
-  | RestTyping
-  | ReturnStatement
-  | ShorthandPropertyAssignment
-  | SpreadAssignment
-  | SpreadElem
-  | SwitchStatement
-  | TaggedTemplateExpression
-  | qt.TemplateExpression
-  | qt.TemplateSpan
-  | ThrowStatement
-  | TryStatement
-  | TupleTyping
-  | TypeAliasDeclaration
-  | TypeAssertion
-  | TypingLiteral
-  | TypeOfExpression
-  | TypingOperator
-  | qt.TypeParameterDeclaration
-  | TypingPredicate
-  | TypingQuery
-  | TypingReference
-  | VariableDeclaration
-  | VariableDeclarationList
-  | VariableStatement
-  | VoidExpression
-  | WhileStatement
-  | WithStatement
-  | YieldExpression;
 export namespace parenthesize {
   interface BinaryPlusExpression extends BinaryExpression {
     cachedLiteralKind: Syntax;
@@ -3092,7 +2979,7 @@ export namespace parenthesize {
   function getLiteralKindOfBinaryPlusOperand(e: qt.Expression): Syntax {
     e = qb.skip.partiallyEmittedExpressions(e);
     if (qy.is.literal(e.kind)) return e.kind;
-    const n = e as Node;
+    const n = e as qt.Node;
     if (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.PlusToken) {
       const p = e as BinaryPlusExpression;
       if (p.cachedLiteralKind) return p.cachedLiteralKind;
@@ -3190,15 +3077,15 @@ export namespace parenthesize {
   }
   export function forAccess(e: qt.Expression): qt.LeftExpression {
     const e2 = qb.skip.partiallyEmittedExpressions(e);
-    const n = e2 as Node;
+    const n = e2 as qt.Node;
     if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.arguments)) return e as qt.LeftExpression;
     return new ParenthesizedExpression(e).setRange(e);
   }
   export function postfixOperand(e: qt.Expression) {
-    return qf.is.leftHandSideExpression(e as Node) ? e : new ParenthesizedExpression(e).setRange(e);
+    return qf.is.leftHandSideExpression(e as qt.Node) ? e : new ParenthesizedExpression(e).setRange(e);
   }
   export function prefixOperand(e: qt.Expression) {
-    return qf.is.unaryExpression(e as Node) ? e : new ParenthesizedExpression(e).setRange(e);
+    return qf.is.unaryExpression(e as qt.Node) ? e : new ParenthesizedExpression(e).setRange(e);
   }
   export function listElems(es: qt.Nodes<qt.Expression>) {
     let r: qt.Expression[] | undefined;
@@ -3219,7 +3106,7 @@ export namespace parenthesize {
   }
   export function expressionForExpressionStatement(e: qt.Expression) {
     const e2 = qb.skip.partiallyEmittedExpressions(e);
-    const n = e2 as Node;
+    const n = e2 as qt.Node;
     if (n.kind === Syntax.CallExpression) {
       const callee = n.expression;
       const k = qb.skip.partiallyEmittedExpressions(callee).kind;
@@ -3262,7 +3149,7 @@ export namespace parenthesize {
     if (qu.some(ns)) {
       const ps = [] as qt.Typing[];
       for (let i = 0; i < ns.length; ++i) {
-        const p = ns[i] as Node;
+        const p = ns[i] as qt.Node;
         ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParameters ? new ParenthesizedTyping(p) : (p as qt.Typing));
       }
       return new Nodes(ps);
@@ -3282,7 +3169,7 @@ export namespace parenthesize {
     return needsParens ? new ParenthesizedExpression(e) : e;
   }
   export function forNew(e: qt.Expression): qt.LeftExpression {
-    const n = qf.get.leftmostExpression(e, true) as Node;
+    const n = qf.get.leftmostExpression(e, true) as qt.Node;
     switch (n.kind) {
       case Syntax.CallExpression:
         return new ParenthesizedExpression(e);
@@ -3307,7 +3194,7 @@ export namespace emit {
       }
     }
   }
-  export function getOrCreateEmitNode(n: Node): qt.EmitNode {
+  export function getOrCreateEmitNode(n: qt.Node): qt.EmitNode {
     if (!n.emitNode) {
       if (qf.is.parseTreeNode(n)) {
         if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qt.EmitNode);
@@ -3334,7 +3221,7 @@ export namespace emit {
     emitNode.flags = emitNode.flags | emitFlags;
     return n;
   }
-  export function getSourceMapRange(n: Node): qt.SourceMapRange {
+  export function getSourceMapRange(n: qt.Node): qt.SourceMapRange {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.sourceMapRange) || n;
   }
@@ -3342,7 +3229,7 @@ export namespace emit {
     getOrCreateEmitNode(n).sourceMapRange = range;
     return n;
   }
-  export function getTokenSourceMapRange(n: Node, token: Syntax): qt.SourceMapRange | undefined {
+  export function getTokenSourceMapRange(n: qt.Node, token: Syntax): qt.SourceMapRange | undefined {
     const emitNode = n.emitNode;
     const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
     return tokenSourceMapRanges && tokenSourceMapRanges[token];
@@ -3353,7 +3240,7 @@ export namespace emit {
     tokenSourceMapRanges[token] = range;
     return n;
   }
-  export function getStartsOnNewLine(n: Node) {
+  export function getStartsOnNewLine(n: qt.Node) {
     const emitNode = n.emitNode;
     return emitNode && emitNode.startsOnNewLine;
   }
@@ -3361,7 +3248,7 @@ export namespace emit {
     getOrCreateEmitNode(n).startsOnNewLine = newLine;
     return n;
   }
-  export function getCommentRange(n: Node) {
+  export function getCommentRange(n: qt.Node) {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.commentRange) || n;
   }
@@ -3369,7 +3256,7 @@ export namespace emit {
     getOrCreateEmitNode(n).commentRange = range;
     return n;
   }
-  export function getSyntheticLeadingComments(n: Node): qt.SynthesizedComment[] | undefined {
+  export function getSyntheticLeadingComments(n: qt.Node): qt.SynthesizedComment[] | undefined {
     const emitNode = n.emitNode;
     return emitNode && emitNode.leadingComments;
   }
@@ -3383,7 +3270,7 @@ export namespace emit {
       qu.append<qt.SynthesizedComment>(getSyntheticLeadingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
     );
   }
-  export function getSyntheticTrailingComments(n: Node): qt.SynthesizedComment[] | undefined {
+  export function getSyntheticTrailingComments(n: qt.Node): qt.SynthesizedComment[] | undefined {
     const emitNode = n.emitNode;
     return emitNode && emitNode.trailingComments;
   }
@@ -3397,7 +3284,7 @@ export namespace emit {
       qu.append<qt.SynthesizedComment>(getSyntheticTrailingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
     );
   }
-  export function moveSyntheticComments<T extends Nobj>(n: T, original: Node): T {
+  export function moveSyntheticComments<T extends Nobj>(n: T, original: qt.Node): T {
     setSyntheticLeadingComments(n, getSyntheticLeadingComments(original));
     setSyntheticTrailingComments(n, getSyntheticTrailingComments(original));
     const emit = getOrCreateEmitNode(original);
@@ -3432,7 +3319,7 @@ export namespace emit {
     }
     return n;
   }
-  export function removeEmitHelper(n: Node, helper: qt.EmitHelper): boolean {
+  export function removeEmitHelper(n: qt.Node, helper: qt.EmitHelper): boolean {
     const emitNode = n.emitNode;
     if (emitNode) {
       const helpers = emitNode.helpers;
@@ -3440,11 +3327,11 @@ export namespace emit {
     }
     return false;
   }
-  export function getEmitHelpers(n: Node): qt.EmitHelper[] | undefined {
+  export function getEmitHelpers(n: qt.Node): qt.EmitHelper[] | undefined {
     const emitNode = n.emitNode;
     return emitNode && emitNode.helpers;
   }
-  export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: qt.EmitHelper) => boolean) {
+  export function moveEmitHelpers(source: qt.Node, target: qt.Node, predicate: (helper: qt.EmitHelper) => boolean) {
     const sourceEmitNode = source.emitNode;
     const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
     if (!qu.some(sourceEmitHelpers)) return;
@@ -3494,7 +3381,7 @@ export namespace emit {
 export namespace fixme {
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
+    return new (SourceMapSource || (SourceMapSource = qt.Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
     return setEmitFlags(new Identifier(name), qt.EmitFlags.HelperName | qt.EmitFlags.AdviseOnEmitNode);
@@ -3525,7 +3412,7 @@ export namespace fixme {
     if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
       let namedBindings: qt.NamedImportBindings | undefined;
       const moduleKind = getEmitModuleKind(compilerOptions);
-      if (moduleKind >= ModuleKind.ES2015 && moduleKind <= ModuleKind.ESNext) {
+      if (moduleKind >= qt.ModuleKind.ES2015 && moduleKind <= qt.ModuleKind.ESNext) {
         const helpers = getEmitHelpers(sourceFile);
         if (helpers) {
           const helperNames: string[] = [];
@@ -3568,7 +3455,7 @@ export namespace fixme {
       const externalHelpersModuleName = getExternalHelpersModuleName(node);
       if (externalHelpersModuleName) return externalHelpersModuleName;
       const moduleKind = getEmitModuleKind(compilerOptions);
-      let create = (hasExportStarsToExportValues || (compilerOptions.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== ModuleKind.System && moduleKind < ModuleKind.ES2015;
+      let create = (hasExportStarsToExportValues || (compilerOptions.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== qt.ModuleKind.System && moduleKind < qt.ModuleKind.ES2015;
       if (!create) {
         const helpers = getEmitHelpers(node);
         if (helpers) {
@@ -3591,20 +3478,20 @@ export namespace fixme {
   export function getExternalModuleNameLiteral(
     importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
     sourceFile: SourceFile,
-    host: EmitHost,
-    resolver: EmitResolver,
+    host: qt.EmitHost,
+    resolver: qt.EmitResolver,
     compilerOptions: qt.CompilerOptions
   ) {
     const moduleName = qf.get.externalModuleName(importNode)!;
     if (moduleName.kind === Syntax.StringLiteral) {
-      function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: SourceFile) {
+      function tryRenameExternalModule(moduleName: qt.LiteralExpression, sourceFile: SourceFile) {
         const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
         return rename && asLiteral(rename);
       }
       function tryGetModuleNameFromDeclaration(
         declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration,
-        host: EmitHost,
-        resolver: EmitResolver,
+        host: qt.EmitHost,
+        resolver: qt.EmitResolver,
         compilerOptions: qt.CompilerOptions
       ) {
         return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
@@ -3615,7 +3502,7 @@ export namespace fixme {
     }
     return;
   }
-  export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: EmitHost, options: qt.CompilerOptions): StringLiteral | undefined {
+  export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: qt.EmitHost, options: qt.CompilerOptions): StringLiteral | undefined {
     if (!file) {
       return;
     }
@@ -3624,7 +3511,7 @@ export namespace fixme {
     return;
   }
 }
-export function asToken<T extends Syntax>(t: T | qt.Token<T>): qb.Token<T> {
+export function asToken<T extends Syntax>(t: T | qt.Token<T>): qt.Token<T> {
   return typeof t === 'number' ? new qb.Token(t) : t;
 }
 export function asName<T extends qt.Identifier | qt.BindingName | qt.PropertyName | qt.EntityName | qt.ThisTyping | undefined>(n: string | T): T | Identifier {
@@ -3690,6 +3577,222 @@ export function updateOuterExpression(o: Node, e: qt.Expression) {
       return o.update(e);
   }
 }
+
+export type Node =
+  | ArrayBindingPattern
+  | ArrayLiteralExpression
+  | ArrayTyping
+  | ArrowFunction
+  | AsExpression
+  | qt.AssertsToken
+  | qt.AssignmentOperatorToken
+  | qt.AsteriskToken
+  | AwaitExpression
+  | qt.AwaitKeywordToken
+  | BigIntLiteral
+  | BinaryExpression
+  | qt.BinaryOperatorToken
+  | BindingElem
+  | Block
+  | BooleanLiteral
+  | BreakStatement
+  | Bundle
+  | CallExpression
+  | CallSignatureDeclaration
+  | CaseBlock
+  | CaseClause
+  | CatchClause
+  | ClassDeclaration
+  | ClassExpression
+  | qt.ColonToken
+  | CommaListExpression
+  | ComputedPropertyName
+  | ConditionalExpression
+  | ConditionalTyping
+  | ConstructorDeclaration
+  | ConstructorTyping
+  | ConstructSignatureDeclaration
+  | ContinueStatement
+  | DebuggerStatement
+  | Declaration
+  | Decorator
+  | DefaultClause
+  | DeleteExpression
+  | Doc
+  | DocAllTyping
+  | DocAugmentsTag
+  | DocAuthorTag
+  | DocCallbackTag
+  | DocClassTag
+  | DocEnumTag
+  | DocFunctionTyping
+  | DocImplementsTag
+  | DocNamepathTyping
+  | DocNonNullableTyping
+  | DocNullableTyping
+  | DocOptionalTyping
+  | DocParameterTag
+  | DocPrivateTag
+  | DocPropertyTag
+  | DocProtectedTag
+  | DocPublicTag
+  | DocReadonlyTag
+  | DocReturnTag
+  | DocSignature
+  | DocTemplateTag
+  | DocThisTag
+  | DocTypedefTag
+  | DocTypingExpression
+  | DocTypingLiteral
+  | DocTypeTag
+  | DocUnknownTag
+  | DocUnknownTyping
+  | DocVariadicTyping
+  | DoStatement
+  | qt.Dot3Token
+  | qt.DotToken
+  | ElemAccessExpression
+  | EmptyStatement
+  | EndOfDeclarationMarker
+  | qt.EndOfFileToken
+  | EnumDeclaration
+  | EnumMember
+  | qt.EqualsGreaterThanToken
+  | qt.EqualsToken
+  | qt.ExclamationToken
+  | ExportAssignment
+  | ExportDeclaration
+  | ExportSpecifier
+  | Expression
+  | ExpressionStatement
+  | ExpressionWithTypings
+  | ExternalModuleReference
+  | ForInStatement
+  | ForOfStatement
+  | ForStatement
+  | FunctionDeclaration
+  | FunctionExpression
+  | FunctionLikeDeclaration
+  | FunctionTyping
+  | GetAccessorDeclaration
+  | HeritageClause
+  | Identifier
+  | IfStatement
+  | ImportClause
+  | ImportDeclaration
+  | ImportEqualsDeclaration
+  | ImportExpression
+  | ImportSpecifier
+  | ImportTyping
+  | IndexedAccessTyping
+  | IndexSignatureDeclaration
+  | InferTyping
+  | InputFiles
+  | InterfaceDeclaration
+  | IntersectionTyping
+  | JsxAttribute
+  | JsxAttributes
+  | JsxClosingElem
+  | JsxClosingFragment
+  | JsxElem
+  | JsxExpression
+  | JsxFragment
+  | JsxOpeningElem
+  | JsxOpeningFragment
+  | JsxSelfClosingElem
+  | JsxSpreadAttribute
+  | JsxText
+  | KeywordTyping
+  | LabeledStatement
+  | LiteralTyping
+  | MappedTyping
+  | MergeDeclarationMarker
+  | MetaProperty
+  | MethodDeclaration
+  | MethodSignature
+  | qt.MinusToken
+  | MissingDeclaration
+  | ModuleBlock
+  | ModuleDeclaration
+  | NamedExports
+  | NamedImports
+  | NamedTupleMember
+  | NamespaceExport
+  | NamespaceExportDeclaration
+  | NamespaceImport
+  | NewExpression
+  | NonNullExpression
+  | NoSubstitutionLiteral
+  | NotEmittedStatement
+  | NumericLiteral
+  | ObjectBindingPattern
+  | ObjectLiteralExpression
+  | OmittedExpression
+  | OptionalTyping
+  | ParameterDeclaration
+  | ParenthesizedExpression
+  | ParenthesizedTyping
+  | PartiallyEmittedExpression
+  | qt.PlusToken
+  | PostfixUnaryExpression
+  | PrefixUnaryExpression
+  | PrivateIdentifier
+  | PropertyAccessExpression
+  | PropertyAssignment
+  | PropertyDeclaration
+  | PropertySignature
+  | QualifiedName
+  | qt.QuestionDotToken
+  | qt.QuestionToken
+  | qt.ReadonlyToken
+  | RegexLiteral
+  | RestTyping
+  | ReturnStatement
+  | SemicolonClassElem
+  | SetAccessorDeclaration
+  | ShorthandPropertyAssignment
+  | SourceFile
+  | SpreadAssignment
+  | SpreadElem
+  | Statement
+  | StringLiteral
+  | SuperExpression
+  | SwitchStatement
+  | SyntheticExpression
+  | SyntheticReferenceExpression
+  | TaggedTemplateExpression
+  | TemplateExpression
+  | TemplateHead
+  | TemplateMiddle
+  | TemplateSpan
+  | TemplateTail
+  | ThisTyping
+  | ThrowStatement
+  | TryStatement
+  | TupleTyping
+  | TypeAliasDeclaration
+  | TypeAssertion
+  | TypingLiteral
+  | TypeOfExpression
+  | TypingOperator
+  | TypeParameterDeclaration
+  | TypingPredicate
+  | TypingQuery
+  | TypingReference
+  | UnionTyping
+  | UniqueTypingOperator
+  | UnparsedPrepend
+  | UnparsedPrologue
+  | UnparsedSource
+  | UnparsedSyntheticReference
+  | UnparsedTextLike
+  | VariableDeclaration
+  | VariableDeclarationList
+  | VariableStatement
+  | VoidExpression
+  | WhileStatement
+  | WithStatement
+  | YieldExpression;
 
 export interface SynMap {
   [Syntax.ArrayBindingPattern]: ArrayBindingPattern;

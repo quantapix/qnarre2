@@ -1,7 +1,8 @@
 import { MutableNodes, Nodes } from './base';
+import * as qb from './base';
 import * as qc from './classes';
 import { qf } from './frame';
-import { EmitFlags, Modifier, Node, Token } from '../type';
+import { EmitFlags, Modifier, Node, NodeFlags, Token } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
@@ -20,7 +21,7 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) 
   if (!r) return;
   if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
-  qc.assert.node(n2, test);
+  qb.assert.node(n2, test);
   aggregateTransformFlags(n2!);
   return n2 as T;
 }
@@ -45,12 +46,12 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (
       if (r) {
         if (qu.isArray(r)) {
           for (const n2 of r) {
-            qc.assert.node(n2, test);
+            qb.assert.node(n2, test);
             aggregateTransformFlags(n2);
             updated.push(n2 as T);
           }
         } else {
-          qc.assert.node(r, test);
+          qb.assert.node(r, test);
           aggregateTransformFlags(r);
           updated.push(r as T);
         }
@@ -81,10 +82,10 @@ export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb:
   let updated: Nodes<ParameterDeclaration> | undefined;
   c.startLexicalEnvironment();
   if (ns) {
-    c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
+    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParameters, true);
     updated = v(ns, cb, qf.is.parameterDeclaration);
-    if (c.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addValueAssignments(updated!, c);
-    c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, false);
+    if (c.getLexicalEnvironmentFlags() & qt.LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addValueAssignments(updated!, c);
+    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParameters, false);
   }
   c.suspendLexicalEnvironment();
   return updated;
@@ -171,7 +172,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.Transf
   if (!node) return;
   const k = node.kind;
   if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisTyping) return node;
-  const n = node as qc.NodeTypes;
+  const n = node as qc.Node;
   switch (n.kind) {
     case Syntax.Identifier:
       return n.update(nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParameterDeclaration));
@@ -594,7 +595,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
   if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) return initial;
   if (kind >= Syntax.TypingPredicate && kind <= Syntax.LiteralTyping) return initial;
   let r = initial;
-  const n = node as qc.NodeTypes;
+  const n = node as qc.Node;
   switch (n.kind) {
     case Syntax.SemicolonClassElem:
     case Syntax.EmptyStatement:
@@ -1022,6 +1023,6 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   return ss;
 }
 export function liftToBlock(ns: readonly Node[]): Statement {
-  qu.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
+  qu.assert(qu.every(ns, isStatement), 'Cannot lift nodes to a Block.');
   return (qu.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
 }
