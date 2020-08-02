@@ -7,6 +7,7 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
+import { ThisExpression } from './classes';
 export interface ReadonlyNodeSet<T extends Node> {
   has(n: T): boolean;
   each(cb: (n: T) => void): void;
@@ -91,7 +92,7 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   id?: number;
-  kind!: any;
+  kind!: Syntax;
   flags = NodeFlags.None;
   transformFlags = TransformFlags.None;
   modifierFlagsCache = ModifierFlags.None;
@@ -110,7 +111,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   private _children?: Nobj[];
   constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
     super(pos, end);
-    if (k) this.kind = k;
+    if (k && this.kind !== k) this.kind = k;
     if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
@@ -329,6 +330,7 @@ export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
   _classElemBrand: any;
 }
 export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDecl {
+  kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: qt.Identifier;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
@@ -359,6 +361,7 @@ export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
   _typeElemBrand: any;
 }
 export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDecl {
+  kind!: qt.SignatureDeclaration['kind'];
   name?: qt.PropertyName;
   typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
   parameters!: qt.Nodes<qt.ParameterDeclaration>;
@@ -396,6 +399,7 @@ export abstract class FunctionLikeDecl extends SignatureDecl implements qt.Funct
   _functionLikeDeclarationBrand: any;
 }
 export abstract class FunctionOrConstructorTobj extends SignatureDecl implements qt.FunctionOrConstructorTobj {
+  kind!: Syntax.FunctionTyping | Syntax.ConstructorTyping;
   type!: qt.Typing;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
@@ -431,6 +435,7 @@ export abstract class TokenOrIdentifier extends Nobj {
   }
 }
 export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
+  kind!: T;
   constructor(k: T, pos?: number, end?: number) {
     super(undefined, k, pos, end);
   }

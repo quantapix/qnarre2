@@ -1411,7 +1411,7 @@ export interface NamedTupleMember extends Tobj, DocContainer, Decl {
   kind: Syntax.NamedTupleMember;
   dot3Token?: Token<Syntax.Dot3Token>;
   name: Identifier;
-  questionToken?: Token<Syntax.QuestionToken>;
+  questionToken?: QuestionToken;
   type: Typing;
 }
 export interface NamespaceDeclaration extends ModuleDeclaration {

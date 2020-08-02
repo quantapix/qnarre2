@@ -1138,8 +1138,7 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.Identifier && n.originalKeywordKind === Syntax.ThisKeyword;
     }
     kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
-      if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
-      return false;
+      return n?.kind === t.kind || (!!n && !!t.also?.includes(n.kind));
     }
     asyncFunction(n: Node) {
       switch (n.kind) {

@@ -7,27 +7,28 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
+type Tester = (n: Node) => boolean;
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
 const isTypeNodeOrTypeParameterDeclaration = qu.or(isTypeNode, isTypeParameterDeclaration);
-export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T;
-export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined;
-export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined {
+export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T;
+export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
+export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
   if (!n || !cb) return n;
-  aggregateTransformFlags(n);
-  const r = cb(n);
-  if (r === n) return n;
-  let n2: Node | undefined;
+  n.aggregateTransformFlags();
+  const r = cb(n as Node);
   if (!r) return;
+  if (r === n) return n;
+  let n2: qc.Node | undefined;
   if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
   qb.assert.node(n2, test);
-  aggregateTransformFlags(n2!);
+  n2?.aggregateTransformFlags();
   return n2 as T;
 }
-export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T>;
-export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined;
-export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined {
+export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
+export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
+export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
   if (!ns || !cb) return ns;
   let updated: MutableNodes<T> | undefined;
   const length = ns.length;
@@ -70,13 +71,13 @@ export function visitParameterList<T extends Node>(
   ns: Nodes<T>,
   cb: Visitor,
   c: qt.TransformationContext,
-  v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T>
+  v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>
 ): Nodes<T>;
 export function visitParameterList<T extends Node>(
   ns: Nodes<T> | undefined,
   cb: Visitor,
   c: qt.TransformationContext,
-  v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T> | undefined
+  v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
 ): Nodes<T> | undefined;
 export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TransformationContext, v = visitNodes) {
   let updated: Nodes<ParameterDeclaration> | undefined;
