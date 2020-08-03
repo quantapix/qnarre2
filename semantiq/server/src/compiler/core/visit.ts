@@ -11,24 +11,24 @@ type Tester = (n: Node) => boolean;
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
 const isTypeNodeOrTypeParameterDeclaration = qu.or(isTypeNode, isTypeParameterDeclaration);
-export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T;
-export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
-export function visitNode<T extends qc.Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
+export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T;
+export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
+export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
   if (!n || !cb) return n;
   n.aggregateTransformFlags();
   const r = cb(n as Node);
   if (!r) return;
   if (r === n) return n;
-  let n2: qc.Node | undefined;
+  let n2: Node | undefined;
   if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
   qb.assert.node(n2, test);
   n2?.aggregateTransformFlags();
   return n2 as T;
 }
-export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
-export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
-export function visitNodes<T extends qc.Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
+export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
+export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
+export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
   if (!ns || !cb) return ns;
   let updated: MutableNodes<T> | undefined;
   const length = ns.length;

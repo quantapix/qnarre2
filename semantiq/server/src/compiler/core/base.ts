@@ -90,6 +90,34 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
   }
 }
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
+const node = new (class {
+  aggregateTransformFlags(): this {
+    const aggregate = (n: Nobj): TransformFlags => {
+      if (n === undefined) return TransformFlags.None;
+      if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
+      return computeTransformFlagsForNode(n, subtree(n));
+    };
+    const nodes = (ns: Nodes<Nobj>): TransformFlags => {
+      if (ns === undefined) return TransformFlags.None;
+      let sub = TransformFlags.None;
+      let f = TransformFlags.None;
+      for (const n of ns) {
+        sub |= aggregate(n);
+        f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
+      }
+      ns.transformFlags = f | TransformFlags.HasComputedFlags;
+      return sub;
+    };
+    const subtree = (n: Nobj): TransformFlags => {
+      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TransformFlags.None;
+      return reduceEachChild(n, TransformFlags.None, child, children);
+    };
+    const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
+    const children = (f: TransformFlags, ns: Nodes<Nobj>): TransformFlags => f | nodes(ns);
+    aggregate(this);
+    return this;
+  }
+})();
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   id?: number;
   kind!: Syntax;
@@ -254,32 +282,6 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
       const e = n.emitNode;
       if (e) this.emitNode = mergeEmitNode(e, this.emitNode);
     }
-    return this;
-  }
-  aggregateTransformFlags(): this {
-    const aggregate = (n: Nobj): TransformFlags => {
-      if (n === undefined) return TransformFlags.None;
-      if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
-      return computeTransformFlagsForNode(n, subtree(n));
-    };
-    const nodes = (ns: Nodes<Nobj>): TransformFlags => {
-      if (ns === undefined) return TransformFlags.None;
-      let sub = TransformFlags.None;
-      let f = TransformFlags.None;
-      for (const n of ns) {
-        sub |= aggregate(n);
-        f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
-      }
-      ns.transformFlags = f | TransformFlags.HasComputedFlags;
-      return sub;
-    };
-    const subtree = (n: Nobj): TransformFlags => {
-      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TransformFlags.None;
-      return reduceEachChild(n, TransformFlags.None, child, children);
-    };
-    const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
-    const children = (f: TransformFlags, ns: Nodes<Nobj>): TransformFlags => f | nodes(ns);
-    aggregate(this);
     return this;
   }
   movePastDecorators(): qu.TextRange {
