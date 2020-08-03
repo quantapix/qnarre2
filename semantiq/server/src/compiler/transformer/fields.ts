@@ -16,7 +16,7 @@ interface PrivateIdentifierInstanceField {
   weakMapName: Identifier;
 }
 type PrivateIdentifierEnvironment = EscapedMap<PrivateIdentifierInfo>;
-export function transformClassFields(context: TransformationContext) {
+export function transformClassFields(context: TrafoContext) {
   const { hoistVariableDeclaration, endLexicalEnvironment, resumeLexicalEnvironment } = context;
   const resolver = context.getEmitResolver();
   const compilerOptions = context.getCompilerOptions();
@@ -39,7 +39,7 @@ export function transformClassFields(context: TransformationContext) {
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
-    if (!(node.transformFlags & TransformFlags.ContainsClassFields)) return node;
+    if (!(node.trafoFlags & TrafoFlags.ContainsClassFields)) return node;
     switch (node.kind) {
       case Syntax.ClassExpression:
       case Syntax.ClassDeclaration:
@@ -622,7 +622,7 @@ export const classPrivateFieldGetHelper: UnscopedEmitHelper = {
                 return privateMap.get(receiver);
             };`,
 };
-function createClassPrivateFieldGetHelper(context: TransformationContext, receiver: Expression, privateField: Identifier) {
+function createClassPrivateFieldGetHelper(context: TrafoContext, receiver: Expression, privateField: Identifier) {
   context.requestEmitHelper(classPrivateFieldGetHelper);
   return new qs.CallExpression(getUnscopedHelperName('__classPrivateFieldGet'), undefined, [receiver, privateField]);
 }
@@ -638,7 +638,7 @@ export const classPrivateFieldSetHelper: UnscopedEmitHelper = {
                 return value;
             };`,
 };
-function createClassPrivateFieldSetHelper(context: TransformationContext, receiver: Expression, privateField: Identifier, value: Expression) {
+function createClassPrivateFieldSetHelper(context: TrafoContext, receiver: Expression, privateField: Identifier, value: Expression) {
   context.requestEmitHelper(classPrivateFieldSetHelper);
   return new qs.CallExpression(getUnscopedHelperName('__classPrivateFieldSet'), undefined, [receiver, privateField, value]);
 }

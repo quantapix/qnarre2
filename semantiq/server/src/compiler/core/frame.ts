@@ -363,20 +363,20 @@ export function newCreate(f: qt.Frame) {
             ]),
             firstAccessor
           );
-          return aggregateTransformFlags(expression);
+          return qc.compute.aggregate(expression);
         }
         return;
       }
       function createExpressionForPropertyAssignment(property: qt.PropertyAssignment, receiver: qt.Expression) {
-        return aggregateTransformFlags(setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
+        return qc.compute.aggregate(setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
       }
       function createExpressionForShorthandPropertyAssignment(property: qt.ShorthandPropertyAssignment, receiver: qt.Expression) {
-        return aggregateTransformFlags(
+        return qc.compute.aggregate(
           setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
         );
       }
       function createExpressionForMethodDeclaration(method: qt.MethodDeclaration, receiver: qt.Expression) {
-        return aggregateTransformFlags(
+        return qc.compute.aggregate(
           setOriginalNode(
             setRange(
               this.assignment(
@@ -2622,7 +2622,7 @@ export function newGet(f: qt.Frame) {
       e.setOriginal(n);
       e.setRange(n);
       if (getStartsOnNewLine(n)) setStartsOnNewLine(e, true);
-      aggregateTransformFlags(e);
+      qc.compute.aggregate(e);
       return e;
     }
     functionFlags(n: qt.SignatureDeclaration | undefined) {

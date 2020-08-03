@@ -1457,7 +1457,7 @@ export interface Nobj extends qu.Range {
   parent?: Node;
   sourceFile: SourceFile;
   symbol: Symbol;
-  transformFlags: qt.TransformFlags;
+  trafoFlags: qt.TrafoFlags;
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined;
 }
 export interface NodeLinks {
@@ -1489,7 +1489,7 @@ export interface NodeLinks {
 }
 export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range {
   trailingComma?: boolean;
-  transformFlags: qt.TransformFlags;
+  trafoFlags: qt.TrafoFlags;
   visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: Nodes) => V | undefined): V | undefined;
 }
 export interface WithArgumentsTobj extends Tobj {
@@ -2276,7 +2276,7 @@ export interface ThrowStatement extends Stmt {
 export interface Token<T extends Syntax> extends Nobj {
   kind: T;
 }
-export interface TransformationContext {
+export interface TrafoContext {
   getEmitResolver(): EmitResolver;
   getEmitHost(): EmitHost;
   getCompilerOptions(): CompilerOptions;
@@ -2837,7 +2837,7 @@ export type CompoundAssignmentOperator =
   | Syntax.PlusEqualsToken
   | Syntax.SlashEqualsToken;
 export type ConciseBody = FunctionBody | Expression;
-export type CustomTransformerFactory = (context: TransformationContext) => CustomTransformer;
+export type CustomTransformerFactory = (context: TrafoContext) => CustomTransformer;
 export type Declaration =
   | ArrowFunction
   | BinaryExpression
@@ -3394,7 +3394,7 @@ export type SuperProperty = SuperPropertyAccessExpression | SuperElemAccessExpre
 export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
 export type TemplateLiteralToken = NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail;
 export type Transformer<T extends Node> = (node: T) => T;
-export type TransformerFactory<T extends Node> = (c: TransformationContext) => Transformer<T>;
+export type TransformerFactory<T extends Node> = (c: TrafoContext) => Transformer<T>;
 export type TypeComparer = (s: Type, t: Type, reportErrors?: boolean) => qt.Ternary;
 export type TypeMapper =
   | { kind: qt.TypeMapKind.Array; sources: readonly Type[]; targets: readonly Type[] | undefined }

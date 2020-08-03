@@ -52,7 +52,7 @@ export function newGet(f: qt.Frame) {
       function markAsSynthetic(node: Node): VisitResult<Node> {
         node.pos = -1;
         node.end = -1;
-        return visitEachChild(node, markAsSynthetic, nullTransformationContext);
+        return visitEachChild(node, markAsSynthetic, nullTrafoContext);
       }
     }
     emitResolver(sourceFile: SourceFile, cancellationToken: CancellationToken) {

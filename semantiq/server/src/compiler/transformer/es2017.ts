@@ -13,7 +13,7 @@ const enum ContextFlags {
   NonTopLevel = 1 << 0,
   HasLexicalThis = 1 << 1,
 }
-export function transformES2017(context: TransformationContext) {
+export function transformES2017(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
   const compilerOptions = context.getCompilerOptions();
@@ -64,7 +64,7 @@ export function transformES2017(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2017) === 0) return node;
+    if ((node.trafoFlags & TrafoFlags.ContainsES2017) === 0) return node;
     switch (node.kind) {
       case Syntax.AsyncKeyword:
         return;
@@ -495,7 +495,7 @@ export const awaiterHelper: UnscopedEmitHelper = {
                 });
             };`,
 };
-function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
+function createAwaiterHelper(context: TrafoContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
   context.requestEmitHelper(awaiterHelper);
   const generatorFunc = new qs.FunctionExpression([], undefined, body);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;

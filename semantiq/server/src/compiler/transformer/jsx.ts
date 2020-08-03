@@ -5,7 +5,7 @@ import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
-export function transformJsx(context: TransformationContext) {
+export function transformJsx(context: TrafoContext) {
   const compilerOptions = context.getCompilerOptions();
   let currentSourceFile: SourceFile;
   return chainBundle(transformSourceFile);
@@ -17,7 +17,7 @@ export function transformJsx(context: TransformationContext) {
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
-    if (node.transformFlags & TransformFlags.ContainsJsx) return visitorWorker(node);
+    if (node.trafoFlags & TrafoFlags.ContainsJsx) return visitorWorker(node);
     return node;
   }
   function visitorWorker(node: Node): VisitResult<Node> {

@@ -83,9 +83,9 @@ export function enableDebugInfo() {
             return qc.format.modifierFlags(qc.get.effectiveModifierFlagsNoCache(this));
           },
         },
-        __debugTransformFlags: {
+        __debugTrafoFlags: {
           get(this: Node) {
-            return qc.format.transformFlags(this.transformFlags);
+            return qc.format.trafoFlags(this.trafoFlags);
           },
         },
         __debugIsParseTreeNode: {

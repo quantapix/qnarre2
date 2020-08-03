@@ -6,7 +6,7 @@ import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
 interface FlattenContext {
-  context: TransformationContext;
+  context: TrafoContext;
   level: FlattenLevel;
   downlevelIteration: boolean;
   hoistTempVariables: boolean;
@@ -24,7 +24,7 @@ export const enum FlattenLevel {
 export function flattenDestructuringAssignment(
   node: VariableDeclaration | DestructuringAssignment,
   visitor: ((node: Node) => VisitResult<Node>) | undefined,
-  context: TransformationContext,
+  context: TrafoContext,
   level: FlattenLevel,
   needsValue?: boolean,
   qf.create.assignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression
@@ -70,9 +70,9 @@ export function flattenDestructuringAssignment(
     if (!some(expressions)) return value;
     expressions.push(value);
   }
-  return aggregateTransformFlags(inlineExpressions(expressions!)) || new qc.OmittedExpression();
+  return qc.compute.aggregate(inlineExpressions(expressions!)) || new qc.OmittedExpression();
   function emitExpression(expression: Expression) {
-    aggregateTransformFlags(expression);
+    qc.compute.aggregate(expression);
     expressions = append(expressions, expression);
   }
   function emitBindingOrAssignment(target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange, original: Node) {
@@ -109,7 +109,7 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
 export function flattenDestructuringBinding(
   node: VariableDeclaration | ParameterDeclaration,
   visitor: (node: Node) => VisitResult<Node>,
-  context: TransformationContext,
+  context: TrafoContext,
   level: FlattenLevel,
   rval?: Expression,
   hoistTempVariables = false,
@@ -162,7 +162,7 @@ export function flattenDestructuringBinding(
     const variable = new qc.VariableDeclaration(name, undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
     variable.original = original;
     setRange(variable, location);
-    aggregateTransformFlags(variable);
+    qc.compute.aggregate(variable);
     declarations.push(variable);
   }
   return declarations;
@@ -217,8 +217,8 @@ function flattenObjectBindingOrAssignmentPattern(
       const propertyName = getPropertyNameOfBindingOrAssignmentElem(elem)!;
       if (
         flattenContext.level >= FlattenLevel.ObjectRest &&
-        !(elem.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !(getTargetOfBindingOrAssignmentElem(elem)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
+        !(elem.trafoFlags & (TrafoFlags.ContainsRestOrSpread | TrafoFlags.ContainsObjectRestOrSpread)) &&
+        !(getTargetOfBindingOrAssignmentElem(elem)!.trafoFlags & (TrafoFlags.ContainsRestOrSpread | TrafoFlags.ContainsObjectRestOrSpread)) &&
         !qc.is.kind(qc.ComputedPropertyName, propertyName)
       ) {
         bindingElems = append(bindingElems, visitNode(elem, flattenContext.visitor));
@@ -265,7 +265,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
   for (let i = 0; i < numElems; i++) {
     const elem = elems[i];
     if (flattenContext.level >= FlattenLevel.ObjectRest) {
-      if (elem.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (elem.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
         const temp = createTempVariable(undefined);
         if (flattenContext.hoistTempVariables) {
           flattenContext.context.hoistVariableDeclaration(temp);
@@ -362,7 +362,7 @@ export const restHelper: UnscopedEmitHelper = {
             };`,
 };
 function createRestCall(
-  context: TransformationContext,
+  context: TrafoContext,
   value: Expression,
   elems: readonly BindingOrAssignmentElem[],
   computedTempVariables: readonly Expression[],

@@ -1,7 +1,7 @@
 import * as qc from './core';
 import * as qt from './type';
 import * as qu from './util';
-export const nullTransformationContext: qt.TransformationContext = {
+export const nullTrafoContext: qt.TrafoContext = {
   enableEmitNotification: qu.noop,
   enableSubstitution: qu.noop,
   endLexicalEnvironment: () => undefined,
@@ -33,7 +33,7 @@ export interface TransformationResult<T extends Node> {
   dispose(): void;
 }
 export type Transformer<T extends Node> = (node: T) => T;
-export type TransformerFactory<T extends Node> = (c: qt.TransformationContext) => Transformer<T>;
+export type TransformerFactory<T extends Node> = (c: qt.TrafoContext) => Transformer<T>;
 function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
   switch (moduleKind) {
     case qt.ModuleKind.ESNext:
@@ -129,11 +129,11 @@ export function transformNodes<T extends Node>(
   let lexicalEnvironmentStackOffset = 0;
   let lexicalEnvironmentSuspended = false;
   let emitHelpers: EmitHelper[] | undefined;
-  let onSubstituteNode: qt.TransformationContext['onSubstituteNode'] = noEmitSubstitution;
-  let onEmitNode: qt.TransformationContext['onEmitNode'] = noEmitNotification;
+  let onSubstituteNode: qt.TrafoContext['onSubstituteNode'] = noEmitSubstitution;
+  let onEmitNode: qt.TrafoContext['onEmitNode'] = noEmitNotification;
   let state = TransformationState.Uninitialized;
   const diagnostics: DiagnosticWithLocation[] = [];
-  const context: qt.TransformationContext = {
+  const context: qt.TrafoContext = {
     getCompilerOptions: () => options,
     getEmitResolver: () => resolver!,
     getEmitHost: () => host!,
@@ -360,7 +360,7 @@ export const valuesHelper: UnscopedEmitHelper = {
                 throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
             };`,
 };
-export function createValuesHelper(context: qt.TransformationContext, expression: Expression, location?: TextRange) {
+export function createValuesHelper(context: qt.TrafoContext, expression: Expression, location?: TextRange) {
   context.requestEmitHelper(valuesHelper);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__values'), undefined, [expression]), location);
 }
@@ -386,7 +386,7 @@ export const readHelper: UnscopedEmitHelper = {
                 return ar;
             };`,
 };
-export function createReadHelper(context: qt.TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
+export function createReadHelper(context: qt.TrafoContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
   context.requestEmitHelper(readHelper);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__read'), undefined, count !== undefined ? [iteratorRecord, qc.asLiteral(count)] : [iteratorRecord]), location);
 }
@@ -401,7 +401,7 @@ export const spreadHelper: UnscopedEmitHelper = {
                 return ar;
             };`,
 };
-export function createSpreadHelper(context: qt.TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadHelper(context: qt.TrafoContext, argumentList: readonly Expression[], location?: TextRange) {
   context.requestEmitHelper(spreadHelper);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__spread'), undefined, argumentList), location);
 }
@@ -418,7 +418,7 @@ export const spreadArraysHelper: UnscopedEmitHelper = {
                 return r;
             };`,
 };
-export function createSpreadArraysHelper(context: qt.TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadArraysHelper(context: qt.TrafoContext, argumentList: readonly Expression[], location?: TextRange) {
   context.requestEmitHelper(spreadArraysHelper);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__spreadArrays'), undefined, argumentList), location);
 }

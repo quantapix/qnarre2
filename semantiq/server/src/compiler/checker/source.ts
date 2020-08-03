@@ -1,5 +1,5 @@
 import { QContext } from './context';
-import { NodeFlags, TransformFlags } from './type';
+import { NodeFlags, TrafoFlags } from './type';
 import * as qt from './type';
 import * as qu from './util';
 import { Modifier, ModifierFlags, Syntax } from './syntax';

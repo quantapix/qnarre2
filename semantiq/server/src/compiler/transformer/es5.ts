@@ -5,7 +5,7 @@ import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
-export function transformES5(context: TransformationContext) {
+export function transformES5(context: TrafoContext) {
   const compilerOptions = context.getCompilerOptions();
   let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
   let noSubstitution: boolean[];

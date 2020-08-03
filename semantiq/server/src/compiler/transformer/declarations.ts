@@ -38,7 +38,7 @@ const declarationEmitNodeBuilderFlags =
   NodeBuilderFlags.AllowEmptyTuple |
   NodeBuilderFlags.GenerateNamesForShadowedTypeParams |
   NodeBuilderFlags.NoTruncation;
-export function transformDeclarations(context: TransformationContext) {
+export function transformDeclarations(context: TrafoContext) {
   const throwDiagnostic = () => fail('Diagnostic emitted without context');
   let getSymbolAccessibilityDiagnostic: GetSymbolAccessibilityDiagnostic = throwDiagnostic;
   let needsDeclare = true;

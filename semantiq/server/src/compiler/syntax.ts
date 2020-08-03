@@ -1,5 +1,5 @@
 import * as qd from './diagnostic';
-import { Associativity, Modifier, ModifierFlags } from './type';
+import { Associativity, Modifier, ModifierFlags, TrafoFlags } from './type';
 import * as qu from './util';
 export const enum Codes {
   nullCharacter = 0,
@@ -1375,6 +1375,70 @@ export const get = new (class {
   shebang(s: string): string | undefined {
     const m = shebangRegex.exec(s);
     return m ? m[0] : undefined;
+  }
+  trafoFlagsSubtreeExclusions(k: Syntax) {
+    if (k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) return TrafoFlags.TypeExcludes;
+    switch (k) {
+      case Syntax.ArrayLiteralExpression:
+      case Syntax.CallExpression:
+      case Syntax.NewExpression:
+        return TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
+      case Syntax.ModuleDeclaration:
+        return TrafoFlags.ModuleExcludes;
+      case Syntax.Parameter:
+        return TrafoFlags.ParameterExcludes;
+      case Syntax.ArrowFunction:
+        return TrafoFlags.ArrowFunctionExcludes;
+      case Syntax.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+        return TrafoFlags.FunctionExcludes;
+      case Syntax.VariableDeclarationList:
+        return TrafoFlags.VariableDeclarationListExcludes;
+      case Syntax.ClassDeclaration:
+      case Syntax.ClassExpression:
+        return TrafoFlags.ClassExcludes;
+      case Syntax.Constructor:
+        return TrafoFlags.ConstructorExcludes;
+      case Syntax.GetAccessor:
+      case Syntax.MethodDeclaration:
+      case Syntax.SetAccessor:
+        return TrafoFlags.MethodOrAccessorExcludes;
+      case Syntax.AnyKeyword:
+      case Syntax.BigIntKeyword:
+      case Syntax.BooleanKeyword:
+      case Syntax.CallSignature:
+      case Syntax.ConstructSignature:
+      case Syntax.IndexSignature:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.MethodSignature:
+      case Syntax.NeverKeyword:
+      case Syntax.NumberKeyword:
+      case Syntax.ObjectKeyword:
+      case Syntax.PropertySignature:
+      case Syntax.StringKeyword:
+      case Syntax.SymbolKeyword:
+      case Syntax.TypeAliasDeclaration:
+      case Syntax.TypeParameter:
+      case Syntax.VoidKeyword:
+        return TrafoFlags.TypeExcludes;
+      case Syntax.ObjectLiteralExpression:
+        return TrafoFlags.ObjectLiteralExcludes;
+      case Syntax.CatchClause:
+        return TrafoFlags.CatchClauseExcludes;
+      case Syntax.ArrayBindingPattern:
+      case Syntax.ObjectBindingPattern:
+        return TrafoFlags.BindingPatternExcludes;
+      case Syntax.AsExpression:
+      case Syntax.ParenthesizedExpression:
+      case Syntax.PartiallyEmittedExpression:
+      case Syntax.SuperKeyword:
+      case Syntax.TypeAssertionExpression:
+        return TrafoFlags.OuterExpressionExcludes;
+      case Syntax.ElemAccessExpression:
+      case Syntax.PropertyAccessExpression:
+        return TrafoFlags.PropertyAccessExcludes;
+    }
+    return TrafoFlags.NodeExcludes;
   }
   trailingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
     return each.reduceTrailingCommentRange(s, pos, appendCommentRange, undefined, undefined);

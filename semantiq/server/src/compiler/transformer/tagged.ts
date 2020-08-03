@@ -10,7 +10,7 @@ export enum ProcessLevel {
   All,
 }
 export function processTaggedTemplateExpression(
-  context: TransformationContext,
+  context: TrafoContext,
   node: TaggedTemplateExpression,
   visitor: Visitor,
   currentSourceFile: SourceFile,
@@ -58,7 +58,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
   text = text.replace(/\r\n?/g, '\n');
   return setRange(qc.asLiteral(text), node);
 }
-function createTemplateObjectHelper(context: TransformationContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
+function createTemplateObjectHelper(context: TrafoContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
   context.requestEmitHelper(templateObjectHelper);
   return new qs.CallExpression(getUnscopedHelperName('__makeTemplateObject'), undefined, [cooked, raw]);
 }

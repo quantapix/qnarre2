@@ -23,7 +23,7 @@ const enum HierarchyFacts {
   IterationStmtIncludes = IterationContainer,
   IterationStmtExcludes = None,
 }
-export function transformES2018(context: TransformationContext) {
+export function transformES2018(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
   const compilerOptions = context.getCompilerOptions();
@@ -91,7 +91,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitorWorker(node: Node, noDestructuringValue: boolean): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2018) === 0) return node;
+    if ((node.trafoFlags & TrafoFlags.ContainsES2018) === 0) return node;
     switch (node.kind) {
       case Syntax.AwaitExpression:
         return visitAwaitExpression(node as AwaitExpression);
@@ -220,7 +220,7 @@ export function transformES2018(context: TransformationContext) {
     return objects;
   }
   function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression {
-    if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (node.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       const objects = chunkObjectLiteralElems(node.properties);
       if (objects.length && objects[0].kind !== Syntax.ObjectLiteralExpression) {
         objects.unshift(new qc.ObjectLiteralExpression());
@@ -258,14 +258,14 @@ export function transformES2018(context: TransformationContext) {
     return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
   }
   function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
-    if (qc.is.destructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
+    if (qc.is.destructuringAssignment(node) && node.left.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
     if (node.operatorToken.kind === Syntax.CommaToken)
       return node.update(visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
   function visitCatchClause(node: CatchClause) {
-    if (node.variableDeclaration && qc.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (node.variableDeclaration && qc.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       const name = qf.get.generatedNameForNode(node.variableDeclaration.name);
       const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, undefined, name);
       const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -298,7 +298,7 @@ export function transformES2018(context: TransformationContext) {
     return visitVariableDeclarationWorker(node, false);
   }
   function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
-    if (qc.is.kind(qc.BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
+    if (qc.is.kind(qc.BindingPattern, node.name) && node.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
     return visitEachChild(node, visitor, context);
   }
@@ -316,7 +316,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
     const ancestorFacts = enterSubtree(HierarchyFacts.IterationStmtExcludes, HierarchyFacts.IterationStmtIncludes);
-    if (node.initer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (node.initer.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       node = transformForOfStatementWithObjectRest(node);
     }
     const result = node.awaitModifier
@@ -429,7 +429,7 @@ export function transformES2018(context: TransformationContext) {
     );
   }
   function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
-    if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
+    if (node.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return node.update(undefined, undefined, node.dot3Token, qf.get.generatedNameForNode(node), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
@@ -583,7 +583,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function appendObjectRestAssignmentsIfNeeded(statements: Statement[] | undefined, node: FunctionLikeDeclaration): Statement[] | undefined {
     for (const parameter of node.parameters) {
-      if (parameter.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (parameter.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
         const temp = qf.get.generatedNameForNode(parameter);
         const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
@@ -688,7 +688,7 @@ export const assignHelper: UnscopedEmitHelper = {
                 return __assign.apply(this, arguments);
             };`,
 };
-export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
+export function createAssignHelper(context: TrafoContext, attributesSegments: Expression[]) {
   if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) return new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
@@ -700,7 +700,7 @@ export const awaitHelper: UnscopedEmitHelper = {
   text: `
             var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }`,
 };
-function createAwaitHelper(context: TransformationContext, expression: Expression) {
+function createAwaitHelper(context: TrafoContext, expression: Expression) {
   context.requestEmitHelper(awaitHelper);
   return new qs.CallExpression(getUnscopedHelperName('__await'), undefined, [expression]);
 }
@@ -722,7 +722,7 @@ export const asyncGeneratorHelper: UnscopedEmitHelper = {
                 function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
             };`,
 };
-function createAsyncGeneratorHelper(context: TransformationContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
+function createAsyncGeneratorHelper(context: TrafoContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
   context.requestEmitHelper(asyncGeneratorHelper);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
   return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(), new Identifier('arguments'), generatorFunc]);
@@ -739,7 +739,7 @@ export const asyncDelegator: UnscopedEmitHelper = {
                 function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
             };`,
 };
-function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+function createAsyncDelegatorHelper(context: TrafoContext, expression: Expression, location?: TextRange) {
   context.requestEmitHelper(asyncDelegator);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncDelegator'), undefined, [expression]), location);
 }
@@ -756,7 +756,7 @@ export const asyncValues: UnscopedEmitHelper = {
                 function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
             };`,
 };
-function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+function createAsyncValuesHelper(context: TrafoContext, expression: Expression, location?: TextRange) {
   context.requestEmitHelper(asyncValues);
   return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncValues'), undefined, [expression]), location);
 }

@@ -4,7 +4,7 @@ import { Node, Nodes } from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
-export function transformModule(context: TransformationContext) {
+export function transformModule(context: TrafoContext) {
   interface AsynchronousDependencies {
     aliasedModuleNames: Expression[];
     unaliasedModuleNames: Expression[];
@@ -48,7 +48,7 @@ export function transformModule(context: TransformationContext) {
       node.isDeclarationFile ||
       !(
         isEffectiveExternalModule(node, compilerOptions) ||
-        node.transformFlags & TransformFlags.ContainsDynamicImport ||
+        node.trafoFlags & TrafoFlags.ContainsDynamicImport ||
         (qc.is.jsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile))
       )
     ) {
@@ -62,7 +62,7 @@ export function transformModule(context: TransformationContext) {
     currentSourceFile = undefined!;
     currentModuleInfo = undefined!;
     needUMDDynamicImportHelper = false;
-    return aggregateTransformFlags(updated);
+    return qc.compute.aggregate(updated);
   }
   function shouldEmitUnderscoreUnderscoreESModule() {
     if (!currentModuleInfo.exportEquals && qc.is.externalModule(currentSourceFile)) return true;
@@ -314,7 +314,7 @@ export function transformModule(context: TransformationContext) {
     }
   }
   function moduleExpressionElemVisitor(node: Expression): VisitResult<Expression> {
-    if (!(node.transformFlags & TransformFlags.ContainsDynamicImport) && !(node.transformFlags & TransformFlags.ContainsDestructuringAssignment)) return node;
+    if (!(node.trafoFlags & TrafoFlags.ContainsDynamicImport) && !(node.trafoFlags & TrafoFlags.ContainsDestructuringAssignment)) return node;
     if (qc.is.importCall(node)) return visitImportCallExpression(node);
     if (qc.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
     return visitEachChild(node, moduleExpressionElemVisitor, context);
@@ -357,7 +357,7 @@ export function transformModule(context: TransformationContext) {
   }
   function visitImportCallExpression(node: ImportCall): Expression {
     const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElemVisitor);
-    const containsLexicalThis = !!(node.transformFlags & TransformFlags.ContainsLexicalThis);
+    const containsLexicalThis = !!(node.trafoFlags & TrafoFlags.ContainsLexicalThis);
     switch (compilerOptions.module) {
       case ModuleKind.AMD:
         return createImportCallExpressionAMD(argument, containsLexicalThis);
@@ -985,7 +985,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     o[k2] = m[k];
 }));`,
 };
-function createCreateBindingHelper(context: TransformationContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
+function createCreateBindingHelper(context: TrafoContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
   context.requestEmitHelper(createBindingHelper);
   return new qs.CallExpression(getUnscopedHelperName('__createBinding'), undefined, [new Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
 }
@@ -1012,7 +1012,7 @@ const exportStarHelper: UnscopedEmitHelper = {
                 for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
             };`,
 };
-function createExportStarHelper(context: TransformationContext, module: Expression) {
+function createExportStarHelper(context: TrafoContext, module: Expression) {
   context.requestEmitHelper(exportStarHelper);
   return new qs.CallExpression(getUnscopedHelperName('__exportStar'), undefined, [module, new Identifier('exports')]);
 }
@@ -1046,7 +1046,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };`,
 };
-export function transformECMAScriptModule(context: TransformationContext) {
+export function transformECMAScriptModule(context: TrafoContext) {
   const compilerOptions = context.getCompilerOptions();
   const previousOnEmitNode = context.onEmitNode;
   const previousOnSubstituteNode = context.onSubstituteNode;
@@ -1127,7 +1127,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
     return substitution;
   }
 }
-export function transformSystemModule(context: TransformationContext) {
+export function transformSystemModule(context: TrafoContext) {
   interface DependencyGroup {
     name: StringLiteral;
     externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];
@@ -1161,7 +1161,7 @@ export function transformSystemModule(context: TransformationContext) {
   let noSubstitution: boolean[] | undefined;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport)) return node;
+    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
     const id = getOriginalNodeId(node);
     currentSourceFile = node;
     enclosingBlockScopedContainer = node;
@@ -1205,7 +1205,7 @@ export function transformSystemModule(context: TransformationContext) {
     contextObject = undefined!;
     hoistedStatements = undefined!;
     enclosingBlockScopedContainer = undefined!;
-    return aggregateTransformFlags(updated);
+    return qc.compute.aggregate(updated);
   }
   function collectDependencyGroups(externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[]) {
     const groupIndices = createMap<number>();
@@ -1244,7 +1244,7 @@ export function transformSystemModule(context: TransformationContext) {
     addRange(statements, hoistedStatements);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const exportStarFunction = addExportStarIfNeeded(statements)!;
-    const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? qc.create.modifiersFromFlags(ModifierFlags.Async) : undefined;
+    const modifiers = node.trafoFlags & TrafoFlags.ContainsAwait ? qc.create.modifiersFromFlags(ModifierFlags.Async) : undefined;
     const moduleObject = new qc.ObjectLiteralExpression([
       new qc.PropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
       new qc.PropertyAssignment('execute', new qs.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new Block(executeStatements, true))),
@@ -1815,7 +1815,7 @@ export function transformSystemModule(context: TransformationContext) {
   function destructuringAndImportCallVisitor(node: Node): VisitResult<Node> {
     if (qc.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
     else if (qc.is.importCall(node)) return visitImportCallExpression(node);
-    else if (node.transformFlags & TransformFlags.ContainsDestructuringAssignment || node.transformFlags & TransformFlags.ContainsDynamicImport)
+    else if (node.trafoFlags & TrafoFlags.ContainsDestructuringAssignment || node.trafoFlags & TrafoFlags.ContainsDynamicImport)
       return visitEachChild(node, destructuringAndImportCallVisitor, context);
     return node;
   }

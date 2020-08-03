@@ -225,7 +225,7 @@ function getInstructionName(instruction: Instruction): string {
       return undefined!; // TODO: GH#18217
   }
 }
-export function transformGenerators(context: TransformationContext) {
+export function transformGenerators(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistFunctionDeclaration, hoistVariableDeclaration } = context;
   const compilerOptions = context.getCompilerOptions();
   const languageVersion = getEmitScriptTarget(compilerOptions);
@@ -275,17 +275,17 @@ export function transformGenerators(context: TransformationContext) {
   let withBlockStack: WithBlock[] | undefined; // A stack containing `with` blocks.
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || (node.transformFlags & TransformFlags.ContainsGenerator) === 0) return node;
+    if (node.isDeclarationFile || (node.trafoFlags & TrafoFlags.ContainsGenerator) === 0) return node;
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
-    const transformFlags = node.transformFlags;
+    const trafoFlags = node.trafoFlags;
     if (inStatementContainingYield) return visitJavaScriptInStatementContainingYield(node);
     if (inGeneratorFunctionBody) return visitJavaScriptInGeneratorFunctionBody(node);
     if (qc.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
-    if (transformFlags & TransformFlags.ContainsGenerator) return visitEachChild(node, visitor, context);
+    if (trafoFlags & TrafoFlags.ContainsGenerator) return visitEachChild(node, visitor, context);
     return node;
   }
   function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
@@ -324,8 +324,8 @@ export function transformGenerators(context: TransformationContext) {
       case Syntax.ReturnStatement:
         return visitReturnStatement(<ReturnStatement>node);
       default:
-        if (node.transformFlags & TransformFlags.ContainsYield) return visitJavaScriptContainingYield(node);
-        if (node.transformFlags & (TransformFlags.ContainsGenerator | TransformFlags.ContainsHoistedDeclarationOrCompletion)) return visitEachChild(node, visitor, context);
+        if (node.trafoFlags & TrafoFlags.ContainsYield) return visitJavaScriptContainingYield(node);
+        if (node.trafoFlags & (TrafoFlags.ContainsGenerator | TrafoFlags.ContainsHoistedDeclarationOrCompletion)) return visitEachChild(node, visitor, context);
         return node;
     }
   }
@@ -482,7 +482,7 @@ export function transformGenerators(context: TransformationContext) {
     return setRange(new Block(statements, body.multiLine), body);
   }
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
-    if (node.transformFlags & TransformFlags.ContainsYield) {
+    if (node.trafoFlags & TrafoFlags.ContainsYield) {
       transformAndEmitVariableDeclarationList(node.declarationList);
       return;
     } else {
@@ -1442,7 +1442,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
   function containsYield(node: Node | undefined): boolean {
-    return !!node && (node.transformFlags & TransformFlags.ContainsYield) !== 0;
+    return !!node && (node.trafoFlags & TrafoFlags.ContainsYield) !== 0;
   }
   function countInitialNodesWithoutYield(nodes: Nodes<Node>) {
     const numNodes = nodes.length;
@@ -2112,7 +2112,7 @@ export function transformGenerators(context: TransformationContext) {
     writeStatement(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
   }
 }
-function createGeneratorHelper(context: TransformationContext, body: FunctionExpression) {
+function createGeneratorHelper(context: TrafoContext, body: FunctionExpression) {
   context.requestEmitHelper(generatorHelper);
   return new qc.CallExpression(getUnscopedHelperName('__generator'), undefined, [new qc.ThisExpression(), body]);
 }

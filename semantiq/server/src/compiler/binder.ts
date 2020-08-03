@@ -161,7 +161,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   let classifiableNames: EscapedMap<true>;
   const unreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
-  let subtreeTransformFlags: TransformFlags = TransformFlags.None;
+  let subtreeTrafoFlags: TrafoFlags = TrafoFlags.None;
   let skipTransformFlagAggregation: boolean;
   function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
     return qf.create.diagnosticForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
@@ -203,7 +203,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     activeLabelList = undefined;
     hasExplicitReturn = false;
     emitFlags = NodeFlags.None;
-    subtreeTransformFlags = TransformFlags.None;
+    subtreeTrafoFlags = TrafoFlags.None;
   }
   return bindSourceFile;
   function bindInStrictMode(file: SourceFile, opts: CompilerOptions): boolean {
@@ -470,16 +470,16 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindChildren(node: Node): void {
     if (skipTransformFlagAggregation) {
       bindChildrenWorker(node);
-    } else if (node.transformFlags & TransformFlags.HasComputedFlags) {
+    } else if (node.trafoFlags & TrafoFlags.HasComputedFlags) {
       skipTransformFlagAggregation = true;
       bindChildrenWorker(node);
       skipTransformFlagAggregation = false;
-      subtreeTransformFlags |= node.transformFlags & ~getTransformFlagsSubtreeExclusions(node.kind);
+      subtreeTrafoFlags |= node.trafoFlags & ~qy.get.trafoFlagsSubtreeExclusions(node.kind);
     } else {
-      const savedSubtreeTransformFlags = subtreeTransformFlags;
-      subtreeTransformFlags = 0;
+      const savedSubtreeTrafoFlags = subtreeTrafoFlags;
+      subtreeTrafoFlags = 0;
       bindChildrenWorker(node);
-      subtreeTransformFlags = savedSubtreeTransformFlags | computeTransformFlagsForNode(node, subtreeTransformFlags);
+      subtreeTrafoFlags = savedSubtreeTrafoFlags | qc.compute.trafoFlags(node, subtreeTrafoFlags);
     }
   }
   function bindEachFunctionsFirst(nodes: Nodes<Node> | undefined): void {
@@ -493,15 +493,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (skipTransformFlagAggregation) {
       forEach(nodes, bindFunction);
     } else {
-      const savedSubtreeTransformFlags = subtreeTransformFlags;
-      subtreeTransformFlags = TransformFlags.None;
-      let nodeArrayFlags = TransformFlags.None;
+      const savedSubtreeTrafoFlags = subtreeTrafoFlags;
+      subtreeTrafoFlags = TrafoFlags.None;
+      let nodeArrayFlags = TrafoFlags.None;
       for (const node of nodes) {
         bindFunction(node);
-        nodeArrayFlags |= node.transformFlags & ~TransformFlags.HasComputedFlags;
+        nodeArrayFlags |= node.trafoFlags & ~TrafoFlags.HasComputedFlags;
       }
-      nodes.transformFlags = nodeArrayFlags | TransformFlags.HasComputedFlags;
-      subtreeTransformFlags |= savedSubtreeTransformFlags;
+      nodes.trafoFlags = nodeArrayFlags | TrafoFlags.HasComputedFlags;
+      subtreeTrafoFlags |= savedSubtreeTrafoFlags;
     }
   }
   function bindEachChild(node: Node) {
@@ -972,8 +972,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     currentFlow = finishFlowLabel(postSwitchLabel);
   }
   function bindCaseBlock(node: CaseBlock): void {
-    const savedSubtreeTransformFlags = subtreeTransformFlags;
-    subtreeTransformFlags = 0;
+    const savedSubtreeTrafoFlags = subtreeTrafoFlags;
+    subtreeTrafoFlags = 0;
     const clauses = node.clauses;
     const isNarrowingSwitch = isNarrowingExpression(node.parent.expression);
     let fallthroughFlow = unreachableFlow;
@@ -994,8 +994,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         clause.fallthroughFlowNode = currentFlow;
       }
     }
-    clauses.transformFlags = subtreeTransformFlags | TransformFlags.HasComputedFlags;
-    subtreeTransformFlags |= savedSubtreeTransformFlags;
+    clauses.trafoFlags = subtreeTrafoFlags | TrafoFlags.HasComputedFlags;
+    subtreeTrafoFlags |= savedSubtreeTrafoFlags;
   }
   function bindCaseClause(node: CaseClause): void {
     const saveCurrentFlow = currentFlow;
@@ -1126,13 +1126,13 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           parent = node;
           let subtreeFlagsState: number | undefined;
           if (skipTransformFlagAggregation) {
-          } else if (node.transformFlags & TransformFlags.HasComputedFlags) {
+          } else if (node.trafoFlags & TrafoFlags.HasComputedFlags) {
             skipTransformFlagAggregation = true;
             subtreeFlagsState = -1;
           } else {
-            const savedSubtreeTransformFlags = subtreeTransformFlags;
-            subtreeTransformFlags = 0;
-            subtreeFlagsState = savedSubtreeTransformFlags;
+            const savedSubtreeTrafoFlags = subtreeTrafoFlags;
+            subtreeTrafoFlags = 0;
+            subtreeFlagsState = savedSubtreeTrafoFlags;
           }
           advanceState(BindBinaryExpressionFlowState.MaybeBindLeft, saveInStrictMode, saveParent, subtreeFlagsState);
           break;
@@ -1198,9 +1198,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       if (workStacks.inStrictMode[stackIndex] !== undefined) {
         if (workStacks.subtreeFlags[stackIndex] === -1) {
           skipTransformFlagAggregation = false;
-          subtreeTransformFlags |= node.transformFlags & ~getTransformFlagsSubtreeExclusions(node.kind);
+          subtreeTrafoFlags |= node.trafoFlags & ~qy.get.trafoFlagsSubtreeExclusions(node.kind);
         } else if (workStacks.subtreeFlags[stackIndex] !== undefined) {
-          subtreeTransformFlags = workStacks.subtreeFlags[stackIndex]! | computeTransformFlagsForNode(node, subtreeTransformFlags);
+          subtreeTrafoFlags = workStacks.subtreeFlags[stackIndex]! | qc.compute.trafoFlags(node, subtreeTrafoFlags);
         }
         inStrictMode = workStacks.inStrictMode[stackIndex]!;
         parent = workStacks.parent[stackIndex]!;
@@ -1783,8 +1783,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         bindContainer(node, containerFlags);
       }
       parent = saveParent;
-    } else if (!skipTransformFlagAggregation && (node.transformFlags & TransformFlags.HasComputedFlags) === 0) {
-      subtreeTransformFlags |= computeTransformFlagsForNode(node, 0);
+    } else if (!skipTransformFlagAggregation && (node.trafoFlags & TrafoFlags.HasComputedFlags) === 0) {
+      subtreeTrafoFlags |= qc.compute.trafoFlags(node, 0);
       const saveParent = parent;
       if (node.kind === Syntax.EndOfFileToken) parent = node;
       bindDoc(node);
@@ -2603,670 +2603,6 @@ function lookupSymbolForNameWorker(container: Node, name: qu.__String): Symbol |
   if (local) return local.exportSymbol || local;
   if (qf.is.kind(qc.SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);
   return container.symbol && container.symbol.exports && container.symbol.exports.get(name);
-}
-export function computeTransformFlagsForNode(node: Node, subtreeFlags: TransformFlags): TransformFlags {
-  const kind = node.kind;
-  switch (kind) {
-    case Syntax.CallExpression:
-      return computeCallExpression(<CallExpression>node, subtreeFlags);
-    case Syntax.NewExpression:
-      return computeNewExpression(<NewExpression>node, subtreeFlags);
-    case Syntax.ModuleDeclaration:
-      return computeModuleDeclaration(<ModuleDeclaration>node, subtreeFlags);
-    case Syntax.ParenthesizedExpression:
-      return computeParenthesizedExpression(<ParenthesizedExpression>node, subtreeFlags);
-    case Syntax.BinaryExpression:
-      return computeBinaryExpression(<BinaryExpression>node, subtreeFlags);
-    case Syntax.ExpressionStatement:
-      return computeExpressionStatement(<ExpressionStatement>node, subtreeFlags);
-    case Syntax.Parameter:
-      return computeParameter(<ParameterDeclaration>node, subtreeFlags);
-    case Syntax.ArrowFunction:
-      return computeArrowFunction(<ArrowFunction>node, subtreeFlags);
-    case Syntax.FunctionExpression:
-      return computeFunctionExpression(<FunctionExpression>node, subtreeFlags);
-    case Syntax.FunctionDeclaration:
-      return computeFunctionDeclaration(<FunctionDeclaration>node, subtreeFlags);
-    case Syntax.VariableDeclaration:
-      return computeVariableDeclaration(<VariableDeclaration>node, subtreeFlags);
-    case Syntax.VariableDeclarationList:
-      return computeVariableDeclarationList(<VariableDeclarationList>node, subtreeFlags);
-    case Syntax.VariableStatement:
-      return computeVariableStatement(<VariableStatement>node, subtreeFlags);
-    case Syntax.LabeledStatement:
-      return computeLabeledStatement(<LabeledStatement>node, subtreeFlags);
-    case Syntax.ClassDeclaration:
-      return computeClassDeclaration(<ClassDeclaration>node, subtreeFlags);
-    case Syntax.ClassExpression:
-      return computeClassExpression(<ClassExpression>node, subtreeFlags);
-    case Syntax.HeritageClause:
-      return computeHeritageClause(<HeritageClause>node, subtreeFlags);
-    case Syntax.CatchClause:
-      return computeCatchClause(<CatchClause>node, subtreeFlags);
-    case Syntax.ExpressionWithTypings:
-      return computeExpressionWithTypings(<ExpressionWithTypings>node, subtreeFlags);
-    case Syntax.Constructor:
-      return computeConstructor(<ConstructorDeclaration>node, subtreeFlags);
-    case Syntax.PropertyDeclaration:
-      return computePropertyDeclaration(<PropertyDeclaration>node, subtreeFlags);
-    case Syntax.MethodDeclaration:
-      return computeMethod(<MethodDeclaration>node, subtreeFlags);
-    case Syntax.GetAccessor:
-    case Syntax.SetAccessor:
-      return computeAccessor(<AccessorDeclaration>node, subtreeFlags);
-    case Syntax.ImportEqualsDeclaration:
-      return computeImportEquals(<ImportEqualsDeclaration>node, subtreeFlags);
-    case Syntax.PropertyAccessExpression:
-      return computePropertyAccess(<PropertyAccessExpression>node, subtreeFlags);
-    case Syntax.ElemAccessExpression:
-      return computeElemAccess(<ElemAccessExpression>node, subtreeFlags);
-    case Syntax.JsxSelfClosingElem:
-    case Syntax.JsxOpeningElem:
-      return computeJsxOpeningLikeElem(<JsxOpeningLikeElem>node, subtreeFlags);
-    default:
-      return computeOther(node, kind, subtreeFlags);
-  }
-}
-function computeCallExpression(node: CallExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  const callee = qc.skip.outerExpressions(node.expression);
-  const expression = node.expression;
-  if (node.flags & NodeFlags.OptionalChain) {
-    transformFlags |= TransformFlags.ContainsES2020;
-  }
-  if (node.typeArguments) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (subtreeFlags & TransformFlags.ContainsRestOrSpread || qf.is.superOrSuperProperty(callee)) {
-    transformFlags |= TransformFlags.AssertES2015;
-    if (qf.is.superProperty(callee)) {
-      transformFlags |= TransformFlags.ContainsLexicalThis;
-    }
-  }
-  if (expression.kind === Syntax.ImportKeyword) {
-    transformFlags |= TransformFlags.ContainsDynamicImport;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ArrayLiteralOrCallOrNewExcludes;
-}
-function computeNewExpression(node: NewExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (node.typeArguments) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (subtreeFlags & TransformFlags.ContainsRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2015;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ArrayLiteralOrCallOrNewExcludes;
-}
-function computeJsxOpeningLikeElem(node: JsxOpeningLikeElem, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.AssertJsx;
-  if (node.typeArguments) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeBinaryExpression(node: BinaryExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  const operatorTokenKind = node.operatorToken.kind;
-  const leftKind = node.left.kind;
-  if (operatorTokenKind === Syntax.Question2Token) {
-    transformFlags |= TransformFlags.AssertES2020;
-  } else if (operatorTokenKind === Syntax.EqualsToken && leftKind === Syntax.ObjectLiteralExpression) {
-    transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2015 | TransformFlags.AssertDestructuringAssignment;
-  } else if (operatorTokenKind === Syntax.EqualsToken && leftKind === Syntax.ArrayLiteralExpression) {
-    transformFlags |= TransformFlags.AssertES2015 | TransformFlags.AssertDestructuringAssignment;
-  } else if (operatorTokenKind === Syntax.Asterisk2Token || operatorTokenKind === Syntax.Asterisk2EqualsToken) {
-    transformFlags |= TransformFlags.AssertES2016;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeParameter(node: ParameterDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  const name = node.name;
-  const initer = node.initer;
-  const dot3Token = node.dot3Token;
-  if (node.questionToken || node.type || (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax && some(node.decorators)) || isThisNode(Identifier, name)) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (qf.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
-    transformFlags |= TransformFlags.AssertTypeScript | TransformFlags.ContainsTypeScriptClassSyntax;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  if (subtreeFlags & TransformFlags.ContainsBindingPattern || initer || dot3Token) {
-    transformFlags |= TransformFlags.AssertES2015;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ParameterExcludes;
-}
-function computeParenthesizedExpression(node: ParenthesizedExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  const expression = node.expression;
-  const expressionKind = expression.kind;
-  if (expressionKind === Syntax.AsExpression || expressionKind === Syntax.TypeAssertionExpression) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.OuterExpressionExcludes;
-}
-function computeClassDeclaration(node: ClassDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags: TransformFlags;
-  if (qf.has.syntacticModifier(node, ModifierFlags.Ambient)) {
-    transformFlags = TransformFlags.AssertTypeScript;
-  } else {
-    transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-    if (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax || node.typeParameters) {
-      transformFlags |= TransformFlags.AssertTypeScript;
-    }
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ClassExcludes;
-}
-function computeClassExpression(node: ClassExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax || node.typeParameters) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ClassExcludes;
-}
-function computeHeritageClause(node: HeritageClause, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  switch (node.token) {
-    case Syntax.ExtendsKeyword:
-      transformFlags |= TransformFlags.AssertES2015;
-      break;
-    case Syntax.ImplementsKeyword:
-      transformFlags |= TransformFlags.AssertTypeScript;
-      break;
-    default:
-      fail('Unexpected token for heritage clause');
-      break;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeCatchClause(node: CatchClause, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (!node.variableDeclaration) {
-    transformFlags |= TransformFlags.AssertES2019;
-  } else if (qf.is.kind(qc.BindingPattern, node.variableDeclaration.name)) {
-    transformFlags |= TransformFlags.AssertES2015;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.CatchClauseExcludes;
-}
-function computeExpressionWithTypings(node: ExpressionWithTypings, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (node.typeArguments) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeConstructor(node: ConstructorDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || !node.body) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ConstructorExcludes;
-}
-function computeMethod(node: MethodDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (node.decorators || qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type || !node.body || node.questionToken) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
-    transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
-  }
-  if (node.asteriskToken) {
-    transformFlags |= TransformFlags.AssertGenerator;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return propagatePropertyNameFlags(node.name, transformFlags & ~TransformFlags.MethodOrAccessorExcludes);
-}
-function computeAccessor(node: AccessorDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (node.decorators || qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || !node.body) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return propagatePropertyNameFlags(node.name, transformFlags & ~TransformFlags.MethodOrAccessorExcludes);
-}
-function computePropertyDeclaration(node: PropertyDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.ContainsClassFields;
-  if (some(node.decorators) || qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (qf.is.kind(qc.ComputedPropertyName, node.name) || (qf.has.staticModifier(node) && node.initer)) {
-    transformFlags |= TransformFlags.ContainsTypeScriptClassSyntax;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return propagatePropertyNameFlags(node.name, transformFlags & ~TransformFlags.PropertyExcludes);
-}
-function computeFunctionDeclaration(node: FunctionDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags: TransformFlags;
-  const modifierFlags = qf.get.syntacticModifierFlags(node);
-  const body = node.body;
-  if (!body || modifierFlags & ModifierFlags.Ambient) {
-    transformFlags = TransformFlags.AssertTypeScript;
-  } else {
-    transformFlags = subtreeFlags | TransformFlags.ContainsHoistedDeclarationOrCompletion;
-    if (modifierFlags & ModifierFlags.TypeScriptModifier || node.typeParameters || node.type) {
-      transformFlags |= TransformFlags.AssertTypeScript;
-    }
-    if (modifierFlags & ModifierFlags.Async) {
-      transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
-    }
-    if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-      transformFlags |= TransformFlags.AssertES2018;
-    }
-    if (node.asteriskToken) {
-      transformFlags |= TransformFlags.AssertGenerator;
-    }
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.FunctionExcludes;
-}
-function computeFunctionExpression(node: FunctionExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
-    transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  if (node.asteriskToken) {
-    transformFlags |= TransformFlags.AssertGenerator;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.FunctionExcludes;
-}
-function computeArrowFunction(node: ArrowFunction, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (qf.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  if (qf.has.syntacticModifier(node, ModifierFlags.Async)) {
-    transformFlags |= TransformFlags.AssertES2017;
-  }
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ArrowFunctionExcludes;
-}
-function computePropertyAccess(node: PropertyAccessExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (node.flags & NodeFlags.OptionalChain) {
-    transformFlags |= TransformFlags.ContainsES2020;
-  }
-  if (node.expression.kind === Syntax.SuperKeyword) {
-    transformFlags |= TransformFlags.ContainsES2017 | TransformFlags.ContainsES2018;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.PropertyAccessExcludes;
-}
-function computeElemAccess(node: ElemAccessExpression, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (node.flags & NodeFlags.OptionalChain) {
-    transformFlags |= TransformFlags.ContainsES2020;
-  }
-  if (node.expression.kind === Syntax.SuperKeyword) {
-    transformFlags |= TransformFlags.ContainsES2017 | TransformFlags.ContainsES2018;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.PropertyAccessExcludes;
-}
-function computeVariableDeclaration(node: VariableDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
-  if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-    transformFlags |= TransformFlags.AssertES2018;
-  }
-  if (node.type || node.exclamationToken) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeVariableStatement(node: VariableStatement, subtreeFlags: TransformFlags) {
-  let transformFlags: TransformFlags;
-  const declarationListTransformFlags = node.declarationList.transformFlags;
-  if (qf.has.syntacticModifier(node, ModifierFlags.Ambient)) {
-    transformFlags = TransformFlags.AssertTypeScript;
-  } else {
-    transformFlags = subtreeFlags;
-    if (declarationListTransformFlags & TransformFlags.ContainsBindingPattern) {
-      transformFlags |= TransformFlags.AssertES2015;
-    }
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeLabeledStatement(node: LabeledStatement, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (subtreeFlags & TransformFlags.ContainsBlockScopedBinding && qf.is.iterationStatement(node, true)) {
-    transformFlags |= TransformFlags.AssertES2015;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeImportEquals(node: ImportEqualsDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  if (!qf.is.externalModuleImportEqualsDeclaration(node)) {
-    transformFlags |= TransformFlags.AssertTypeScript;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeExpressionStatement(node: ExpressionStatement, subtreeFlags: TransformFlags) {
-  const transformFlags = subtreeFlags;
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.NodeExcludes;
-}
-function computeModuleDeclaration(node: ModuleDeclaration, subtreeFlags: TransformFlags) {
-  let transformFlags = TransformFlags.AssertTypeScript;
-  const modifierFlags = qf.get.syntacticModifierFlags(node);
-  if ((modifierFlags & ModifierFlags.Ambient) === 0) {
-    transformFlags |= subtreeFlags;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.ModuleExcludes;
-}
-function computeVariableDeclarationList(node: VariableDeclarationList, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags | TransformFlags.ContainsHoistedDeclarationOrCompletion;
-  if (subtreeFlags & TransformFlags.ContainsBindingPattern) {
-    transformFlags |= TransformFlags.AssertES2015;
-  }
-  if (node.flags & NodeFlags.BlockScoped) {
-    transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBlockScopedBinding;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~TransformFlags.VariableDeclarationListExcludes;
-}
-function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
-  let transformFlags = subtreeFlags;
-  let excludeFlags = TransformFlags.NodeExcludes;
-  switch (kind) {
-    case Syntax.AsyncKeyword:
-      transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2017;
-      break;
-    case Syntax.AwaitExpression:
-      transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2017 | TransformFlags.ContainsAwait;
-      break;
-    case Syntax.TypeAssertionExpression:
-    case Syntax.AsExpression:
-    case Syntax.PartiallyEmittedExpression:
-      transformFlags |= TransformFlags.AssertTypeScript;
-      excludeFlags = TransformFlags.OuterExpressionExcludes;
-      break;
-    case Syntax.PublicKeyword:
-    case Syntax.PrivateKeyword:
-    case Syntax.ProtectedKeyword:
-    case Syntax.AbstractKeyword:
-    case Syntax.DeclareKeyword:
-    case Syntax.ConstKeyword:
-    case Syntax.EnumDeclaration:
-    case Syntax.EnumMember:
-    case Syntax.NonNullExpression:
-    case Syntax.ReadonlyKeyword:
-      transformFlags |= TransformFlags.AssertTypeScript;
-      break;
-    case Syntax.JsxElem:
-    case Syntax.JsxText:
-    case Syntax.JsxClosingElem:
-    case Syntax.JsxFragment:
-    case Syntax.JsxOpeningFragment:
-    case Syntax.JsxClosingFragment:
-    case Syntax.JsxAttribute:
-    case Syntax.JsxAttributes:
-    case Syntax.JsxSpreadAttribute:
-    case Syntax.JsxExpression:
-      transformFlags |= TransformFlags.AssertJsx;
-      break;
-    case Syntax.NoSubstitutionLiteral:
-    case Syntax.TemplateHead:
-    case Syntax.TemplateMiddle:
-    case Syntax.TemplateTail:
-      if ((<NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail>node).templateFlags) {
-        transformFlags |= TransformFlags.AssertES2018;
-        break;
-      }
-    case Syntax.TaggedTemplateExpression:
-      if (qf.has.invalidEscape((<TaggedTemplateExpression>node).template)) {
-        transformFlags |= TransformFlags.AssertES2018;
-        break;
-      }
-    case Syntax.TemplateExpression:
-    case Syntax.ShorthandPropertyAssignment:
-    case Syntax.StaticKeyword:
-    case Syntax.MetaProperty:
-      transformFlags |= TransformFlags.AssertES2015;
-      break;
-    case Syntax.StringLiteral:
-      if ((<StringLiteral>node).hasExtendedEscape) {
-        transformFlags |= TransformFlags.AssertES2015;
-      }
-      break;
-    case Syntax.NumericLiteral:
-      if ((<NumericLiteral>node).numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) {
-        transformFlags |= TransformFlags.AssertES2015;
-      }
-      break;
-    case Syntax.BigIntLiteral:
-      transformFlags |= TransformFlags.AssertESNext;
-      break;
-    case Syntax.ForOfStatement:
-      if ((<ForOfStatement>node).awaitModifier) {
-        transformFlags |= TransformFlags.AssertES2018;
-      }
-      transformFlags |= TransformFlags.AssertES2015;
-      break;
-    case Syntax.YieldExpression:
-      transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2015 | TransformFlags.ContainsYield;
-      break;
-    case Syntax.AnyKeyword:
-    case Syntax.NumberKeyword:
-    case Syntax.BigIntKeyword:
-    case Syntax.NeverKeyword:
-    case Syntax.ObjectKeyword:
-    case Syntax.StringKeyword:
-    case Syntax.BooleanKeyword:
-    case Syntax.SymbolKeyword:
-    case Syntax.VoidKeyword:
-    case Syntax.TypeParameter:
-    case Syntax.PropertySignature:
-    case Syntax.MethodSignature:
-    case Syntax.CallSignature:
-    case Syntax.ConstructSignature:
-    case Syntax.IndexSignature:
-    case Syntax.TypingPredicate:
-    case Syntax.TypingReference:
-    case Syntax.FunctionTyping:
-    case Syntax.ConstructorTyping:
-    case Syntax.TypingQuery:
-    case Syntax.TypingLiteral:
-    case Syntax.ArrayTyping:
-    case Syntax.TupleTyping:
-    case Syntax.OptionalTyping:
-    case Syntax.RestTyping:
-    case Syntax.UnionTyping:
-    case Syntax.IntersectionTyping:
-    case Syntax.ConditionalTyping:
-    case Syntax.InferTyping:
-    case Syntax.ParenthesizedTyping:
-    case Syntax.InterfaceDeclaration:
-    case Syntax.TypeAliasDeclaration:
-    case Syntax.ThisTyping:
-    case Syntax.TypingOperator:
-    case Syntax.IndexedAccessTyping:
-    case Syntax.MappedTyping:
-    case Syntax.LiteralTyping:
-    case Syntax.NamespaceExportDeclaration:
-      transformFlags = TransformFlags.AssertTypeScript;
-      excludeFlags = TransformFlags.TypeExcludes;
-      break;
-    case Syntax.ComputedPropertyName:
-      transformFlags |= TransformFlags.ContainsComputedPropertyName;
-      break;
-    case Syntax.SpreadElem:
-      transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsRestOrSpread;
-      break;
-    case Syntax.SpreadAssignment:
-      transformFlags |= TransformFlags.AssertES2018 | TransformFlags.ContainsObjectRestOrSpread;
-      break;
-    case Syntax.SuperKeyword:
-      transformFlags |= TransformFlags.AssertES2015;
-      excludeFlags = TransformFlags.OuterExpressionExcludes;
-      break;
-    case Syntax.ThisKeyword:
-      transformFlags |= TransformFlags.ContainsLexicalThis;
-      break;
-    case Syntax.ObjectBindingPattern:
-      transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
-      if (subtreeFlags & TransformFlags.ContainsRestOrSpread) {
-        transformFlags |= TransformFlags.AssertES2018 | TransformFlags.ContainsObjectRestOrSpread;
-      }
-      excludeFlags = TransformFlags.BindingPatternExcludes;
-      break;
-    case Syntax.ArrayBindingPattern:
-      transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
-      excludeFlags = TransformFlags.BindingPatternExcludes;
-      break;
-    case Syntax.BindingElem:
-      transformFlags |= TransformFlags.AssertES2015;
-      if ((<BindingElem>node).dot3Token) {
-        transformFlags |= TransformFlags.ContainsRestOrSpread;
-      }
-      break;
-    case Syntax.Decorator:
-      transformFlags |= TransformFlags.AssertTypeScript | TransformFlags.ContainsTypeScriptClassSyntax;
-      break;
-    case Syntax.ObjectLiteralExpression:
-      excludeFlags = TransformFlags.ObjectLiteralExcludes;
-      if (subtreeFlags & TransformFlags.ContainsComputedPropertyName) {
-        transformFlags |= TransformFlags.AssertES2015;
-      }
-      if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
-        transformFlags |= TransformFlags.AssertES2018;
-      }
-      break;
-    case Syntax.ArrayLiteralExpression:
-      excludeFlags = TransformFlags.ArrayLiteralOrCallOrNewExcludes;
-      break;
-    case Syntax.DoStatement:
-    case Syntax.WhileStatement:
-    case Syntax.ForStatement:
-    case Syntax.ForInStatement:
-      if (subtreeFlags & TransformFlags.ContainsBlockScopedBinding) {
-        transformFlags |= TransformFlags.AssertES2015;
-      }
-      break;
-    case Syntax.SourceFile:
-      break;
-    case Syntax.NamespaceExport:
-      transformFlags |= TransformFlags.AssertESNext;
-      break;
-    case Syntax.ReturnStatement:
-      transformFlags |= TransformFlags.ContainsHoistedDeclarationOrCompletion | TransformFlags.AssertES2018;
-      break;
-    case Syntax.ContinueStatement:
-    case Syntax.BreakStatement:
-      transformFlags |= TransformFlags.ContainsHoistedDeclarationOrCompletion;
-      break;
-    case Syntax.PrivateIdentifier:
-      transformFlags |= TransformFlags.ContainsClassFields;
-      break;
-  }
-  node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
-  return transformFlags & ~excludeFlags;
-}
-function propagatePropertyNameFlags(node: PropertyName, transformFlags: TransformFlags) {
-  return transformFlags | (node.transformFlags & TransformFlags.PropertyNamePropagatingFlags);
-}
-export function getTransformFlagsSubtreeExclusions(kind: Syntax) {
-  if (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) return TransformFlags.TypeExcludes;
-  switch (kind) {
-    case Syntax.CallExpression:
-    case Syntax.NewExpression:
-    case Syntax.ArrayLiteralExpression:
-      return TransformFlags.ArrayLiteralOrCallOrNewExcludes;
-    case Syntax.ModuleDeclaration:
-      return TransformFlags.ModuleExcludes;
-    case Syntax.Parameter:
-      return TransformFlags.ParameterExcludes;
-    case Syntax.ArrowFunction:
-      return TransformFlags.ArrowFunctionExcludes;
-    case Syntax.FunctionExpression:
-    case Syntax.FunctionDeclaration:
-      return TransformFlags.FunctionExcludes;
-    case Syntax.VariableDeclarationList:
-      return TransformFlags.VariableDeclarationListExcludes;
-    case Syntax.ClassDeclaration:
-    case Syntax.ClassExpression:
-      return TransformFlags.ClassExcludes;
-    case Syntax.Constructor:
-      return TransformFlags.ConstructorExcludes;
-    case Syntax.MethodDeclaration:
-    case Syntax.GetAccessor:
-    case Syntax.SetAccessor:
-      return TransformFlags.MethodOrAccessorExcludes;
-    case Syntax.AnyKeyword:
-    case Syntax.NumberKeyword:
-    case Syntax.BigIntKeyword:
-    case Syntax.NeverKeyword:
-    case Syntax.StringKeyword:
-    case Syntax.ObjectKeyword:
-    case Syntax.BooleanKeyword:
-    case Syntax.SymbolKeyword:
-    case Syntax.VoidKeyword:
-    case Syntax.TypeParameter:
-    case Syntax.PropertySignature:
-    case Syntax.MethodSignature:
-    case Syntax.CallSignature:
-    case Syntax.ConstructSignature:
-    case Syntax.IndexSignature:
-    case Syntax.InterfaceDeclaration:
-    case Syntax.TypeAliasDeclaration:
-      return TransformFlags.TypeExcludes;
-    case Syntax.ObjectLiteralExpression:
-      return TransformFlags.ObjectLiteralExcludes;
-    case Syntax.CatchClause:
-      return TransformFlags.CatchClauseExcludes;
-    case Syntax.ObjectBindingPattern:
-    case Syntax.ArrayBindingPattern:
-      return TransformFlags.BindingPatternExcludes;
-    case Syntax.TypeAssertionExpression:
-    case Syntax.AsExpression:
-    case Syntax.PartiallyEmittedExpression:
-    case Syntax.ParenthesizedExpression:
-    case Syntax.SuperKeyword:
-      return TransformFlags.OuterExpressionExcludes;
-    case Syntax.PropertyAccessExpression:
-    case Syntax.ElemAccessExpression:
-      return TransformFlags.PropertyAccessExcludes;
-    default:
-      return TransformFlags.NodeExcludes;
-  }
 }
 function setParentPointers(parent: Node, child: Node): void {
   child.parent = parent;

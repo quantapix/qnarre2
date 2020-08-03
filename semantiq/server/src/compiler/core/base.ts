@@ -2,7 +2,7 @@ import * as qc from './index';
 import * as qd from '../diagnostic';
 import { qf } from './frame';
 import { Node } from '../type';
-import { CheckFlags, EmitFlags, ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from '../type';
+import { CheckFlags, EmitFlags, ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
@@ -64,7 +64,7 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
   pos = -1;
   end = -1;
   trailingComma?: boolean;
-  transformFlags = TransformFlags.None;
+  trafoFlags = TrafoFlags.None;
   static isNodes<T extends qt.Nobj>(ns: readonly T[]): ns is Nodes<T> {
     return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
   }
@@ -90,39 +90,11 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
   }
 }
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
-const node = new (class {
-  aggregateTransformFlags(): this {
-    const aggregate = (n: Nobj): TransformFlags => {
-      if (n === undefined) return TransformFlags.None;
-      if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
-      return computeTransformFlagsForNode(n, subtree(n));
-    };
-    const nodes = (ns: Nodes<Nobj>): TransformFlags => {
-      if (ns === undefined) return TransformFlags.None;
-      let sub = TransformFlags.None;
-      let f = TransformFlags.None;
-      for (const n of ns) {
-        sub |= aggregate(n);
-        f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
-      }
-      ns.transformFlags = f | TransformFlags.HasComputedFlags;
-      return sub;
-    };
-    const subtree = (n: Nobj): TransformFlags => {
-      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TransformFlags.None;
-      return reduceEachChild(n, TransformFlags.None, child, children);
-    };
-    const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
-    const children = (f: TransformFlags, ns: Nodes<Nobj>): TransformFlags => f | nodes(ns);
-    aggregate(this);
-    return this;
-  }
-})();
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   id?: number;
   kind!: Syntax;
   flags = NodeFlags.None;
-  transformFlags = TransformFlags.None;
+  trafoFlags = TrafoFlags.None;
   modifierFlagsCache = ModifierFlags.None;
   decorators?: Nodes<qt.Decorator>;
   modifiers?: qt.Modifiers;
@@ -273,7 +245,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     return cb(this);
   }
   updateFrom(n: Nobj): this {
-    if (this !== n) return this.setOriginal(n).setRange(n).aggregateTransformFlags();
+    if (this !== n) return this.setOriginal(n).setRange(n).qc.compute.aggregate();
     return this;
   }
   setOriginal(n?: Nobj): this {
@@ -1057,7 +1029,7 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
   id: number;
   flags: NodeFlags;
   modifierFlagsCache: ModifierFlags;
-  transformFlags: TransformFlags;
+  trafoFlags: TrafoFlags;
   decorators?: Nodes<Decorator> | undefined;
   modifiers?: qt.Modifiers | undefined;
   original?: Nobj | undefined;
@@ -1885,8 +1857,8 @@ export const format = new (class {
   syntax(k?: Syntax): string {
     return qu.formatEnum(k, (qt as any).SyntaxKind, false);
   }
-  transformFlags(f?: TransformFlags): string {
-    return qu.formatEnum(f, (qt as any).TransformFlags, true);
+  trafoFlags(f?: TrafoFlags): string {
+    return qu.formatEnum(f, (qt as any).TrafoFlags, true);
   }
   typeFlags(f?: TypeFlags): string {
     return qu.formatEnum(f, (qt as any).TypeFlags, true);
@@ -1915,6 +1887,504 @@ export const skip = new (class {
   partiallyEmittedExpressions(n: Node): Node;
   partiallyEmittedExpressions(n: Node | qt.Expression) {
     return this.outerExpressions(n, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
+  }
+})();
+export const compute = new (class {
+  aggregate(n: Node): Node {
+    const aggregate = (n?: Node): TrafoFlags => {
+      if (!n) return TrafoFlags.None;
+      if (n.trafoFlags & TrafoFlags.HasComputedFlags) return n.trafoFlags & ~qy.get.trafoFlagsSubtreeExclusions(n.kind);
+      return this.trafoFlags(n, subtree(n));
+    };
+    const nodes = (ns?: Nodes<Node>): TrafoFlags => {
+      if (!ns) return TrafoFlags.None;
+      let sub = TrafoFlags.None;
+      let f = TrafoFlags.None;
+      for (const n of ns) {
+        sub |= aggregate(n);
+        f |= n.trafoFlags & ~TrafoFlags.HasComputedFlags;
+      }
+      ns.trafoFlags = f | TrafoFlags.HasComputedFlags;
+      return sub;
+    };
+    const subtree = (n: Node): TrafoFlags => {
+      if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TrafoFlags.None;
+      return reduceEachChild(n, TrafoFlags.None, child, children);
+    };
+    const child = (f: TrafoFlags, n: Node): TrafoFlags => f | aggregate(n);
+    const children = (f: TrafoFlags, ns: Nodes<Node>): TrafoFlags => f | nodes(ns);
+    aggregate(n);
+    return n;
+  }
+  trafoFlags(n: Node, f: TrafoFlags): TrafoFlags {
+    switch (n.kind) {
+      case Syntax.CallExpression:
+        return this.callExpression(n, f);
+      case Syntax.NewExpression:
+        return this.newExpression(n, f);
+      case Syntax.ModuleDeclaration:
+        return this.moduleDeclaration(n, f);
+      case Syntax.ParenthesizedExpression:
+        return this.parenthesizedExpression(n, f);
+      case Syntax.BinaryExpression:
+        return this.binaryExpression(n, f);
+      case Syntax.ExpressionStatement:
+        return this.expressionStatement(n, f);
+      case Syntax.Parameter:
+        return this.parameter(n, f);
+      case Syntax.ArrowFunction:
+        return this.arrowFunction(n, f);
+      case Syntax.FunctionExpression:
+        return this.functionExpression(n, f);
+      case Syntax.FunctionDeclaration:
+        return this.functionDeclaration(n, f);
+      case Syntax.VariableDeclaration:
+        return this.variableDeclaration(n, f);
+      case Syntax.VariableDeclarationList:
+        return this.variableDeclarationList(n, f);
+      case Syntax.VariableStatement:
+        return this.variableStatement(n, f);
+      case Syntax.LabeledStatement:
+        return this.labeledStatement(n, f);
+      case Syntax.ClassDeclaration:
+        return this.classDeclaration(n, f);
+      case Syntax.ClassExpression:
+        return this.classExpression(n, f);
+      case Syntax.HeritageClause:
+        return this.heritageClause(n, f);
+      case Syntax.CatchClause:
+        return this.catchClause(n, f);
+      case Syntax.ExpressionWithTypings:
+        return this.expressionWithTypings(n, f);
+      case Syntax.Constructor:
+        return this.constructorr(n, f);
+      case Syntax.PropertyDeclaration:
+        return this.propertyDeclaration(n, f);
+      case Syntax.MethodDeclaration:
+        return this.method(n, f);
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
+        return this.accessor(n, f);
+      case Syntax.ImportEqualsDeclaration:
+        return this.importEquals(n, f);
+      case Syntax.PropertyAccessExpression:
+        return this.propertyAccess(n, f);
+      case Syntax.ElemAccessExpression:
+        return this.elemAccess(n, f);
+      case Syntax.JsxSelfClosingElem:
+      case Syntax.JsxOpeningElem:
+        return this.jsxOpeningLikeElem(n, f);
+    }
+    return this.other(n, f);
+  }
+  callExpression(n: qt.CallExpression, f: TrafoFlags) {
+    let r = f;
+    const callee = qc.skip.outerExpressions(n.expression);
+    const e = n.expression;
+    if (n.flags & NodeFlags.OptionalChain) r |= TrafoFlags.ContainsES2020;
+    if (n.typeArguments) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsRestOrSpread || qf.is.superOrSuperProperty(callee)) {
+      r |= TrafoFlags.AssertES2015;
+      if (qf.is.superProperty(callee)) r |= TrafoFlags.ContainsLexicalThis;
+    }
+    if (e.kind === Syntax.ImportKeyword) r |= TrafoFlags.ContainsDynamicImport;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
+  }
+  newExpression(n: qt.NewExpression, f: TrafoFlags) {
+    let r = f;
+    if (n.typeArguments) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsRestOrSpread) r |= TrafoFlags.AssertES2015;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
+  }
+  jsxOpeningLikeElem(n: qt.JsxOpeningLikeElem, f: TrafoFlags) {
+    let r = f | TrafoFlags.AssertJsx;
+    if (n.typeArguments) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  binaryExpression(n: qt.BinaryExpression, f: TrafoFlags) {
+    let r = f;
+    const k = n.operatorToken.kind;
+    const l = n.left.kind;
+    if (k === Syntax.Question2Token) r |= TrafoFlags.AssertES2020;
+    else if (k === Syntax.EqualsToken && l === Syntax.ObjectLiteralExpression) r |= TrafoFlags.AssertES2018 | TrafoFlags.AssertES2015 | TrafoFlags.AssertDestructuringAssignment;
+    else if (k === Syntax.EqualsToken && l === Syntax.ArrayLiteralExpression) r |= TrafoFlags.AssertES2015 | TrafoFlags.AssertDestructuringAssignment;
+    else if (k === Syntax.Asterisk2Token || k === Syntax.Asterisk2EqualsToken) r |= TrafoFlags.AssertES2016;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  parameter(n: qt.ParameterDeclaration, f: TrafoFlags) {
+    let r = f;
+    const name = n.name;
+    const initer = n.initer;
+    const dot3Token = n.dot3Token;
+    if (n.questionToken || n.type || (f & TrafoFlags.ContainsTypeScriptClassSyntax && qu.some(n.decorators)) || isThisNode(Identifier, name)) r |= TrafoFlags.AssertTypeScript;
+    if (qf.has.syntacticModifier(n, ModifierFlags.ParameterPropertyModifier)) r |= TrafoFlags.AssertTypeScript | TrafoFlags.ContainsTypeScriptClassSyntax;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    if (f & TrafoFlags.ContainsBindingPattern || initer || dot3Token) r |= TrafoFlags.AssertES2015;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ParameterExcludes;
+  }
+  parenthesizedExpression(n: qt.ParenthesizedExpression, f: TrafoFlags) {
+    let r = f;
+    const k = n.expression.kind;
+    if (k === Syntax.AsExpression || k === Syntax.TypeAssertionExpression) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.OuterExpressionExcludes;
+  }
+  classDeclaration(n: qt.ClassDeclaration, f: TrafoFlags) {
+    let r: TrafoFlags;
+    if (qf.has.syntacticModifier(n, ModifierFlags.Ambient)) r = TrafoFlags.AssertTypeScript;
+    else {
+      r = f | TrafoFlags.AssertES2015;
+      if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParameters) r |= TrafoFlags.AssertTypeScript;
+    }
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ClassExcludes;
+  }
+  classExpression(n: qt.ClassExpression, f: TrafoFlags) {
+    let r = f | TrafoFlags.AssertES2015;
+    if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParameters) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ClassExcludes;
+  }
+  heritageClause(n: qt.HeritageClause, f: TrafoFlags) {
+    let r = f;
+    switch (n.token) {
+      case Syntax.ExtendsKeyword:
+        r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.ImplementsKeyword:
+        r |= TrafoFlags.AssertTypeScript;
+        break;
+      default:
+        qu.fail('Unexpected token for heritage clause');
+        break;
+    }
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  catchClause(n: qt.CatchClause, f: TrafoFlags) {
+    let r = f;
+    if (!n.variableDeclaration) r |= TrafoFlags.AssertES2019;
+    else if (qf.is.kind(qc.BindingPattern, n.variableDeclaration.name)) r |= TrafoFlags.AssertES2015;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.CatchClauseExcludes;
+  }
+  expressionWithTypings(n: qt.ExpressionWithTypings, f: TrafoFlags) {
+    let r = f | TrafoFlags.AssertES2015;
+    if (n.typeArguments) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  constructorr(n: qt.ConstructorDeclaration, f: TrafoFlags) {
+    let r = f;
+    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || !n.body) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ConstructorExcludes;
+  }
+  method(n: qt.MethodDeclaration, f: TrafoFlags) {
+    let r = f | TrafoFlags.AssertES2015;
+    if (n.decorators || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type || !n.body || n.questionToken) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
+    if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return this.propagatePropertyNameFlags(n.name, r & ~TrafoFlags.MethodOrAccessorExcludes);
+  }
+  accessor(n: qt.AccessorDeclaration, f: TrafoFlags) {
+    let r = f;
+    if (n.decorators || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.type || !n.body) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return this.propagatePropertyNameFlags(n.name, r & ~TrafoFlags.MethodOrAccessorExcludes);
+  }
+  propertyDeclaration(n: qt.PropertyDeclaration, f: TrafoFlags) {
+    let r = f | TrafoFlags.ContainsClassFields;
+    if (qu.some(n.decorators) || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.type || n.questionToken || n.exclamationToken) r |= TrafoFlags.AssertTypeScript;
+    if (qf.is.kind(qc.ComputedPropertyName, n.name) || (qf.has.staticModifier(n) && n.initer)) r |= TrafoFlags.ContainsTypeScriptClassSyntax;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return this.propagatePropertyNameFlags(n.name, r & ~TrafoFlags.PropertyExcludes);
+  }
+  functionDeclaration(n: qt.FunctionDeclaration, f: TrafoFlags) {
+    let r: TrafoFlags;
+    const m = qf.get.syntacticModifierFlags(n);
+    if (!n.body || m & ModifierFlags.Ambient) r = TrafoFlags.AssertTypeScript;
+    else {
+      r = f | TrafoFlags.ContainsHoistedDeclarationOrCompletion;
+      if (m & ModifierFlags.TypeScriptModifier || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+      if (m & ModifierFlags.Async) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
+      if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+      if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
+    }
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.FunctionExcludes;
+  }
+  functionExpression(n: qt.FunctionExpression, f: TrafoFlags) {
+    let r = f;
+    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+    if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.FunctionExcludes;
+  }
+  arrowFunction(n: qt.ArrowFunction, f: TrafoFlags) {
+    let r = f | TrafoFlags.AssertES2015;
+    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+    if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= TrafoFlags.AssertES2017;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ArrowFunctionExcludes;
+  }
+  propertyAccess(n: qt.PropertyAccessExpression, f: TrafoFlags) {
+    let r = f;
+    if (n.flags & NodeFlags.OptionalChain) r |= TrafoFlags.ContainsES2020;
+    if (n.expression.kind === Syntax.SuperKeyword) r |= TrafoFlags.ContainsES2017 | TrafoFlags.ContainsES2018;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.PropertyAccessExcludes;
+  }
+  elemAccess(n: qt.ElemAccessExpression, f: TrafoFlags) {
+    let r = f;
+    if (n.flags & NodeFlags.OptionalChain) r |= TrafoFlags.ContainsES2020;
+    if (n.expression.kind === Syntax.SuperKeyword) r |= TrafoFlags.ContainsES2017 | TrafoFlags.ContainsES2018;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.PropertyAccessExcludes;
+  }
+  variableDeclaration(n: qt.VariableDeclaration, f: TrafoFlags) {
+    let r = f;
+    r |= TrafoFlags.AssertES2015 | TrafoFlags.ContainsBindingPattern;
+    if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+    if (n.type || n.exclamationToken) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  variableStatement(n: qt.VariableStatement, f: TrafoFlags) {
+    let r: TrafoFlags;
+    const d = n.declarationList.trafoFlags;
+    if (qf.has.syntacticModifier(n, ModifierFlags.Ambient)) r = TrafoFlags.AssertTypeScript;
+    else {
+      r = f;
+      if (d & TrafoFlags.ContainsBindingPattern) r |= TrafoFlags.AssertES2015;
+    }
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  labeledStatement(n: qt.LabeledStatement, f: TrafoFlags) {
+    let r = f;
+    if (f & TrafoFlags.ContainsBlockScopedBinding && qf.is.iterationStatement(n, true)) r |= TrafoFlags.AssertES2015;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  importEquals(n: qt.ImportEqualsDeclaration, f: TrafoFlags) {
+    let r = f;
+    if (!qf.is.externalModuleImportEqualsDeclaration(n)) r |= TrafoFlags.AssertTypeScript;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  expressionStatement(n: qt.ExpressionStatement, f: TrafoFlags) {
+    const r = f;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.NodeExcludes;
+  }
+  moduleDeclaration(n: qt.ModuleDeclaration, f: TrafoFlags) {
+    let r = TrafoFlags.AssertTypeScript;
+    const m = qf.get.syntacticModifierFlags(n);
+    if ((m & ModifierFlags.Ambient) === 0) r |= f;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.ModuleExcludes;
+  }
+  variableDeclarationList(n: qt.VariableDeclarationList, f: TrafoFlags) {
+    let r = f | TrafoFlags.ContainsHoistedDeclarationOrCompletion;
+    if (f & TrafoFlags.ContainsBindingPattern) r |= TrafoFlags.AssertES2015;
+    if (n.flags & NodeFlags.BlockScoped) r |= TrafoFlags.AssertES2015 | TrafoFlags.ContainsBlockScopedBinding;
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~TrafoFlags.VariableDeclarationListExcludes;
+  }
+  other(n: Node, f: TrafoFlags) {
+    let r = f;
+    let excludeFlags = TrafoFlags.NodeExcludes;
+    switch (n.kind) {
+      case Syntax.AsyncKeyword:
+        r |= TrafoFlags.AssertES2018 | TrafoFlags.AssertES2017;
+        break;
+      case Syntax.AwaitExpression:
+        r |= TrafoFlags.AssertES2018 | TrafoFlags.AssertES2017 | TrafoFlags.ContainsAwait;
+        break;
+      case Syntax.AsExpression:
+      case Syntax.PartiallyEmittedExpression:
+      case Syntax.TypeAssertionExpression:
+        r |= TrafoFlags.AssertTypeScript;
+        excludeFlags = TrafoFlags.OuterExpressionExcludes;
+        break;
+      case Syntax.AbstractKeyword:
+      case Syntax.ConstKeyword:
+      case Syntax.DeclareKeyword:
+      case Syntax.EnumDeclaration:
+      case Syntax.EnumMember:
+      case Syntax.NonNullExpression:
+      case Syntax.PrivateKeyword:
+      case Syntax.ProtectedKeyword:
+      case Syntax.PublicKeyword:
+      case Syntax.ReadonlyKeyword:
+        r |= TrafoFlags.AssertTypeScript;
+        break;
+      case Syntax.JsxAttribute:
+      case Syntax.JsxAttributes:
+      case Syntax.JsxClosingElem:
+      case Syntax.JsxClosingFragment:
+      case Syntax.JsxElem:
+      case Syntax.JsxExpression:
+      case Syntax.JsxFragment:
+      case Syntax.JsxOpeningFragment:
+      case Syntax.JsxSpreadAttribute:
+      case Syntax.JsxText:
+        r |= TrafoFlags.AssertJsx;
+        break;
+      case Syntax.NoSubstitutionLiteral:
+      case Syntax.TemplateHead:
+      case Syntax.TemplateMiddle:
+      case Syntax.TemplateTail:
+        if (n.templateFlags) r |= TrafoFlags.AssertES2018;
+        break;
+      case Syntax.TaggedTemplateExpression:
+        if (qf.has.invalidEscape(n.template)) {
+          r |= TrafoFlags.AssertES2018;
+          break;
+        }
+      case Syntax.MetaProperty:
+      case Syntax.ShorthandPropertyAssignment:
+      case Syntax.StaticKeyword:
+      case Syntax.TemplateExpression:
+        r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.StringLiteral:
+        if (n.hasExtendedEscape) r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.NumericLiteral:
+        if (n.numericLiteralFlags & qt.TokenFlags.BinaryOrOctalSpecifier) r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.BigIntLiteral:
+        r |= TrafoFlags.AssertESNext;
+        break;
+      case Syntax.ForOfStatement:
+        if (n.awaitModifier) r |= TrafoFlags.AssertES2018;
+        r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.YieldExpression:
+        r |= TrafoFlags.AssertES2018 | TrafoFlags.AssertES2015 | TrafoFlags.ContainsYield;
+        break;
+      case Syntax.AnyKeyword:
+      case Syntax.ArrayTyping:
+      case Syntax.BigIntKeyword:
+      case Syntax.BooleanKeyword:
+      case Syntax.CallSignature:
+      case Syntax.ConditionalTyping:
+      case Syntax.ConstructorTyping:
+      case Syntax.ConstructSignature:
+      case Syntax.FunctionTyping:
+      case Syntax.IndexedAccessTyping:
+      case Syntax.IndexSignature:
+      case Syntax.InferTyping:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.IntersectionTyping:
+      case Syntax.LiteralTyping:
+      case Syntax.MappedTyping:
+      case Syntax.MethodSignature:
+      case Syntax.NamespaceExportDeclaration:
+      case Syntax.NeverKeyword:
+      case Syntax.NumberKeyword:
+      case Syntax.ObjectKeyword:
+      case Syntax.OptionalTyping:
+      case Syntax.ParenthesizedTyping:
+      case Syntax.PropertySignature:
+      case Syntax.RestTyping:
+      case Syntax.StringKeyword:
+      case Syntax.SymbolKeyword:
+      case Syntax.ThisTyping:
+      case Syntax.TupleTyping:
+      case Syntax.TypeAliasDeclaration:
+      case Syntax.TypeParameter:
+      case Syntax.TypingLiteral:
+      case Syntax.TypingOperator:
+      case Syntax.TypingPredicate:
+      case Syntax.TypingQuery:
+      case Syntax.TypingReference:
+      case Syntax.UnionTyping:
+      case Syntax.VoidKeyword:
+        r = TrafoFlags.AssertTypeScript;
+        excludeFlags = TrafoFlags.TypeExcludes;
+        break;
+      case Syntax.ComputedPropertyName:
+        r |= TrafoFlags.ContainsComputedPropertyName;
+        break;
+      case Syntax.SpreadElem:
+        r |= TrafoFlags.AssertES2015 | TrafoFlags.ContainsRestOrSpread;
+        break;
+      case Syntax.SpreadAssignment:
+        r |= TrafoFlags.AssertES2018 | TrafoFlags.ContainsObjectRestOrSpread;
+        break;
+      case Syntax.SuperKeyword:
+        r |= TrafoFlags.AssertES2015;
+        excludeFlags = TrafoFlags.OuterExpressionExcludes;
+        break;
+      case Syntax.ThisKeyword:
+        r |= TrafoFlags.ContainsLexicalThis;
+        break;
+      case Syntax.ObjectBindingPattern:
+        r |= TrafoFlags.AssertES2015 | TrafoFlags.ContainsBindingPattern;
+        if (f & TrafoFlags.ContainsRestOrSpread) r |= TrafoFlags.AssertES2018 | TrafoFlags.ContainsObjectRestOrSpread;
+        excludeFlags = TrafoFlags.BindingPatternExcludes;
+        break;
+      case Syntax.ArrayBindingPattern:
+        r |= TrafoFlags.AssertES2015 | TrafoFlags.ContainsBindingPattern;
+        excludeFlags = TrafoFlags.BindingPatternExcludes;
+        break;
+      case Syntax.BindingElem:
+        r |= TrafoFlags.AssertES2015;
+        if (n.dot3Token) r |= TrafoFlags.ContainsRestOrSpread;
+        break;
+      case Syntax.Decorator:
+        r |= TrafoFlags.AssertTypeScript | TrafoFlags.ContainsTypeScriptClassSyntax;
+        break;
+      case Syntax.ObjectLiteralExpression:
+        excludeFlags = TrafoFlags.ObjectLiteralExcludes;
+        if (f & TrafoFlags.ContainsComputedPropertyName) r |= TrafoFlags.AssertES2015;
+        if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
+        break;
+      case Syntax.ArrayLiteralExpression:
+        excludeFlags = TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
+        break;
+      case Syntax.DoStatement:
+      case Syntax.ForInStatement:
+      case Syntax.ForStatement:
+      case Syntax.WhileStatement:
+        if (f & TrafoFlags.ContainsBlockScopedBinding) r |= TrafoFlags.AssertES2015;
+        break;
+      case Syntax.SourceFile:
+        break;
+      case Syntax.NamespaceExport:
+        r |= TrafoFlags.AssertESNext;
+        break;
+      case Syntax.ReturnStatement:
+        r |= TrafoFlags.ContainsHoistedDeclarationOrCompletion | TrafoFlags.AssertES2018;
+        break;
+      case Syntax.BreakStatement:
+      case Syntax.ContinueStatement:
+        r |= TrafoFlags.ContainsHoistedDeclarationOrCompletion;
+        break;
+      case Syntax.PrivateIdentifier:
+        r |= TrafoFlags.ContainsClassFields;
+        break;
+    }
+    n.trafoFlags = r | TrafoFlags.HasComputedFlags;
+    return r & ~excludeFlags;
+  }
+  propagatePropertyNameFlags(n: qt.PropertyName, f: TrafoFlags) {
+    return f | (n.trafoFlags & TrafoFlags.PropertyNamePropagatingFlags);
   }
 })();
 export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;

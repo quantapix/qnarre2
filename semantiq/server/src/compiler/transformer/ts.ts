@@ -27,7 +27,7 @@ const enum ClassFacts {
   MayNeedImmediatelyInvokedFunctionExpression = HasAnyDecorators | HasStaticInitializedProperties,
   IsExported = IsExportOfNamespace | IsDefaultExternalExport | IsNamedExternalExport,
 }
-export function transformTypeScript(context: TransformationContext) {
+export function transformTypeScript(context: TrafoContext) {
   const { startLexicalEnvironment, resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
   const compilerOptions = context.getCompilerOptions();
@@ -117,7 +117,7 @@ export function transformTypeScript(context: TransformationContext) {
     return saveStateAndInvoke(node, visitorWorker);
   }
   function visitorWorker(node: Node): VisitResult<Node> {
-    if (node.transformFlags & TransformFlags.ContainsTypeScript) return visitTypeScript(node);
+    if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return visitTypeScript(node);
     return node;
   }
   function sourceElemVisitor(node: Node): VisitResult<Node> {
@@ -137,7 +137,7 @@ export function transformTypeScript(context: TransformationContext) {
   function visitEllidableStatement(node: ImportDeclaration | ImportEqualsDeclaration | ExportAssignment | ExportDeclaration): VisitResult<Node> {
     const parsed = qc.get.parseTreeOf(node);
     if (parsed !== node) {
-      if (node.transformFlags & TransformFlags.ContainsTypeScript) return visitEachChild(node, visitor, context);
+      if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return visitEachChild(node, visitor, context);
       return node;
     }
     switch (node.kind) {
@@ -164,7 +164,7 @@ export function transformTypeScript(context: TransformationContext) {
       (node.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference)
     ) {
       return;
-    } else if (node.transformFlags & TransformFlags.ContainsTypeScript || qc.has.syntacticModifier(node, ModifierFlags.Export)) {
+    } else if (node.trafoFlags & TrafoFlags.ContainsTypeScript || qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       return visitTypeScript(node);
     }
     return node;
@@ -330,7 +330,7 @@ export function transformTypeScript(context: TransformationContext) {
     return facts;
   }
   function hasTypeScriptClassSyntax(node: Node) {
-    return !!(node.transformFlags & TransformFlags.ContainsTypeScriptClassSyntax);
+    return !!(node.trafoFlags & TrafoFlags.ContainsTypeScriptClassSyntax);
   }
   function isClassLikeDeclarationWithTypeScriptSyntax(node: ClassLikeDeclaration) {
     return some(node.decorators) || some(node.typeParameters) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
@@ -390,7 +390,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (facts & ClassFacts.HasStaticInitializedProperties) {
       emitFlags |= EmitFlags.NoTrailingSourceMap;
     }
-    aggregateTransformFlags(classDeclaration);
+    qc.compute.aggregate(classDeclaration);
     setRange(classDeclaration, node);
     classDeclaration.setOriginal(node);
     setEmitFlags(classDeclaration, emitFlags);
@@ -403,7 +403,7 @@ export function transformTypeScript(context: TransformationContext) {
     const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
     const members = transformClassMembers(node);
     const classExpression = new qc.ClassExpression(undefined, name, undefined, heritageClauses, members);
-    aggregateTransformFlags(classExpression);
+    qc.compute.aggregate(classExpression);
     classExpression.setOriginal(node);
     setRange(classExpression, location);
     const statement = new qc.VariableStatement(
@@ -418,7 +418,7 @@ export function transformTypeScript(context: TransformationContext) {
   function visitClassExpression(node: ClassExpression): Expression {
     if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return visitEachChild(node, visitor, context);
     const classExpression = new qc.ClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
-    aggregateTransformFlags(classExpression);
+    qc.compute.aggregate(classExpression);
     classExpression.setOriginal(node);
     setRange(classExpression, node);
     return classExpression;
@@ -430,7 +430,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (parametersWithPropertyAssignments) {
       for (const parameter of parametersWithPropertyAssignments) {
         if (qc.is.kind(qc.Identifier, parameter.name)) {
-          members.push(aggregateTransformFlags(PropertyDeclaration.create(undefined, undefined, parameter.name, undefined, undefined, undefined)).setOriginal(parameter));
+          members.push(qc.compute.aggregate(PropertyDeclaration.create(undefined, undefined, parameter.name, undefined, undefined, undefined)).setOriginal(parameter));
         }
       }
     }
@@ -1635,7 +1635,7 @@ export function transformTypeScript(context: TransformationContext) {
     return qc.is.kind(qc.PropertyAccessExpression, node) || qc.is.kind(qc.ElemAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
   }
 }
-function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {
+function createDecorateHelper(context: TrafoContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {
   const argumentsArray: Expression[] = [];
   argumentsArray.push(new ArrayLiteralExpression(decoratorExpressions, true));
   argumentsArray.push(target);
@@ -1661,7 +1661,7 @@ export const decorateHelper: UnscopedEmitHelper = {
                 return c > 3 && r && Object.defineProperty(target, key, r), r;
             };`,
 };
-function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: Expression) {
+function createMetadataHelper(context: TrafoContext, metadataKey: string, metadataValue: Expression) {
   context.requestEmitHelper(metadataHelper);
   return new qc.CallExpression(getUnscopedHelperName('__metadata'), undefined, [qc.asLiteral(metadataKey), metadataValue]);
 }
@@ -1675,7 +1675,7 @@ export const metadataHelper: UnscopedEmitHelper = {
                 if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
             };`,
 };
-function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
+function createParamHelper(context: TrafoContext, expression: Expression, parameterOffset: number, location?: TextRange) {
   context.requestEmitHelper(paramHelper);
   return setRange(new qc.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(parameterOffset), expression]), location);
 }

@@ -657,7 +657,7 @@ export const enum TokenFlags {
   BinaryOrOctalSpecifier = BinarySpecifier | OctalSpecifier,
   NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
 }
-export const enum TransformFlags {
+export const enum TrafoFlags {
   None = 0,
   ContainsTypeScript = 1 << 0,
   ContainsJsx = 1 << 1,

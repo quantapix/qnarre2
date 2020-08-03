@@ -15,7 +15,7 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, li
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
   if (!n || !cb) return n;
-  n.aggregateTransformFlags();
+  n.qc.compute.aggregate();
   const r = cb(n as Node);
   if (!r) return;
   if (r === n) return n;
@@ -23,7 +23,7 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, li
   if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
   qb.assert.node(n2, test);
-  n2?.aggregateTransformFlags();
+  n2?.qc.compute.aggregate();
   return n2 as T;
 }
 export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
@@ -37,7 +37,7 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: T
   if (start > 0 || count < length) updated = new Nodes<T>([], ns.trailingComma && start + count === length);
   for (let i = 0; i < count; i++) {
     const n: T = ns[i + start];
-    aggregateTransformFlags(n);
+    qc.compute.aggregate(n);
     const r = n ? cb(n) : undefined;
     if (updated !== undefined || r === undefined || r !== n) {
       if (updated === undefined) {
@@ -48,12 +48,12 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: T
         if (qu.isArray(r)) {
           for (const n2 of r) {
             qb.assert.node(n2, test);
-            aggregateTransformFlags(n2);
+            qc.compute.aggregate(n2);
             updated.push(n2 as T);
           }
         } else {
           qb.assert.node(r, test);
-          aggregateTransformFlags(r);
+          qc.compute.aggregate(r);
           updated.push(r as T);
         }
       }
@@ -61,7 +61,7 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: T
   }
   return updated || ns;
 }
-export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt.TransformationContext, start?: number, strict?: boolean) {
+export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt.TrafoContext, start?: number, strict?: boolean) {
   c.startLexicalEnvironment();
   ss = visitNodes(ss, cb, isStatement, start);
   if (strict) ss = ensureUseStrict(ss);
@@ -70,16 +70,16 @@ export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt
 export function visitParameterList<T extends Node>(
   ns: Nodes<T>,
   cb: Visitor,
-  c: qt.TransformationContext,
+  c: qt.TrafoContext,
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>
 ): Nodes<T>;
 export function visitParameterList<T extends Node>(
   ns: Nodes<T> | undefined,
   cb: Visitor,
-  c: qt.TransformationContext,
+  c: qt.TrafoContext,
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
 ): Nodes<T> | undefined;
-export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TransformationContext, v = visitNodes) {
+export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TrafoContext, v = visitNodes) {
   let updated: Nodes<ParameterDeclaration> | undefined;
   c.startLexicalEnvironment();
   if (ns) {
@@ -91,7 +91,7 @@ export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb:
   c.suspendLexicalEnvironment();
   return updated;
 }
-function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.TransformationContext) {
+function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.TrafoContext) {
   let r: qc.ParameterDeclaration[] | undefined;
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
@@ -104,10 +104,10 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.Transform
   if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
   return ps;
 }
-function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: qt.TransformationContext) {
+function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: qt.TrafoContext) {
   return p.dot3Token ? p : qf.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
-function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TransformationContext) {
+function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.VariableStatement(
       undefined,
@@ -124,7 +124,7 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TransformationCo
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: qt.TransformationContext) {
+function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -149,10 +149,10 @@ function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expres
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
 }
-export function visitFunctionBody(n: qt.FunctionBody, cb: Visitor, c: qt.TransformationContext): qt.FunctionBody;
-export function visitFunctionBody(n: qt.FunctionBody | undefined, cb: Visitor, c: qt.TransformationContext): qt.FunctionBody | undefined;
-export function visitFunctionBody(n: qt.ConciseBody, cb: Visitor, c: qt.TransformationContext): qt.ConciseBody;
-export function visitFunctionBody(n: qt.ConciseBody | undefined, cb: Visitor, c: qt.TransformationContext): qt.ConciseBody | undefined {
+export function visitFunctionBody(n: qt.FunctionBody, cb: Visitor, c: qt.TrafoContext): qt.FunctionBody;
+export function visitFunctionBody(n: qt.FunctionBody | undefined, cb: Visitor, c: qt.TrafoContext): qt.FunctionBody | undefined;
+export function visitFunctionBody(n: qt.ConciseBody, cb: Visitor, c: qt.TrafoContext): qt.ConciseBody;
+export function visitFunctionBody(n: qt.ConciseBody | undefined, cb: Visitor, c: qt.TrafoContext): qt.ConciseBody | undefined {
   c.resumeLexicalEnvironment();
   const updated = visitNode(n, cb, isConciseBody);
   const declarations = c.endLexicalEnvironment();
@@ -167,9 +167,9 @@ const isExpression = (n: Node) => qf.is.expressionNode(n);
 const isTypeNode = (n: Node) => qf.is.typeNode(n);
 const isDecorator = (n: Node) => qf.is.decorator(n);
 const isModifier = (n: Node) => qf.is.modifier(n);
-export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: qt.TransformationContext): T;
-export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: qt.TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
-export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
+export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: qt.TrafoContext): T;
+export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: qt.TrafoContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
+export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
   if (!node) return;
   const k = node.kind;
   if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisTyping) return node;

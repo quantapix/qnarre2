@@ -5,7 +5,7 @@ import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
-export function transformES2016(context: TransformationContext) {
+export function transformES2016(context: TrafoContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
@@ -13,7 +13,7 @@ export function transformES2016(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2016) === 0) return node;
+    if ((node.trafoFlags & TrafoFlags.ContainsES2016) === 0) return node;
     switch (node.kind) {
       case Syntax.BinaryExpression:
         return visitBinaryExpression(<BinaryExpression>node);
