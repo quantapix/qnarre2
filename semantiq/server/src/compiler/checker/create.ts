@@ -462,7 +462,7 @@ export function newCreate(f: qt.Frame) {
       const jsxChildrenPropertyName = getJsxElemChildrenPropertyName(getJsxNamespaceAt(openingLikeElem));
       for (const attributeDecl of attributes.properties) {
         const member = attributeDecl.symbol;
-        if (qf.is.kind(qc.JsxAttribute, attributeDecl)) {
+        if (attributeDecl.kind === Syntax.JsxAttribute) {
           const exprType = check.jsxAttribute(attributeDecl, checkMode);
           objectFlags |= getObjectFlags(exprType) & ObjectFlags.PropagatingFlags;
           const attributeSymbol = new Symbol(SymbolFlags.Property | qt.SymbolFlags.Transient | member.flags, member.escName);
@@ -762,7 +762,7 @@ export function newCreate(f: qt.Frame) {
         isBindingCapturedByNode: (node, decl) => {
           const parseNode = qf.get.parseTreeOf(node);
           const parseDecl = qf.get.parseTreeOf(decl);
-          return !!parseNode && !!parseDecl && (qf.is.kind(qc.VariableDeclaration, parseDecl) || qf.is.kind(qc.BindingElem, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+          return !!parseNode && !!parseDecl && (parseDecl.kind === Syntax.VariableDeclaration || parseDecl.kind === Syntax.BindingElem) && isBindingCapturedByNode(parseNode, parseDecl);
         },
         getDeclarationStmtsForSourceFile: (node, flags, tracker, bundled) => {
           const n = qf.get.parseTreeOf(node) as SourceFile;
@@ -1188,7 +1188,7 @@ export function newResolve(f: qt.Frame) {
             isInExternalModule = true;
           case Syntax.ModuleDeclaration:
             const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
-            if (location.kind === Syntax.SourceFile || (qf.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !qf.is.globalScopeAugmentation(location))) {
+            if (location.kind === Syntax.SourceFile || (location.kind === Syntax.ModuleDeclaration && location.flags & NodeFlags.Ambient && !qf.is.globalScopeAugmentation(location))) {
               if ((result = moduleExports.get(InternalSymbol.Default))) {
                 const localSymbol = getLocalSymbolForExportDefault(result);
                 if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;
@@ -1204,7 +1204,7 @@ export function newResolve(f: qt.Frame) {
               }
             }
             if (name !== InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & qt.SymbolFlags.ModuleMember))) {
-              if (qf.is.kind(qc.SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
+              if (location.kind === Syntax.SourceFile && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
               else {
                 break loop;
               }
@@ -1298,13 +1298,13 @@ export function newResolve(f: qt.Frame) {
           case Syntax.Parameter:
             if (
               lastLocation &&
-              (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qf.is.kind(qc.BindingPattern, lastLocation)))
+              (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && lastLocation.kind === Syntax.BindingPattern))
             ) {
               if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as ParameterDeclaration;
             }
             break;
           case Syntax.BindingElem:
-            if (lastLocation && (lastLocation === (location as BindingElem).initer || (lastLocation === (location as BindingElem).name && qf.is.kind(qc.BindingPattern, lastLocation)))) {
+            if (lastLocation && (lastLocation === (location as BindingElem).initer || (lastLocation === (location as BindingElem).name && lastLocation.kind === Syntax.BindingPattern))) {
               const root = qf.get.rootDeclaration(location);
               if (root.kind === Syntax.Parameter) {
                 if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElem;
@@ -1372,7 +1372,7 @@ export function newResolve(f: qt.Frame) {
         }
         if (result && isInExternalModule && (meaning & qt.SymbolFlags.Value) === qt.SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.Doc)) {
           const merged = getMergedSymbol(result);
-          if (length(merged.declarations) && every(merged.declarations, (d) => qf.is.kind(qc.NamespaceExportDeclaration, d) || (qf.is.kind(qc.SourceFile, d) && !!d.symbol.globalExports))) {
+          if (length(merged.declarations) && every(merged.declarations, (d) => d.kind === Syntax.NamespaceExportDeclaration || (d.kind === Syntax.SourceFile && !!d.symbol.globalExports))) {
             errorOrSuggestion(
               !compilerOptions.allowUmdGlobalAccess,
               errorLocation!,
@@ -1430,7 +1430,7 @@ export function newResolve(f: qt.Frame) {
         if (qf.is.inJSFile(name)) {
           if (
             namespace.valueDeclaration &&
-            qf.is.kind(qc.VariableDeclaration, namespace.valueDeclaration) &&
+            namespace.valueDeclaration.kind === Syntax.VariableDeclaration &&
             namespace.valueDeclaration.initer &&
             isCommonJsRequire(namespace.valueDeclaration.initer)
           ) {
@@ -1555,7 +1555,7 @@ export function newResolve(f: qt.Frame) {
         }
         if (compilerOptions.esModuleInterop) {
           const referenceParent = referencingLocation.parent;
-          if ((qf.is.kind(qc.ImportDeclaration, referenceParent) && qf.get.namespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
+          if ((referenceParent.kind === Syntax.ImportDeclaration && qf.get.namespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
             const type = this.getTypeOfSymbol();
             let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
             if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
@@ -1600,7 +1600,7 @@ export function newResolve(f: qt.Frame) {
       }
       if (baseType === errorType) return (type.resolvedBaseTypes = empty);
       const reducedBaseType = getReducedType(baseType);
-      if (!isValidBaseType(reducedBaseType)) {
+      if (!qf.is.validBaseType(reducedBaseType)) {
         const elaboration = elaborateNeverIntersection(undefined, baseType);
         const diagnostic = chainqd.Messages(
           elaboration,
@@ -1624,7 +1624,7 @@ export function newResolve(f: qt.Frame) {
           for (const node of qf.get.interfaceBaseTypeNodes(<InterfaceDeclaration>declaration)!) {
             const baseType = getReducedType(getTypeFromTypeNode(node));
             if (baseType !== errorType) {
-              if (isValidBaseType(baseType)) {
+              if (qf.is.validBaseType(baseType)) {
                 if (type !== baseType && !hasBaseType(baseType, type)) {
                   if (type.resolvedBaseTypes === empty) type.resolvedBaseTypes = [<ObjectType>baseType];
                   else {
@@ -1953,7 +1953,7 @@ export function newResolve(f: qt.Frame) {
       }
       const args = getEffectiveCallArguments(node);
       const isSingleNonGenericCandidate = candidates.length === 1 && !candidates[0].typeParameters;
-      let argCheckMode = !isDecorator && !isSingleNonGenericCandidate && some(args, isContextSensitive) ? CheckMode.SkipContextSensitive : CheckMode.Normal;
+      let argCheckMode = !isDecorator && !isSingleNonGenericCandidate && some(args, qf.is.contextSensitive) ? CheckMode.SkipContextSensitive : CheckMode.Normal;
       let candidatesForArgumentError: Signature[] | undefined;
       let candidateForArgumentArityError: Signature | undefined;
       let candidateForTypeArgumentError: Signature | undefined;

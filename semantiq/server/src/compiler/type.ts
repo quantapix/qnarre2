@@ -2440,7 +2440,7 @@ export interface TypeChecker {
   getContextualTypeForObjectLiteralElem(elem: ObjectLiteralElemLike): Type | undefined;
   getContextualTypeForArgumentAtIndex(call: CallLikeExpression, argIndex: number): Type | undefined;
   getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined;
-  isContextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElemLike | JsxAttributeLike): boolean;
+  qf.is.contextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElemLike | JsxAttributeLike): boolean;
   getResolvedSignature(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
   getResolvedSignatureForSignatureHelp(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
   getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];

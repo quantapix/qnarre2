@@ -7,7 +7,6 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { ThisExpression } from './classes';
 export interface ReadonlyNodeSet<T extends Node> {
   has(n: T): boolean;
   each(cb: (n: T) => void): void;
@@ -15,6 +14,9 @@ export interface ReadonlyNodeSet<T extends Node> {
 }
 export class NodeSet<T extends Node> implements ReadonlyNodeSet<T> {
   private map = new qu.QMap<T>();
+  has(n: T) {
+    return this.map.has(String(qf.get.nodeId(n)));
+  }
   add(n: T) {
     this.map.set(String(qf.get.nodeId(n)), n);
   }
@@ -22,9 +24,6 @@ export class NodeSet<T extends Node> implements ReadonlyNodeSet<T> {
     if (this.has(n)) return false;
     this.add(n);
     return true;
-  }
-  has(n: T) {
-    return this.map.has(String(qf.get.nodeId(n)));
   }
   each(cb: (n: T) => void) {
     this.map.forEach(cb);
@@ -39,6 +38,9 @@ export interface ReadonlyNodeMap<N extends Node, V> {
 }
 export class NodeMap<N extends Node, V> implements ReadonlyNodeMap<N, V> {
   private map = new qu.QMap<{ n: N; v: V }>();
+  has(n: N) {
+    return this.map.has(String(qf.get.nodeId(n)));
+  }
   get(n: N): V | undefined {
     const r = this.map.get(String(qf.get.nodeId(n)));
     return r?.v;
@@ -52,9 +54,6 @@ export class NodeMap<N extends Node, V> implements ReadonlyNodeMap<N, V> {
   }
   set(n: N, v: V) {
     this.map.set(String(qf.get.nodeId(n)), { n, v });
-  }
-  has(n: N) {
-    return this.map.has(String(qf.get.nodeId(n)));
   }
   each(cb: (v: V, n: N) => void) {
     this.map.forEach(({ n, v }) => cb(v, n));
@@ -239,16 +238,18 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
   indexOfNode(ns: readonly Node[]) {
-    return qu.binarySearch(ns, this, (n) => n.pos, qu.compareNumbers);
+    return qu.binarySearch(ns, this as Node, (n) => n.pos, qu.compareNumbers);
   }
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined {
-    return cb(this);
+    return cb(this as Node);
   }
-  updateFrom(n: Nobj): this {
-    if (this !== n) return this.setOriginal(n).setRange(n).qc.compute.aggregate();
-    return this;
+  updateFrom(n: Node): this {
+    if (this === n) return this;
+    const r = this.setOriginal(n).setRange(n);
+    compute.aggregate(r as Node);
+    return r;
   }
-  setOriginal(n?: Nobj): this {
+  setOriginal(n?: Node): this {
     this.original = n;
     if (n) {
       const e = n.emitNode;
