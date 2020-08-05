@@ -2365,13 +2365,13 @@ export interface TypeAssertion extends UnaryExpr {
   expression: UnaryExpression;
 }
 export interface TypeChecker {
-  getTypeOfSymbolAtLocation(symbol: Symbol, node: Node): Type;
+  qf.get.typeOfSymbolAtLocation(symbol: Symbol, node: Node): Type;
   getDeclaredTypeOfSymbol(symbol: Symbol): Type;
-  getPropertiesOfType(type: Type): Symbol[];
-  getPropertyOfType(type: Type, propertyName: string): Symbol | undefined;
+  qf.get.propertiesOfType(type: Type): Symbol[];
+  qf.get.propertyOfType(type: Type, propertyName: string): Symbol | undefined;
   getPrivateIdentifierPropertyOfType(leftType: Type, name: string, location: Node): Symbol | undefined;
   getTypeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
-  getIndexInfoOfType(type: Type, kind: qt.IndexKind): IndexInfo | undefined;
+  qf.get.indexInfoOfType(type: Type, kind: qt.IndexKind): IndexInfo | undefined;
   getSignaturesOfType(type: Type, kind: qt.SignatureKind): readonly Signature[];
   getIndexTypeOfType(type: Type, kind: qt.IndexKind): Type | undefined;
   getBaseTypes(type: InterfaceType): BaseType[];
@@ -2450,7 +2450,7 @@ export interface TypeChecker {
   isUndefinedSymbol(symbol: Symbol): boolean;
   isArgumentsSymbol(symbol: Symbol): boolean;
   isUnknownSymbol(symbol: Symbol): boolean;
-  getMergedSymbol(symbol: Symbol): Symbol;
+  qf.get.mergedSymbol(symbol: Symbol): Symbol;
   getConstantValue(node: EnumMember | PropertyAccessExpression | ElemAccessExpression): string | number | undefined;
   isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTyping, propertyName: string): boolean;
   isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTyping | QualifiedName, type: Type, property: Symbol): boolean;
@@ -2484,7 +2484,7 @@ export interface TypeChecker {
   getESSymbolType(): Type;
   getNeverType(): Type;
   getOptionalType(): Type;
-  getUnionType(types: Type[], subtypeReduction?: qt.UnionReduction): Type;
+  qf.get.unionType(types: Type[], subtypeReduction?: qt.UnionReduction): Type;
   createArrayType(elemType: Type): Type;
   getElemTypeOfArrayType(arrayType: Type): Type | undefined;
   createPromiseType(type: Type): Type;
@@ -2527,7 +2527,7 @@ export interface TypeChecker {
   getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
   resolveName(name: string, location: Node | undefined, meaning: qt.SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
   getJsxNamespace(location?: Node): string;
-  getAccessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags, useOnlyExternalAliasing: boolean): Symbol[] | undefined;
+  qf.get.accessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags, useOnlyExternalAliasing: boolean): Symbol[] | undefined;
   getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
   resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
   resolveExternalModuleSymbol(symbol: Symbol): Symbol;

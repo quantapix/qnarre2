@@ -839,10 +839,10 @@ export class Type implements qt.Type {
     return this.symbol;
   }
   getProperties(): qt.Symbol[] {
-    return this.checker.getPropertiesOfType(this);
+    return this.checker.qf.get.propertiesOfType(this);
   }
   getProperty(n: string): qt.Symbol | undefined {
-    return this.checker.getPropertyOfType(this, n);
+    return this.checker.qf.get.propertyOfType(this, n);
   }
   getApparentProperties(): qt.Symbol[] {
     return this.checker.getAugmentedPropertiesOfType(this);
@@ -1584,7 +1584,7 @@ export function createGetSymbolWalker(
   getReturnTypeOfSignature: (sig: Signature) => Type,
   getBaseTypes: (t: Type) => Type[],
   resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
-  getTypeOfSymbol: (sym: Symbol) => Type,
+  qf.get.typeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
   getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
@@ -1696,7 +1696,7 @@ export function createGetSymbolWalker(
       if (visitedSymbols[i]) return false;
       visitedSymbols[i] = s;
       if (!accept(s)) return true;
-      const t = getTypeOfSymbol(s);
+      const t = qf.get.typeOfSymbol(s);
       visitType(t);
       if (s.exports) s.exports.forEach(visitSymbol);
       qu.each(s.declarations, (d) => {
@@ -1716,7 +1716,7 @@ function getDocComment(ds?: readonly qt.Declaration[], tc?: qt.TypeChecker): qt.
   const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
     return qu.firstDefined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
       const superType = tc?.getTypeAtLocation(n);
-      const baseProperty = superType && tc?.getPropertyOfType(superType, pName);
+      const baseProperty = superType && tc?.qf.get.propertyOfType(superType, pName);
       const inheritedDocs = baseProperty && baseProperty.getDocComment(tc);
       return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
     });
