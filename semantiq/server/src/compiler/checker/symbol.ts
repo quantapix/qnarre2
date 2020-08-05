@@ -724,7 +724,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (ds) {
       for (const d of ds) {
         const c = qf.get.thisContainer(d, false);
-        if (c && (c.kind === Syntax.Constructor || isJSConstructor(c))) return <ConstructorDeclaration>c;
+        if (c && (c.kind === Syntax.Constructor || qf.is.jsConstructor(c))) return <ConstructorDeclaration>c;
       }
     }
   }
@@ -956,7 +956,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(): TypeParameter[] | undefined {
     let r: TypeParameter[] | undefined;
     for (const d of this.declarations ?? []) {
-      if (d.kind === Syntax.InterfaceDeclaration || d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression || isJSConstructor(d) || qf.is.typeAlias(d)) {
+      if (d.kind === Syntax.InterfaceDeclaration || d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression || qf.is.jsConstructor(d) || qf.is.typeAlias(d)) {
         const d2 = d as InterfaceDeclaration | TypeAliasDeclaration | DocTypedefTag | DocCallbackTag;
         r = appendTypeParameters(r, qf.get.effectiveTypeParameterDeclarations(d2));
       }
@@ -1112,7 +1112,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         switch (declaration.kind) {
           case Syntax.PropertyDeclaration:
           case Syntax.PropertySignature:
-            return isThislessVariableLikeDeclaration(<VariableLikeDeclaration>declaration);
+            return qf.is.thislessVariableLikeDeclaration(<VariableLikeDeclaration>declaration);
           case Syntax.MethodDeclaration:
           case Syntax.MethodSignature:
           case Syntax.Constructor:
@@ -1572,17 +1572,17 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return { accessibility: SymbolAccessibility.Accessible, aliasesToMakeVisible };
     function getIsDeclarationVisible(declaration: Declaration) {
-      if (!isDeclarationVisible(declaration)) {
+      if (!qf.is.declarationVisible(declaration)) {
         const anyImportSyntax = getAnyImportSyntax(declaration);
-        if (anyImportSyntax && !has.syntacticModifier(anyImportSyntax, ModifierFlags.Export) && isDeclarationVisible(anyImportSyntax.parent)) return addVisibleAlias(declaration, anyImportSyntax);
+        if (anyImportSyntax && !has.syntacticModifier(anyImportSyntax, ModifierFlags.Export) && qf.is.declarationVisible(anyImportSyntax.parent)) return addVisibleAlias(declaration, anyImportSyntax);
         else if (
           declaration.kind === Syntax.VariableDeclaration &&
           declaration.parent.parent.kind === Syntax.VariableStatement &&
           !has.syntacticModifier(declaration.parent.parent, ModifierFlags.Export) &&
-          isDeclarationVisible(declaration.parent.parent.parent)
+          qf.is.declarationVisible(declaration.parent.parent.parent)
         ) {
           return addVisibleAlias(declaration, declaration.parent.parent);
-        } else if (qf.is.lateVisibilityPaintedStatement(declaration) && !has.syntacticModifier(declaration, ModifierFlags.Export) && isDeclarationVisible(declaration.parent)) {
+        } else if (qf.is.lateVisibilityPaintedStatement(declaration) && !has.syntacticModifier(declaration, ModifierFlags.Export) && qf.is.declarationVisible(declaration.parent)) {
           return addVisibleAlias(declaration, declaration);
         }
         return false;

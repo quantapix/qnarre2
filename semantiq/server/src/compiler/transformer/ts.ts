@@ -1693,7 +1693,7 @@ export function nodeOrChildIsDecorated(node: ClassDeclaration): boolean;
 export function nodeOrChildIsDecorated(node: ClassElem, parent: Node): boolean;
 export function nodeOrChildIsDecorated(node: Node, parent: Node, grandparent: Node): boolean;
 export function nodeOrChildIsDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
-  return nodeIsDecorated(node, parent!, grandparent!) || childIsDecorated(node, parent!);
+  return qf.is.decorated(node, parent!, grandparent!) || childIsDecorated(node, parent!);
 }
 export function childIsDecorated(node: ClassDeclaration): boolean;
 export function childIsDecorated(node: Node, parent: Node): boolean;
@@ -1703,7 +1703,7 @@ export function childIsDecorated(node: Node, parent?: Node): boolean {
       return some((<ClassDeclaration>node).members, (m) => nodeOrChildIsDecorated(m, node, parent!));
     case Syntax.MethodDeclaration:
     case Syntax.SetAccessor:
-      return some((<FunctionLikeDeclaration>node).parameters, (p) => nodeIsDecorated(p, node, parent!));
+      return some((<FunctionLikeDeclaration>node).parameters, (p) => qf.is.decorated(p, node, parent!));
     default:
       return false;
   }

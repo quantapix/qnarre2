@@ -650,7 +650,7 @@ export interface DocTypingExpression extends Tobj {
 export interface DocTypingLiteral extends DocTobj {
   kind: Syntax.DocTypingLiteral;
   docPropertyTags?: readonly DocPropertyLikeTag[];
-  isArrayType?: boolean;
+  qf.is.arrayType?: boolean;
 }
 export interface DocTypeTag extends DocTag {
   kind: Syntax.DocTypeTag;
@@ -750,7 +750,7 @@ export interface EmitResolver {
   isReferencedAliasDeclaration(node: Node, checkChildren?: boolean): boolean;
   isTopLevelValueImportEqualsWithEntityName(node: ImportEqualsDeclaration): boolean;
   getNodeCheckFlags(node: Node): qt.NodeCheckFlags;
-  isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
+  qf.is.declarationVisible(node: Declaration | AnyImportSyntax): boolean;
   isLateBound(node: Decl): node is LateBoundDecl;
   collectLinkedAliases(node: Identifier, setVisibility?: boolean): Node[] | undefined;
   isImplementationOfOverload(node: FunctionLikeDeclaration): boolean | undefined;
@@ -2488,7 +2488,7 @@ export interface TypeChecker {
   createArrayType(elemType: Type): Type;
   getElemTypeOfArrayType(arrayType: Type): Type | undefined;
   createPromiseType(type: Type): Type;
-  isTypeAssignableTo(source: Type, target: Type): boolean;
+  qf.is.typeAssignableTo(source: Type, target: Type): boolean;
   createAnonymousType(
     symbol: Symbol | undefined,
     members: SymbolTable,
@@ -2520,9 +2520,9 @@ export interface TypeChecker {
   getTypeCount(): number;
   getInstantiationCount(): number;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
-  isArrayType(type: Type): boolean;
-  isTupleType(type: Type): boolean;
-  isArrayLikeType(type: Type): boolean;
+  qf.is.arrayType(type: Type): boolean;
+  qf.is.tupleType(type: Type): boolean;
+  qf.is.arrayLikeType(type: Type): boolean;
   isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean;
   getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
   resolveName(name: string, location: Node | undefined, meaning: qt.SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
@@ -2536,7 +2536,7 @@ export interface TypeChecker {
   getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
   runWithCancellationToken<T>(token: CancellationToken, cb: (checker: TypeChecker) => T): T;
   getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
-  isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
+  qf.is.declarationVisible(node: Declaration | AnyImportSyntax): boolean;
 }
 export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
   getCompilerOptions(): CompilerOptions;

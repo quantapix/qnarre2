@@ -3976,7 +3976,7 @@ function create() {
         if (children) {
           n2 = create.node(Syntax.DocTypingLiteral, start);
           n2.docPropertyTags = children;
-          if (typeExpression.type.kind === Syntax.ArrayTyping) n2.isArrayType = true;
+          if (typeExpression.type.kind === Syntax.ArrayTyping) n2.qf.is.arrayType = true;
           n.type = finishNode(n2);
           return finishNode(n);
         }
@@ -4123,7 +4123,7 @@ function create() {
           } else n2.docPropertyTags = append(n2.docPropertyTags as MutableNodes<DocPropertyTag>, child);
         }
         if (n2) {
-          if (typeExpression && typeExpression.type.kind === Syntax.ArrayTyping) n2.isArrayType = true;
+          if (typeExpression && typeExpression.type.kind === Syntax.ArrayTyping) n2.qf.is.arrayType = true;
           n.typeExpression = childTypeTag && childTypeTag.typeExpression && !is.objectOrObjectArrayTypeReference(childTypeTag.typeExpression.type) ? childTypeTag.typeExpression : finishNode(n2);
           end = n.typeExpression.end;
         }

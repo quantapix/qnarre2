@@ -142,8 +142,8 @@ export function newCreate(f: qt.Frame) {
             const indexInfo = !isLateBoundName(name) && ((NumericLiteral.name(name) && getIndexInfoOfType(type, IndexKind.Number)) || getIndexInfoOfType(type, IndexKind.String));
             if (indexInfo) {
               checkFlags |= qt.CheckFlags.WritePartial | (indexInfo.isReadonly ? qt.CheckFlags.Readonly : 0);
-              indexTypes = append(indexTypes, isTupleType(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
-            } else if (isObjectLiteralType(type)) {
+              indexTypes = append(indexTypes, qf.is.tupleType(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
+            } else if (qf.is.objectLiteralType(type)) {
               checkFlags |= qt.CheckFlags.WritePartial;
               indexTypes = append(indexTypes, undefinedType);
             } else checkFlags |= qt.CheckFlags.ReadPartial;
@@ -172,7 +172,7 @@ export function newCreate(f: qt.Frame) {
         } else if (type !== firstType) {
           checkFlags |= qt.CheckFlags.HasNonUniformType;
         }
-        if (isLiteralType(type)) checkFlags |= qt.CheckFlags.HasLiteralType;
+        if (qf.is.literalType(type)) checkFlags |= qt.CheckFlags.HasLiteralType;
         if (type.flags & qt.TypeFlags.Never) checkFlags |= qt.CheckFlags.HasNeverType;
         propTypes.push(type);
       }
@@ -415,9 +415,9 @@ export function newCreate(f: qt.Frame) {
       return this.anonymousType(undefined, members, empty, empty, indexInfo, undefined);
     }
     reverseMappedType(source: Type, target: MappedType, constraint: IndexType) {
-      if (!(getIndexInfoOfType(source, IndexKind.String) || (getPropertiesOfType(source).length !== 0 && isPartiallyInferableType(source)))) return;
-      if (isArrayType(source)) return this.arrayType(inferReverseMappedType(getTypeArguments(<TypeReference>source)[0], target, constraint), isReadonlyArrayType(source));
-      if (isTupleType(source)) {
+      if (!(getIndexInfoOfType(source, IndexKind.String) || (getPropertiesOfType(source).length !== 0 && qf.is.partiallyInferableType(source)))) return;
+      if (qf.is.arrayType(source)) return this.arrayType(inferReverseMappedType(getTypeArguments(<TypeReference>source)[0], target, constraint), qf.is.readonlyArrayType(source));
+      if (qf.is.tupleType(source)) {
         const elemTypes = map(getTypeArguments(source), (t) => inferReverseMappedType(t, target, constraint));
         const minLength = getMappedTypeModifiers(target) & MappedTypeModifiers.IncludeOptional ? getTypeReferenceArity(source) - (source.target.hasRestElem ? 1 : 0) : source.target.minLength;
         return this.tupleType(elemTypes, minLength, source.target.hasRestElem, source.target.readonly, source.target.labeledElemDeclarations);
@@ -481,7 +481,7 @@ export function newCreate(f: qt.Frame) {
             attributesTable = new SymbolTable();
           }
           const exprType = getReducedType(check.expressionCached(attributeDecl.expression, checkMode));
-          if (isTypeAny(exprType)) hasSpreadAnyType = true;
+          if (qf.is.typeAny(exprType)) hasSpreadAnyType = true;
           if (isValidSpreadType(exprType)) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
             if (allAttributesTable) check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
@@ -624,7 +624,7 @@ export function newCreate(f: qt.Frame) {
         const iterationTypes = globalType !== emptyGenericType ? getIterationTypesOfGlobalIterableType(globalType, resolver) : undefined;
         const iterableIteratorReturnType = iterationTypes ? iterationTypes.returnType : anyType;
         const iterableIteratorNextType = iterationTypes ? iterationTypes.nextType : undefinedType;
-        if (isTypeAssignableTo(returnType, iterableIteratorReturnType) && isTypeAssignableTo(iterableIteratorNextType, nextType)) {
+        if (qf.is.typeAssignableTo(returnType, iterableIteratorReturnType) && qf.is.typeAssignableTo(iterableIteratorNextType, nextType)) {
           if (globalType !== emptyGenericType) return this.typeFromGenericGlobalType(globalType, [yieldType]);
           resolver.getGlobalIterableIteratorType(true);
           return emptyObjectType;
@@ -711,7 +711,7 @@ export function newCreate(f: qt.Frame) {
           return node ? getNodeCheckFlags(node) : 0;
         },
         isTopLevelValueImportEqualsWithEntityName,
-        isDeclarationVisible,
+        qf.is.declarationVisible,
         isImplementationOfOverload,
         isRequiredInitializedParameter,
         isOptionalUninitializedParameterProperty,
@@ -912,9 +912,9 @@ export function newInstantiate(f: qt.Frame) {
           return mapType(getReducedType(mappedTypeVariable), (t) => {
             if (t.flags & (TypeFlags.AnyOrUnknown | qt.TypeFlags.InstantiableNonPrimitive | qt.TypeFlags.Object | qt.TypeFlags.Intersection) && t !== wildcardType && t !== errorType) {
               const replacementMapper = prependTypeMapping(typeVariable, t, mapper);
-              return isArrayType(t)
+              return qf.is.arrayType(t)
                 ? this.mappedArrayType(t, type, replacementMapper)
-                : isTupleType(t)
+                : qf.is.tupleType(t)
                 ? this.mappedTupleType(t, type, replacementMapper)
                 : this.anonymousType(type, replacementMapper);
             }
@@ -926,7 +926,7 @@ export function newInstantiate(f: qt.Frame) {
     }
     mappedArrayType(arrayType: Type, mappedType: MappedType, mapper: TypeMapper) {
       const elemType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
-      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(isReadonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
+      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(qf.is.readonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
     }
     mappedTupleType(tupleType: TupleTypeReference, mappedType: MappedType, mapper: TypeMapper) {
       const minLength = tupleType.target.minLength;
@@ -1029,7 +1029,7 @@ export function newInstantiate(f: qt.Frame) {
         if (maybeVariable.flags & qt.TypeFlags.TypeVariable) return getSubstitutionType(maybeVariable as TypeVariable, this.type((<SubstitutionType>type).substitute, mapper));
         else {
           const sub = this.type((<SubstitutionType>type).substitute, mapper);
-          if (sub.flags & qt.TypeFlags.AnyOrUnknown || isTypeAssignableTo(getRestrictiveInstantiation(maybeVariable), getRestrictiveInstantiation(sub))) return maybeVariable;
+          if (sub.flags & qt.TypeFlags.AnyOrUnknown || qf.is.typeAssignableTo(getRestrictiveInstantiation(maybeVariable), getRestrictiveInstantiation(sub))) return maybeVariable;
           return sub;
         }
       }
@@ -1156,7 +1156,7 @@ export function newResolve(f: qt.Frame) {
       let grandparent: Node;
       let isInExternalModule = false;
       loop: while (location) {
-        if (location.locals && !isGlobalSourceFile(location)) {
+        if (location.locals && !qf.is.globalSourceFile(location)) {
           if ((result = lookup(location.locals, name, meaning))) {
             let useResult = true;
             if (qf.is.functionLike(location) && lastLocation && lastLocation !== (<FunctionLikeDeclaration>location).body) {
@@ -1792,7 +1792,7 @@ export function newResolve(f: qt.Frame) {
             constructSignatures = addRange(
               constructSignatures.slice(),
               mapDefined(type.callSignatures, (sig) =>
-                isJSConstructor(sig.declaration)
+                qf.is.jsConstructor(sig.declaration)
                   ? qf.create.signature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, classType, undefined, sig.minArgumentCount, sig.flags & SignatureFlags.PropagatingFlags)
                   : undefined
               )
@@ -1845,7 +1845,7 @@ export function newResolve(f: qt.Frame) {
       setStructuredTypeMembers(type, members, empty, empty, stringIndexInfo, numberIndexInfo);
       function addMemberForKeyType(t: Type) {
         const templateMapper = appendTypeMapping(type.mapper, typeParameter, t);
-        if (isTypeUsableAsPropertyName(t)) {
+        if (qf.is.typeUsableAsPropertyName(t)) {
           const propName = getPropertyNameFromType(t);
           const modifiersProp = getPropertyOfType(modifiersType, propName);
           const isOptional = !!(
@@ -2097,7 +2097,7 @@ export function newResolve(f: qt.Frame) {
     callExpression(node: CallExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
       if (node.expression.kind === Syntax.SuperKeyword) {
         const superType = check.superExpression(node.expression);
-        if (isTypeAny(superType)) {
+        if (qf.is.typeAny(superType)) {
           for (const arg of node.arguments) {
             check.expression(arg);
           }
@@ -2159,7 +2159,7 @@ export function newResolve(f: qt.Frame) {
       if (expressionType === silentNeverType) return silentNeverSignature;
       expressionType = getApparentType(expressionType);
       if (expressionType === errorType) return this.errorCall(node);
-      if (isTypeAny(expressionType)) {
+      if (qf.is.typeAny(expressionType)) {
         if (node.typeArguments) error(node, qd.msgs.Untyped_function_calls_may_not_accept_type_arguments);
         return this.untypedCall(node);
       }
@@ -2177,7 +2177,7 @@ export function newResolve(f: qt.Frame) {
       if (callSignatures.length) {
         const signature = this.call(node, callSignatures, candidatesOutArray, checkMode, SignatureFlags.None);
         if (!noImplicitAny) {
-          if (signature.declaration && !isJSConstructor(signature.declaration) && getReturnTypeOfSignature(signature) !== voidType)
+          if (signature.declaration && !qf.is.jsConstructor(signature.declaration) && getReturnTypeOfSignature(signature) !== voidType)
             error(node, qd.msgs.Only_a_void_function_can_be_called_with_the_new_keyword);
           if (getThisTypeOfSignature(signature) === voidType) error(node, qd.msgs.A_function_that_is_called_with_the_new_keyword_cannot_have_a_this_type_that_is_void);
         }

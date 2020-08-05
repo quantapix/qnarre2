@@ -704,7 +704,7 @@ export class QContext {
       returnTypeNode = new qc.TypingPredicate(assertsModifier, parameterName, typeNode);
     } else {
       const returnType = getReturnTypeOfSignature(signature);
-      if (returnType && !(suppressAny && isTypeAny(returnType))) {
+      if (returnType && !(suppressAny && qf.is.typeAny(returnType))) {
         returnTypeNode = this.serializeReturnTypeForSignature(returnType, signature, privateSymbolVisitor, bundledImports);
       } else if (!suppressAny) {
         returnTypeNode = new qc.KeywordTyping(Syntax.AnyKeyword);
@@ -742,7 +742,7 @@ export class QContext {
     const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: BindingName): BindingName => {
       const elideIniterAndSetEmitFlags = (node: Node): Node => {
-        if (this.tracker.trackSymbol && node.kind === Syntax.ComputedPropertyName && isLateBindableName(node)) {
+        if (this.tracker.trackSymbol && node.kind === Syntax.ComputedPropertyName && qf.is.lateBindableName(node)) {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
         const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
@@ -856,7 +856,7 @@ export class QContext {
       );
     }
     if (node.kind === Syntax.TypingReference && node.typeName.kind === Syntax.Identifier && node.typeName.escapedText === '') return new qc.KeywordTyping(Syntax.AnyKeyword).setOriginal(node);
-    if ((node.kind === Syntax.ExpressionWithTypings || node.kind === Syntax.TypingReference) && isDocIndexSignature(node)) {
+    if ((node.kind === Syntax.ExpressionWithTypings || node.kind === Syntax.TypingReference) && qf.is.docIndexSignature(node)) {
       return new qc.TypingLiteral([
         new qc.IndexSignatureDeclaration(
           undefined,
@@ -1019,7 +1019,7 @@ export class QContext {
         if (baseType) {
           const baseInfo = getIndexInfoOfType(baseType, type);
           if (baseInfo) {
-            if (isTypeIdenticalTo(info.type, baseInfo.type)) continue;
+            if (qf.is.typeIdenticalTo(info.type, baseInfo.type)) continue;
           }
         }
         results.push(this.indexInfoToIndexSignatureDeclarationHelper(info, type));
@@ -1244,7 +1244,7 @@ export class QContext {
       return setEmitFlags(typeLiteralNode, this.flags & NodeBuilderFlags.MultilineObjectLiterals ? 0 : EmitFlags.SingleLine);
     };
     if (symbol) {
-      if (isJSConstructor(symbol.valueDeclaration)) {
+      if (qf.is.jsConstructor(symbol.valueDeclaration)) {
         const isInstanceType = type === this.getDeclaredTypeOfClassOrInterface() ? SymbolFlags.Type : SymbolFlags.Value;
         return this.symbolToTypeNode(symbol, isInstanceType);
       }
@@ -1429,7 +1429,7 @@ export class QContext {
           getPropertyOfType(baseType, p.escName) &&
           isReadonlySymbol(getPropertyOfType(baseType, p.escName)!) === isReadonlySymbol(p) &&
           (p.flags & SymbolFlags.Optional) === (getPropertyOfType(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
-          isTypeIdenticalTo(getTypeOfSymbol(p), getTypeOfPropertyOfType(baseType, p.escName)!))
+          qf.is.typeIdenticalTo(getTypeOfSymbol(p), getTypeOfPropertyOfType(baseType, p.escName)!))
       ) {
         return [];
       }

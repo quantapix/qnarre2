@@ -438,7 +438,7 @@ export function transformDeclarations(context: TrafoContext) {
       case Syntax.ClassDeclaration:
       case Syntax.TypeAliasDeclaration:
       case Syntax.EnumDeclaration:
-        return !resolver.isDeclarationVisible(node);
+        return !resolver.qf.is.declarationVisible(node);
       case Syntax.VariableDeclaration:
         return !getBindingNameVisible(node as VariableDeclaration);
       case Syntax.ImportEqualsDeclaration:
@@ -452,7 +452,7 @@ export function transformDeclarations(context: TrafoContext) {
   function getBindingNameVisible(elem: BindingElem | VariableDeclaration | OmittedExpression): boolean {
     if (qc.is.kind(qc.OmittedExpression, elem)) return false;
     if (qc.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elems, getBindingNameVisible);
-    return resolver.isDeclarationVisible(elem);
+    return resolver.qf.is.declarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
     if (qc.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
@@ -522,7 +522,7 @@ export function transformDeclarations(context: TrafoContext) {
     return input;
   }
   function transformImportEqualsDeclaration(decl: ImportEqualsDeclaration) {
-    if (!resolver.isDeclarationVisible(decl)) return;
+    if (!resolver.qf.is.declarationVisible(decl)) return;
     if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
       const specifier = qc.get.externalModuleImportEqualsDeclarationExpression(decl);
       return decl.update(undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
@@ -536,7 +536,7 @@ export function transformDeclarations(context: TrafoContext) {
   }
   function transformImportDeclaration(decl: ImportDeclaration) {
     if (!decl.importClause) return decl.update(undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
-    const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
+    const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.qf.is.declarationVisible(decl.importClause) ? decl.importClause.name : undefined;
     if (!decl.importClause.namedBindings) {
       return (
         visibleDefaultBinding &&
@@ -549,7 +549,7 @@ export function transformDeclarations(context: TrafoContext) {
       );
     }
     if (decl.importClause.namedBindings.kind === Syntax.NamespaceImport) {
-      const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings : undefined;
+      const namedBindings = resolver.qf.is.declarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings : undefined;
       return visibleDefaultBinding || namedBindings
         ? decl.update(
             undefined,
@@ -559,7 +559,7 @@ export function transformDeclarations(context: TrafoContext) {
           )
         : undefined;
     }
-    const bindingList = mapDefined(decl.importClause.namedBindings.elems, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
+    const bindingList = mapDefined(decl.importClause.namedBindings.elems, (b) => (resolver.qf.is.declarationVisible(b) ? b : undefined));
     if ((bindingList && bindingList.length) || visibleDefaultBinding) {
       return decl.update(
         undefined,

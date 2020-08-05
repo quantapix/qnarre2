@@ -8,7 +8,7 @@ import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-export { assert, format, skip, MutableNodes, Nodes } from './base';
+export { assert, findAncestor, format, skip, MutableNodes, Nodes } from './base';
 export * from './classes';
 export { qf, Fget, Fhas, Fis } from './frame';
 export namespace BindingOrAssignmentElem {

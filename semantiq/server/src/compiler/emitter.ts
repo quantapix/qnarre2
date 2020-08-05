@@ -547,7 +547,7 @@ export const notImplementedResolver: EmitResolver = {
   isReferencedAliasDeclaration: notImplemented,
   isTopLevelValueImportEqualsWithEntityName: notImplemented,
   getNodeCheckFlags: notImplemented,
-  isDeclarationVisible: notImplemented,
+  qf.is.declarationVisible: notImplemented,
   isLateBound: (_node): _node is LateBoundDecl => false,
   collectLinkedAliases: notImplemented,
   isImplementationOfOverload: notImplemented,
@@ -2854,7 +2854,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         writeSpace();
         writePunctuation('{');
         write('Object');
-        if (tag.typeExpression.isArrayType) {
+        if (tag.typeExpression.qf.is.arrayType) {
           writePunctuation('[');
           writePunctuation(']');
         }

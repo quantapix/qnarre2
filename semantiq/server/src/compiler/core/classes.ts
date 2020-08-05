@@ -840,11 +840,11 @@ export class DocTypingLiteral extends qb.DocTobj implements qt.DocTypingLiteral 
   static readonly kind = Syntax.DocTypingLiteral;
   kind!: Syntax.DocTypingLiteral;
   docPropertyTags?: readonly qt.DocPropertyLikeTag[];
-  isArrayType?: boolean;
+  qf.is.arrayType?: boolean;
   constructor(ts?: readonly qt.DocPropertyLikeTag[], isArray?: boolean) {
     super(true);
     this.docPropertyTags = ts;
-    this.isArrayType = isArray;
+    this.qf.is.arrayType = isArray;
   }
 }
 DocTypingLiteral.prototype.kind = DocTypingLiteral.kind;

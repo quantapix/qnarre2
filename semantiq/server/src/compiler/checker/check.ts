@@ -135,7 +135,7 @@ export function newCheck(f: qt.Frame) {
       if (result.flags & (SymbolFlags.Function | qt.SymbolFlags.FunctionScopedVariable | qt.SymbolFlags.Assignment) && result.flags & qt.SymbolFlags.Class) return;
       const declaration = find(result.declarations, (d) => qf.is.blockOrCatchScoped(d) || qf.is.classLike(d) || d.kind === Syntax.EnumDeclaration);
       if (declaration === undefined) return qu.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
-      if (!(declaration.flags & NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(declaration, n)) {
+      if (!(declaration.flags & NodeFlags.Ambient) && !qf.is.blockScopedNameDeclaredBeforeUse(declaration, n)) {
         let diagnosticMessage;
         const declarationName = declarationNameToString(qf.get.declaration.nameOf(declaration));
         if (result.flags & qt.SymbolFlags.BlockScopedVariable) diagnosticMessage = error(n, qd.msgs.Block_scoped_variable_0_used_before_its_declaration, declarationName);
@@ -199,7 +199,7 @@ export function newCheck(f: qt.Frame) {
       containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
     ): boolean {
-      if (isTypeRelatedTo(source, target, relation)) return true;
+      if (qf.is.typeRelatedTo(source, target, relation)) return true;
       if (!errorNode || !elaborateError(expr, source, target, relation, headMessage, containingMessageChain, errorOutputContainer))
         return this.typeRelatedTo(source, target, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer);
       return false;
@@ -382,14 +382,14 @@ export function newCheck(f: qt.Frame) {
         const [sourceType, targetType] = getTypeNamesForErrorDisplay(source, target);
         let generalizedSource = source;
         let generalizedSourceType = sourceType;
-        if (isLiteralType(source) && !typeCouldHaveTopLevelSingletonTypes(target)) {
+        if (qf.is.literalType(source) && !typeCouldHaveTopLevelSingletonTypes(target)) {
           generalizedSource = getBaseTypeOfLiteralType(source);
           generalizedSourceType = getTypeNameForErrorDisplay(generalizedSource);
         }
         if (target.flags & TypeFlags.TypeParameter) {
           const constraint = getBaseConstraintOfType(target);
           let needsOriginalSource;
-          if (constraint && (isTypeAssignableTo(generalizedSource, constraint) || (needsOriginalSource = isTypeAssignableTo(source, constraint)))) {
+          if (constraint && (qf.is.typeAssignableTo(generalizedSource, constraint) || (needsOriginalSource = qf.is.typeAssignableTo(source, constraint)))) {
             reportError(
               qd.msgs._0_is_assignable_to_the_constraint_of_type_1_but_1_could_be_instantiated_with_a_different_subtype_of_constraint_2,
               needsOriginalSource ? sourceType : generalizedSourceType,
@@ -423,23 +423,23 @@ export function newCheck(f: qt.Frame) {
         }
       }
       function tryElaborateArrayLikeErrors(source: qt.Type, target: qt.Type, reportErrors: boolean): boolean {
-        if (isTupleType(source)) {
+        if (qf.is.tupleType(source)) {
           if (source.target.readonly && isMutableArrayOrTuple(target)) {
             if (reportErrors) reportError(qd.msgs.The_type_0_is_readonly_and_cannot_be_assigned_to_the_mutable_type_1, typeToString(source), typeToString(target));
             return false;
           }
-          return isTupleType(target) || isArrayType(target);
+          return qf.is.tupleType(target) || qf.is.arrayType(target);
         }
-        if (isReadonlyArrayType(source) && isMutableArrayOrTuple(target)) {
+        if (qf.is.readonlyArrayType(source) && isMutableArrayOrTuple(target)) {
           if (reportErrors) reportError(qd.msgs.The_type_0_is_readonly_and_cannot_be_assigned_to_the_mutable_type_1, typeToString(source), typeToString(target));
           return false;
         }
-        if (isTupleType(target)) return isArrayType(source);
+        if (qf.is.tupleType(target)) return qf.is.arrayType(source);
         return true;
       }
       function isRelatedTo(originalSource: qt.Type, originalTarget: qt.Type, reportErrors = false, headMessage?: qd.Message, intersectionState = IntersectionState.None): qt.Ternary {
         if (originalSource.flags & TypeFlags.Object && originalTarget.flags & TypeFlags.Primitive) {
-          if (isSimpleTypeRelatedTo(originalSource, originalTarget, relation, reportErrors ? reportError : undefined)) return qt.Ternary.True;
+          if (qf.is.simpleTypeRelatedTo(originalSource, originalTarget, relation, reportErrors ? reportError : undefined)) return qt.Ternary.True;
           reportErrorResults(originalSource, originalTarget, qt.Ternary.False, !!(getObjectFlags(originalSource) & ObjectFlags.JsxAttributes));
           return qt.Ternary.False;
         }
@@ -456,12 +456,12 @@ export function newCheck(f: qt.Frame) {
           }
         }
         if (
-          (relation === comparableRelation && !(target.flags & TypeFlags.Never) && isSimpleTypeRelatedTo(target, source, relation)) ||
-          isSimpleTypeRelatedTo(source, target, relation, reportErrors ? reportError : undefined)
+          (relation === comparableRelation && !(target.flags & TypeFlags.Never) && qf.is.simpleTypeRelatedTo(target, source, relation)) ||
+          qf.is.simpleTypeRelatedTo(source, target, relation, reportErrors ? reportError : undefined)
         )
           return qt.Ternary.True;
         const isComparingJsxAttributes = !!(getObjectFlags(source) & ObjectFlags.JsxAttributes);
-        const isPerformingExcessPropertyChecks = !(intersectionState & IntersectionState.Target) && isObjectLiteralType(source) && getObjectFlags(source) & ObjectFlags.FreshLiteral;
+        const isPerformingExcessPropertyChecks = !(intersectionState & IntersectionState.Target) && qf.is.objectLiteralType(source) && getObjectFlags(source) & ObjectFlags.FreshLiteral;
         if (isPerformingExcessPropertyChecks) {
           if (hasExcessProperties(<FreshObjectLiteralType>source, target, reportErrors)) {
             if (reportErrors) reportRelationError(headMessage, source, target);
@@ -520,8 +520,8 @@ export function newCheck(f: qt.Frame) {
           !inPropertyCheck &&
           ((target.flags & TypeFlags.Intersection && (isPerformingExcessPropertyChecks || isPerformingCommonPropertyChecks)) ||
             (isNonGenericObjectType(target) &&
-              !isArrayType(target) &&
-              !isTupleType(target) &&
+              !qf.is.arrayType(target) &&
+              !qf.is.tupleType(target) &&
               source.flags & TypeFlags.Intersection &&
               getApparentType(source).flags & TypeFlags.StructuredType &&
               !some((<IntersectionType>source).types, (t) => !!(getObjectFlags(t) & ObjectFlags.NonInferrableType))))
@@ -929,7 +929,7 @@ export function newCheck(f: qt.Frame) {
               mapper = ctx.mapper;
             }
             if (
-              isTypeIdenticalTo(sourceExtends, (<ConditionalType>target).extendsType) &&
+              qf.is.typeIdenticalTo(sourceExtends, (<ConditionalType>target).extendsType) &&
               (isRelatedTo((<ConditionalType>source).checkType, (<ConditionalType>target).checkType) || isRelatedTo((<ConditionalType>target).checkType, (<ConditionalType>source).checkType))
             ) {
               if ((result = isRelatedTo(instantiateType(getTrueTypeFromConditionalType(<ConditionalType>source), mapper), getTrueTypeFromConditionalType(<ConditionalType>target), reportErrors)))
@@ -979,7 +979,7 @@ export function newCheck(f: qt.Frame) {
             if (variances === empty) return qt.Ternary.Maybe;
             const varianceResult = relateVariances(getTypeArguments(<TypeReference>source), getTypeArguments(<TypeReference>target), variances, intersectionState);
             if (varianceResult !== undefined) return varianceResult;
-          } else if (isReadonlyArrayType(target) ? isArrayType(source) || isTupleType(source) : isArrayType(target) && isTupleType(source) && !source.target.readonly) {
+          } else if (qf.is.readonlyArrayType(target) ? qf.is.arrayType(source) || qf.is.tupleType(source) : qf.is.arrayType(target) && qf.is.tupleType(source) && !source.target.readonly) {
             if (relation !== identityRelation) return isRelatedTo(getIndexTypeOfType(source, IndexKind.Number) || anyType, getIndexTypeOfType(target, IndexKind.Number) || anyType, reportErrors);
             return qt.Ternary.False;
           } else if (
@@ -1275,13 +1275,13 @@ export function newCheck(f: qt.Frame) {
       function propertiesRelatedTo(source: qt.Type, target: qt.Type, reportErrors: boolean, excludedProperties: EscapedMap<true> | undefined, intersectionState: IntersectionState): qt.Ternary {
         if (relation === identityRelation) return propertiesIdenticalTo(source, target, excludedProperties);
         const requireOptionalProperties =
-          (relation === subtypeRelation || relation === strictSubtypeRelation) && !isObjectLiteralType(source) && !isEmptyArrayLiteralType(source) && !isTupleType(source);
+          (relation === subtypeRelation || relation === strictSubtypeRelation) && !qf.is.objectLiteralType(source) && !qf.is.emptyArrayLiteralType(source) && !qf.is.tupleType(source);
         const unmatchedProperty = getUnmatchedProperty(source, target, requireOptionalProperties, false);
         if (unmatchedProperty) {
           if (reportErrors) reportUnmatchedProperty(source, target, unmatchedProperty, requireOptionalProperties);
           return qt.Ternary.False;
         }
-        if (isObjectLiteralType(target)) {
+        if (qf.is.objectLiteralType(target)) {
           for (const sourceProp of excludeProperties(getPropertiesOfType(source), excludedProperties)) {
             if (!getPropertyOfObjectType(target, sourceProp.escName)) {
               const sourceType = getTypeOfSymbol(sourceProp);
@@ -1293,10 +1293,10 @@ export function newCheck(f: qt.Frame) {
           }
         }
         let result = qt.Ternary.True;
-        if (isTupleType(target)) {
+        if (qf.is.tupleType(target)) {
           const targetRestType = getRestTypeOfTupleType(target);
           if (targetRestType) {
-            if (!isTupleType(source)) return qt.Ternary.False;
+            if (!qf.is.tupleType(source)) return qt.Ternary.False;
             const sourceRestType = getRestTypeOfTupleType(source);
             if (sourceRestType && !isRelatedTo(sourceRestType, targetRestType, reportErrors)) {
               if (reportErrors) reportError(qd.msgs.Rest_signatures_are_incompatible);
@@ -1316,7 +1316,7 @@ export function newCheck(f: qt.Frame) {
           }
         }
         const properties = getPropertiesOfType(target);
-        const numericNamesOnly = isTupleType(source) && isTupleType(target);
+        const numericNamesOnly = qf.is.tupleType(source) && qf.is.tupleType(target);
         for (const targetProp of excludeProperties(properties, excludedProperties)) {
           const name = targetProp.escName;
           if (!(targetProp.flags & qt.SymbolFlags.Prototype) && (!numericNamesOnly || NumericLiteral.name(name) || name === 'length')) {
@@ -1348,8 +1348,8 @@ export function newCheck(f: qt.Frame) {
       function signaturesRelatedTo(source: qt.Type, target: qt.Type, kind: SignatureKind, reportErrors: boolean): qt.Ternary {
         if (relation === identityRelation) return signaturesIdenticalTo(source, target, kind);
         if (target === anyFunctionType || source === anyFunctionType) return qt.Ternary.True;
-        const sourceIsJSConstructor = source.symbol && isJSConstructor(source.symbol.valueDeclaration);
-        const targetIsJSConstructor = target.symbol && isJSConstructor(target.symbol.valueDeclaration);
+        const sourceIsJSConstructor = source.symbol && qf.is.jsConstructor(source.symbol.valueDeclaration);
+        const targetIsJSConstructor = target.symbol && qf.is.jsConstructor(target.symbol.valueDeclaration);
         const sourceSignatures = getSignaturesOfType(source, sourceIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
         const targetSignatures = getSignaturesOfType(target, targetIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
         if (kind === SignatureKind.Construct && sourceSignatures.length && targetSignatures.length) {
@@ -1457,7 +1457,7 @@ export function newCheck(f: qt.Frame) {
         if (qf.is.genericMappedType(source)) return getIndexTypeOfType(target, IndexKind.String) ? isRelatedTo(getTemplateTypeFromMappedType(source), targetType, reportErrors) : qt.Ternary.False;
         const indexType = getIndexTypeOfType(source, kind) || (kind === IndexKind.Number && getIndexTypeOfType(source, IndexKind.String));
         if (indexType) return indexTypeRelatedTo(indexType, targetType, reportErrors);
-        if (!(intersectionState & IntersectionState.Source) && isObjectTypeWithInferableIndex(source)) {
+        if (!(intersectionState & IntersectionState.Source) && qf.is.objectTypeWithInferableIndex(source)) {
           let related = eachPropertyRelatedTo(source, targetType, kind, reportErrors);
           if (related && kind === IndexKind.String) {
             const numberIndexType = getIndexTypeOfType(source, IndexKind.Number);
@@ -1498,7 +1498,7 @@ export function newCheck(f: qt.Frame) {
       const localOrExportSymbol = getExportSymbolOfValueSymbolIfExported(symbol);
       let declaration: Declaration | undefined = localOrExportSymbol.valueDeclaration;
       if (localOrExportSymbol.flags & qt.SymbolFlags.Class) {
-        if (declaration.kind === Syntax.ClassDeclaration && nodeIsDecorated(declaration as ClassDeclaration)) {
+        if (declaration.kind === Syntax.ClassDeclaration && qf.is.decorated(declaration as ClassDeclaration)) {
           let container = qf.get.containingClass(n);
           while (container !== undefined) {
             if (container === declaration && container.name !== n) {
@@ -1743,7 +1743,7 @@ export function newCheck(f: qt.Frame) {
         const e = elems[i];
         const spread = e.kind === Syntax.SpreadElem && (<SpreadElem>e).expression;
         const spreadType = spread && this.expression(spread, checkMode, forceTuple);
-        if (spreadType && isTupleType(spreadType)) {
+        if (spreadType && qf.is.tupleType(spreadType)) {
           elemTypes.push(...getTypeArguments(spreadType));
           if (spreadType.target.hasRestElem) {
             if (i === elemCount - 1) hasEndingSpreadElem = true;
@@ -1787,7 +1787,7 @@ export function newCheck(f: qt.Frame) {
         links.resolvedType = this.expression(n.expression);
         if (
           links.resolvedType.flags & TypeFlags.Nullable ||
-          (!isTypeAssignableToKind(links.resolvedType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) && !isTypeAssignableTo(links.resolvedType, stringNumberSymbolType))
+          (!qf.is.typeAssignableToKind(links.resolvedType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) && !qf.is.typeAssignableTo(links.resolvedType, stringNumberSymbolType))
         ) {
           error(n, qd.msgs.A_computed_property_name_must_be_of_type_string_number_symbol_or_any);
         } else {
@@ -1843,7 +1843,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
           objectFlags |= getObjectFlags(type) & ObjectFlags.PropagatingFlags;
-          const nameType = computedNameType && isTypeUsableAsPropertyName(computedNameType) ? computedNameType : undefined;
+          const nameType = computedNameType && qf.is.typeUsableAsPropertyName(computedNameType) ? computedNameType : undefined;
           const prop = nameType
             ? new Symbol(SymbolFlags.Property | member.flags, getPropertyNameFromType(nameType), checkFlags | qt.CheckFlags.Late)
             : new Symbol(SymbolFlags.Property | member.flags, member.escName, checkFlags);
@@ -1888,8 +1888,8 @@ export function newCheck(f: qt.Frame) {
           this.nodeDeferred(memberDecl);
         }
         if (computedNameType && !(computedNameType.flags & TypeFlags.StringOrNumberLiteralOrUnique)) {
-          if (isTypeAssignableTo(computedNameType, stringNumberSymbolType)) {
-            if (isTypeAssignableTo(computedNameType, numberType)) hasComputedNumberProperty = true;
+          if (qf.is.typeAssignableTo(computedNameType, stringNumberSymbolType)) {
+            if (qf.is.typeAssignableTo(computedNameType, numberType)) hasComputedNumberProperty = true;
             else {
               hasComputedStringProperty = true;
             }
@@ -2026,7 +2026,7 @@ export function newCheck(f: qt.Frame) {
         checkGrammar.jsxExpression(n);
         if (n.expression) {
           const type = this.expression(n.expression, checkMode);
-          if (n.dot3Token && type !== anyType && !isArrayType(type)) error(n, qd.msgs.JSX_spread_child_must_be_an_array_type);
+          if (n.dot3Token && type !== anyType && !qf.is.arrayType(type)) error(n, qd.msgs.JSX_spread_child_must_be_an_array_type);
           return type;
         }
         return errorType;
@@ -2193,7 +2193,7 @@ export function newCheck(f: qt.Frame) {
       const assignmentKind = qf.get.assignmentTargetKind(n);
       const apparentType = getApparentType(assignmentKind !== AssignmentKind.None || isMethodAccessForCall(n) ? getWidenedType(leftType) : leftType);
       if (right.kind === Syntax.PrivateIdentifier) this.externalEmitHelpers(n, ExternalEmitHelpers.ClassPrivateFieldGet);
-      const isAnyLike = isTypeAny(apparentType) || apparentType === silentNeverType;
+      const isAnyLike = qf.is.typeAny(apparentType) || apparentType === silentNeverType;
       let prop: Symbol | undefined;
       if (right.kind === Syntax.PrivateIdentifier) {
         const lexicallyScopedSymbol = lookupSymbolForPrivateIdentifierDeclaration(right.escapedText, right);
@@ -2256,7 +2256,7 @@ export function newCheck(f: qt.Frame) {
       if (
         isInPropertyIniter(n) &&
         !(qf.is.accessExpression(n) && qf.is.accessExpression(n.expression)) &&
-        !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right) &&
+        !qf.is.blockScopedNameDeclaredBeforeUse(valueDeclaration, right) &&
         !isPropertyDeclaredInAncestorClass(prop)
       ) {
         diagnosticMessage = error(right, qd.msgs.Property_0_is_used_before_its_initialization, declarationName);
@@ -2264,7 +2264,7 @@ export function newCheck(f: qt.Frame) {
         valueDeclaration.kind === Syntax.ClassDeclaration &&
         n.parent.kind !== Syntax.TypingReference &&
         !(valueDeclaration.flags & NodeFlags.Ambient) &&
-        !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right)
+        !qf.is.blockScopedNameDeclaredBeforeUse(valueDeclaration, right)
       ) {
         diagnosticMessage = error(right, qd.msgs.Class_0_used_before_its_declaration, declarationName);
       }
@@ -2417,7 +2417,7 @@ export function newCheck(f: qt.Frame) {
           declaration.kind !== Syntax.ConstructSignature &&
           declaration.kind !== Syntax.ConstructorTyping &&
           !qc.isDoc.constructSignature(declaration) &&
-          !isJSConstructor(declaration)
+          !qf.is.jsConstructor(declaration)
         ) {
           if (noImplicitAny) error(n, qd.new_expression_whose_target_lacks_a_construct_signature_implicitly_has_an_any_type);
           return anyType;
@@ -2454,7 +2454,7 @@ export function newCheck(f: qt.Frame) {
       for (let i = 1; i < n.arguments.length; ++i) {
         this.expressionCached(n.arguments[i]);
       }
-      if (specifierType.flags & TypeFlags.Undefined || specifierType.flags & TypeFlags.Null || !isTypeAssignableTo(specifierType, stringType))
+      if (specifierType.flags & TypeFlags.Undefined || specifierType.flags & TypeFlags.Null || !qf.is.typeAssignableTo(specifierType, stringType))
         error(specifier, qd.msgs.Dynamic_import_s_specifier_must_be_of_type_string_but_here_has_type_0, typeToString(specifierType));
       const moduleSymbol = resolveExternalModuleName(n, specifier);
       if (moduleSymbol) {
@@ -2561,7 +2561,7 @@ export function newCheck(f: qt.Frame) {
         }
       });
       if (aggregatedTypes.length === 0 && !hasReturnWithNoExpression && (hasReturnOfTypeNever || mayReturnNever(func))) return;
-      if (strictNullChecks && aggregatedTypes.length && hasReturnWithNoExpression && !(isJSConstructor(func) && aggregatedTypes.some((t) => t.symbol === func.symbol)))
+      if (strictNullChecks && aggregatedTypes.length && hasReturnWithNoExpression && !(qf.is.jsConstructor(func) && aggregatedTypes.some((t) => t.symbol === func.symbol)))
         pushIfUnique(aggregatedTypes, undefinedType);
       return aggregatedTypes;
     }
@@ -2575,7 +2575,7 @@ export function newCheck(f: qt.Frame) {
       if (type && type.flags & TypeFlags.Never) error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_returning_never_cannot_have_a_reachable_end_point);
       else if (type && !hasExplicitReturn) {
         error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_whose_declared_type_is_neither_void_nor_any_must_return_a_value);
-      } else if (type && strictNullChecks && !isTypeAssignableTo(undefinedType, type)) {
+      } else if (type && strictNullChecks && !qf.is.typeAssignableTo(undefinedType, type)) {
         error(qf.get.effectiveReturnTypeNode(func) || func, qd.msgs.Function_lacks_ending_return_statement_and_return_type_does_not_include_undefined);
       } else if (compilerOptions.noImplicitReturns) {
         if (!type) {
@@ -2632,9 +2632,9 @@ export function newCheck(f: qt.Frame) {
       }
     }
     arithmeticOperandType(operand: Node, type: qt.Type, diagnostic: qd.Message, isAwaitValid = false): boolean {
-      if (!isTypeAssignableTo(type, numberOrBigIntType)) {
+      if (!qf.is.typeAssignableTo(type, numberOrBigIntType)) {
         const awaitedType = isAwaitValid && getAwaitedTypeOfPromise(type);
-        errorAndMaybeSuggestAwait(operand, !!awaitedType && isTypeAssignableTo(awaitedType, numberOrBigIntType), diagnostic);
+        errorAndMaybeSuggestAwait(operand, !!awaitedType && qf.is.typeAssignableTo(awaitedType, numberOrBigIntType), diagnostic);
         return false;
       }
       return true;
@@ -2796,9 +2796,9 @@ export function newCheck(f: qt.Frame) {
     }
     instanceOfExpression(left: Expression, right: Expression, leftType: qt.Type, rightType: qt.Type): qt.Type {
       if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
-      if (!isTypeAny(leftType) && allTypesAssignableToKind(leftType, TypeFlags.Primitive))
+      if (!qf.is.typeAny(leftType) && allTypesAssignableToKind(leftType, TypeFlags.Primitive))
         error(left, qd.msgs.The_left_hand_side_of_an_instanceof_expression_must_be_of_type_any_an_object_type_or_a_type_parameter);
-      if (!(isTypeAny(rightType) || typeHasCallOrConstructSignatures(rightType) || isTypeSubtypeOf(rightType, globalFunctionType)))
+      if (!(qf.is.typeAny(rightType) || typeHasCallOrConstructSignatures(rightType) || isTypeSubtypeOf(rightType, globalFunctionType)))
         error(right, qd.msgs.The_right_hand_side_of_an_instanceof_expression_must_be_of_type_any_or_of_a_type_assignable_to_the_Function_interface_type);
       return booleanType;
     }
@@ -2806,7 +2806,7 @@ export function newCheck(f: qt.Frame) {
       if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
       leftType = this.nonNullType(leftType, left);
       rightType = this.nonNullType(rightType, right);
-      if (!(allTypesAssignableToKind(leftType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) || isTypeAssignableToKind(leftType, TypeFlags.Index | TypeFlags.TypeParameter)))
+      if (!(allTypesAssignableToKind(leftType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) || qf.is.typeAssignableToKind(leftType, TypeFlags.Index | TypeFlags.TypeParameter)))
         error(left, qd.msgs.The_left_hand_side_of_an_in_expression_must_be_of_type_any_string_number_or_symbol);
       if (!allTypesAssignableToKind(rightType, TypeFlags.NonPrimitive | TypeFlags.InstantiableNonPrimitive))
         error(right, qd.msgs.The_right_hand_side_of_an_in_expression_must_be_of_type_any_an_object_type_or_a_type_parameter);
@@ -2832,7 +2832,7 @@ export function newCheck(f: qt.Frame) {
       if (property.kind === Syntax.PropertyAssignment || property.kind === Syntax.ShorthandPropertyAssignment) {
         const name = property.name;
         const exprType = getLiteralTypeFromPropertyName(name);
-        if (isTypeUsableAsPropertyName(exprType)) {
+        if (qf.is.typeUsableAsPropertyName(exprType)) {
           const text = getPropertyNameFromType(exprType);
           const prop = getPropertyOfType(objectLiteralType, text);
           if (prop) {
@@ -2875,7 +2875,7 @@ export function newCheck(f: qt.Frame) {
       if (elem.kind !== Syntax.OmittedExpression) {
         if (elem.kind !== Syntax.SpreadElem) {
           const indexType = getLiteralType(elemIndex);
-          if (isArrayLikeType(sourceType)) {
+          if (qf.is.arrayLikeType(sourceType)) {
             const accessFlags = hasDefaultValue(elem) ? AccessFlags.NoTupleBoundsCheck : 0;
             const elemType = getIndexedAccessTypeOrUndefined(sourceType, indexType, createSyntheticExpression(elem, indexType), accessFlags) || errorType;
             const assignedType = hasDefaultValue(elem) ? getTypeWithFacts(elemType, TypeFacts.NEUndefined) : elemType;
@@ -2891,7 +2891,7 @@ export function newCheck(f: qt.Frame) {
             error((<BinaryExpression>restExpression).operatorToken, qd.msgs.A_rest_elem_cannot_have_an_initer);
           else {
             checkGrammar.forDisallowedTrailingComma(n.elems, qd.msgs.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
-            const type = everyType(sourceType, isTupleType) ? mapType(sourceType, (t) => sliceTupleType(<TupleTypeReference>t, elemIndex)) : createArrayType(elemType);
+            const type = everyType(sourceType, qf.is.tupleType) ? mapType(sourceType, (t) => sliceTupleType(<TupleTypeReference>t, elemIndex)) : createArrayType(elemType);
             return this.destructuringAssignment(restExpression, type, checkMode);
           }
         }
@@ -3049,7 +3049,7 @@ export function newCheck(f: qt.Frame) {
             const rightOk = this.arithmeticOperandType(right, rightType, qd.msgs.The_right_hand_side_of_an_arithmetic_operation_must_be_of_type_any_number_bigint_or_an_enum_type, true);
             let resultType: qt.Type;
             if (
-              (isTypeAssignableToKind(leftType, TypeFlags.AnyOrUnknown) && isTypeAssignableToKind(rightType, TypeFlags.AnyOrUnknown)) ||
+              (qf.is.typeAssignableToKind(leftType, TypeFlags.AnyOrUnknown) && qf.is.typeAssignableToKind(rightType, TypeFlags.AnyOrUnknown)) ||
               !(maybeTypeOfKind(leftType, TypeFlags.BigIntLike) || maybeTypeOfKind(rightType, TypeFlags.BigIntLike))
             ) {
               resultType = numberType;
@@ -3073,23 +3073,23 @@ export function newCheck(f: qt.Frame) {
         case Syntax.PlusToken:
         case Syntax.PlusEqualsToken:
           if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
-          if (!isTypeAssignableToKind(leftType, TypeFlags.StringLike) && !isTypeAssignableToKind(rightType, TypeFlags.StringLike)) {
+          if (!qf.is.typeAssignableToKind(leftType, TypeFlags.StringLike) && !qf.is.typeAssignableToKind(rightType, TypeFlags.StringLike)) {
             leftType = this.nonNullType(leftType, left);
             rightType = this.nonNullType(rightType, right);
           }
           let resultType: qt.Type | undefined;
-          if (isTypeAssignableToKind(leftType, TypeFlags.NumberLike, true)) resultType = numberType;
-          else if (isTypeAssignableToKind(leftType, TypeFlags.BigIntLike, true)) {
+          if (qf.is.typeAssignableToKind(leftType, TypeFlags.NumberLike, true)) resultType = numberType;
+          else if (qf.is.typeAssignableToKind(leftType, TypeFlags.BigIntLike, true)) {
             resultType = bigintType;
-          } else if (isTypeAssignableToKind(leftType, TypeFlags.StringLike, true)) {
+          } else if (qf.is.typeAssignableToKind(leftType, TypeFlags.StringLike, true)) {
             resultType = stringType;
-          } else if (isTypeAny(leftType) || isTypeAny(rightType)) {
+          } else if (qf.is.typeAny(leftType) || qf.is.typeAny(rightType)) {
             resultType = leftType === errorType || rightType === errorType ? errorType : anyType;
           }
           if (resultType && !this.forDisallowedESSymbolOperand(operator)) return resultType;
           if (!resultType) {
             const closeEnoughKind = TypeFlags.NumberLike | TypeFlags.BigIntLike | TypeFlags.StringLike | TypeFlags.AnyOrUnknown;
-            reportOperatorError((left, right) => isTypeAssignableToKind(left, closeEnoughKind) && isTypeAssignableToKind(right, closeEnoughKind));
+            reportOperatorError((left, right) => qf.is.typeAssignableToKind(left, closeEnoughKind) && qf.is.typeAssignableToKind(right, closeEnoughKind));
             return anyType;
           }
           if (operator === Syntax.PlusEqualsToken) this.assignmentOperator(resultType);
@@ -3102,7 +3102,7 @@ export function newCheck(f: qt.Frame) {
             leftType = getBaseTypeOfLiteralType(this.nonNullType(leftType, left));
             rightType = getBaseTypeOfLiteralType(this.nonNullType(rightType, right));
             reportOperatorErrorUnless(
-              (left, right) => isTypeComparableTo(left, right) || isTypeComparableTo(right, left) || (isTypeAssignableTo(left, numberOrBigIntType) && isTypeAssignableTo(right, numberOrBigIntType))
+              (left, right) => isTypeComparableTo(left, right) || isTypeComparableTo(right, left) || (qf.is.typeAssignableTo(left, numberOrBigIntType) && qf.is.typeAssignableTo(right, numberOrBigIntType))
             );
           }
           return booleanType;
@@ -3131,7 +3131,7 @@ export function newCheck(f: qt.Frame) {
               (declKind !== AssignmentDeclarationKind.ModuleExports &&
                 declKind !== AssignmentDeclarationKind.Prototype &&
                 !qf.is.emptyObjectType(rightType) &&
-                !isFunctionObjectType(rightType as ObjectType) &&
+                !qf.is.functionObjectType(rightType as ObjectType) &&
                 !(getObjectFlags(rightType) & ObjectFlags.Class))
             ) {
               this.assignmentOperator(rightType);
@@ -3148,7 +3148,7 @@ export function newCheck(f: qt.Frame) {
           return qu.fail();
       }
       function bothAreBigIntLike(left: qt.Type, right: qt.Type): boolean {
-        return isTypeAssignableToKind(left, TypeFlags.BigIntLike) && isTypeAssignableToKind(right, TypeFlags.BigIntLike);
+        return qf.is.typeAssignableToKind(left, TypeFlags.BigIntLike) && qf.is.typeAssignableToKind(right, TypeFlags.BigIntLike);
       }
       function checkAssignmentDeclaration(kind: AssignmentDeclarationKind, rightType: qt.Type) {
         if (kind === AssignmentDeclarationKind.ModuleExports) {
@@ -3335,7 +3335,7 @@ export function newCheck(f: qt.Frame) {
       const type = getQuickTypeOfExpression(initer) || (contextualType ? this.expressionWithContextualType(initer, contextualType, undefined, CheckMode.Normal) : this.expressionCached(initer));
       return declaration.kind === Syntax.ParameterDeclaration &&
         declaration.name.kind === Syntax.ArrayBindingPattern &&
-        isTupleType(type) &&
+        qf.is.tupleType(type) &&
         !type.target.hasRestElem &&
         getTypeReferenceArity(type) < declaration.name.elems.length
         ? padTupleType(type, declaration.name)
@@ -3528,7 +3528,7 @@ export function newCheck(f: qt.Frame) {
         if (func.kind === Syntax.ArrowFunction) error(n, qd.msgs.An_arrow_function_cannot_have_a_this_parameter);
         if (func.kind === Syntax.GetAccessor || func.kind === Syntax.SetAccessor) error(n, qd.get_and_set_accessors_cannot_declare_this_parameters);
       }
-      if (n.dot3Token && !n.name.kind === Syntax.BindingPattern && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(n.symbol)), anyReadonlyArrayType))
+      if (n.dot3Token && !n.name.kind === Syntax.BindingPattern && !qf.is.typeAssignableTo(getReducedType(getTypeOfSymbol(n.symbol)), anyReadonlyArrayType))
         error(n, qd.msgs.A_rest_parameter_must_be_of_an_array_type);
     }
     typePredicate(n: qc.TypingPredicate): void {
@@ -3848,7 +3848,7 @@ export function newCheck(f: qt.Frame) {
     accessorDeclarationTypesIdentical(first: AccessorDeclaration, second: AccessorDeclaration, getAnnotatedType: (a: AccessorDeclaration) => qt.Type | undefined, message: qd.Message) {
       const firstType = getAnnotatedType(first);
       const secondType = getAnnotatedType(second);
-      if (firstType && secondType && !isTypeIdenticalTo(firstType, secondType)) error(first, message);
+      if (firstType && secondType && !qf.is.typeIdenticalTo(firstType, secondType)) error(first, message);
     }
     missingDeclaration(n: Node) {
       this.decorators(n);
@@ -3915,7 +3915,7 @@ export function newCheck(f: qt.Frame) {
             grammarErrorOnNode(e, qd.msgs.A_rest_elem_must_be_last_in_a_tuple_type);
             break;
           }
-          if (!isArrayType(getTypeFromTypeNode((<RestTyping>e).type))) error(e, qd.msgs.A_rest_elem_type_must_be_an_array_type);
+          if (!qf.is.arrayType(getTypeFromTypeNode((<RestTyping>e).type))) error(e, qd.msgs.A_rest_elem_type_must_be_an_array_type);
         } else if (isTupleOptionalElem(e)) {
           seenOptionalElem = true;
         } else if (seenOptionalElem) {
@@ -3932,7 +3932,7 @@ export function newCheck(f: qt.Frame) {
       if (!(type.flags & TypeFlags.IndexedAccess)) return type;
       const objectType = (<IndexedAccessType>type).objectType;
       const indexType = (<IndexedAccessType>type).indexType;
-      if (isTypeAssignableTo(indexType, getIndexType(objectType, false))) {
+      if (qf.is.typeAssignableTo(indexType, getIndexType(objectType, false))) {
         if (
           accessNode.kind === Syntax.ElemAccessExpression &&
           qf.is.assignmentTarget(accessNode) &&
@@ -3944,7 +3944,7 @@ export function newCheck(f: qt.Frame) {
         return type;
       }
       const apparentObjectType = getApparentType(objectType);
-      if (getIndexInfoOfType(apparentObjectType, IndexKind.Number) && isTypeAssignableToKind(indexType, TypeFlags.NumberLike)) return type;
+      if (getIndexInfoOfType(apparentObjectType, IndexKind.Number) && qf.is.typeAssignableToKind(indexType, TypeFlags.NumberLike)) return type;
       if (qf.is.genericObjectType(objectType)) {
         const propertyName = getPropertyNameFromIndex(indexType, accessNode);
         if (propertyName) {
@@ -4131,7 +4131,7 @@ export function newCheck(f: qt.Frame) {
     }
     decorators(n: Node): void {
       if (!n.decorators) return;
-      if (!nodeCanBeDecorated(n, n.parent, n.parent.parent)) return;
+      if (!qf.is.decoratable(n, n.parent, n.parent.parent)) return;
       if (!compilerOptions.experimentalDecorators) {
         error(
           n,
@@ -4214,7 +4214,7 @@ export function newCheck(f: qt.Frame) {
             else {
               error(n.name, qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name, idText(n.name));
             }
-          } else if (findLast(qc.getDoc.tags(decl), isDocParameterTag) === n && n.typeExpression && n.typeExpression.type && !isArrayType(getTypeFromTypeNode(n.typeExpression.type))) {
+          } else if (findLast(qc.getDoc.tags(decl), isDocParameterTag) === n && n.typeExpression && n.typeExpression.type && !qf.is.arrayType(getTypeFromTypeNode(n.typeExpression.type))) {
             error(
               n.name,
               qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type,
@@ -4554,7 +4554,7 @@ export function newCheck(f: qt.Frame) {
         const name = n.propertyName || n.name;
         if (parentType && !name.kind === Syntax.BindingPattern) {
           const exprType = getLiteralTypeFromPropertyName(name);
-          if (isTypeUsableAsPropertyName(exprType)) {
+          if (qf.is.typeUsableAsPropertyName(exprType)) {
             const nameText = getPropertyNameFromType(exprType);
             const property = getPropertyOfType(parentType, nameText);
             if (property) {
@@ -4605,7 +4605,7 @@ export function newCheck(f: qt.Frame) {
         }
       } else {
         const declarationType = convertAutoToAny(getWidenedTypeForVariableLikeDeclaration(n));
-        if (type !== errorType && declarationType !== errorType && !isTypeIdenticalTo(type, declarationType) && !(symbol.flags & qt.SymbolFlags.Assignment))
+        if (type !== errorType && declarationType !== errorType && !qf.is.typeIdenticalTo(type, declarationType) && !(symbol.flags & qt.SymbolFlags.Assignment))
           errorNextVariableOrPropertyDeclarationMustHaveSameType(symbol.valueDeclaration, type, n, declarationType);
         if (n.initer) this.typeAssignableToAndOptionallyElaborate(this.expressionCached(n.initer), declarationType, n, n.initer, undefined);
         if (!areDeclarationFlagsIdentical(n, symbol.valueDeclaration)) error(n.name, qd.msgs.All_declarations_of_0_must_have_identical_modifiers, declarationNameToString(n.name));
@@ -4748,7 +4748,7 @@ export function newCheck(f: qt.Frame) {
         const leftType = this.expression(varExpr);
         if (varExpr.kind === Syntax.ArrayLiteralExpression || varExpr.kind === Syntax.ObjectLiteralExpression)
           error(varExpr, qd.msgs.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
-        else if (!isTypeAssignableTo(getIndexTypeOrString(rightType), leftType)) {
+        else if (!qf.is.typeAssignableTo(getIndexTypeOrString(rightType), leftType)) {
           error(varExpr, qd.msgs.The_left_hand_side_of_a_for_in_statement_must_be_of_type_string_or_any);
         } else {
           this.referenceExpression(
@@ -4758,7 +4758,7 @@ export function newCheck(f: qt.Frame) {
           );
         }
       }
-      if (rightType === neverType || !isTypeAssignableToKind(rightType, TypeFlags.NonPrimitive | TypeFlags.InstantiableNonPrimitive))
+      if (rightType === neverType || !qf.is.typeAssignableToKind(rightType, TypeFlags.NonPrimitive | TypeFlags.InstantiableNonPrimitive))
         error(n.expression, qd.msgs.The_right_hand_side_of_a_for_in_statement_must_be_of_type_any_an_object_type_or_a_type_parameter_but_here_has_type_0, typeToString(rightType));
       this.sourceElem(n.statement);
       if (n.locals) registerForUnusedIdentifiersCheck(n);
@@ -4775,7 +4775,7 @@ export function newCheck(f: qt.Frame) {
       return this.iteratedTypeOrElemType(use, this.nonNullExpression(statement.expression), undefinedType, statement.expression);
     }
     iteratedTypeOrElemType(use: IterationUse, inputType: qt.Type, sentType: qt.Type, errorNode: Node | undefined): qt.Type {
-      if (isTypeAny(inputType)) return inputType;
+      if (qf.is.typeAny(inputType)) return inputType;
       return getIteratedTypeOrElemType(use, inputType, sentType, errorNode, true) || anyType;
     }
     breakOrContinueStatement(n: qc.BreakOrContinueStatement) {
@@ -4827,7 +4827,7 @@ export function newCheck(f: qt.Frame) {
       let firstDefaultClause: CaseOrDefaultClause;
       let hasDuplicateDefaultClause = false;
       const expressionType = this.expression(n.expression);
-      const expressionIsLiteral = isLiteralType(expressionType);
+      const expressionIsLiteral = qf.is.literalType(expressionType);
       forEach(n.caseBlock.clauses, (clause) => {
         if (clause.kind === Syntax.DefaultClause && !hasDuplicateDefaultClause) {
           if (firstDefaultClause === undefined) firstDefaultClause = clause;
@@ -4838,7 +4838,7 @@ export function newCheck(f: qt.Frame) {
         }
         if (produceDiagnostics && clause.kind === Syntax.CaseClause) {
           let caseType = this.expression(clause.expression);
-          const caseIsLiteral = isLiteralType(caseType);
+          const caseIsLiteral = qf.is.literalType(caseType);
           let comparedExpressionType = expressionType;
           if (!caseIsLiteral || !expressionIsLiteral) {
             caseType = caseIsLiteral ? getBaseTypeOfLiteralType(caseType) : caseType;
@@ -4925,7 +4925,7 @@ export function newCheck(f: qt.Frame) {
           errorNode = someBaseTypeHasBothIndexers ? undefined : type.symbol.declarations[0];
         }
       }
-      if (errorNode && !isTypeAssignableTo(numberIndexType!, stringIndexType!))
+      if (errorNode && !qf.is.typeAssignableTo(numberIndexType!, stringIndexType!))
         error(errorNode, qd.msgs.Numeric_index_type_0_is_not_assignable_to_string_index_type_1, typeToString(numberIndexType!), typeToString(stringIndexType!));
       function checkIndexConstraintForProperty(
         prop: Symbol,
@@ -4952,7 +4952,7 @@ export function newCheck(f: qt.Frame) {
           );
           errorNode = someBaseClassHasBothPropertyAndIndexer ? undefined : containingType.symbol.declarations[0];
         }
-        if (errorNode && !isTypeAssignableTo(propertyType, indexType)) {
+        if (errorNode && !qf.is.typeAssignableTo(propertyType, indexType)) {
           const errorMessage =
             indexKind === IndexKind.String ? qd.msgs.Property_0_of_type_1_is_not_assignable_to_string_index_type_2 : qd.msgs.Property_0_of_type_1_is_not_assignable_to_numeric_index_type_2;
           error(errorNode, errorMessage, prop.symbolToString(), typeToString(propertyType), typeToString(indexType));
@@ -5064,11 +5064,11 @@ export function newCheck(f: qt.Frame) {
           else {
             this.typeAssignableTo(staticType, getTypeWithoutSignatures(staticBaseType), n.name || n, qd.msgs.Class_static_side_0_incorrectly_extends_base_class_static_side_1);
           }
-          if (baseConstructorType.flags & TypeFlags.TypeVariable && !isMixinConstructorType(staticType))
+          if (baseConstructorType.flags & TypeFlags.TypeVariable && !qf.is.mixinConstructorType(staticType))
             error(n.name || n, qd.msgs.A_mixin_class_must_have_a_constructor_with_a_single_rest_parameter_of_type_any);
           if (!(staticBaseType.symbol && staticBaseType.symbol.flags & qt.SymbolFlags.Class) && !(baseConstructorType.flags & TypeFlags.TypeVariable)) {
             const constructors = getInstantiatedConstructorsForTypeArguments(staticBaseType, baseTypeNode.typeArguments, baseTypeNode);
-            if (forEach(constructors, (sig) => !isJSConstructor(sig.declaration) && !isTypeIdenticalTo(getReturnTypeOfSignature(sig), baseType)))
+            if (forEach(constructors, (sig) => !qf.is.jsConstructor(sig.declaration) && !qf.is.typeIdenticalTo(getReturnTypeOfSignature(sig), baseType)))
               error(baseTypeNode.expression, qd.msgs.Base_constructors_must_all_have_the_same_return_type);
           }
           this.kindsOfPropertyMemberOverrides(type, baseType);
@@ -5372,7 +5372,7 @@ export function newCheck(f: qt.Frame) {
                 this.moduleAugmentationElem(statement, isGlobalAugmentation);
               }
             }
-          } else if (isGlobalSourceFile(n.parent)) {
+          } else if (qf.is.globalSourceFile(n.parent)) {
             if (isGlobalAugmentation) error(n.name, qd.msgs.Augmentations_for_the_global_scope_can_only_be_directly_nested_in_external_modules_or_ambient_module_declarations);
             else if (isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(n.name))) {
               error(n.name, qd.msgs.Ambient_module_declaration_cannot_specify_relative_module_name);
@@ -5556,7 +5556,7 @@ export function newCheck(f: qt.Frame) {
       if (!n.parent.parent.moduleSpecifier) {
         const exportedName = n.propertyName || n.name;
         const symbol = resolveName(exportedName, exportedName.escapedText, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace | qt.SymbolFlags.Alias, undefined, undefined, true);
-        if (symbol && (symbol === undefinedSymbol || symbol === globalThisSymbol || isGlobalSourceFile(getDeclarationContainer(symbol.declarations[0]))))
+        if (symbol && (symbol === undefinedSymbol || symbol === globalThisSymbol || qf.is.globalSourceFile(getDeclarationContainer(symbol.declarations[0]))))
           error(exportedName, qd.msgs.Cannot_export_0_Only_local_declarations_can_be_exported_from_a_module, idText(exportedName));
         else {
           markExportAsReferenced(n);
@@ -5985,7 +5985,7 @@ export function newCheck(f: qt.Frame) {
       }
       decorators(n: Node): boolean {
         if (!n.decorators) return false;
-        if (!nodeCanBeDecorated(n, n.parent, n.parent.parent)) {
+        if (!qf.is.decoratable(n, n.parent, n.parent.parent)) {
           if (n.kind === Syntax.MethodDeclaration && !qf.is.present((<MethodDeclaration>n).body))
             return grammarErrorOnFirstToken(n, qd.msgs.A_decorator_can_only_decorate_a_method_implementation_not_an_overload);
           return grammarErrorOnFirstToken(n, qd.msgs.Decorators_are_not_valid_here);
