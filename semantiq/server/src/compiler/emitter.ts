@@ -1944,7 +1944,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     expression = qc.skip.partiallyEmittedExpressions(expression);
     if (qc.is.kind(qc.NumericLiteral, expression)) {
       const text = getLiteralTextOfNode(<LiteralExpression>expression, false);
-      return !expression.numericLiteralFlags && !stringContains(text, Token.toString(Syntax.DotToken)!);
+      return !expression.numericLiteralFlags && !qu.stringContains(text, Token.toString(Syntax.DotToken)!);
     } else if (qc.is.accessExpression(expression)) {
       const constantValue = getConstantValue(expression);
       return typeof constantValue === 'number' && isFinite(constantValue) && Math.floor(constantValue) === constantValue;

@@ -482,7 +482,7 @@ export function newCreate(f: qt.Frame) {
           }
           const exprType = getReducedType(check.expressionCached(attributeDecl.expression, checkMode));
           if (qf.is.typeAny(exprType)) hasSpreadAnyType = true;
-          if (isValidSpreadType(exprType)) {
+          if (qf.is.validSpreadType(exprType)) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
             if (allAttributesTable) check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
           } else {

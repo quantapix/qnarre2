@@ -553,7 +553,7 @@ export function newGet(f: qt.Frame) {
       if (pattern.kind === Syntax.ObjectBindingPattern) {
         if (declaration.dot3Token) {
           parentType = getReducedType(parentType);
-          if (parentType.flags & qt.TypeFlags.Unknown || !isValidSpreadType(parentType)) {
+          if (parentType.flags & qt.TypeFlags.Unknown || !qf.is.validSpreadType(parentType)) {
             error(declaration, qd.msgs.Rest_types_may_only_be_created_from_object_types);
             return errorType;
           }
@@ -669,7 +669,7 @@ export function newGet(f: qt.Frame) {
       return everyType(flowType, isNullableType) ? undefined : convertAutoToAny(flowType);
     }
     flowTypeOfProperty(reference: Node, prop: Symbol | undefined) {
-      const initialType = (prop && (!isAutoTypedProperty(prop) || qf.get.effectiveModifierFlags(prop.valueDeclaration) & ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
+      const initialType = (prop && (!qf.is.autoTypedProperty(prop) || qf.get.effectiveModifierFlags(prop.valueDeclaration) & ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
       return getFlowTypeOfReference(reference, autoType, initialType);
     }
     widenedTypeForAssignmentDeclaration(symbol: Symbol, resolvedSymbol?: Symbol) {
@@ -683,7 +683,7 @@ export function newGet(f: qt.Frame) {
       let type;
       let definedInConstructor = false;
       let definedInMethod = false;
-      if (isConstructorDeclaredProperty(symbol)) type = getFlowTypeInConstructor(symbol, getDeclaringConstructor(symbol)!);
+      if (qf.is.constructorDeclaredProperty(symbol)) type = getFlowTypeInConstructor(symbol, getDeclaringConstructor(symbol)!);
       if (!type) {
         let jsdocType: Type | undefined;
         let types: Type[] | undefined;
@@ -4785,7 +4785,7 @@ export function newGet(f: qt.Frame) {
       function narrowTypeByConstructor(type: Type, operator: Syntax, identifier: Expression, assumeTrue: boolean): Type {
         if (assumeTrue ? operator !== Syntax.Equals2Token && operator !== Syntax.Equals3Token : operator !== Syntax.ExclamationEqualsToken && operator !== Syntax.ExclamationEquals2Token) return type;
         const identifierType = getTypeOfExpression(identifier);
-        if (!isFunctionType(identifierType) && !isConstructorType(identifierType)) return type;
+        if (!qf.is.functionType(identifierType) && !isConstructorType(identifierType)) return type;
         const prototypeProperty = getPropertyOfType(identifierType, 'prototype' as qu.__String);
         if (!prototypeProperty) return type;
         const prototypeType = getTypeOfSymbol(prototypeProperty);
@@ -6187,7 +6187,7 @@ export function newGet(f: qt.Frame) {
             const anonymousSymbol = new Symbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
             const defaultContainingObject = createAnonymousType(anonymousSymbol, memberTable, empty, empty, undefined);
             anonymousSymbol.type = defaultContainingObject;
-            synthType.syntheticType = isValidSpreadType(type) ? getSpreadType(type, defaultContainingObject, anonymousSymbol, false) : defaultContainingObject;
+            synthType.syntheticType = qf.is.validSpreadType(type) ? getSpreadType(type, defaultContainingObject, anonymousSymbol, false) : defaultContainingObject;
           } else {
             synthType.syntheticType = type;
           }
@@ -7400,7 +7400,7 @@ export function newGet(f: qt.Frame) {
       if (qf.is.typeAssignableToKind(type, qt.TypeFlags.StringLike)) return TypeReferenceSerializationKind.StringLikeType;
       if (qf.is.tupleType(type)) return TypeReferenceSerializationKind.ArrayLikeType;
       if (qf.is.typeAssignableToKind(type, qt.TypeFlags.ESSymbolLike)) return TypeReferenceSerializationKind.ESSymbolType;
-      if (isFunctionType(type)) return TypeReferenceSerializationKind.TypeWithCallSignature;
+      if (qf.is.functionType(type)) return TypeReferenceSerializationKind.TypeWithCallSignature;
       if (qf.is.arrayType(type)) return TypeReferenceSerializationKind.ArrayLikeType;
       return TypeReferenceSerializationKind.ObjectType;
     }

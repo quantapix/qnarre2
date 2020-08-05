@@ -509,9 +509,9 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     return some(ignoredPaths, (searchPath) => isInPath(path, searchPath));
   }
   function isInPath(path: string, searchPath: string) {
-    if (stringContains(path, searchPath)) return true;
+    if (qu.stringContains(path, searchPath)) return true;
     if (host.useCaseSensitiveFileNames) return false;
-    return stringContains(toCanonicalFilePath(path), searchPath);
+    return qu.stringContains(toCanonicalFilePath(path), searchPath);
   }
 }
 export type FsWatchCallback = (eventName: 'rename' | 'change', relativeFileName: string | undefined) => void;

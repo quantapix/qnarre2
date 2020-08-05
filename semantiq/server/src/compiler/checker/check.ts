@@ -583,7 +583,7 @@ export function newCheck(f: qt.Frame) {
         return getUnionType(reduceLeft(types, appendPropType, undefined) || empty);
       }
       function hasExcessProperties(source: FreshObjectLiteralType, target: qt.Type, reportErrors: boolean): boolean {
-        if (!isExcessPropertyCheckTarget(target) || (!noImplicitAny && getObjectFlags(target) & ObjectFlags.JSLiteral)) return false;
+        if (!qf.is.excessPropertyCheckTarget(target) || (!noImplicitAny && getObjectFlags(target) & ObjectFlags.JSLiteral)) return false;
         const isComparingJsxAttributes = !!(getObjectFlags(source) & ObjectFlags.JsxAttributes);
         if ((relation === assignableRelation || relation === comparableRelation) && (isTypeSubsetOf(globalObjectType, target) || (!isComparingJsxAttributes && qf.is.emptyObjectType(target))))
           return false;
@@ -595,9 +595,9 @@ export function newCheck(f: qt.Frame) {
         }
         for (const prop of getPropertiesOfType(source)) {
           if (shouldCheckAsExcessProperty(prop, source.symbol) && !isIgnoredJsxProperty(source, prop)) {
-            if (!isKnownProperty(reducedTarget, prop.escName, isComparingJsxAttributes)) {
+            if (!qf.is.knownProperty(reducedTarget, prop.escName, isComparingJsxAttributes)) {
               if (reportErrors) {
-                const errorTarget = filterType(reducedTarget, isExcessPropertyCheckTarget);
+                const errorTarget = filterType(reducedTarget, qf.is.excessPropertyCheckTarget);
                 if (!errorNode) return qu.fail();
                 if (errorNode.kind === Syntax.JsxAttributes || qc.isJsx.openingLikeElem(errorNode) || qc.isJsx.openingLikeElem(errorNode.parent)) {
                   if (prop.valueDeclaration && prop.valueDeclaration.kind === Syntax.JsxAttribute && errorNode.sourceFile === prop.valueDeclaration.name.sourceFile)
@@ -1875,7 +1875,7 @@ export function newCheck(f: qt.Frame) {
             hasComputedNumberProperty = false;
           }
           const type = getReducedType(this.expression(memberDecl.expression));
-          if (!isValidSpreadType(type)) {
+          if (!qf.is.validSpreadType(type)) {
             error(memberDecl, qd.msgs.Spread_types_may_only_be_created_from_object_types);
             return errorType;
           }

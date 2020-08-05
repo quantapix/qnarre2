@@ -1,28 +1,28 @@
 import * as qc from '../core';
 import * as qd from '../diagnostic';
-import { Node, SymbolFlags, TypeFlags } from './type';
+import { ModifierFlags, Node, SymbolFlags, TypeFlags } from './type';
 import * as qt from './type';
 import * as qu from '../util';
-import { ModifierFlags, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { newGet, Tget } from './get';
-import { newHas, Thas, newIs, Tis } from './predicate';
+import { newGet, Fget } from './get';
+import { newHas, Fhas, newIs, Fis } from './predicate';
 import { newCreate, Tcreate, newInstantiate, Tinstantiate, newResolve, Tresolve } from './create';
 import { newCheck, Tcheck } from './check';
 export interface Tframe extends qt.Frame {
   check: Tcheck;
   create: Tcreate;
-  each: qc.Neach;
-  get: Tget;
-  has: Thas;
+  each: qc.Feach;
+  get: Fget;
+  has: Fhas;
   instantiate: Tinstantiate;
-  is: Tis;
+  is: Fis;
   resolve: Tresolve;
 }
 export const qf = {} as Tframe;
 newCheck(qf);
 newCreate(qf);
-qc.newEach(qf);
+newEach(qf);
 newGet(qf);
 newHas(qf);
 newInstantiate(qf);
@@ -83,7 +83,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const i = this.qf.get.nodeId();
       return nodeLinks[i] || (nodeLinks[i] = new (<any>NodeLinks)());
     }
-    qf.is.globalSourceFile() {
+    isGlobalSourceFile() {
       return this.kind === Syntax.SourceFile && !is.externalOrCommonJsModule(this as xSourceFile);
     }
   }
@@ -264,7 +264,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const node = qf.get.parseTreeOf(nodeIn, isJsxAttributeLike);
       return node && getContextualTypeForJsxAttribute(node);
     },
-    qf.is.contextSensitive,
+    isContextSensitive,
     getFullyQualifiedName,
     getResolvedSignature: (node, candidatesOutArray, argumentCount) => getResolvedSignatureWorker(node, candidatesOutArray, argumentCount, CheckMode.Normal),
     getResolvedSignatureForSignatureHelp: (node, candidatesOutArray, argumentCount) => getResolvedSignatureWorker(node, candidatesOutArray, argumentCount, CheckMode.IsForSignatureHelp),
@@ -321,7 +321,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     },
     getApparentType,
     getUnionType,
-    qf.is.typeAssignableTo,
+    isTypeAssignableTo,
     createAnonymousType,
     createSignature,
     createSymbol,
@@ -342,9 +342,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getNeverType: () => neverType,
     getOptionalType: () => optionalType,
     isSymbolAccessible,
-    qf.is.arrayType,
-    qf.is.tupleType,
-    qf.is.arrayLikeType,
+    isArrayType,
+    isTupleType,
+    isArrayLikeType,
     isTypeInvalidDueToUnionDiscriminant,
     getAllPossiblePropertiesOfTypes,
     getSuggestedSymbolForNonexistentProperty,
@@ -399,7 +399,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     },
     getLocalTypeParametersOfClassOrInterfaceOrTypeAlias,
-    qf.is.declarationVisible,
+    isDeclarationVisible,
   };
   const tupleTypes = new qu.QMap<GenericType>();
   const unionTypes = new qu.QMap<UnionType>();
@@ -2575,7 +2575,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function typesDefinitelyUnrelated(source: Type, target: Type) {
     return (
-      (qf.is.tupleType(source) && qf.is.tupleType(target) && tupleTypesDefinitelyUnrelated(source, target)) || (!!getUnmatchedProperty(source, target, true) && !!getUnmatchedProperty(target, source, true))
+      (qf.is.tupleType(source) && qf.is.tupleType(target) && tupleTypesDefinitelyUnrelated(source, target)) ||
+      (!!getUnmatchedProperty(source, target, true) && !!getUnmatchedProperty(target, source, true))
     );
   }
   function inferTypes(inferences: InferenceInfo[], originalSource: Type, originalTarget: Type, priority: InferencePriority = 0, contravariant = false) {
@@ -2663,7 +2664,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
                 clearCachedInferences(inferences);
               }
             }
-            if (!(priority & InferencePriority.ReturnType) && target.flags & qt.TypeFlags.TypeParameter && inference.topLevel && !qf.is.typeParameterAtTopLevel(originalTarget, <TypeParameter>target)) {
+            if (
+              !(priority & InferencePriority.ReturnType) &&
+              target.flags & qt.TypeFlags.TypeParameter &&
+              inference.topLevel &&
+              !qf.is.typeParameterAtTopLevel(originalTarget, <TypeParameter>target)
+            ) {
               inference.topLevel = false;
               clearCachedInferences(inferences);
             }
@@ -3194,7 +3200,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return discriminateTypeByDiscriminableItems(
       contextualType,
       map(
-        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && isPossiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
+        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && qf.is.possiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
         (prop) => [() => check.expression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, qu.__String]
       ),
       qf.is.typeAssignableTo,
@@ -3207,7 +3213,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       map(
         filter(
           node.properties,
-          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || isPossiblyDiscriminantValue(p.initer))
+          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || qf.is.possiblyDiscriminantValue(p.initer))
         ),
         (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => check.expression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, qu.__String]
       ),
@@ -3888,11 +3894,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
   }
-  function computeMemberValue(member: EnumMember, autoValue: number | undefined) {
+  function computeMemberValue(member: EnumMember, autoValue?: number) {
     if (qf.is.computedNonLiteralName(member.name)) error(member.name, qd.msgs.Computed_property_names_are_not_allowed_in_enums);
     else {
-      const text = qf.get.textOfPropertyName(member.name);
-      if (NumericLiteral.name(text) && !isInfinityOrNaNString(text)) error(member.name, qd.msgs.An_enum_member_cannot_have_a_numeric_name);
+      const t = qf.get.textOfPropertyName(member.name);
+      if (NumericLiteral.name(t) && !qu.isInfinityOrNaNString(t)) error(member.name, qd.msgs.An_enum_member_cannot_have_a_numeric_name);
     }
     if (member.initer) return computeConstantValue(member);
     if (member.parent.flags & NodeFlags.Ambient && !is.enumConst(member.parent) && getEnumKind(getSymbolOfNode(member.parent)) === EnumKind.Numeric) return;
@@ -3929,12 +3935,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
     return value;
-    function evaluate(expr: Expression): string | number | undefined {
-      switch (expr.kind) {
+    function evaluate(e: Expression): string | number | undefined {
+      switch (e.kind) {
         case Syntax.PrefixUnaryExpression:
-          const value = evaluate((<PrefixUnaryExpression>expr).operand);
+          const value = evaluate((<PrefixUnaryExpression>e).operand);
           if (typeof value === 'number') {
-            switch ((<PrefixUnaryExpression>expr).operator) {
+            switch ((<PrefixUnaryExpression>e).operator) {
               case Syntax.PlusToken:
                 return value;
               case Syntax.MinusToken:
@@ -3945,10 +3951,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           }
           break;
         case Syntax.BinaryExpression:
-          const left = evaluate((<BinaryExpression>expr).left);
-          const right = evaluate((<BinaryExpression>expr).right);
+          const left = evaluate((<BinaryExpression>e).left);
+          const right = evaluate((<BinaryExpression>e).right);
           if (typeof left === 'number' && typeof right === 'number') {
-            switch ((<BinaryExpression>expr).operatorToken.kind) {
+            switch ((<BinaryExpression>e).operatorToken.kind) {
               case Syntax.BarToken:
                 return left | right;
               case Syntax.AmpersandToken:
@@ -3974,50 +3980,48 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
               case Syntax.Asterisk2Token:
                 return left ** right;
             }
-          } else if (typeof left === 'string' && typeof right === 'string' && (<BinaryExpression>expr).operatorToken.kind === Syntax.PlusToken) {
+          } else if (typeof left === 'string' && typeof right === 'string' && (<BinaryExpression>e).operatorToken.kind === Syntax.PlusToken) {
             return left + right;
           }
           break;
         case Syntax.StringLiteral:
         case Syntax.NoSubstitutionLiteral:
-          return (<StringLiteralLike>expr).text;
+          return (<StringLiteralLike>e).text;
         case Syntax.NumericLiteral:
-          checkGrammar.numericLiteral(<NumericLiteral>expr);
-          return +(<NumericLiteral>expr).text;
+          checkGrammar.numericLiteral(<NumericLiteral>e);
+          return +(<NumericLiteral>e).text;
         case Syntax.ParenthesizedExpression:
-          return evaluate((<ParenthesizedExpression>expr).expression);
+          return evaluate((<ParenthesizedExpression>e).expression);
         case Syntax.Identifier:
-          const identifier = <Identifier>expr;
-          if (isInfinityOrNaNString(identifier.escapedText)) return +identifier.escapedText;
-          return qf.is.missing(expr) ? 0 : evaluateEnumMember(expr, getSymbolOfNode(member.parent), identifier.escapedText);
+          if (qu.isInfinityOrNaNString(e.escapedText)) return +e.escapedText;
+          return qf.is.missing(e) ? 0 : evaluateEnumMember(e, getSymbolOfNode(member.parent), identifier.escapedText);
         case Syntax.ElemAccessExpression:
         case Syntax.PropertyAccessExpression:
-          const ex = <AccessExpression>expr;
+          const ex = <AccessExpression>e;
           if (isConstantMemberAccess(ex)) {
             const type = getTypeOfExpression(ex.expression);
             if (type.symbol && type.symbol.flags & qt.SymbolFlags.Enum) {
               let name: qu.__String;
               if (ex.kind === Syntax.PropertyAccessExpression) name = ex.name.escapedText;
-              else {
-                name = qy.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
-              }
-              return evaluateEnumMember(expr, type.symbol, name);
+              else name = qy.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
+
+              return evaluateEnumMember(e, type.symbol, name);
             }
           }
           break;
       }
       return;
     }
-    function evaluateEnumMember(expr: Expression, enumSymbol: Symbol, name: qu.__String) {
+    function evaluateEnumMember(e: Expression, enumSymbol: Symbol, name: qu.__String) {
       const memberSymbol = enumSymbol.exports!.get(name);
       if (memberSymbol) {
         const declaration = memberSymbol.valueDeclaration;
         if (declaration !== member) {
           if (qf.is.blockScopedNameDeclaredBeforeUse(declaration, member)) return getEnumMemberValue(declaration as EnumMember);
-          error(expr, qd.msgs.A_member_initer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums);
+          error(e, qd.msgs.A_member_initer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums);
           return 0;
         } else {
-          error(expr, qd.msgs.Property_0_is_used_before_being_assigned, memberSymbol.symbolToString());
+          error(e, qd.msgs.Property_0_is_used_before_being_assigned, memberSymbol.symbolToString());
         }
       }
       return;

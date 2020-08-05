@@ -60,7 +60,7 @@ interface DirectoryOfFailedLookupWatch {
 }
 export function removeIgnoredPath(path: Path): Path | undefined {
   if (endsWith(path, '/node_modules/.staging')) return removeSuffix(path, '/.staging') as Path;
-  return some(ignoredPaths, (searchPath) => stringContains(path, searchPath)) ? undefined : path;
+  return some(ignoredPaths, (searchPath) => qu.stringContains(path, searchPath)) ? undefined : path;
 }
 export function canWatchDirectory(dirPath: Path) {
   const rootLength = getRootLength(dirPath);

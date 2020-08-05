@@ -2173,7 +2173,7 @@ export interface SymbolLinks {
   deferralParent?: Type;
   cjsExportMerged?: Symbol;
   typeOnlyDeclaration?: TypeOnlyCompatibleAliasDeclaration | false;
-  isConstructorDeclaredProperty?: boolean;
+  qf.is.constructorDeclaredProperty?: boolean;
   tupleLabelDeclaration?: NamedTupleMember | ParameterDeclaration;
 }
 export interface SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S>, qu.EscapedMap<S> {}

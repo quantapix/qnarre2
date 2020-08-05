@@ -25,7 +25,7 @@ export function pathIsRelative(path: string): boolean {
   return /^\.\.?($|[\\/])/.test(path);
 }
 export function hasExtension(fileName: string): boolean {
-  return qu.stringContains(getBaseFileName(fileName), '.');
+  return qu.qu.stringContains(getBaseFileName(fileName), '.');
 }
 export function fileExtensionIs(path: string, extension: string): boolean {
   return path.length > extension.length && qu.endsWith(path, extension);

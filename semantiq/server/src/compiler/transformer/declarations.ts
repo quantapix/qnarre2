@@ -12,7 +12,7 @@ export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver
 }
 function hasInternalAnnotation(range: CommentRange, currentSourceFile: SourceFile) {
   const comment = currentSourceFile.text.substring(range.pos, range.end);
-  return stringContains(comment, '@internal');
+  return qu.stringContains(comment, '@internal');
 }
 export function isInternalDeclaration(node: Node, currentSourceFile: SourceFile) {
   const parseTreeNode = qc.get.parseTreeOf(node);

@@ -1662,7 +1662,7 @@ export function createProgram(
   function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: PackageId | undefined): SourceFile | undefined {
     if (useSourceOfProjectReferenceRedirect) {
       let source = getSourceOfProjectReferenceRedirect(fileName);
-      if (!source && host.realpath && options.preserveSymlinks && isDeclarationFileName(fileName) && stringContains(fileName, nodeModulesPathPart)) {
+      if (!source && host.realpath && options.preserveSymlinks && isDeclarationFileName(fileName) && qu.stringContains(fileName, nodeModulesPathPart)) {
         const realPath = host.realpath(fileName);
         if (realPath !== fileName) source = getSourceOfProjectReferenceRedirect(realPath);
       }
@@ -2576,7 +2576,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
   }
   function handleDirectoryCouldBeSymlink(directory: string) {
     if (!host.getResolvedProjectReferences()) return;
-    if (!originalRealpath || !stringContains(directory, nodeModulesPathPart)) return;
+    if (!originalRealpath || !qu.stringContains(directory, nodeModulesPathPart)) return;
     if (!symlinkedDirectories) symlinkedDirectories = createMap();
     const directoryPath = ensureTrailingDirectorySeparator(host.toPath(directory));
     if (symlinkedDirectories.has(directoryPath)) return;
@@ -2597,7 +2597,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     if (result !== undefined) return result;
     if (!symlinkedDirectories) return false;
     const fileOrDirectoryPath = host.toPath(fileOrDirectory);
-    if (!stringContains(fileOrDirectoryPath, nodeModulesPathPart)) return false;
+    if (!qu.stringContains(fileOrDirectoryPath, nodeModulesPathPart)) return false;
     if (isFile && symlinkedFiles && symlinkedFiles.has(fileOrDirectoryPath)) return true;
     return (
       firstDefinedIterator(symlinkedDirectories.entries(), ([directoryPath, symlinkedDirectory]) => {

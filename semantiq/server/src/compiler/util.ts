@@ -1149,6 +1149,12 @@ export function compose<T>(a: (t: T) => T, b: (t: T) => T, c: (t: T) => T, d: (t
 export function min<T>(a: T, b: T, c: Comparer<T>): T {
   return c(a, b) === Comparison.LessThan ? a : b;
 }
+export function isInfinityOrNaNString(n: string | __String) {
+  return n === 'Infinity' || n === '-Infinity' || n === 'NaN';
+}
+export function unhyphenatedJsxName(n: string | __String) {
+  return !stringContains(n as string, '-');
+}
 function compare(a?: string, b?: string): Comparison;
 function compare(a?: number, b?: number): Comparison;
 function compare(a?: string | number, b?: string | number) {

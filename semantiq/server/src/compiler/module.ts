@@ -1233,7 +1233,7 @@ function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string,
 }
 export const nodeModulesPathPart = '/node_modules/';
 export function pathContainsNodeModules(path: string): boolean {
-  return stringContains(path, nodeModulesPathPart);
+  return qu.stringContains(path, nodeModulesPathPart);
 }
 function parseNodeModuleFromPath(resolved: PathAndExtension): string | undefined {
   const path = normalizePath(resolved.path);
@@ -1561,7 +1561,7 @@ export function getPackageNameFromTypesPackageName(mangledName: string): string 
   return mangledName;
 }
 export function unmangleScopedPackageName(typesPackageName: string): string {
-  return stringContains(typesPackageName, mangledScopedPackageSeparator) ? '@' + typesPackageName.replace(mangledScopedPackageSeparator, dirSeparator) : typesPackageName;
+  return qu.stringContains(typesPackageName, mangledScopedPackageSeparator) ? '@' + typesPackageName.replace(mangledScopedPackageSeparator, dirSeparator) : typesPackageName;
 }
 function tryFindNonRelativeModuleNameInCache(cache: PerModuleNameCache | undefined, moduleName: string, containingDirectory: string, state: ModuleResolutionState): SearchResult<Resolved> {
   const result = cache && cache.get(containingDirectory);

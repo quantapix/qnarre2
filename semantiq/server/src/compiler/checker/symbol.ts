@@ -696,11 +696,11 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
     }
   }
-  isConstructorDeclaredProperty() {
+  qf.is.constructorDeclaredProperty() {
     if (this.valueDeclaration && this.valueDeclaration.kind === Syntax.BinaryExpression) {
       const ls = this.getLinks();
-      if (ls.isConstructorDeclaredProperty === undefined) {
-        ls.isConstructorDeclaredProperty =
+      if (ls.qf.is.constructorDeclaredProperty === undefined) {
+        ls.qf.is.constructorDeclaredProperty =
           !!getDeclaringConstructor(symbol) &&
           every(
             this.declarations,
@@ -711,11 +711,11 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
               !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
           );
       }
-      return ls.isConstructorDeclaredProperty;
+      return ls.qf.is.constructorDeclaredProperty;
     }
     return false;
   }
-  isAutoTypedProperty() {
+  qf.is.autoTypedProperty() {
     const v = this.valueDeclaration;
     return v && v.kind === Syntax.PropertyDeclaration && !get.effectiveTypeAnnotationNode(v) && !v.initer && (noImplicitAny || qf.is.inJSFile(v));
   }
