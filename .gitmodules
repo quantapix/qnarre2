@@ -25,3 +25,12 @@
 [submodule "semantiq/pyright"]
 	path = semantiq/pyright
 	url = https://github.com/microsoft/pyright.git
+[submodule "semantiq/mypy"]
+	path = semantiq/mypy
+	url = https://github.com/python/mypy.git
+[submodule "semantiq/cpython"]
+	path = semantiq/cpython
+	url = https://github.com/python/cpython.git
+[submodule "semantiq/julia"]
+	path = semantiq/julia
+	url = https://github.com/JuliaLang/julia.git
