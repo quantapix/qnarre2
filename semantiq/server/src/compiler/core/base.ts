@@ -854,10 +854,10 @@ export class Type implements qt.Type {
     return this.checker.getSignaturesOfType(this, qt.SignatureKind.Construct);
   }
   getStringIndexType(): qt.Type | undefined {
-    return this.checker.getIndexTypeOfType(this, qt.IndexKind.String);
+    return this.checker.qf.get.indexTypeOfType(this, qt.IndexKind.String);
   }
   getNumberIndexType(): qt.Type | undefined {
-    return this.checker.getIndexTypeOfType(this, qt.IndexKind.Number);
+    return this.checker.qf.get.indexTypeOfType(this, qt.IndexKind.Number);
   }
   getBaseTypes(): qt.BaseType[] | undefined {
     return this.isClassOrInterface() ? this.checker.getBaseTypes(this) : undefined;
@@ -902,7 +902,7 @@ export class Signature implements qt.Signature {
   docTags?: qt.DocTagInfo[];
   constructor(public checker: qt.TypeChecker, public flags: SignatureFlags) {}
   getReturnType(): Type {
-    return this.checker.getReturnTypeOfSignature(this);
+    return this.checker.qf.get.returnTypeOfSignature(this);
   }
   getDocComment(): qt.SymbolDisplayPart[] {
     return this.docComment || (this.docComment = getDocComment(singleElemArray(this.declaration), this.checker));
@@ -1581,12 +1581,12 @@ export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | S
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: Signature) => Type,
   getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
-  getReturnTypeOfSignature: (sig: Signature) => Type,
+  qf.get.returnTypeOfSignature: (sig: Signature) => Type,
   getBaseTypes: (t: Type) => Type[],
   resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
   qf.get.typeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
-  getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
+  qf.get.indexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
@@ -1666,7 +1666,7 @@ export function createGetSymbolWalker(
         visitSymbol(parameter);
       }
       visitType(getRestTypeOfSignature(signature));
-      visitType(getReturnTypeOfSignature(signature));
+      visitType(qf.get.returnTypeOfSignature(signature));
     }
     function visitInterfaceType(interfaceT: InterfaceType) {
       visitObjectType(interfaceT);
@@ -1675,9 +1675,9 @@ export function createGetSymbolWalker(
       visitType(interfaceT.thisType);
     }
     function visitObjectType(t: ObjectType) {
-      const stringIndexType = getIndexTypeOfStructuredType(t, qt.IndexKind.String);
+      const stringIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.String);
       visitType(stringIndexType);
-      const numberIndexType = getIndexTypeOfStructuredType(t, qt.IndexKind.Number);
+      const numberIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.Number);
       visitType(numberIndexType);
       const resolved = resolveStructuredTypeMembers(t);
       for (const signature of resolved.callSignatures) {

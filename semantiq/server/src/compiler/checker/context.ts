@@ -703,7 +703,7 @@ export class QContext {
       const typeNode = typePredicate.type && this.typeToTypeNodeHelper(typePredicate.type);
       returnTypeNode = new qc.TypingPredicate(assertsModifier, parameterName, typeNode);
     } else {
-      const returnType = getReturnTypeOfSignature(signature);
+      const returnType = qf.get.returnTypeOfSignature(signature);
       if (returnType && !(suppressAny && qf.is.typeAny(returnType))) {
         returnTypeNode = this.serializeReturnTypeForSignature(returnType, signature, privateSymbolVisitor, bundledImports);
       } else if (!suppressAny) {
@@ -797,7 +797,7 @@ export class QContext {
       const declWithExistingAnnotation = getDeclarationWithTypeAnnotation(symbol, enclosingDeclaration);
       if (declWithExistingAnnotation && !qf.is.functionLikeDeclaration(declWithExistingAnnotation)) {
         const existing = qf.get.effectiveTypeAnnotationNode(declWithExistingAnnotation)!;
-        if (getTypeFromTypeNode(existing) === type && existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing, type)) {
+        if (qf.get.typeFromTypeNode(existing) === type && existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing, type)) {
           const result = this.serializeExistingTypeNode(existing, includePrivateSymbol, bundled);
           if (result) return result;
         }
@@ -815,7 +815,7 @@ export class QContext {
       if (
         !!qc.findAncestor(annotation, (n) => n === this.enclosingDeclaration) &&
         annotation &&
-        instantiateType(getTypeFromTypeNode(annotation), signature.mapper) === type &&
+        instantiateType(qf.get.typeFromTypeNode(annotation), signature.mapper) === type &&
         existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(annotation, type)
       ) {
         const result = this.serializeExistingTypeNode(annotation, includePrivateSymbol, bundled);
@@ -843,8 +843,8 @@ export class QContext {
       return new qc.TypingLiteral(
         map(node.docPropertyTags, (t) => {
           const name = t.name.kind === Syntax.Identifier ? t.name : t.name.right;
-          const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode(node), name.escapedText);
-          const overrideTypeNode = typeViaParent && t.typeExpression && getTypeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
+          const typeViaParent = qf.get.typeOfPropertyOfType(qf.get.typeFromTypeNode(node), name.escapedText);
+          const overrideTypeNode = typeViaParent && t.typeExpression && qf.get.typeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
           return new qc.PropertySignature(
             undefined,
             name,
@@ -914,7 +914,7 @@ export class QContext {
       qf.is.inDoc(node) &&
       (getIntendedTypeFromDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
     ) {
-      return this.typeToTypeNodeHelper(getTypeFromTypeNode(node)).setOriginal(node);
+      return this.typeToTypeNodeHelper(qf.get.typeFromTypeNode(node)).setOriginal(node);
     }
     if (qf.is.literalImportTyping(node)) {
       const rewriteModuleSpecifier = (parent: ImportTyping, lit: StringLiteral) => {
@@ -1429,7 +1429,7 @@ export class QContext {
           qf.get.propertyOfType(baseType, p.escName) &&
           isReadonlySymbol(qf.get.propertyOfType(baseType, p.escName)!) === isReadonlySymbol(p) &&
           (p.flags & SymbolFlags.Optional) === (qf.get.propertyOfType(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
-          qf.is.typeIdenticalTo(qf.get.typeOfSymbol(p), getTypeOfPropertyOfType(baseType, p.escName)!))
+          qf.is.typeIdenticalTo(qf.get.typeOfSymbol(p), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
       ) {
         return [];
       }

@@ -2370,16 +2370,16 @@ export interface TypeChecker {
   qf.get.propertiesOfType(type: Type): Symbol[];
   qf.get.propertyOfType(type: Type, propertyName: string): Symbol | undefined;
   getPrivateIdentifierPropertyOfType(leftType: Type, name: string, location: Node): Symbol | undefined;
-  getTypeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
+  qf.get.typeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
   qf.get.indexInfoOfType(type: Type, kind: qt.IndexKind): IndexInfo | undefined;
   getSignaturesOfType(type: Type, kind: qt.SignatureKind): readonly Signature[];
-  getIndexTypeOfType(type: Type, kind: qt.IndexKind): Type | undefined;
+  qf.get.indexTypeOfType(type: Type, kind: qt.IndexKind): Type | undefined;
   getBaseTypes(type: InterfaceType): BaseType[];
   getBaseTypeOfLiteralType(type: Type): Type;
-  getWidenedType(type: Type): Type;
+  qf.get.widenedType(type: Type): Type;
   getPromisedTypeOfPromise(promise: Type, errorNode?: Node): Type | undefined;
   getAwaitedType(type: Type): Type | undefined;
-  getReturnTypeOfSignature(signature: Signature): Type;
+  qf.get.returnTypeOfSignature(signature: Signature): Type;
   getParameterType(signature: Signature, parameterIndex: number): Type;
   getNullableType(type: Type, flags: qt.TypeFlags): Type;
   getNonNullableType(type: Type): Type;
@@ -2423,7 +2423,7 @@ export interface TypeChecker {
   getPropertySymbolOfDestructuringAssignment(location: Identifier): Symbol | undefined;
   getTypeOfAssignmentPattern(pattern: AssignmentPattern): Type;
   getTypeAtLocation(node: Node): Type;
-  getTypeFromTypeNode(node: Typing): Type;
+  qf.get.typeFromTypeNode(node: Typing): Type;
   signatureToString(signature: Signature, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, kind?: qt.SignatureKind): string;
   typeToString(type: Type, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags): string;
   symbolToString(s: Symbol, decl?: Node, meaning?: qt.SymbolFlags, flags?: qt.SymbolFormatFlags): string;
@@ -2445,7 +2445,7 @@ export interface TypeChecker {
   getResolvedSignatureForSignatureHelp(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
   getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];
   hasEffectiveRestParameter(sig: Signature): boolean;
-  getSignatureFromDeclaration(declaration: SignatureDeclaration): Signature | undefined;
+  qf.get.signatureFromDeclaration(declaration: SignatureDeclaration): Signature | undefined;
   isImplementationOfOverload(node: SignatureDeclaration): boolean | undefined;
   isUndefinedSymbol(symbol: Symbol): boolean;
   isArgumentsSymbol(symbol: Symbol): boolean;
