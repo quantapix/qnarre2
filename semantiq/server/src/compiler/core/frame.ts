@@ -1567,11 +1567,11 @@ export function newIs(f: qt.Frame) {
     externalModule(n?: Node) {
       return n?.kind === Syntax.SourceFile && n?.externalModuleIndicator !== undefined;
     }
-    externalModuleAugmentation(n: Node): n is qt.AmbientModuleDeclaration {
+    externalModuleAugmentation(n?: Node): n is qt.AmbientModuleDeclaration {
       return this.ambientModule(n) && this.moduleAugmentationExternal(n);
     }
-    moduleAugmentationExternal(n: qt.AmbientModuleDeclaration) {
-      const p = n.parent;
+    moduleAugmentationExternal(n?: qt.AmbientModuleDeclaration) {
+      const p = n?.parent;
       switch (p?.kind) {
         case Syntax.SourceFile:
           return this.externalModule(p);
@@ -2463,7 +2463,6 @@ export function newHas(f: qt.Frame) {
       }
       return (n.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
     }
-
     syntacticModifier(n: Node, f: ModifierFlags) {
       return !!qf.get.selectedSyntacticModifierFlags(n, f);
     }

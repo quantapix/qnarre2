@@ -10,7 +10,7 @@ import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 export { assert, findAncestor, format, skip, MutableNodes, Nodes } from './base';
 export * from './classes';
-export { qf, Fget, Fhas, Fis } from './frame';
+export { qf, Fcreate, Fget, Fhas, Fis } from './frame';
 export namespace BindingOrAssignmentElem {
   export function getIniterOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.Expression | undefined {
     if (qf.is.declarationBindingElem(e)) {

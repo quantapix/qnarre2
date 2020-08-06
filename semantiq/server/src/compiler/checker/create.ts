@@ -1,23 +1,23 @@
 import * as qc from '../core';
 import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
 import * as qt from './type';
 import * as qu from '../util';
-import { ModifierFlags, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
-import { Tget } from './get';
-import { Thas, Tis } from './predicate';
-interface Frame extends qt.Frame {
-  get: Tget;
-  has: Thas;
-  is: Tis;
-}
+import { Fget } from './get';
+import { Fhas, Fis } from './predicate';
 export function newCreate(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    get: Fget;
+    has: Fhas;
+    is: Fis;
+  }
   const qf = f as Frame;
-  interface Tcreate extends ReturnType<typeof qc.newCreate> {}
-  class Tcreate {
+  interface Fcreate extends qc.Fcreate {}
+  class Fcreate {
     intrinsicType(kind: qt.TypeFlags, intrinsicName: string, objectFlags: ObjectFlags = 0): IntrinsicType {
       const type = <IntrinsicType>this.type(kind);
       type.intrinsicName = intrinsicName;
@@ -263,13 +263,7 @@ export function newCreate(f: qt.Frame) {
     arrayType(elemType: Type, readonly?: boolean): ObjectType {
       return this.typeFromGenericGlobalType(readonly ? globalReadonlyArrayType : globalArrayType, [elemType]);
     }
-    tupleTypeOfArity(
-      arity: number,
-      minLength: number,
-      hasRestElem: boolean,
-      readonly: boolean,
-      namedMemberDeclarations: readonly (NamedTupleMember | ParameterDeclaration)[] | undefined
-    ): TupleType {
+    tupleTypeOfArity(arity: number, minLength: number, hasRestElem: boolean, readonly: boolean, namedMemberDeclarations: readonly (NamedTupleMember | ParameterDeclaration)[] | undefined): TupleType {
       let typeParameters: TypeParameter[] | undefined;
       const properties: Symbol[] = [];
       const maxLength = hasRestElem ? arity - 1 : arity;
@@ -312,13 +306,7 @@ export function newCreate(f: qt.Frame) {
       type.labeledElemDeclarations = namedMemberDeclarations;
       return type;
     }
-    tupleType(
-      elemTypes: readonly Type[],
-      minLength = elemTypes.length,
-      hasRestElem = false,
-      readonly = false,
-      namedMemberDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[]
-    ) {
+    tupleType(elemTypes: readonly Type[], minLength = elemTypes.length, hasRestElem = false, readonly = false, namedMemberDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[]) {
       const arity = elemTypes.length;
       if (arity === 1 && hasRestElem) return this.arrayType(elemTypes[0], readonly);
       const tupleType = getTupleTypeOfArity(arity, minLength, arity > 0 && hasRestElem, readonly, namedMemberDeclarations);
@@ -711,7 +699,7 @@ export function newCreate(f: qt.Frame) {
           return node ? getNodeCheckFlags(node) : 0;
         },
         isTopLevelValueImportEqualsWithEntityName,
-        qf.is.declarationVisible,
+        isDeclarationVisible,
         isImplementationOfOverload,
         isRequiredInitializedParameter,
         isOptionalUninitializedParameterProperty,
@@ -743,7 +731,7 @@ export function newCreate(f: qt.Frame) {
           return !!(symbol && this.getCheckFlags() & qt.CheckFlags.Late);
         },
         getJsxFactoryEntity,
-        qf.get.allAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
+        getAllAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
           accessor = qf.get.parseTreeOf(accessor, qf.is.getOrSetKind)!;
           const otherKind = accessor.kind === Syntax.SetAccessor ? Syntax.GetAccessor : Syntax.SetAccessor;
           const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(qf.get.symbolOfNode(accessor), otherKind);
@@ -797,7 +785,7 @@ export function newCreate(f: qt.Frame) {
       function getTypeReferenceDirectivesForEntityName(node: EntityNameOrEntityNameExpression): string[] | undefined {
         if (!fileToDirective) return;
         let meaning = qt.SymbolFlags.Type | qt.SymbolFlags.Namespace;
-        if ((node.kind === Syntax.Identifier && isInTypeQuery(node)) || (node.kind === Syntax.PropertyAccessExpression && !isInHeritageClause(node)))
+        if ((node.kind === Syntax.Identifier && qf.is.inTypeQuery(node)) || (node.kind === Syntax.PropertyAccessExpression && !isInHeritageClause(node)))
           meaning = qt.SymbolFlags.Value | qt.SymbolFlags.ExportValue;
         const symbol = qf.resolve.entityName(node, meaning, true);
         return symbol && symbol !== unknownSymbol ? getTypeReferenceDirectivesForSymbol(symbol, meaning) : undefined;
@@ -825,9 +813,9 @@ export function newCreate(f: qt.Frame) {
       return { kind, mapper1, mapper2 };
     }
   }
-  return (qf.create = new Tcreate());
+  return (qf.create = new Fcreate());
 }
-export interface Tcreate extends ReturnType<typeof newCreate> {}
+export interface Fcreate extends ReturnType<typeof newCreate> {}
 export function newInstantiate(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.instantiate = new (class {
@@ -933,11 +921,7 @@ export function newInstantiate(f: qt.Frame) {
       const elemTypes = map(getTypeArguments(tupleType), (_, i) => this.mappedTypeTemplate(mappedType, qf.get.literalType('' + i), i >= minLength, mapper));
       const modifiers = getMappedTypeModifiers(mappedType);
       const newMinLength =
-        modifiers & MappedTypeModifiers.IncludeOptional
-          ? 0
-          : modifiers & MappedTypeModifiers.ExcludeOptional
-          ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElem ? 1 : 0)
-          : minLength;
+        modifiers & MappedTypeModifiers.IncludeOptional ? 0 : modifiers & MappedTypeModifiers.ExcludeOptional ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElem ? 1 : 0) : minLength;
       const newReadonly = getModifiedReadonlyState(tupleType.target.readonly, modifiers);
       return contains(elemTypes, errorType) ? errorType : qf.create.tupleType(elemTypes, newMinLength, tupleType.target.hasRestElem, newReadonly, tupleType.target.labeledElemDeclarations);
     }
@@ -1118,7 +1102,7 @@ export function newInstantiate(f: qt.Frame) {
     }
   })());
 }
-export interface Tinstantiate extends ReturnType<typeof newInstantiate> {}
+export interface Finstantiate extends ReturnType<typeof newInstantiate> {}
 export function newResolve(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.resolve = new (class {
@@ -2269,7 +2253,7 @@ export function newResolve(f: qt.Frame) {
     }
   })());
 }
-export interface Tresolve extends ReturnType<typeof newResolve> {}
+export interface Fresolve extends ReturnType<typeof newResolve> {}
 export function tryExtractTSExtension(fileName: string): string | undefined {
   return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
 }

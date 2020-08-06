@@ -1253,7 +1253,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindVariableDeclarationFlow(node: VariableDeclaration) {
     bindEachChild(node);
-    if (node.initer || qf.is.forInOrOfStatement(node.parent.parent)) {
+    if (node.initer || qf.check.forInOrOfStatement(node.parent.parent)) {
       bindInitializedVariableFlow(node);
     }
   }

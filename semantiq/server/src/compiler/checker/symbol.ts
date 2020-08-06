@@ -239,9 +239,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       return symbols;
     }
   }
-  qf.get.mergedSymbol(): Symbol;
-  qf.get.mergedSymbol(): Symbol | undefined;
-  qf.get.mergedSymbol(): Symbol | undefined {
+  mergedSymbol(): Symbol;
+  mergedSymbol(): Symbol | undefined;
+  mergedSymbol(): Symbol | undefined {
     let merged: Symbol;
     return this.mergeId && (merged = mergedSymbols[this.mergeId]) ? merged : this;
   }

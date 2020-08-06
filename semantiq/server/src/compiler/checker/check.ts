@@ -18,7 +18,7 @@ export function newCheck(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.check = new (class {
     andReportErrorForMissingPrefix(n: Node, name: qu.__String, nameArg: qu.__String | qc.Identifier): boolean {
-      if (!n.kind === Syntax.Identifier || n.escapedText !== name || isTypeReferenceIdentifier(n) || isInTypeQuery(n)) return false;
+      if (!n.kind === Syntax.Identifier || n.escapedText !== name || isTypeReferenceIdentifier(n) || qf.is.inTypeQuery(n)) return false;
       const container = qf.get.thisContainer(n, false);
       let location = container;
       while (location) {
@@ -1568,7 +1568,7 @@ export function newCheck(f: qt.Frame) {
         declaration.kind === Syntax.BindingElem ||
         (type !== autoType &&
           type !== autoArrayType &&
-          (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || isInTypeQuery(n) || n.parent.kind === Syntax.ExportSpecifier)) ||
+          (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || qf.is.inTypeQuery(n) || n.parent.kind === Syntax.ExportSpecifier)) ||
         n.parent.kind === Syntax.NonNullExpression ||
         (declaration.kind === Syntax.VariableDeclaration && (<VariableDeclaration>declaration).exclamationToken) ||
         declaration.flags & NodeFlags.Ambient;
@@ -3784,7 +3784,7 @@ export function newCheck(f: qt.Frame) {
       if (qf.is.missing(n.body)) return;
       if (!produceDiagnostics) return;
       function isInstancePropertyWithIniterOrPrivateIdentifierProperty(x: Node) {
-        if (x.qf.is.privateIdentifierPropertyDeclaration()) return true;
+        if (qf.is.privateIdentifierPropertyDeclaration(x)) return true;
         return x.kind === Syntax.PropertyDeclaration && !qf.has.syntacticModifier(x, ModifierFlags.Static) && !!(<PropertyDeclaration>x).initer;
       }
       const containingClassDecl = <ClassDeclaration>n.parent;
@@ -4397,7 +4397,7 @@ export function newCheck(f: qt.Frame) {
             const parameter = local.valueDeclaration && tryGetRootParameterDeclaration(local.valueDeclaration);
             const name = local.valueDeclaration && qf.get.declaration.nameOf(local.valueDeclaration);
             if (parameter && name) {
-              if (!qf.is.parameterPropertyDeclaration(parameter, parameter.parent) && !parameterIsThqy.qf.is.keyword(parameter) && !isIdentifierThatStartsWithUnderscore(name))
+              if (!qf.is.parameterPropertyDeclaration(parameter, parameter.parent) && !parameterIsThqy.qf.is.keyword(parameter) && !qf.is.identifierThatStartsWithUnderscore(name))
                 addDiagnostic(parameter, UnusedKind.Parameter, qf.create.diagnosticForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
             } else {
               errorUnusedLocal(declaration, local.name, addDiagnostic);
@@ -6024,7 +6024,7 @@ export function newCheck(f: qt.Frame) {
               else if (flags & ModifierFlags.Abstract) {
                 if (modifier.kind === Syntax.PrivateKeyword) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_1_modifier, text, 'abstract');
                 return grammarErrorOnNode(modifier, qd.msgs._0_modifier_must_precede_1_modifier, text, 'abstract');
-              } else if (n.qf.is.privateIdentifierPropertyDeclaration()) {
+              } else if (qf.is.privateIdentifierPropertyDeclaration(n)) {
                 return grammarErrorOnNode(modifier, qd.msgs.An_accessibility_modifier_cannot_be_used_with_a_private_identifier);
               }
               flags |= qy.qf.get.modifierFlag(modifier.kind);
@@ -6037,7 +6037,7 @@ export function newCheck(f: qt.Frame) {
                 return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_appear_on_a_module_or_namespace_elem, 'static');
               else if (n.kind === Syntax.Parameter) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_appear_on_a_parameter, 'static');
               else if (flags & ModifierFlags.Abstract) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_1_modifier, 'static', 'abstract');
-              else if (n.qf.is.privateIdentifierPropertyDeclaration()) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_a_private_identifier, 'static');
+              else if (qf.is.privateIdentifierPropertyDeclaration(n)) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_a_private_identifier, 'static');
               flags |= ModifierFlags.Static;
               lastStatic = modifier;
               break;
@@ -6070,7 +6070,7 @@ export function newCheck(f: qt.Frame) {
               else if (n.kind === Syntax.Parameter) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_appear_on_a_parameter, 'declare');
               else if (n.parent.flags & NodeFlags.Ambient && n.parent.kind === Syntax.ModuleBlock)
                 return grammarErrorOnNode(modifier, qd.msgs.A_declare_modifier_cannot_be_used_in_an_already_ambient_context);
-              else if (n.qf.is.privateIdentifierPropertyDeclaration()) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_a_private_identifier, 'declare');
+              else if (qf.is.privateIdentifierPropertyDeclaration(n)) return grammarErrorOnNode(modifier, qd.msgs._0_modifier_cannot_be_used_with_a_private_identifier, 'declare');
               flags |= ModifierFlags.Ambient;
               lastDeclare = modifier;
               break;
@@ -6390,14 +6390,14 @@ export function newCheck(f: qt.Frame) {
       jsxExpression(n: qc.JsxExpression) {
         if (n.expression && qf.is.commaSequence(n.expression)) return grammarErrorOnNode(n.expression, qd.msgs.JSX_expressions_may_not_use_the_comma_operator_Did_you_mean_to_write_an_array);
       }
-      forInOrForOfStatement(forInOrOfStatement: ForInOrOfStatement): boolean {
-        if (this.statementInAmbientContext(forInOrOfStatement)) return true;
-        if (forInOrOfStatement.kind === Syntax.ForOfStatement && forInOrOfStatement.awaitModifier) {
-          if ((forInOrOfStatement.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
-            const sourceFile = forInOrOfStatement.sourceFile;
+      forInOrForOfStatement(n: ForInOrOfStatement): boolean {
+        if (this.statementInAmbientContext(n)) return true;
+        if (n.kind === Syntax.ForOfStatement && n.awaitModifier) {
+          if ((n.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
+            const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
-              const diagnostic = qf.create.diagnosticForNode(forInOrOfStatement.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
-              const func = qf.get.containingFunction(forInOrOfStatement);
+              const diagnostic = qf.create.diagnosticForNode(n.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
+              const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor) {
                 qu.assert((qf.get.functionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
                 const relatedInfo = qf.create.diagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
@@ -6409,14 +6409,14 @@ export function newCheck(f: qt.Frame) {
             return false;
           }
         }
-        if (forInOrOfStatement.initer.kind === Syntax.VariableDeclarationList) {
-          const variableList = <VariableDeclarationList>forInOrOfStatement.initer;
+        if (n.initer.kind === Syntax.VariableDeclarationList) {
+          const variableList = <VariableDeclarationList>n.initer;
           if (!this.variableDeclarationList(variableList)) {
             const declarations = variableList.declarations;
             if (!declarations.length) return false;
             if (declarations.length > 1) {
               const diagnostic =
-                forInOrOfStatement.kind === Syntax.ForInStatement
+                n.kind === Syntax.ForInStatement
                   ? qd.msgs.Only_a_single_variable_declaration_is_allowed_in_a_for_in_statement
                   : qd.msgs.Only_a_single_variable_declaration_is_allowed_in_a_for_of_statement;
               return grammarErrorOnFirstToken(variableList.declarations[1], diagnostic);
@@ -6424,14 +6424,14 @@ export function newCheck(f: qt.Frame) {
             const firstDeclaration = declarations[0];
             if (firstDeclaration.initer) {
               const diagnostic =
-                forInOrOfStatement.kind === Syntax.ForInStatement
+                n.kind === Syntax.ForInStatement
                   ? qd.msgs.The_variable_declaration_of_a_for_in_statement_cannot_have_an_initer
                   : qd.msgs.The_variable_declaration_of_a_for_of_statement_cannot_have_an_initer;
               return grammarErrorOnNode(firstDeclaration.name, diagnostic);
             }
             if (firstDeclaration.type) {
               const diagnostic =
-                forInOrOfStatement.kind === Syntax.ForInStatement
+                n.kind === Syntax.ForInStatement
                   ? qd.msgs.The_left_hand_side_of_a_for_in_statement_cannot_use_a_type_annotation
                   : qd.msgs.The_left_hand_side_of_a_for_of_statement_cannot_use_a_type_annotation;
               return grammarErrorOnNode(firstDeclaration, diagnostic);
@@ -6730,4 +6730,4 @@ export function newCheck(f: qt.Frame) {
     })();
   })());
 }
-export interface Tcheck extends ReturnType<typeof newCheck> {}
+export interface Fcheck extends ReturnType<typeof newCheck> {}

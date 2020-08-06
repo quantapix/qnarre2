@@ -15,7 +15,7 @@ export function newGet(f: qt.Frame) {
   }
   const qf = f as Frame;
   interface Fget extends qc.Fget {}
-  return (qf.get = new (class Fget {
+  class Fget {
     resolvedSignatureWorker(nIn: qt.CallLikeExpression, candidatesOutArray: qt.Signature[] | undefined, argumentCount: number | undefined, checkMode: CheckMode): Signature | undefined {
       const n = this.parseTreeOf(nIn, isCallLikeExpression);
       apparentArgumentCount = argumentCount;
@@ -7499,6 +7499,7 @@ export function newGet(f: qt.Frame) {
       }
       return ambientModulesCache;
     }
-  })());
+  }
+  return (qf.get = new Fget());
 }
 export interface Fget extends ReturnType<typeof newGet> {}

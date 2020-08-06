@@ -1,8 +1,8 @@
 import * as qc from '../core';
-import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../type';
+import { ModifierFlags, Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
-import { ModifierFlags, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { qf } from './index';
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: Typing, type: Type) {
