@@ -300,7 +300,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       ) {
         if (qf.is.moduleExportsAccessExpression(d.parent.left) || qf.is.exportsIdentifier(d.parent.left.expression)) return qf.get.symbolOfNode(d.sourceFile);
         check.expressionCached(d.parent.left.expression);
-        return getNodeLinks(d.parent.left.expression).resolvedSymbol;
+        return qf.get.nodeLinks(d.parent.left.expression).resolvedSymbol;
       }
     });
     if (!length(candidates)) return;
@@ -1124,7 +1124,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return false;
   }
-  getMembersOfSymbol() {
+  qf.get.membersOfSymbol() {
     return this.flags & qt.SymbolFlags.LateBindingContainer ? getResolvedMembersOrExportsOfSymbol(this, MembersOrExportsResolutionKind.resolvedMembers) : this.members || emptySymbols;
   }
   qf.get.lateBoundSymbol(): Symbol {
@@ -1133,7 +1133,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       if (!ls.lateSymbol && some(this.declarations, hasLateBindableName)) {
         const parent = this.parent?.qf.get.mergedSymbol()!;
         if (some(this.declarations, hasStaticModifier)) parent.getExportsOfSymbol();
-        else parent.getMembersOfSymbol();
+        else parent.qf.get.membersOfSymbol();
       }
       return ls.lateSymbol || (ls.lateSymbol = this);
     }
@@ -1177,7 +1177,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   isParameterAssigned() {
     const f = qf.get.rootDeclaration(this.valueDeclaration).parent as FunctionLikeDeclaration;
-    const ls = getNodeLinks(f);
+    const ls = qf.get.nodeLinks(f);
     if (!(ls.flags & NodeCheckFlags.AssignmentsMarked)) {
       ls.flags |= NodeCheckFlags.AssignmentsMarked;
       if (!hasParentWithAssignmentsMarked(f)) markParameterAssignments(f);
@@ -1453,7 +1453,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       if (ls.isDeclarationWithCollidingName === undefined) {
         const container = qf.get.enclosingBlockScopeContainer(this.valueDeclaration);
         if (qf.is.statementWithLocals(container) || this.isSymbolOfDestructuredElemOfCatchBinding()) {
-          const nodeLinks = getNodeLinks(this.valueDeclaration);
+          const nodeLinks = qf.get.nodeLinks(this.valueDeclaration);
           if (resolveName(container.parent, this.escName, qt.SymbolFlags.Value, undefined, undefined, false)) ls.isDeclarationWithCollidingName = true;
           else if (nodeLinks.flags & NodeCheckFlags.CapturedBlockScopedBinding) {
             const isDeclaredInLoop = nodeLinks.flags & NodeCheckFlags.BlockScopedBindingInLoop;
@@ -1591,7 +1591,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     function addVisibleAlias(declaration: Declaration, aliasingStatement: LateVisibilityPaintedStatement) {
       if (shouldComputeAliasToMakeVisible) {
-        getNodeLinks(declaration).isVisible = true;
+        qf.get.nodeLinks(declaration).isVisible = true;
         aliasesToMakeVisible = appendIfUnique(aliasesToMakeVisible, aliasingStatement);
       }
       return true;

@@ -18,6 +18,17 @@ export function newIs(f: qt.Frame) {
   const qf = f as Frame;
   interface Fis extends qc.Fis {}
   class Fis {
+    deferredContext(n: Node, last?: Node) {
+      if (n.kind !== Syntax.ArrowFunction && n.kind !== Syntax.FunctionExpression) {
+        return (
+          n.kind === Syntax.TypingQuery ||
+          ((this.functionLikeDeclaration(n) || (n.kind === Syntax.PropertyDeclaration && !qf.has.syntacticModifier(n, ModifierFlags.Static))) && (!last || last !== n.name))
+        );
+      }
+      if (last && last === n.name) return false;
+      if (n.asteriskToken || qf.has.syntacticModifier(n, ModifierFlags.Async)) return true;
+      return !qf.get.immediatelyInvokedFunctionExpression(n);
+    }
     docIndexSignature(n: qt.TypingReference | qt.ExpressionWithTypings) {
       return (
         n.kind === Syntax.TypingReference &&
@@ -290,7 +301,7 @@ export function newIs(f: qt.Frame) {
     }
     declarationVisible(n: Node): boolean {
       if (n) {
-        const ls = getNodeLinks(n);
+        const ls = qf.get.nodeLinks(n);
         const determineIfDeclarationIsVisible = () => {
           switch (n.kind) {
             case Syntax.DocCallbackTag:
@@ -365,7 +376,7 @@ export function newIs(f: qt.Frame) {
         case qt.TypeSystemPropertyName.Type:
           return !!s.getLinks(t).type;
         case qt.TypeSystemPropertyName.EnumTagType:
-          return !!getNodeLinks(t as DocEnumTag).resolvedEnumType;
+          return !!qf.get.nodeLinks(t as DocEnumTag).resolvedEnumType;
         case qt.TypeSystemPropertyName.DeclaredType:
           return !!s.getLinks(t).declaredType;
         case qt.TypeSystemPropertyName.ResolvedBaseConstructorType:
@@ -804,7 +815,7 @@ export function newIs(f: qt.Frame) {
     emptyAnonymousObjectType(t: qt.Type) {
       return !!(
         getObjectFlags(t) & ObjectFlags.Anonymous &&
-        ((t.members && this.emptyResolvedType(t)) || (t.symbol && t.symbol.flags & qt.SymbolFlags.TypeLiteral && getMembersOfSymbol(t.symbol).size === 0))
+        ((t.members && this.emptyResolvedType(t)) || (t.symbol && t.symbol.flags & qt.SymbolFlags.TypeLiteral && qf.get.membersOfSymbol(t.symbol).size === 0))
       );
     }
     stringIndexSignatureOnlyType(t: qt.Type): boolean {
@@ -1268,7 +1279,7 @@ export function newIs(f: qt.Frame) {
       return !!qc.findAncestor(n, (n) => (n === threshold ? 'quit' : this.functionLike(n)));
     }
     bindingCapturedByNode(n: Node, decl: qt.VariableDeclaration | qt.BindingElem) {
-      const links = getNodeLinks(n);
+      const links = qf.get.nodeLinks(n);
       return !!links && qu.contains(links.capturedBlockScopeBindings, qf.get.symbolOfNode(decl));
     }
     assignedInBodyOfForStatement(n: qt.Identifier, container: qt.ForStatement): boolean {
@@ -1583,7 +1594,7 @@ export function newIs(f: qt.Frame) {
       return d.kind === Syntax.NamedTupleMember || (d.kind === Syntax.ParameterDeclaration && d.name && d.name.kind === Syntax.Identifier);
     }
     exhaustiveSwitchStatement(n: SwitchStatement): boolean {
-      const links = getNodeLinks(n);
+      const links = qf.get.nodeLinks(n);
       return links.isExhaustive !== undefined ? links.isExhaustive : (links.isExhaustive = computeExhaustiveSwitchStatement(n));
     }
     readonlyAssignmentDeclaration(d: qt.Declaration) {
@@ -1626,7 +1637,7 @@ export function newIs(f: qt.Frame) {
       if (this.accessExpression(e)) {
         const n = qc.skip.parentheses(e.expression);
         if (n.kind === Syntax.Identifier) {
-          const s = getNodeLinks(n).resolvedSymbol!;
+          const s = qf.get.nodeLinks(n).resolvedSymbol!;
           if (s.flags & qt.SymbolFlags.Alias) {
             const d = s.getDeclarationOfAliasSymbol();
             return !!d && d.kind === Syntax.NamespaceImport;
@@ -2017,7 +2028,7 @@ export function newHas(f: qt.Frame) {
       return false;
     }
     skipDirectInferenceFlag(n: Node) {
-      return !!getNodeLinks(n).skipDirectInference;
+      return !!qf.get.nodeLinks(n).skipDirectInference;
     }
     primitiveConstraint(t: qt.TypeParameter): boolean {
       const constraint = getConstraintOfTypeParameter(t);
@@ -2039,7 +2050,7 @@ export function newHas(f: qt.Frame) {
       return !!(getTypePredicateOfSignature(signature) || (signature.declaration && (getReturnTypeFromAnnotation(signature.declaration) || unknownType).flags & TypeFlags.Never));
     }
     parentWithAssignmentsMarked(n: Node) {
-      return !!qc.findAncestor(n.parent, (n) => qf.is.functionLike(n) && !!(getNodeLinks(n).flags & NodeCheckFlags.AssignmentsMarked));
+      return !!qc.findAncestor(n.parent, (n) => qf.is.functionLike(n) && !!(qf.get.nodeLinks(n).flags & NodeCheckFlags.AssignmentsMarked));
     }
     defaultValue(n: qt.BindingElem | qt.Expression): boolean {
       return (n.kind === Syntax.BindingElem && !!(<BindingElem>n).initer) || (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.EqualsToken);
@@ -2129,7 +2140,7 @@ export function newHas(f: qt.Frame) {
       );
     }
     argumentsReference(d: qt.SignatureDeclaration): boolean {
-      const links = getNodeLinks(d);
+      const links = qf.get.nodeLinks(d);
       if (links.containsArgumentsReference === undefined) {
         if (links.flags & NodeCheckFlags.CaptureArguments) links.containsArgumentsReference = true;
         else {

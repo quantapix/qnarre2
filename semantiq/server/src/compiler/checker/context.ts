@@ -394,9 +394,9 @@ export class QContext {
       if (
         !(this.flags & NodeBuilderFlags.ForbidIndexedAccessSymbolReferences) &&
         parent &&
-        getMembersOfSymbol(parent) &&
-        getMembersOfSymbol(parent).get(symbol.escName) &&
-        getSymbolIfSameReference(getMembersOfSymbol(parent).get(symbol.escName)!, symbol)
+        qf.get.membersOfSymbol(parent) &&
+        qf.get.membersOfSymbol(parent).get(symbol.escName) &&
+        getSymbolIfSameReference(qf.get.membersOfSymbol(parent).get(symbol.escName)!, symbol)
       ) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
         if (LHS.kind === Syntax.IndexedAccessTyping) return new qc.IndexedAccessTyping(LHS, new qc.LiteralTyping(qc.asLiteral(symbolName)));

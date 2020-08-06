@@ -2490,7 +2490,7 @@ export function newGet(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.get = new (class Fget {
-    static nextNodeId = 1;
+    nextNodeId = 1;
     static nextAutoGenerateId = 1;
     declaration = new (class extends Fget {
       nPosToString(n: Node): string {

@@ -1165,7 +1165,7 @@ export function newResolve(f: qt.Frame) {
             }
           }
         }
-        withinDeferredContext = withinDeferredContext || getIsDeferredContext(location, lastLocation);
+        withinDeferredContext = withinDeferredContext || qf.is.deferredContext(location, lastLocation);
         switch (location.kind) {
           case Syntax.SourceFile:
             if (!qf.is.externalOrCommonJsModule(<SourceFile>location)) break;
@@ -1628,7 +1628,7 @@ export function newResolve(f: qt.Frame) {
     declaredMembers(type: InterfaceType): InterfaceTypeWithDeclaredMembers {
       if (!(<InterfaceTypeWithDeclaredMembers>type).declaredProperties) {
         const symbol = type.symbol;
-        const members = getMembersOfSymbol(symbol);
+        const members = qf.get.membersOfSymbol(symbol);
         (<InterfaceTypeWithDeclaredMembers>type).declaredProperties = getNamedMembers(members);
         (<InterfaceTypeWithDeclaredMembers>type).declaredCallSignatures = empty;
         (<InterfaceTypeWithDeclaredMembers>type).declaredConstructSignatures = empty;
@@ -1647,7 +1647,7 @@ export function newResolve(f: qt.Frame) {
       let stringIndexInfo: IndexInfo | undefined;
       let numberIndexInfo: IndexInfo | undefined;
       if (rangeEquals(typeParameters, typeArguments, 0, typeParameters.length)) {
-        members = source.symbol ? getMembersOfSymbol(source.symbol) : new SymbolTable(source.declaredProperties);
+        members = source.symbol ? qf.get.membersOfSymbol(source.symbol) : new SymbolTable(source.declaredProperties);
         callSignatures = source.declaredCallSignatures;
         constructSignatures = source.declaredConstructSignatures;
         stringIndexInfo = source.declaredStringIndexInfo;
@@ -1662,7 +1662,7 @@ export function newResolve(f: qt.Frame) {
       }
       const baseTypes = getBaseTypes(source);
       if (baseTypes.length) {
-        if (source.symbol && members === getMembersOfSymbol(source.symbol)) members = new SymbolTable(source.declaredProperties);
+        if (source.symbol && members === qf.get.membersOfSymbol(source.symbol)) members = new SymbolTable(source.declaredProperties);
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArgument = lastOrUndefined(typeArguments);
         for (const baseType of baseTypes) {
@@ -1732,7 +1732,7 @@ export function newResolve(f: qt.Frame) {
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
       } else if (symbol.flags & qt.SymbolFlags.TypeLiteral) {
         setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
-        const members = getMembersOfSymbol(symbol);
+        const members = qf.get.membersOfSymbol(symbol);
         const callSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.Call));
         const constructSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.New));
         const stringIndexInfo = getIndexInfoOfSymbol(symbol, IndexKind.String);

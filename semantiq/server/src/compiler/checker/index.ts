@@ -7,19 +7,19 @@ import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { newGet, Fget } from './get';
 import { newHas, Fhas, newIs, Fis } from './predicate';
-import { newCreate, Tcreate, newInstantiate, Tinstantiate, newResolve, Tresolve } from './create';
-import { newCheck, Tcheck } from './check';
-export interface Tframe extends qt.Frame {
-  check: Tcheck;
-  create: Tcreate;
+import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
+import { newCheck, Fcheck } from './check';
+export interface Fframe extends qt.Frame {
+  check: Fcheck;
+  create: Fcreate;
   each: qc.Feach;
   get: Fget;
   has: Fhas;
-  instantiate: Tinstantiate;
+  instantiate: Finstantiate;
   is: Fis;
-  resolve: Tresolve;
+  resolve: Fresolve;
 }
-export const qf = {} as Tframe;
+export const qf = {} as Fframe;
 newCheck(qf);
 newCreate(qf);
 newEach(qf);
@@ -35,9 +35,6 @@ let nextMergeId = 1;
 let nextFlowId = 1;
 
 function SymbolLinks(this: SymbolLinks) {}
-function NodeLinks(this: NodeLinks) {
-  this.flags = 0;
-}
 export function isInstantiatedModule(node: ModuleDeclaration, preserveConstEnums: boolean) {
   const moduleState = getModuleInstanceState(node);
   return moduleState === ModuleInstanceState.Instantiated || (preserveConstEnums && moduleState === ModuleInstanceState.ConstEnumOnly);
@@ -79,10 +76,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const emitResolver = createResolver();
   const nodeBuilder = createNodeBuilder();
   class QNode extends qc.Nobj {
-    getNodeLinks(): NodeLinks {
-      const i = this.qf.get.nodeId();
-      return nodeLinks[i] || (nodeLinks[i] = new (<any>NodeLinks)());
-    }
     isGlobalSourceFile() {
       return this.kind === Syntax.SourceFile && !is.externalOrCommonJsModule(this as xSourceFile);
     }
@@ -232,23 +225,23 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const node = qf.get.parseTreeOf(nodeIn, isExpression);
       if (!node) return;
       const containingCall = qc.findAncestor(node, isCallLikeExpression);
-      const containingCallResolvedSignature = containingCall && getNodeLinks(containingCall).resolvedSignature;
+      const containingCallResolvedSignature = containingCall && qf.get.nodeLinks(containingCall).resolvedSignature;
       if (contextFlags! & ContextFlags.Completions && containingCall) {
         let toMarkSkip = node as Node;
         do {
-          getNodeLinks(toMarkSkip).skipDirectInference = true;
+          qf.get.nodeLinks(toMarkSkip).skipDirectInference = true;
           toMarkSkip = toMarkSkip.parent;
         } while (toMarkSkip && toMarkSkip !== containingCall);
-        getNodeLinks(containingCall).resolvedSignature = undefined;
+        qf.get.nodeLinks(containingCall).resolvedSignature = undefined;
       }
       const result = getContextualType(node, contextFlags);
       if (contextFlags! & ContextFlags.Completions && containingCall) {
         let toMarkSkip = node as Node;
         do {
-          getNodeLinks(toMarkSkip).skipDirectInference = undefined;
+          qf.get.nodeLinks(toMarkSkip).skipDirectInference = undefined;
           toMarkSkip = toMarkSkip.parent;
         } while (toMarkSkip && toMarkSkip !== containingCall);
-        getNodeLinks(containingCall).resolvedSignature = containingCallResolvedSignature;
+        qf.get.nodeLinks(containingCall).resolvedSignature = containingCallResolvedSignature;
       }
       return result;
     },
@@ -379,7 +372,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       try {
         cancellationToken = ct;
         check.sourceFile(file);
-        assert(!!(getNodeLinks(file).flags & NodeCheckFlags.TypeChecked));
+        assert(!!(qf.get.nodeLinks(file).flags & NodeCheckFlags.TypeChecked));
         diagnostics = addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
         check.unusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
           if (!qf.has.parseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
@@ -590,7 +583,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const maximumSuggestionCount = 10;
   const mergedSymbols: Symbol[] = [];
   const symbolLinks: SymbolLinks[] = [];
-  const nodeLinks: NodeLinks[] = [];
   const flowLoopCaches: qu.QMap<Type>[] = [];
   const flowLoopNodes: FlowNode[] = [];
   const flowLoopKeys: string[] = [];
@@ -729,7 +721,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       result.valueDeclaration.pos >= functionLocation.body.pos &&
       result.valueDeclaration.end <= functionLocation.body.end
     ) {
-      const ls = getNodeLinks(functionLocation);
+      const ls = qf.get.nodeLinks(functionLocation);
       if (ls.declarationRequiresScopeChange === undefined) ls.declarationRequiresScopeChange = forEach(functionLocation.parameters, requiresScopeChange) || false;
       return !ls.declarationRequiresScopeChange;
     }
@@ -1083,7 +1075,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     function buildVisibleNodeList(declarations: Declaration[]) {
       forEach(declarations, (declaration) => {
         const resultNode = getAnyImportSyntax(declaration) || declaration;
-        if (setVisibility) getNodeLinks(declaration).isVisible = true;
+        if (setVisibility) qf.get.nodeLinks(declaration).isVisible = true;
         else {
           result = result || [];
           pushIfUnique(result, resultNode);
@@ -1185,7 +1177,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function lateBindMember(parent: Symbol, earlySymbols: SymbolTable | undefined, lateSymbols: EscapedMap<TransientSymbol>, decl: LateBoundDecl | LateBoundBinaryExpressionDeclaration) {
     assert(!!decl.symbol, 'The member is expected to have a symbol.');
-    const ls = getNodeLinks(decl);
+    const ls = qf.get.nodeLinks(decl);
     if (!ls.resolvedSymbol) {
       ls.resolvedSymbol = decl.symbol;
       const declName = decl.kind === Syntax.BinaryExpression ? decl.left : decl.name;
@@ -3142,12 +3134,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function captureLexicalThis(node: Node, container: Node): void {
-    getNodeLinks(node).flags |= NodeCheckFlags.LexicalThis;
+    qf.get.nodeLinks(node).flags |= NodeCheckFlags.LexicalThis;
     if (container.kind === Syntax.PropertyDeclaration || container.kind === Syntax.Constructor) {
       const classNode = container.parent;
-      getNodeLinks(classNode).flags |= NodeCheckFlags.CaptureThis;
+      qf.get.nodeLinks(classNode).flags |= NodeCheckFlags.CaptureThis;
     } else {
-      getNodeLinks(container).flags |= NodeCheckFlags.CaptureThis;
+      qf.get.nodeLinks(container).flags |= NodeCheckFlags.CaptureThis;
     }
   }
   function findFirstSuperCall(node: Node): SuperCall | undefined {
@@ -3464,7 +3456,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     let headMessage = isCall ? qd.msgs.This_expression_is_not_callable : qd.msgs.This_expression_is_not_constructable;
     if (errorTarget.parent.kind === Syntax.CallExpression && errorTarget.parent.arguments.length === 0) {
-      const { resolvedSymbol } = getNodeLinks(errorTarget);
+      const { resolvedSymbol } = qf.get.nodeLinks(errorTarget);
       if (resolvedSymbol && resolvedSymbol.flags & qt.SymbolFlags.GetAccessor) headMessage = qd.msgs.This_expression_is_not_callable_because_it_is_a_get_accessor_Did_you_mean_to_use_it_without;
     }
     return {
@@ -3645,7 +3637,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function contextuallyCheckFunctionExpressionOrObjectLiteralMethod(node: FunctionExpression | ArrowFunction | MethodDeclaration, checkMode?: CheckMode) {
-    const links = getNodeLinks(node);
+    const links = qf.get.nodeLinks(node);
     if (!(links.flags & NodeCheckFlags.ContextChecked)) {
       const contextualSignature = getContextualSignature(node);
       if (!(links.flags & NodeCheckFlags.ContextChecked)) {
@@ -3883,13 +3875,13 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return true;
   }
   function computeEnumMemberValues(node: EnumDeclaration) {
-    const nodeLinks = getNodeLinks(node);
+    const nodeLinks = qf.get.nodeLinks(node);
     if (!(nodeLinks.flags & NodeCheckFlags.EnumValuesComputed)) {
       nodeLinks.flags |= NodeCheckFlags.EnumValuesComputed;
       let autoValue: number | undefined = 0;
       for (const member of node.members) {
         const value = computeMemberValue(member, autoValue);
-        getNodeLinks(member).enumMemberValue = value;
+        qf.get.nodeLinks(member).enumMemberValue = value;
         autoValue = typeof value === 'number' ? value + 1 : undefined;
       }
     }

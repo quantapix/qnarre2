@@ -1491,7 +1491,7 @@ export function newCheck(f: qt.Frame) {
       if (symbol === unknownSymbol) return errorType;
       if (symbol === argumentsSymbol) {
         const container = qf.get.containingFunction(n)!;
-        getNodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
+        qf.get.nodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
         return this.qf.get.typeOfSymbol();
       }
       if (!(n.parent && n.parent.kind === Syntax.PropertyAccessExpression && n.parent.expression === n)) markAliasReferenced(symbol, n);
@@ -1502,8 +1502,8 @@ export function newCheck(f: qt.Frame) {
           let container = qf.get.containingClass(n);
           while (container !== undefined) {
             if (container === declaration && container.name !== n) {
-              getNodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
-              getNodeLinks(n).flags |= NodeCheckFlags.ConstructorReferenceInClass;
+              qf.get.nodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
+              qf.get.nodeLinks(n).flags |= NodeCheckFlags.ConstructorReferenceInClass;
               break;
             }
             container = qf.get.containingClass(container);
@@ -1513,8 +1513,8 @@ export function newCheck(f: qt.Frame) {
           while (container.kind !== Syntax.SourceFile) {
             if (container.parent === declaration) {
               if (container.kind === Syntax.PropertyDeclaration && qf.has.syntacticModifier(container, ModifierFlags.Static)) {
-                getNodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
-                getNodeLinks(n).flags |= NodeCheckFlags.ConstructorReferenceInClass;
+                qf.get.nodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
+                qf.get.nodeLinks(n).flags |= NodeCheckFlags.ConstructorReferenceInClass;
               }
               break;
             }
@@ -1681,11 +1681,11 @@ export function newCheck(f: qt.Frame) {
       else {
         nodeCheckFlag = NodeCheckFlags.SuperInstance;
       }
-      getNodeLinks(n).flags |= nodeCheckFlag;
+      qf.get.nodeLinks(n).flags |= nodeCheckFlag;
       if (container.kind === Syntax.MethodDeclaration && qf.has.syntacticModifier(container, ModifierFlags.Async)) {
-        if (qf.is.superProperty(n.parent) && qf.is.assignmentTarget(n.parent)) getNodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuperBinding;
+        if (qf.is.superProperty(n.parent) && qf.is.assignmentTarget(n.parent)) qf.get.nodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuperBinding;
         else {
-          getNodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuper;
+          qf.get.nodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuper;
         }
       }
       if (needToCaptureLexicalThis) captureLexicalThis(n.parent, container);
@@ -1782,7 +1782,7 @@ export function newCheck(f: qt.Frame) {
       );
     }
     computedPropertyName(n: qc.ComputedPropertyName): qt.Type {
-      const links = getNodeLinks(n.expression);
+      const links = qf.get.nodeLinks(n.expression);
       if (!links.resolvedType) {
         links.resolvedType = this.expression(n.expression);
         if (
@@ -2189,7 +2189,7 @@ export function newCheck(f: qt.Frame) {
       return false;
     }
     propertyAccessExpressionOrQualifiedName(n: qc.PropertyAccessExpression | QualifiedName, left: qt.Expression | QualifiedName, leftType: qt.Type, right: qc.Identifier | PrivateIdentifier) {
-      const parentSymbol = getNodeLinks(left).resolvedSymbol;
+      const parentSymbol = qf.get.nodeLinks(left).resolvedSymbol;
       const assignmentKind = qf.get.assignmentTargetKind(n);
       const apparentType = getApparentType(assignmentKind !== AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(leftType) : leftType);
       if (right.kind === Syntax.PrivateIdentifier) this.externalEmitHelpers(n, ExternalEmitHelpers.ClassPrivateFieldGet);
@@ -2238,7 +2238,7 @@ export function newCheck(f: qt.Frame) {
       } else {
         this.propertyNotUsedBeforeDeclaration(prop, n, right);
         markPropertyAsReferenced(prop, n, left.kind === Syntax.ThisKeyword);
-        getNodeLinks(n).resolvedSymbol = prop;
+        qf.get.nodeLinks(n).resolvedSymbol = prop;
         this.propertyAccessibility(n, left.kind === Syntax.SuperKeyword, apparentType, prop);
         if (isAssignmentToReadonlyEntity(n as Expression, prop, assignmentKind)) {
           error(right, qd.msgs.Cannot_assign_to_0_because_it_is_a_read_only_property, idText(right));
@@ -2593,7 +2593,7 @@ export function newCheck(f: qt.Frame) {
         if (!qf.get.effectiveReturnTypeNode(n) && !hasContextSensitiveParameters(n)) {
           const contextualSignature = getContextualSignature(n);
           if (contextualSignature && couldContainTypeVariables(qf.get.returnTypeOfSignature(contextualSignature))) {
-            const links = getNodeLinks(n);
+            const links = qf.get.nodeLinks(n);
             if (links.contextFreeType) return links.contextFreeType;
             const returnType = getReturnTypeFromBody(n, checkMode);
             const returnOnlySignature = createSignature(undefined, undefined, undefined, empty, returnType, undefined, 0, SignatureFlags.None);
@@ -2659,7 +2659,7 @@ export function newCheck(f: qt.Frame) {
         return booleanType;
       }
       if (expr.kind === Syntax.PropertyAccessExpression && expr.name.kind === Syntax.PrivateIdentifier) error(expr, qd.msgs.The_operand_of_a_delete_operator_cannot_be_a_private_identifier);
-      const links = getNodeLinks(expr);
+      const links = qf.get.nodeLinks(expr);
       const symbol = getExportSymbolOfValueSymbolIfExported(links.resolvedSymbol);
       if (symbol) {
         if (isReadonlySymbol(symbol)) error(expr, qd.msgs.The_operand_of_a_delete_operator_cannot_be_a_read_only_property);
@@ -3317,7 +3317,7 @@ export function newCheck(f: qt.Frame) {
       }
     }
     expressionCached(n: qc.Expression | QualifiedName, checkMode?: CheckMode): qt.Type {
-      const links = getNodeLinks(n);
+      const links = qf.get.nodeLinks(n);
       if (!links.resolvedType) {
         if (checkMode && checkMode !== CheckMode.Normal) return this.expression(n, checkMode);
         const saveFlowLoopStart = flowLoopStart;
@@ -3759,7 +3759,7 @@ export function newCheck(f: qt.Frame) {
       this.variableLikeDeclaration(n);
       if (n.name.kind === Syntax.PrivateIdentifier && languageVersion < ScriptTarget.ESNext) {
         for (let lexicalScope = qf.get.enclosingBlockScopeContainer(n); !!lexicalScope; lexicalScope = qf.get.enclosingBlockScopeContainer(lexicalScope)) {
-          getNodeLinks(lexicalScope).flags |= NodeCheckFlags.ContainsClassWithPrivateIdentifiers;
+          qf.get.nodeLinks(lexicalScope).flags |= NodeCheckFlags.ContainsClassWithPrivateIdentifiers;
         }
       }
     }
@@ -3880,7 +3880,7 @@ export function newCheck(f: qt.Frame) {
           const typeParameters = getTypeParametersForTypeReference(n);
           if (typeParameters) this.typeArgumentConstraints(n, typeParameters);
         }
-        if (type.flags & TypeFlags.Enum && getNodeLinks(n).resolvedSymbol!.flags & qt.SymbolFlags.EnumMember)
+        if (type.flags & TypeFlags.Enum && qf.get.nodeLinks(n).resolvedSymbol!.flags & qt.SymbolFlags.EnumMember)
           error(n, qd.msgs.Enum_type_0_has_members_with_initers_that_are_not_literals, typeToString(type));
       }
     }
@@ -5362,7 +5362,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
           const mergedClass = getDeclarationOfKind(symbol, Syntax.ClassDeclaration);
-          if (mergedClass && inSameLexicalScope(n, mergedClass)) getNodeLinks(n).flags |= NodeCheckFlags.LexicalModuleMergesWithClass;
+          if (mergedClass && inSameLexicalScope(n, mergedClass)) qf.get.nodeLinks(n).flags |= NodeCheckFlags.LexicalModuleMergesWithClass;
         }
         if (isAmbientExternalModule) {
           if (qf.is.externalModuleAugmentation(n)) {
@@ -5828,7 +5828,7 @@ export function newCheck(f: qt.Frame) {
     }
     nodeDeferred(n: Node) {
       const enclosingFile = n.sourceFile;
-      const links = getNodeLinks(enclosingFile);
+      const links = qf.get.nodeLinks(enclosingFile);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
         links.deferredNodes = links.deferredNodes || new qu.QMap();
         const id = '' + qf.get.nodeId(n);
@@ -5836,7 +5836,7 @@ export function newCheck(f: qt.Frame) {
       }
     }
     deferredNodes(context: SourceFile) {
-      const links = getNodeLinks(context);
+      const links = qf.get.nodeLinks(context);
       if (links.deferredNodes) links.deferredNodes.forEach(checkDeferredNode);
     }
     deferredNode(n: Node) {
@@ -5880,7 +5880,7 @@ export function newCheck(f: qt.Frame) {
       performance.measure('Check', 'beforeCheck', 'afterCheck');
     }
     sourceFileWorker(n: qc.SourceFile) {
-      const links = getNodeLinks(n);
+      const links = qf.get.nodeLinks(n);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
         if (skipTypeChecking(n, compilerOptions, host)) return;
         checkGrammar.sourceFile(n);
@@ -6689,11 +6689,11 @@ export function newCheck(f: qt.Frame) {
       }
       statementInAmbientContext(n: Node): boolean {
         if (n.flags & NodeFlags.Ambient) {
-          const links = getNodeLinks(n);
+          const links = qf.get.nodeLinks(n);
           if (!links.hasReportedStatementInAmbientContext && (qf.is.functionLike(n.parent) || qf.is.accessor(n.parent)))
-            return (getNodeLinks(n).hasReportedStatementInAmbientContext = grammarErrorOnFirstToken(n, qd.msgs.An_implementation_cannot_be_declared_in_ambient_contexts));
+            return (qf.get.nodeLinks(n).hasReportedStatementInAmbientContext = grammarErrorOnFirstToken(n, qd.msgs.An_implementation_cannot_be_declared_in_ambient_contexts));
           if (n.parent.kind === Syntax.Block || n.parent.kind === Syntax.ModuleBlock || n.parent.kind === Syntax.SourceFile) {
-            const links = getNodeLinks(n.parent);
+            const links = qf.get.nodeLinks(n.parent);
             if (!links.hasReportedStatementInAmbientContext) return (links.hasReportedStatementInAmbientContext = grammarErrorOnFirstToken(n, qd.msgs.Statements_are_not_allowed_in_ambient_contexts));
           } else {
           }
