@@ -1544,9 +1544,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return;
   }
-  getFullyQualifiedName(containingLocation?: Node): string {
+  qf.get.fullyQualifiedName(containingLocation?: Node): string {
     return this.parent
-      ? getFullyQualifiedName(this.parent, containingLocation) + '.' + this.symbolToString()
+      ? qf.get.fullyQualifiedName(this.parent, containingLocation) + '.' + this.symbolToString()
       : this.symbolToString(containingLocation, undefined, qt.SymbolFormatFlags.DoNotIncludeSymbolChain | qt.SymbolFormatFlags.AllowAnyNodeKind);
   }
   getAliasForSymbolInContainer(container: Symbol) {

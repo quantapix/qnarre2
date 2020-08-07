@@ -1428,7 +1428,7 @@ export function newResolve(f: qt.Frame) {
         }
         symbol = qf.get.mergedSymbol(getSymbol(namespace.getExportsOfSymbol(), right.escapedText, meaning));
         if (!symbol) {
-          if (!ignoreErrors) error(right, qd.msgs.Namespace_0_has_no_exported_member_1, getFullyQualifiedName(namespace), declarationNameToString(right));
+          if (!ignoreErrors) error(right, qd.msgs.Namespace_0_has_no_exported_member_1, qf.get.fullyQualifiedName(namespace), declarationNameToString(right));
           return;
         }
       } else throw qc.assert.never(name, 'Unknown entity name kind.');

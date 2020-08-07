@@ -1,7 +1,7 @@
 import * as qc from '../core';
 import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
 import * as qt from './type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
@@ -180,9 +180,9 @@ export function newGet(f: qt.Frame) {
               ? combineValueAndTypeSymbols(symbolFromVariable, symbolFromModule)
               : symbolFromModule || symbolFromVariable;
           if (!symbol) {
-            const moduleName = getFullyQualifiedName(moduleSymbol, n);
+            const moduleName = this.fullyQualifiedName(moduleSymbol, n);
             const declarationName = declarationNameToString(name);
-            const suggestion = getSuggestedSymbolForNonexistentModule(name, targetSymbol);
+            const suggestion = this.suggestedSymbolForNonexistentModule(name, targetSymbol);
             if (suggestion !== undefined) {
               const suggestionName = suggestion.symbolToString();
               const diagnostic = error(name, qd.msgs.Module_0_has_no_exported_member_1_Did_you_mean_2, moduleName, declarationName, suggestionName);
@@ -199,7 +199,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     targetOfImportSpecifier(n: qt.ImportSpecifier, dontResolveAlias: boolean): Symbol | undefined {
-      const resolved = getExternalModuleMember(n.parent?.parent?.parent, n, dontResolveAlias);
+      const resolved = this.externalModuleMember(n.parent?.parent?.parent, n, dontResolveAlias);
       markSymbolOfAliasDeclarationIfTypeOnly(n, undefined, resolved, false);
       return resolved;
     }
@@ -210,14 +210,14 @@ export function newGet(f: qt.Frame) {
     }
     targetOfExportSpecifier(n: qt.ExportSpecifier, meaning: qt.SymbolFlags, dontResolveAlias?: boolean) {
       const resolved = n.parent?.parent?.moduleSpecifier
-        ? getExternalModuleMember(n.parent?.parent, n, dontResolveAlias)
+        ? this.externalModuleMember(n.parent?.parent, n, dontResolveAlias)
         : resolveEntityName(n.propertyName || n.name, meaning, false, dontResolveAlias);
       markSymbolOfAliasDeclarationIfTypeOnly(n, undefined, resolved, false);
       return resolved;
     }
     targetOfExportAssignment(n: qt.ExportAssignment | qt.BinaryExpression, dontResolveAlias: boolean): Symbol | undefined {
       const expression = n.kind === Syntax.ExportAssignment ? n.expression : n.right;
-      const resolved = getTargetOfAliasLikeExpression(expression, dontResolveAlias);
+      const resolved = this.targetOfAliasLikeExpression(expression, dontResolveAlias);
       markSymbolOfAliasDeclarationIfTypeOnly(n, undefined, resolved, false);
       return resolved;
     }
@@ -227,15 +227,15 @@ export function newGet(f: qt.Frame) {
       const aliasLike = resolveEntityName(expression, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace, true, dontResolveAlias);
       if (aliasLike) return aliasLike;
       qf.check.expressionCached(expression);
-      return qf.get.nodeLinks(expression).resolvedSymbol;
+      return this.nodeLinks(expression).resolvedSymbol;
     }
     targetOfPropertyAssignment(n: qt.PropertyAssignment, dontRecursivelyResolve: boolean): Symbol | undefined {
       const expression = n.initer;
-      return getTargetOfAliasLikeExpression(expression, dontRecursivelyResolve);
+      return this.targetOfAliasLikeExpression(expression, dontRecursivelyResolve);
     }
     targetOfPropertyAccessExpression(n: qt.PropertyAccessExpression, dontRecursivelyResolve: boolean): Symbol | undefined {
       if (!(n.parent?.kind === Syntax.BinaryExpression && n.parent?.left === n && n.parent?.operatorToken.kind === Syntax.EqualsToken)) return;
-      return getTargetOfAliasLikeExpression(n.parent?.right, dontRecursivelyResolve);
+      return this.targetOfAliasLikeExpression(n.parent?.right, dontRecursivelyResolve);
     }
     targetOfAliasDeclaration(n: qt.Declaration, dontRecursivelyResolve = false): Symbol | undefined {
       switch (n.kind) {
@@ -253,7 +253,7 @@ export function newGet(f: qt.Frame) {
           return this.targetOfExportSpecifier(n, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace, dontRecursivelyResolve);
         case Syntax.ExportAssignment:
         case Syntax.BinaryExpression:
-          return this.targetOfExportAssignment(<ExportAssignment | BinaryExpression>n, dontRecursivelyResolve);
+          return this.targetOfExportAssignment(n, dontRecursivelyResolve);
         case Syntax.NamespaceExportDeclaration:
           return this.targetOfNamespaceExportDeclaration(n, dontRecursivelyResolve);
         case Syntax.ShorthandPropertyAssignment:
@@ -1654,7 +1654,7 @@ export function newGet(f: qt.Frame) {
       return minTypeArgumentCount;
     }
     signatureFromDeclaration(declaration: qt.SignatureDeclaration | DocSignature): qt.Signature {
-      const links = qf.get.nodeLinks(declaration);
+      const links = this.nodeLinks(declaration);
       if (!links.resolvedSignature) {
         const parameters: Symbol[] = [];
         let flags = qt.SignatureFlags.None;
@@ -2055,7 +2055,7 @@ export function newGet(f: qt.Frame) {
       return errorType;
     }
     typeFromDocValueReference(n: WithArgumentsTobj, symbol: Symbol): qt.Type | undefined {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedDocType) {
         const valueType = this.this.typeOfSymbol();
         let typeType = valueType;
@@ -2156,7 +2156,7 @@ export function newGet(f: qt.Frame) {
       return strictNullChecks ? getNullableType(type, qt.TypeFlags.Null) : type;
     }
     typeFromTypeReference(n: TypeReferenceType): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         if (qf.is.constTypeReference(n) && qf.is.assertionExpression(n.parent)) {
           links.resolvedSymbol = unknownSymbol;
@@ -2186,7 +2186,7 @@ export function newGet(f: qt.Frame) {
       return links.resolvedType;
     }
     typeFromTypingQuery(n: TypingQuery): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) links.resolvedType = getRegularTypeOfLiteralType(this.widenedType(qf.check.expression(n.exprName)));
       return links.resolvedType;
     }
@@ -2309,7 +2309,7 @@ export function newGet(f: qt.Frame) {
       return getTupleTypeOfArity(n.elems.length, minLength, !!restElem, readonly, missingName ? undefined : (n.elems as readonly NamedTupleMember[]));
     }
     typeFromArrayOrTupleTyping(n: ArrayTyping | TupleTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const target = getArrayOrTupleTargetType(n);
         if (target === emptyGenericType) links.resolvedType = emptyObjectType;
@@ -2403,7 +2403,7 @@ export function newGet(f: qt.Frame) {
       return type;
     }
     typeFromUnionTyping(n: UnionTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const aliasSymbol = getAliasSymbolForTypeNode(n);
         links.resolvedType = this.unionType(map(n.types, this.typeFromTypeNode), UnionReduction.Literal, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
@@ -2471,7 +2471,7 @@ export function newGet(f: qt.Frame) {
       return result;
     }
     typeFromIntersectionTyping(n: IntersectionTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const aliasSymbol = getAliasSymbolForTypeNode(n);
         links.resolvedType = getIntersectionType(map(n.types, this.typeFromTypeNode), aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
@@ -2552,7 +2552,7 @@ export function newGet(f: qt.Frame) {
       return indexType.flags & qt.TypeFlags.Never ? stringType : indexType;
     }
     typeFromTypingOperator(n: TypingOperator): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         switch (n.operator) {
           case Syntax.KeyOfKeyword:
@@ -2614,7 +2614,7 @@ export function newGet(f: qt.Frame) {
               error(accessExpression.argumentExpression, qd.msgs.Cannot_assign_to_0_because_it_is_a_read_only_property, prop.symbolToString());
               return;
             }
-            if (accessFlags & AccessFlags.CacheSymbol) qf.get.nodeLinks(accessNode!).resolvedSymbol = prop;
+            if (accessFlags & AccessFlags.CacheSymbol) this.nodeLinks(accessNode!).resolvedSymbol = prop;
             if (isThisPropertyAccessInConstructor(accessExpression, prop)) return autoType;
           }
           const propType = this.typeOfSymbol(prop);
@@ -2679,7 +2679,7 @@ export function newGet(f: qt.Frame) {
                   if (indexType.flags & qt.TypeFlags.EnumLiteral)
                     errorInfo = chainqd.Messages(undefined, qd.msgs.Property_0_does_not_exist_on_type_1, '[' + typeToString(indexType) + ']', typeToString(objectType));
                   else if (indexType.flags & qt.TypeFlags.UniqueESSymbol) {
-                    const symbolName = getFullyQualifiedName((indexType as UniqueESSymbolType).symbol, accessExpression);
+                    const symbolName = this.fullyQualifiedName((indexType as UniqueESSymbolType).symbol, accessExpression);
                     errorInfo = chainqd.Messages(undefined, qd.msgs.Property_0_does_not_exist_on_type_1, '[' + symbolName + ']', typeToString(objectType));
                   } else if (indexType.flags & qt.TypeFlags.StringLiteral) {
                     errorInfo = chainqd.Messages(undefined, qd.msgs.Property_0_does_not_exist_on_type_1, (indexType as StringLiteralType).value, typeToString(objectType));
@@ -2803,7 +2803,7 @@ export function newGet(f: qt.Frame) {
       return getPropertyTypeForIndexType(objectType, apparentObjectType, indexType, indexType, false, accessNode, accessFlags | AccessFlags.CacheSymbol);
     }
     typeFromIndexedAccessTyping(n: IndexedAccessTyping) {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const objectType = this.typeFromTypeNode(n.objectType);
         const indexType = this.typeFromTypeNode(n.indexType);
@@ -2816,7 +2816,7 @@ export function newGet(f: qt.Frame) {
       return links.resolvedType;
     }
     typeFromMappedTyping(n: MappedTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const type = <MappedType>createObjectType(ObjectFlags.Mapped, n.symbol);
         type.declaration = n;
@@ -2903,7 +2903,7 @@ export function newGet(f: qt.Frame) {
       return result;
     }
     typeFromConditionalTyping(n: ConditionalTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const checkType = this.typeFromTypeNode(n.checkType);
         const aliasSymbol = getAliasSymbolForTypeNode(n);
@@ -2932,7 +2932,7 @@ export function newGet(f: qt.Frame) {
       return links.resolvedType;
     }
     typeFromInferTyping(n: InferTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) links.resolvedType = getDeclaredTypeOfTypeParameter(this.symbolOfNode(n.typeParameter));
       return links.resolvedType;
     }
@@ -2941,7 +2941,7 @@ export function newGet(f: qt.Frame) {
       return append(getIdentifierChain(n.left), n.right);
     }
     typeFromImportTyping(n: ImportTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         if (n.isTypeOf && n.typeArguments) {
           error(n, qd.msgs.Type_arguments_cannot_be_used_here);
@@ -2968,11 +2968,11 @@ export function newGet(f: qt.Frame) {
             const meaning = nameStack.length ? qt.SymbolFlags.Namespace : targetMeaning;
             const next = getSymbol(this.mergedSymbol(currentNamespace.resolveSymbol()).getExportsOfSymbol(), current.escapedText, meaning);
             if (!next) {
-              error(current, qd.msgs.Namespace_0_has_no_exported_member_1, getFullyQualifiedName(currentNamespace), declarationNameToString(current));
+              error(current, qd.msgs.Namespace_0_has_no_exported_member_1, this.fullyQualifiedName(currentNamespace), declarationNameToString(current));
               return (links.resolvedType = errorType);
             }
-            qf.get.nodeLinks(current).resolvedSymbol = next;
-            qf.get.nodeLinks(current.parent).resolvedSymbol = next;
+            this.nodeLinks(current).resolvedSymbol = next;
+            this.nodeLinks(current.parent).resolvedSymbol = next;
             currentNamespace = next;
           }
           links.resolvedType = resolveImportSymbolType(n, links, currentNamespace, targetMeaning);
@@ -2992,10 +2992,10 @@ export function newGet(f: qt.Frame) {
       return links.resolvedType;
     }
     typeFromTypeLiteralOrFunctionOrConstructorTyping(n: Typing): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         const aliasSymbol = getAliasSymbolForTypeNode(n);
-        if (qf.get.membersOfSymbol(n.symbol).size === 0 && !aliasSymbol) links.resolvedType = emptyTypeLiteralType;
+        if (this.membersOfSymbol(n.symbol).size === 0 && !aliasSymbol) links.resolvedType = emptyTypeLiteralType;
         else {
           let type = createObjectType(ObjectFlags.Anonymous, n.symbol);
           type.aliasSymbol = aliasSymbol;
@@ -3130,7 +3130,7 @@ export function newGet(f: qt.Frame) {
       return type;
     }
     typeFromLiteralTyping(n: LiteralTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) links.resolvedType = getRegularTypeOfLiteralType(qf.check.expression(n.literal));
       return links.resolvedType;
     }
@@ -3170,12 +3170,12 @@ export function newGet(f: qt.Frame) {
       return errorType;
     }
     typeFromThisNodeTypeNode(n: ThisExpression | ThisTyping): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) links.resolvedType = getThisType(n);
       return links.resolvedType;
     }
     typeFromNamedTupleTyping(n: NamedTupleMember): qt.Type {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedType) {
         let type = this.typeFromTypeNode(n.type);
         if (n.dot3Token) type = getElemTypeOfArrayType(type) || errorType;
@@ -3306,7 +3306,7 @@ export function newGet(f: qt.Frame) {
     objectTypeInstantiation(type: AnonymousType | DeferredTypeReference, mapper: TypeMapper) {
       const target = type.objectFlags & ObjectFlags.Instantiated ? type.target! : type;
       const n = type.objectFlags & ObjectFlags.Reference ? (<TypeReference>type).node! : type.symbol.declarations[0];
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       let typeParameters = links.outerTypeParameters;
       if (!typeParameters) {
         let declaration = n;
@@ -3927,7 +3927,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     resolvedSymbol(n: Identifier): Symbol {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedSymbol) {
         links.resolvedSymbol =
           (!qf.is.missing(n) &&
@@ -4125,7 +4125,7 @@ export function newGet(f: qt.Frame) {
       return getTypeWithDefault(type, n.initer!);
     }
     typeOfIniter(n: qt.Expression) {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       return links.resolvedType || this.typeOfExpression(n);
     }
     initialTypeOfVariableDeclaration(n: VariableDeclaration) {
@@ -4164,7 +4164,7 @@ export function newGet(f: qt.Frame) {
       return neverType;
     }
     switchClauseTypes(switchStatement: SwitchStatement): qt.Type[] {
-      const links = qf.get.nodeLinks(switchStatement);
+      const links = this.nodeLinks(switchStatement);
       if (!links.switchTypes) {
         links.switchTypes = [];
         for (const clause of switchStatement.caseBlock.clauses) {
@@ -4244,7 +4244,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     effectsSignature(n: CallExpression) {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       let signature = links.effectsSignature;
       if (signature === undefined) {
         let funcType: qt.Type | undefined;
@@ -4891,7 +4891,7 @@ export function newGet(f: qt.Frame) {
         if (qf.is.rightSideOfQualifiedNameOrPropertyAccess(location)) location = location.parent;
         if (qf.is.expressionNode(location) && !qf.is.assignmentTarget(location)) {
           const type = this.typeOfExpression(location);
-          if (getExportSymbolOfValueSymbolIfExported(qf.get.nodeLinks(location).resolvedSymbol) === symbol) return type;
+          if (getExportSymbolOfValueSymbolIfExported(this.nodeLinks(location).resolvedSymbol) === symbol) return type;
         }
       }
       return this.this.typeOfSymbol();
@@ -5040,7 +5040,7 @@ export function newGet(f: qt.Frame) {
         const args = getEffectiveCallArguments(iife);
         const indexOfParameter = func.parameters.indexOf(parameter);
         if (parameter.dot3Token) return getSpreadArgumentType(args, indexOfParameter, args.length, anyType, undefined);
-        const links = qf.get.nodeLinks(iife);
+        const links = this.nodeLinks(iife);
         const cached = links.resolvedSignature;
         links.resolvedSignature = anySignature;
         const type = indexOfParameter < args.length ? this.widenedLiteralType(qf.check.expression(args[indexOfParameter])) : parameter.initer ? undefined : undefinedWideningType;
@@ -5137,7 +5137,7 @@ export function newGet(f: qt.Frame) {
       return argIndex === -1 ? undefined : getContextualTypeForArgumentAtIndex(callTarget, argIndex);
     }
     contextualTypeForArgumentAtIndex(callTarget: CallLikeExpression, argIndex: number): qt.Type {
-      const signature = qf.get.nodeLinks(callTarget).resolvedSignature === resolvingSignature ? resolvingSignature : getResolvedSignature(callTarget);
+      const signature = this.nodeLinks(callTarget).resolvedSignature === resolvingSignature ? resolvingSignature : getResolvedSignature(callTarget);
       if (qc.isJsx.openingLikeElem(callTarget) && argIndex === 0) return getEffectiveFirstArgumentForJsxSignature(signature, callTarget);
       return getTypeAtPosition(signature, argIndex);
     }
@@ -5526,7 +5526,7 @@ export function newGet(f: qt.Frame) {
       return typeSymbol ? getDeclaredTypeOfSymbol(typeSymbol) : errorType;
     }
     intrinsicTagSymbol(n: JsxOpeningLikeElem | JsxClosingElem): Symbol {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedSymbol) {
         const intrinsicElemsType = getJsxType(JsxNames.IntrinsicElems, n);
         if (intrinsicElemsType !== errorType) {
@@ -5551,7 +5551,7 @@ export function newGet(f: qt.Frame) {
       return links.resolvedSymbol;
     }
     jsxNamespaceAt(location: Node | undefined): Symbol {
-      const links = location && qf.get.nodeLinks(location);
+      const links = location && this.nodeLinks(location);
       if (links && links.jsxNamespace) return links.jsxNamespace;
       if (!links || links.jsxNamespace !== false) {
         const namespaceName = getJsxNamespace(location);
@@ -5623,7 +5623,7 @@ export function newGet(f: qt.Frame) {
     }
     intrinsicAttributesTypeFromJsxOpeningLikeElem(n: JsxOpeningLikeElem): qt.Type {
       qu.assert(isJsxIntrinsicIdentifier(n.tagName));
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (!links.resolvedJsxElemAttributesType) {
         const symbol = getIntrinsicTagSymbol(n);
         if (links.jsxFlags & JsxFlags.IntrinsicNamedElem) return (links.resolvedJsxElemAttributesType = this.this.typeOfSymbol());
@@ -5724,7 +5724,7 @@ export function newGet(f: qt.Frame) {
       return targetModule.exports && getSpellingSuggestionForName(idText(name), this.exportsOfModuleAsArray(targetModule), qt.SymbolFlags.ModuleMember);
     }
     suggestionForNonexistentExport(name: Identifier, targetModule: Symbol): string | undefined {
-      const suggestion = getSuggestedSymbolForNonexistentModule(name, targetModule);
+      const suggestion = this.suggestedSymbolForNonexistentModule(name, targetModule);
       return suggestion && suggestion.name;
     }
     suggestionForNonexistentIndexSignature(objectType: qt.Type, expr: ElemAccessExpression, keyedType: qt.Type): string | undefined {
@@ -6144,7 +6144,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     resolvedSignature(n: CallLikeExpression, candidatesOutArray?: qt.Signature[] | undefined, checkMode?: CheckMode): qt.Signature {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       const cached = links.resolvedSignature;
       if (cached && cached !== resolvingSignature && !candidatesOutArray) return cached;
       links.resolvedSignature = resolvingSignature;
@@ -6472,7 +6472,7 @@ export function newGet(f: qt.Frame) {
       return;
     }
     contextFreeTypeOfExpression(n: qt.Expression) {
-      const links = qf.get.nodeLinks(n);
+      const links = this.nodeLinks(n);
       if (links.contextFreeType) return links.contextFreeType;
       const saveContextualType = n.contextualType;
       n.contextualType = anyType;
@@ -6502,7 +6502,7 @@ export function newGet(f: qt.Frame) {
     typeParametersForTypeReference(n: qt.TypingReference | ExpressionWithTypings) {
       const type = getTypeFromTypeReference(n);
       if (type !== errorType) {
-        const symbol = qf.get.nodeLinks(n).resolvedSymbol;
+        const symbol = this.nodeLinks(n).resolvedSymbol;
         if (symbol) {
           return (
             (symbol.flags & qt.SymbolFlags.TypeAlias && s.getLinks(symbol).typeParameters) ||
@@ -7015,7 +7015,7 @@ export function newGet(f: qt.Frame) {
               if (className) copySymbol(location.symbol, symbols, meaning);
             case Syntax.ClassDeclaration:
             case Syntax.InterfaceDeclaration:
-              if (!isStatic) qf.get.membersOfSymbol(this.symbolOfNode(location as ClassDeclaration | InterfaceDeclaration)).copy(symbols, meaning & qt.SymbolFlags.Type);
+              if (!isStatic) this.membersOfSymbol(this.symbolOfNode(location as ClassDeclaration | InterfaceDeclaration)).copy(symbols, meaning & qt.SymbolFlags.Type);
               break;
             case Syntax.FunctionExpression:
               const funcName = (location as qt.FunctionExpression).name;
@@ -7075,7 +7075,7 @@ export function newGet(f: qt.Frame) {
         const possibleImportNode = isImportTypeQualifierPart(name);
         if (possibleImportNode) {
           this.typeFromTypeNode(possibleImportNode);
-          const sym = qf.get.nodeLinks(name).resolvedSymbol;
+          const sym = this.nodeLinks(name).resolvedSymbol;
           return sym === unknownSymbol ? undefined : sym;
         }
       }
@@ -7109,7 +7109,7 @@ export function newGet(f: qt.Frame) {
           }
           return resolveEntityName(name, qt.SymbolFlags.Value, false, true);
         } else if (name.kind === Syntax.PropertyAccessExpression || name.kind === Syntax.QualifiedName) {
-          const links = qf.get.nodeLinks(name);
+          const links = this.nodeLinks(name);
           if (links.resolvedSymbol) return links.resolvedSymbol;
           if (name.kind === Syntax.PropertyAccessExpression) qf.check.propertyAccessExpression(name);
           else {
@@ -7205,7 +7205,7 @@ export function newGet(f: qt.Frame) {
     }
     exportSpecifierLocalTargetSymbol(n: ExportSpecifier): Symbol | undefined {
       return n.parent?.parent?.moduleSpecifier
-        ? getExternalModuleMember(n.parent?.parent, n)
+        ? this.externalModuleMember(n.parent?.parent, n)
         : resolveEntityName(n.propertyName || n.name, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace | qt.SymbolFlags.Alias);
     }
     typeOfNode(n: Node): qt.Type {
@@ -7359,15 +7359,15 @@ export function newGet(f: qt.Frame) {
       return (symbol && this.propertiesOfType(this.this.typeOfSymbol())) || empty;
     }
     nCheckFlags(n: Node): NodeCheckFlags {
-      return qf.get.nodeLinks(n).flags || 0;
+      return this.nodeLinks(n).flags || 0;
     }
     enumMemberValue(n: EnumMember): string | number | undefined {
       computeEnumMemberValues(n.parent);
-      return qf.get.nodeLinks(n).enumMemberValue;
+      return this.nodeLinks(n).enumMemberValue;
     }
     constantValue(n: EnumMember | AccessExpression): string | number | undefined {
       if (n.kind === Syntax.EnumMember) return getEnumMemberValue(n);
-      const symbol = qf.get.nodeLinks(n).resolvedSymbol;
+      const symbol = this.nodeLinks(n).resolvedSymbol;
       if (symbol && symbol.flags & qt.SymbolFlags.EnumMember) {
         const member = symbol.valueDeclaration as EnumMember;
         if (qf.is.enumConst(member.parent)) return getEnumMemberValue(member);
@@ -7405,7 +7405,7 @@ export function newGet(f: qt.Frame) {
       return TypeReferenceSerializationKind.ObjectType;
     }
     referencedValueSymbol(reference: Identifier, startInDeclarationContainer?: boolean): Symbol | undefined {
-      const resolvedSymbol = qf.get.nodeLinks(reference).resolvedSymbol;
+      const resolvedSymbol = this.nodeLinks(reference).resolvedSymbol;
       if (resolvedSymbol) return resolvedSymbol;
       let location: Node = reference;
       if (startInDeclarationContainer) {

@@ -5108,7 +5108,7 @@ export function newCheck(f: qt.Frame) {
         const declaration = signatures[0].declaration;
         if (declaration && qf.has.effectiveModifier(declaration, ModifierFlags.Private)) {
           const typeClassDeclaration = getClassLikeDeclarationOfSymbol(type.symbol)!;
-          if (!isNodeWithinClass(n, typeClassDeclaration)) error(n, qd.msgs.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, getFullyQualifiedName(type.symbol));
+          if (!isNodeWithinClass(n, typeClassDeclaration)) error(n, qd.msgs.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, qf.get.fullyQualifiedName(type.symbol));
         }
       }
     }

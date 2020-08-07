@@ -258,7 +258,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return node && getContextualTypeForJsxAttribute(node);
     },
     isContextSensitive,
-    getFullyQualifiedName,
+    qf.get.fullyQualifiedName,
     getResolvedSignature: (node, candidatesOutArray, argumentCount) => getResolvedSignatureWorker(node, candidatesOutArray, argumentCount, CheckMode.Normal),
     getResolvedSignatureForSignatureHelp: (node, candidatesOutArray, argumentCount) => getResolvedSignatureWorker(node, candidatesOutArray, argumentCount, CheckMode.IsForSignatureHelp),
     getExpandedParameters,
@@ -344,7 +344,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getSuggestionForNonexistentProperty,
     getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, qy.get.escUnderscores(name), meaning),
     getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, qy.get.escUnderscores(name), meaning),
-    getSuggestedSymbolForNonexistentModule,
+    qf.get.suggestedSymbolForNonexistentModule,
     getSuggestionForNonexistentExport,
     getBaseConstraintOfType,
     getDefaultFromTypeParameter: (type) => (type && type.flags & qt.TypeFlags.TypeParameter ? getDefaultFromTypeParameter(type as TypeParameter) : undefined),

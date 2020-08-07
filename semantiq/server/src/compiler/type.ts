@@ -2432,7 +2432,7 @@ export interface TypeChecker {
   writeType(type: Type, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, writer?: EmitTextWriter): string;
   writeSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: qt.SymbolFlags, flags?: qt.SymbolFormatFlags, writer?: EmitTextWriter): string;
   writeTypePredicate(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, writer?: EmitTextWriter): string;
-  getFullyQualifiedName(symbol: Symbol): string;
+  qf.get.fullyQualifiedName(symbol: Symbol): string;
   getAugmentedPropertiesOfType(type: Type): Symbol[];
   getRootSymbols(symbol: Symbol): readonly Symbol[];
   getContextualType(node: Expression): Type | undefined;
@@ -2468,7 +2468,7 @@ export interface TypeChecker {
   getSuggestionForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): string | undefined;
   getSuggestedSymbolForNonexistentSymbol(location: Node, name: string, meaning: qt.SymbolFlags): Symbol | undefined;
   getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: qt.SymbolFlags): string | undefined;
-  getSuggestedSymbolForNonexistentModule(node: Identifier, target: Symbol): Symbol | undefined;
+  qf.get.suggestedSymbolForNonexistentModule(node: Identifier, target: Symbol): Symbol | undefined;
   getSuggestionForNonexistentExport(node: Identifier, target: Symbol): string | undefined;
   getBaseConstraintOfType(type: Type): Type | undefined;
   getDefaultFromTypeParameter(type: Type): Type | undefined;
