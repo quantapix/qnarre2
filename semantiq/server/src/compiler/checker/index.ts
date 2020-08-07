@@ -4371,3 +4371,166 @@ function getIterationTypesKeyFromIterationTypeKind(typeKind: IterationTypeKind) 
       return 'nextType';
   }
 }
+
+/*
+
+export interface TypeCheckerOld {
+  qf.get.typeOfSymbolAtLocation(symbol: Symbol, node: Node): Type;
+  getDeclaredTypeOfSymbol(symbol: Symbol): Type;
+  getPrivateIdentifierPropertyOfType(leftType: Type, name: string, location: Node): Symbol | undefined;
+  qf.get.typeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
+  qf.get.indexInfoOfType(type: Type, kind: qt.IndexKind): IndexInfo | undefined;
+  getBaseTypeOfLiteralType(type: Type): Type;
+  qf.get.widenedType(type: Type): Type;
+  getPromisedTypeOfPromise(promise: Type, errorNode?: Node): Type | undefined;
+  getAwaitedType(type: Type): Type | undefined;
+  getParameterType(signature: Signature, parameterIndex: number): Type;
+  getNullableType(type: Type, flags: qt.TypeFlags): Type;
+  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): Typing | undefined;
+  typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined, tracker?: SymbolTracker): Typing | undefined;
+  signatureToSignatureDeclaration(
+    signature: Signature,
+    kind: Syntax,
+    enclosingDeclaration: Node | undefined,
+    flags: qt.NodeBuilderFlags | undefined
+  ): (SignatureDeclaration & { typeArguments?: Nodes<Typing> }) | undefined;
+  signatureToSignatureDeclaration(
+    signature: Signature,
+    kind: Syntax,
+    enclosingDeclaration: Node | undefined,
+    flags: qt.NodeBuilderFlags | undefined,
+    tracker?: SymbolTracker
+  ): (SignatureDeclaration & { typeArguments?: Nodes<Typing> }) | undefined;
+  indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: qt.IndexKind, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): IndexSignatureDeclaration | undefined;
+  indexInfoToIndexSignatureDeclaration(
+    indexInfo: IndexInfo,
+    kind: qt.IndexKind,
+    enclosingDeclaration: Node | undefined,
+    flags: qt.NodeBuilderFlags | undefined,
+    tracker?: SymbolTracker
+  ): IndexSignatureDeclaration | undefined;
+  symbolToEntityName(symbol: Symbol, meaning: qt.SymbolFlags, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): EntityName | undefined;
+  symbolToExpression(symbol: Symbol, meaning: qt.SymbolFlags, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): Expression | undefined;
+  symbolToTypeParameterDeclarations(symbol: Symbol, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): Nodes<TypeParameterDeclaration> | undefined;
+  symbolToParameterDeclaration(symbol: Symbol, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): ParameterDeclaration | undefined;
+  typeParameterToDeclaration(parameter: TypeParameter, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): TypeParameterDeclaration | undefined;
+  getSymbolsInScope(location: Node, meaning: qt.SymbolFlags): Symbol[];
+  getSymbolAtLocation(node: Node): Symbol | undefined;
+  getSymbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: string): Symbol[];
+  getShorthandAssignmentValueSymbol(location: Node): Symbol | undefined;
+  getExportSpecifierLocalTargetSymbol(location: ExportSpecifier): Symbol | undefined;
+  getExportSymbolOfSymbol(symbol: Symbol): Symbol;
+  getPropertySymbolOfDestructuringAssignment(location: Identifier): Symbol | undefined;
+  getTypeOfAssignmentPattern(pattern: AssignmentPattern): Type;
+  qf.get.typeFromTypeNode(node: Typing): Type;
+  signatureToString(signature: Signature, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, kind?: qt.SignatureKind): string;
+  typeToString(type: Type, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags): string;
+  symbolToString(s: Symbol, decl?: Node, meaning?: qt.SymbolFlags, flags?: qt.SymbolFormatFlags): string;
+  typePredicateToString(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags): string;
+  writeSignature(signature: Signature, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, kind?: qt.SignatureKind, writer?: EmitTextWriter): string;
+  writeType(type: Type, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, writer?: EmitTextWriter): string;
+  writeSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: qt.SymbolFlags, flags?: qt.SymbolFormatFlags, writer?: EmitTextWriter): string;
+  writeTypePredicate(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: qt.TypeFormatFlags, writer?: EmitTextWriter): string;
+  qf.get.fullyQualifiedName(symbol: Symbol): string;
+  getRootSymbols(symbol: Symbol): readonly Symbol[];
+  getContextualType(node: Expression): Type | undefined;
+  getContextualType(node: Expression, contextFlags?: qt.ContextFlags): Type | undefined;
+  getContextualTypeForObjectLiteralElem(elem: ObjectLiteralElemLike): Type | undefined;
+  getContextualTypeForArgumentAtIndex(call: CallLikeExpression, argIndex: number): Type | undefined;
+  getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined;
+  qf.is.contextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElemLike | JsxAttributeLike): boolean;
+  getResolvedSignature(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
+  getResolvedSignatureForSignatureHelp(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
+  getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];
+  hasEffectiveRestParameter(sig: Signature): boolean;
+  qf.get.signatureFromDeclaration(declaration: SignatureDeclaration): Signature | undefined;
+  isImplementationOfOverload(node: SignatureDeclaration): boolean | undefined;
+  isUndefinedSymbol(symbol: Symbol): boolean;
+  isArgumentsSymbol(symbol: Symbol): boolean;
+  isUnknownSymbol(symbol: Symbol): boolean;
+  qf.get.mergedSymbol(symbol: Symbol): Symbol;
+  getConstantValue(node: EnumMember | PropertyAccessExpression | ElemAccessExpression): string | number | undefined;
+  isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTyping, propertyName: string): boolean;
+  isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTyping | QualifiedName, type: Type, property: Symbol): boolean;
+  getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined;
+  getExportsOfModule(moduleSymbol: Symbol): Symbol[];
+  getExportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[];
+  getJsxIntrinsicTagNamesAt(location: Node): Symbol[];
+  isOptionalParameter(node: ParameterDeclaration): boolean;
+  getAmbientModules(): Symbol[];
+  tryGetMemberInModuleExports(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
+  tryGetMemberInModuleExportsAndProperties(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
+  getApparentType(type: Type): Type;
+  getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): Symbol | undefined;
+  getSuggestionForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): string | undefined;
+  getSuggestedSymbolForNonexistentSymbol(location: Node, name: string, meaning: qt.SymbolFlags): Symbol | undefined;
+  getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: qt.SymbolFlags): string | undefined;
+  qf.get.suggestedSymbolForNonexistentModule(node: Identifier, target: Symbol): Symbol | undefined;
+  getSuggestionForNonexistentExport(node: Identifier, target: Symbol): string | undefined;
+  getAnyType(): Type;
+  getStringType(): Type;
+  getNumberType(): Type;
+  getBooleanType(): Type;
+  getFalseType(fresh?: boolean): Type;
+  getTrueType(fresh?: boolean): Type;
+  getVoidType(): Type;
+  getUndefinedType(): Type;
+  getNullType(): Type;
+  getESSymbolType(): Type;
+  getNeverType(): Type;
+  getOptionalType(): Type;
+  qf.get.unionType(types: Type[], subtypeReduction?: qt.UnionReduction): Type;
+  createArrayType(elemType: Type): Type;
+  getElemTypeOfArrayType(arrayType: Type): Type | undefined;
+  createPromiseType(type: Type): Type;
+  qf.is.typeAssignableTo(source: Type, target: Type): boolean;
+  createAnonymousType(
+    symbol: Symbol | undefined,
+    members: SymbolTable,
+    callSignatures: Signature[],
+    constructSignatures: Signature[],
+    stringIndexInfo: IndexInfo | undefined,
+    numberIndexInfo: IndexInfo | undefined
+  ): Type;
+  createSignature(
+    declaration: SignatureDeclaration,
+    typeParameters: TypeParameter[] | undefined,
+    thisParameter: Symbol | undefined,
+    parameters: Symbol[],
+    resolvedReturnType: Type,
+    typePredicate: TypePredicate | undefined,
+    minArgumentCount: number,
+    flags: qt.SignatureFlags
+  ): Signature;
+  createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
+  isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
+  tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
+  getSymbolWalker(accept?: (symbol: Symbol) => boolean): SymbolWalker;
+  getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): qd.Diagnostic[];
+  getGlobalDiagnostics(): qd.Diagnostic[];
+  getEmitResolver(sourceFile?: SourceFile, cancellationToken?: CancellationToken): EmitResolver;
+  getNodeCount(): number;
+  getIdentifierCount(): number;
+  getSymbolCount(): number;
+  getTypeCount(): number;
+  getInstantiationCount(): number;
+  getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
+  qf.is.arrayType(type: Type): boolean;
+  qf.is.tupleType(type: Type): boolean;
+  qf.is.arrayLikeType(type: Type): boolean;
+  isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean;
+  getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
+  resolveName(name: string, location: Node | undefined, meaning: qt.SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
+  getJsxNamespace(location?: Node): string;
+  qf.get.accessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags, useOnlyExternalAliasing: boolean): Symbol[] | undefined;
+  getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
+  resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
+  resolveExternalModuleSymbol(symbol: Symbol): Symbol;
+  tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): Type | undefined;
+  getTypeArgumentConstraint(node: Typing): Type | undefined;
+  getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
+  runWithCancellationToken<T>(token: CancellationToken, cb: (checker: TypeChecker) => T): T;
+  getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
+  qf.is.declarationVisible(node: Declaration | AnyImportSyntax): boolean;
+}
+*/

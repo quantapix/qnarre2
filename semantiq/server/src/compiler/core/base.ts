@@ -620,32 +620,32 @@ export abstract class Symbol implements qt.Symbol {
   getDeclarations() {
     return this.declarations;
   }
-  getDocComment(tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+  getDocComment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
       this.docComment = qu.empty;
       if (!this.declarations && (this as qt.TransientSymbol).target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
         const labelDecl = ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
-        this.docComment = getDocComment([labelDecl], tc);
-      } else this.docComment = getDocComment(this.declarations, tc);
+        this.docComment = getDocComment([labelDecl], c);
+      } else this.docComment = getDocComment(this.declarations, c);
     }
     return this.docComment!;
   }
-  getCtxComment(ctx?: Node, tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
-    switch (ctx?.kind) {
+  getCtxComment(n?: Node, c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+    switch (n?.kind) {
       case Syntax.GetAccessor:
         if (!this.getComment) {
           this.getComment = qu.empty;
-          this.getComment = getDocComment(qu.filter(this.declarations, qf.is.getAccessor), tc);
+          this.getComment = getDocComment(qu.filter(this.declarations, qf.is.getAccessor), c);
         }
         return this.getComment!;
       case Syntax.SetAccessor:
         if (!this.setComment) {
           this.setComment = qu.empty;
-          this.setComment = getDocComment(qu.filter(this.declarations, isSetAccessor), tc);
+          this.setComment = getDocComment(qu.filter(this.declarations, isSetAccessor), c);
         }
         return this.setComment!;
       default:
-        return this.getDocComment(tc);
+        return this.getDocComment(c);
     }
   }
   getDocTags(): qt.DocTagInfo[] {
@@ -717,7 +717,7 @@ export abstract class Symbol implements qt.Symbol {
     return 0;
   }
   skipAlias(c: qt.TypeChecker) {
-    return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
+    return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
   }
   getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
     return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
@@ -796,7 +796,7 @@ export class Type implements qt.Type {
   widened?: Type;
   constructor(public checker: qt.TypeChecker, public flags: TypeFlags) {}
   get typeArguments() {
-    if (this.getObjectFlags() & ObjectFlags.Reference) return this.checker.getTypeArguments((this as qt.Type) as qt.TypeReference);
+    if (this.getObjectFlags() & ObjectFlags.Reference) return this.checker.get.typeArguments((this as qt.Type) as qt.TypeReference);
     return;
   }
   isUnion(): this is qt.UnionType {
@@ -827,7 +827,7 @@ export class Type implements qt.Type {
     return !!(this.getObjectFlags() & ObjectFlags.Class);
   }
   isNullableType() {
-    return this.checker.isNullableType(this);
+    return this.checker.is.nullableType(this);
   }
   isAbstractConstructorType() {
     return !!(this.getObjectFlags() & ObjectFlags.Anonymous) && !!this.symbol?.isAbstractConstructorSymbol();
@@ -839,46 +839,46 @@ export class Type implements qt.Type {
     return this.symbol;
   }
   getProperties(): qt.Symbol[] {
-    return this.checker.qf.get.propertiesOfType(this);
+    return this.checker.get.propertiesOfType(this);
   }
   getProperty(n: string): qt.Symbol | undefined {
-    return this.checker.qf.get.propertyOfType(this, n);
+    return this.checker.get.propertyOfType(this, n);
   }
   getApparentProperties(): qt.Symbol[] {
-    return this.checker.getAugmentedPropertiesOfType(this);
+    return this.checker.get.augmentedPropertiesOfType(this);
   }
   getCallSignatures(): readonly qt.Signature[] {
-    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Call);
+    return this.checker.get.signaturesOfType(this, qt.SignatureKind.Call);
   }
   getConstructSignatures(): readonly qt.Signature[] {
-    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Construct);
+    return this.checker.get.signaturesOfType(this, qt.SignatureKind.Construct);
   }
   getStringIndexType(): qt.Type | undefined {
-    return this.checker.qf.get.indexTypeOfType(this, qt.IndexKind.String);
+    return this.checker.get.indexTypeOfType(this, qt.IndexKind.String);
   }
   getNumberIndexType(): qt.Type | undefined {
-    return this.checker.qf.get.indexTypeOfType(this, qt.IndexKind.Number);
+    return this.checker.get.indexTypeOfType(this, qt.IndexKind.Number);
   }
   getBaseTypes(): qt.BaseType[] | undefined {
-    return this.isClassOrInterface() ? this.checker.getBaseTypes(this) : undefined;
+    return this.isClassOrInterface() ? this.checker.get.baseTypes(this) : undefined;
   }
   getNonNullableType(): qt.Type {
-    return this.checker.getNonNullableType(this);
+    return this.checker.get.nonNullableType(this);
   }
   getNonOptionalType(): qt.Type {
-    return this.checker.getNonOptionalType(this);
+    return this.checker.get.nonOptionalType(this);
   }
   getConstraint(): qt.Type | undefined {
-    return this.checker.getBaseConstraintOfType(this);
+    return this.checker.get.baseConstraintOfType(this);
   }
   getDefault(): qt.Type | undefined {
-    return this.checker.getDefaultFromTypeParameter(this);
+    return this.checker.get.defaultFromTypeParameter(this);
   }
   getObjectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? (this as qt.ObjectType).objectFlags : 0;
   }
-  hasCallOrConstructSignatures(checker: qt.TypeChecker) {
-    return checker.getSignaturesOfType(this, qt.SignatureKind.Call).length !== 0 || checker.getSignaturesOfType(this, qt.SignatureKind.Construct).length !== 0;
+  hasCallOrConstructSignatures() {
+    return this.checker.get.signaturesOfType(this, qt.SignatureKind.Call).length !== 0 || this.checker.get.signaturesOfType(this, qt.SignatureKind.Construct).length !== 0;
   }
 }
 export class Signature implements qt.Signature {
@@ -901,8 +901,8 @@ export class Signature implements qt.Signature {
   docComment?: qt.SymbolDisplayPart[];
   docTags?: qt.DocTagInfo[];
   constructor(public checker: qt.TypeChecker, public flags: SignatureFlags) {}
-  getReturnType(): Type {
-    return this.checker.qf.get.returnTypeOfSignature(this);
+  getReturnType(): qt.Type {
+    return this.checker.get.returnTypeOfSignature(this);
   }
   getDocComment(): qt.SymbolDisplayPart[] {
     return this.docComment || (this.docComment = getDocComment(singleElemArray(this.declaration), this.checker));
@@ -1710,24 +1710,24 @@ export function createGetSymbolWalker(
     }
   }
 }
-function getDocComment(ds?: readonly qt.Declaration[], tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
   if (!ds) return qu.empty;
-  let c = Doc.getDocCommentsFromDeclarations(ds);
   const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
     return qu.firstDefined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
-      const superType = tc?.getTypeAtLocation(n);
-      const baseProperty = superType && tc?.qf.get.propertyOfType(superType, pName);
-      const inheritedDocs = baseProperty && baseProperty.getDocComment(tc);
+      const superType = c?.get.typeAtLocation(n);
+      const baseProperty = superType && c?.get.propertyOfType(superType, pName);
+      const inheritedDocs = baseProperty && baseProperty.getDocComment(c);
       return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
     });
   };
-  if (c.length === 0 || ds.some(qf.has.docInheritDocTag)) {
+  let cs = Doc.getDocCommentsFromDeclarations(ds);
+  if (cs.length === 0 || ds.some(qf.has.docInheritDocTag)) {
     forEachUnique(ds, (d) => {
       const inheritedDocs = findInherited(d, d.symbol.name);
-      if (inheritedDocs) c = c.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), c);
+      if (inheritedDocs) cs = cs.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), cs);
     });
   }
-  return c;
+  return cs;
 }
 export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
   return Scanner.lineOf(lineMap, pos);

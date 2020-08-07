@@ -276,7 +276,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           logChanges = false;
         }
       }
-      assert(resolution !== undefined && !resolution.isInvalidated);
+      qu.assert(resolution !== undefined && !resolution.isInvalidated);
       seenNamesInFile.set(name, true);
       resolvedModules.push(getResolutionWithResolvedFileName(resolution));
     }
@@ -335,11 +335,11 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       failedLookupLocation = isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
       const failedLookupPathSplit = failedLookupLocationPath.split(dirSeparator);
       const failedLookupSplit = failedLookupLocation.split(dirSeparator);
-      assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
+      qu.assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
       if (failedLookupPathSplit.length > rootSplitLength + 1) {
         return {
           dir: failedLookupSplit.slice(0, rootSplitLength + 1).join(dirSeparator),
-          dirPath: failedLookupPathSplit.slice(0, rootSplitLength + 1).join(dirSeparator) as Path,
+          dirPath: failedLookupPathSplit.slice(0, rootSplitLength + 1).join(dirSeparator) as qt.Path,
         };
       } else {
         return {
@@ -380,7 +380,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function watchFailedLookupLocationsOfExternalModuleResolutions<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
     name: string,
     resolution: T,
-    filePath: Path,
+    filePath: qt.Path,
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
   ) {
     if (resolution.refCount) {
@@ -388,7 +388,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       Debug.assertDefined(resolution.files);
     } else {
       resolution.refCount = 1;
-      assert(resolution.files === undefined);
+      qu.assert(resolution.files === undefined);
       if (isExternalModuleNameRelative(name)) {
         watchFailedLookupLocationOfResolution(resolution);
       } else {
@@ -402,7 +402,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     (resolution.files || (resolution.files = [])).push(filePath);
   }
   function watchFailedLookupLocationOfResolution(resolution: ResolutionWithFailedLookupLocations) {
-    assert(!!resolution.refCount);
+    qu.assert(!!resolution.refCount);
     const { failedLookupLocations } = resolution;
     if (!failedLookupLocations.length) return;
     resolutionsWithFailedLookups.push(resolution);
@@ -417,7 +417,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           customFailedLookupPaths.set(failedLookupLocationPath, refCount + 1);
         }
         if (dirPath === rootPath) {
-          assert(!nonRecursive);
+          qu.assert(!nonRecursive);
           setAtRoot = true;
         } else {
           setDirectoryWatcher(dir, dirPath, nonRecursive);
@@ -434,10 +434,10 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       resolutions.forEach(watchFailedLookupLocationOfResolution);
     }
   }
-  function setDirectoryWatcher(dir: string, dirPath: Path, nonRecursive?: boolean) {
+  function setDirectoryWatcher(dir: string, dirPath: qt.Path, nonRecursive?: boolean) {
     const dirWatcher = directoryWatchesOfFailedLookups.get(dirPath);
     if (dirWatcher) {
-      assert(!!nonRecursive === !!dirWatcher.nonRecursive);
+      qu.assert(!!nonRecursive === !!dirWatcher.nonRecursive);
       dirWatcher.refCount++;
     } else {
       directoryWatchesOfFailedLookups.set(dirPath, { watcher: createDirectoryWatcher(dir, dirPath, nonRecursive), refCount: 1, nonRecursive });
@@ -445,7 +445,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
   function stopWatchFailedLookupLocationOfResolution<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
     resolution: T,
-    filePath: Path,
+    filePath: qt.Path,
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
   ) {
     unorderedRemoveItem(Debug.assertDefined(resolution.files), filePath);
@@ -472,7 +472,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           if (refCount === 1) {
             customFailedLookupPaths.delete(failedLookupLocationPath);
           } else {
-            assert(refCount > 1);
+            qu.assert(refCount > 1);
             customFailedLookupPaths.set(failedLookupLocationPath, refCount - 1);
           }
         }
@@ -491,7 +491,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const dirWatcher = directoryWatchesOfFailedLookups.get(dirPath)!;
     dirWatcher.refCount--;
   }
-  function createDirectoryWatcher(directory: string, dirPath: Path, nonRecursive: boolean | undefined) {
+  function createDirectoryWatcher(directory: string, dirPath: qt.Path, nonRecursive: boolean | undefined) {
     return resolutionHost.watchDirectoryOfFailedLookupLocation(
       directory,
       (fileOrDirectory) => {
@@ -508,7 +508,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
   function removeResolutionsOfFileFromCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
     cache: Map<Map<T>>,
-    filePath: Path,
+    filePath: qt.Path,
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
   ) {
     const resolutions = cache.get(filePath);
@@ -551,10 +551,10 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     forEach(resolvedFileToResolution.get(filePath), invalidateResolution);
   }
   function setFilesWithInvalidatedNonRelativeUnresolvedImports(filesMap: ReadonlyMap<readonly string[]>) {
-    assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
+    qu.assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
     filesWithInvalidatedNonRelativeUnresolvedImports = filesMap;
   }
-  function invalidateResolutionOfFailedLookupLocation(fileOrDirectoryPath: Path, isCreatingWatchedDirectory: boolean) {
+  function invalidateResolutionOfFailedLookupLocation(fileOrDirectoryPath: qt.Path, isCreatingWatchedDirectory: boolean) {
     let isChangedFailedLookupLocation: (location: string) => boolean;
     if (isCreatingWatchedDirectory) {
       isChangedFailedLookupLocation = (location) => isInDirectoryPath(fileOrDirectoryPath, resolutionHost.toPath(location));
@@ -597,7 +597,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const toWatch = getDirectoryToWatchFromFailedLookupLocationDirectory(typeRoot, typeRootPath);
     return toWatch && directoryWatchesOfFailedLookups.has(toWatch.dirPath) ? toWatch.dirPath : undefined;
   }
-  function createTypeRootsWatch(typeRootPath: Path, typeRoot: string): FileWatcher {
+  function createTypeRootsWatch(typeRootPath: qt.Path, typeRoot: string): FileWatcher {
     return resolutionHost.watchTypeRootsDirectory(
       typeRoot,
       (fileOrDirectory) => {

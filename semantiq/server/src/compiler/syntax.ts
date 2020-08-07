@@ -847,7 +847,7 @@ export const is = new (class {
   }
   intrinsicJsxName(s: qu.__String | string) {
     const c = (s as string).charCodeAt(0);
-    return (c >= Codes.a && c <= Codes.z) || qu.qu.stringContains(s as string, '-');
+    return (c >= Codes.a && c <= Codes.z) || qu.stringContains(s as string, '-');
   }
   keyword(k: Syntax) {
     return Syntax.FirstKeyword <= k && k <= Syntax.LastKeyword;
