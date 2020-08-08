@@ -9,25 +9,27 @@ import { newGet, Fget } from './get';
 import { newHas, Fhas, newIs, Fis } from './predicate';
 import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
 import { newCheck, Fcheck } from './check';
-export interface Fframe extends qt.Frame {
+export interface Frame extends qc.Frame, qt.TypeChecker {
   check: Fcheck;
   create: Fcreate;
-  each: qc.Feach;
   get: Fget;
   has: Fhas;
   instantiate: Finstantiate;
   is: Fis;
   resolve: Fresolve;
 }
-export const qf = {} as Fframe;
-newCheck(qf);
-newCreate(qf);
-newEach(qf);
-newGet(qf);
-newHas(qf);
-newInstantiate(qf);
-newIs(qf);
-newResolve(qf);
+export function newFrame() {
+  const f = qc.newFrame() as Frame;
+  newCheck(f);
+  newCreate(f);
+  newGet(f);
+  newHas(f);
+  newInstantiate(f);
+  newIs(f);
+  newResolve(f)
+  return f;
+}
+export const qf = newFrame();
 
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
@@ -100,11 +102,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qu.__String);
   let apparentArgumentCount: number | undefined;
   const checker: TypeChecker = {
-    getNodeCount: () => sum(host.getSourceFiles(), 'nodeCount'),
-    getIdentifierCount: () => sum(host.getSourceFiles(), 'identifierCount'),
-    getSymbolCount: () => sum(host.getSourceFiles(), 'symbolCount') + Symbol.count,
-    getTypeCount: () => QType.typeCount,
-    getInstantiationCount: () => totalInstantiationCount,
     getRelationCacheSizes: () => ({
       assignable: assignableRelation.size,
       identity: identityRelation.size,

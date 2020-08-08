@@ -17,7 +17,7 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   interface Fis extends qc.Fis {}
-  class Fis {
+  class Fis implements qt.CheckerIs {
     deferredContext(n: Node, last?: Node) {
       if (n.kind !== Syntax.ArrowFunction && n.kind !== Syntax.FunctionExpression) {
         return (

@@ -9,7 +9,7 @@ import * as qy from '../syntax';
 import { Symbol } from './symbol';
 import { Fhas, Fis } from './predicate';
 import { Fcheck } from './check';
-export function newGet(f: qt.Frame) {
+export function newGet(f: qt.Frame, host: qt.TypeCheckerHost) {
   interface Frame extends qt.Frame {
     check: Fcheck;
     has: Fhas;
@@ -17,8 +17,23 @@ export function newGet(f: qt.Frame) {
   }
   const qf = f as Frame;
   interface Fget extends qc.Fget {}
-  class Fget {
+  class Fget implements qt.CheckerGet {
     links = [] as qt.NodeLinks[];
+    get nodeCount() {
+      return sum(host.getSourceFiles(), 'nodeCount');
+    }
+    get identifierCount() {
+      return sum(host.getSourceFiles(), 'identifierCount');
+    }
+    get symbolCount() {
+      return sum(host.getSourceFiles(), 'symbolCount') + Symbol.count;
+    }
+    get typeCount() {
+      return QType.typeCount;
+    }
+    get instantiationCount() {
+      return totalInstantiationCount;
+    }
     nodeLinks(n: Node): qt.NodeLinks {
       const i = this.nodeId(n);
       return this.links[i] || (this.links[i] = { flags: 0 } as qt.NodeLinks);

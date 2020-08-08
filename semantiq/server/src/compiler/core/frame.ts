@@ -3893,19 +3893,23 @@ export function newGet(f: qt.Frame) {
   })());
 }
 export interface Fget extends ReturnType<typeof newGet> {}
-export interface Fframe extends qt.Frame {
+export interface Frame extends qt.Frame {
   create: Fcreate;
   each: Feach;
   get: Fget;
   has: Fhas;
   is: Fis;
 }
-export const qf = {} as Fframe;
-newCreate(qf);
-newEach(qf);
-newIs(qf);
-newHas(qf);
-newGet(qf);
+export function newFrame() {
+  const f = {} as Frame;
+  newCreate(f);
+  newEach(f);
+  newGet(f);
+  newHas(f);
+  newIs(f);
+  return f;
+}
+export const qf = newFrame();
 export namespace access {
   export const enum Kind {
     Read,
