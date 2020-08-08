@@ -111,7 +111,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     isUndefinedSymbol: (symbol) => symbol === undefinedSymbol,
     isArgumentsSymbol: (symbol) => symbol === argumentsSymbol,
     isUnknownSymbol: (symbol) => symbol === unknownSymbol,
-    qf.get.mergedSymbol,
     getDiagnostics,
     getGlobalDiagnostics,
     qf.get.typeOfSymbolAtLocation: (symbol, location) => {
@@ -124,7 +123,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return getSymbolsOfParameterPropertyDeclaration(parameter, qy.get.escUnderscores(parameterName));
     },
     getDeclaredTypeOfSymbol,
-    qf.get.propertiesOfType,
     qf.get.propertyOfType: (type, name) => qf.get.propertyOfType(type, qy.get.escUnderscores(name)),
     getPrivateIdentifierPropertyOfType: (leftType: Type, name: string, location: Node) => {
       const node = qf.get.parseTreeOf(location);
@@ -283,7 +281,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getImmediateAliasedSymbol,
     getAliasedSymbol: resolveAlias,
     getEmitResolver,
-    getExportsOfModule: qf.get.exportsOfModuleAsArray,
+    qf.get.exportsOfModule: qf.get.exportsOfModuleAsArray,
     getExportsAndPropertiesOfModule,
     getSymbolWalker: createGetSymbolWalker(
       getRestTypeOfSignature,
@@ -294,7 +292,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       qf.get.typeOfSymbol,
       getResolvedSymbol,
       qf.get.indexTypeOfStructuredType,
-      getConstraintOfTypeParameter,
+      qf.get.constraintOfTypeParameter,
       qf.get.firstIdentifier,
       getTypeArguments
     ),
@@ -343,7 +341,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, qy.get.escUnderscores(name), meaning),
     qf.get.suggestedSymbolForNonexistentModule,
     getSuggestionForNonexistentExport,
-    getBaseConstraintOfType,
+    qf.get.baseConstraintOfType,
     getDefaultFromTypeParameter: (type) => (type && type.flags & qt.TypeFlags.TypeParameter ? getDefaultFromTypeParameter(type as TypeParameter) : undefined),
     resolveName(name, location, meaning, excludeGlobals) {
       return resolveName(location, qy.get.escUnderscores(name), meaning, undefined, undefined, false, excludeGlobals);
@@ -795,11 +793,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (localSymbol) {
       const exportedEqualsSymbol = exports?.get(InternalSymbol.ExportEquals);
       if (exportedEqualsSymbol) {
-        getSymbolIfSameReference(exportedEqualsSymbol, localSymbol)
+        qf.get.symbolIfSameReference(exportedEqualsSymbol, localSymbol)
           ? reportInvalidImportEqualsExportMember(node, name, declarationName, moduleName)
           : error(name, qd.msgs.Module_0_has_no_exported_member_1, moduleName, declarationName);
       } else {
-        const exportedSymbol = exports ? find(symbolsToArray(exports), (symbol) => !!getSymbolIfSameReference(symbol, localSymbol)) : undefined;
+        const exportedSymbol = exports ? find(symbolsToArray(exports), (symbol) => !!qf.get.symbolIfSameReference(symbol, localSymbol)) : undefined;
         const diagnostic = exportedSymbol
           ? error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_exported_as_2, moduleName, declarationName, exportedSymbol.symbolToString())
           : error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_not_exported, moduleName, declarationName);
@@ -880,7 +878,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return getPackagesSet().has(getTypesPackageName(packageName));
   }
   function tryGetMemberInModuleExports(memberName: qu.__String, moduleSymbol: Symbol): Symbol | undefined {
-    const symbolTable = getExportsOfModule(moduleSymbol);
+    const symbolTable = qf.get.exportsOfModule(moduleSymbol);
     if (symbolTable) return symbolTable.get(memberName);
   }
   function tryGetMemberInModuleExportsAndProperties(memberName: qu.__String, moduleSymbol: Symbol): Symbol | undefined {
@@ -1233,7 +1231,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function combineUnionThisParam(left: Symbol | undefined, right: Symbol | undefined): Symbol | undefined {
     if (!left || !right) return left || right;
-    const thisType = getIntersectionType([qf.get.typeOfSymbol(left), qf.get.typeOfSymbol(right)]);
+    const thisType = qf.get.intersectionType([qf.get.typeOfSymbol(left), qf.get.typeOfSymbol(right)]);
     return createSymbolWithType(left, thisType);
   }
   function combineUnionParameters(left: Signature, right: Signature) {
@@ -1248,7 +1246,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     for (let i = 0; i < longestCount; i++) {
       const longestParamType = tryGetTypeAtPosition(longest, i)!;
       const shorterParamType = tryGetTypeAtPosition(shorter, i) || unknownType;
-      const unionParamType = getIntersectionType([longestParamType, shorterParamType]);
+      const unionParamType = qf.get.intersectionType([longestParamType, shorterParamType]);
       const isRestParam = eitherHasEffectiveRest && !needsExtraRestElem && i === longestCount - 1;
       const isOptional = i >= getMinArgumentCount(longest) && i >= getMinArgumentCount(shorter);
       const leftName = i >= leftCount ? undefined : getParameterNameAtPosition(left, i);
@@ -1286,10 +1284,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function intersectTypes(type1: Type, type2: Type): Type;
   function intersectTypes(type1: Type | undefined, type2: Type | undefined): Type | undefined;
   function intersectTypes(type1: Type | undefined, type2: Type | undefined): Type | undefined {
-    return !type1 ? type2 : !type2 ? type1 : getIntersectionType([type1, type2]);
+    return !type1 ? type2 : !type2 ? type1 : qf.get.intersectionType([type1, type2]);
   }
   function intersectIndexInfos(info1: IndexInfo | undefined, info2: IndexInfo | undefined): IndexInfo | undefined {
-    return !info1 ? info2 : !info2 ? info1 : createIndexInfo(getIntersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
+    return !info1 ? info2 : !info2 ? info1 : createIndexInfo(qf.get.intersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
   }
   function unionSpreadIndexInfos(info1: IndexInfo | undefined, info2: IndexInfo | undefined): IndexInfo | undefined {
     return info1 && info2 && createIndexInfo(qf.get.unionType([info1.type, info2.type]), info1.isReadonly || info2.isReadonly);
@@ -1311,7 +1309,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         mixedTypes.push(qf.get.returnTypeOfSignature(getSignaturesOfType(types[i], SignatureKind.Construct)[0]));
       }
     }
-    return getIntersectionType(mixedTypes);
+    return qf.get.intersectionType(mixedTypes);
   }
   function appendSignatures(signatures: Signature[] | undefined, newSignatures: readonly Signature[]) {
     for (const sig of newSignatures) {
@@ -1628,13 +1626,13 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function distributeIndexOverObjectType(objectType: Type, indexType: Type, writing: boolean) {
     if (objectType.flags & qt.TypeFlags.UnionOrIntersection) {
       const types = map((objectType as UnionOrIntersectionType).types, (t) => getSimplifiedType(qf.get.indexedAccessType(t, indexType), writing));
-      return objectType.flags & qt.TypeFlags.Intersection || writing ? getIntersectionType(types) : qf.get.unionType(types);
+      return objectType.flags & qt.TypeFlags.Intersection || writing ? qf.get.intersectionType(types) : qf.get.unionType(types);
     }
   }
   function distributeObjectOverIndexType(objectType: Type, indexType: Type, writing: boolean) {
     if (indexType.flags & qt.TypeFlags.Union) {
       const types = map((indexType as UnionType).types, (t) => getSimplifiedType(qf.get.indexedAccessType(objectType, t), writing));
-      return writing ? getIntersectionType(types) : qf.get.unionType(types);
+      return writing ? qf.get.intersectionType(types) : qf.get.unionType(types);
     }
   }
   function unwrapSubstitution(type: Type): Type {
@@ -2607,7 +2605,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         source = qf.get.unionType(sources);
       } else if (
         target.flags & qt.TypeFlags.Intersection &&
-        some((<IntersectionType>target).types, (t) => !!getInferenceInfoForType(t) || (qf.is.genericMappedType(t) && !!getInferenceInfoForType(getHomomorphicTypeVariable(t) || neverType)))
+        some((<IntersectionType>target).types, (t) => !!getInferenceInfoForType(t) || (qf.is.genericMappedType(t) && !!getInferenceInfoForType(qf.get.homomorphicTypeVariable(t) || neverType)))
       ) {
         if (!(source.flags & qt.TypeFlags.Union)) {
           const [sources, targets] = inferFromMatchingTypes(
@@ -2616,8 +2614,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             qf.is.typeIdenticalTo
           );
           if (sources.length === 0 || targets.length === 0) return;
-          source = getIntersectionType(sources);
-          target = getIntersectionType(targets);
+          source = qf.get.intersectionType(sources);
+          target = qf.get.intersectionType(targets);
         }
       } else if (target.flags & (TypeFlags.IndexedAccess | qt.TypeFlags.Substitution)) {
         target = getActualTypeVariable(target);
@@ -3122,7 +3120,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function typeHasNullableConstraint(type: Type) {
-    return type.flags & qt.TypeFlags.InstantiableNonPrimitive && maybeTypeOfKind(getBaseConstraintOfType(type) || unknownType, qt.TypeFlags.Nullable);
+    return type.flags & qt.TypeFlags.InstantiableNonPrimitive && maybeTypeOfKind(qf.get.baseConstraintOfType(type) || unknownType, qt.TypeFlags.Nullable);
   }
   function markAliasReferenced(symbol: Symbol, location: Node) {
     if (symbol.isNonLocalAlias(SymbolFlags.Value) && !qf.is.inTypeQuery(location) && !this.getTypeOnlyAliasDeclaration()) {
@@ -3610,7 +3608,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const operandType = qf.get.typeOfExpression((node.expression as TypeOfExpression).expression);
       const witnesses = getSwitchClauseTypeOfWitnesses(node, false);
       const notEqualFacts = getFactsFromTypeofSwitch(0, 0, witnesses, true);
-      const type = getBaseConstraintOfType(operandType) || operandType;
+      const type = qf.get.baseConstraintOfType(operandType) || operandType;
       return !!(filterType(type, (t) => (getTypeFacts(t) & notEqualFacts) === notEqualFacts).flags & qt.TypeFlags.Never);
     }
     const type = qf.get.typeOfExpression(node.expression);
@@ -3832,7 +3830,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       nextTypes = append(nextTypes, iterationTypes.nextType);
     }
     if (yieldTypes || returnTypes || nextTypes)
-      return createIterationTypes(yieldTypes && qf.get.unionType(yieldTypes), returnTypes && qf.get.unionType(returnTypes), nextTypes && getIntersectionType(nextTypes));
+      return createIterationTypes(yieldTypes && qf.get.unionType(yieldTypes), returnTypes && qf.get.unionType(returnTypes), nextTypes && qf.get.intersectionType(nextTypes));
     return noIterationTypes;
   }
   function setCachedIterationTypes(type: Type, cacheKey: MatchingKeys<IterableOrIteratorType, IterationTypes | undefined>, cachedTypes: IterationTypes) {
@@ -3862,7 +3860,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (source.name.escapedText !== target.symbol.escName) return false;
         const constraint = qf.get.effectiveConstraintOfTypeParameter(source);
         const sourceConstraint = constraint && qf.get.typeFromTypeNode(constraint);
-        const targetConstraint = getConstraintOfTypeParameter(target);
+        const targetConstraint = qf.get.constraintOfTypeParameter(target);
         if (sourceConstraint && targetConstraint && !qf.is.typeIdenticalTo(sourceConstraint, targetConstraint)) return false;
         const sourceDefault = source.default && qf.get.typeFromTypeNode(source.default);
         const targetDefault = getDefaultFromTypeParameter(target);
@@ -4066,7 +4064,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     moduleSymbol = resolveExternalModuleSymbol(moduleSymbol);
     const symbolLinks = s.getLinks(moduleSymbol);
     if (symbolLinks.exportsSomeValue === undefined)
-      symbolLinks.exportsSomeValue = hasExportAssignment ? !!(moduleSymbol.flags & qt.SymbolFlags.Value) : forEachEntry(getExportsOfModule(moduleSymbol), isValue);
+      symbolLinks.exportsSomeValue = hasExportAssignment ? !!(moduleSymbol.flags & qt.SymbolFlags.Value) : forEachEntry(qf.get.exportsOfModule(moduleSymbol), isValue);
     return symbolLinks.exportsSomeValue!;
     function isValue(s: Symbol): boolean {
       s = s.resolveSymbol();
@@ -4304,7 +4302,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     let bestMatch: Type | undefined;
     let matchingCount = 0;
     for (const target of unionTarget.types) {
-      const overlap = getIntersectionType([qf.get.indexType(source), qf.get.indexType(target)]);
+      const overlap = qf.get.intersectionType([qf.get.indexType(source), qf.get.indexType(target)]);
       if (overlap.flags & qt.TypeFlags.Index) {
         bestMatch = target;
         matchingCount = Infinity;
@@ -4450,7 +4448,7 @@ export interface TypeCheckerOld {
   isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTyping, propertyName: string): boolean;
   isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTyping | QualifiedName, type: Type, property: Symbol): boolean;
   getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined;
-  getExportsOfModule(moduleSymbol: Symbol): Symbol[];
+  qf.get.exportsOfModule(moduleSymbol: Symbol): Symbol[];
   getExportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[];
   getJsxIntrinsicTagNamesAt(location: Node): Symbol[];
   isOptionalParameter(node: ParameterDeclaration): boolean;
@@ -4506,11 +4504,6 @@ export interface TypeCheckerOld {
   getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): qd.Diagnostic[];
   getGlobalDiagnostics(): qd.Diagnostic[];
   getEmitResolver(sourceFile?: SourceFile, cancellationToken?: CancellationToken): EmitResolver;
-  getNodeCount(): number;
-  getIdentifierCount(): number;
-  getSymbolCount(): number;
-  getTypeCount(): number;
-  getInstantiationCount(): number;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
   qf.is.arrayType(type: Type): boolean;
   qf.is.tupleType(type: Type): boolean;

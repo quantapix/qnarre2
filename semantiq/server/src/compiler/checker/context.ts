@@ -333,7 +333,7 @@ export class QContext {
             for (const parent of sortedParents) {
               const parentChain = getSymbolChain(parent, getQualifiedLeftMeaning(meaning), false);
               if (parentChain) {
-                if (parent.exports && parent.exports.get(InternalSymbol.ExportEquals) && getSymbolIfSameReference(parent.exports.get(InternalSymbol.ExportEquals)!, s)) {
+                if (parent.exports && parent.exports.get(InternalSymbol.ExportEquals) && qf.get.symbolIfSameReference(parent.exports.get(InternalSymbol.ExportEquals)!, s)) {
                   accessibleSymbolChain = parentChain;
                   break;
                 }
@@ -382,7 +382,7 @@ export class QContext {
         if (parent && parent.getExportsOfSymbol()) {
           const exports = parent.getExportsOfSymbol();
           forEachEntry(exports, (ex, name) => {
-            if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbol.ExportEquals) {
+            if (qf.get.symbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbol.ExportEquals) {
               symbolName = qy.get.unescUnderscores(name);
               return true;
             }
@@ -396,7 +396,7 @@ export class QContext {
         parent &&
         qf.get.membersOfSymbol(parent) &&
         qf.get.membersOfSymbol(parent).get(symbol.escName) &&
-        getSymbolIfSameReference(qf.get.membersOfSymbol(parent).get(symbol.escName)!, symbol)
+        qf.get.symbolIfSameReference(qf.get.membersOfSymbol(parent).get(symbol.escName)!, symbol)
       ) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
         if (LHS.kind === Syntax.IndexedAccessTyping) return new qc.IndexedAccessTyping(LHS, new qc.LiteralTyping(qc.asLiteral(symbolName)));
@@ -722,7 +722,7 @@ export class QContext {
     this.flags = savedContextFlags;
     return new qc.TypeParameterDeclaration(name, constraintNode, defaultParameterNode);
   }
-  typeParameterToDeclaration(type: TypeParameter, constraint = getConstraintOfTypeParameter(type)): TypeParameterDeclaration {
+  typeParameterToDeclaration(type: TypeParameter, constraint = qf.get.constraintOfTypeParameter(type)): TypeParameterDeclaration {
     const constraintNode = constraint && this.typeToTypeNodeHelper(constraint);
     return this.typeParameterToDeclarationWithConstraint(type, constraintNode);
   }

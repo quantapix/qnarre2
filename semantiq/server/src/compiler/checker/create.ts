@@ -190,7 +190,7 @@ export function newCreate(f: qt.Frame) {
         result.deferralParent = containingType;
         result.deferralConstituents = propTypes;
       } else {
-        result.type = isUnion ? qf.get.unionType(propTypes) : getIntersectionType(propTypes);
+        result.type = isUnion ? qf.get.unionType(propTypes) : qf.get.intersectionType(propTypes);
       }
       return result;
     }
@@ -221,7 +221,7 @@ export function newCreate(f: qt.Frame) {
     canonicalSignature(signature: Signature) {
       return getSignatureInstantiation(
         signature,
-        map(signature.typeParameters, (tp) => (tp.target && !getConstraintOfTypeParameter(tp.target) ? tp.target : tp)),
+        map(signature.typeParameters, (tp) => (tp.target && !qf.get.constraintOfTypeParameter(tp.target) ? tp.target : tp)),
         qf.is.inJSFile(signature.declaration)
       );
     }
@@ -474,7 +474,7 @@ export function newCreate(f: qt.Frame) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
             if (allAttributesTable) check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
           } else {
-            typeToIntersect = typeToIntersect ? getIntersectionType([typeToIntersect, exprType]) : exprType;
+            typeToIntersect = typeToIntersect ? qf.get.intersectionType([typeToIntersect, exprType]) : exprType;
           }
         }
       }
@@ -500,7 +500,7 @@ export function newCreate(f: qt.Frame) {
         }
       }
       if (hasSpreadAnyType) return anyType;
-      if (typeToIntersect && spread !== emptyJsxObjectType) return getIntersectionType([typeToIntersect, spread]);
+      if (typeToIntersect && spread !== emptyJsxObjectType) return qf.get.intersectionType([typeToIntersect, spread]);
       return typeToIntersect || (spread === emptyJsxObjectType ? this.jsxAttributesType() : spread);
       function createJsxAttributesType() {
         objectFlags |= freshObjectLiteralFlag;
@@ -543,7 +543,7 @@ export function newCreate(f: qt.Frame) {
         flags |= SignatureFlags.HasRestParameter;
       }
       if (candidates.some(signatureHasLiteralTypes)) flags |= SignatureFlags.HasLiteralTypes;
-      return this.signature(candidates[0].declaration, undefined, thisParameter, parameters, getIntersectionType(candidates.map(qf.get.returnTypeOfSignature)), undefined, minArgumentCount, flags);
+      return this.signature(candidates[0].declaration, undefined, thisParameter, parameters, qf.get.intersectionType(candidates.map(qf.get.returnTypeOfSignature)), undefined, minArgumentCount, flags);
     }
     combinedSymbolFromTypes(sources: readonly Symbol[], types: Type[]): Symbol {
       return this.combinedSymbolForOverloadFailure(sources, qf.get.unionType(types, UnionReduction.Subtype));
@@ -767,7 +767,7 @@ export function newCreate(f: qt.Frame) {
         const importTarget = getExternalModuleFileFromDeclaration(node);
         if (!importTarget) return false;
         if (importTarget === file) return false;
-        const exports = getExportsOfModule(file.symbol);
+        const exports = qf.get.exportsOfModule(file.symbol);
         for (const s of arrayFrom(exports.values())) {
           if (s.mergeId) {
             const merged = qf.get.mergedSymbol(s);
@@ -893,7 +893,7 @@ export function newInstantiate(f: qt.Frame) {
       return result;
     }
     mappedType(type: MappedType, mapper: TypeMapper): Type {
-      const typeVariable = getHomomorphicTypeVariable(type);
+      const typeVariable = qf.get.homomorphicTypeVariable(type);
       if (typeVariable) {
         const mappedTypeVariable = this.type(typeVariable, mapper);
         if (typeVariable !== mappedTypeVariable) {
@@ -1002,7 +1002,7 @@ export function newInstantiate(f: qt.Frame) {
         return newTypes === types
           ? type
           : flags & qt.TypeFlags.Intersection
-          ? getIntersectionType(newTypes, type.aliasSymbol, this.types(type.aliasTypeArguments, mapper))
+          ? qf.get.intersectionType(newTypes, type.aliasSymbol, this.types(type.aliasTypeArguments, mapper))
           : qf.get.unionType(newTypes, UnionReduction.Literal, type.aliasSymbol, this.types(type.aliasTypeArguments, mapper));
       }
       if (flags & qt.TypeFlags.Index) return qf.get.indexType(this.type((<IndexType>type).type, mapper));
@@ -1040,7 +1040,7 @@ export function newInstantiate(f: qt.Frame) {
           UnionReduction.None
         );
       }
-      if (type.flags & qt.TypeFlags.Intersection) return getIntersectionType(map((<IntersectionType>type).types, (t) => this.instantiableTypes(t, mapper)));
+      if (type.flags & qt.TypeFlags.Intersection) return qf.get.intersectionType(map((<IntersectionType>type).types, (t) => this.instantiableTypes(t, mapper)));
       return type;
     }
     signatureInContextOf(signature: Signature, contextualSignature: Signature, inferenceContext?: InferenceContext, compareTypes?: TypeComparer): Signature {
@@ -1666,7 +1666,7 @@ export function newResolve(f: qt.Frame) {
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArgument = lastOrUndefined(typeArguments);
         for (const baseType of baseTypes) {
-          const instantiatedBaseType = thisArgument ? getTypeWithThisArgument(qf.instantiate.type(baseType, mapper), thisArgument) : baseType;
+          const instantiatedBaseType = thisArgument ? qf.get.typeWithThisArgument(qf.instantiate.type(baseType, mapper), thisArgument) : baseType;
           addInheritedMembers(members, qf.get.propertiesOfType(instantiatedBaseType));
           callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
           constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));

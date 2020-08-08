@@ -419,14 +419,14 @@ export function newIs(f: qt.Frame) {
     constructorType(t: qt.Type): boolean {
       if (getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0) return true;
       if (t.flags & TypeFlags.TypeVariable) {
-        const constraint = getBaseConstraintOfType(t);
+        const constraint = qf.get.baseConstraintOfType(t);
         return !!constraint && this.mixinConstructorType(constraint);
       }
       return false;
     }
     validBaseType(t: qt.Type): t is qt.BaseType {
       if (t.flags & TypeFlags.TypeParameter) {
-        const constraint = getBaseConstraintOfType(t);
+        const constraint = qf.get.baseConstraintOfType(t);
         if (constraint) return this.validBaseType(constraint);
       }
       return !!((t.flags & (TypeFlags.Object | TypeFlags.NonPrimitive | TypeFlags.Any) && !this.genericMappedType(t)) || (t.flags & TypeFlags.Intersection && qu.every(t.types, this.validBaseType)));
@@ -763,7 +763,7 @@ export function newIs(f: qt.Frame) {
         : t.flags & TypeFlags.Union
         ? qu.some(t.types, (t) => this.typeDerivedFrom(s, t))
         : s.flags & TypeFlags.InstantiableNonPrimitive
-        ? this.typeDerivedFrom(getBaseConstraintOfType(s) || unknownType, t)
+        ? this.typeDerivedFrom(qf.get.baseConstraintOfType(s) || unknownType, t)
         : t === globalObjectType
         ? !!(s.flags & (TypeFlags.Object | TypeFlags.NonPrimitive))
         : t === globalFunctionType
@@ -923,7 +923,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     unconstrainedTypeParameter(t: qt.Type) {
-      return t.flags & TypeFlags.TypeParameter && !getConstraintOfTypeParameter(t);
+      return t.flags & TypeFlags.TypeParameter && !qf.get.constraintOfTypeParameter(t);
     }
     nonDeferredTypeReference(t: qt.Type): t is qt.TypeReference {
       return !!(getObjectFlags(t) & ObjectFlags.Reference) && !t.node;
@@ -1358,7 +1358,7 @@ export function newIs(f: qt.Frame) {
     }
     validSpreadType(t: qt.Type): boolean {
       if (t.flags & TypeFlags.Instantiable) {
-        const constraint = getBaseConstraintOfType(t);
+        const constraint = qf.get.baseConstraintOfType(t);
         if (constraint !== undefined) return this.validSpreadType(constraint);
       }
       return !!(
@@ -1730,7 +1730,7 @@ export function newIs(f: qt.Frame) {
           return qu.some(types, (t) => isLiteralOfContextualType(t, t));
         }
         if (c.flags & TypeFlags.InstantiableNonPrimitive) {
-          const constraint = getBaseConstraintOfType(c) || unknownType;
+          const constraint = qf.get.baseConstraintOfType(c) || unknownType;
           return (
             (maybeTypeOfKind(constraint, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
             (maybeTypeOfKind(constraint, TypeFlags.Number) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
@@ -1997,7 +1997,7 @@ export function newHas(f: qt.Frame) {
       return getResolvedBaseConstraint(t) !== circularConstraintType;
     }
     nonCircularTypeParameterDefault(typeParameter: qt.TypeParameter) {
-      return getResolvedTypeParameterDefault(typeParameter) !== circularConstraintType;
+      return qf.get.resolvedTypeParameterDefault(typeParameter) !== circularConstraintType;
     }
     typeParameterDefault(typeParameter: qt.TypeParameter): boolean {
       return !!(typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => decl.kind === Syntax.TypeParameterDeclaration && decl.default));
@@ -2031,7 +2031,7 @@ export function newHas(f: qt.Frame) {
       return !!qf.get.nodeLinks(n).skipDirectInference;
     }
     primitiveConstraint(t: qt.TypeParameter): boolean {
-      const constraint = getConstraintOfTypeParameter(t);
+      const constraint = qf.get.constraintOfTypeParameter(t);
       return (
         !!constraint &&
         maybeTypeOfKind(constraint.flags & TypeFlags.Conditional ? getDefaultConstraintOfConditionalType(constraint as ConditionalType) : constraint, TypeFlags.Primitive | TypeFlags.Index)

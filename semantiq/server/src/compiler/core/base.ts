@@ -1587,7 +1587,7 @@ export function createGetSymbolWalker(
   qf.get.typeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
   qf.get.indexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
-  getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
+  qf.get.constraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {
@@ -1639,7 +1639,7 @@ export function createGetSymbolWalker(
       qu.each(getTypeArguments(t), visitType);
     }
     function visitTypeParameter(t: TypeParameter) {
-      visitType(getConstraintOfTypeParameter(t));
+      visitType(qf.get.constraintOfTypeParameter(t));
     }
     function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
       qu.each(t.types, visitType);

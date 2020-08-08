@@ -274,7 +274,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.SourceFile:
         return InternalSymbol.ExportEquals;
       case Syntax.BinaryExpression:
-        if (qf.get.assignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
+        if (qf.get.assignmentDeclarationKind(node as BinaryExpression) === qt.AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
       case Syntax.DocFunctionTyping:
@@ -1600,28 +1600,28 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           );
           const oldContainer = container;
           switch (qf.get.assignmentDeclarationPropertyAccessKind(declName.parent)) {
-            case AssignmentDeclarationKind.ExportsProperty:
-            case AssignmentDeclarationKind.ModuleExports:
+            case qt.AssignmentDeclarationKind.ExportsProperty:
+            case qt.AssignmentDeclarationKind.ModuleExports:
               if (!qf.is.externalOrCommonJsModule(file)) {
                 container = undefined!;
               } else {
                 container = file;
               }
               break;
-            case AssignmentDeclarationKind.ThisProperty:
+            case qt.AssignmentDeclarationKind.ThisProperty:
               container = declName.parent.expression;
               break;
-            case AssignmentDeclarationKind.PrototypeProperty:
+            case qt.AssignmentDeclarationKind.PrototypeProperty:
               container = (declName.parent.expression as PropertyAccessExpression).name;
               break;
-            case AssignmentDeclarationKind.Property:
+            case qt.AssignmentDeclarationKind.Property:
               container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression)
                 ? file
                 : qf.is.kind(qc.PropertyAccessExpression, declName.parent.expression)
                 ? declName.parent.expression.name
                 : declName.parent.expression;
               break;
-            case AssignmentDeclarationKind.None:
+            case qt.AssignmentDeclarationKind.None:
               return fail("Shouldn't have detected typedef or enum on non-assignment declaration");
           }
           if (container) {
@@ -1859,25 +1859,25 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.BinaryExpression:
         const specialKind = qf.get.assignmentDeclarationKind(node as BinaryExpression);
         switch (specialKind) {
-          case AssignmentDeclarationKind.ExportsProperty:
+          case qt.AssignmentDeclarationKind.ExportsProperty:
             bindExportsPropertyAssignment(node as BindableStaticPropertyAssignmentExpression);
             break;
-          case AssignmentDeclarationKind.ModuleExports:
+          case qt.AssignmentDeclarationKind.ModuleExports:
             bindModuleExportsAssignment(node as BindablePropertyAssignmentExpression);
             break;
-          case AssignmentDeclarationKind.PrototypeProperty:
+          case qt.AssignmentDeclarationKind.PrototypeProperty:
             bindPrototypePropertyAssignment((node as BindableStaticPropertyAssignmentExpression).left, node);
             break;
-          case AssignmentDeclarationKind.Prototype:
+          case qt.AssignmentDeclarationKind.Prototype:
             bindPrototypeAssignment(node as BindableStaticPropertyAssignmentExpression);
             break;
-          case AssignmentDeclarationKind.ThisProperty:
+          case qt.AssignmentDeclarationKind.ThisProperty:
             bindThisNode(PropertyAssignment, node as BindablePropertyAssignmentExpression);
             break;
-          case AssignmentDeclarationKind.Property:
+          case qt.AssignmentDeclarationKind.Property:
             bindSpecialPropertyAssignment(node as BindablePropertyAssignmentExpression);
             break;
-          case AssignmentDeclarationKind.None:
+          case qt.AssignmentDeclarationKind.None:
             break;
           default:
             fail('Unknown binary expression special property assignment kind');
@@ -1957,13 +1957,13 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.CallExpression:
         const assignmentKind = qf.get.assignmentDeclarationKind(node as CallExpression);
         switch (assignmentKind) {
-          case AssignmentDeclarationKind.ObjectDefinePropertyValue:
+          case qt.AssignmentDeclarationKind.ObjectDefinePropertyValue:
             return bindObjectDefinePropertyAssignment(node as BindableObjectDefinePropertyCall);
-          case AssignmentDeclarationKind.ObjectDefinePropertyExports:
+          case qt.AssignmentDeclarationKind.ObjectDefinePropertyExports:
             return bindObjectDefinePropertyExport(node as BindableObjectDefinePropertyCall);
-          case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
+          case qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
             return bindObjectDefinePrototypeProperty(node as BindableObjectDefinePropertyCall);
-          case AssignmentDeclarationKind.None:
+          case qt.AssignmentDeclarationKind.None:
             break;
           default:
             return fail('Unknown call expression assignment declaration kind');
