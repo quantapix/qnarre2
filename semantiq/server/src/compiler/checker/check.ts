@@ -1579,7 +1579,7 @@ export function newCheck(f: qt.Frame) {
         : type === autoType || type === autoArrayType
         ? undefinedType
         : getOptionalType(type);
-      const flowType = qf.get.flowTypeOfReference(n, type, initialType, flowContainer, !assumeInitialized);
+      const flowType = qf.get.flow.typeOfReference(n, type, initialType, flowContainer, !assumeInitialized);
       if (!isEvolvingArrayOperationTarget(n) && (type === autoType || type === autoArrayType)) {
         if (flowType === autoType || flowType === autoArrayType) {
           if (noImplicitAny) {

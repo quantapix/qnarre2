@@ -1810,7 +1810,7 @@ export function newIs(f: qt.Frame) {
       reference.expression.parent = reference;
       reference.parent = constructor;
       reference.flowNode = constructor.returnFlowNode;
-      const flowType = qf.get.flowTypeOfReference(reference, propType, getOptionalType(propType));
+      const flowType = qf.get.flow.typeOfReference(reference, propType, getOptionalType(propType));
       return !(getFalsyFlags(flowType) & TypeFlags.Undefined);
     }
     constantMemberAccess(n: qt.Expression): boolean {

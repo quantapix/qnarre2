@@ -3154,23 +3154,23 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const classSymbol = check.expression(className).symbol;
         if (classSymbol && classSymbol.members && classSymbol.flags & qt.SymbolFlags.Function) {
           const classType = (getDeclaredTypeOfSymbol(classSymbol) as InterfaceType).thisType;
-          if (classType) return qf.get.flowTypeOfReference(node, classType);
+          if (classType) return qf.get.flow.typeOfReference(node, classType);
         }
       } else if (isInJS && (container.kind === Syntax.FunctionExpression || container.kind === Syntax.FunctionDeclaration) && qc.getDoc.classTag(container)) {
         const classType = (getDeclaredTypeOfSymbol(qf.get.mergedSymbol(container.symbol)) as InterfaceType).thisType!;
-        return qf.get.flowTypeOfReference(node, classType);
+        return qf.get.flow.typeOfReference(node, classType);
       }
       const thisType = getThisTypeOfDeclaration(container) || getContextualThisParameterType(container);
-      if (thisType) return qf.get.flowTypeOfReference(node, thisType);
+      if (thisType) return qf.get.flow.typeOfReference(node, thisType);
     }
     if (qf.is.classLike(container.parent)) {
       const symbol = qf.get.symbolOfNode(container.parent);
       const type = qf.has.syntacticModifier(container, ModifierFlags.Static) ? this.qf.get.typeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
-      return qf.get.flowTypeOfReference(node, type);
+      return qf.get.flow.typeOfReference(node, type);
     }
     if (isInJS) {
       const type = getTypeForThisExpressionFromDoc(container);
-      if (type && type !== errorType) return qf.get.flowTypeOfReference(node, type);
+      if (type && type !== errorType) return qf.get.flow.typeOfReference(node, type);
     }
     if (container.kind === Syntax.SourceFile) {
       if (container.commonJsModuleIndicator) {
