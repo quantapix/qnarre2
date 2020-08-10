@@ -645,9 +645,6 @@ export abstract class Symbol implements qt.Symbol {
     const ds = this.declarations;
     return ds && qu.find(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
   }
-  checkFlags(): CheckFlags {
-    return this.isTransient() ? this.checkFlags : 0;
-  }
   setValueDeclaration(d: qt.Declaration) {
     const v = this.valueDeclaration;
     if (
@@ -738,28 +735,28 @@ export class SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S> 
     }
   }
   add(ss: SymbolTable<S>, m: qd.Message) {
-    ss.forEach((s, id) => {
-      const t = this.get(id);
-      if (t) qu.each(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
-      else this.set(id, s);
+    const addDiagnostic = (n: string, m: qd.Message) => {
+      return (d: qt.Declaration) => diagnostics.add(qf.create.diagnosticForNode(d, m, n));
+    };
+    ss.forEach((s, n) => {
+      const t = this.get(n);
+      if (t) qu.each(t.declarations, addDiagnostic(qy.get.unescUnderscores(n), m));
+      else this.set(n, s);
     });
-    function addDeclarationDiagnostic(id: string, m: qd.Message) {
-      return (d: qt.Declaration) => diagnostics.add(qf.create.diagnosticForNode(d, m, id));
-    }
   }
   merge(ss: SymbolTable<S>, unidir = false) {
-    ss.forEach((s, i) => {
-      const t = this.get(i);
-      this.set(i, t ? s.merge(t, unidir) : s);
+    ss.forEach((s, n) => {
+      const t = this.get(n);
+      this.set(n, t ? s.merge(t, unidir) : s);
     });
   }
   combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
     if (!qu.hasEntries(this)) return ss;
     if (!qu.hasEntries(ss)) return this;
-    const t = new SymbolTable<S>();
-    t.merge(this);
-    t.merge(ss!);
-    return t;
+    const r = new SymbolTable<S>();
+    r.merge(this);
+    r.merge(ss!);
+    return r;
   }
   copy(to: SymbolTable<S>, f: SymbolFlags) {
     if (f) this.forEach((s) => s.copy(to, f));

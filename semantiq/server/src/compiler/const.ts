@@ -215,6 +215,25 @@ export const enum InferencePriority {
   PriorityImpliesCombination = ReturnType | MappedTypeConstraint | LiteralKeyof,
   Circularity = -1,
 }
+export const enum InternalSymbol {
+  Call = '__call',
+  Constructor = '__constructor',
+  New = '__new',
+  Index = '__index',
+  ExportStar = '__export',
+  Global = '__global',
+  Missing = '__missing',
+  Type = '__type',
+  Object = '__object',
+  JSXAttributes = '__jsxAttributes',
+  Class = '__class',
+  Function = '__function',
+  Computed = '__computed',
+  Resolving = '__resolving__',
+  Default = 'default',
+  ExportEquals = 'export=',
+  This = 'this',
+}
 export const enum JsxEmit {
   None = 0,
   Preserve = 1,

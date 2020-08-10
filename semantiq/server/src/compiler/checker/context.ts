@@ -1553,7 +1553,7 @@ export class QContext {
       symbolTable = new SymbolTable();
       symbolTable.set(InternalSymbol.ExportEquals, exportEquals);
     }
-    visitSymbolTable(symbolTable);
+    symbolTable.visit();
     const flattenExportAssignedNamespace = (ss: Statement[]) => {
       const exportAssignment = find(ss, isExportAssignment);
       const ns = find(ss, isModuleDeclaration);
@@ -1699,7 +1699,7 @@ export class QContext {
         const subcontext = { ...context, enclosingDeclaration: fakespace };
         const oldContext = context;
         context = subcontext;
-        visitSymbolTable(new SymbolTable(localProps), suppressNewPrivateContext, true);
+        new SymbolTable(localProps).visit(suppressNewPrivateContext, true);
         context = oldContext;
         addingDeclare = oldAddingDeclare;
         const declarations = results;

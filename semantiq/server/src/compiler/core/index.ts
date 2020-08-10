@@ -7,8 +7,7 @@ import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, Nodes, TokenFlags 
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
-import * as qy from '../syntax';
-export { assert, findAncestor, format, skip, MutableNodes, Nodes } from './base';
+export { assert, findAncestor, format, skip, MutableNodes, Nodes, Symbol, SymbolTable } from './base';
 export * from './classes';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
 export namespace BindingOrAssignmentElem {

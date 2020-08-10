@@ -552,7 +552,7 @@ export function newCreate(f: qt.Frame) {
     signatureForJSXIntrinsic(node: JsxOpeningLikeElem, result: Type): Signature {
       const namespace = getJsxNamespaceAt(node);
       const exports = namespace && namespace.getExportsOfSymbol();
-      const typeSymbol = exports && getSymbol(exports, JsxNames.Elem, qt.SymbolFlags.Type);
+      const typeSymbol = exports && exports.fetch(JsxNames.Elem, qt.SymbolFlags.Type);
       const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, qt.SymbolFlags.Type, node);
       const declaration = FunctionTyping.create(
         undefined,
@@ -1417,7 +1417,7 @@ export function newResolve(f: qt.Frame) {
             }
           }
         }
-        symbol = qf.get.mergedSymbol(getSymbol(namespace.getExportsOfSymbol(), right.escapedText, meaning));
+        symbol = qf.get.mergedSymbol(namespace.getExportsOfSymbol().fetch(right.escapedText, meaning));
         if (!symbol) {
           if (!ignoreErrors) error(right, qd.msgs.Namespace_0_has_no_exported_member_1, qf.get.fullyQualifiedName(namespace), declarationNameToString(right));
           return;

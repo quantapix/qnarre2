@@ -92,7 +92,7 @@ export function transformDeclarations(context: TrafoContext) {
         if (!lateMarkedStatements) lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
         else {
           for (const ref of symbolAccessibilityResult.aliasesToMakeVisible) {
-            pushIfUnique(lateMarkedStatements, ref);
+            qu.pushIfUnique(lateMarkedStatements, ref);
           }
         }
       }

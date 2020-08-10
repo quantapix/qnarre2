@@ -156,25 +156,6 @@ export interface Sorteds<T> extends Array<T> {
 export interface ReadonlySorteds<T> extends ReadonlyArray<T> {
   ' __sortedArrayBrand': any;
 }
-export const enum InternalSymbol {
-  Call = '__call',
-  Constructor = '__constructor',
-  New = '__new',
-  Index = '__index',
-  ExportStar = '__export',
-  Global = '__global',
-  Missing = '__missing',
-  Type = '__type',
-  Object = '__object',
-  JSXAttributes = '__jsxAttributes',
-  Class = '__class',
-  Function = '__function',
-  Computed = '__computed',
-  Resolving = '__resolving__',
-  Default = 'default',
-  ExportEquals = 'export=',
-  This = 'this',
-}
 export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbol;
 export type EscapedMap<T> = Map<__String, T>;
 export function createEscapedMap<T>(): EscapedMap<T> {

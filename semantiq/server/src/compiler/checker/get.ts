@@ -338,8 +338,8 @@ export function newGet(f: qt.Frame) {
       merged.this.links().cjsExportMerged = merged;
       return (ls.cjsExportMerged = merged);
     }
-    exportsOfModuleAsArray(moduleSymbol: Symbol): Symbol[] {
-      return symbolsToArray(this.exportsOfModule(moduleSymbol));
+    exportsOfModuleAsArray(s: Symbol): Symbol[] {
+      return this.exportsOfModule(s).toArray();
     }
     exportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[] {
       const exports = this.exportsOfModuleAsArray(moduleSymbol);
@@ -359,13 +359,6 @@ export function newGet(f: qt.Frame) {
     }
     symbolIfSameReference(s1: Symbol, s2: Symbol) {
       if (this.mergedSymbol(this.mergedSymbol(s1)?.resolveSymbol()) === this.mergedSymbol(this.mergedSymbol(s2)?.resolveSymbol())) return s1;
-    }
-    namedMembers(ms: SymbolTable): Symbol[] {
-      let r: Symbol[] | undefined;
-      ms.forEach((symbol, id) => {
-        if (!qy.is.reservedName(id) && symbolIsValue(symbol)) (r || (r = [])).push(symbol);
-      });
-      return r || qu.empty;
     }
     qualifiedLeftMeaning(rightMeaning: SymbolFlags) {
       return rightMeaning === SymbolFlags.Value ? SymbolFlags.Value : SymbolFlags.Namespace;
@@ -3698,7 +3691,7 @@ export function newGet(f: qt.Frame) {
     *unmatchedProperties(source: qt.Type, target: qt.Type, requireOptionalProperties: boolean, matchDiscriminantProperties: boolean): IterableIterator<Symbol> {
       const properties = this.propertiesOfType(target);
       for (const targetProp of properties) {
-        if (qf.is.staticPrivateIdentifierProperty(targetProp)) continue;
+        if (targetProp.isStaticPrivateIdentifierProperty()) continue;
         if (requireOptionalProperties || !(targetProp.flags & SymbolFlags.Optional || this.checkFlags(targetProp) & qt.CheckFlags.Partial)) {
           const sourceProp = this.propertyOfType(source, targetProp.escName);
           if (!sourceProp) yield targetProp;
@@ -4390,7 +4383,7 @@ export function newGet(f: qt.Frame) {
           const flowType = this.typeAtFlowNode(antecedent);
           const type = this.typeFromFlowType(flowType);
           if (type === declaredType && declaredType === initialType) return type;
-          pushIfUnique(antecedentTypes, type);
+          qu.pushIfUnique(antecedentTypes, type);
           if (!qf.is.typeSubsetOf(t, declaredType)) subtypeReduction = true;
           if (qf.is.incomplete(flowType)) seenIncomplete = true;
         }
@@ -4436,7 +4429,7 @@ export function newGet(f: qt.Frame) {
             if (cached) return cached;
           }
           const type = this.typeFromFlowType(flowType);
-          pushIfUnique(antecedentTypes, type);
+          qu.pushIfUnique(antecedentTypes, type);
           if (!qf.is.typeSubsetOf(t, declaredType)) subtypeReduction = true;
           if (type === declaredType) break;
         }
@@ -6814,7 +6807,7 @@ export function newGet(f: qt.Frame) {
       };
       populate();
       ss.delete(InternalSymbol.This);
-      return symbolsToArray(ss);
+      return ss.toArray();
     }
     leftSideOfImportEqualsOrExportAssignment(n: qt.EntityName): qt.ImportEqualsDeclaration | qt.ExportAssignment | undefined {
       while (n.parent?.kind === Syntax.QualifiedName) {

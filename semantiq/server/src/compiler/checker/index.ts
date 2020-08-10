@@ -412,8 +412,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const substitutionTypes = new qu.QMap<SubstitutionType>();
   const evolvingArrayTypes: EvolvingArrayType[] = [];
   const undefinedProperties = new qu.QMap<Symbol>() as EscapedMap<Symbol>;
-  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
-  const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
   const anyType = createIntrinsicType(TypeFlags.Any, 'any');
   const autoType = createIntrinsicType(TypeFlags.Any, 'any');
   const wildcardType = createIntrinsicType(TypeFlags.Any, 'any');
@@ -812,7 +810,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           ? reportInvalidImportEqualsExportMember(node, name, declarationName, moduleName)
           : error(name, qd.msgs.Module_0_has_no_exported_member_1, moduleName, declarationName);
       } else {
-        const exportedSymbol = exports ? find(symbolsToArray(exports), (symbol) => !!qf.get.symbolIfSameReference(symbol, localSymbol)) : undefined;
+        const exportedSymbol = exports ? find(exports.toArray(), (s) => !!qf.get.symbolIfSameReference(s, localSymbol)) : undefined;
         const diagnostic = exportedSymbol
           ? error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_exported_as_2, moduleName, declarationName, exportedSymbol.symbolToString())
           : error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_not_exported, moduleName, declarationName);
@@ -1088,7 +1086,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (setVisibility) qf.get.nodeLinks(declaration).isVisible = true;
         else {
           result = result || [];
-          pushIfUnique(result, resultNode);
+          qu.pushIfUnique(result, resultNode);
         }
         if (qf.is.internalModuleImportEqualsDeclaration(declaration)) {
           const internalModuleReference = <Identifier | QualifiedName>declaration.moduleReference;
@@ -1167,11 +1165,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return outerTypeParams[last].symbol !== typeArgs[last].symbol;
     }
     return true;
-  }
-  function addInheritedMembers(symbols: SymbolTable, baseSymbols: Symbol[]) {
-    for (const s of baseSymbols) {
-      if (!symbols.has(s.escName) && !isStaticPrivateIdentifierProperty(s)) symbols.set(s.escName, s);
-    }
   }
   function addDeclarationToLateBoundSymbol(symbol: Symbol, member: LateBoundDecl | BinaryExpression, symbolFlags: qt.SymbolFlags) {
     assert(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
@@ -1355,17 +1348,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     return errorInfo;
   }
-  function symbolsToArray(symbols: SymbolTable): Symbol[] {
-    const result: Symbol[] = [];
-    symbols.forEach((symbol, id) => {
-      if (!qy.is.reservedName(id)) result.push(symbol);
-    });
-    return result;
-  }
   function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
     if (isExternalModuleNameRelative(moduleName)) return;
-    const symbol = getSymbol(globals, ('"' + moduleName + '"') as qu.__String, qt.SymbolFlags.ValueModule);
-    return symbol && withAugmentations ? qf.get.mergedSymbol(symbol) : symbol;
+    const s = globals.fetch(('"' + moduleName + '"') as qu.__String, qt.SymbolFlags.ValueModule);
+    return s && withAugmentations ? qf.get.mergedSymbol(s) : s;
   }
   function fillMissingTypeArgs(typeArgs: readonly Type[], typeParams: readonly TypeParam[] | undefined, minTypeArgCount: number, isJavaScriptImplicitAny: boolean): Type[];
   function fillMissingTypeArgs(

@@ -490,9 +490,6 @@ export function newIs(f: qt.Frame) {
       const ps = qf.get.effectiveTypeParamDeclarations(n);
       return (n.kind === Syntax.Constructor || (!!t && this.thislessType(t))) && n.params.every(this.thislessVariableLikeDeclaration) && ps.every(this.thislessTypeParam);
     }
-    staticPrivateIdentifierProperty(s: Symbol): boolean {
-      return this.privateIdentifierPropertyDeclaration(s.valueDeclaration) && qf.has.syntacticModifier(s.valueDeclaration, ModifierFlags.Static);
-    }
     typeUsableAsPropertyName(t: qt.Type): t is qt.StringLiteralType | qt.NumberLiteralType | qt.UniqueESSymbolType {
       return !!(t.flags & TypeFlags.StringOrNumberLiteralOrUnique);
     }
