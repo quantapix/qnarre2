@@ -107,7 +107,7 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
   return !!forEach(getElemsOfBindingOrAssignmentPattern(pattern), bindingOrAssignmentElemContainsNonLiteralComputedName);
 }
 export function flattenDestructuringBinding(
-  node: VariableDeclaration | ParameterDeclaration,
+  node: VariableDeclaration | ParamDeclaration,
   visitor: (node: Node) => VisitResult<Node>,
   context: TrafoContext,
   level: FlattenLevel,

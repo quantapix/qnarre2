@@ -16,9 +16,9 @@ function hasInternalAnnotation(range: CommentRange, currentSourceFile: SourceFil
 }
 export function isInternalDeclaration(node: Node, currentSourceFile: SourceFile) {
   const parseTreeNode = qc.get.parseTreeOf(node);
-  if (parseTreeNode && parseTreeNode.kind === Syntax.Parameter) {
-    const paramIdx = (parseTreeNode.parent as FunctionLike).parameters.indexOf(parseTreeNode as ParameterDeclaration);
-    const previousSibling = paramIdx > 0 ? (parseTreeNode.parent as FunctionLike).parameters[paramIdx - 1] : undefined;
+  if (parseTreeNode && parseTreeNode.kind === Syntax.Param) {
+    const paramIdx = (parseTreeNode.parent as FunctionLike).params.indexOf(parseTreeNode as ParamDeclaration);
+    const previousSibling = paramIdx > 0 ? (parseTreeNode.parent as FunctionLike).params[paramIdx - 1] : undefined;
     const text = currentSourceFile.text;
     const commentRanges = previousSibling
       ? concatenate(syntax.get.trailingCommentRanges(text, syntax.skipTrivia(text, previousSibling.end + 1, false, true)), syntax.get.leadingCommentRanges(text, node.pos))
@@ -126,7 +126,7 @@ export function transformDeclarations(context: TrafoContext) {
     if (!isBundledEmit) (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
   }
   function trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
-    if (symbol.flags & SymbolFlags.TypeParameter) return;
+    if (symbol.flags & SymbolFlags.TypeParam) return;
     handleSymbolAccessibilityError(resolver.isSymbolAccessible(symbol, enclosingDeclaration, meaning, true));
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
@@ -147,14 +147,14 @@ export function transformDeclarations(context: TrafoContext) {
       );
     }
   }
-  function reportLikelyUnsafeImportRequiredError(specifier: string) {
+  function reportLikelyUnsafeImportRequiredError(spec: string) {
     if (errorNameNode) {
       context.addDiagnostic(
         qf.create.diagnosticForNode(
           errorNameNode,
           qd.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary,
           declarationNameToString(errorNameNode),
-          specifier
+          spec
         )
       );
     }
@@ -316,7 +316,7 @@ export function transformDeclarations(context: TrafoContext) {
           declFileName = paths.declarationFilePath || paths.jsFilePath || file.fileName;
         }
         if (declFileName) {
-          const specifier = moduleSpecifiers.getModuleSpecifier(
+          const spec = moduleSpecifiers.getModuleSpecifier(
             { ...options, baseUrl: options.baseUrl && toPath(options.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
             currentSourceFile,
             toPath(outputFilePath, host.getCurrentDirectory(), host.getCanonicalFileName),
@@ -324,8 +324,8 @@ export function transformDeclarations(context: TrafoContext) {
             host,
             undefined
           );
-          if (!pathIsRelative(specifier)) {
-            recordTypeReferenceDirectivesIfNecessary([specifier]);
+          if (!pathIsRelative(spec)) {
+            recordTypeReferenceDirectivesIfNecessary([spec]);
             return;
           }
           let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, false);
@@ -361,19 +361,19 @@ export function transformDeclarations(context: TrafoContext) {
       return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternIniters(elem.name), shouldPrintWithIniter(elem) ? elem.initer : undefined);
     }
   }
-  function ensureParameter(p: ParameterDeclaration, modifierMask?: ModifierFlags, type?: Typing): ParameterDeclaration {
+  function ensureParam(p: ParamDeclaration, modifierMask?: ModifierFlags, type?: Typing): ParamDeclaration {
     let oldDiag: typeof getSymbolAccessibilityDiagnostic | undefined;
     if (!suppressNewDiagnosticContexts) {
       oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p);
     }
-    const newParam = updateParameter(
+    const newParam = updateParam(
       p,
       undefined,
       maskModifiers(p, modifierMask),
       p.dot3Token,
       filterBindingPatternIniters(p.name),
-      resolver.isOptionalParameter(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
+      resolver.isOptionalParam(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
       ensureType(p, type || p.type, true),
       ensureNoIniter(p)
     );
@@ -397,13 +397,13 @@ export function transformDeclarations(context: TrafoContext) {
     | VariableDeclaration
     | MethodSignature
     | CallSignatureDeclaration
-    | ParameterDeclaration
+    | ParamDeclaration
     | PropertyDeclaration
     | PropertySignature;
   function ensureType(node: HasInferredType, type: Typing | undefined, ignorePrivate?: boolean): Typing | undefined {
     if (!ignorePrivate && qc.has.effectiveModifier(node, ModifierFlags.Private)) return;
     if (shouldPrintWithIniter(node)) return;
-    const shouldUseResolverType = node.kind === Syntax.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
+    const shouldUseResolverType = node.kind === Syntax.Param && (resolver.isRequiredInitializedParam(node) || resolver.isOptionalUninitializedParamProperty(node));
     if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
     if (!qc.get.parseTreeOf(node)) return type ? visitNode(type, visitDeclarationSubtree) : new qc.KeywordTyping(Syntax.AnyKeyword);
     if (node.kind === Syntax.SetAccessor) return new qc.KeywordTyping(Syntax.AnyKeyword);
@@ -415,7 +415,7 @@ export function transformDeclarations(context: TrafoContext) {
     }
     if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElem)
       return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
-    if (node.kind === Syntax.Parameter || node.kind === Syntax.PropertyDeclaration || node.kind === Syntax.PropertySignature) {
+    if (node.kind === Syntax.Param || node.kind === Syntax.PropertyDeclaration || node.kind === Syntax.PropertySignature) {
       if (!node.initer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
       return cleanup(
         resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType) ||
@@ -454,33 +454,33 @@ export function transformDeclarations(context: TrafoContext) {
     if (qc.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elems, getBindingNameVisible);
     return resolver.qf.is.declarationVisible(elem);
   }
-  function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
+  function updateParamsList(node: Node, params: Nodes<ParamDeclaration>, modifierMask?: ModifierFlags) {
     if (qc.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
-    const newParams = map(params, (p) => ensureParameter(p, modifierMask));
+    const newParams = map(params, (p) => ensureParam(p, modifierMask));
     if (!newParams) return undefined!;
     return new Nodes(newParams, params.trailingComma);
   }
   function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
-    let newParams: ParameterDeclaration[] | undefined;
+    let newParams: ParamDeclaration[] | undefined;
     if (!isPrivate) {
-      const thisParameter = getThisNode(ParameterDeclaration, input);
-      if (thisParameter) newParams = [ensureParameter(thisParameter)];
+      const thisParam = getThisNode(ParamDeclaration, input);
+      if (thisParam) newParams = [ensureParam(thisParam)];
     }
     if (qc.is.kind(qc.SetAccessorDeclaration, input)) {
-      let newValueParameter: ParameterDeclaration | undefined;
+      let newValueParam: ParamDeclaration | undefined;
       if (!isPrivate) {
-        const valueParameter = qf.get.setAccessorValueParameter(input);
-        if (valueParameter) {
+        const valueParam = qf.get.setAccessorValueParam(input);
+        if (valueParam) {
           const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.qf.get.allAccessorDeclarations(input));
-          newValueParameter = ensureParameter(valueParameter, undefined, accessorType);
+          newValueParam = ensureParam(valueParam, undefined, accessorType);
         }
       }
-      if (!newValueParameter) newValueParameter = new qc.ParameterDeclaration(undefined, undefined, 'value');
-      newParams = append(newParams, newValueParameter);
+      if (!newValueParam) newValueParam = new qc.ParamDeclaration(undefined, undefined, 'value');
+      newParams = append(newParams, newValueParam);
     }
-    return new Nodes(newParams || emptyArray) as Nodes<ParameterDeclaration>;
+    return new Nodes(newParams || emptyArray) as Nodes<ParamDeclaration>;
   }
-  function ensureTypeParams(node: Node, params: Nodes<TypeParameterDeclaration> | undefined) {
+  function ensureTypeParams(node: Node, params: Nodes<TypeParamDeclaration> | undefined) {
     return qc.has.effectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
   }
   function isEnclosingDeclaration(node: Node) {
@@ -524,8 +524,8 @@ export function transformDeclarations(context: TrafoContext) {
   function transformImportEqualsDeclaration(decl: ImportEqualsDeclaration) {
     if (!resolver.qf.is.declarationVisible(decl)) return;
     if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
-      const specifier = qc.get.externalModuleImportEqualsDeclarationExpression(decl);
-      return decl.update(undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
+      const spec = qc.get.externalModuleImportEqualsDeclarationExpression(decl);
+      return decl.update(undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, spec)));
     } else {
       const oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(decl);
@@ -635,17 +635,17 @@ export function transformDeclarations(context: TrafoContext) {
         case Syntax.ExpressionWithTypings: {
           if (qc.is.entityName(input.expression) || qc.is.entityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(node.update(parenthesizeTypeParameters(node.typeArguments), node.expression));
+          return cleanup(node.update(parenthesizeTypeParams(node.typeArguments), node.expression));
         }
         case Syntax.TypingReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(node.update(node.typeName, parenthesizeTypeParameters(node.typeArguments)));
+          return cleanup(node.update(node.typeName, parenthesizeTypeParams(node.typeArguments)));
         }
         case Syntax.ConstructSignature:
-          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
+          return cleanup(input.update(ensureTypeParams(input, input.typeParams), updateParamsList(input, input.params), ensureType(input, input.type)));
         case Syntax.Constructor: {
-          const ctor = SignatureDeclaration.create(Syntax.Constructor, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters, ModifierFlags.None), undefined);
+          const ctor = SignatureDeclaration.create(Syntax.Constructor, ensureTypeParams(input, input.typeParams), updateParamsList(input, input.params, ModifierFlags.None), undefined);
           ctor.modifiers = new Nodes(ensureModifiers(input));
           return cleanup(ctor);
         }
@@ -653,8 +653,8 @@ export function transformDeclarations(context: TrafoContext) {
           if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           const sig = SignatureDeclaration.create(
             Syntax.MethodSignature,
-            ensureTypeParams(input, input.typeParameters),
-            updateParamsList(input, input.parameters),
+            ensureTypeParams(input, input.typeParams),
+            updateParamsList(input, input.params),
             ensureType(input, input.type)
           ) as MethodSignature;
           sig.name = input.name;
@@ -688,14 +688,14 @@ export function transformDeclarations(context: TrafoContext) {
           return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoIniter(input)));
         case Syntax.MethodSignature: {
           if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
-          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken));
+          return cleanup(input.update(ensureTypeParams(input, input.typeParams), updateParamsList(input, input.params), ensureType(input, input.type), input.name, input.questionToken));
         }
         case Syntax.CallSignature: {
-          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
+          return cleanup(input.update(ensureTypeParams(input, input.typeParams), updateParamsList(input, input.params), ensureType(input, input.type)));
         }
         case Syntax.IndexSignature: {
           return cleanup(
-            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree) || new qc.KeywordTyping(Syntax.AnyKeyword))
+            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.params), visitNode(input.type, visitDeclarationSubtree) || new qc.KeywordTyping(Syntax.AnyKeyword))
           );
         }
         case Syntax.VariableDeclaration: {
@@ -704,8 +704,8 @@ export function transformDeclarations(context: TrafoContext) {
           suppressNewDiagnosticContexts = true;
           return cleanup(input.update(input.name, ensureType(input, input.type), ensureNoIniter(input)));
         }
-        case Syntax.TypeParameter: {
-          if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) return cleanup(updateTypeParameterDeclaration(input, input.name, undefined));
+        case Syntax.TypeParam: {
+          if (isPrivateMethodTypeParam(input) && (input.default || input.constraint)) return cleanup(updateTypeParamDeclaration(input, input.name, undefined));
           return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
         }
         case Syntax.ConditionalTyping: {
@@ -719,14 +719,14 @@ export function transformDeclarations(context: TrafoContext) {
           return cleanup(input.update(checkType, extendsType, trueType, falseType));
         }
         case Syntax.FunctionTyping: {
-          return cleanup(input.update(Nodes.visit(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree)));
+          return cleanup(input.update(Nodes.visit(input.typeParams, visitDeclarationSubtree), updateParamsList(input, input.params), visitNode(input.type, visitDeclarationSubtree)));
         }
         case Syntax.ConstructorTyping: {
           return cleanup(
             ConstructorDeclaration.updateTypeNode(
               input,
-              Nodes.visit(input.typeParameters, visitDeclarationSubtree),
-              updateParamsList(input, input.parameters),
+              Nodes.visit(input.typeParams, visitDeclarationSubtree),
+              updateParamsList(input, input.params),
               visitNode(input.type, visitDeclarationSubtree)
             )
           );
@@ -758,7 +758,7 @@ export function transformDeclarations(context: TrafoContext) {
       return returnValue && preserveDoc(returnValue, input).setOriginal(input);
     }
   }
-  function isPrivateMethodTypeParameter(node: TypeParameterDeclaration) {
+  function isPrivateMethodTypeParam(node: TypeParamDeclaration) {
     return node.parent.kind === Syntax.MethodDeclaration && qc.has.effectiveModifier(node.parent, ModifierFlags.Private);
   }
   function visitDeclarationStmts(input: Node): VisitResult<Node> {
@@ -825,7 +825,7 @@ export function transformDeclarations(context: TrafoContext) {
             undefined,
             ensureModifiers(input),
             input.name,
-            Nodes.visit(input.typeParameters, visitDeclarationSubtree, isTypeParameterDeclaration),
+            Nodes.visit(input.typeParams, visitDeclarationSubtree, isTypeParamDeclaration),
             visitNode(input.type, visitDeclarationSubtree, isTypeNode)
           )
         );
@@ -835,7 +835,7 @@ export function transformDeclarations(context: TrafoContext) {
             undefined,
             ensureModifiers(input),
             input.name,
-            ensureTypeParams(input, input.typeParameters),
+            ensureTypeParams(input, input.typeParams),
             transformHeritageClauses(input.heritageClauses),
             Nodes.visit(input.members, visitDeclarationSubtree)
           )
@@ -848,8 +848,8 @@ export function transformDeclarations(context: TrafoContext) {
             ensureModifiers(input),
             undefined,
             input.name,
-            ensureTypeParams(input, input.typeParameters),
-            updateParamsList(input, input.parameters),
+            ensureTypeParams(input, input.typeParams),
+            updateParamsList(input, input.params),
             ensureType(input, input.type),
             undefined
           )
@@ -872,7 +872,7 @@ export function transformDeclarations(context: TrafoContext) {
           const namespaceDecl = new qc.ModuleDeclaration(undefined, ensureModifiers(input), input.name!, new qc.ModuleBlock(declarations), NodeFlags.Namespace);
           if (!qc.has.effectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
           const modifiers = qc.create.modifiersFromFlags((qc.get.effectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
-          const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
+          const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParams, clean.params, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
           const exportDefaultDeclaration = new qc.ExportAssignment(undefined, false, namespaceDecl.name);
           if (qc.is.kind(qc.SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
@@ -917,14 +917,14 @@ export function transformDeclarations(context: TrafoContext) {
       }
       case Syntax.ClassDeclaration: {
         const modifiers = new Nodes(ensureModifiers(input));
-        const typeParameters = ensureTypeParams(input, input.typeParameters);
+        const typeParams = ensureTypeParams(input, input.typeParams);
         const ctor = qf.get.firstConstructorWithBody(input);
-        let parameterProperties: readonly PropertyDeclaration[] | undefined;
+        let paramProperties: readonly PropertyDeclaration[] | undefined;
         if (ctor) {
           const oldDiag = getSymbolAccessibilityDiagnostic;
-          parameterProperties = compact(
-            flatMap(ctor.parameters, (param) => {
-              if (!qc.has.syntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
+          paramProperties = compact(
+            flatMap(ctor.params, (param) => {
+              if (!qc.has.syntacticModifier(param, ModifierFlags.ParamPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
               if (param.name.kind === Syntax.Identifier)
                 return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoIniter(param)), param);
@@ -945,7 +945,7 @@ export function transformDeclarations(context: TrafoContext) {
         }
         const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qc.is.kind(qc.PrivateIdentifier, member.name));
         const privateIdentifier = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : undefined;
-        const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
+        const memberNodes = concatenate(concatenate(privateIdentifier, paramProperties), Nodes.visit(input.members, visitDeclarationSubtree));
         const members = new Nodes(memberNodes);
         const extendsClause = qf.get.effectiveBaseTypeNode(input);
         if (extendsClause && !qc.is.entityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
@@ -976,10 +976,10 @@ export function transformDeclarations(context: TrafoContext) {
               );
             })
           );
-          return [statement, cleanup(input.update(undefined, modifiers, input.name, typeParameters, heritageClauses, members))!];
+          return [statement, cleanup(input.update(undefined, modifiers, input.name, typeParams, heritageClauses, members))!];
         } else {
           const heritageClauses = transformHeritageClauses(input.heritageClauses);
-          return cleanup(input.update(undefined, modifiers, input.name, typeParameters, heritageClauses, members));
+          return cleanup(input.update(undefined, modifiers, input.name, typeParams, heritageClauses, members));
         }
       }
       case Syntax.VariableStatement: {
@@ -1114,15 +1114,15 @@ function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFla
   return flags;
 }
 function getTypeAnnotationFromAccessor(accessor: AccessorDeclaration): Typing | undefined {
-  if (accessor) return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.parameters.length > 0 ? accessor.parameters[0].type : undefined;
+  if (accessor) return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.params.length > 0 ? accessor.params[0].type : undefined;
 }
-type CanHaveLiteralIniter = VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration;
+type CanHaveLiteralIniter = VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration;
 function canHaveLiteralIniter(node: Node): boolean {
   switch (node.kind) {
     case Syntax.PropertyDeclaration:
     case Syntax.PropertySignature:
       return !qc.has.effectiveModifier(node, ModifierFlags.Private);
-    case Syntax.Parameter:
+    case Syntax.Param:
     case Syntax.VariableDeclaration:
       return true;
   }
@@ -1169,7 +1169,7 @@ type ProcessedComponent =
   | CallSignatureDeclaration
   | IndexSignatureDeclaration
   | VariableDeclaration
-  | TypeParameterDeclaration
+  | TypeParamDeclaration
   | ExpressionWithTypings
   | TypingReference
   | ConditionalTyping
@@ -1189,7 +1189,7 @@ function isProcessedComponent(node: Node): node is ProcessedComponent {
     case Syntax.CallSignature:
     case Syntax.IndexSignature:
     case Syntax.VariableDeclaration:
-    case Syntax.TypeParameter:
+    case Syntax.TypeParam:
     case Syntax.ExpressionWithTypings:
     case Syntax.TypingReference:
     case Syntax.ConditionalTyping:

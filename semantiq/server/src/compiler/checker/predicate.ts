@@ -53,7 +53,7 @@ export function newIs(f: qt.Frame) {
         case Syntax.SetAccessor:
         case Syntax.MethodDeclaration:
           return n.body !== undefined && p?.kind === Syntax.ClassDeclaration;
-        case Syntax.Parameter:
+        case Syntax.Param:
           return p?.body !== undefined && (p?.kind === Syntax.Constructor || p?.kind === Syntax.MethodDeclaration || p?.kind === Syntax.SetAccessor) && grandp?.kind === Syntax.ClassDeclaration;
       }
       return false;
@@ -97,7 +97,7 @@ export function newIs(f: qt.Frame) {
         const sourceFiles = host.getSourceFiles();
         return sourceFiles.indexOf(dFile) <= sourceFiles.indexOf(useFile);
       }
-      const isPropertyImmediatelyReferencedWithinDeclaration = (d: qt.PropertyDeclaration | qt.ParameterPropertyDeclaration, stop: boolean) => {
+      const isPropertyImmediatelyReferencedWithinDeclaration = (d: qt.PropertyDeclaration | qt.ParamPropertyDeclaration, stop: boolean) => {
         if (usage.end > d.end) return false;
         const changer = qc.findAncestor(usage, (n: Node) => {
           if (n === d) return 'quit';
@@ -105,7 +105,7 @@ export function newIs(f: qt.Frame) {
             case Syntax.ArrowFunction:
               return true;
             case Syntax.PropertyDeclaration:
-              return stop && ((d.kind === Syntax.PropertyDeclaration && n.parent === d.parent) || (this.parameterPropertyDeclaration(d, d.parent) && n.parent === d.parent?.parent)) ? 'quit' : true;
+              return stop && ((d.kind === Syntax.PropertyDeclaration && n.parent === d.parent) || (this.paramPropertyDeclaration(d, d.parent) && n.parent === d.parent?.parent)) ? 'quit' : true;
             case Syntax.Block:
               switch (n.parent?.kind) {
                 case Syntax.GetAccessor:
@@ -140,7 +140,7 @@ export function newIs(f: qt.Frame) {
           return !qc.findAncestor(usage, (n) => n.kind === Syntax.ComputedPropertyName && n.parent?.parent === d);
         } else if (d.kind === Syntax.PropertyDeclaration) {
           return !isPropertyImmediatelyReferencedWithinDeclaration(d, false);
-        } else if (this.parameterPropertyDeclaration(d, d.parent)) {
+        } else if (this.paramPropertyDeclaration(d, d.parent)) {
           return !(
             compilerOptions.target === qt.ScriptTarget.ESNext &&
             !!compilerOptions.useDefineForClassFields &&
@@ -161,7 +161,7 @@ export function newIs(f: qt.Frame) {
           compilerOptions.target === qt.ScriptTarget.ESNext &&
           !!compilerOptions.useDefineForClassFields &&
           qf.get.containingClass(d) &&
-          (d.kind === Syntax.PropertyDeclaration || this.parameterPropertyDeclaration(d, d.parent))
+          (d.kind === Syntax.PropertyDeclaration || this.paramPropertyDeclaration(d, d.parent))
         ) {
           return !isPropertyImmediatelyReferencedWithinDeclaration(d, true);
         }
@@ -345,7 +345,7 @@ export function newIs(f: qt.Frame) {
             case Syntax.IntersectionTyping:
             case Syntax.ModuleBlock:
             case Syntax.NamedTupleMember:
-            case Syntax.Parameter:
+            case Syntax.Param:
             case Syntax.ParenthesizedTyping:
             case Syntax.TupleTyping:
             case Syntax.TypingLiteral:
@@ -358,7 +358,7 @@ export function newIs(f: qt.Frame) {
               return false;
             case Syntax.NamespaceExportDeclaration:
             case Syntax.SourceFile:
-            case Syntax.TypeParameter:
+            case Syntax.TypeParam:
               return true;
             case Syntax.ExportAssignment:
               return false;
@@ -412,7 +412,7 @@ export function newIs(f: qt.Frame) {
       const signatures = getSignaturesOfType(t, qt.SignatureKind.Construct);
       if (signatures.length === 1) {
         const s = signatures[0];
-        return !s.typeParameters && s.parameters.length === 1 && signatureHasRestParameter(s) && getElemTypeOfArrayType(getTypeOfParameter(s.parameters[0])) === anyType;
+        return !s.typeParams && s.params.length === 1 && signatureHasRestParam(s) && getElemTypeOfArrayType(getTypeOfParam(s.params[0])) === anyType;
       }
       return false;
     }
@@ -425,7 +425,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     validBaseType(t: qt.Type): t is qt.BaseType {
-      if (t.flags & TypeFlags.TypeParameter) {
+      if (t.flags & TypeFlags.TypeParam) {
         const constraint = qf.get.baseConstraintOfType(t);
         if (constraint) return this.validBaseType(constraint);
       }
@@ -477,8 +477,8 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    thislessTypeParameter(n: qt.TypeParameterDeclaration) {
-      const c = qf.get.effectiveConstraintOfTypeParameter(n);
+    thislessTypeParam(n: qt.TypeParamDeclaration) {
+      const c = qf.get.effectiveConstraintOfTypeParam(n);
       return !c || this.thislessType(c);
     }
     thislessVariableLikeDeclaration(n: qt.VariableLikeDeclaration): boolean {
@@ -487,8 +487,8 @@ export function newIs(f: qt.Frame) {
     }
     thislessFunctionLikeDeclaration(n: qt.FunctionLikeDeclaration): boolean {
       const t = qf.get.effectiveReturnTypeNode(n);
-      const ps = qf.get.effectiveTypeParameterDeclarations(n);
-      return (n.kind === Syntax.Constructor || (!!t && this.thislessType(t))) && n.parameters.every(this.thislessVariableLikeDeclaration) && ps.every(this.thislessTypeParameter);
+      const ps = qf.get.effectiveTypeParamDeclarations(n);
+      return (n.kind === Syntax.Constructor || (!!t && this.thislessType(t))) && n.params.every(this.thislessVariableLikeDeclaration) && ps.every(this.thislessTypeParam);
     }
     staticPrivateIdentifierProperty(s: Symbol): boolean {
       return this.privateIdentifierPropertyDeclaration(s.valueDeclaration) && qf.has.syntacticModifier(s.valueDeclaration, ModifierFlags.Static);
@@ -537,27 +537,27 @@ export function newIs(f: qt.Frame) {
     conflictingPrivateProperty(s: Symbol) {
       return !s.valueDeclaration && !!(s.checkFlags() & CheckFlags.ContainsPrivate);
     }
-    docOptionalParameter(n: qt.ParameterDeclaration) {
+    docOptionalParam(n: qt.ParamDeclaration) {
       return (
         this.inJSFile(n) &&
         ((n.type && n.type.kind === Syntax.DocOptionalTyping) ||
-          qc.getDoc.parameterTags(n).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping)))
+          qc.getDoc.paramTags(n).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping)))
       );
     }
-    optionalParameter(n: qt.ParameterDeclaration | qt.DocParameterTag) {
-      if (qf.has.questionToken(n) || this.optionalDocParameterTag(n) || this.docOptionalParameter(n)) return true;
+    optionalParam(n: qt.ParamDeclaration | qt.DocParamTag) {
+      if (qf.has.questionToken(n) || this.optionalDocParamTag(n) || this.docOptionalParam(n)) return true;
       if (n.initer) {
         const signature = qf.get.signatureFromDeclaration(n.parent);
-        const parameterIndex = n.parent.parameters.indexOf(n);
-        qu.assert(parameterIndex >= 0);
-        return parameterIndex >= getMinArgumentCount(signature, true);
+        const paramIndex = n.parent.params.indexOf(n);
+        qu.assert(paramIndex >= 0);
+        return paramIndex >= getMinArgumentCount(signature, true);
       }
       const iife = qf.get.immediatelyInvokedFunctionExpression(n.parent);
-      if (iife) return !n.type && !n.dot3Token && n.parent.parameters.indexOf(n) >= iife.arguments.length;
+      if (iife) return !n.type && !n.dot3Token && n.parent.params.indexOf(n) >= iife.arguments.length;
       return false;
     }
-    optionalDocParameterTag(n: Node): n is qt.DocParameterTag {
-      if (n.kind !== Syntax.DocParameterTag) return false;
+    optionalDocParamTag(n: Node): n is qt.DocParamTag {
+      if (n.kind !== Syntax.DocParamTag) return false;
       const { isBracketed, typeExpression } = n;
       return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping);
     }
@@ -646,8 +646,8 @@ export function newIs(f: qt.Frame) {
       }
       return !!(t.flags & (TypeFlags.InstantiableNonPrimitive | TypeFlags.Index));
     }
-    thisTypeParameter(t: qt.Type): boolean {
-      return !!(t.flags & TypeFlags.TypeParameter && t.isThisType);
+    thisTypeParam(t: qt.Type): boolean {
+      return !!(t.flags & TypeFlags.TypeParam && t.isThisType);
     }
     intersectionEmpty(t1: qt.Type, t2: qt.Type) {
       return !!(qf.get.unionType([intersectTypes(t1, t2), neverType]).flags & TypeFlags.Never);
@@ -688,7 +688,7 @@ export function newIs(f: qt.Frame) {
     freshLiteralType(t: qt.Type) {
       return !!(t.flags & TypeFlags.Literal) && (t as qt.LiteralType).freshType === t;
     }
-    typeParameterPossiblyReferenced(tp: qt.TypeParameter, node: Node) {
+    typeParamPossiblyReferenced(tp: qt.TypeParam, node: Node) {
       if (tp.symbol && tp.symbol.declarations && tp.symbol.declarations.length === 1) {
         const container = tp.symbol.declarations[0].parent;
         const containsReference = (n: Node): boolean => {
@@ -696,7 +696,7 @@ export function newIs(f: qt.Frame) {
             case Syntax.ThisTyping:
               return !!tp.isThisType;
             case Syntax.Identifier:
-              return !tp.isThisType && this.partOfTypeNode(n) && maybeTypeParameterReference(n) && qf.get.typeFromTypeNodeWorker(<Typing>n) === tp;
+              return !tp.isThisType && this.partOfTypeNode(n) && maybeTypeParamReference(n) && qf.get.typeFromTypeNodeWorker(<Typing>n) === tp;
             case Syntax.TypingQuery:
               return true;
           }
@@ -741,7 +741,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     contextSensitiveFunctionLikeDeclaration(n: qt.FunctionLikeDeclaration): boolean {
-      return (!n.kind === Syntax.FunctionDeclaration || (this.inJSFile(n) && !!getTypeForDeclarationFromDocComment(n))) && (hasContextSensitiveParameters(n) || hasContextSensitiveReturnExpression(n));
+      return (!n.kind === Syntax.FunctionDeclaration || (this.inJSFile(n) && !!getTypeForDeclarationFromDocComment(n))) && (hasContextSensitiveParams(n) || hasContextSensitiveReturnExpression(n));
     }
     contextSensitiveFunctionOrObjectLiteralMethod(n: Node): n is qt.FunctionExpression | qt.ArrowFunction | qt.MethodDeclaration {
       return ((this.inJSFile(n) && n.kind === Syntax.FunctionDeclaration) || isFunctionExpressionOrArrowFunction(n) || this.objectLiteralMethod(n)) && this.contextSensitiveFunctionLikeDeclaration(n);
@@ -779,11 +779,11 @@ export function newIs(f: qt.Frame) {
     }
     anySignature(s: qt.Signature) {
       return (
-        !s.typeParameters &&
-        (!s.thisParameter || this.typeAny(getTypeOfParameter(s.thisParameter))) &&
-        s.parameters.length === 1 &&
-        signatureHasRestParameter(s) &&
-        (getTypeOfParameter(s.parameters[0]) === anyArrayType || this.typeAny(getTypeOfParameter(s.parameters[0]))) &&
+        !s.typeParams &&
+        (!s.thisParam || this.typeAny(getTypeOfParam(s.thisParam))) &&
+        s.params.length === 1 &&
+        signatureHasRestParam(s) &&
+        (getTypeOfParam(s.params[0]) === anyArrayType || this.typeAny(getTypeOfParam(s.params[0]))) &&
         this.typeAny(qf.get.returnTypeOfSignature(s))
       );
     }
@@ -920,14 +920,14 @@ export function newIs(f: qt.Frame) {
       if (t.flags & TypeFlags.Intersection) return qu.every(t.types, isWeakType);
       return false;
     }
-    unconstrainedTypeParameter(t: qt.Type) {
-      return t.flags & TypeFlags.TypeParameter && !qf.get.constraintOfTypeParameter(t);
+    unconstrainedTypeParam(t: qt.Type) {
+      return t.flags & TypeFlags.TypeParam && !qf.get.constraintOfTypeParam(t);
     }
     nonDeferredTypeReference(t: qt.Type): t is qt.TypeReference {
       return !!(getObjectFlags(t) & ObjectFlags.Reference) && !t.node;
     }
     typeReferenceWithGenericArguments(t: qt.Type): boolean {
-      return this.nonDeferredTypeReference(t) && qu.some(getTypeArguments(t), (t) => this.unconstrainedTypeParameter(t) || this.typeReferenceWithGenericArguments(t));
+      return this.nonDeferredTypeReference(t) && qu.some(getTypeArguments(t), (t) => this.unconstrainedTypeParam(t) || this.typeReferenceWithGenericArguments(t));
     }
     propertyInClassDerivedFrom(s: Symbol, baseClass: qt.Type | undefined) {
       return forEachProperty(s, (sp) => {
@@ -972,13 +972,13 @@ export function newIs(f: qt.Frame) {
       return compareProperties(sProp, tProp, compareTypesIdentical) !== Ternary.False;
     }
     matchingSignature(s: qt.Signature, t: qt.Signature, partialMatch: boolean) {
-      const sParameterCount = getParameterCount(s);
-      const tParameterCount = getParameterCount(t);
+      const sParamCount = getParamCount(s);
+      const tParamCount = getParamCount(t);
       const sMinArgumentCount = getMinArgumentCount(s);
       const tMinArgumentCount = getMinArgumentCount(t);
-      const sHasRestParameter = hasEffectiveRestParameter(s);
-      const tHasRestParameter = hasEffectiveRestParameter(t);
-      if (sParameterCount === tParameterCount && sMinArgumentCount === tMinArgumentCount && sHasRestParameter === tHasRestParameter) return true;
+      const sHasRestParam = hasEffectiveRestParam(s);
+      const tHasRestParam = hasEffectiveRestParam(t);
+      if (sParamCount === tParamCount && sMinArgumentCount === tMinArgumentCount && sHasRestParam === tHasRestParam) return true;
       if (partialMatch && sMinArgumentCount <= tMinArgumentCount) return true;
       return false;
     }
@@ -1041,12 +1041,12 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    typeParameterAtTopLevel(t: qt.Type, p: qt.TypeParameter): boolean {
+    typeParamAtTopLevel(t: qt.Type, p: qt.TypeParam): boolean {
       return !!(
         t === p ||
-        (t.flags & TypeFlags.UnionOrIntersection && qu.some(t.types, (t) => this.typeParameterAtTopLevel(t, p))) ||
+        (t.flags & TypeFlags.UnionOrIntersection && qu.some(t.types, (t) => this.typeParamAtTopLevel(t, p))) ||
         (t.flags & TypeFlags.Conditional &&
-          (this.typeParameterAtTopLevel(getTrueTypeFromConditionalType(<ConditionalType>t), p) || this.typeParameterAtTopLevel(getFalseTypeFromConditionalType(<ConditionalType>t), p)))
+          (this.typeParamAtTopLevel(getTrueTypeFromConditionalType(<ConditionalType>t), p) || this.typeParamAtTopLevel(getFalseTypeFromConditionalType(<ConditionalType>t), p)))
       );
     }
     partiallyInferableType(t: qt.Type): boolean {
@@ -1168,8 +1168,8 @@ export function newIs(f: qt.Frame) {
     }
     declarationWithExplicitTypeAnnotation(d: qt.Declaration) {
       return (
-        (d.kind === Syntax.VariableDeclaration || d.kind === Syntax.Parameter || d.kind === Syntax.PropertyDeclaration || d.kind === Syntax.PropertySignature) &&
-        !!qf.get.effectiveTypeAnnotationNode(d as qt.VariableDeclaration | qt.ParameterDeclaration | qt.PropertyDeclaration | PropertySignature)
+        (d.kind === Syntax.VariableDeclaration || d.kind === Syntax.Param || d.kind === Syntax.PropertyDeclaration || d.kind === Syntax.PropertySignature) &&
+        !!qf.get.effectiveTypeAnnotationNode(d as qt.VariableDeclaration | qt.ParamDeclaration | qt.PropertyDeclaration | PropertySignature)
       );
     }
     reachableFlowNode(flow: qt.FlowNode) {
@@ -1205,7 +1205,7 @@ export function newIs(f: qt.Frame) {
           if (signature) {
             const predicate = getTypePredicateOfSignature(signature);
             if (predicate && predicate.kind === TypePredicateKind.AssertsIdentifier) {
-              const predicateArgument = (<FlowCall>flow).n.arguments[predicate.parameterIndex];
+              const predicateArgument = (<FlowCall>flow).n.arguments[predicate.paramIndex];
               if (predicateArgument && this.falseExpression(predicateArgument)) return false;
             }
             if (qf.get.returnTypeOfSignature(signature).flags & TypeFlags.Never) return false;
@@ -1295,12 +1295,12 @@ export function newIs(f: qt.Frame) {
       return !!qc.findAncestor(current, (n) => (n === container ? 'quit' : n === container.statement));
     }
     inConstructorArgumentIniter(n: Node, constructorDecl: Node): boolean {
-      return !!qc.findAncestor(n, (n) => (this.functionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
+      return !!qc.findAncestor(n, (n) => (this.functionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Param && n.parent === constructorDecl));
     }
-    inParameterIniterBeforeContainingFunction(n: Node) {
+    inParamIniterBeforeContainingFunction(n: Node) {
       let inBindingIniter = false;
       while (n.parent && !this.functionLike(n.parent)) {
-        if (n.parent.kind === Syntax.Parameter && (inBindingIniter || n.parent.initer === n)) return true;
+        if (n.parent.kind === Syntax.Param && (inBindingIniter || n.parent.initer === n)) return true;
         if (n.parent.kind === Syntax.BindingElem && n.parent.initer === n) inBindingIniter = true;
         n = n.parent;
       }
@@ -1327,13 +1327,13 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     aritySmaller(signature: qt.Signature, t: qt.SignatureDeclaration) {
-      let tParameterCount = 0;
-      for (; tParameterCount < t.parameters.length; tParameterCount++) {
-        const param = t.parameters[tParameterCount];
-        if (param.initer || param.questionToken || param.dot3Token || this.docOptionalParameter(param)) break;
+      let tParamCount = 0;
+      for (; tParamCount < t.params.length; tParamCount++) {
+        const param = t.params[tParamCount];
+        if (param.initer || param.questionToken || param.dot3Token || this.docOptionalParam(param)) break;
       }
-      if (t.parameters.length && parameterIsThqy.this.keyword(t.parameters[0])) tParameterCount--;
-      return !hasEffectiveRestParameter(signature) && getParameterCount(signature) < tParameterCount;
+      if (t.params.length && paramIsThqy.this.keyword(t.params[0])) tParamCount--;
+      return !hasEffectiveRestParam(signature) && getParamCount(signature) < tParamCount;
     }
     functionExpressionOrArrowFunction(n: Node): n is qt.FunctionExpression | qt.ArrowFunction {
       return n.kind === Syntax.FunctionExpression || n.kind === Syntax.ArrowFunction;
@@ -1488,12 +1488,12 @@ export function newIs(f: qt.Frame) {
       return !!n && (n.kind === Syntax.SpreadElem || (n.kind === Syntax.SyntheticExpression && n.isSpread));
     }
     genericFunctionReturningFunction(s: qt.Signature) {
-      return !!(s.typeParameters && this.functionType(qf.get.returnTypeOfSignature(s)));
+      return !!(s.typeParams && this.functionType(qf.get.returnTypeOfSignature(s)));
     }
     untypedFunctionCall(t: qt.Type, apparentFuncType: qt.Type, numCallSignatures: number, numConstructSignatures: number): boolean {
       return (
         this.typeAny(t) ||
-        (this.typeAny(apparentFuncType) && !!(t.flags & TypeFlags.TypeParameter)) ||
+        (this.typeAny(apparentFuncType) && !!(t.flags & TypeFlags.TypeParam)) ||
         (!numCallSignatures && !numConstructSignatures && !(apparentFuncType.flags & (TypeFlags.Union | TypeFlags.Never)) && this.typeAssignableTo(t, globalFunctionType))
       );
     }
@@ -1519,7 +1519,7 @@ export function newIs(f: qt.Frame) {
     potentiallyUncalledDecorator(decorator: Decorator, signatures: readonly qt.Signature[]) {
       return (
         signatures.length &&
-        qu.every(signatures, (signature) => signature.minArgumentCount === 0 && !signatureHasRestParameter(signature) && signature.parameters.length < getDecoratorArgumentCount(decorator, signature))
+        qu.every(signatures, (signature) => signature.minArgumentCount === 0 && !signatureHasRestParam(signature) && signature.params.length < getDecoratorArgumentCount(decorator, signature))
       );
     }
     jsConstructor(n?: Node): n is qt.FunctionDeclaration | qt.FunctionExpression {
@@ -1588,8 +1588,8 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    validDeclarationForTupleLabel(d: qt.Declaration): d is qt.NamedTupleMember | (ParameterDeclaration & { name: qc.Identifier }) {
-      return d.kind === Syntax.NamedTupleMember || (d.kind === Syntax.ParameterDeclaration && d.name && d.name.kind === Syntax.Identifier);
+    validDeclarationForTupleLabel(d: qt.Declaration): d is qt.NamedTupleMember | (ParamDeclaration & { name: qc.Identifier }) {
+      return d.kind === Syntax.NamedTupleMember || (d.kind === Syntax.ParamDeclaration && d.name && d.name.kind === Syntax.Identifier);
     }
     exhaustiveSwitchStatement(n: SwitchStatement): boolean {
       const links = qf.get.nodeLinks(n);
@@ -1623,10 +1623,10 @@ export function newIs(f: qt.Frame) {
           if (s.valueDeclaration) {
             const isAssignmentDeclaration = s.valueDeclaration.kind === Syntax.BinaryExpression;
             const isLocalPropertyDeclaration = ctor.parent === s.valueDeclaration.parent;
-            const isLocalParameterProperty = ctor === s.valueDeclaration.parent;
+            const isLocalParamProperty = ctor === s.valueDeclaration.parent;
             const isLocalThisPropertyAssignment = this.assignmentDeclaration && s.parent?.valueDeclaration === ctor.parent;
             const isLocalThisPropertyAssignmentConstructorFunction = this.assignmentDeclaration && s.parent?.valueDeclaration === ctor;
-            const isWriteableSymbol = isLocalPropertyDeclaration || isLocalParameterProperty || isLocalThisPropertyAssignment || isLocalThisPropertyAssignmentConstructorFunction;
+            const isWriteableSymbol = isLocalPropertyDeclaration || isLocalParamProperty || isLocalThisPropertyAssignment || isLocalThisPropertyAssignmentConstructorFunction;
             return !isWriteableSymbol;
           }
         }
@@ -1765,8 +1765,8 @@ export function newIs(f: qt.Frame) {
     identifierThatStartsWithUnderscore(n: Node) {
       return n.kind === Syntax.Identifier && idText(n).charCodeAt(0) === qy.Codes._;
     }
-    typeParameterUnused(d: qt.TypeParameterDeclaration) {
-      return !(qf.get.mergedSymbol(d.symbol).isReferenced! & qt.SymbolFlags.TypeParameter) && !this.identifierThatStartsWithUnderscore(d.name);
+    typeParamUnused(d: qt.TypeParamDeclaration) {
+      return !(qf.get.mergedSymbol(d.symbol).isReferenced! & qt.SymbolFlags.TypeParam) && !this.identifierThatStartsWithUnderscore(d.name);
     }
     validUnusedLocalDeclaration(d: qt.Declaration): boolean {
       if (d.kind === Syntax.BindingElem && this.identifierThatStartsWithUnderscore(d.name)) {
@@ -1916,17 +1916,11 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    requiredInitializedParameter(parameter: qt.ParameterDeclaration | qt.DocParameterTag): boolean {
-      return (
-        !!strictNullChecks &&
-        !isOptionalParameter(parameter) &&
-        !parameter.kind === Syntax.DocParameterTag &&
-        !!parameter.initer &&
-        !qf.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier)
-      );
+    requiredInitializedParam(param: qt.ParamDeclaration | qt.DocParamTag): boolean {
+      return !!strictNullChecks && !isOptionalParam(param) && !param.kind === Syntax.DocParamTag && !!param.initer && !qf.has.syntacticModifier(param, ModifierFlags.ParamPropertyModifier);
     }
-    optionalUninitializedParameterProperty(parameter: qt.ParameterDeclaration) {
-      return strictNullChecks && isOptionalParameter(parameter) && !parameter.initer && qf.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
+    optionalUninitializedParamProperty(param: qt.ParamDeclaration) {
+      return strictNullChecks && isOptionalParam(param) && !param.initer && qf.has.syntacticModifier(param, ModifierFlags.ParamPropertyModifier);
     }
     expandoFunctionDeclaration(n: qt.Declaration): boolean {
       const d = qf.get.parseTreeOf(n, isFunctionDeclaration);
@@ -1938,7 +1932,7 @@ export function newIs(f: qt.Frame) {
     functionType(t: qt.Type): boolean {
       return !!(t.flags & TypeFlags.Object) && getSignaturesOfType(t, qt.SignatureKind.Call).length > 0;
     }
-    literalConstDeclaration(n: qt.VariableDeclaration | qt.PropertyDeclaration | PropertySignature | qt.ParameterDeclaration): boolean {
+    literalConstDeclaration(n: qt.VariableDeclaration | qt.PropertyDeclaration | PropertySignature | qt.ParamDeclaration): boolean {
       if (this.declarationReadonly(n) || (n.kind === Syntax.VariableDeclaration && this.varConst(n))) return this.freshLiteralType(qf.get.typeOfSymbol(qf.get.symbolOfNode(n)));
       return false;
     }
@@ -1994,24 +1988,24 @@ export function newHas(f: qt.Frame) {
     nonCircularBaseConstraint(t: InstantiableType): boolean {
       return getResolvedBaseConstraint(t) !== circularConstraintType;
     }
-    nonCircularTypeParameterDefault(typeParameter: qt.TypeParameter) {
-      return qf.get.resolvedTypeParameterDefault(typeParameter) !== circularConstraintType;
+    nonCircularTypeParamDefault(typeParam: qt.TypeParam) {
+      return qf.get.resolvedTypeParamDefault(typeParam) !== circularConstraintType;
     }
-    typeParameterDefault(typeParameter: qt.TypeParameter): boolean {
-      return !!(typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => decl.kind === Syntax.TypeParameterDeclaration && decl.default));
+    typeParamDefault(typeParam: qt.TypeParam): boolean {
+      return !!(typeParam.symbol && forEach(typeParam.symbol.declarations, (decl) => decl.kind === Syntax.TypeParamDeclaration && decl.default));
     }
-    contextSensitiveParameters(n: qt.FunctionLikeDeclaration) {
-      if (!n.typeParameters) {
-        if (qu.some(n.parameters, (p) => !qf.get.effectiveTypeAnnotationNode(p))) return true;
+    contextSensitiveParams(n: qt.FunctionLikeDeclaration) {
+      if (!n.typeParams) {
+        if (qu.some(n.params, (p) => !qf.get.effectiveTypeAnnotationNode(p))) return true;
         if (n.kind !== Syntax.ArrowFunction) {
-          const parameter = firstOrUndefined(n.parameters);
-          if (!(parameter && parameterIsThqy.this.keyword(parameter))) return true;
+          const param = firstOrUndefined(n.params);
+          if (!(param && paramIsThqy.this.keyword(param))) return true;
         }
       }
       return false;
     }
     contextSensitiveReturnExpression(n: qt.FunctionLikeDeclaration) {
-      return !n.typeParameters && !qf.get.effectiveReturnTypeNode(n) && !!n.body && n.body.kind !== Syntax.Block && this.contextSensitive(n.body);
+      return !n.typeParams && !qf.get.effectiveReturnTypeNode(n) && !!n.body && n.body.kind !== Syntax.Block && this.contextSensitive(n.body);
     }
     commonProperties(s: qt.Type, t: qt.Type, isComparingJsxAttributes: boolean) {
       for (const prop of qf.get.propertiesOfType(s)) {
@@ -2028,8 +2022,8 @@ export function newHas(f: qt.Frame) {
     skipDirectInferenceFlag(n: Node) {
       return !!qf.get.nodeLinks(n).skipDirectInference;
     }
-    primitiveConstraint(t: qt.TypeParameter): boolean {
-      const constraint = qf.get.constraintOfTypeParameter(t);
+    primitiveConstraint(t: qt.TypeParam): boolean {
+      const constraint = qf.get.constraintOfTypeParam(t);
       return (
         !!constraint &&
         maybeTypeOfKind(constraint.flags & TypeFlags.Conditional ? getDefaultConstraintOfConditionalType(constraint as ConditionalType) : constraint, TypeFlags.Primitive | TypeFlags.Index)
@@ -2059,7 +2053,7 @@ export function newHas(f: qt.Frame) {
     correctArity(n: CallLikeExpression, args: readonly Expression[], signature: qt.Signature, signatureHelpTrailingComma = false) {
       let argCount: number;
       let callIsIncomplete = false;
-      let effectiveParameterCount = getParameterCount(signature);
+      let effectiveParamCount = getParamCount(signature);
       let effectiveMinimumArguments = getMinArgumentCount(signature);
       if (n.kind === Syntax.TaggedTemplateExpression) {
         argCount = args.length;
@@ -2077,7 +2071,7 @@ export function newHas(f: qt.Frame) {
         callIsIncomplete = n.attributes.end === n.end;
         if (callIsIncomplete) return true;
         argCount = effectiveMinimumArguments === 0 ? args.length : 1;
-        effectiveParameterCount = args.length === 0 ? effectiveParameterCount : 1;
+        effectiveParamCount = args.length === 0 ? effectiveParamCount : 1;
         effectiveMinimumArguments = Math.min(effectiveMinimumArguments, 1);
       } else {
         if (!n.arguments) {
@@ -2087,9 +2081,9 @@ export function newHas(f: qt.Frame) {
         argCount = signatureHelpTrailingComma ? args.length + 1 : args.length;
         callIsIncomplete = n.arguments.end === n.end;
         const spreadArgIndex = getSpreadArgumentIndex(args);
-        if (spreadArgIndex >= 0) return spreadArgIndex >= getMinArgumentCount(signature) && (hasEffectiveRestParameter(signature) || spreadArgIndex < getParameterCount(signature));
+        if (spreadArgIndex >= 0) return spreadArgIndex >= getMinArgumentCount(signature) && (hasEffectiveRestParam(signature) || spreadArgIndex < getParamCount(signature));
       }
-      if (!hasEffectiveRestParameter(signature) && argCount > effectiveParameterCount) return false;
+      if (!hasEffectiveRestParam(signature) && argCount > effectiveParamCount) return false;
       if (callIsIncomplete || argCount >= effectiveMinimumArguments) return true;
       for (let i = argCount; i < effectiveMinimumArguments; i++) {
         const t = getTypeAtPosition(signature, i);
@@ -2098,13 +2092,13 @@ export function newHas(f: qt.Frame) {
       return true;
     }
     correctTypeArgumentArity(signature: qt.Signature, typeArguments: Nodes<Typing> | undefined) {
-      const numTypeParameters = length(signature.typeParameters);
-      const minTypeArgumentCount = getMinTypeArgumentCount(signature.typeParameters);
-      return !qu.some(typeArguments) || (typeArguments.length >= minTypeArgumentCount && typeArguments.length <= numTypeParameters);
+      const numTypeParams = length(signature.typeParams);
+      const minTypeArgumentCount = getMinTypeArgumentCount(signature.typeParams);
+      return !qu.some(typeArguments) || (typeArguments.length >= minTypeArgumentCount && typeArguments.length <= numTypeParams);
     }
-    effectiveRestParameter(signature: qt.Signature) {
-      if (signatureHasRestParameter(signature)) {
-        const restType = qf.get.typeOfSymbol(signature.parameters[signature.parameters.length - 1]);
+    effectiveRestParam(signature: qt.Signature) {
+      if (signatureHasRestParam(signature)) {
+        const restType = qf.get.typeOfSymbol(signature.params[signature.params.length - 1]);
         return !this.tupleType(restType) || restType.target.hasRestElem;
       }
       return false;
@@ -2118,8 +2112,8 @@ export function newHas(f: qt.Frame) {
       }
       return false;
     }
-    typeParameterByName(typeParameters: readonly qt.TypeParameter[] | undefined, name: qu.__String) {
-      return qu.some(typeParameters, (tp) => tp.symbol.escName === name);
+    typeParamByName(typeParams: readonly qt.TypeParam[] | undefined, name: qu.__String) {
+      return qu.some(typeParams, (tp) => tp.symbol.escName === name);
     }
     exportedMembers(moduleSymbol: Symbol) {
       return forEachEntry(moduleSymbol.exports!, (_, id) => id !== 'export=');

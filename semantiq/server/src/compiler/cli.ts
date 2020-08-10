@@ -543,12 +543,12 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     description: qd.Report_errors_on_unused_locals,
   },
   {
-    name: 'noUnusedParameters',
+    name: 'noUnusedParams',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     showInSimplifiedHelpView: true,
     category: qd.Additional_Checks,
-    description: qd.Report_errors_on_unused_parameters,
+    description: qd.Report_errors_on_unused_params,
   },
   {
     name: 'noImplicitReturns',

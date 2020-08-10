@@ -366,16 +366,7 @@ export function transformGenerators(context: TrafoContext) {
     if (node.asteriskToken) {
       node = setOriginalNode(
         setRange(
-          new qc.FunctionDeclaration(
-            undefined,
-            node.modifiers,
-            undefined,
-            node.name,
-            undefined,
-            visitParameterList(node.parameters, visitor, context),
-            undefined,
-            transformGeneratorFunctionBody(node.body!)
-          ),
+          new qc.FunctionDeclaration(undefined, node.modifiers, undefined, node.name, undefined, visitParamList(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body!)),
           node
         ),
         node
@@ -401,10 +392,7 @@ export function transformGenerators(context: TrafoContext) {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(
-        setRange(
-          new qc.FunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
-          node
-        ),
+        setRange(new qc.FunctionExpression(undefined, undefined, node.name, undefined, visitParamList(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body)), node),
         node
       );
     } else {
@@ -1840,7 +1828,7 @@ export function transformGenerators(context: TrafoContext) {
     return createGeneratorHelper(
       context,
       setEmitFlags(
-        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
+        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
         EmitFlags.ReuseTempVariableScope
       )
     );
@@ -2121,7 +2109,7 @@ function createGeneratorHelper(context: TrafoContext, body: FunctionExpression) 
 // object that implements the Iterator protocol, in that it has `next`, `return`, and
 // `throw` methods that step through the generator when invoked.
 //
-// parameters:
+// params:
 //  @param thisArg  The value to use as the `this` binding for the transformed generator body.
 //  @param body     A function that acts as the transformed generator body.
 //

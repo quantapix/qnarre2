@@ -23,7 +23,7 @@ export interface AnonymousType extends ObjectType {
 }
 export interface ArrayBindingPattern extends Nobj {
   kind: Syntax.ArrayBindingPattern;
-  parent?: VariableDeclaration | ParameterDeclaration | BindingElem;
+  parent?: VariableDeclaration | ParamDeclaration | BindingElem;
   elems: Nodes<ArrayBindingElem>;
 }
 export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
@@ -51,14 +51,14 @@ export interface AsExpression extends Expr {
 }
 export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.AssertsIdentifier;
-  parameterName: string;
-  parameterIndex: number;
+  paramName: string;
+  paramIndex: number;
   type?: Type;
 }
 export interface AssertsThisTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.AssertsThis;
-  parameterName: undefined;
-  parameterIndex: undefined;
+  paramName: undefined;
+  paramIndex: undefined;
   type?: Type;
 }
 export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
@@ -217,7 +217,7 @@ export interface ClassImplementingOrExtendingExpressionWithTypings {
 export interface ClassLikeDecl extends NamedDecl, DocContainer {
   kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: Identifier;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
+  typeParams?: Nodes<TypeParamDeclaration>;
   heritageClauses?: Nodes<HeritageClause>;
   members: Nodes<ClassElem>;
 }
@@ -361,7 +361,7 @@ export interface CompilerOptions {
   noImplicitThis?: boolean;
   noStrictGenericChecks?: boolean;
   noUnusedLocals?: boolean;
-  noUnusedParameters?: boolean;
+  noUnusedParams?: boolean;
   noImplicitUseStrict?: boolean;
   assumeChangesOnlyAffectDirectDependencies?: boolean;
   noLib?: boolean;
@@ -428,8 +428,8 @@ export interface ConditionalRoot {
   trueType: Type;
   falseType: Type;
   isDistributive: boolean;
-  inferTypeParameters?: TypeParameter[];
-  outerTypeParameters?: TypeParameter[];
+  inferTypeParams?: TypeParam[];
+  outerTypeParams?: TypeParam[];
   instantiations?: qu.QMap<Type>;
   aliasSymbol?: Symbol;
   aliasTypeArguments?: Type[];
@@ -586,8 +586,8 @@ export interface DocOptionalTyping extends DocTobj {
   kind: Syntax.DocOptionalTyping;
   type: Typing;
 }
-export interface DocParameterTag extends DocPropertyLikeTag {
-  kind: Syntax.DocParameterTag;
+export interface DocParamTag extends DocPropertyLikeTag {
+  kind: Syntax.DocParamTag;
 }
 export interface DocPrivateTag extends DocTag {
   kind: Syntax.DocPrivateTag;
@@ -617,8 +617,8 @@ export interface DocReturnTag extends DocTag {
 }
 export interface DocSignature extends DocTobj, Decl {
   kind: Syntax.DocSignature;
-  typeParameters?: readonly DocTemplateTag[];
-  parameters: readonly DocParameterTag[];
+  typeParams?: readonly DocTemplateTag[];
+  params: readonly DocParamTag[];
   type?: DocReturnTag;
 }
 export interface DocTag extends Nobj {
@@ -630,7 +630,7 @@ export interface DocTagInfo {}
 export interface DocTemplateTag extends DocTag {
   kind: Syntax.DocTemplateTag;
   constraint?: DocTypingExpression;
-  typeParameters: Nodes<TypeParameterDeclaration>;
+  typeParams: Nodes<TypeParamDeclaration>;
 }
 export interface DocThisTag extends DocTag {
   kind: Syntax.DocThisTag;
@@ -754,8 +754,8 @@ export interface EmitResolver {
   isLateBound(node: Decl): node is LateBoundDecl;
   collectLinkedAliases(node: Identifier, setVisibility?: boolean): Node[] | undefined;
   isImplementationOfOverload(node: FunctionLikeDeclaration): boolean | undefined;
-  isRequiredInitializedParameter(node: ParameterDeclaration): boolean;
-  isOptionalUninitializedParameterProperty(node: ParameterDeclaration): boolean;
+  isRequiredInitializedParam(node: ParamDeclaration): boolean;
+  isOptionalUninitializedParamProperty(node: ParamDeclaration): boolean;
   isExpandoFunctionDeclaration(node: FunctionDeclaration): boolean;
   getPropertiesOfContainerFunction(node: Declaration): Symbol[];
   createTypeOfDeclaration(
@@ -767,19 +767,19 @@ export interface EmitResolver {
   ): Typing | undefined;
   createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
   createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
-  createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker): Expression;
+  createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration, tracker: SymbolTracker): Expression;
   isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags | undefined, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
   isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult;
   getConstantValue(node: EnumMember | PropertyAccessExpression | ElemAccessExpression): string | number | undefined;
   getReferencedValueDeclaration(reference: Identifier): Declaration | undefined;
   getTypeReferenceSerializationKind(typeName: EntityName, location?: Node): qt.TypeReferenceSerializationKind;
-  isOptionalParameter(node: ParameterDeclaration): boolean;
+  isOptionalParam(node: ParamDeclaration): boolean;
   moduleExportsSomeValue(moduleReferenceExpression: Expression): boolean;
   isArgumentsLocalBinding(node: Identifier): boolean;
   getExternalModuleFileFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping): SourceFile | undefined;
   getTypeReferenceDirectivesForEntityName(name: EntityNameOrEntityNameExpression): string[] | undefined;
   getTypeReferenceDirectivesForSymbol(symbol: Symbol, meaning?: qt.SymbolFlags): string[] | undefined;
-  isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean;
+  isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration): boolean;
   getJsxFactoryEntity(location?: Node): EntityName | undefined;
   getAllAccessorDeclarations(declaration: AccessorDeclaration): AllAccessorDeclarations;
   getSymbolOfExternalModuleSpecifier(node: StringLiteralLike): Symbol | undefined;
@@ -1009,13 +1009,13 @@ export interface Identifier extends PrimaryExpr, Decl {
   autoGenerateFlags?: qt.GeneratedIdentifierFlags;
   autoGenerateId?: number;
   isInDocNamespace?: boolean;
-  typeArguments?: Nodes<Typing | TypeParameterDeclaration>;
+  typeArguments?: Nodes<Typing | TypeParamDeclaration>;
   jsdocDotPos?: number;
 }
 export interface IdentifierTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.Identifier;
-  parameterName: string;
-  parameterIndex: number;
+  paramName: string;
+  paramIndex: number;
   type: Type;
 }
 export interface IfStatement extends Stmt {
@@ -1102,10 +1102,10 @@ export interface InferenceContext {
   mapper: TypeMapper;
   nonFixingMapper: TypeMapper;
   returnMapper?: TypeMapper;
-  inferredTypeParameters?: readonly TypeParameter[];
+  inferredTypeParams?: readonly TypeParam[];
 }
 export interface InferenceInfo {
-  typeParameter: TypeParameter;
+  typeParam: TypeParam;
   candidates?: Type[];
   contraCandidates?: Type[];
   inferredType?: Type;
@@ -1115,7 +1115,7 @@ export interface InferenceInfo {
 }
 export interface InferTyping extends Tobj {
   kind: Syntax.InferTyping;
-  typeParameter: TypeParameterDeclaration;
+  typeParam: TypeParamDeclaration;
 }
 export interface InputFiles extends Nobj {
   kind: Syntax.InputFiles;
@@ -1139,15 +1139,15 @@ export interface InstantiableType extends Type {
 export interface InterfaceDeclaration extends DeclarationStmt, DocContainer {
   kind: Syntax.InterfaceDeclaration;
   name: Identifier;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
+  typeParams?: Nodes<TypeParamDeclaration>;
   heritageClauses?: Nodes<HeritageClause>;
   members: Nodes<TypeElem>;
 }
 export interface InterfaceType extends ObjectType {
-  typeParameters?: TypeParameter[];
-  outerTypeParameters?: TypeParameter[];
-  localTypeParameters?: TypeParameter[];
-  thisType?: TypeParameter;
+  typeParams?: TypeParam[];
+  outerTypeParams?: TypeParam[];
+  localTypeParams?: TypeParam[];
+  thisType?: TypeParam;
   resolvedBaseConstructorType?: Type;
   resolvedBaseTypes: BaseType[];
 }
@@ -1323,7 +1323,7 @@ export interface MappedSymbol extends TransientSymbol {
 }
 export interface MappedType extends AnonymousType {
   declaration: MappedTyping;
-  typeParameter?: TypeParameter;
+  typeParam?: TypeParam;
   constraintType?: Type;
   templateType?: Type;
   modifiersType?: Type;
@@ -1332,7 +1332,7 @@ export interface MappedType extends AnonymousType {
 export interface MappedTyping extends Tobj, Decl {
   kind: Syntax.MappedTyping;
   readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
-  typeParameter: TypeParameterDeclaration;
+  typeParam: TypeParamDeclaration;
   questionToken?: QuestionToken | PlusToken | MinusToken;
   type?: Typing;
 }
@@ -1461,31 +1461,31 @@ export interface Nobj extends qu.Range {
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined;
 }
 export interface NodeLinks {
-  flags: qt.NodeCheckFlags;
-  resolvedType?: Type;
-  resolvedEnumType?: Type;
-  resolvedSignature?: Signature;
-  resolvedSymbol?: Symbol;
-  resolvedIndexInfo?: IndexInfo;
+  capturedBlockScopeBindings?: Symbol[];
+  containsArgumentsReference?: boolean;
+  contextFreeType?: Type;
+  declarationRequiresScopeChange?: boolean;
+  deferredNodes?: qu.QMap<Node>;
   effectsSignature?: Signature;
   enumMemberValue?: string | number;
-  isVisible?: boolean;
-  containsArgumentsReference?: boolean;
+  flags: qt.NodeCheckFlags;
   hasReportedStatementInAmbientContext?: boolean;
-  jsxFlags: qt.JsxFlags;
-  resolvedJsxElemAttributesType?: Type;
-  resolvedJsxElemAllAttributesType?: Type;
-  resolvedDocType?: Type;
-  switchTypes?: Type[];
-  jsxNamespace?: Symbol | false;
-  contextFreeType?: Type;
-  deferredNodes?: qu.QMap<Node>;
-  capturedBlockScopeBindings?: Symbol[];
-  outerTypeParameters?: TypeParameter[];
   instantiations?: qu.QMap<Type>;
   isExhaustive?: boolean;
+  isVisible?: boolean;
+  jsxFlags: qt.JsxFlags;
+  jsxNamespace?: Symbol | false;
+  outerTypeParams?: TypeParam[];
+  resolvedDocType?: Type;
+  resolvedEnumType?: Type;
+  resolvedIndexInfo?: IndexInfo;
+  resolvedJsxElemAllAttributesType?: Type;
+  resolvedJsxElemAttributesType?: Type;
+  resolvedSignature?: Signature;
+  resolvedSymbol?: Symbol;
+  resolvedType?: Type;
   skipDirectInference?: true;
-  declarationRequiresScopeChange?: boolean;
+  switchTypes?: Type[];
 }
 export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range {
   trailingComma?: boolean;
@@ -1524,7 +1524,7 @@ export interface NumericLiteral extends LiteralExpr, Decl {
 }
 export interface ObjectBindingPattern extends Nobj {
   kind: Syntax.ObjectBindingPattern;
-  parent?: VariableDeclaration | ParameterDeclaration | BindingElem;
+  parent?: VariableDeclaration | ParamDeclaration | BindingElem;
   elems: Nodes<BindingElem>;
 }
 export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
@@ -1563,8 +1563,8 @@ export interface PackageId {
   subModuleName: string;
   version: string;
 }
-export interface ParameterDeclaration extends NamedDecl, DocContainer {
-  kind: Syntax.Parameter;
+export interface ParamDeclaration extends NamedDecl, DocContainer {
+  kind: Syntax.Param;
   parent?: SignatureDeclaration;
   dot3Token?: Dot3Token;
   name: BindingName;
@@ -1946,9 +1946,9 @@ export interface Signature {
   checker: TypeChecker;
   flags: qt.SignatureFlags;
   declaration?: SignatureDeclaration | DocSignature;
-  typeParameters?: readonly TypeParameter[];
-  parameters: readonly Symbol[];
-  thisParameter?: Symbol;
+  typeParams?: readonly TypeParam[];
+  params: readonly Symbol[];
+  thisParam?: Symbol;
   resolvedReturnType?: Type;
   resolvedTypePredicate?: TypePredicate;
   minArgumentCount: number;
@@ -1964,8 +1964,8 @@ export interface Signature {
 export interface SignatureDecl extends NamedDecl, DocContainer {
   kind: SignatureDeclaration['kind'];
   name?: PropertyName;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
-  parameters: Nodes<ParameterDeclaration>;
+  typeParams?: Nodes<TypeParamDeclaration>;
+  params: Nodes<ParamDeclaration>;
   type?: Typing;
   typeArguments?: Nodes<Typing>;
 }
@@ -2115,7 +2115,7 @@ export interface SwitchStatement extends Stmt {
   possiblyExhaustive?: boolean;
 }
 export interface Symbol {
-  assignmentDeclarationMembers?: qu.QMap<Declaration>;
+  assignmentDeclarations?: qu.QMap<Declaration>;
   constEnumOnlyModule?: boolean;
   declarations?: Declaration[];
   escName: qu.__String;
@@ -2126,7 +2126,7 @@ export interface Symbol {
   id?: number;
   isAssigned?: boolean;
   isReferenced?: qt.SymbolFlags;
-  isReplaceableByMethod?: boolean;
+  isReplaceable?: boolean;
   members?: SymbolTable;
   mergeId?: number;
   parent?: Symbol;
@@ -2137,66 +2137,66 @@ export interface SymbolAccessibilityResult extends SymbolVisibilityResult {
 }
 export interface SymbolDisplayPart {}
 export interface SymbolLinks {
-  immediateTarget?: Symbol;
-  target?: Symbol;
-  type?: Type;
-  nameType?: Type;
-  uniqueESSymbolType?: Type;
-  declaredType?: Type;
-  typeParameters?: TypeParameter[];
-  outerTypeParameters?: TypeParameter[];
-  instantiations?: qu.QMap<Type>;
-  inferredClassSymbol?: qu.QMap<TransientSymbol>;
-  mapper?: TypeMapper;
-  referenced?: boolean;
+  bindingElem?: BindingElem;
+  cjsExportMerged?: Symbol;
   constEnumReferenced?: boolean;
   containingType?: UnionOrIntersectionType;
-  leftSpread?: Symbol;
-  rightSpread?: Symbol;
-  syntheticOrigin?: Symbol;
-  isDiscriminantProperty?: boolean;
-  resolvedExports?: SymbolTable;
-  resolvedMembers?: SymbolTable;
-  exportsChecked?: boolean;
-  typeParametersChecked?: boolean;
-  isDeclarationWithCollidingName?: boolean;
-  bindingElem?: BindingElem;
-  exportsSomeValue?: boolean;
-  enumKind?: qt.EnumKind;
-  originatingImport?: ImportDeclaration | ImportCall;
-  lateSymbol?: Symbol;
-  specifierCache?: qu.QMap<string>;
-  extendedContainers?: Symbol[];
-  extendedContainersByFile?: qu.QMap<Symbol[]>;
-  variances?: qt.VarianceFlags[];
+  declaredType?: Type;
   deferralConstituents?: Type[];
   deferralParent?: Type;
-  cjsExportMerged?: Symbol;
-  typeOnlyDeclaration?: TypeOnlyCompatibleAliasDeclaration | false;
+  enumKind?: qt.EnumKind;
+  exportsChecked?: boolean;
+  exportsSomeValue?: boolean;
+  extendedContainers?: Symbol[];
+  extendedContainersByFile?: qu.QMap<Symbol[]>;
+  immediateTarget?: Symbol;
+  inferredClassSymbol?: qu.QMap<TransientSymbol>;
+  instantiations?: qu.QMap<Type>;
   isConstructorDeclaredProperty?: boolean;
-  tupleLabelDeclaration?: NamedTupleMember | ParameterDeclaration;
+  isDeclarationWithCollidingName?: boolean;
+  isDiscriminantProperty?: boolean;
+  lateSymbol?: Symbol;
+  leftSpread?: Symbol;
+  mapper?: TypeMapper;
+  nameType?: Type;
+  originatingImport?: ImportDeclaration | ImportCall;
+  outerTypeParams?: TypeParam[];
+  referenced?: boolean;
+  resolvedExports?: SymbolTable;
+  resolvedMembers?: SymbolTable;
+  rightSpread?: Symbol;
+  specCache?: qu.QMap<string>;
+  syntheticOrigin?: Symbol;
+  target?: Symbol;
+  tupleLabelDeclaration?: NamedTupleMember | ParamDeclaration;
+  type?: Type;
+  typeOnlyDeclaration?: TypeOnlyCompatibleAliasDeclaration | false;
+  typeParams?: TypeParam[];
+  typeParamsChecked?: boolean;
+  uniqueESSymbolType?: Type;
+  variances?: qt.VarianceFlags[];
 }
 export interface SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S>, qu.EscapedMap<S> {}
 export interface SymbolTracker {
-  trackSymbol?(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags): void;
-  reportInaccessibleThisError?(): void;
-  reportPrivateInBaseOfClassExpression?(propertyName: string): void;
-  reportInaccessibleUniqueSymbolError?(): void;
-  reportLikelyUnsafeImportRequiredError?(specifier: string): void;
   moduleResolverHost?: ModuleSpecifierResolutionHost & { getCommonSourceDirectory(): string };
-  trackReferencedAmbientModule?(decl: ModuleDeclaration, symbol: Symbol): void;
-  trackExternalModuleSymbolOfImportTyping?(symbol: Symbol): void;
-  reportNonlocalAugmentation?(containingFile: SourceFile, parentSymbol: Symbol, augmentingSymbol: Symbol): void;
+  reportInaccessibleThisError?(): void;
+  reportInaccessibleUniqueSymbolError?(): void;
+  reportLikelyUnsafeImportRequiredError?(spec: string): void;
+  reportNonlocalAugmentation?(s: SourceFile, parent: Symbol, augment: Symbol): void;
+  reportPrivateInBaseOfClassExpression?(n: string): void;
+  trackExternalModuleSymbolOfImportTyping?(s: Symbol): void;
+  trackReferencedAmbientModule?(d: ModuleDeclaration, s: Symbol): void;
+  trackSymbol?(s: Symbol, decl: Node | undefined, f: qt.SymbolFlags): void;
 }
 export interface SymbolVisibilityResult {
   accessibility: qt.SymbolAccessibility;
   aliasesToMakeVisible?: LateVisibilityPaintedStatement[];
-  errorSymbolName?: string;
   errorNode?: Node;
+  errorSymbolName?: string;
 }
 export interface SymbolWalker {
-  walkType(root: Type): { visitedTypes: readonly Type[]; visitedSymbols: readonly Symbol[] };
   walkSymbol(root: Symbol): { visitedTypes: readonly Type[]; visitedSymbols: readonly Symbol[] };
+  walkType(root: Type): { visitedTypes: readonly Type[]; visitedSymbols: readonly Symbol[] };
 }
 export interface SyntaxList extends Nobj {
   children: Node[];
@@ -2214,7 +2214,7 @@ export interface SyntheticExpression extends Expr {
   kind: Syntax.SyntheticExpression;
   isSpread: boolean;
   type: Type;
-  tupleNameSource?: ParameterDeclaration | NamedTupleMember;
+  tupleNameSource?: ParamDeclaration | NamedTupleMember;
 }
 export interface SyntheticReferenceExpression extends LeftExpr {
   kind: Syntax.SyntheticReferenceExpression;
@@ -2265,8 +2265,8 @@ export interface ThisTyping extends Tobj {
 }
 export interface ThisTypePredicate extends TypePredicateBase {
   kind: qt.TypePredicateKind.This;
-  parameterName: undefined;
-  parameterIndex: undefined;
+  paramName: undefined;
+  paramIndex: undefined;
   type: Type;
 }
 export interface ThrowStatement extends Stmt {
@@ -2323,7 +2323,7 @@ export interface TupleType extends GenericType {
   minLength: number;
   hasRestElem: boolean;
   readonly: boolean;
-  labeledElemDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[];
+  labeledElemDeclarations?: readonly (NamedTupleMember | ParamDeclaration)[];
 }
 export interface TupleTyping extends Tobj {
   kind: Syntax.TupleTyping;
@@ -2356,7 +2356,7 @@ export interface TypeAcquisition {
 export interface TypeAliasDeclaration extends DeclarationStmt, DocContainer {
   kind: Syntax.TypeAliasDeclaration;
   name: Identifier;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
+  typeParams?: Nodes<TypeParamDeclaration>;
   type: Typing;
 }
 export interface TypeAssertion extends UnaryExpr {
@@ -2369,7 +2369,7 @@ export interface CheckerGet {
   augmentedPropertiesOfType(t: Type): Symbol[];
   baseConstraintOfType(t: Type): Type | undefined;
   baseTypes(t: InterfaceType): BaseType[];
-  defaultFromTypeParameter(t: Type): Type | undefined;
+  defaultFromTypeParam(t: Type): Type | undefined;
   indexTypeOfType(t: Type, k: qt.IndexKind): Type | undefined;
   nonNullableType(t: Type): Type;
   nonOptionalType(t: Type): Type;
@@ -2414,17 +2414,17 @@ export interface TypingOperator extends Tobj {
   operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
   type: Typing;
 }
-export interface TypeParameter extends InstantiableType {
+export interface TypeParam extends InstantiableType {
   constraint?: Type;
   default?: Type;
-  target?: TypeParameter;
+  target?: TypeParam;
   mapper?: TypeMapper;
   isThisType?: boolean;
   resolvedDefaultType?: Type;
 }
-export interface TypeParameterDeclaration extends NamedDecl {
-  kind: Syntax.TypeParameter;
-  parent?: DeclarationWithTypeParameterChildren | InferTyping;
+export interface TypeParamDeclaration extends NamedDecl {
+  kind: Syntax.TypeParam;
+  parent?: DeclarationWithTypeParamChildren | InferTyping;
   name: Identifier;
   constraint?: Typing;
   default?: Typing;
@@ -2438,7 +2438,7 @@ export interface TypingPredicate extends Tobj {
   kind: Syntax.TypingPredicate;
   parent?: SignatureDeclaration | DocTypingExpression;
   assertsModifier?: AssertsToken;
-  parameterName: Identifier | ThisTyping;
+  paramName: Identifier | ThisTyping;
   type?: Typing;
 }
 export interface TypingQuery extends Tobj {
@@ -2649,7 +2649,7 @@ export type BindingOrAssignmentElem =
   | Identifier
   | ObjectLiteralExpression
   | OmittedExpression
-  | ParameterDeclaration
+  | ParamDeclaration
   | PropertyAccessExpression
   | PropertyAssignment
   | ShorthandPropertyAssignment
@@ -2701,7 +2701,7 @@ export type Declaration =
   | DocCallbackTag
   | DocEnumTag
   | DocFunctionTyping
-  | DocParameterTag
+  | DocParamTag
   | DocPropertyTag
   | DocSignature
   | DocTypedefTag
@@ -2733,7 +2733,7 @@ export type Declaration =
   | NoSubstitutionLiteral
   | NumericLiteral
   | ObjectLiteralExpression
-  | ParameterDeclaration
+  | ParamDeclaration
   | PropertyAccessExpression
   | PropertyDeclaration
   | PropertySignature
@@ -2743,11 +2743,11 @@ export type Declaration =
   | StringLiteral
   | TypeAliasDeclaration
   | TypingLiteral
-  | TypeParameterDeclaration
+  | TypeParamDeclaration
   | VariableDeclaration;
 export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElemAccessExpression | BindingPattern | EntityNameExpression;
-export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | DocTemplateTag;
-export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | DocTypedefTag | DocCallbackTag | DocSignature;
+export type DeclarationWithTypeParamChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | DocTemplateTag;
+export type DeclarationWithTypeParams = DeclarationWithTypeParamChildren | DocTypedefTag | DocCallbackTag | DocSignature;
 export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
 export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
 export type DocNamespaceBody = Identifier | DocNamespaceDeclaration;
@@ -2831,7 +2831,7 @@ export type HasDoc =
   | MethodSignature
   | ModuleDeclaration
   | NamedTupleMember
-  | ParameterDeclaration
+  | ParamDeclaration
   | ParenthesizedExpression
   | PropertyAssignment
   | PropertyDeclaration
@@ -2840,7 +2840,7 @@ export type HasDoc =
   | SpreadAssignment
   | TypeAliasDeclaration
   | VariableStatement;
-export type HasExpressionIniter = VariableDeclaration | ParameterDeclaration | BindingElem | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
+export type HasExpressionIniter = VariableDeclaration | ParamDeclaration | BindingElem | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
 export type HasIniter = HasExpressionIniter | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
 export type HasInvalidatedResolution = (sourceFile: Path) => boolean;
 export type HasType =
@@ -2851,7 +2851,7 @@ export type HasType =
   | DocTypingExpression
   | DocVariadicTyping
   | MappedTyping
-  | ParameterDeclaration
+  | ParamDeclaration
   | ParenthesizedTyping
   | PropertyDeclaration
   | PropertySignature
@@ -2960,7 +2960,7 @@ export type Node =
   | DocNonNullableTyping
   | DocNullableTyping
   | DocOptionalTyping
-  | DocParameterTag
+  | DocParamTag
   | DocPrivateTag
   | DocPropertyTag
   | DocProtectedTag
@@ -3058,7 +3058,7 @@ export type Node =
   | ObjectLiteralExpression
   | OmittedExpression
   | OptionalTyping
-  | ParameterDeclaration
+  | ParamDeclaration
   | ParenthesizedExpression
   | ParenthesizedTyping
   | PartiallyEmittedExpression
@@ -3104,7 +3104,7 @@ export type Node =
   | TypingLiteral
   | TypeOfExpression
   | TypingOperator
-  | TypeParameterDeclaration
+  | TypeParamDeclaration
   | TypingPredicate
   | TypingQuery
   | TypingReference
@@ -3146,7 +3146,7 @@ export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration 
 export type OptionalChain = PropertyAccessChain | ElemAccessChain | CallChain | NonNullChain;
 export type OptionalChainRoot = PropertyAccessChainRoot | ElemAccessChainRoot | CallChainRoot;
 export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
-export type ParameterPropertyDeclaration = ParameterDeclaration & { parent?: ConstructorDeclaration; name: Identifier };
+export type ParamPropertyDeclaration = ParamDeclaration & { parent?: ConstructorDeclaration; name: Identifier };
 export type Path = string & { __pathBrand: any };
 export type PlusToken = Token<Syntax.PlusToken>;
 export type PostfixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token;
@@ -3254,7 +3254,7 @@ export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol'
 export type TypeOnlyCompatibleAliasDeclaration = ImportClause | NamespaceImport | ImportOrExportSpecifier;
 export type TypePredicate = ThisTypePredicate | IdentifierTypePredicate | AssertsThisTypePredicate | AssertsIdentifierTypePredicate;
 export type TypeReferenceType = TypingReference | ExpressionWithTypings;
-export type TypeVariable = TypeParameter | IndexedAccessType;
+export type TypeVariable = TypeParam | IndexedAccessType;
 export type Typing =
   | ArrayTyping
   | BooleanLiteral
@@ -3293,11 +3293,11 @@ export type UpdateExpression = PostfixUnaryExpression | PrefixUnaryExpression | 
 export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression;
 export type VariableLikeDeclaration =
   | BindingElem
-  | DocParameterTag
+  | DocParamTag
   | DocPropertyTag
   | EnumMember
   | JsxAttribute
-  | ParameterDeclaration
+  | ParamDeclaration
   | PropertyAssignment
   | PropertyDeclaration
   | PropertySignature
@@ -3316,7 +3316,7 @@ interface SymbolWriter extends SymbolTracker {
   writePunctuation(text: string): void;
   writeSpace(text: string): void;
   writeStringLiteral(text: string): void;
-  writeParameter(text: string): void;
+  writeParam(text: string): void;
   writeProperty(text: string): void;
   writeSymbol(text: string, symbol: Symbol): void;
   writeLine(force?: boolean): void;

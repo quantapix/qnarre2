@@ -362,12 +362,12 @@ export function transformClassFields(context: TrafoContext) {
     const constructor = visitNode(qf.get.firstConstructorWithBody(node), visitor, ConstructorDeclaration.kind);
     const properties = node.members.filter(isPropertyDeclarationThatRequiresConstructorStatement);
     if (!some(properties)) return constructor;
-    const parameters = visitParameterList(constructor ? constructor.parameters : undefined, visitor, context);
+    const params = visitParamList(constructor ? constructor.params : undefined, visitor, context);
     const body = transformConstructorBody(node, constructor, isDerivedClass);
     if (!body) {
       return;
     }
-    return startOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, parameters ?? [], body), constructor || node).setOriginal(constructor));
+    return startOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, params ?? [], body), constructor || node).setOriginal(constructor));
   }
   function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
     const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
@@ -386,15 +386,15 @@ export function transformClassFields(context: TrafoContext) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
     }
     if (constructor?.body) {
-      let afterParameterProperties = findIndex(constructor.body.statements, (s) => !qf.is.parameterPropertyDeclaration(qc.get.originalOf(s), constructor), indexOfFirstStatement);
-      if (afterParameterProperties === -1) {
-        afterParameterProperties = constructor.body.statements.length;
+      let afterParamProperties = findIndex(constructor.body.statements, (s) => !qf.is.paramPropertyDeclaration(qc.get.originalOf(s), constructor), indexOfFirstStatement);
+      if (afterParamProperties === -1) {
+        afterParamProperties = constructor.body.statements.length;
       }
-      if (afterParameterProperties > indexOfFirstStatement) {
+      if (afterParamProperties > indexOfFirstStatement) {
         if (!useDefineForClassFields) {
-          addRange(statements, Nodes.visit(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParameterProperties - indexOfFirstStatement));
+          addRange(statements, Nodes.visit(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParamProperties - indexOfFirstStatement));
         }
-        indexOfFirstStatement = afterParameterProperties;
+        indexOfFirstStatement = afterParamProperties;
       }
     }
     addPropertyStatements(statements, properties, new qc.ThisExpression());
@@ -454,7 +454,7 @@ export function transformClassFields(context: TrafoContext) {
     const initer =
       property.initer || emitAssignment
         ? visitNode(property.initer, visitor, isExpression)
-        : qf.is.parameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qf.is.kind(qc.Identifier, propertyName)
+        : qf.is.paramPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qf.is.kind(qc.Identifier, propertyName)
         ? propertyName
         : qs.VoidExpression.zero();
     if (emitAssignment || qf.is.kind(qc.PrivateIdentifier, propertyName)) {
@@ -557,7 +557,7 @@ export function transformClassFields(context: TrafoContext) {
     return;
   }
   function wrapPrivateIdentifierForDestructuringTarget(node: PrivateIdentifierPropertyAccessExpression) {
-    const parameter = qf.get.generatedNameForNode(node);
+    const param = qf.get.generatedNameForNode(node);
     const info = accessPrivateIdentifier(node.name);
     if (!info) return visitEachChild(node, visitor, context);
     let receiver = node.expression;
@@ -573,8 +573,8 @@ export function transformClassFields(context: TrafoContext) {
             undefined,
             undefined,
             'value',
-            [new qc.ParameterDeclaration(undefined, undefined, undefined, undefined)],
-            new Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
+            [new qc.ParamDeclaration(undefined, undefined, undefined, undefined)],
+            new Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, param, Syntax.EqualsToken))])
           ),
         ])
       ),

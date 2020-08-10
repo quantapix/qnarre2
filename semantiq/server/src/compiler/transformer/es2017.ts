@@ -20,7 +20,7 @@ export function transformES2017(context: TrafoContext) {
   const languageVersion = getEmitScriptTarget(compilerOptions);
   let enabledSubstitutions: ES2017SubstitutionFlags;
   let enclosingSuperContainerFlags: NodeCheckFlags = 0;
-  let enclosingFunctionParameterNames: EscapedMap<true>;
+  let enclosingFunctionParamNames: EscapedMap<true>;
   let capturedSuperProperties: EscapedMap<true>;
   let hasSuperElemAccess: boolean;
   const substitutedSuperAccessors: boolean[] = [];
@@ -134,18 +134,18 @@ export function transformES2017(context: TrafoContext) {
     recordDeclarationName(node.variableDeclaration!, catchClauseNames);
     let catchClauseUnshadowedNames: EscapedMap<true> | undefined;
     catchClauseNames.forEach((_, escName) => {
-      if (enclosingFunctionParameterNames.has(escName)) {
+      if (enclosingFunctionParamNames.has(escName)) {
         if (!catchClauseUnshadowedNames) {
-          catchClauseUnshadowedNames = cloneMap(enclosingFunctionParameterNames);
+          catchClauseUnshadowedNames = cloneMap(enclosingFunctionParamNames);
         }
         catchClauseUnshadowedNames.delete(escName);
       }
     });
     if (catchClauseUnshadowedNames) {
-      const savedEnclosingFunctionParameterNames = enclosingFunctionParameterNames;
-      enclosingFunctionParameterNames = catchClauseUnshadowedNames;
+      const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
+      enclosingFunctionParamNames = catchClauseUnshadowedNames;
       const result = visitEachChild(node, asyncBodyVisitor, context);
-      enclosingFunctionParameterNames = savedEnclosingFunctionParameterNames;
+      enclosingFunctionParamNames = savedEnclosingFunctionParamNames;
       return result;
     }
     return visitEachChild(node, asyncBodyVisitor, context);
@@ -196,7 +196,7 @@ export function transformES2017(context: TrafoContext) {
       node.name,
       undefined,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
@@ -208,7 +208,7 @@ export function transformES2017(context: TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
@@ -219,7 +219,7 @@ export function transformES2017(context: TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
@@ -228,13 +228,13 @@ export function transformES2017(context: TrafoContext) {
     return node.update(
       Nodes.visit(node.modifiers, visitor, isModifier),
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
-  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElem, names: EscapedMap<true>) {
+  function recordDeclarationName({ name }: ParamDeclaration | VariableDeclaration | BindingElem, names: EscapedMap<true>) {
     if (qc.is.kind(qc.Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
@@ -246,7 +246,7 @@ export function transformES2017(context: TrafoContext) {
     }
   }
   function isVariableDeclarationListWithCollidingName(node: ForIniter): node is VariableDeclarationList {
-    return !!node && qc.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+    return !!node && qc.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParamName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
@@ -275,11 +275,11 @@ export function transformES2017(context: TrafoContext) {
     const converted = setSourceMapRange(qf.create.assignment(convertToAssignmentElemTarget(node.name), node.initer!), node);
     return visitNode(converted, visitor, isExpression);
   }
-  function collidesWithParameterName({ name }: VariableDeclaration | BindingElem): boolean {
-    if (qc.is.kind(qc.Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
+  function collidesWithParamName({ name }: VariableDeclaration | BindingElem): boolean {
+    if (qc.is.kind(qc.Identifier, name)) return enclosingFunctionParamNames.has(name.escapedText);
     else {
       for (const elem of name.elems) {
-        if (!qc.is.kind(qc.OmittedExpression, elem) && collidesWithParameterName(elem)) return true;
+        if (!qc.is.kind(qc.OmittedExpression, elem) && collidesWithParamName(elem)) return true;
       }
     }
     return false;
@@ -293,10 +293,10 @@ export function transformES2017(context: TrafoContext) {
     const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
     const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
-    const savedEnclosingFunctionParameterNames = enclosingFunctionParameterNames;
-    enclosingFunctionParameterNames = qb.createEscapedMap<true>();
-    for (const parameter of node.parameters) {
-      recordDeclarationName(parameter, enclosingFunctionParameterNames);
+    const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
+    enclosingFunctionParamNames = qb.createEscapedMap<true>();
+    for (const param of node.params) {
+      recordDeclarationName(param, enclosingFunctionParamNames);
     }
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElemAccess = hasSuperElemAccess;
@@ -341,7 +341,7 @@ export function transformES2017(context: TrafoContext) {
         result = expression;
       }
     }
-    enclosingFunctionParameterNames = savedEnclosingFunctionParameterNames;
+    enclosingFunctionParamNames = savedEnclosingFunctionParamNames;
     if (!isArrowFunction) {
       capturedSuperProperties = savedCapturedSuperProperties;
       hasSuperElemAccess = savedHasSuperElemAccess;
@@ -461,7 +461,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
           new ArrowFunction(
             undefined,
             undefined,
-            [new qc.ParameterDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
+            [new qc.ParamDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
             qf.create.assignment(setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))

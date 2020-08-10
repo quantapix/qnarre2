@@ -283,8 +283,8 @@ export const enum Syntax {
   OfKeyword, // LastKeyword and LastToken and LastContextualKeyword
   QualifiedName,
   ComputedPropertyName,
-  TypeParameter,
-  Parameter,
+  TypeParam,
+  Param,
   Decorator,
   PropertySignature,
   PropertyDeclaration,
@@ -446,7 +446,7 @@ export const enum Syntax {
   DocReadonlyTag,
   DocCallbackTag,
   DocEnumTag,
-  DocParameterTag,
+  DocParamTag,
   DocReturnTag,
   DocThisTag,
   DocTypeTag,
@@ -674,7 +674,7 @@ export const is = new (class {
     return k >= Syntax.FirstAssignment && k <= Syntax.LastAssignment;
   }
   classMemberModifier(k: Syntax) {
-    return this.parameterPropertyModifier(k) || k === Syntax.StaticKeyword;
+    return this.paramPropertyModifier(k) || k === Syntax.StaticKeyword;
   }
   codePoint(c: number) {
     return c <= 0x10ffff;
@@ -729,14 +729,14 @@ export const is = new (class {
       case Syntax.NamespaceExport:
       case Syntax.NamespaceExportDeclaration:
       case Syntax.NamespaceImport:
-      case Syntax.Parameter:
+      case Syntax.Param:
       case Syntax.PropertyAssignment:
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
       case Syntax.SetAccessor:
       case Syntax.ShorthandPropertyAssignment:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.TypeParameter:
+      case Syntax.TypeParam:
       case Syntax.VariableDeclaration:
         return true;
     }
@@ -948,8 +948,8 @@ export const is = new (class {
     }
     return false;
   }
-  parameterPropertyModifier(k: Syntax) {
-    return !!(get.modifierFlag(k) & ModifierFlags.ParameterPropertyModifier);
+  paramPropertyModifier(k: Syntax) {
+    return !!(get.modifierFlag(k) & ModifierFlags.ParamPropertyModifier);
   }
   pinnedComment(s: string, start: number) {
     return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
@@ -1385,8 +1385,8 @@ export const get = new (class {
         return TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
       case Syntax.ModuleDeclaration:
         return TrafoFlags.ModuleExcludes;
-      case Syntax.Parameter:
-        return TrafoFlags.ParameterExcludes;
+      case Syntax.Param:
+        return TrafoFlags.ParamExcludes;
       case Syntax.ArrowFunction:
         return TrafoFlags.ArrowFunctionExcludes;
       case Syntax.FunctionDeclaration:
@@ -1418,7 +1418,7 @@ export const get = new (class {
       case Syntax.StringKeyword:
       case Syntax.SymbolKeyword:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.TypeParameter:
+      case Syntax.TypeParam:
       case Syntax.VoidKeyword:
         return TrafoFlags.TypeExcludes;
       case Syntax.ObjectLiteralExpression:

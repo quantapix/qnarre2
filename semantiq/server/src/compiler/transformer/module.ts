@@ -8,7 +8,7 @@ export function transformModule(context: TrafoContext) {
   interface AsynchronousDependencies {
     aliasedModuleNames: Expression[];
     unaliasedModuleNames: Expression[];
-    importAliasNames: ParameterDeclaration[];
+    importAliasNames: ParamDeclaration[];
   }
   function getTransformModuleDelegate(moduleKind: ModuleKind): (node: SourceFile) => SourceFile {
     switch (moduleKind) {
@@ -118,7 +118,7 @@ export function transformModule(context: TrafoContext) {
                     undefined,
                     undefined,
                     undefined,
-                    [new qc.ParameterDeclaration(undefined, undefined, 'require'), new qc.ParameterDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
+                    [new qc.ParamDeclaration(undefined, undefined, 'require'), new qc.ParamDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
                     undefined,
                     transformAsynchronousModuleBody(node)
                   ),
@@ -139,7 +139,7 @@ export function transformModule(context: TrafoContext) {
       undefined,
       undefined,
       undefined,
-      [new qc.ParameterDeclaration(undefined, undefined, 'factory')],
+      [new qc.ParamDeclaration(undefined, undefined, 'factory')],
       undefined,
       setRange(
         new Block(
@@ -188,7 +188,7 @@ export function transformModule(context: TrafoContext) {
                 undefined,
                 undefined,
                 undefined,
-                [new qc.ParameterDeclaration(undefined, undefined, 'require'), new qc.ParameterDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
+                [new qc.ParamDeclaration(undefined, undefined, 'require'), new qc.ParamDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
                 undefined,
                 transformAsynchronousModuleBody(node)
               ),
@@ -204,11 +204,11 @@ export function transformModule(context: TrafoContext) {
   function collectAsynchronousDependencies(node: SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
     const aliasedModuleNames: Expression[] = [];
     const unaliasedModuleNames: Expression[] = [];
-    const importAliasNames: ParameterDeclaration[] = [];
+    const importAliasNames: ParamDeclaration[] = [];
     for (const amdDependency of node.amdDependencies) {
       if (amdDependency.name) {
         aliasedModuleNames.push(qc.asLiteral(amdDependency.path));
-        importAliasNames.push(new qc.ParameterDeclaration(undefined, undefined, amdDependency.name));
+        importAliasNames.push(new qc.ParamDeclaration(undefined, undefined, amdDependency.name));
       } else {
         unaliasedModuleNames.push(qc.asLiteral(amdDependency.path));
       }
@@ -220,7 +220,7 @@ export function transformModule(context: TrafoContext) {
         if (includeNonAmdDependencies && importAliasName) {
           setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
           aliasedModuleNames.push(externalModuleName);
-          importAliasNames.push(new qc.ParameterDeclaration(undefined, undefined, importAliasName));
+          importAliasNames.push(new qc.ParamDeclaration(undefined, undefined, importAliasName));
         } else {
           unaliasedModuleNames.push(externalModuleName);
         }
@@ -384,7 +384,7 @@ export function transformModule(context: TrafoContext) {
   function createImportCallExpressionAMD(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
     const resolve = createUniqueName('resolve');
     const reject = createUniqueName('reject');
-    const parameters = [new qc.ParameterDeclaration(resolve), new qc.ParameterDeclaration(reject)];
+    const params = [new qc.ParamDeclaration(resolve), new qc.ParamDeclaration(reject)];
     const body = new Block([
       new qc.ExpressionStatement(new qs.CallExpression(new Identifier('require'), undefined, [new ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
     ]);
@@ -392,7 +392,7 @@ export function transformModule(context: TrafoContext) {
     if (languageVersion >= ScriptTarget.ES2015) {
       func = new ArrowFunction(undefined, body);
     } else {
-      func = new qs.FunctionExpression(undefined, parameters, undefined, body);
+      func = new qs.FunctionExpression(undefined, params, undefined, body);
       if (containsLexicalThis) {
         setEmitFlags(func, EmitFlags.CapturesThis);
       }
@@ -542,22 +542,22 @@ export function transformModule(context: TrafoContext) {
           setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node).setOriginal(node)
         );
       }
-      for (const specifier of node.exportClause.elems) {
+      for (const spec of node.exportClause.elems) {
         if (languageVersion === ScriptTarget.ES3) {
           statements.push(
             setOriginalNode(
               setRange(
                 new qc.ExpressionStatement(
-                  createCreateBindingHelper(context, generatedName, qc.asLiteral(specifier.propertyName || specifier.name), specifier.propertyName ? qc.asLiteral(specifier.name) : undefined)
+                  createCreateBindingHelper(context, generatedName, qc.asLiteral(spec.propertyName || spec.name), spec.propertyName ? qc.asLiteral(spec.name) : undefined)
                 ),
-                specifier
+                spec
               ),
-              specifier
+              spec
             )
           );
         } else {
-          const exportedValue = new qc.PropertyAccessExpression(generatedName, specifier.propertyName || specifier.name);
-          statements.push(setRange(new qc.ExpressionStatement(createExportExpression(qf.get.declaration.exportName(specifier), exportedValue, true)), specifier).setOriginal(specifier));
+          const exportedValue = new qc.PropertyAccessExpression(generatedName, spec.propertyName || spec.name);
+          statements.push(setRange(new qc.ExpressionStatement(createExportExpression(qf.get.declaration.exportName(spec), exportedValue, true)), spec).setOriginal(spec));
         }
       }
       return singleOrMany(statements);
@@ -608,7 +608,7 @@ export function transformModule(context: TrafoContext) {
               node.asteriskToken,
               qf.get.declaration.name(node, true),
               undefined,
-              Nodes.visit(node.parameters, moduleExpressionElemVisitor),
+              Nodes.visit(node.params, moduleExpressionElemVisitor),
               undefined,
               visitEachChild(node.body, moduleExpressionElemVisitor, context)
             ),
@@ -1171,7 +1171,7 @@ export function transformSystemModule(context: TrafoContext) {
     contextObject = contextObjectMap[id] = createUniqueName('context');
     const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
-    const moduleBodyFunction = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
+    const moduleBodyFunction = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
     const dependencies = new ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
     const updated = setEmitFlags(
@@ -1318,7 +1318,7 @@ export function transformSystemModule(context: TrafoContext) {
       undefined,
       exportStarFunction,
       undefined,
-      [new qc.ParameterDeclaration(undefined, undefined, m)],
+      [new qc.ParamDeclaration(undefined, undefined, m)],
       undefined,
       new Block(
         [
@@ -1343,7 +1343,7 @@ export function transformSystemModule(context: TrafoContext) {
     const setters: Expression[] = [];
     for (const group of dependencyGroups) {
       const localName = forEach(group.externalImports, (i) => qf.get.declaration.localNameForExternalImport(i, currentSourceFile));
-      const parameterName = localName ? qf.get.generatedNameForNode(localName) : createUniqueName('');
+      const paramName = localName ? qf.get.generatedNameForNode(localName) : createUniqueName('');
       const statements: Statement[] = [];
       for (const entry of group.externalImports) {
         const importVariableName = qf.get.declaration.localNameForExternalImport(entry, currentSourceFile)!;
@@ -1354,7 +1354,7 @@ export function transformSystemModule(context: TrafoContext) {
             }
           case Syntax.ImportEqualsDeclaration:
             assert(importVariableName !== undefined);
-            statements.push(new qc.ExpressionStatement(qf.create.assignment(importVariableName, parameterName)));
+            statements.push(new qc.ExpressionStatement(qf.create.assignment(importVariableName, paramName)));
             break;
           case Syntax.ExportDeclaration:
             assert(importVariableName !== undefined);
@@ -1362,19 +1362,19 @@ export function transformSystemModule(context: TrafoContext) {
               if (qc.is.kind(qc.NamedExports, entry.exportClause)) {
                 const properties: PropertyAssignment[] = [];
                 for (const e of entry.exportClause.elems) {
-                  properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qs.ElemAccessExpression(parameterName, qc.asLiteral(idText(e.propertyName || e.name)))));
+                  properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qs.ElemAccessExpression(paramName, qc.asLiteral(idText(e.propertyName || e.name)))));
                 }
                 statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, true)));
               } else {
-                statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, undefined, [qc.asLiteral(idText(entry.exportClause.name)), parameterName])));
+                statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, undefined, [qc.asLiteral(idText(entry.exportClause.name)), paramName])));
               }
             } else {
-              statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportStarFunction, undefined, [parameterName])));
+              statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportStarFunction, undefined, [paramName])));
             }
             break;
         }
       }
-      setters.push(new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, parameterName)], undefined, new Block(statements, true)));
+      setters.push(new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, paramName)], undefined, new Block(statements, true)));
     }
     return new ArrayLiteralExpression(setters, true);
   }
@@ -1443,7 +1443,7 @@ export function transformSystemModule(context: TrafoContext) {
           node.asteriskToken,
           qf.get.declaration.name(node, true),
           undefined,
-          Nodes.visit(node.parameters, destructuringAndImportCallVisitor, qf.is.parameterDeclaration),
+          Nodes.visit(node.params, destructuringAndImportCallVisitor, qf.is.paramDeclaration),
           undefined,
           visitNode(node.body, destructuringAndImportCallVisitor, isBlock)
         )

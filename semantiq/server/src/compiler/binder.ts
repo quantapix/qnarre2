@@ -48,10 +48,10 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
       const exportDeclaration = node as ExportDeclaration;
       if (!exportDeclaration.moduleSpecifier && exportDeclaration.exportClause && exportDeclaration.exportClause.kind === Syntax.NamedExports) {
         let state = ModuleInstanceState.NonInstantiated;
-        for (const specifier of exportDeclaration.exportClause.elems) {
-          const specifierState = getModuleInstanceStateForAliasTarget(specifier, visited);
-          if (specifierState > state) {
-            state = specifierState;
+        for (const spec of exportDeclaration.exportClause.elems) {
+          const specState = getModuleInstanceStateForAliasTarget(spec, visited);
+          if (specState > state) {
+            state = specState;
           }
           if (state === ModuleInstanceState.Instantiated) return state;
         }
@@ -84,9 +84,9 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
   }
   return ModuleInstanceState.Instantiated;
 }
-function getModuleInstanceStateForAliasTarget(specifier: ExportSpecifier, visited: qu.QMap<ModuleInstanceState | undefined>) {
-  const name = specifier.propertyName || specifier.name;
-  let p: Node | undefined = specifier.parent;
+function getModuleInstanceStateForAliasTarget(spec: ExportSpecifier, visited: qu.QMap<ModuleInstanceState | undefined>) {
+  const name = spec.propertyName || spec.name;
+  let p: Node | undefined = spec.parent;
   while (p) {
     if (qf.is.kind(qc.Block, p) || qf.is.kind(qc.ModuleBlock, p) || qf.is.kind(qc.SourceFile, p)) {
       const statements = p.statements;
@@ -271,21 +271,21 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         break;
       case Syntax.DocFunctionTyping:
         return qf.is.doc.constructSignature(node) ? InternalSymbol.New : InternalSymbol.Call;
-      case Syntax.Parameter:
+      case Syntax.Param:
         qu.assert(
           node.parent.kind === Syntax.DocFunctionTyping,
-          'Impossible parameter parent kind',
+          'Impossible param parent kind',
           () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected DocFunctionTyping`
         );
         const functionType = <DocFunctionTyping>node.parent;
-        const index = functionType.parameters.indexOf(node as ParameterDeclaration);
+        const index = functionType.params.indexOf(node as ParamDeclaration);
         return ('arg' + index) as qu.__String;
     }
   }
   function getDisplayName(node: Declaration): string {
     return qf.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
   }
-  function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceableByMethod?: boolean): Symbol {
+  function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceable?: boolean): Symbol {
     qu.assert(!qf.has.dynamicName(node));
     const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (qf.is.kind(qc.ExportSpecifier, node) && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
@@ -299,11 +299,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
       if (!symbol) {
         symbolTable.set(name, (symbol = newSymbol(SymbolFlags.None, name)));
-        if (isReplaceableByMethod) symbol.isReplaceableByMethod = true;
-      } else if (isReplaceableByMethod && !symbol.isReplaceableByMethod) {
+        if (isReplaceable) symbol.isReplaceable = true;
+      } else if (isReplaceable && !symbol.isReplaceable) {
         return symbol;
       } else if (symbol.flags & excludes) {
-        if (symbol.isReplaceableByMethod) {
+        if (symbol.isReplaceable) {
           symbolTable.set(name, (symbol = newSymbol(SymbolFlags.None, name)));
         } else if (!(includes & SymbolFlags.Variable && symbol.flags & SymbolFlags.Assignment)) {
           if (qf.is.namedDeclaration(node)) {
@@ -1894,10 +1894,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return;
       case Syntax.TypingPredicate:
         break;
-      case Syntax.TypeParameter:
-        return bindTypeParameter(node as TypeParameterDeclaration);
-      case Syntax.Parameter:
-        return bindParameter(<ParameterDeclaration>node);
+      case Syntax.TypeParam:
+        return bindTypeParam(node as TypeParamDeclaration);
+      case Syntax.Param:
+        return bindParam(<ParamDeclaration>node);
       case Syntax.VariableDeclaration:
         return bindVariableDeclarationOrBindingElem(<VariableDeclaration>node);
       case Syntax.BindingElem:
@@ -2002,8 +2002,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         }
       case Syntax.ModuleBlock:
         return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
-      case Syntax.DocParameterTag:
-        if (node.parent.kind === Syntax.DocSignature) return bindParameter(node as DocParameterTag);
+      case Syntax.DocParamTag:
+        if (node.parent.kind === Syntax.DocSignature) return bindParam(node as DocParamTag);
         if (node.parent.kind !== Syntax.DocTypingLiteral) {
           break;
         }
@@ -2193,7 +2193,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDecl, symbol: Symbol | undefined) {
     if (symbol) {
-      const members = symbol.assignmentDeclarationMembers || (symbol.assignmentDeclarationMembers = createMap());
+      const members = symbol.assignmentDeclarations || (symbol.assignmentDeclarations = createMap());
       members.set('' + qf.get.nodeId(node), node);
     }
   }
@@ -2418,26 +2418,26 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (!qf.is.kind(qc.BindingPattern, node.name)) {
       if (qf.is.blockOrCatchScoped(node)) {
         bindBlockScopedDeclaration(node, SymbolFlags.BlockScopedVariable, SymbolFlags.BlockScopedVariableExcludes);
-      } else if (qf.is.parameterDeclaration(node)) {
-        declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParameterExcludes);
+      } else if (qf.is.paramDeclaration(node)) {
+        declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParamExcludes);
       } else {
         declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.FunctionScopedVariableExcludes);
       }
     }
   }
-  function bindParameter(node: ParameterDeclaration | DocParameterTag) {
-    if (node.kind === Syntax.DocParameterTag && container.kind !== Syntax.DocSignature) {
+  function bindParam(node: ParamDeclaration | DocParamTag) {
+    if (node.kind === Syntax.DocParamTag && container.kind !== Syntax.DocSignature) {
       return;
     }
     if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
       checkStrictModeEvalOrArguments(node, node.name);
     }
     if (qf.is.kind(qc.BindingPattern, node.name)) {
-      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParameterDeclaration).parent.parameters.indexOf(node as ParameterDeclaration)) as qu.__String);
+      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParamDeclaration).parent.params.indexOf(node as ParamDeclaration)) as qu.__String);
     } else {
-      declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParameterExcludes);
+      declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParamExcludes);
     }
-    if (qf.is.parameterPropertyDeclaration(node, node.parent)) {
+    if (qf.is.paramPropertyDeclaration(node, node.parent)) {
       const classDeclaration = node.parent.parent;
       declareSymbol(
         classDeclaration.symbol.members!,
@@ -2488,16 +2488,16 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const extendsType = qc.findAncestor(node, (n) => n.parent && qf.is.kind(qc.ConditionalTyping, n.parent) && n.parent.extendsType === n);
     return extendsType && (extendsType.parent as ConditionalTyping);
   }
-  function bindTypeParameter(node: TypeParameterDeclaration) {
+  function bindTypeParam(node: TypeParamDeclaration) {
     if (qf.is.kind(qc.DocTemplateTag, node.parent)) {
       const container = find((node.parent.parent as Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
           container.locals = new SymbolTable();
         }
-        declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
+        declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
       } else {
-        declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
+        declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
       }
     } else if (node.parent.kind === Syntax.InferTyping) {
       const container = getInferTypeContainer(node.parent);
@@ -2505,12 +2505,12 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         if (!container.locals) {
           container.locals = new SymbolTable();
         }
-        declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
+        declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
       } else {
-        bindAnonymousDeclaration(node, SymbolFlags.TypeParameter, getDeclarationName(node)!);
+        bindAnonymousDeclaration(node, SymbolFlags.TypeParam, getDeclarationName(node)!);
       }
     } else {
-      declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
+      declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
     }
   }
   function shouldReportErrorOnModuleDeclaration(node: ModuleDeclaration): boolean {

@@ -64,7 +64,7 @@ export function transformES2020(context: TrafoContext) {
       if (shouldCaptureInTempVariable(expression)) {
         thisArg = createTempVariable(hoistVariableDeclaration);
         expression = qf.create.assignment(thisArg, expression);
-        // if (inParameterIniter) tempVariableInParameter = true;
+        // if (inParamIniter) tempVariableInParam = true;
       } else {
         thisArg = expression;
       }
@@ -101,7 +101,7 @@ export function transformES2020(context: TrafoContext) {
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
       leftExpression = qf.create.assignment(capturedLeft, leftExpression);
-      // if (inParameterIniter) tempVariableInParameter = true;
+      // if (inParamIniter) tempVariableInParam = true;
     }
     let rightExpression = capturedLeft;
     let thisArg: Expression | undefined;
@@ -114,7 +114,7 @@ export function transformES2020(context: TrafoContext) {
             if (shouldCaptureInTempVariable(rightExpression)) {
               thisArg = createTempVariable(hoistVariableDeclaration);
               rightExpression = qf.create.assignment(thisArg, rightExpression);
-              // if (inParameterIniter) tempVariableInParameter = true;
+              // if (inParamIniter) tempVariableInParam = true;
             } else {
               thisArg = rightExpression;
             }
@@ -156,7 +156,7 @@ export function transformES2020(context: TrafoContext) {
     if (shouldCaptureInTempVariable(left)) {
       right = createTempVariable(hoistVariableDeclaration);
       left = qf.create.assignment(right, left);
-      // if (inParameterIniter) tempVariableInParameter = true;
+      // if (inParamIniter) tempVariableInParam = true;
     }
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }

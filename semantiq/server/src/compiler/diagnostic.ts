@@ -211,51 +211,41 @@ export const msgs = {
   Asterisk_Slash_expected: new Message(1010, Category.Error, 'Asterisk_Slash_expected_1010', "'*/' expected."),
   An_elem_access_expression_should_take_an_argument: new Message(1011, Category.Error, 'An_elem_access_expression_should_take_an_argument_1011', 'An elem access expression should take an argument.'),
   Unexpected_token: new Message(1012, Category.Error, 'Unexpected_token_1012', 'Unexpected token.'),
-  A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma: new Message(
+  A_rest_param_or_binding_pattern_may_not_have_a_trailing_comma: new Message(
     1013,
     Category.Error,
-    'A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma_1013',
-    'A rest parameter or binding pattern may not have a trailing comma.'
+    'A_rest_param_or_binding_pattern_may_not_have_a_trailing_comma_1013',
+    'A rest param or binding pattern may not have a trailing comma.'
   ),
-  A_rest_parameter_must_be_last_in_a_parameter_list: new Message(1014, Category.Error, 'A_rest_parameter_must_be_last_in_a_parameter_list_1014', 'A rest parameter must be last in a parameter list.'),
-  Parameter_cannot_have_question_mark_and_initer: new Message(1015, Category.Error, 'Parameter_cannot_have_question_mark_and_initer_1015', 'Parameter cannot have question mark and initer.'),
-  A_required_parameter_cannot_follow_an_optional_parameter: new Message(
-    1016,
-    Category.Error,
-    'A_required_parameter_cannot_follow_an_optional_parameter_1016',
-    'A required parameter cannot follow an optional parameter.'
-  ),
-  An_index_signature_cannot_have_a_rest_parameter: new Message(1017, Category.Error, 'An_index_signature_cannot_have_a_rest_parameter_1017', 'An index signature cannot have a rest parameter.'),
-  An_index_signature_parameter_cannot_have_an_accessibility_modifier: new Message(
+  A_rest_param_must_be_last_in_a_param_list: new Message(1014, Category.Error, 'A_rest_param_must_be_last_in_a_param_list_1014', 'A rest param must be last in a param list.'),
+  Param_cannot_have_question_mark_and_initer: new Message(1015, Category.Error, 'Param_cannot_have_question_mark_and_initer_1015', 'Param cannot have question mark and initer.'),
+  A_required_param_cannot_follow_an_optional_param: new Message(1016, Category.Error, 'A_required_param_cannot_follow_an_optional_param_1016', 'A required param cannot follow an optional param.'),
+  An_index_signature_cannot_have_a_rest_param: new Message(1017, Category.Error, 'An_index_signature_cannot_have_a_rest_param_1017', 'An index signature cannot have a rest param.'),
+  An_index_signature_param_cannot_have_an_accessibility_modifier: new Message(
     1018,
     Category.Error,
-    'An_index_signature_parameter_cannot_have_an_accessibility_modifier_1018',
-    'An index signature parameter cannot have an accessibility modifier.'
+    'An_index_signature_param_cannot_have_an_accessibility_modifier_1018',
+    'An index signature param cannot have an accessibility modifier.'
   ),
-  An_index_signature_parameter_cannot_have_a_question_mark: new Message(
+  An_index_signature_param_cannot_have_a_question_mark: new Message(
     1019,
     Category.Error,
-    'An_index_signature_parameter_cannot_have_a_question_mark_1019',
-    'An index signature parameter cannot have a question mark.'
+    'An_index_signature_param_cannot_have_a_question_mark_1019',
+    'An index signature param cannot have a question mark.'
   ),
-  An_index_signature_parameter_cannot_have_an_initer: new Message(
-    1020,
-    Category.Error,
-    'An_index_signature_parameter_cannot_have_an_initer_1020',
-    'An index signature parameter cannot have an initer.'
-  ),
+  An_index_signature_param_cannot_have_an_initer: new Message(1020, Category.Error, 'An_index_signature_param_cannot_have_an_initer_1020', 'An index signature param cannot have an initer.'),
   An_index_signature_must_have_a_type_annotation: new Message(1021, Category.Error, 'An_index_signature_must_have_a_type_annotation_1021', 'An index signature must have a type annotation.'),
-  An_index_signature_parameter_must_have_a_type_annotation: new Message(
+  An_index_signature_param_must_have_a_type_annotation: new Message(
     1022,
     Category.Error,
-    'An_index_signature_parameter_must_have_a_type_annotation_1022',
-    'An index signature parameter must have a type annotation.'
+    'An_index_signature_param_must_have_a_type_annotation_1022',
+    'An index signature param must have a type annotation.'
   ),
-  An_index_signature_parameter_type_must_be_either_string_or_number: new Message(
+  An_index_signature_param_type_must_be_either_string_or_number: new Message(
     1023,
     Category.Error,
-    'An_index_signature_parameter_type_must_be_either_string_or_number_1023',
-    "An index signature parameter type must be either 'string' or 'number'."
+    'An_index_signature_param_type_must_be_either_string_or_number_1023',
+    "An index signature param type must be either 'string' or 'number'."
   ),
   readonly_modifier_can_only_appear_on_a_property_declaration_or_index_signature: new Message(
     1024,
@@ -310,13 +300,13 @@ export const msgs = {
     'Top_level_declarations_in_d_ts_files_must_start_with_either_a_declare_or_export_modifier_1046',
     "Top-level declarations in .d.ts files must start with either a 'declare' or 'export' modifier."
   ),
-  A_rest_parameter_cannot_be_optional: new Message(1047, Category.Error, 'A_rest_parameter_cannot_be_optional_1047', 'A rest parameter cannot be optional.'),
-  A_rest_parameter_cannot_have_an_initer: new Message(1048, Category.Error, 'A_rest_parameter_cannot_have_an_initer_1048', 'A rest parameter cannot have an initer.'),
-  A_set_accessor_must_have_exactly_one_parameter: new Message(1049, Category.Error, 'A_set_accessor_must_have_exactly_one_parameter_1049', "A 'set' accessor must have exactly one parameter."),
-  A_set_accessor_cannot_have_an_optional_parameter: new Message(1051, Category.Error, 'A_set_accessor_cannot_have_an_optional_parameter_1051', "A 'set' accessor cannot have an optional parameter."),
-  A_set_accessor_parameter_cannot_have_an_initer: new Message(1052, Category.Error, 'A_set_accessor_parameter_cannot_have_an_initer_1052', "A 'set' accessor parameter cannot have an initer."),
-  A_set_accessor_cannot_have_rest_parameter: new Message(1053, Category.Error, 'A_set_accessor_cannot_have_rest_parameter_1053', "A 'set' accessor cannot have rest parameter."),
-  A_get_accessor_cannot_have_parameters: new Message(1054, Category.Error, 'A_get_accessor_cannot_have_parameters_1054', "A 'get' accessor cannot have parameters."),
+  A_rest_param_cannot_be_optional: new Message(1047, Category.Error, 'A_rest_param_cannot_be_optional_1047', 'A rest param cannot be optional.'),
+  A_rest_param_cannot_have_an_initer: new Message(1048, Category.Error, 'A_rest_param_cannot_have_an_initer_1048', 'A rest param cannot have an initer.'),
+  A_set_accessor_must_have_exactly_one_param: new Message(1049, Category.Error, 'A_set_accessor_must_have_exactly_one_param_1049', "A 'set' accessor must have exactly one param."),
+  A_set_accessor_cannot_have_an_optional_param: new Message(1051, Category.Error, 'A_set_accessor_cannot_have_an_optional_param_1051', "A 'set' accessor cannot have an optional param."),
+  A_set_accessor_param_cannot_have_an_initer: new Message(1052, Category.Error, 'A_set_accessor_param_cannot_have_an_initer_1052', "A 'set' accessor param cannot have an initer."),
+  A_set_accessor_cannot_have_rest_param: new Message(1053, Category.Error, 'A_set_accessor_cannot_have_rest_param_1053', "A 'set' accessor cannot have rest param."),
+  A_get_accessor_cannot_have_params: new Message(1054, Category.Error, 'A_get_accessor_cannot_have_params_1054', "A 'get' accessor cannot have params."),
   Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value: new Message(
     1055,
     Category.Error,
@@ -342,11 +332,11 @@ export const msgs = {
     "The return type of an async function must either be a valid promise or must not contain a callable 'then' member."
   ),
   A_promise_must_have_a_then_method: new Message(1059, Category.Error, 'A_promise_must_have_a_then_method_1059', "A promise must have a 'then' method."),
-  The_first_parameter_of_the_then_method_of_a_promise_must_be_a_callback: new Message(
+  The_first_param_of_the_then_method_of_a_promise_must_be_a_callback: new Message(
     1060,
     Category.Error,
-    'The_first_parameter_of_the_then_method_of_a_promise_must_be_a_callback_1060',
-    "The first parameter of the 'then' method of a promise must be a callback."
+    'The_first_param_of_the_then_method_of_a_promise_must_be_a_callback_1060',
+    "The first param of the 'then' method of a promise must be a callback."
   ),
   Enum_member_must_have_initer: new Message(1061, Category.Error, 'Enum_member_must_have_initer_1061', 'Enum member must have initer.'),
   Type_is_referenced_directly_or_indirectly_in_the_fulfillment_callback_of_its_own_then_method: new Message(
@@ -379,11 +369,11 @@ export const msgs = {
     'Unexpected_token_A_constructor_method_accessor_or_property_was_expected_1068',
     'Unexpected token. A constructor, method, accessor, or property was expected.'
   ),
-  Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces: new Message(
+  Unexpected_token_A_type_param_name_was_expected_without_curly_braces: new Message(
     1069,
     Category.Error,
-    'Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces_1069',
-    'Unexpected token. A type parameter name was expected without curly braces.'
+    'Unexpected_token_A_type_param_name_was_expected_without_curly_braces_1069',
+    'Unexpected token. A type param name was expected without curly braces.'
   ),
   _0_modifier_cannot_appear_on_a_type_member: new Message(1070, Category.Error, '_0_modifier_cannot_appear_on_a_type_member_1070', "'{0}' modifier cannot appear on a type member."),
   _0_modifier_cannot_appear_on_an_index_signature: new Message(1071, Category.Error, '_0_modifier_cannot_appear_on_an_index_signature_1071', "'{0}' modifier cannot appear on an index signature."),
@@ -406,18 +396,18 @@ export const msgs = {
     '_0_modifier_cannot_appear_on_a_constructor_declaration_1089',
     "'{0}' modifier cannot appear on a constructor declaration."
   ),
-  _0_modifier_cannot_appear_on_a_parameter: new Message(1090, Category.Error, '_0_modifier_cannot_appear_on_a_parameter_1090', "'{0}' modifier cannot appear on a parameter."),
+  _0_modifier_cannot_appear_on_a_param: new Message(1090, Category.Error, '_0_modifier_cannot_appear_on_a_param_1090', "'{0}' modifier cannot appear on a param."),
   Only_a_single_variable_declaration_is_allowed_in_a_for_in_statement: new Message(
     1091,
     Category.Error,
     'Only_a_single_variable_declaration_is_allowed_in_a_for_in_statement_1091',
     "Only a single variable declaration is allowed in a 'for...in' statement."
   ),
-  Type_parameters_cannot_appear_on_a_constructor_declaration: new Message(
+  Type_params_cannot_appear_on_a_constructor_declaration: new Message(
     1092,
     Category.Error,
-    'Type_parameters_cannot_appear_on_a_constructor_declaration_1092',
-    'Type parameters cannot appear on a constructor declaration.'
+    'Type_params_cannot_appear_on_a_constructor_declaration_1092',
+    'Type params cannot appear on a constructor declaration.'
   ),
   Type_annotation_cannot_appear_on_a_constructor_declaration: new Message(
     1093,
@@ -425,21 +415,16 @@ export const msgs = {
     'Type_annotation_cannot_appear_on_a_constructor_declaration_1093',
     'Type annotation cannot appear on a constructor declaration.'
   ),
-  An_accessor_cannot_have_type_parameters: new Message(1094, Category.Error, 'An_accessor_cannot_have_type_parameters_1094', 'An accessor cannot have type parameters.'),
+  An_accessor_cannot_have_type_params: new Message(1094, Category.Error, 'An_accessor_cannot_have_type_params_1094', 'An accessor cannot have type params.'),
   A_set_accessor_cannot_have_a_return_type_annotation: new Message(
     1095,
     Category.Error,
     'A_set_accessor_cannot_have_a_return_type_annotation_1095',
     "A 'set' accessor cannot have a return type annotation."
   ),
-  An_index_signature_must_have_exactly_one_parameter: new Message(
-    1096,
-    Category.Error,
-    'An_index_signature_must_have_exactly_one_parameter_1096',
-    'An index signature must have exactly one parameter.'
-  ),
+  An_index_signature_must_have_exactly_one_param: new Message(1096, Category.Error, 'An_index_signature_must_have_exactly_one_param_1096', 'An index signature must have exactly one param.'),
   _0_list_cannot_be_empty: new Message(1097, Category.Error, '_0_list_cannot_be_empty_1097', "'{0}' list cannot be empty."),
-  Type_parameter_list_cannot_be_empty: new Message(1098, Category.Error, 'Type_parameter_list_cannot_be_empty_1098', 'Type parameter list cannot be empty.'),
+  Type_param_list_cannot_be_empty: new Message(1098, Category.Error, 'Type_param_list_cannot_be_empty_1098', 'Type param list cannot be empty.'),
   Type_argument_list_cannot_be_empty: new Message(1099, Category.Error, 'Type_argument_list_cannot_be_empty_1099', 'Type argument list cannot be empty.'),
   Invalid_use_of_0_in_strict_mode: new Message(1100, Category.Error, 'Invalid_use_of_0_in_strict_mode_1100', "Invalid use of '{0}' in strict mode."),
   with_statements_are_not_allowed_in_strict_mode: new Message(1101, Category.Error, 'with_statements_are_not_allowed_in_strict_mode_1101', "'with' statements are not allowed in strict mode."),
@@ -529,8 +514,8 @@ export const msgs = {
   Argument_expression_expected: new Message(1135, Category.Error, 'Argument_expression_expected_1135', 'Argument expression expected.'),
   Property_assignment_expected: new Message(1136, Category.Error, 'Property_assignment_expected_1136', 'Property assignment expected.'),
   Expression_or_comma_expected: new Message(1137, Category.Error, 'Expression_or_comma_expected_1137', 'Expression or comma expected.'),
-  Parameter_declaration_expected: new Message(1138, Category.Error, 'Parameter_declaration_expected_1138', 'Parameter declaration expected.'),
-  Type_parameter_declaration_expected: new Message(1139, Category.Error, 'Type_parameter_declaration_expected_1139', 'Type parameter declaration expected.'),
+  Param_declaration_expected: new Message(1138, Category.Error, 'Param_declaration_expected_1138', 'Param declaration expected.'),
+  Type_param_declaration_expected: new Message(1139, Category.Error, 'Type_param_declaration_expected_1139', 'Type param declaration expected.'),
   Type_argument_expected: new Message(1140, Category.Error, 'Type_argument_expected_1140', 'Type argument expected.'),
   String_literal_expected: new Message(1141, Category.Error, 'String_literal_expected_1141', 'String literal expected.'),
   Line_break_not_permitted_here: new Message(1142, Category.Error, 'Line_break_not_permitted_here_1142', 'Line break not permitted here.'),
@@ -638,11 +623,11 @@ export const msgs = {
   Modifiers_cannot_appear_here: new Message(1184, Category.Error, 'Modifiers_cannot_appear_here_1184', 'Modifiers cannot appear here.'),
   Merge_conflict_marker_encountered: new Message(1185, Category.Error, 'Merge_conflict_marker_encountered_1185', 'Merge conflict marker encountered.'),
   A_rest_elem_cannot_have_an_initer: new Message(1186, Category.Error, 'A_rest_elem_cannot_have_an_initer_1186', 'A rest elem cannot have an initer.'),
-  A_parameter_property_may_not_be_declared_using_a_binding_pattern: new Message(
+  A_param_property_may_not_be_declared_using_a_binding_pattern: new Message(
     1187,
     Category.Error,
-    'A_parameter_property_may_not_be_declared_using_a_binding_pattern_1187',
-    'A parameter property may not be declared using a binding pattern.'
+    'A_param_property_may_not_be_declared_using_a_binding_pattern_1187',
+    'A param property may not be declared using a binding pattern.'
   ),
   Only_a_single_variable_declaration_is_allowed_in_a_for_of_statement: new Message(
     1188,
@@ -787,26 +772,16 @@ export const msgs = {
   ),
   _0_tag_already_specified: new Message(1223, Category.Error, '_0_tag_already_specified_1223', "'{0}' tag already specified."),
   Signature_0_must_be_a_type_predicate: new Message(1224, Category.Error, 'Signature_0_must_be_a_type_predicate_1224', "Signature '{0}' must be a type predicate."),
-  Cannot_find_parameter_0: new Message(1225, Category.Error, 'Cannot_find_parameter_0_1225', "Cannot find parameter '{0}'."),
+  Cannot_find_param_0: new Message(1225, Category.Error, 'Cannot_find_param_0_1225', "Cannot find param '{0}'."),
   Type_predicate_0_is_not_assignable_to_1: new Message(1226, Category.Error, 'Type_predicate_0_is_not_assignable_to_1_1226', "Type predicate '{0}' is not assignable to '{1}'."),
-  Parameter_0_is_not_in_the_same_position_as_parameter_1: new Message(
-    1227,
-    Category.Error,
-    'Parameter_0_is_not_in_the_same_position_as_parameter_1_1227',
-    "Parameter '{0}' is not in the same position as parameter '{1}'."
-  ),
+  Param_0_is_not_in_the_same_position_as_param_1: new Message(1227, Category.Error, 'Param_0_is_not_in_the_same_position_as_param_1_1227', "Param '{0}' is not in the same position as param '{1}'."),
   A_type_predicate_is_only_allowed_in_return_type_position_for_functions_and_methods: new Message(
     1228,
     Category.Error,
     'A_type_predicate_is_only_allowed_in_return_type_position_for_functions_and_methods_1228',
     'A type predicate is only allowed in return type position for functions and methods.'
   ),
-  A_type_predicate_cannot_reference_a_rest_parameter: new Message(
-    1229,
-    Category.Error,
-    'A_type_predicate_cannot_reference_a_rest_parameter_1229',
-    'A type predicate cannot reference a rest parameter.'
-  ),
+  A_type_predicate_cannot_reference_a_rest_param: new Message(1229, Category.Error, 'A_type_predicate_cannot_reference_a_rest_param_1229', 'A type predicate cannot reference a rest param.'),
   A_type_predicate_cannot_reference_elem_0_in_a_binding_pattern: new Message(
     1230,
     Category.Error,
@@ -844,11 +819,11 @@ export const msgs = {
     'The_return_type_of_a_property_decorator_function_must_be_either_void_or_any_1236',
     "The return type of a property decorator function must be either 'void' or 'any'."
   ),
-  The_return_type_of_a_parameter_decorator_function_must_be_either_void_or_any: new Message(
+  The_return_type_of_a_param_decorator_function_must_be_either_void_or_any: new Message(
     1237,
     Category.Error,
-    'The_return_type_of_a_parameter_decorator_function_must_be_either_void_or_any_1237',
-    "The return type of a parameter decorator function must be either 'void' or 'any'."
+    'The_return_type_of_a_param_decorator_function_must_be_either_void_or_any_1237',
+    "The return type of a param decorator function must be either 'void' or 'any'."
   ),
   Unable_to_resolve_signature_of_class_decorator_when_called_as_an_expression: new Message(
     1238,
@@ -856,11 +831,11 @@ export const msgs = {
     'Unable_to_resolve_signature_of_class_decorator_when_called_as_an_expression_1238',
     'Unable to resolve signature of class decorator when called as an expression.'
   ),
-  Unable_to_resolve_signature_of_parameter_decorator_when_called_as_an_expression: new Message(
+  Unable_to_resolve_signature_of_param_decorator_when_called_as_an_expression: new Message(
     1239,
     Category.Error,
-    'Unable_to_resolve_signature_of_parameter_decorator_when_called_as_an_expression_1239',
-    'Unable to resolve signature of parameter decorator when called as an expression.'
+    'Unable_to_resolve_signature_of_param_decorator_when_called_as_an_expression_1239',
+    'Unable to resolve signature of param decorator when called as an expression.'
   ),
   Unable_to_resolve_signature_of_property_decorator_when_called_as_an_expression: new Message(
     1240,
@@ -1001,11 +976,11 @@ export const msgs = {
     'Global_module_exports_may_only_appear_at_top_level_1316',
     'Global module exports may only appear at top level.'
   ),
-  A_parameter_property_cannot_be_declared_using_a_rest_parameter: new Message(
+  A_param_property_cannot_be_declared_using_a_rest_param: new Message(
     1317,
     Category.Error,
-    'A_parameter_property_cannot_be_declared_using_a_rest_parameter_1317',
-    'A parameter property cannot be declared using a rest parameter.'
+    'A_param_property_cannot_be_declared_using_a_rest_param_1317',
+    'A param property cannot be declared using a rest param.'
   ),
   An_abstract_accessor_cannot_have_an_implementation: new Message(
     1318,
@@ -1043,12 +1018,7 @@ export const msgs = {
     'Dynamic_imports_are_only_supported_when_the_module_flag_is_set_to_es2020_esnext_commonjs_amd_system__1323',
     "Dynamic imports are only supported when the '--module' flag is set to 'es2020', 'esnext', 'commonjs', 'amd', 'system', or 'umd'."
   ),
-  Dynamic_import_must_have_one_specifier_as_an_argument: new Message(
-    1324,
-    Category.Error,
-    'Dynamic_import_must_have_one_specifier_as_an_argument_1324',
-    'Dynamic import must have one specifier as an argument.'
-  ),
+  Dynamic_import_must_have_one_spec_as_an_argument: new Message(1324, Category.Error, 'Dynamic_import_must_have_one_spec_as_an_argument_1324', 'Dynamic import must have one spec as an argument.'),
   Specifier_of_dynamic_import_cannot_be_spread_elem: new Message(1325, Category.Error, 'Specifier_of_dynamic_import_cannot_be_spread_elem_1325', 'Specifier of dynamic import cannot be spread elem.'),
   Dynamic_import_cannot_have_type_arguments: new Message(1326, Category.Error, 'Dynamic_import_cannot_have_type_arguments_1326', 'Dynamic import cannot have type arguments'),
   String_literal_with_double_quotes_expected: new Message(1327, Category.Error, 'String_literal_with_double_quotes_expected_1327', 'String literal with double quotes expected.'),
@@ -1095,17 +1065,17 @@ export const msgs = {
     "'unique symbol' types are only allowed on variables in a variable statement."
   ),
   unique_symbol_types_are_not_allowed_here: new Message(1335, Category.Error, 'unique_symbol_types_are_not_allowed_here_1335', "'unique symbol' types are not allowed here."),
-  An_index_signature_parameter_type_cannot_be_a_type_alias_Consider_writing_0_Colon_1_Colon_2_instead: new Message(
+  An_index_signature_param_type_cannot_be_a_type_alias_Consider_writing_0_Colon_1_Colon_2_instead: new Message(
     1336,
     Category.Error,
-    'An_index_signature_parameter_type_cannot_be_a_type_alias_Consider_writing_0_Colon_1_Colon_2_instead_1336',
-    "An index signature parameter type cannot be a type alias. Consider writing '[{0}: {1}]: {2}' instead."
+    'An_index_signature_param_type_cannot_be_a_type_alias_Consider_writing_0_Colon_1_Colon_2_instead_1336',
+    "An index signature param type cannot be a type alias. Consider writing '[{0}: {1}]: {2}' instead."
   ),
-  An_index_signature_parameter_type_cannot_be_a_union_type_Consider_using_a_mapped_object_type_instead: new Message(
+  An_index_signature_param_type_cannot_be_a_union_type_Consider_using_a_mapped_object_type_instead: new Message(
     1337,
     Category.Error,
-    'An_index_signature_parameter_type_cannot_be_a_union_type_Consider_using_a_mapped_object_type_instead_1337',
-    'An index signature parameter type cannot be a union type. Consider using a mapped object type instead.'
+    'An_index_signature_param_type_cannot_be_a_union_type_Consider_using_a_mapped_object_type_instead_1337',
+    'An index signature param type cannot be a union type. Consider using a mapped object type instead.'
   ),
   infer_declarations_are_only_permitted_in_the_extends_clause_of_a_conditional_type: new Message(
     1338,
@@ -1139,19 +1109,19 @@ export const msgs = {
     'An_expression_of_type_void_cannot_be_tested_for_truthiness_1345',
     "An expression of type 'void' cannot be tested for truthiness"
   ),
-  This_parameter_is_not_allowed_with_use_strict_directive: new Message(
+  This_param_is_not_allowed_with_use_strict_directive: new Message(
     1346,
     Category.Error,
-    'This_parameter_is_not_allowed_with_use_strict_directive_1346',
-    "This parameter is not allowed with 'use strict' directive."
+    'This_param_is_not_allowed_with_use_strict_directive_1346',
+    "This param is not allowed with 'use strict' directive."
   ),
-  use_strict_directive_cannot_be_used_with_non_simple_parameter_list: new Message(
+  use_strict_directive_cannot_be_used_with_non_simple_param_list: new Message(
     1347,
     Category.Error,
-    'use_strict_directive_cannot_be_used_with_non_simple_parameter_list_1347',
-    "'use strict' directive cannot be used with non-simple parameter list."
+    'use_strict_directive_cannot_be_used_with_non_simple_param_list_1347',
+    "'use strict' directive cannot be used with non-simple param list."
   ),
-  Non_simple_parameter_declared_here: new Message(1348, Category.Error, 'Non_simple_parameter_declared_here_1348', 'Non-simple parameter declared here.'),
+  Non_simple_param_declared_here: new Message(1348, Category.Error, 'Non_simple_param_declared_here_1348', 'Non-simple param declared here.'),
   use_strict_directive_used_here: new Message(1349, Category.Error, 'use_strict_directive_used_here_1349', "'use strict' directive used here."),
   Print_the_final_configuration_instead_of_building: new Message(
     1350,
@@ -1328,12 +1298,7 @@ export const msgs = {
     'Initer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor_2301',
     "Initer of instance member variable '{0}' cannot reference identifier '{1}' declared in the constructor."
   ),
-  Static_members_cannot_reference_class_type_parameters: new Message(
-    2302,
-    Category.Error,
-    'Static_members_cannot_reference_class_type_parameters_2302',
-    'Static members cannot reference class type parameters.'
-  ),
+  Static_members_cannot_reference_class_type_params: new Message(2302, Category.Error, 'Static_members_cannot_reference_class_type_params_2302', 'Static members cannot reference class type params.'),
   Circular_definition_of_import_alias_0: new Message(2303, Category.Error, 'Circular_definition_of_import_alias_0_2303', "Circular definition of import alias '{0}'."),
   Cannot_find_name_0: new Message(2304, Category.Error, 'Cannot_find_name_0_2304', "Cannot find name '{0}'."),
   Module_0_has_no_exported_member_1: new Message(2305, Category.Error, 'Module_0_has_no_exported_member_1_2305', "Module '{0}' has no exported member '{1}'."),
@@ -1369,11 +1334,11 @@ export const msgs = {
     'An_interface_can_only_extend_an_object_type_or_intersection_of_object_types_with_statically_known_me_2312',
     'An interface can only extend an object type or intersection of object types with statically known members.'
   ),
-  Type_parameter_0_has_a_circular_constraint: new Message(2313, Category.Error, 'Type_parameter_0_has_a_circular_constraint_2313', "Type parameter '{0}' has a circular constraint."),
+  Type_param_0_has_a_circular_constraint: new Message(2313, Category.Error, 'Type_param_0_has_a_circular_constraint_2313', "Type param '{0}' has a circular constraint."),
   Generic_type_0_requires_1_type_argument_s: new Message(2314, Category.Error, 'Generic_type_0_requires_1_type_argument_s_2314', "Generic type '{0}' requires {1} type argument(s)."),
   Type_0_is_not_generic: new Message(2315, Category.Error, 'Type_0_is_not_generic_2315', "Type '{0}' is not generic."),
   Global_type_0_must_be_a_class_or_interface_type: new Message(2316, Category.Error, 'Global_type_0_must_be_a_class_or_interface_type_2316', "Global type '{0}' must be a class or interface type."),
-  Global_type_0_must_have_1_type_parameter_s: new Message(2317, Category.Error, 'Global_type_0_must_have_1_type_parameter_s_2317', "Global type '{0}' must have {1} type parameter(s)."),
+  Global_type_0_must_have_1_type_param_s: new Message(2317, Category.Error, 'Global_type_0_must_have_1_type_param_s_2317', "Global type '{0}' must have {1} type param(s)."),
   Cannot_find_global_type_0: new Message(2318, Category.Error, 'Cannot_find_global_type_0_2318', "Cannot find global type '{0}'."),
   Named_property_0_of_types_1_and_2_are_not_identical: new Message(
     2319,
@@ -1404,7 +1369,7 @@ export const msgs = {
     'Property_0_is_optional_in_type_1_but_required_in_type_2_2327',
     "Property '{0}' is optional in type '{1}' but required in type '{2}'."
   ),
-  Types_of_parameters_0_and_1_are_incompatible: new Message(2328, Category.Error, 'Types_of_parameters_0_and_1_are_incompatible_2328', "Types of parameters '{0}' and '{1}' are incompatible."),
+  Types_of_params_0_and_1_are_incompatible: new Message(2328, Category.Error, 'Types_of_params_0_and_1_are_incompatible_2328', "Types of params '{0}' and '{1}' are incompatible."),
   Index_signature_is_missing_in_type_0: new Message(2329, Category.Error, 'Index_signature_is_missing_in_type_0_2329', "Index signature is missing in type '{0}'."),
   Index_signatures_are_incompatible: new Message(2330, Category.Error, 'Index_signatures_are_incompatible_2330', 'Index signatures are incompatible.'),
   this_cannot_be_referenced_in_a_module_or_namespace_body: new Message(
@@ -1471,11 +1436,11 @@ export const msgs = {
     "This syntax requires an imported helper named '{1}' which does not exist in '{0}'. Consider upgrading your version of '{0}'."
   ),
   Type_0_does_not_satisfy_the_constraint_1: new Message(2344, Category.Error, 'Type_0_does_not_satisfy_the_constraint_1_2344', "Type '{0}' does not satisfy the constraint '{1}'."),
-  Argument_of_type_0_is_not_assignable_to_parameter_of_type_1: new Message(
+  Argument_of_type_0_is_not_assignable_to_param_of_type_1: new Message(
     2345,
     Category.Error,
-    'Argument_of_type_0_is_not_assignable_to_parameter_of_type_1_2345',
-    "Argument of type '{0}' is not assignable to parameter of type '{1}'."
+    'Argument_of_type_0_is_not_assignable_to_param_of_type_1_2345',
+    "Argument of type '{0}' is not assignable to param of type '{1}'."
   ),
   Call_target_does_not_contain_any_signatures: new Message(2346, Category.Error, 'Call_target_does_not_contain_any_signatures_2346', 'Call target does not contain any signatures.'),
   Untyped_function_calls_may_not_accept_type_arguments: new Message(
@@ -1534,11 +1499,11 @@ export const msgs = {
     'The_operand_of_an_increment_or_decrement_operator_must_be_a_variable_or_a_property_access_2357',
     'The operand of an increment or decrement operator must be a variable or a property access.'
   ),
-  The_left_hand_side_of_an_instanceof_expression_must_be_of_type_any_an_object_type_or_a_type_parameter: new Message(
+  The_left_hand_side_of_an_instanceof_expression_must_be_of_type_any_an_object_type_or_a_type_param: new Message(
     2358,
     Category.Error,
     'The_left_hand_side_of_an_instanceof_expression_must_be_of_type_any_an_object_type_or_a_type_paramete_2358',
-    "The left-hand side of an 'instanceof' expression must be of type 'any', an object type or a type parameter."
+    "The left-hand side of an 'instanceof' expression must be of type 'any', an object type or a type param."
   ),
   The_right_hand_side_of_an_instanceof_expression_must_be_of_type_any_or_of_a_type_assignable_to_the_Function_interface_type: new Message(
     2359,
@@ -1552,11 +1517,11 @@ export const msgs = {
     'The_left_hand_side_of_an_in_expression_must_be_of_type_any_string_number_or_symbol_2360',
     "The left-hand side of an 'in' expression must be of type 'any', 'string', 'number', or 'symbol'."
   ),
-  The_right_hand_side_of_an_in_expression_must_be_of_type_any_an_object_type_or_a_type_parameter: new Message(
+  The_right_hand_side_of_an_in_expression_must_be_of_type_any_an_object_type_or_a_type_param: new Message(
     2361,
     Category.Error,
-    'The_right_hand_side_of_an_in_expression_must_be_of_type_any_an_object_type_or_a_type_parameter_2361',
-    "The right-hand side of an 'in' expression must be of type 'any', an object type or a type parameter."
+    'The_right_hand_side_of_an_in_expression_must_be_of_type_any_an_object_type_or_a_type_param_2361',
+    "The right-hand side of an 'in' expression must be of type 'any', an object type or a type param."
   ),
   The_left_hand_side_of_an_arithmetic_operation_must_be_of_type_any_number_bigint_or_an_enum_type: new Message(
     2362,
@@ -1589,34 +1554,34 @@ export const msgs = {
     'This_condition_will_always_return_0_since_the_types_1_and_2_have_no_overlap_2367',
     "This condition will always return '{0}' since the types '{1}' and '{2}' have no overlap."
   ),
-  Type_parameter_name_cannot_be_0: new Message(2368, Category.Error, 'Type_parameter_name_cannot_be_0_2368', "Type parameter name cannot be '{0}'."),
-  A_parameter_property_is_only_allowed_in_a_constructor_implementation: new Message(
+  Type_param_name_cannot_be_0: new Message(2368, Category.Error, 'Type_param_name_cannot_be_0_2368', "Type param name cannot be '{0}'."),
+  A_param_property_is_only_allowed_in_a_constructor_implementation: new Message(
     2369,
     Category.Error,
-    'A_parameter_property_is_only_allowed_in_a_constructor_implementation_2369',
-    'A parameter property is only allowed in a constructor implementation.'
+    'A_param_property_is_only_allowed_in_a_constructor_implementation_2369',
+    'A param property is only allowed in a constructor implementation.'
   ),
-  A_rest_parameter_must_be_of_an_array_type: new Message(2370, Category.Error, 'A_rest_parameter_must_be_of_an_array_type_2370', 'A rest parameter must be of an array type.'),
-  A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation: new Message(
+  A_rest_param_must_be_of_an_array_type: new Message(2370, Category.Error, 'A_rest_param_must_be_of_an_array_type_2370', 'A rest param must be of an array type.'),
+  A_param_initer_is_only_allowed_in_a_function_or_constructor_implementation: new Message(
     2371,
     Category.Error,
-    'A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation_2371',
-    'A parameter initer is only allowed in a function or constructor implementation.'
+    'A_param_initer_is_only_allowed_in_a_function_or_constructor_implementation_2371',
+    'A param initer is only allowed in a function or constructor implementation.'
   ),
-  Parameter_0_cannot_reference_itself: new Message(2372, Category.Error, 'Parameter_0_cannot_reference_itself_2372', "Parameter '{0}' cannot reference itself."),
-  Parameter_0_cannot_reference_identifier_1_declared_after_it: new Message(
+  Param_0_cannot_reference_itself: new Message(2372, Category.Error, 'Param_0_cannot_reference_itself_2372', "Param '{0}' cannot reference itself."),
+  Param_0_cannot_reference_identifier_1_declared_after_it: new Message(
     2373,
     Category.Error,
-    'Parameter_0_cannot_reference_identifier_1_declared_after_it_2373',
-    "Parameter '{0}' cannot reference identifier '{1}' declared after it."
+    'Param_0_cannot_reference_identifier_1_declared_after_it_2373',
+    "Param '{0}' cannot reference identifier '{1}' declared after it."
   ),
   Duplicate_string_index_signature: new Message(2374, Category.Error, 'Duplicate_string_index_signature_2374', 'Duplicate string index signature.'),
   Duplicate_number_index_signature: new Message(2375, Category.Error, 'Duplicate_number_index_signature_2375', 'Duplicate number index signature.'),
-  A_super_call_must_be_the_first_statement_in_the_constructor_when_a_class_contains_initialized_properties_parameter_properties_or_private_identifiers: new Message(
+  A_super_call_must_be_the_first_statement_in_the_constructor_when_a_class_contains_initialized_properties_param_properties_or_private_identifiers: new Message(
     2376,
     Category.Error,
     'A_super_call_must_be_the_first_statement_in_the_constructor_when_a_class_contains_initialized_proper_2376',
-    "A 'super' call must be the first statement in the constructor when a class contains initialized properties, parameter properties, or private identifiers."
+    "A 'super' call must be the first statement in the constructor when a class contains initialized properties, param properties, or private identifiers."
   ),
   Constructors_for_derived_classes_must_contain_a_super_call: new Message(
     2377,
@@ -1697,11 +1662,11 @@ export const msgs = {
     'Individual_declarations_in_merged_declaration_0_must_be_all_exported_or_all_local_2395',
     "Individual declarations in merged declaration '{0}' must be all exported or all local."
   ),
-  Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_parameters: new Message(
+  Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_params: new Message(
     2396,
     Category.Error,
-    'Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_parameters_2396',
-    "Duplicate identifier 'arguments'. Compiler uses 'arguments' to initialize rest parameters."
+    'Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_params_2396',
+    "Duplicate identifier 'arguments'. Compiler uses 'arguments' to initialize rest params."
   ),
   Declaration_name_conflicts_with_built_in_global_identifier_0: new Message(
     2397,
@@ -1709,11 +1674,11 @@ export const msgs = {
     'Declaration_name_conflicts_with_built_in_global_identifier_0_2397',
     "Declaration name conflicts with built-in global identifier '{0}'."
   ),
-  constructor_cannot_be_used_as_a_parameter_property_name: new Message(
+  constructor_cannot_be_used_as_a_param_property_name: new Message(
     2398,
     Category.Error,
-    'constructor_cannot_be_used_as_a_parameter_property_name_2398',
-    "'constructor' cannot be used as a parameter property name."
+    'constructor_cannot_be_used_as_a_param_property_name_2398',
+    "'constructor' cannot be used as a param property name."
   ),
   Duplicate_identifier_this_Compiler_uses_variable_declaration_this_to_capture_this_reference: new Message(
     2399,
@@ -1763,11 +1728,11 @@ export const msgs = {
     'The_left_hand_side_of_a_for_in_statement_must_be_a_variable_or_a_property_access_2406',
     "The left-hand side of a 'for...in' statement must be a variable or a property access."
   ),
-  The_right_hand_side_of_a_for_in_statement_must_be_of_type_any_an_object_type_or_a_type_parameter_but_here_has_type_0: new Message(
+  The_right_hand_side_of_a_for_in_statement_must_be_of_type_any_an_object_type_or_a_type_param_but_here_has_type_0: new Message(
     2407,
     Category.Error,
-    'The_right_hand_side_of_a_for_in_statement_must_be_of_type_any_an_object_type_or_a_type_parameter_but_2407',
-    "The right-hand side of a 'for...in' statement must be of type 'any', an object type or a type parameter, but here has type '{0}'."
+    'The_right_hand_side_of_a_for_in_statement_must_be_of_type_any_an_object_type_or_a_type_param_but_2407',
+    "The right-hand side of a 'for...in' statement must be of type 'any', an object type or a type param, but here has type '{0}'."
   ),
   Setters_cannot_return_a_value: new Message(2408, Category.Error, 'Setters_cannot_return_a_value_2408', 'Setters cannot return a value.'),
   Return_type_of_constructor_signature_must_be_assignable_to_the_instance_type_of_the_class: new Message(
@@ -1846,11 +1811,11 @@ export const msgs = {
     "Class '{0}' defines instance member accessor '{1}', but extended class '{2}' defines it as instance member function."
   ),
   Interface_name_cannot_be_0: new Message(2427, Category.Error, 'Interface_name_cannot_be_0_2427', "Interface name cannot be '{0}'."),
-  All_declarations_of_0_must_have_identical_type_parameters: new Message(
+  All_declarations_of_0_must_have_identical_type_params: new Message(
     2428,
     Category.Error,
-    'All_declarations_of_0_must_have_identical_type_parameters_2428',
-    "All declarations of '{0}' must have identical type parameters."
+    'All_declarations_of_0_must_have_identical_type_params_2428',
+    "All declarations of '{0}' must have identical type params."
   ),
   Interface_0_incorrectly_extends_interface_1: new Message(2430, Category.Error, 'Interface_0_incorrectly_extends_interface_1_2430', "Interface '{0}' incorrectly extends interface '{1}'."),
   Enum_name_cannot_be_0: new Message(2431, Category.Error, 'Enum_name_cannot_be_0_2431', "Enum name cannot be '{0}'."),
@@ -1955,11 +1920,11 @@ export const msgs = {
   Enum_0_used_before_its_declaration: new Message(2450, Category.Error, 'Enum_0_used_before_its_declaration_2450', "Enum '{0}' used before its declaration."),
   Cannot_redeclare_block_scoped_variable_0: new Message(2451, Category.Error, 'Cannot_redeclare_block_scoped_variable_0_2451', "Cannot redeclare block-scoped variable '{0}'."),
   An_enum_member_cannot_have_a_numeric_name: new Message(2452, Category.Error, 'An_enum_member_cannot_have_a_numeric_name_2452', 'An enum member cannot have a numeric name.'),
-  The_type_argument_for_type_parameter_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_type_arguments_explicitly: new Message(
+  The_type_argument_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_type_arguments_explicitly: new Message(
     2453,
     Category.Error,
-    'The_type_argument_for_type_parameter_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_typ_2453',
-    "The type argument for type parameter '{0}' cannot be inferred from the usage. Consider specifying the type arguments explicitly."
+    'The_type_argument_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_typ_2453',
+    "The type argument for type param '{0}' cannot be inferred from the usage. Consider specifying the type arguments explicitly."
   ),
   Variable_0_is_used_before_being_assigned: new Message(2454, Category.Error, 'Variable_0_is_used_before_being_assigned_2454', "Variable '{0}' is used before being assigned."),
   Type_argument_candidate_1_is_not_a_valid_type_argument_because_it_is_not_a_supertype_of_candidate_0: new Message(
@@ -1995,11 +1960,11 @@ export const msgs = {
     'A_rest_elem_must_be_last_in_a_destructuring_pattern_2462',
     'A rest elem must be last in a destructuring pattern.'
   ),
-  A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature: new Message(
+  A_binding_pattern_param_cannot_be_optional_in_an_implementation_signature: new Message(
     2463,
     Category.Error,
-    'A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature_2463',
-    'A binding pattern parameter cannot be optional in an implementation signature.'
+    'A_binding_pattern_param_cannot_be_optional_in_an_implementation_signature_2463',
+    'A binding pattern param cannot be optional in an implementation signature.'
   ),
   A_computed_property_name_must_be_of_type_string_number_symbol_or_any: new Message(
     2464,
@@ -2019,11 +1984,11 @@ export const msgs = {
     'super_cannot_be_referenced_in_a_computed_property_name_2466',
     "'super' cannot be referenced in a computed property name."
   ),
-  A_computed_property_name_cannot_reference_a_type_parameter_from_its_containing_type: new Message(
+  A_computed_property_name_cannot_reference_a_type_param_from_its_containing_type: new Message(
     2467,
     Category.Error,
-    'A_computed_property_name_cannot_reference_a_type_parameter_from_its_containing_type_2467',
-    'A computed property name cannot reference a type parameter from its containing type.'
+    'A_computed_property_name_cannot_reference_a_type_param_from_its_containing_type_2467',
+    'A computed property name cannot reference a type param from its containing type.'
   ),
   Cannot_find_global_value_0: new Message(2468, Category.Error, 'Cannot_find_global_value_0_2468', "Cannot find global value '{0}'."),
   The_0_operator_cannot_be_applied_to_type_symbol: new Message(2469, Category.Error, 'The_0_operator_cannot_be_applied_to_type_symbol_2469', "The '{0}' operator cannot be applied to type 'symbol'."),
@@ -2247,11 +2212,11 @@ export const msgs = {
     'Cannot_assign_an_abstract_constructor_type_to_a_non_abstract_constructor_type_2517',
     'Cannot assign an abstract constructor type to a non-abstract constructor type.'
   ),
-  A_this_based_type_guard_is_not_compatible_with_a_parameter_based_type_guard: new Message(
+  A_this_based_type_guard_is_not_compatible_with_a_param_based_type_guard: new Message(
     2518,
     Category.Error,
-    'A_this_based_type_guard_is_not_compatible_with_a_parameter_based_type_guard_2518',
-    "A 'this'-based type guard is not compatible with a parameter-based type guard."
+    'A_this_based_type_guard_is_not_compatible_with_a_param_based_type_guard_2518',
+    "A 'this'-based type guard is not compatible with a param-based type guard."
   ),
   An_async_iterator_must_have_a_next_method: new Message(2519, Category.Error, 'An_async_iterator_must_have_a_next_method_2519', "An async iterator must have a 'next()' method."),
   Duplicate_identifier_0_Compiler_uses_declaration_1_to_support_async_functions: new Message(
@@ -2272,17 +2237,17 @@ export const msgs = {
     'The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_usi_2522',
     "The 'arguments' object cannot be referenced in an async function or method in ES3 and ES5. Consider using a standard function or method."
   ),
-  yield_expressions_cannot_be_used_in_a_parameter_initer: new Message(
+  yield_expressions_cannot_be_used_in_a_param_initer: new Message(
     2523,
     Category.Error,
-    'yield_expressions_cannot_be_used_in_a_parameter_initer_2523',
-    "'yield' expressions cannot be used in a parameter initer."
+    'yield_expressions_cannot_be_used_in_a_param_initer_2523',
+    "'yield' expressions cannot be used in a param initer."
   ),
-  await_expressions_cannot_be_used_in_a_parameter_initer: new Message(
+  await_expressions_cannot_be_used_in_a_param_initer: new Message(
     2524,
     Category.Error,
-    'await_expressions_cannot_be_used_in_a_parameter_initer_2524',
-    "'await' expressions cannot be used in a parameter initer."
+    'await_expressions_cannot_be_used_in_a_param_initer_2524',
+    "'await' expressions cannot be used in a param initer."
   ),
   Initer_provides_no_value_for_this_binding_elem_and_the_binding_elem_has_no_default_value: new Message(
     2525,
@@ -2359,11 +2324,11 @@ export const msgs = {
     'Expression_resolves_to_variable_declaration_newTarget_that_compiler_uses_to_capture_new_target_meta__2544',
     "Expression resolves to variable declaration '_newTarget' that compiler uses to capture 'new.target' meta-property reference."
   ),
-  A_mixin_class_must_have_a_constructor_with_a_single_rest_parameter_of_type_any: new Message(
+  A_mixin_class_must_have_a_constructor_with_a_single_rest_param_of_type_any: new Message(
     2545,
     Category.Error,
-    'A_mixin_class_must_have_a_constructor_with_a_single_rest_parameter_of_type_any_2545',
-    "A mixin class must have a constructor with a single rest parameter of type 'any[]'."
+    'A_mixin_class_must_have_a_constructor_with_a_single_rest_param_of_type_any_2545',
+    "A mixin class must have a constructor with a single rest param of type 'any[]'."
   ),
   The_type_returned_by_the_0_method_of_an_async_iterator_must_be_a_promise_for_a_type_with_a_value_property: new Message(
     2547,
@@ -2414,11 +2379,11 @@ export const msgs = {
     'Object_literal_may_only_specify_known_properties_but_0_does_not_exist_in_type_1_Did_you_mean_to_writ_2561',
     "Object literal may only specify known properties, but '{0}' does not exist in type '{1}'. Did you mean to write '{2}'?"
   ),
-  Base_class_expressions_cannot_reference_class_type_parameters: new Message(
+  Base_class_expressions_cannot_reference_class_type_params: new Message(
     2562,
     Category.Error,
-    'Base_class_expressions_cannot_reference_class_type_parameters_2562',
-    'Base class expressions cannot reference class type parameters.'
+    'Base_class_expressions_cannot_reference_class_type_params_2562',
+    'Base class expressions cannot reference class type params.'
   ),
   The_containing_function_or_module_body_is_too_large_for_control_flow_analysis: new Message(
     2563,
@@ -2807,11 +2772,11 @@ export const msgs = {
     "Cannot extend a class '{0}'. Class constructor is marked as private."
   ),
   Accessors_must_both_be_abstract_or_non_abstract: new Message(2676, Category.Error, 'Accessors_must_both_be_abstract_or_non_abstract_2676', 'Accessors must both be abstract or non-abstract.'),
-  A_type_predicate_s_type_must_be_assignable_to_its_parameter_s_type: new Message(
+  A_type_predicate_s_type_must_be_assignable_to_its_param_s_type: new Message(
     2677,
     Category.Error,
-    'A_type_predicate_s_type_must_be_assignable_to_its_parameter_s_type_2677',
-    "A type predicate's type must be assignable to its parameter's type."
+    'A_type_predicate_s_type_must_be_assignable_to_its_param_s_type_2677',
+    "A type predicate's type must be assignable to its param's type."
   ),
   Type_0_is_not_comparable_to_type_1: new Message(2678, Category.Error, 'Type_0_is_not_comparable_to_type_1_2678', "Type '{0}' is not comparable to type '{1}'."),
   A_function_that_is_called_with_the_new_keyword_cannot_have_a_this_type_that_is_void: new Message(
@@ -2820,8 +2785,8 @@ export const msgs = {
     'A_function_that_is_called_with_the_new_keyword_cannot_have_a_this_type_that_is_void_2679',
     "A function that is called with the 'new' keyword cannot have a 'this' type that is 'void'."
   ),
-  A_0_parameter_must_be_the_first_parameter: new Message(2680, Category.Error, 'A_0_parameter_must_be_the_first_parameter_2680', "A '{0}' parameter must be the first parameter."),
-  A_constructor_cannot_have_a_this_parameter: new Message(2681, Category.Error, 'A_constructor_cannot_have_a_this_parameter_2681', "A constructor cannot have a 'this' parameter."),
+  A_0_param_must_be_the_first_param: new Message(2680, Category.Error, 'A_0_param_must_be_the_first_param_2680', "A '{0}' param must be the first param."),
+  A_constructor_cannot_have_a_this_param: new Message(2681, Category.Error, 'A_constructor_cannot_have_a_this_param_2681', "A constructor cannot have a 'this' param."),
   get_and_set_accessor_must_have_the_same_this_type: new Message(
     2682,
     Category.Error,
@@ -2946,11 +2911,11 @@ export const msgs = {
     'An_async_function_or_method_in_ES5_SlashES3_requires_the_Promise_constructor_Make_sure_you_have_a_de_2705',
     "An async function or method in ES5/ES3 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your `--lib` option."
   ),
-  Required_type_parameters_may_not_follow_optional_type_parameters: new Message(
+  Required_type_params_may_not_follow_optional_type_params: new Message(
     2706,
     Category.Error,
-    'Required_type_parameters_may_not_follow_optional_type_parameters_2706',
-    'Required type parameters may not follow optional type parameters.'
+    'Required_type_params_may_not_follow_optional_type_params_2706',
+    'Required type params may not follow optional type params.'
   ),
   Generic_type_0_requires_between_1_and_2_type_arguments: new Message(
     2707,
@@ -2996,7 +2961,7 @@ export const msgs = {
     'Abstract_property_0_in_class_1_cannot_be_accessed_in_the_constructor_2715',
     "Abstract property '{0}' in class '{1}' cannot be accessed in the constructor."
   ),
-  Type_parameter_0_has_a_circular_default: new Message(2716, Category.Error, 'Type_parameter_0_has_a_circular_default_2716', "Type parameter '{0}' has a circular default."),
+  Type_param_0_has_a_circular_default: new Message(2716, Category.Error, 'Type_param_0_has_a_circular_default_2716', "Type param '{0}' has a circular default."),
   Subsequent_property_declarations_must_have_the_same_type_Property_0_must_be_of_type_1_but_here_has_type_2: new Message(
     2717,
     Category.Error,
@@ -3050,7 +3015,7 @@ export const msgs = {
   ),
   _0_is_declared_here: new Message(2728, Category.Message, '_0_is_declared_here_2728', "'{0}' is declared here."),
   Property_0_is_used_before_its_initialization: new Message(2729, Category.Error, 'Property_0_is_used_before_its_initialization_2729', "Property '{0}' is used before its initialization."),
-  An_arrow_function_cannot_have_a_this_parameter: new Message(2730, Category.Error, 'An_arrow_function_cannot_have_a_this_parameter_2730', "An arrow function cannot have a 'this' parameter."),
+  An_arrow_function_cannot_have_a_this_param: new Message(2730, Category.Error, 'An_arrow_function_cannot_have_a_this_param_2730', "An arrow function cannot have a 'this' param."),
   Implicit_conversion_of_a_symbol_to_a_string_will_fail_at_runtime_Consider_wrapping_this_expression_in_String: new Message(
     2731,
     Category.Error,
@@ -3114,11 +3079,11 @@ export const msgs = {
     'No_overload_expects_0_type_arguments_but_overloads_do_exist_that_expect_either_1_or_2_type_arguments_2743',
     'No overload expects {0} type arguments, but overloads do exist that expect either {1} or {2} type arguments.'
   ),
-  Type_parameter_defaults_can_only_reference_previously_declared_type_parameters: new Message(
+  Type_param_defaults_can_only_reference_previously_declared_type_params: new Message(
     2744,
     Category.Error,
-    'Type_parameter_defaults_can_only_reference_previously_declared_type_parameters_2744',
-    'Type parameter defaults can only reference previously declared type parameters.'
+    'Type_param_defaults_can_only_reference_previously_declared_type_params_2744',
+    'Type param defaults can only reference previously declared type params.'
   ),
   This_JSX_tag_s_0_prop_expects_type_1_which_requires_multiple_children_but_only_a_single_child_was_provided: new Message(
     2745,
@@ -3264,11 +3229,11 @@ export const msgs = {
     '_0_is_specified_more_than_once_so_this_usage_will_be_overwritten_2783',
     "'{0}' is specified more than once, so this usage will be overwritten."
   ),
-  get_and_set_accessors_cannot_declare_this_parameters: new Message(
+  get_and_set_accessors_cannot_declare_this_params: new Message(
     2784,
     Category.Error,
-    'get_and_set_accessors_cannot_declare_this_parameters_2784',
-    "'get' and 'set' accessors cannot declare 'this' parameters."
+    'get_and_set_accessors_cannot_declare_this_params_2784',
+    "'get' and 'set' accessors cannot declare 'this' params."
   ),
   This_spread_always_overwrites_this_property: new Message(2785, Category.Error, 'This_spread_always_overwrites_this_property_2785', 'This spread always overwrites this property.'),
   _0_cannot_be_used_as_a_JSX_component: new Message(2786, Category.Error, '_0_cannot_be_used_as_a_JSX_component_2786', "'{0}' cannot be used as a JSX component."),
@@ -3288,53 +3253,53 @@ export const msgs = {
     "Exponentiation cannot be performed on 'bigint' values unless the 'target' option is set to 'es2016' or later."
   ),
   Import_declaration_0_is_using_private_name_1: new Message(4000, Category.Error, 'Import_declaration_0_is_using_private_name_1_4000', "Import declaration '{0}' is using private name '{1}'."),
-  Type_parameter_0_of_exported_class_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_exported_class_has_or_is_using_private_name_1: new Message(
     4002,
     Category.Error,
-    'Type_parameter_0_of_exported_class_has_or_is_using_private_name_1_4002',
-    "Type parameter '{0}' of exported class has or is using private name '{1}'."
+    'Type_param_0_of_exported_class_has_or_is_using_private_name_1_4002',
+    "Type param '{0}' of exported class has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_exported_interface_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_exported_interface_has_or_is_using_private_name_1: new Message(
     4004,
     Category.Error,
-    'Type_parameter_0_of_exported_interface_has_or_is_using_private_name_1_4004',
-    "Type parameter '{0}' of exported interface has or is using private name '{1}'."
+    'Type_param_0_of_exported_interface_has_or_is_using_private_name_1_4004',
+    "Type param '{0}' of exported interface has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4006,
     Category.Error,
-    'Type_parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1_4006',
-    "Type parameter '{0}' of constructor signature from exported interface has or is using private name '{1}'."
+    'Type_param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1_4006',
+    "Type param '{0}' of constructor signature from exported interface has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4008,
     Category.Error,
-    'Type_parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1_4008',
-    "Type parameter '{0}' of call signature from exported interface has or is using private name '{1}'."
+    'Type_param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1_4008',
+    "Type param '{0}' of call signature from exported interface has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1: new Message(
     4010,
     Category.Error,
-    'Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1_4010',
-    "Type parameter '{0}' of public static method from exported class has or is using private name '{1}'."
+    'Type_param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1_4010',
+    "Type param '{0}' of public static method from exported class has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1: new Message(
     4012,
     Category.Error,
-    'Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1_4012',
-    "Type parameter '{0}' of public method from exported class has or is using private name '{1}'."
+    'Type_param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1_4012',
+    "Type param '{0}' of public method from exported class has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_method_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4014,
     Category.Error,
-    'Type_parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1_4014',
-    "Type parameter '{0}' of method from exported interface has or is using private name '{1}'."
+    'Type_param_0_of_method_from_exported_interface_has_or_is_using_private_name_1_4014',
+    "Type param '{0}' of method from exported interface has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_exported_function_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_exported_function_has_or_is_using_private_name_1: new Message(
     4016,
     Category.Error,
-    'Type_parameter_0_of_exported_function_has_or_is_using_private_name_1_4016',
-    "Type parameter '{0}' of exported function has or is using private name '{1}'."
+    'Type_param_0_of_exported_function_has_or_is_using_private_name_1_4016',
+    "Type param '{0}' of exported function has or is using private name '{1}'."
   ),
   Implements_clause_of_exported_class_0_has_or_is_using_private_name_1: new Message(
     4019,
@@ -3420,29 +3385,29 @@ export const msgs = {
     'Property_0_of_exported_interface_has_or_is_using_private_name_1_4033',
     "Property '{0}' of exported interface has or is using private name '{1}'."
   ),
-  Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
     4034,
     Category.Error,
-    'Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_mod_4034',
-    "Parameter type of public static setter '{0}' from exported class has or is using name '{1}' from private module '{2}'."
+    'Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_mod_4034',
+    "Param type of public static setter '{0}' from exported class has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1: new Message(
     4035,
     Category.Error,
-    'Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1_4035',
-    "Parameter type of public static setter '{0}' from exported class has or is using private name '{1}'."
+    'Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1_4035',
+    "Param type of public static setter '{0}' from exported class has or is using private name '{1}'."
   ),
-  Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
     4036,
     Category.Error,
-    'Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2_4036',
-    "Parameter type of public setter '{0}' from exported class has or is using name '{1}' from private module '{2}'."
+    'Param_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2_4036',
+    "Param type of public setter '{0}' from exported class has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Param_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1: new Message(
     4037,
     Category.Error,
-    'Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1_4037',
-    "Parameter type of public setter '{0}' from exported class has or is using private name '{1}'."
+    'Param_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1_4037',
+    "Param type of public setter '{0}' from exported class has or is using private name '{1}'."
   ),
   Return_type_of_public_static_getter_0_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4038,
@@ -3582,113 +3547,113 @@ export const msgs = {
     'Return_type_of_exported_function_has_or_is_using_private_name_0_4060',
     "Return type of exported function has or is using private name '{0}'."
   ),
-  Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
+  Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4061,
     Category.Error,
-    'Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_can_4061',
-    "Parameter '{0}' of constructor from exported class has or is using name '{1}' from external module {2} but cannot be named."
+    'Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_can_4061',
+    "Param '{0}' of constructor from exported class has or is using name '{1}' from external module {2} but cannot be named."
   ),
-  Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
     4062,
     Category.Error,
-    'Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2_4062',
-    "Parameter '{0}' of constructor from exported class has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2_4062',
+    "Param '{0}' of constructor from exported class has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Param_0_of_constructor_from_exported_class_has_or_is_using_private_name_1: new Message(
     4063,
     Category.Error,
-    'Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1_4063',
-    "Parameter '{0}' of constructor from exported class has or is using private name '{1}'."
+    'Param_0_of_constructor_from_exported_class_has_or_is_using_private_name_1_4063',
+    "Param '{0}' of constructor from exported class has or is using private name '{1}'."
   ),
-  Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
     4064,
     Category.Error,
-    'Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_mod_4064',
-    "Parameter '{0}' of constructor signature from exported interface has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_mod_4064',
+    "Param '{0}' of constructor signature from exported interface has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4065,
     Category.Error,
-    'Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1_4065',
-    "Parameter '{0}' of constructor signature from exported interface has or is using private name '{1}'."
+    'Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1_4065',
+    "Param '{0}' of constructor signature from exported interface has or is using private name '{1}'."
   ),
-  Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
     4066,
     Category.Error,
-    'Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4066',
-    "Parameter '{0}' of call signature from exported interface has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4066',
+    "Param '{0}' of call signature from exported interface has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4067,
     Category.Error,
-    'Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1_4067',
-    "Parameter '{0}' of call signature from exported interface has or is using private name '{1}'."
+    'Param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1_4067',
+    "Param '{0}' of call signature from exported interface has or is using private name '{1}'."
   ),
-  Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
+  Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4068,
     Category.Error,
-    'Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module__4068',
-    "Parameter '{0}' of public static method from exported class has or is using name '{1}' from external module {2} but cannot be named."
+    'Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module__4068',
+    "Param '{0}' of public static method from exported class has or is using name '{1}' from external module {2} but cannot be named."
   ),
-  Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
     4069,
     Category.Error,
-    'Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2_4069',
-    "Parameter '{0}' of public static method from exported class has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2_4069',
+    "Param '{0}' of public static method from exported class has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1: new Message(
     4070,
     Category.Error,
-    'Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1_4070',
-    "Parameter '{0}' of public static method from exported class has or is using private name '{1}'."
+    'Param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1_4070',
+    "Param '{0}' of public static method from exported class has or is using private name '{1}'."
   ),
-  Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
+  Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4071,
     Category.Error,
-    'Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_c_4071',
-    "Parameter '{0}' of public method from exported class has or is using name '{1}' from external module {2} but cannot be named."
+    'Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_c_4071',
+    "Param '{0}' of public method from exported class has or is using name '{1}' from external module {2} but cannot be named."
   ),
-  Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2: new Message(
     4072,
     Category.Error,
-    'Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2_4072',
-    "Parameter '{0}' of public method from exported class has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2_4072',
+    "Param '{0}' of public method from exported class has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1: new Message(
+  Param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1: new Message(
     4073,
     Category.Error,
-    'Parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1_4073',
-    "Parameter '{0}' of public method from exported class has or is using private name '{1}'."
+    'Param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1_4073',
+    "Param '{0}' of public method from exported class has or is using private name '{1}'."
   ),
-  Parameter_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
     4074,
     Category.Error,
-    'Parameter_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4074',
-    "Parameter '{0}' of method from exported interface has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4074',
+    "Param '{0}' of method from exported interface has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Param_0_of_method_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4075,
     Category.Error,
-    'Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1_4075',
-    "Parameter '{0}' of method from exported interface has or is using private name '{1}'."
+    'Param_0_of_method_from_exported_interface_has_or_is_using_private_name_1_4075',
+    "Param '{0}' of method from exported interface has or is using private name '{1}'."
   ),
-  Parameter_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
+  Param_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4076,
     Category.Error,
-    'Parameter_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named_4076',
-    "Parameter '{0}' of exported function has or is using name '{1}' from external module {2} but cannot be named."
+    'Param_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named_4076',
+    "Param '{0}' of exported function has or is using name '{1}' from external module {2} but cannot be named."
   ),
-  Parameter_0_of_exported_function_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_exported_function_has_or_is_using_name_1_from_private_module_2: new Message(
     4077,
     Category.Error,
-    'Parameter_0_of_exported_function_has_or_is_using_name_1_from_private_module_2_4077',
-    "Parameter '{0}' of exported function has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_exported_function_has_or_is_using_name_1_from_private_module_2_4077',
+    "Param '{0}' of exported function has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_exported_function_has_or_is_using_private_name_1: new Message(
+  Param_0_of_exported_function_has_or_is_using_private_name_1: new Message(
     4078,
     Category.Error,
-    'Parameter_0_of_exported_function_has_or_is_using_private_name_1_4078',
-    "Parameter '{0}' of exported function has or is using private name '{1}'."
+    'Param_0_of_exported_function_has_or_is_using_private_name_1_4078',
+    "Param '{0}' of exported function has or is using private name '{1}'."
   ),
   Exported_type_alias_0_has_or_is_using_private_name_1: new Message(
     4081,
@@ -3702,11 +3667,11 @@ export const msgs = {
     'Default_export_of_the_module_has_or_is_using_private_name_0_4082',
     "Default export of the module has or is using private name '{0}'."
   ),
-  Type_parameter_0_of_exported_type_alias_has_or_is_using_private_name_1: new Message(
+  Type_param_0_of_exported_type_alias_has_or_is_using_private_name_1: new Message(
     4083,
     Category.Error,
-    'Type_parameter_0_of_exported_type_alias_has_or_is_using_private_name_1_4083',
-    "Type parameter '{0}' of exported type alias has or is using private name '{1}'."
+    'Type_param_0_of_exported_type_alias_has_or_is_using_private_name_1_4083',
+    "Type param '{0}' of exported type alias has or is using private name '{1}'."
   ),
   Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict: new Message(
     4090,
@@ -3714,17 +3679,17 @@ export const msgs = {
     'Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_librar_4090',
     "Conflicting definitions for '{0}' found at '{1}' and '{2}'. Consider installing a specific version of this library to resolve the conflict."
   ),
-  Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2: new Message(
     4091,
     Category.Error,
-    'Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4091',
-    "Parameter '{0}' of index signature from exported interface has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2_4091',
+    "Param '{0}' of index signature from exported interface has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
+  Param_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1: new Message(
     4092,
     Category.Error,
-    'Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1_4092',
-    "Parameter '{0}' of index signature from exported interface has or is using private name '{1}'."
+    'Param_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1_4092',
+    "Param '{0}' of index signature from exported interface has or is using private name '{1}'."
   ),
   Property_0_of_exported_class_expression_may_not_be_private_or_protected: new Message(
     4094,
@@ -3780,11 +3745,11 @@ export const msgs = {
     'Method_0_of_exported_interface_has_or_is_using_private_name_1_4102',
     "Method '{0}' of exported interface has or is using private name '{1}'."
   ),
-  Type_parameter_0_of_exported_mapped_object_type_is_using_private_name_1: new Message(
+  Type_param_0_of_exported_mapped_object_type_is_using_private_name_1: new Message(
     4103,
     Category.Error,
-    'Type_parameter_0_of_exported_mapped_object_type_is_using_private_name_1_4103',
-    "Type parameter '{0}' of exported mapped object type is using private name '{1}'."
+    'Type_param_0_of_exported_mapped_object_type_is_using_private_name_1_4103',
+    "Type param '{0}' of exported mapped object type is using private name '{1}'."
   ),
   The_type_0_is_readonly_and_cannot_be_assigned_to_the_mutable_type_1: new Message(
     4104,
@@ -3792,29 +3757,29 @@ export const msgs = {
     'The_type_0_is_readonly_and_cannot_be_assigned_to_the_mutable_type_1_4104',
     "The type '{0}' is 'readonly' and cannot be assigned to the mutable type '{1}'."
   ),
-  Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter: new Message(
+  Private_or_protected_member_0_cannot_be_accessed_on_a_type_param: new Message(
     4105,
     Category.Error,
-    'Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter_4105',
-    "Private or protected member '{0}' cannot be accessed on a type parameter."
+    'Private_or_protected_member_0_cannot_be_accessed_on_a_type_param_4105',
+    "Private or protected member '{0}' cannot be accessed on a type param."
   ),
-  Parameter_0_of_accessor_has_or_is_using_private_name_1: new Message(
+  Param_0_of_accessor_has_or_is_using_private_name_1: new Message(
     4106,
     Category.Error,
-    'Parameter_0_of_accessor_has_or_is_using_private_name_1_4106',
-    "Parameter '{0}' of accessor has or is using private name '{1}'."
+    'Param_0_of_accessor_has_or_is_using_private_name_1_4106',
+    "Param '{0}' of accessor has or is using private name '{1}'."
   ),
-  Parameter_0_of_accessor_has_or_is_using_name_1_from_private_module_2: new Message(
+  Param_0_of_accessor_has_or_is_using_name_1_from_private_module_2: new Message(
     4107,
     Category.Error,
-    'Parameter_0_of_accessor_has_or_is_using_name_1_from_private_module_2_4107',
-    "Parameter '{0}' of accessor has or is using name '{1}' from private module '{2}'."
+    'Param_0_of_accessor_has_or_is_using_name_1_from_private_module_2_4107',
+    "Param '{0}' of accessor has or is using name '{1}' from private module '{2}'."
   ),
-  Parameter_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
+  Param_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named: new Message(
     4108,
     Category.Error,
-    'Parameter_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named_4108',
-    "Parameter '{0}' of accessor has or is using name '{1}' from external module '{2}' but cannot be named."
+    'Param_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named_4108',
+    "Param '{0}' of accessor has or is using name '{1}' from external module '{2}' but cannot be named."
   ),
   Type_arguments_for_0_circularly_reference_themselves: new Message(
     4109,
@@ -4449,7 +4414,7 @@ export const msgs = {
   File_name_0_has_a_1_extension_stripping_it: new Message(6132, Category.Message, 'File_name_0_has_a_1_extension_stripping_it_6132', "File name '{0}' has a '{1}' extension - stripping it."),
   _0_is_declared_but_its_value_is_never_read: new Message(6133, Category.Error, '_0_is_declared_but_its_value_is_never_read_6133', "'{0}' is declared but its value is never read.", true),
   Report_errors_on_unused_locals: new Message(6134, Category.Message, 'Report_errors_on_unused_locals_6134', 'Report errors on unused locals.'),
-  Report_errors_on_unused_parameters: new Message(6135, Category.Message, 'Report_errors_on_unused_parameters_6135', 'Report errors on unused parameters.'),
+  Report_errors_on_unused_params: new Message(6135, Category.Message, 'Report_errors_on_unused_params_6135', 'Report errors on unused params.'),
   The_maximum_dependency_depth_to_search_under_node_modules_and_load_JavaScript_files: new Message(
     6136,
     Category.Message,
@@ -4678,7 +4643,7 @@ export const msgs = {
   ),
   _0_was_also_declared_here: new Message(6203, Category.Message, '_0_was_also_declared_here_6203', "'{0}' was also declared here."),
   and_here: new Message(6204, Category.Message, 'and_here_6204', 'and here.'),
-  All_type_parameters_are_unused: new Message(6205, Category.Error, 'All_type_parameters_are_unused_6205', 'All type parameters are unused'),
+  All_type_params_are_unused: new Message(6205, Category.Error, 'All_type_params_are_unused_6205', 'All type params are unused'),
   package_json_has_a_typesVersions_field_with_version_specific_path_mappings: new Message(
     6206,
     Category.Message,
@@ -5032,7 +4997,7 @@ export const msgs = {
     "File '{0}' is a JavaScript file. Did you mean to enable the 'allowJs' option?"
   ),
   Variable_0_implicitly_has_an_1_type: new Message(7005, Category.Error, 'Variable_0_implicitly_has_an_1_type_7005', "Variable '{0}' implicitly has an '{1}' type."),
-  Parameter_0_implicitly_has_an_1_type: new Message(7006, Category.Error, 'Parameter_0_implicitly_has_an_1_type_7006', "Parameter '{0}' implicitly has an '{1}' type."),
+  Param_0_implicitly_has_an_1_type: new Message(7006, Category.Error, 'Param_0_implicitly_has_an_1_type_7006', "Param '{0}' implicitly has an '{1}' type."),
   Member_0_implicitly_has_an_1_type: new Message(7008, Category.Error, 'Member_0_implicitly_has_an_1_type_7008', "Member '{0}' implicitly has an '{1}' type."),
   new_expression_whose_target_lacks_a_construct_signature_implicitly_has_an_any_type: new Message(
     7009,
@@ -5088,7 +5053,7 @@ export const msgs = {
     'Object_literal_s_property_0_implicitly_has_an_1_type_7018',
     "Object literal's property '{0}' implicitly has an '{1}' type."
   ),
-  Rest_parameter_0_implicitly_has_an_any_type: new Message(7019, Category.Error, 'Rest_parameter_0_implicitly_has_an_any_type_7019', "Rest parameter '{0}' implicitly has an 'any[]' type."),
+  Rest_param_0_implicitly_has_an_any_type: new Message(7019, Category.Error, 'Rest_param_0_implicitly_has_an_any_type_7019', "Rest param '{0}' implicitly has an 'any[]' type."),
   Call_signature_which_lacks_return_type_annotation_implicitly_has_an_any_return_type: new Message(
     7020,
     Category.Error,
@@ -5130,11 +5095,11 @@ export const msgs = {
   Fallthrough_case_in_switch: new Message(7029, Category.Error, 'Fallthrough_case_in_switch_7029', 'Fallthrough case in switch.'),
   Not_all_code_paths_return_a_value: new Message(7030, Category.Error, 'Not_all_code_paths_return_a_value_7030', 'Not all code paths return a value.'),
   Binding_elem_0_implicitly_has_an_1_type: new Message(7031, Category.Error, 'Binding_elem_0_implicitly_has_an_1_type_7031', "Binding elem '{0}' implicitly has an '{1}' type."),
-  Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_parameter_type_annotation: new Message(
+  Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_param_type_annotation: new Message(
     7032,
     Category.Error,
-    'Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_parameter_type_annotation_7032',
-    "Property '{0}' implicitly has type 'any', because its set accessor lacks a parameter type annotation."
+    'Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_param_type_annotation_7032',
+    "Property '{0}' implicitly has type 'any', because its set accessor lacks a param type annotation."
   ),
   Property_0_implicitly_has_type_any_because_its_get_accessor_lacks_a_return_type_annotation: new Message(
     7033,
@@ -5154,11 +5119,11 @@ export const msgs = {
     'Try_npm_install_types_Slash_1_if_it_exists_or_add_a_new_declaration_d_ts_file_containing_declare_mod_7035',
     "Try `npm install @types/{1}` if it exists or add a new declaration (.d.ts) file containing `declare module '{0}';`"
   ),
-  Dynamic_import_s_specifier_must_be_of_type_string_but_here_has_type_0: new Message(
+  Dynamic_import_s_spec_must_be_of_type_string_but_here_has_type_0: new Message(
     7036,
     Category.Error,
-    'Dynamic_import_s_specifier_must_be_of_type_string_but_here_has_type_0_7036',
-    "Dynamic import's specifier must be of type 'string', but here has type '{0}'."
+    'Dynamic_import_s_spec_must_be_of_type_string_but_here_has_type_0_7036',
+    "Dynamic import's spec must be of type 'string', but here has type '{0}'."
   ),
   Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports: new Message(
     7037,
@@ -5202,11 +5167,11 @@ export const msgs = {
     'Variable_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage_7043',
     "Variable '{0}' implicitly has an '{1}' type, but a better type may be inferred from usage."
   ),
-  Parameter_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage: new Message(
+  Param_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage: new Message(
     7044,
     Category.Suggestion,
-    'Parameter_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage_7044',
-    "Parameter '{0}' implicitly has an '{1}' type, but a better type may be inferred from usage."
+    'Param_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage_7044',
+    "Param '{0}' implicitly has an '{1}' type, but a better type may be inferred from usage."
   ),
   Member_0_implicitly_has_an_1_type_but_a_better_type_may_be_inferred_from_usage: new Message(
     7045,
@@ -5220,11 +5185,11 @@ export const msgs = {
     'Variable_0_implicitly_has_type_1_in_some_locations_but_a_better_type_may_be_inferred_from_usage_7046',
     "Variable '{0}' implicitly has type '{1}' in some locations, but a better type may be inferred from usage."
   ),
-  Rest_parameter_0_implicitly_has_an_any_type_but_a_better_type_may_be_inferred_from_usage: new Message(
+  Rest_param_0_implicitly_has_an_any_type_but_a_better_type_may_be_inferred_from_usage: new Message(
     7047,
     Category.Suggestion,
-    'Rest_parameter_0_implicitly_has_an_any_type_but_a_better_type_may_be_inferred_from_usage_7047',
-    "Rest parameter '{0}' implicitly has an 'any[]' type, but a better type may be inferred from usage."
+    'Rest_param_0_implicitly_has_an_any_type_but_a_better_type_may_be_inferred_from_usage_7047',
+    "Rest param '{0}' implicitly has an 'any[]' type, but a better type may be inferred from usage."
   ),
   Property_0_implicitly_has_type_any_but_a_better_type_for_its_get_accessor_may_be_inferred_from_usage: new Message(
     7048,
@@ -5244,11 +5209,11 @@ export const msgs = {
     '_0_implicitly_has_an_1_return_type_but_a_better_type_may_be_inferred_from_usage_7050',
     "'{0}' implicitly has an '{1}' return type, but a better type may be inferred from usage."
   ),
-  Parameter_has_a_name_but_no_type_Did_you_mean_0_Colon_1: new Message(
+  Param_has_a_name_but_no_type_Did_you_mean_0_Colon_1: new Message(
     7051,
     Category.Error,
-    'Parameter_has_a_name_but_no_type_Did_you_mean_0_Colon_1_7051',
-    "Parameter has a name but no type. Did you mean '{0}: {1}'?"
+    'Param_has_a_name_but_no_type_Did_you_mean_0_Colon_1_7051',
+    "Param has a name but no type. Did you mean '{0}: {1}'?"
   ),
   Elem_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1: new Message(
     7052,
@@ -5262,11 +5227,11 @@ export const msgs = {
     'Elem_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1_7053',
     "Elem implicitly has an 'any' type because expression of type '{0}' can't be used to index type '{1}'."
   ),
-  No_index_signature_with_a_parameter_of_type_0_was_found_on_type_1: new Message(
+  No_index_signature_with_a_param_of_type_0_was_found_on_type_1: new Message(
     7054,
     Category.Error,
-    'No_index_signature_with_a_parameter_of_type_0_was_found_on_type_1_7054',
-    "No index signature with a parameter of type '{0}' was found on type '{1}'."
+    'No_index_signature_with_a_param_of_type_0_was_found_on_type_1_7054',
+    "No index signature with a param of type '{0}' was found on type '{1}'."
   ),
   _0_which_lacks_return_type_annotation_implicitly_has_an_1_yield_type: new Message(
     7055,
@@ -5283,11 +5248,11 @@ export const msgs = {
   ),
   import_can_only_be_used_in_TypeScript_files: new Message(8002, Category.Error, 'import_can_only_be_used_in_TypeScript_files_8002', "'import ... =' can only be used in TypeScript files."),
   export_can_only_be_used_in_TypeScript_files: new Message(8003, Category.Error, 'export_can_only_be_used_in_TypeScript_files_8003', "'export =' can only be used in TypeScript files."),
-  Type_parameter_declarations_can_only_be_used_in_TypeScript_files: new Message(
+  Type_param_declarations_can_only_be_used_in_TypeScript_files: new Message(
     8004,
     Category.Error,
-    'Type_parameter_declarations_can_only_be_used_in_TypeScript_files_8004',
-    'Type parameter declarations can only be used in TypeScript files.'
+    'Type_param_declarations_can_only_be_used_in_TypeScript_files_8004',
+    'Type param declarations can only be used in TypeScript files.'
   ),
   implements_clauses_can_only_be_used_in_TypeScript_files: new Message(
     8005,
@@ -5320,11 +5285,11 @@ export const msgs = {
     'Type_arguments_can_only_be_used_in_TypeScript_files_8011',
     'Type arguments can only be used in TypeScript files.'
   ),
-  Parameter_modifiers_can_only_be_used_in_TypeScript_files: new Message(
+  Param_modifiers_can_only_be_used_in_TypeScript_files: new Message(
     8012,
     Category.Error,
-    'Parameter_modifiers_can_only_be_used_in_TypeScript_files_8012',
-    'Parameter modifiers can only be used in TypeScript files.'
+    'Param_modifiers_can_only_be_used_in_TypeScript_files_8012',
+    'Param modifiers can only be used in TypeScript files.'
   ),
   Non_null_assertions_can_only_be_used_in_TypeScript_files: new Message(
     8013,
@@ -5365,11 +5330,11 @@ export const msgs = {
   ),
   Doc_0_is_not_attached_to_a_class: new Message(8022, Category.Error, 'Doc_0_is_not_attached_to_a_class_8022', "Doc '@{0}' is not attached to a class."),
   Doc_0_1_does_not_match_the_extends_2_clause: new Message(8023, Category.Error, 'Doc_0_1_does_not_match_the_extends_2_clause_8023', "Doc '@{0} {1}' does not match the 'extends {2}' clause."),
-  Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name: new Message(
+  Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name: new Message(
     8024,
     Category.Error,
-    'Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_8024',
-    "Doc '@param' tag has name '{0}', but there is no parameter with that name."
+    'Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_8024',
+    "Doc '@param' tag has name '{0}', but there is no param with that name."
   ),
   Class_declarations_cannot_have_more_than_one_augments_or_extends_tag: new Message(
     8025,
@@ -5389,17 +5354,17 @@ export const msgs = {
     'Expected_0_1_type_arguments_provide_these_with_an_extends_tag_8027',
     "Expected {0}-{1} type arguments; provide these with an '@extends' tag."
   ),
-  Doc_may_only_appear_in_the_last_parameter_of_a_signature: new Message(
+  Doc_may_only_appear_in_the_last_param_of_a_signature: new Message(
     8028,
     Category.Error,
-    'Doc_may_only_appear_in_the_last_parameter_of_a_signature_8028',
-    "Doc '...' may only appear in the last parameter of a signature."
+    'Doc_may_only_appear_in_the_last_param_of_a_signature_8028',
+    "Doc '...' may only appear in the last param of a signature."
   ),
-  Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type: new Message(
+  Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_arguments_if_it_had_an_array_type: new Message(
     8029,
     Category.Error,
-    'Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_h_8029',
-    "Doc '@param' tag has name '{0}', but there is no parameter with that name. It would match 'arguments' if it had an array type."
+    'Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_arguments_if_it_h_8029',
+    "Doc '@param' tag has name '{0}', but there is no param with that name. It would match 'arguments' if it had an array type."
   ),
   The_type_of_a_function_declaration_must_match_the_function_s_signature: new Message(
     8030,
@@ -5588,7 +5553,7 @@ export const msgs = {
   Remove_destructuring: new Message(90009, Category.Message, 'Remove_destructuring_90009', 'Remove destructuring'),
   Remove_variable_statement: new Message(90010, Category.Message, 'Remove_variable_statement_90010', 'Remove variable statement'),
   Remove_template_tag: new Message(90011, Category.Message, 'Remove_template_tag_90011', 'Remove template tag'),
-  Remove_type_parameters: new Message(90012, Category.Message, 'Remove_type_parameters_90012', 'Remove type parameters'),
+  Remove_type_params: new Message(90012, Category.Message, 'Remove_type_params_90012', 'Remove type params'),
   Import_0_from_module_1: new Message(90013, Category.Message, 'Import_0_from_module_1_90013', 'Import \'{0}\' from module "{1}"'),
   Change_0_to_1: new Message(90014, Category.Message, 'Change_0_to_1_90014', "Change '{0}' to '{1}'"),
   Add_0_to_existing_import_declaration_from_1: new Message(90015, Category.Message, 'Add_0_to_existing_import_declaration_from_1_90015', 'Add \'{0}\' to existing import declaration from "{1}"'),
@@ -5615,7 +5580,7 @@ export const msgs = {
     'Add_default_import_0_to_existing_import_declaration_from_1_90033',
     'Add default import \'{0}\' to existing import declaration from "{1}"'
   ),
-  Add_parameter_name: new Message(90034, Category.Message, 'Add_parameter_name_90034', 'Add parameter name'),
+  Add_param_name: new Message(90034, Category.Message, 'Add_param_name_90034', 'Add param name'),
   Declare_private_property_0: new Message(90035, Category.Message, 'Declare_private_property_0_90035', "Declare private property '{0}'"),
   Replace_0_with_Promise_1: new Message(90036, Category.Message, 'Replace_0_with_Promise_1_90036', "Replace '{0}' with 'Promise<{1}>'"),
   Fix_all_incorrect_return_type_of_an_async_functions: new Message(
@@ -5636,7 +5601,7 @@ export const msgs = {
   Annotate_with_type_from_Doc: new Message(95009, Category.Message, 'Annotate_with_type_from_Doc_95009', 'Annotate with type from Doc'),
   Annotate_with_types_from_Doc: new Message(95010, Category.Message, 'Annotate_with_types_from_Doc_95010', 'Annotate with types from Doc'),
   Infer_type_of_0_from_usage: new Message(95011, Category.Message, 'Infer_type_of_0_from_usage_95011', "Infer type of '{0}' from usage"),
-  Infer_parameter_types_from_usage: new Message(95012, Category.Message, 'Infer_parameter_types_from_usage_95012', 'Infer parameter types from usage'),
+  Infer_param_types_from_usage: new Message(95012, Category.Message, 'Infer_param_types_from_usage_95012', 'Infer param types from usage'),
   Convert_to_default_import: new Message(95013, Category.Message, 'Convert_to_default_import_95013', 'Convert to default import'),
   Install_0: new Message(95014, Category.Message, 'Install_0_95014', "Install '{0}'"),
   Replace_import_with_0: new Message(95015, Category.Message, 'Replace_import_with_0_95015', "Replace import with '{0}'."),
@@ -5736,14 +5701,14 @@ export const msgs = {
   ),
   Add_missing_new_operator_to_call: new Message(95071, Category.Message, 'Add_missing_new_operator_to_call_95071', "Add missing 'new' operator to call"),
   Add_missing_new_operator_to_all_calls: new Message(95072, Category.Message, 'Add_missing_new_operator_to_all_calls_95072', "Add missing 'new' operator to all calls"),
-  Add_names_to_all_parameters_without_names: new Message(95073, Category.Message, 'Add_names_to_all_parameters_without_names_95073', 'Add names to all parameters without names'),
+  Add_names_to_all_params_without_names: new Message(95073, Category.Message, 'Add_names_to_all_params_without_names_95073', 'Add names to all params without names'),
   Enable_the_experimentalDecorators_option_in_your_configuration_file: new Message(
     95074,
     Category.Message,
     'Enable_the_experimentalDecorators_option_in_your_configuration_file_95074',
     "Enable the 'experimentalDecorators' option in your configuration file"
   ),
-  Convert_parameters_to_destructured_object: new Message(95075, Category.Message, 'Convert_parameters_to_destructured_object_95075', 'Convert parameters to destructured object'),
+  Convert_params_to_destructured_object: new Message(95075, Category.Message, 'Convert_params_to_destructured_object_95075', 'Convert params to destructured object'),
   Allow_accessing_UMD_globals_from_modules: new Message(95076, Category.Message, 'Allow_accessing_UMD_globals_from_modules_95076', 'Allow accessing UMD globals from modules.'),
   Extract_type: new Message(95077, Category.Message, 'Extract_type_95077', 'Extract type'),
   Extract_to_type_alias: new Message(95078, Category.Message, 'Extract_to_type_alias_95078', 'Extract to type alias'),
@@ -5797,7 +5762,7 @@ export const msgs = {
   ),
   Add_class_tag: new Message(95102, Category.Message, 'Add_class_tag_95102', "Add '@class' tag"),
   Add_this_tag: new Message(95103, Category.Message, 'Add_this_tag_95103', "Add '@this' tag"),
-  Add_this_parameter: new Message(95104, Category.Message, 'Add_this_parameter_95104', "Add 'this' parameter."),
+  Add_this_param: new Message(95104, Category.Message, 'Add_this_param_95104', "Add 'this' param."),
   Convert_function_expression_0_to_arrow_function: new Message(95105, Category.Message, 'Convert_function_expression_0_to_arrow_function_95105', "Convert function expression '{0}' to arrow function"),
   Convert_function_declaration_0_to_arrow_function: new Message(
     95106,
@@ -5861,7 +5826,7 @@ export const msgs = {
     'JSX_expressions_may_not_use_the_comma_operator_Did_you_mean_to_write_an_array_18007',
     'JSX expressions may not use the comma operator. Did you mean to write an array?'
   ),
-  Private_identifiers_cannot_be_used_as_parameters: new Message(18009, Category.Error, 'Private_identifiers_cannot_be_used_as_parameters_18009', 'Private identifiers cannot be used as parameters'),
+  Private_identifiers_cannot_be_used_as_params: new Message(18009, Category.Error, 'Private_identifiers_cannot_be_used_as_params_18009', 'Private identifiers cannot be used as params'),
   An_accessibility_modifier_cannot_be_used_with_a_private_identifier: new Message(
     18010,
     Category.Error,

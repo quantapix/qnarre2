@@ -15,8 +15,8 @@ interface Parser {
 }
 const enum PropertyLike {
   Property = 1 << 0,
-  Parameter = 1 << 1,
-  CallbackParameter = 1 << 2,
+  Param = 1 << 1,
+  CallbackParam = 1 << 2,
 }
 const enum SignatureFlags {
   None = 0,
@@ -43,10 +43,10 @@ const enum Context {
   JsxAttributes,
   JsxChildren,
   ArrayLiteralMembers,
-  Parameters,
-  DocParameters,
+  Params,
+  DocParams,
   RestProperties,
-  TypeParameters,
+  TypeParams,
   TypeArguments,
   TupleElemTypes,
   HeritageClauses,
@@ -174,7 +174,7 @@ function create() {
       };
       return lookAhead(isDeclaration);
     }
-    startOfType(inParameter?: boolean) {
+    startOfType(inParam?: boolean) {
       switch (tok()) {
         case Syntax.AnyKeyword:
         case Syntax.UnknownKeyword:
@@ -212,21 +212,21 @@ function create() {
         case Syntax.AssertsKeyword:
           return true;
         case Syntax.FunctionKeyword:
-          return !inParameter;
+          return !inParam;
         case Syntax.MinusToken:
-          return !inParameter && lookAhead(next.isNumericOrBigIntLiteral);
+          return !inParam && lookAhead(next.isNumericOrBigIntLiteral);
         case Syntax.OpenParenToken:
           const isParenthesizedOrFunctionType = (): boolean => {
             next.tok();
-            return tok() === Syntax.CloseParenToken || this.startOfParameter(false) || this.startOfType();
+            return tok() === Syntax.CloseParenToken || this.startOfParam(false) || this.startOfType();
           };
-          return !inParameter && lookAhead(isParenthesizedOrFunctionType);
+          return !inParam && lookAhead(isParenthesizedOrFunctionType);
         default:
           return this.identifier();
       }
     }
-    startOfParameter(isDocParameter: boolean) {
-      return tok() === Syntax.Dot3Token || this.identifierOrPrivateIdentifierOrPattern() || qy.is.modifier(tok()) || tok() === Syntax.AtToken || this.startOfType(!isDocParameter);
+    startOfParam(isDocParam: boolean) {
+      return tok() === Syntax.Dot3Token || this.identifierOrPrivateIdentifierOrPattern() || qy.is.modifier(tok()) || tok() === Syntax.AtToken || this.startOfType(!isDocParam);
     }
     startOfStatement() {
       switch (tok()) {
@@ -767,8 +767,8 @@ function create() {
           case Context.EnumMembers:
           case Context.TypeMembers:
           case Context.VariableDeclarations:
-          case Context.DocParameters:
-          case Context.Parameters:
+          case Context.DocParams:
+          case Context.Params:
             return true;
         }
         return false;
@@ -852,9 +852,9 @@ function create() {
           case Context.VariableDeclarations:
             if (n.kind === Syntax.VariableDeclaration) return (n as qc.VariableDeclaration).initer === undefined;
             break;
-          case Context.DocParameters:
-          case Context.Parameters:
-            if (n.kind === Syntax.Parameter) return (n as qc.ParameterDeclaration).initer === undefined;
+          case Context.DocParams:
+          case Context.Params:
+            if (n.kind === Syntax.Param) return (n as qc.ParamDeclaration).initer === undefined;
         }
         return false;
       };
@@ -970,7 +970,7 @@ function create() {
           return is.identifierOrPrivateIdentifierOrPattern();
         case Context.ArrayBindingElems:
           return tok() === Syntax.CommaToken || tok() === Syntax.Dot3Token || is.identifierOrPrivateIdentifierOrPattern();
-        case Context.TypeParameters:
+        case Context.TypeParams:
           return is.identifier();
         case Context.ArrayLiteralMembers:
           switch (tok()) {
@@ -980,10 +980,10 @@ function create() {
           }
         case Context.ArgumentExpressions:
           return tok() === Syntax.Dot3Token || is.startOfExpression();
-        case Context.Parameters:
-          return is.startOfParameter(false);
-        case Context.DocParameters:
-          return is.startOfParameter(true);
+        case Context.Params:
+          return is.startOfParam(false);
+        case Context.DocParams:
+          return is.startOfParam(true);
         case Context.TypeArguments:
         case Context.TupleElemTypes:
           return tok() === Syntax.CommaToken || is.startOfType();
@@ -1022,7 +1022,7 @@ function create() {
             return false;
           };
           return isTerminator();
-        case Context.TypeParameters:
+        case Context.TypeParams:
           return tok() === Syntax.GreaterThanToken || tok() === Syntax.OpenParenToken || tok() === Syntax.OpenBraceToken || tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
         case Context.ArgumentExpressions:
           return tok() === Syntax.CloseParenToken || tok() === Syntax.SemicolonToken;
@@ -1030,8 +1030,8 @@ function create() {
         case Context.TupleElemTypes:
         case Context.ArrayBindingElems:
           return tok() === Syntax.CloseBracketToken;
-        case Context.DocParameters:
-        case Context.Parameters:
+        case Context.DocParams:
+        case Context.Params:
         case Context.RestProperties:
           return tok() === Syntax.CloseParenToken || tok() === Syntax.CloseBracketToken;
         case Context.TypeArguments:
@@ -1083,12 +1083,12 @@ function create() {
             return qd.msgs.Property_assignment_expected;
           case Context.ArrayLiteralMembers:
             return qd.msgs.Expression_or_comma_expected;
-          case Context.DocParameters:
-            return qd.msgs.Parameter_declaration_expected;
-          case Context.Parameters:
-            return qd.msgs.Parameter_declaration_expected;
-          case Context.TypeParameters:
-            return qd.msgs.Type_parameter_declaration_expected;
+          case Context.DocParams:
+            return qd.msgs.Param_declaration_expected;
+          case Context.Params:
+            return qd.msgs.Param_declaration_expected;
+          case Context.TypeParams:
+            return qd.msgs.Type_param_declaration_expected;
           case Context.TypeArguments:
             return qd.msgs.Type_argument_expected;
           case Context.TupleElemTypes:
@@ -1396,7 +1396,7 @@ function create() {
     thisTypePredicate(lhs: qc.ThisTyping): qt.TypingPredicate {
       next.tok();
       const n = create.node(Syntax.TypingPredicate, lhs.pos);
-      n.parameterName = lhs;
+      n.paramName = lhs;
       n.type = this.type();
       return finishNode(n);
     }
@@ -1411,8 +1411,8 @@ function create() {
       n.exprName = this.entityName(true);
       return finishNode(n);
     }
-    typeParameter(): qc.TypeParameterDeclaration {
-      const n = create.node(Syntax.TypeParameter);
+    typeParam(): qc.TypeParamDeclaration {
+      const n = create.node(Syntax.TypeParam);
       n.name = this.identifier();
       if (this.optional(Syntax.ExtendsKeyword)) {
         if (is.startOfType() || !is.startOfExpression()) n.constraint = this.type();
@@ -1421,41 +1421,41 @@ function create() {
       if (this.optional(Syntax.EqualsToken)) n.default = this.type();
       return finishNode(n);
     }
-    typeParameters(): Nodes<qc.TypeParameterDeclaration> | undefined {
-      if (tok() === Syntax.LessThanToken) return ctx.parseBracketedList(Context.TypeParameters, this.typeParameter, Syntax.LessThanToken, Syntax.GreaterThanToken);
+    typeParams(): Nodes<qc.TypeParamDeclaration> | undefined {
+      if (tok() === Syntax.LessThanToken) return ctx.parseBracketedList(Context.TypeParams, this.typeParam, Syntax.LessThanToken, Syntax.GreaterThanToken);
       return;
     }
-    parameter(): qc.ParameterDeclaration {
-      const n = create.nodeWithDoc(Syntax.Parameter);
-      const parameterType = (): qt.Typing | undefined => {
+    param(): qc.ParamDeclaration {
+      const n = create.nodeWithDoc(Syntax.Param);
+      const paramType = (): qt.Typing | undefined => {
         if (this.optional(Syntax.ColonToken)) return this.type();
         return;
       };
       if (tok() === Syntax.ThisKeyword) {
         n.name = create.identifier(true);
-        n.type = parameterType();
+        n.type = paramType();
         return finishNode(n);
       }
       n.decorators = this.decorators();
       n.modifiers = this.modifiers();
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
-      n.name = this.identifierOrPattern(qd.msgs.Private_identifiers_cannot_be_used_as_parameters);
+      n.name = this.identifierOrPattern(qd.msgs.Private_identifiers_cannot_be_used_as_params);
       if (qc.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
-      n.type = parameterType();
+      n.type = paramType();
       n.initer = this.initer();
       return finishNode(n);
     }
-    parameterList(s: qc.SignatureDeclaration, f: SignatureFlags): boolean {
+    paramList(s: qc.SignatureDeclaration, f: SignatureFlags): boolean {
       if (!this.expected(Syntax.OpenParenToken)) {
-        s.parameters = create.missingList<qc.ParameterDeclaration>();
+        s.params = create.missingList<qc.ParamDeclaration>();
         return false;
       }
       const yf = flags.inContext(NodeFlags.YieldContext);
       const af = flags.inContext(NodeFlags.AwaitContext);
       flags.set(!!(f & SignatureFlags.Yield), NodeFlags.YieldContext);
       flags.set(!!(f & SignatureFlags.Await), NodeFlags.AwaitContext);
-      s.parameters = f & SignatureFlags.Doc ? ctx.parseDelimitedList(Context.DocParameters, this.parameter) : ctx.parseDelimitedList(Context.Parameters, this.parameter);
+      s.params = f & SignatureFlags.Doc ? ctx.parseDelimitedList(Context.DocParams, this.param) : ctx.parseDelimitedList(Context.Params, this.param);
       flags.set(yf, NodeFlags.YieldContext);
       flags.set(af, NodeFlags.AwaitContext);
       return this.expected(Syntax.CloseParenToken);
@@ -1473,7 +1473,7 @@ function create() {
     }
     indexSignatureDeclaration(n: qc.IndexSignatureDeclaration): qc.IndexSignatureDeclaration {
       n.kind = Syntax.IndexSignature;
-      n.parameters = ctx.parseBracketedList(Context.Parameters, this.parameter, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
+      n.params = ctx.parseBracketedList(Context.Params, this.param, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       n.type = this.typeAnnotation();
       this.typeMemberSemicolon();
       return finishNode(n);
@@ -1513,8 +1513,8 @@ function create() {
       } else es = create.missingList<qc.TypeElem>();
       return es;
     }
-    mappedTypeParameter() {
-      const n = create.node(Syntax.TypeParameter);
+    mappedTypeParam() {
+      const n = create.node(Syntax.TypeParam);
       n.name = this.identifier();
       this.expected(Syntax.InKeyword);
       n.constraint = this.type();
@@ -1528,7 +1528,7 @@ function create() {
         if (n.readonlyToken.kind !== Syntax.ReadonlyKeyword) this.expectedToken(Syntax.ReadonlyKeyword);
       }
       this.expected(Syntax.OpenBracketToken);
-      n.typeParameter = this.mappedTypeParameter();
+      n.typeParam = this.mappedTypeParam();
       this.expected(Syntax.CloseBracketToken);
       if (tok() === Syntax.QuestionToken || tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) {
         n.questionToken = this.tokenNode<qc.QuestionToken | qc.PlusToken | qc.MinusToken>();
@@ -1731,9 +1731,9 @@ function create() {
     inferType(): qc.InferTyping {
       const n = create.node(Syntax.InferTyping);
       this.expected(Syntax.InferKeyword);
-      const p = create.node(Syntax.TypeParameter);
+      const p = create.node(Syntax.TypeParam);
       p.name = this.identifier();
-      n.typeParameter = finishNode(p);
+      n.typeParam = finishNode(p);
       return finishNode(n);
     }
     typeOperatorOrHigher(): qt.Typing {
@@ -1775,7 +1775,7 @@ function create() {
       if (typePredicateVariable) {
         const n = create.node(Syntax.TypingPredicate, typePredicateVariable.pos);
         n.assertsModifier = undefined;
-        n.parameterName = typePredicateVariable;
+        n.paramName = typePredicateVariable;
         n.type = type;
         return finishNode(n);
       }
@@ -1792,7 +1792,7 @@ function create() {
     assertsTypePredicate(): qt.Typing {
       const n = create.node(Syntax.TypingPredicate);
       n.assertsModifier = this.expectedToken(Syntax.AssertsKeyword);
-      n.parameterName = tok() === Syntax.ThisKeyword ? this.thisTypeNode() : this.identifier();
+      n.paramName = tok() === Syntax.ThisKeyword ? this.thisTypeNode() : this.identifier();
       n.type = this.optional(Syntax.IsKeyword) ? this.type() : undefined;
       return finishNode(n);
     }
@@ -1805,7 +1805,7 @@ function create() {
         const isUnambiguouslyStartOfFunctionType = () => {
           next.tok();
           if (tok() === Syntax.CloseParenToken || tok() === Syntax.Dot3Token) return true;
-          const skipParameterStart = () => {
+          const skipParamStart = () => {
             if (qy.is.modifier(tok())) parse.modifiers();
             if (is.identifier() || tok() === Syntax.ThisKeyword) {
               next.tok();
@@ -1818,7 +1818,7 @@ function create() {
             }
             return false;
           };
-          if (skipParameterStart()) {
+          if (skipParamStart()) {
             if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.QuestionToken || tok() === Syntax.EqualsToken) return true;
             if (tok() === Syntax.CloseParenToken) {
               next.tok();
@@ -1991,10 +1991,10 @@ function create() {
         n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
         n.modifiers = asyncModifier;
       } else n = create.node(Syntax.ArrowFunction, identifier.pos);
-      const n2 = create.node(Syntax.Parameter, identifier.pos);
+      const n2 = create.node(Syntax.Param, identifier.pos);
       n2.name = identifier;
       finishNode(n);
-      n.parameters = create.nodes<qc.ParameterDeclaration>([n2], n2.pos, n2.end);
+      n.params = create.nodes<qc.ParamDeclaration>([n2], n2.pos, n2.end);
       n.equalsGreaterThanToken = this.expectedToken(Syntax.EqualsGreaterThanToken);
       n.body = this.arrowFunctionExpressionBody(!!asyncModifier);
       return addDocComment(finishNode(n));
@@ -3076,7 +3076,7 @@ function create() {
       n.kind = kind;
       this.expected(Syntax.ClassKeyword);
       n.name = this.nameOfClassDeclarationOrExpression();
-      n.typeParameters = this.typeParameters();
+      n.typeParams = this.typeParams();
       n.heritageClauses = this.heritageClauses();
       if (this.expected(Syntax.OpenBraceToken)) {
         n.members = this.classMembers();
@@ -3114,7 +3114,7 @@ function create() {
       n.kind = Syntax.InterfaceDeclaration;
       this.expected(Syntax.InterfaceKeyword);
       n.name = this.identifier();
-      n.typeParameters = this.typeParameters();
+      n.typeParams = this.typeParams();
       n.heritageClauses = this.heritageClauses();
       n.members = this.objectTypeMembers();
       return finishNode(n);
@@ -3123,7 +3123,7 @@ function create() {
       n.kind = Syntax.TypeAliasDeclaration;
       this.expected(Syntax.TypeKeyword);
       n.name = this.identifier();
-      n.typeParameters = this.typeParameters();
+      n.typeParams = this.typeParams();
       this.expected(Syntax.EqualsToken);
       n.type = this.type();
       this.semicolon();
@@ -3721,8 +3721,8 @@ function create() {
       n.typeName = parse.identifierName();
       return finishNode(n);
     }
-    parameter(): qc.ParameterDeclaration {
-      const n = create.node(Syntax.Parameter);
+    param(): qc.ParamDeclaration {
+      const n = create.node(Syntax.Param);
       if (tok() === Syntax.ThisKeyword || tok() === Syntax.NewKeyword) {
         n.name = parse.identifierName();
         parse.expected(Syntax.ColonToken);
@@ -3821,7 +3821,7 @@ function create() {
         case 'arg':
         case 'argument':
         case 'param':
-          return this.parameterOrPropertyTag(start, tagName, PropertyLike.Parameter, margin);
+          return this.paramOrPropertyTag(start, tagName, PropertyLike.Param, margin);
         case 'return':
         case 'returns':
           tag = this.returnTag(start, tagName);
@@ -3942,16 +3942,16 @@ function create() {
       }
       return { name, isBracketed };
     }
-    parameterOrPropertyTag(start: number, tagName: qc.Identifier, target: PropertyLike, indent: number): DocParameterTag | DocPropertyTag {
+    paramOrPropertyTag(start: number, tagName: qc.Identifier, target: PropertyLike, indent: number): DocParamTag | DocPropertyTag {
       let typeExpression = this.tryTypeExpression();
       let isNameFirst = !typeExpression;
       skipWhitespaceOrAsterisk();
       const { name, isBracketed } = this.bracketNameInPropertyAndParamTag();
       skipWhitespace();
       if (isNameFirst) typeExpression = this.tryTypeExpression();
-      const n = target === PropertyLike.Property ? create.node(Syntax.DocPropertyTag, start) : create.node(Syntax.DocParameterTag, start);
+      const n = target === PropertyLike.Property ? create.node(Syntax.DocPropertyTag, start) : create.node(Syntax.DocParamTag, start);
       const comment = this.tagComments(indent + scanner.getStartPos() - start);
-      const nestedTypeLiteral = target !== PropertyLike.CallbackParameter && this.nestedTypeLiteral(typeExpression, name, target, indent);
+      const nestedTypeLiteral = target !== PropertyLike.CallbackParam && this.nestedTypeLiteral(typeExpression, name, target, indent);
       if (nestedTypeLiteral) {
         typeExpression = nestedTypeLiteral;
         isNameFirst = true;
@@ -3971,8 +3971,8 @@ function create() {
         let n2: DocTypingLiteral;
         const start = scanner.getStartPos();
         let children: DocPropertyLikeTag[] | undefined;
-        while ((child = tryParse(() => this.childParameterOrPropertyTag(target, indent, name)))) {
-          if (child.kind === Syntax.DocParameterTag || child.kind === Syntax.DocPropertyTag) children = append(children, child);
+        while ((child = tryParse(() => this.childParamOrPropertyTag(target, indent, name)))) {
+          if (child.kind === Syntax.DocParamTag || child.kind === Syntax.DocPropertyTag) children = append(children, child);
         }
         if (children) {
           n2 = create.node(Syntax.DocTypingLiteral, start);
@@ -4152,11 +4152,11 @@ function create() {
       n.name = this.getDocTypeAliasName(n.fullName);
       skipWhitespace();
       n.comment = this.tagComments(indent);
-      let child: DocParameterTag | false;
+      let child: DocParamTag | false;
       const n2 = create.node(Syntax.DocSignature, start) as DocSignature;
-      n2.parameters = [];
-      while ((child = tryParse(() => this.childParameterOrPropertyTag(PropertyLike.CallbackParameter, indent) as DocParameterTag))) {
-        n2.parameters = append(n2.parameters as MutableNodes<DocParameterTag>, child);
+      n2.params = [];
+      while ((child = tryParse(() => this.childParamOrPropertyTag(PropertyLike.CallbackParam, indent) as DocParamTag))) {
+        n2.params = append(n2.params as MutableNodes<DocParamTag>, child);
       }
       const returnTag = tryParse(() => {
         if (this.optional(Syntax.AtToken)) {
@@ -4180,9 +4180,9 @@ function create() {
       return;
     }
     childPropertyTag(indent: number) {
-      return this.childParameterOrPropertyTag(PropertyLike.Property, indent) as DocTypeTag | DocPropertyTag | false;
+      return this.childParamOrPropertyTag(PropertyLike.Property, indent) as DocTypeTag | DocPropertyTag | false;
     }
-    childParameterOrPropertyTag(target: PropertyLike, indent: number, name?: qt.EntityName): DocTypeTag | DocPropertyTag | DocParameterTag | false {
+    childParamOrPropertyTag(target: PropertyLike, indent: number, name?: qt.EntityName): DocTypeTag | DocPropertyTag | DocParamTag | false {
       let canParseTag = true;
       let seenAsterisk = false;
       while (true) {
@@ -4192,8 +4192,8 @@ function create() {
               const child = this.tryChildTag(target, indent);
               if (
                 child &&
-                (child.kind === Syntax.DocParameterTag || child.kind === Syntax.DocPropertyTag) &&
-                target !== PropertyLike.CallbackParameter &&
+                (child.kind === Syntax.DocParamTag || child.kind === Syntax.DocPropertyTag) &&
+                target !== PropertyLike.CallbackParam &&
                 name &&
                 (qf.is.kind(qc.Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
               ) {
@@ -4219,7 +4219,7 @@ function create() {
         }
       }
     }
-    tryChildTag(target: PropertyLike, indent: number): DocTypeTag | DocPropertyTag | DocParameterTag | false {
+    tryChildTag(target: PropertyLike, indent: number): DocTypeTag | DocPropertyTag | DocParamTag | false {
       qu.assert(tok() === Syntax.AtToken);
       const start = scanner.getStartPos();
       next.tokDoc();
@@ -4236,31 +4236,31 @@ function create() {
         case 'arg':
         case 'argument':
         case 'param':
-          t = PropertyLike.Parameter | PropertyLike.CallbackParameter;
+          t = PropertyLike.Param | PropertyLike.CallbackParam;
           break;
         default:
           return false;
       }
       if (!(target & t)) return false;
-      return this.parameterOrPropertyTag(start, tagName, target, indent);
+      return this.paramOrPropertyTag(start, tagName, target, indent);
     }
     templateTag(start: number, tagName: qc.Identifier): DocTemplateTag {
       let constraint: DocTypingExpression | undefined;
       if (tok() === Syntax.OpenBraceToken) constraint = this.typeExpression();
-      const typeParameters = [];
-      const typeParametersPos = getNodePos();
+      const typeParams = [];
+      const typeParamsPos = getNodePos();
       do {
         skipWhitespace();
-        const n = create.node(Syntax.TypeParameter);
-        n.name = this.identifierName(qd.msgs.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
+        const n = create.node(Syntax.TypeParam);
+        n.name = this.identifierName(qd.msgs.Unexpected_token_A_type_param_name_was_expected_without_curly_braces);
         finishNode(n);
         skipWhitespaceOrAsterisk();
-        typeParameters.push(n);
+        typeParams.push(n);
       } while (this.optional(Syntax.CommaToken));
       const n = create.node(Syntax.DocTemplateTag, start);
       n.tagName = tagName;
       n.constraint = constraint;
-      n.typeParameters = create.nodes(typeParameters, typeParametersPos);
+      n.typeParams = create.nodes(typeParams, typeParamsPos);
       finishNode(n);
       return n;
     }
@@ -4360,8 +4360,8 @@ function create() {
     return i;
   }
   function fillSignature(t: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, f: SignatureFlags, s: qc.SignatureDeclaration): boolean {
-    if (!(f & SignatureFlags.Doc)) s.typeParameters = parse.typeParameters();
-    const r = parse.parameterList(s, f);
+    if (!(f & SignatureFlags.Doc)) s.typeParams = parse.typeParams();
+    const r = parse.paramList(s, f);
     const shouldParseReturnType = (isType: boolean) => {
       if (t === Syntax.EqualsGreaterThanToken) {
         parse.expected(t);
@@ -4382,9 +4382,9 @@ function create() {
             return qf.is.missing((n as qt.TypingReference).typeName);
           case Syntax.FunctionTyping:
           case Syntax.ConstructorTyping: {
-            const { parameters, type } = n as FunctionOrConstructorTyping;
+            const { params, type } = n as FunctionOrConstructorTyping;
             const isMissingList = (ns: Nodes<Node>) => !!(ns as MissingList<Node>).isMissingList;
-            return isMissingList(parameters) || hasArrowFunctionBlockingError(type);
+            return isMissingList(params) || hasArrowFunctionBlockingError(type);
           }
           case Syntax.ParenthesizedTyping:
             return hasArrowFunctionBlockingError((n as ParenthesizedTyping).type);

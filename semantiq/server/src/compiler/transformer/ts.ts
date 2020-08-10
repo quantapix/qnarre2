@@ -46,7 +46,7 @@ export function transformTypeScript(context: TrafoContext) {
   let currentLexicalScope: SourceFile | Block | ModuleBlock | CaseBlock;
   let currentNameScope: ClassDeclaration | undefined;
   let currentScopeFirstDeclarationsOfName: EscapedMap<Node> | undefined;
-  let currentClassHasParameterProperties: boolean | undefined;
+  let currentClassHasParamProperties: boolean | undefined;
   let enabledSubstitutions: TypeScriptSubstitutionFlags;
   let classAliases: Identifier[];
   let applicableSubstitutions: TypeScriptSubstitutionFlags;
@@ -76,7 +76,7 @@ export function transformTypeScript(context: TrafoContext) {
     const savedCurrentScope = currentLexicalScope;
     const savedCurrentNameScope = currentNameScope;
     const savedCurrentScopeFirstDeclarationsOfName = currentScopeFirstDeclarationsOfName;
-    const savedCurrentClassHasParameterProperties = currentClassHasParameterProperties;
+    const savedCurrentClassHasParamProperties = currentClassHasParamProperties;
     onBeforeVisitNode(node);
     const visited = f(node);
     if (currentLexicalScope !== savedCurrentScope) {
@@ -84,7 +84,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
     currentLexicalScope = savedCurrentScope;
     currentNameScope = savedCurrentNameScope;
-    currentClassHasParameterProperties = savedCurrentClassHasParameterProperties;
+    currentClassHasParamProperties = savedCurrentClassHasParamProperties;
     return visited;
   }
   function onBeforeVisitNode(node: Node) {
@@ -216,7 +216,7 @@ export function transformTypeScript(context: TrafoContext) {
       case Syntax.RestTyping:
       case Syntax.TypingLiteral:
       case Syntax.TypingPredicate:
-      case Syntax.TypeParameter:
+      case Syntax.TypeParam:
       case Syntax.AnyKeyword:
       case Syntax.UnknownKeyword:
       case Syntax.BooleanKeyword:
@@ -270,8 +270,8 @@ export function transformTypeScript(context: TrafoContext) {
         return visitFunctionExpression(<FunctionExpression>node);
       case Syntax.ArrowFunction:
         return visitArrowFunction(<ArrowFunction>node);
-      case Syntax.Parameter:
-        return visitParameter(<ParameterDeclaration>node);
+      case Syntax.Param:
+        return visitParam(<ParamDeclaration>node);
       case Syntax.ParenthesizedExpression:
         return visitParenthesizedExpression(<ParenthesizedExpression>node);
       case Syntax.TypeAssertionExpression:
@@ -310,11 +310,11 @@ export function transformTypeScript(context: TrafoContext) {
   function shouldEmitDecorateCallForClass(node: ClassDeclaration) {
     if (node.decorators && node.decorators.length > 0) return true;
     const constructor = qf.get.firstConstructorWithBody(node);
-    if (constructor) return forEach(constructor.parameters, shouldEmitDecorateCallForParameter);
+    if (constructor) return forEach(constructor.params, shouldEmitDecorateCallForParam);
     return false;
   }
-  function shouldEmitDecorateCallForParameter(parameter: ParameterDeclaration) {
-    return parameter.decorators !== undefined && parameter.decorators.length > 0;
+  function shouldEmitDecorateCallForParam(param: ParamDeclaration) {
+    return param.decorators !== undefined && param.decorators.length > 0;
   }
   function getClassFacts(node: ClassDeclaration, staticProperties: readonly PropertyDeclaration[]) {
     let facts = ClassFacts.None;
@@ -333,7 +333,7 @@ export function transformTypeScript(context: TrafoContext) {
     return !!(node.trafoFlags & TrafoFlags.ContainsTypeScriptClassSyntax);
   }
   function isClassLikeDeclarationWithTypeScriptSyntax(node: ClassLikeDeclaration) {
-    return some(node.decorators) || some(node.typeParameters) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
+    return some(node.decorators) || some(node.typeParams) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
     if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qc.has.syntacticModifier(node, ModifierFlags.Export))) return visitEachChild(node, visitor, context);
@@ -426,11 +426,11 @@ export function transformTypeScript(context: TrafoContext) {
   function transformClassMembers(node: ClassDeclaration | ClassExpression) {
     const members: ClassElem[] = [];
     const constructor = qf.get.firstConstructorWithBody(node);
-    const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qc.is.parameterPropertyDeclaration(p, constructor));
-    if (parametersWithPropertyAssignments) {
-      for (const parameter of parametersWithPropertyAssignments) {
-        if (qc.is.kind(qc.Identifier, parameter.name)) {
-          members.push(qc.compute.aggregate(PropertyDeclaration.create(undefined, undefined, parameter.name, undefined, undefined, undefined)).setOriginal(parameter));
+    const paramsWithPropertyAssignments = constructor && filter(constructor.params, (p) => qc.is.paramPropertyDeclaration(p, constructor));
+    if (paramsWithPropertyAssignments) {
+      for (const param of paramsWithPropertyAssignments) {
+        if (qc.is.kind(qc.Identifier, param.name)) {
+          members.push(qc.compute.aggregate(PropertyDeclaration.create(undefined, undefined, param.name, undefined, undefined, undefined)).setOriginal(param));
         }
       }
     }
@@ -451,22 +451,22 @@ export function transformTypeScript(context: TrafoContext) {
   }
   interface AllDecorators {
     decorators: readonly Decorator[] | undefined;
-    parameters?: readonly (readonly Decorator[] | undefined)[];
+    params?: readonly (readonly Decorator[] | undefined)[];
   }
-  function getDecoratorsOfParameters(node: FunctionLikeDeclaration | undefined) {
+  function getDecoratorsOfParams(node: FunctionLikeDeclaration | undefined) {
     let decorators: (readonly Decorator[] | undefined)[] | undefined;
     if (node) {
-      const parameters = node.parameters;
-      const firstParameterIsThis = parameters.length > 0 && parameterIsThsyntax.is.keyword(parameters[0]);
-      const firstParameterOffset = firstParameterIsThis ? 1 : 0;
-      const numParameters = firstParameterIsThis ? parameters.length - 1 : parameters.length;
-      for (let i = 0; i < numParameters; i++) {
-        const parameter = parameters[i + firstParameterOffset];
-        if (decorators || parameter.decorators) {
+      const params = node.params;
+      const firstParamIsThis = params.length > 0 && paramIsThsyntax.is.keyword(params[0]);
+      const firstParamOffset = firstParamIsThis ? 1 : 0;
+      const numParams = firstParamIsThis ? params.length - 1 : params.length;
+      for (let i = 0; i < numParams; i++) {
+        const param = params[i + firstParamOffset];
+        if (decorators || param.decorators) {
           if (!decorators) {
-            decorators = new Array(numParameters);
+            decorators = new Array(numParams);
           }
-          decorators[i] = parameter.decorators;
+          decorators[i] = param.decorators;
         }
       }
     }
@@ -474,13 +474,13 @@ export function transformTypeScript(context: TrafoContext) {
   }
   function getAllDecoratorsOfConstructor(node: ClassExpression | ClassDeclaration): AllDecorators | undefined {
     const decorators = node.decorators;
-    const parameters = getDecoratorsOfParameters(qf.get.firstConstructorWithBody(node));
-    if (!decorators && !parameters) {
+    const params = getDecoratorsOfParams(qf.get.firstConstructorWithBody(node));
+    if (!decorators && !params) {
       return;
     }
     return {
       decorators,
-      parameters,
+      params,
     };
   }
   function getAllDecoratorsOfClassElem(node: ClassExpression | ClassDeclaration, member: ClassElem): AllDecorators | undefined {
@@ -506,22 +506,22 @@ export function transformTypeScript(context: TrafoContext) {
       return;
     }
     const decorators = firstAccessorWithDecorators.decorators;
-    const parameters = getDecoratorsOfParameters(setAccessor);
-    if (!decorators && !parameters) {
+    const params = getDecoratorsOfParams(setAccessor);
+    if (!decorators && !params) {
       return;
     }
-    return { decorators, parameters };
+    return { decorators, params };
   }
   function getAllDecoratorsOfMethod(method: MethodDeclaration): AllDecorators | undefined {
     if (!method.body) {
       return;
     }
     const decorators = method.decorators;
-    const parameters = getDecoratorsOfParameters(method);
-    if (!decorators && !parameters) {
+    const params = getDecoratorsOfParams(method);
+    if (!decorators && !params) {
       return;
     }
-    return { decorators, parameters };
+    return { decorators, params };
   }
   function getAllDecoratorsOfProperty(property: PropertyDeclaration): AllDecorators | undefined {
     const decorators = property.decorators;
@@ -536,7 +536,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
     const decoratorExpressions: Expression[] = [];
     addRange(decoratorExpressions, map(allDecorators.decorators, transformDecorator));
-    addRange(decoratorExpressions, flatMap(allDecorators.parameters, transformDecoratorsOfParameter));
+    addRange(decoratorExpressions, flatMap(allDecorators.params, transformDecoratorsOfParam));
     addTypeMetadata(node, container, decoratorExpressions);
     return decoratorExpressions;
   }
@@ -594,12 +594,12 @@ export function transformTypeScript(context: TrafoContext) {
   function transformDecorator(decorator: Decorator) {
     return visitNode(decorator.expression, visitor, isExpression);
   }
-  function transformDecoratorsOfParameter(decorators: Decorator[], parameterOffset: number) {
+  function transformDecoratorsOfParam(decorators: Decorator[], paramOffset: number) {
     let expressions: Expression[] | undefined;
     if (decorators) {
       expressions = [];
       for (const decorator of decorators) {
-        const helper = createParamHelper(context, transformDecorator(decorator), parameterOffset, decorator.expression);
+        const helper = createParamHelper(context, transformDecorator(decorator), paramOffset, decorator.expression);
         setEmitFlags(helper, EmitFlags.NoComments);
         expressions.push(helper);
       }
@@ -619,7 +619,7 @@ export function transformTypeScript(context: TrafoContext) {
         decoratorExpressions.push(createMetadataHelper(context, 'design:type', serializeTypeOfNode(node)));
       }
       if (shouldAddParamTypesMetadata(node)) {
-        decoratorExpressions.push(createMetadataHelper(context, 'design:paramtypes', serializeParameterTypesOfNode(node, container)));
+        decoratorExpressions.push(createMetadataHelper(context, 'design:paramtypes', serializeParamTypesOfNode(node, container)));
       }
       if (shouldAddReturnTypeMetadata(node)) {
         decoratorExpressions.push(createMetadataHelper(context, 'design:returntype', serializeReturnTypeOfNode(node)));
@@ -636,7 +636,7 @@ export function transformTypeScript(context: TrafoContext) {
       }
       if (shouldAddParamTypesMetadata(node)) {
         (properties || (properties = [])).push(
-          new qc.PropertyAssignment('paramTypes', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container)))
+          new qc.PropertyAssignment('paramTypes', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeParamTypesOfNode(node, container)))
         );
       }
       if (shouldAddReturnTypeMetadata(node)) {
@@ -677,8 +677,8 @@ export function transformTypeScript(context: TrafoContext) {
   function serializeTypeOfNode(node: Node): SerializedTypeNode {
     switch (node.kind) {
       case Syntax.PropertyDeclaration:
-      case Syntax.Parameter:
-        return serializeTypeNode((<PropertyDeclaration | ParameterDeclaration | GetAccessorDeclaration>node).type);
+      case Syntax.Param:
+        return serializeTypeNode((<PropertyDeclaration | ParamDeclaration | GetAccessorDeclaration>node).type);
       case Syntax.SetAccessor:
       case Syntax.GetAccessor:
         return serializeTypeNode(getAccessorTypeNode(node as AccessorDeclaration));
@@ -690,32 +690,32 @@ export function transformTypeScript(context: TrafoContext) {
         return qc.VoidExpression.zero();
     }
   }
-  function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
+  function serializeParamTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
     const valueDeclaration = qc.is.classLike(node) ? qf.get.firstConstructorWithBody(node) : qc.is.functionLike(node) && qc.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
     const expressions: SerializedTypeNode[] = [];
     if (valueDeclaration) {
-      const parameters = getParametersOfDecoratedDeclaration(valueDeclaration, container);
-      const numParameters = parameters.length;
-      for (let i = 0; i < numParameters; i++) {
-        const parameter = parameters[i];
-        if (i === 0 && qc.is.kind(qc.Identifier, parameter.name) && parameter.name.escapedText === 'this') {
+      const params = getParamsOfDecoratedDeclaration(valueDeclaration, container);
+      const numParams = params.length;
+      for (let i = 0; i < numParams; i++) {
+        const param = params[i];
+        if (i === 0 && qc.is.kind(qc.Identifier, param.name) && param.name.escapedText === 'this') {
           continue;
         }
-        if (parameter.dot3Token) {
-          expressions.push(serializeTypeNode(qf.get.restParameterElemType(parameter.type)));
+        if (param.dot3Token) {
+          expressions.push(serializeTypeNode(qf.get.restParamElemType(param.type)));
         } else {
-          expressions.push(serializeTypeOfNode(parameter));
+          expressions.push(serializeTypeOfNode(param));
         }
       }
     }
     return new ArrayLiteralExpression(expressions);
   }
-  function getParametersOfDecoratedDeclaration(node: SignatureDeclaration, container: ClassLikeDeclaration) {
+  function getParamsOfDecoratedDeclaration(node: SignatureDeclaration, container: ClassLikeDeclaration) {
     if (container && node.kind === Syntax.GetAccessor) {
       const { setAccessor } = qf.get.allAccessorDeclarations(container.members, <AccessorDeclaration>node);
-      if (setAccessor) return setAccessor.parameters;
+      if (setAccessor) return setAccessor.params;
     }
-    return node.parameters;
+    return node.params;
   }
   function serializeReturnTypeOfNode(node: Node): SerializedTypeNode {
     if (qc.is.functionLike(node) && node.type) return serializeTypeNode(node.type);
@@ -905,7 +905,7 @@ export function transformTypeScript(context: TrafoContext) {
   }
   function visitPropertyNameOfClassElem(member: ClassElem): PropertyName {
     const name = member.name!;
-    if (qc.is.kind(qc.ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
+    if (qc.is.kind(qc.ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParamProperties) || some(member.decorators))) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = qc.skip.partiallyEmittedExpressions(expression);
       if (!isSimpleInlineableExpression(innerExpression)) {
@@ -943,16 +943,16 @@ export function transformTypeScript(context: TrafoContext) {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return;
     }
-    return node.update(undefined, undefined, visitParameterList(node.parameters, visitor, context), transformConstructorBody(node.body, node));
+    return node.update(undefined, undefined, visitParamList(node.params, visitor, context), transformConstructorBody(node.body, node));
   }
   function transformConstructorBody(body: Block, constructor: ConstructorDeclaration) {
-    const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qc.is.parameterPropertyDeclaration(p, constructor));
-    if (!some(parametersWithPropertyAssignments)) return visitFunctionBody(body, visitor, context);
+    const paramsWithPropertyAssignments = constructor && filter(constructor.params, (p) => qc.is.paramPropertyDeclaration(p, constructor));
+    if (!some(paramsWithPropertyAssignments)) return visitFunctionBody(body, visitor, context);
     let statements: Statement[] = [];
     let indexOfFirstStatement = 0;
     resumeLexicalEnvironment();
     indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
-    addRange(statements, map(parametersWithPropertyAssignments, transformParameterWithPropertyAssignment));
+    addRange(statements, map(paramsWithPropertyAssignments, transformParamWithPropertyAssignment));
     addRange(statements, Nodes.visit(body.statements, visitor, isStatement, indexOfFirstStatement));
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
     const block = new Block(setRange(new Nodes(statements), body.statements), true);
@@ -960,7 +960,7 @@ export function transformTypeScript(context: TrafoContext) {
     block.setOriginal(body);
     return block;
   }
-  function transformParameterWithPropertyAssignment(node: ParameterPropertyDeclaration) {
+  function transformParamWithPropertyAssignment(node: ParamPropertyDeclaration) {
     const name = node.name;
     if (!qc.is.kind(qc.Identifier, name)) {
       return;
@@ -987,7 +987,7 @@ export function transformTypeScript(context: TrafoContext) {
       visitPropertyNameOfClassElem(node),
       undefined,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       visitFunctionBody(node.body, visitor, context)
     );
@@ -1008,7 +1008,7 @@ export function transformTypeScript(context: TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
@@ -1026,7 +1026,7 @@ export function transformTypeScript(context: TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
     if (updated !== node) {
@@ -1043,7 +1043,7 @@ export function transformTypeScript(context: TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
@@ -1061,7 +1061,7 @@ export function transformTypeScript(context: TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
@@ -1071,15 +1071,15 @@ export function transformTypeScript(context: TrafoContext) {
     const updated = node.update(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
       visitFunctionBody(node.body, visitor, context)
     );
     return updated;
   }
-  function visitParameter(node: ParameterDeclaration) {
-    if (parameterIsThsyntax.is.keyword(node)) return;
+  function visitParam(node: ParamDeclaration) {
+    if (paramIsThsyntax.is.keyword(node)) return;
 
     const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     if (updated !== node) {
@@ -1152,7 +1152,7 @@ export function transformTypeScript(context: TrafoContext) {
         emitFlags |= EmitFlags.NoLeadingComments;
       }
     }
-    const parameterName = getNamespaceParameterName(node);
+    const paramName = getNamespaceParamName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
       ? qf.get.declaration.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
@@ -1164,15 +1164,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
     const enumStatement = new qc.ExpressionStatement(
       new qc.CallExpression(
-        new qc.FunctionExpression(
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)],
-          undefined,
-          transformEnumBody(node, containerName)
-        ),
+        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, undefined, paramName)], undefined, transformEnumBody(node, containerName)),
         undefined,
         [moduleArg]
       )
@@ -1282,7 +1274,7 @@ export function transformTypeScript(context: TrafoContext) {
         emitFlags |= EmitFlags.NoLeadingComments;
       }
     }
-    const parameterName = getNamespaceParameterName(node);
+    const paramName = getNamespaceParamName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
       ? qf.get.declaration.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
@@ -1299,7 +1291,7 @@ export function transformTypeScript(context: TrafoContext) {
           undefined,
           undefined,
           undefined,
-          [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)],
+          [new qc.ParamDeclaration(undefined, undefined, undefined, paramName)],
           undefined,
           transformModuleBody(node, containerName)
         ),
@@ -1479,7 +1471,7 @@ export function transformTypeScript(context: TrafoContext) {
   function getNamespaceMemberNameWithSourceMapsAndWithoutComments(name: Identifier) {
     return qf.get.namespaceMemberName(currentNamespaceContainerName, name, false, true);
   }
-  function getNamespaceParameterName(node: ModuleDeclaration | EnumDeclaration) {
+  function getNamespaceParamName(node: ModuleDeclaration | EnumDeclaration) {
     const name = qf.get.generatedNameForNode(node);
     setSourceMapRange(name, node.name);
     return name;
@@ -1675,9 +1667,9 @@ export const metadataHelper: UnscopedEmitHelper = {
                 if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
             };`,
 };
-function createParamHelper(context: TrafoContext, expression: Expression, parameterOffset: number, location?: TextRange) {
+function createParamHelper(context: TrafoContext, expression: Expression, paramOffset: number, location?: TextRange) {
   context.requestEmitHelper(paramHelper);
-  return setRange(new qc.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(parameterOffset), expression]), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(paramOffset), expression]), location);
 }
 export const paramHelper: UnscopedEmitHelper = {
   name: 'typescript:param',
@@ -1703,7 +1695,7 @@ export function childIsDecorated(node: Node, parent?: Node): boolean {
       return some((<ClassDeclaration>node).members, (m) => nodeOrChildIsDecorated(m, node, parent!));
     case Syntax.MethodDeclaration:
     case Syntax.SetAccessor:
-      return some((<FunctionLikeDeclaration>node).parameters, (p) => qf.is.decorated(p, node, parent!));
+      return some((<FunctionLikeDeclaration>node).params, (p) => qf.is.decorated(p, node, parent!));
     default:
       return false;
   }

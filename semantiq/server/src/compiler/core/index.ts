@@ -109,7 +109,7 @@ export namespace BindingOrAssignmentElem {
   }
   export function getRestIndicatorOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.BindingOrAssignmentElemRestIndicator | undefined {
     switch (e.kind) {
-      case Syntax.Parameter:
+      case Syntax.Param:
       case Syntax.BindingElem:
         // `...` in `let [...a] = ...`
         return e.dot3Token;

@@ -99,7 +99,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   symbolToString(decl?: Node, meaning?: qt.SymbolFlags, flags: qt.SymbolFormatFlags = qt.SymbolFormatFlags.AllowAnyNodeKind, w?: EmitTextWriter): string {
     let f = qt.NodeBuilderFlags.IgnoreErrors;
     if (flags & qt.SymbolFormatFlags.UseOnlyExternalAliasing) f |= qt.NodeBuilderFlags.UseOnlyExternalAliasing;
-    if (flags & qt.SymbolFormatFlags.WriteTypeParametersOrArguments) f |= qt.NodeBuilderFlags.WriteTypeParametersInQualifiedName;
+    if (flags & qt.SymbolFormatFlags.WriteTypeParamsOrArguments) f |= qt.NodeBuilderFlags.WriteTypeParamsInQualifiedName;
     if (flags & qt.SymbolFormatFlags.UseAliasDefinedOutsideCurrentScope) f |= qt.NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope;
     if (flags & qt.SymbolFormatFlags.DoNotIncludeSymbolChain) f |= qt.NodeBuilderFlags.DoNotIncludeSymbolChain;
     const builder = flags & qt.SymbolFormatFlags.AllowAnyNodeKind ? nodeBuilder.symbolToExpression : nodeBuilder.symbolToEntityName;
@@ -228,7 +228,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
               qf.create.diagnosticForNode(
                 node,
                 qd.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
-                lookupTable.get(id)!.specifierText,
+                lookupTable.get(id)!.specText,
                 qy.get.unescUnderscores(id)
               )
             );
@@ -275,7 +275,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   getContainersOfSymbol(enclosingDeclaration: Node | undefined): Symbol[] | undefined {
     const container = this.getParentOfSymbol();
-    if (container && !(this.flags & qt.SymbolFlags.TypeParameter)) {
+    if (container && !(this.flags & qt.SymbolFlags.TypeParam)) {
       const additionalContainers = mapDefined(container.declarations, fileSymbolIfFileSymbolExportEqualsContainer);
       const reexportContainers = enclosingDeclaration && this.getAlternativeContainingModules(enclosingDeclaration);
       if (enclosingDeclaration && qf.get.accessibleSymbolChain(container, enclosingDeclaration, qt.SymbolFlags.Namespace, false))
@@ -422,15 +422,15 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbol(symbolName))), ModifierFlags.None);
   }
   includePrivateSymbol() {
-    if (some(this.declarations, qf.is.parameterDeclaration)) return;
+    if (some(this.declarations, qf.is.paramDeclaration)) return;
     Debug.assertIsDefined(deferredPrivates);
     getUnusedName(qy.get.unescUnderscores(this.escName), this);
     deferredPrivates.set('' + this.getId(), this);
   }
   serializeTypeAlias(symbolName: string, modifierFlags: ModifierFlags) {
     const aliasType = this.getDeclaredTypeOfTypeAlias();
-    const typeParams = this.getLinks().typeParameters;
-    const typeParamDecls = map(typeParams, (p) => typeParameterToDeclaration(p, context));
+    const typeParams = this.getLinks().typeParams;
+    const typeParamDecls = map(typeParams, (p) => typeParamToDeclaration(p, context));
     const jsdocAliasDecl = find(this.declarations, isDocTypeAlias);
     const commentText = jsdocAliasDecl ? jsdocAliasDecl.comment || jsdocAliasDecl.parent.comment : undefined;
     const oldFlags = context.flags;
@@ -456,8 +456,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   serializeInterface(symbolName: string, modifierFlags: ModifierFlags) {
     const interfaceType = this.getDeclaredTypeOfClassOrInterface();
-    const localParams = this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias();
-    const typeParamDecls = map(localParams, (p) => typeParameterToDeclaration(p, context));
+    const localParams = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
+    const typeParamDecls = map(localParams, (p) => typeParamToDeclaration(p, context));
     const baseTypes = getBaseTypes(interfaceType);
     const baseType = length(baseTypes) ? qf.get.intersectionType(baseTypes) : undefined;
     const members = flatMap<Symbol, TypeElem>(qf.get.propertiesOfType(interfaceType), (p) => serializePropertySymbolForInterface(p, baseType));
@@ -619,11 +619,11 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         );
         break;
       case Syntax.ExportSpecifier:
-        const specifier = (node.parent.parent as ExportDeclaration).moduleSpecifier;
+        const spec = (node.parent.parent as ExportDeclaration).moduleSpecifier;
         serializeExportSpecifier(
           qy.get.unescUnderscores(this.escName),
-          specifier ? verbatimTargetName : targetName,
-          specifier && qf.is.stringLiteralLike(specifier) ? qc.asLiteral(specifier.text) : undefined
+          spec ? verbatimTargetName : targetName,
+          spec && qf.is.stringLiteralLike(spec) ? qc.asLiteral(spec.text) : undefined
         );
         break;
       case Syntax.ExportAssignment:
@@ -722,15 +722,15 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
     }
   }
-  getTypeOfVariableOrParameterOrProperty(): Type {
+  getTypeOfVariableOrParamOrProperty(): Type {
     const ls = this.getLinks();
     if (!ls.type) {
-      const t = getTypeOfVariableOrParameterOrPropertyWorker(symbol);
+      const t = getTypeOfVariableOrParamOrPropertyWorker(symbol);
       if (!ls.type) ls.type = t;
     }
     return ls.type;
   }
-  getTypeOfVariableOrParameterOrPropertyWorker() {
+  getTypeOfVariableOrParamOrPropertyWorker() {
     if (symbol.flags & qt.SymbolFlags.Prototype) return getTypeOfPrototypeProperty(symbol);
     if (symbol === requireSymbol) return anyType;
     if (symbol.flags & qt.SymbolFlags.ModuleExports) {
@@ -782,7 +782,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     } else if (qf.is.objectLiteralMethod(declaration)) {
       type = tryGetTypeFromEffectiveTypeNode(declaration) || check.objectLiteralMethod(declaration, CheckMode.Normal);
     } else if (
-      declaration.kind === Syntax.ParameterDeclaration ||
+      declaration.kind === Syntax.ParamDeclaration ||
       declaration.kind === Syntax.PropertyDeclaration ||
       declaration.kind === Syntax.PropertySignature ||
       declaration.kind === Syntax.VariableDeclaration ||
@@ -831,12 +831,12 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     const getterReturnType = getAnnotatedAccessorType(getter);
     if (getterReturnType) return getterReturnType;
-    const setterParameterType = getAnnotatedAccessorType(setter);
-    if (setterParameterType) return setterParameterType;
+    const setterParamType = getAnnotatedAccessorType(setter);
+    if (setterParamType) return setterParamType;
     if (getter && getter.body) return getReturnTypeFromBody(getter);
     if (setter) {
       if (!isPrivateWithinAmbient(setter))
-        errorOrSuggestion(noImplicitAny, setter, qd.Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_parameter_type_annotation, this.symbolToString());
+        errorOrSuggestion(noImplicitAny, setter, qd.Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_param_type_annotation, this.symbolToString());
     } else {
       qu.assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
       if (!isPrivateWithinAmbient(getter))
@@ -915,7 +915,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       error(this.valueDeclaration, qd._0_is_referenced_directly_or_indirectly_in_its_own_type_annotation, this.symbolToString());
       return errorType;
     }
-    if (noImplicitAny && (declaration.kind !== Syntax.Parameter || (<HasIniter>declaration).initer)) {
+    if (noImplicitAny && (declaration.kind !== Syntax.Param || (<HasIniter>declaration).initer)) {
       error(this.valueDeclaration, qd._0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or_indirectly_in_its_own_initer, this.symbolToString());
     }
     return anyType;
@@ -935,30 +935,30 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (f & qt.CheckFlags.Instantiated) return this.getTypeOfInstantiatedSymbol();
     if (f & qt.CheckFlags.Mapped) return getTypeOfMappedSymbol(this as MappedSymbol);
     if (f & qt.CheckFlags.ReverseMapped) return getTypeOfReverseMappedSymbol(this as ReverseMappedSymbol);
-    if (this.flags & (qt.SymbolFlags.Variable | qt.SymbolFlags.Property)) return this.getTypeOfVariableOrParameterOrProperty();
+    if (this.flags & (qt.SymbolFlags.Variable | qt.SymbolFlags.Property)) return this.getTypeOfVariableOrParamOrProperty();
     if (this.flags & (qt.SymbolFlags.Function | qt.SymbolFlags.Method | qt.SymbolFlags.Class | qt.SymbolFlags.Enum | qt.SymbolFlags.ValueModule)) return this.getTypeOfFuncClassEnumModule();
     if (this.flags & qt.SymbolFlags.EnumMember) return this.getTypeOfEnumMember();
     if (this.flags & qt.SymbolFlags.Accessor) return this.getTypeOfAccessors();
     if (this.flags & qt.SymbolFlags.Alias) return this.getTypeOfAlias();
     return errorType;
   }
-  getOuterTypeParametersOfClassOrInterface(): TypeParameter[] | undefined {
+  getOuterTypeParamsOfClassOrInterface(): TypeParam[] | undefined {
     const d = this.flags & qt.SymbolFlags.Class ? this.valueDeclaration : this.declarationOfKind(Syntax.InterfaceDeclaration)!;
     qu.assert(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
-    return getOuterTypeParameters(d);
+    return getOuterTypeParams(d);
   }
-  getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(): TypeParameter[] | undefined {
-    let r: TypeParameter[] | undefined;
+  getLocalTypeParamsOfClassOrInterfaceOrTypeAlias(): TypeParam[] | undefined {
+    let r: TypeParam[] | undefined;
     for (const d of this.declarations ?? []) {
       if (d.kind === Syntax.InterfaceDeclaration || d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression || qf.is.jsConstructor(d) || qf.is.typeAlias(d)) {
         const d2 = d as InterfaceDeclaration | TypeAliasDeclaration | DocTypedefTag | DocCallbackTag;
-        r = appendTypeParameters(r, qf.get.effectiveTypeParameterDeclarations(d2));
+        r = appendTypeParams(r, qf.get.effectiveTypeParamDeclarations(d2));
       }
     }
     return r;
   }
-  getTypeParametersOfClassOrInterface(): TypeParameter[] | undefined {
-    return concatenate(this.getOuterTypeParametersOfClassOrInterface(), this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias());
+  getTypeParamsOfClassOrInterface(): TypeParam[] | undefined {
+    return concatenate(this.getOuterTypeParamsOfClassOrInterface(), this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias());
   }
   isThislessInterface() {
     const ds = this.declarations;
@@ -988,18 +988,18 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       const merged = mergeJSSymbols(this, getAssignedClassSymbol(this.valueDeclaration));
       if (merged) symbol = ls = merged;
       const type = (originalLinks.declaredType = ls.declaredType = <InterfaceType>createObjectType(kind, this));
-      const outerTypeParameters = this.getOuterTypeParametersOfClassOrInterface();
-      const localTypeParameters = this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias();
-      if (outerTypeParameters || localTypeParameters || kind === ObjectFlags.Class || !isThislessInterface(this)) {
+      const outerTypeParams = this.getOuterTypeParamsOfClassOrInterface();
+      const localTypeParams = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
+      if (outerTypeParams || localTypeParams || kind === ObjectFlags.Class || !isThislessInterface(this)) {
         type.objectFlags |= ObjectFlags.Reference;
-        type.typeParameters = concatenate(outerTypeParameters, localTypeParameters);
-        type.outerTypeParameters = outerTypeParameters;
-        type.localTypeParameters = localTypeParameters;
+        type.typeParams = concatenate(outerTypeParams, localTypeParams);
+        type.outerTypeParams = outerTypeParams;
+        type.localTypeParams = localTypeParams;
         (<GenericType>type).instantiations = new qu.QMap<TypeReference>();
-        (<GenericType>type).instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
+        (<GenericType>type).instantiations.set(getTypeListId(type.typeParams), <GenericType>type);
         (<GenericType>type).target = <GenericType>type;
-        (<GenericType>type).resolvedTypeArguments = type.typeParameters;
-        type.thisType = createTypeParameter(this);
+        (<GenericType>type).resolvedTypeArguments = type.typeParams;
+        type.thisType = createTypeParam(this);
         type.thisType.isThisType = true;
         type.thisType.constraint = type;
       }
@@ -1014,9 +1014,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       const typeNode = qc.isDoc.typeAlias(d) ? d.typeExpression : d.type;
       let type = typeNode ? qf.get.typeFromTypeNode(typeNode) : errorType;
       if (popTypeResolution()) {
-        const ps = this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias();
+        const ps = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
         if (ps) {
-          ls.typeParameters = ps;
+          ls.typeParams = ps;
           ls.instantiations = new qu.QMap<Type>();
           ls.instantiations.set(getTypeListId(ps), type);
         }
@@ -1079,9 +1079,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return ls.declaredType;
   }
-  getDeclaredTypeOfTypeParameter(): TypeParameter {
+  getDeclaredTypeOfTypeParam(): TypeParam {
     const ls = this.getLinks();
-    return ls.declaredType || (ls.declaredType = createTypeParameter(this));
+    return ls.declaredType || (ls.declaredType = createTypeParam(this));
   }
   getDeclaredTypeOfAlias(): Type {
     const ls = this.getLinks();
@@ -1093,7 +1093,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   tryGetDeclaredTypeOfSymbol(): Type | undefined {
     if (this.flags & (qt.SymbolFlags.Class | qt.SymbolFlags.Interface)) return this.getDeclaredTypeOfClassOrInterface();
     if (this.flags & qt.SymbolFlags.TypeAlias) return this.getDeclaredTypeOfTypeAlias();
-    if (this.flags & qt.SymbolFlags.TypeParameter) return this.getDeclaredTypeOfTypeParameter();
+    if (this.flags & qt.SymbolFlags.TypeParam) return this.getDeclaredTypeOfTypeParam();
     if (this.flags & qt.SymbolFlags.Enum) return this.getDeclaredTypeOfEnum();
     if (this.flags & qt.SymbolFlags.EnumMember) return this.getDeclaredTypeOfEnumMember();
     if (this.flags & qt.SymbolFlags.Alias) return this.getDeclaredTypeOfAlias();
@@ -1142,8 +1142,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (s) {
       for (const d of s.declarations ?? []) {
         const n = cast(d, IndexSignatureDeclaration.kind);
-        if (n.parameters.length === 1) {
-          const p = n.parameters[0];
+        if (n.params.length === 1) {
+          const p = n.params[0];
           if (p.type && p.type.kind === syntaxKind) return n;
         }
       }
@@ -1163,18 +1163,18 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   getAliasVariances() {
     const ls = this.getLinks();
-    return getVariancesWorker(ls.typeParameters, ls, (_links, param, marker) => {
-      const type = qf.get.typeAliasInstantiation(this, instantiateTypes(ls.typeParameters!, makeUnaryTypeMapper(param, marker)));
+    return getVariancesWorker(ls.typeParams, ls, (_links, param, marker) => {
+      const type = qf.get.typeAliasInstantiation(this, instantiateTypes(ls.typeParams!, makeUnaryTypeMapper(param, marker)));
       type.aliasTypeArgumentsContainsMarker = true;
       return type;
     });
   }
-  isParameterAssigned() {
+  isParamAssigned() {
     const f = qf.get.rootDeclaration(this.valueDeclaration).parent as FunctionLikeDeclaration;
     const ls = qf.get.nodeLinks(f);
     if (!(ls.flags & NodeCheckFlags.AssignmentsMarked)) {
       ls.flags |= NodeCheckFlags.AssignmentsMarked;
-      if (!hasParentWithAssignmentsMarked(f)) markParameterAssignments(f);
+      if (!hasParentWithAssignmentsMarked(f)) markParamAssignments(f);
     }
     return this.isAssigned || false;
   }
@@ -1204,7 +1204,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   symbolHasNonMethodDeclaration() {
     return !!forEachProperty(this, (p) => !(p.flags & qt.SymbolFlags.Method));
   }
-  getTypeOfParameter() {
+  getTypeOfParam() {
     const t = this.qf.get.typeOfSymbol();
     if (strictNullChecks) {
       const d = this.valueDeclaration;
@@ -1390,18 +1390,18 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
     }
   }
-  checkTypeParameterListsIdentical() {
+  checkTypeParamListsIdentical() {
     if (this.declarations?.length === 1) return;
     const ls = this.getLinks();
-    if (!ls.typeParametersChecked) {
-      ls.typeParametersChecked = true;
+    if (!ls.typeParamsChecked) {
+      ls.typeParamsChecked = true;
       const ds = this.getClassOrInterfaceDeclarationsOfSymbol();
       if (!ds || ds.length <= 1) return;
       const t = this.getDeclaredTypeOfSymbol() as InterfaceType;
-      if (!areTypeParametersIdentical(ds, t.localTypeParameters!)) {
+      if (!areTypeParamsIdentical(ds, t.localTypeParams!)) {
         const n = this.symbolToString();
         for (const d of ds) {
-          error(d.name, qd.All_declarations_of_0_must_have_identical_type_parameters, n);
+          error(d.name, qd.All_declarations_of_0_must_have_identical_type_params, n);
         }
       }
     }
@@ -1512,21 +1512,21 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
     }
   }
-  isTypeParameterSymbolDeclaredInContainer(container: Node) {
+  isTypeParamSymbolDeclaredInContainer(container: Node) {
     for (const d of this.declarations) {
-      if (d.kind === Syntax.TypeParameter) {
+      if (d.kind === Syntax.TypeParam) {
         const p = d.parent.kind === Syntax.DocTemplateTag ? qc.getDoc.host(d.parent) : d.parent;
         if (p === container) return !(d.parent.kind === Syntax.DocTemplateTag && find((d.parent.parent as Doc).tags!, isDocTypeAlias));
       }
     }
     return false;
   }
-  qf.get.exportOfModule(specifier: ImportOrExportSpecifier, dontResolveAlias: boolean): Symbol | undefined {
+  qf.get.exportOfModule(spec: ImportOrExportSpecifier, dontResolveAlias: boolean): Symbol | undefined {
     if (this.flags & qt.SymbolFlags.Module) {
-      const name = (specifier.propertyName ?? specifier.name).escapedText;
+      const name = (spec.propertyName ?? spec.name).escapedText;
       const exportSymbol = this.getExportsOfSymbol().get(name);
       const resolved = exportSymbol.resolveSymbol(dontResolveAlias);
-      markSymbolOfAliasDeclarationIfTypeOnly(specifier, exportSymbol, resolved, false);
+      markSymbolOfAliasDeclarationIfTypeOnly(spec, exportSymbol, resolved, false);
       return resolved;
     }
     return;

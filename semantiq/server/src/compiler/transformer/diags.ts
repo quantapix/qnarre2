@@ -23,8 +23,8 @@ export type DeclarationDiagnosticProducing =
   | qt.MethodDeclaration
   | qt.MethodSignature
   | qt.FunctionDeclaration
-  | qt.ParameterDeclaration
-  | qt.TypeParameterDeclaration
+  | qt.ParamDeclaration
+  | qt.TypeParamDeclaration
   | qt.ExpressionWithTypings
   | qt.ImportEqualsDeclaration
   | qt.TypeAliasDeclaration
@@ -44,8 +44,8 @@ export function canProduceDiagnostics(node: Node): node is DeclarationDiagnostic
     qf.is.kind(qc.MethodDeclaration, node) ||
     qf.is.kind(qc.MethodSignature, node) ||
     qf.is.kind(qc.FunctionDeclaration, node) ||
-    qf.is.kind(qc.ParameterDeclaration, node) ||
-    qf.is.kind(qc.TypeParameterDeclaration, node) ||
+    qf.is.kind(qc.ParamDeclaration, node) ||
+    qf.is.kind(qc.TypeParamDeclaration, node) ||
     qf.is.kind(qc.ExpressionWithTypings, node) ||
     qf.is.kind(qc.ImportEqualsDeclaration, node) ||
     qf.is.kind(qc.TypeAliasDeclaration, node) ||
@@ -135,11 +135,11 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   ) {
     return getReturnTypeVisibilityError;
   }
-  if (qf.is.kind(qc.ParameterDeclaration, node)) {
-    if (qf.is.parameterPropertyDeclaration(node, node.parent) && qf.has.syntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
-    return getParameterDeclarationTypeVisibilityError;
+  if (qf.is.kind(qc.ParamDeclaration, node)) {
+    if (qf.is.paramPropertyDeclaration(node, node.parent) && qf.has.syntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
+    return getParamDeclarationTypeVisibilityError;
   }
-  if (qf.is.kind(qc.TypeParameterDeclaration, node)) return getTypeParameterConstraintVisibilityError;
+  if (qf.is.kind(qc.TypeParamDeclaration, node)) return getTypeParamConstraintVisibilityError;
   if (qf.is.kind(qc.ExpressionWithTypings, node)) return getHeritageClauseVisibilityError;
   if (qf.is.kind(qc.ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
   if (qf.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
@@ -155,7 +155,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       node.kind === Syntax.PropertyDeclaration ||
       node.kind === Syntax.PropertyAccessExpression ||
       node.kind === Syntax.PropertySignature ||
-      (node.kind === Syntax.Parameter && qf.has.syntacticModifier(node.parent, ModifierFlags.Private))
+      (node.kind === Syntax.Param && qf.has.syntacticModifier(node.parent, ModifierFlags.Private))
     ) {
       if (qf.has.syntacticModifier(node, ModifierFlags.Static)) {
         return r.errorModuleName
@@ -163,7 +163,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
             ? qd.msgs.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
             : qd.msgs.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2
           : qd.msgs.Public_static_property_0_of_exported_class_has_or_is_using_private_name_1;
-      } else if (node.parent?.kind === Syntax.ClassDeclaration || node.kind === Syntax.Parameter) {
+      } else if (node.parent?.kind === Syntax.ClassDeclaration || node.kind === Syntax.Param) {
         return r.errorModuleName
           ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
             ? qd.msgs.Public_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -190,12 +190,12 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     if (node.kind === Syntax.SetAccessor) {
       if (qf.has.syntacticModifier(node, ModifierFlags.Static)) {
         diagnosticMessage = r.errorModuleName
-          ? qd.msgs.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1;
+          ? qd.msgs.Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1;
       } else {
         diagnosticMessage = r.errorModuleName
-          ? qd.msgs.Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1;
+          ? qd.msgs.Param_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1;
       }
     } else {
       if (qf.has.syntacticModifier(node, ModifierFlags.Static)) {
@@ -271,8 +271,8 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       errorNode: (node as qt.NamedDecl).name || node,
     };
   }
-  function getParameterDeclarationTypeVisibilityError(r: qt.SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
-    const diagnosticMessage: qd.Message = getParameterDeclarationTypeVisibilityMessage(r);
+  function getParamDeclarationTypeVisibilityError(r: qt.SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
+    const diagnosticMessage: qd.Message = getParamDeclarationTypeVisibilityMessage(r);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -281,102 +281,102 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
         }
       : undefined;
   }
-  function getParameterDeclarationTypeVisibilityMessage(r: qt.SymbolAccessibilityResult): qd.Message {
+  function getParamDeclarationTypeVisibilityMessage(r: qt.SymbolAccessibilityResult): qd.Message {
     switch (node.parent?.kind) {
       case Syntax.Constructor:
         return r.errorModuleName
           ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
-            ? qd.msgs.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
-            : qd.msgs.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1;
+            ? qd.msgs.Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
+            : qd.msgs.Param_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_constructor_from_exported_class_has_or_is_using_private_name_1;
       case Syntax.ConstructSignature:
       case Syntax.ConstructorTyping:
         return r.errorModuleName
-          ? qd.msgs.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
+          ? qd.msgs.Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
       case Syntax.CallSignature:
         return r.errorModuleName
-          ? qd.msgs.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
+          ? qd.msgs.Param_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
       case Syntax.IndexSignature:
         return r.errorModuleName
-          ? qd.msgs.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1;
+          ? qd.msgs.Param_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1;
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
         if (qf.has.syntacticModifier(node.parent, ModifierFlags.Static)) {
           return r.errorModuleName
             ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
-              ? qd.msgs.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
-              : qd.msgs.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
-            : qd.msgs.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
+              ? qd.msgs.Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
+              : qd.msgs.Param_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
+            : qd.msgs.Param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
         } else if (node.parent?.parent?.kind === Syntax.ClassDeclaration) {
           return r.errorModuleName
             ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
-              ? qd.msgs.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
-              : qd.msgs.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
-            : qd.msgs.Parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
+              ? qd.msgs.Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
+              : qd.msgs.Param_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
+            : qd.msgs.Param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
         } else {
           return r.errorModuleName
-            ? qd.msgs.Parameter_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2
-            : qd.msgs.Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
+            ? qd.msgs.Param_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2
+            : qd.msgs.Param_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
         }
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionTyping:
         return r.errorModuleName
           ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
-            ? qd.msgs.Parameter_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
-            : qd.msgs.Parameter_0_of_exported_function_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_exported_function_has_or_is_using_private_name_1;
+            ? qd.msgs.Param_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
+            : qd.msgs.Param_0_of_exported_function_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_exported_function_has_or_is_using_private_name_1;
       case Syntax.SetAccessor:
       case Syntax.GetAccessor:
         return r.errorModuleName
           ? r.accessibility === qt.SymbolAccessibility.CannotBeNamed
-            ? qd.msgs.Parameter_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
-            : qd.msgs.Parameter_0_of_accessor_has_or_is_using_name_1_from_private_module_2
-          : qd.msgs.Parameter_0_of_accessor_has_or_is_using_private_name_1;
+            ? qd.msgs.Param_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
+            : qd.msgs.Param_0_of_accessor_has_or_is_using_name_1_from_private_module_2
+          : qd.msgs.Param_0_of_accessor_has_or_is_using_private_name_1;
       default:
-        return qu.fail(`Unknown parent for parameter: ${(ts as any).SyntaxKind[node.parent?.kind]}`);
+        return qu.fail(`Unknown parent for param: ${(ts as any).SyntaxKind[node.parent?.kind]}`);
     }
   }
-  function getTypeParameterConstraintVisibilityError(): SymbolAccessibilityDiagnostic {
+  function getTypeParamConstraintVisibilityError(): SymbolAccessibilityDiagnostic {
     let diagnosticMessage: qd.Message;
     switch (node.parent?.kind) {
       case Syntax.ClassDeclaration:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_class_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_exported_class_has_or_is_using_private_name_1;
         break;
       case Syntax.InterfaceDeclaration:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_interface_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_exported_interface_has_or_is_using_private_name_1;
         break;
       case Syntax.MappedTyping:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_mapped_object_type_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_exported_mapped_object_type_is_using_private_name_1;
         break;
       case Syntax.ConstructorTyping:
       case Syntax.ConstructSignature:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
         break;
       case Syntax.CallSignature:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
         break;
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
         if (qf.has.syntacticModifier(node.parent, ModifierFlags.Static)) {
-          diagnosticMessage = qd.msgs.Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
+          diagnosticMessage = qd.msgs.Type_param_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
         } else if (node.parent?.parent?.kind === Syntax.ClassDeclaration) {
-          diagnosticMessage = qd.msgs.Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
+          diagnosticMessage = qd.msgs.Type_param_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
         } else {
-          diagnosticMessage = qd.msgs.Type_parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
+          diagnosticMessage = qd.msgs.Type_param_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
         }
         break;
       case Syntax.FunctionTyping:
       case Syntax.FunctionDeclaration:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_function_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_exported_function_has_or_is_using_private_name_1;
         break;
       case Syntax.TypeAliasDeclaration:
-        diagnosticMessage = qd.msgs.Type_parameter_0_of_exported_type_alias_has_or_is_using_private_name_1;
+        diagnosticMessage = qd.msgs.Type_param_0_of_exported_type_alias_has_or_is_using_private_name_1;
         break;
       default:
-        return qu.fail('This is unknown parent for type parameter: ' + node.parent?.kind);
+        return qu.fail('This is unknown parent for type param: ' + node.parent?.kind);
     }
     return {
       diagnosticMessage,

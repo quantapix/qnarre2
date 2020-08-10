@@ -291,7 +291,7 @@ export const enum MembersOrExportsResolutionKind {
 }
 export const enum UnusedKind {
   Local,
-  Parameter,
+  Param,
 }
 export type AddUnusedDiagnostic = (containingNode: qt.Node, type: UnusedKind, diagnostic: qd.DiagnosticWithLocation) => void;
 export const enum DeclarationMeaning {

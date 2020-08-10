@@ -307,18 +307,18 @@ export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
 export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDecl {
   kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: qt.Identifier;
-  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
   members: qt.Nodes<qt.ClassElem>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     es: readonly qt.ClassElem[]
   ) {
     super(s, k);
-    this.typeParameters = Nodes.from(ts);
+    this.typeParams = Nodes.from(ts);
     this.heritageClauses = Nodes.from(hs);
     this.members = new Nodes(es);
   }
@@ -338,28 +338,21 @@ export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
 export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDecl {
   kind!: qt.SignatureDeclaration['kind'];
   name?: qt.PropertyName;
-  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
-  parameters!: qt.Nodes<qt.ParameterDeclaration>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
+  params!: qt.Nodes<qt.ParamDeclaration>;
   type?: qt.Typing;
   typeArguments?: qt.Nodes<qt.Typing>;
-  constructor(
-    s: boolean,
-    k: qt.SignatureDeclaration['kind'],
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps?: readonly qt.ParameterDeclaration[],
-    t?: qt.Typing,
-    ta?: readonly qt.Typing[]
-  ) {
+  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParamDeclaration[] | undefined, ps?: readonly qt.ParamDeclaration[], t?: qt.Typing, ta?: readonly qt.Typing[]) {
     super(s, k);
-    this.typeParameters = Nodes.from(ts);
-    this.parameters = new Nodes(ps);
+    this.typeParams = Nodes.from(ts);
+    this.params = new Nodes(ps);
     this.type = t;
     this.typeArguments = Nodes.from(ta);
   }
 
   /*
-  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.Typing): T {
-    return this.typeParameters !== ts || this.parameters !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
+  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParamDeclaration> | undefined, ps: Nodes<ParamDeclaration>, t?: qc.Typing): T {
+    return this.typeParams !== ts || this.params !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
   }
   */
 }
@@ -377,7 +370,7 @@ export abstract class FunctionOrConstructorTobj extends SignatureDecl implements
   kind!: Syntax.FunctionTyping | Syntax.ConstructorTyping;
   type!: qt.Typing;
   docCache?: readonly qt.DocTag[];
-  constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
+  constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(s, k, ts, ps, t);
   }
   _typingBrand: any;
@@ -583,7 +576,7 @@ export abstract class DocContainer implements qt.DocContainer {
   }
 }
 export abstract class Symbol implements qt.Symbol {
-  assignmentDeclarationMembers?: qu.QMap<qt.Declaration>;
+  assignmentDeclarations?: qu.QMap<qt.Declaration>;
   constEnumOnlyModule?: boolean;
   declarations?: qt.Declaration[];
   docComment?: qt.SymbolDisplayPart[];
@@ -594,7 +587,7 @@ export abstract class Symbol implements qt.Symbol {
   id?: number;
   isAssigned?: boolean;
   isReferenced?: SymbolFlags;
-  isReplaceableByMethod?: boolean;
+  isReplaceable?: boolean;
   members?: qt.SymbolTable;
   mergeId?: number;
   parent?: qt.Symbol;
@@ -698,7 +691,7 @@ export abstract class Symbol implements qt.Symbol {
   comment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
       this.docComment = qu.empty;
-      if (!this.declarations && (this as qt.TransientSymbol).target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
+      if (!this.declarations && this.target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
         const labelDecl = ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
         this.docComment = getDocComment([labelDecl], c);
       } else this.docComment = getDocComment(this.declarations, c);
@@ -804,8 +797,8 @@ export class Type implements qt.Type {
   isNumberLiteral(): this is qt.NumberLiteralType {
     return !!(this.flags & TypeFlags.NumberLiteral);
   }
-  isTypeParameter(): this is qt.TypeParameter {
-    return !!(this.flags & TypeFlags.TypeParameter);
+  isTypeParam(): this is qt.TypeParam {
+    return !!(this.flags & TypeFlags.TypeParam);
   }
   isClassOrInterface(): this is qt.InterfaceType {
     return !!(this.getObjectFlags() & ObjectFlags.ClassOrInterface);
@@ -859,7 +852,7 @@ export class Type implements qt.Type {
     return this.checker.get.baseConstraintOfType(this);
   }
   getDefault(): qt.Type | undefined {
-    return this.checker.get.defaultFromTypeParameter(this);
+    return this.checker.get.defaultFromTypeParam(this);
   }
   getObjectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? (this as qt.ObjectType).objectFlags : 0;
@@ -870,9 +863,9 @@ export class Type implements qt.Type {
 }
 export class Signature implements qt.Signature {
   declaration?: qt.SignatureDeclaration | qt.DocSignature;
-  typeParameters?: readonly qt.TypeParameter[];
-  parameters!: readonly Symbol[];
-  thisParameter?: Symbol;
+  typeParams?: readonly qt.TypeParam[];
+  params!: readonly Symbol[];
+  thisParam?: Symbol;
   resolvedReturnType?: Type;
   resolvedTypePredicate?: qt.TypePredicate;
   minArgumentCount!: number;
@@ -900,8 +893,8 @@ export class Signature implements qt.Signature {
     }
     return this.docTags;
   }
-  signatureHasRestParameter(s: Signature) {
-    return !!(s.flags & SignatureFlags.HasRestParameter);
+  signatureHasRestParam(s: Signature) {
+    return !!(s.flags & SignatureFlags.HasRestParam);
   }
   signatureHasLiteralTypes(s: Signature) {
     return !!(s.flags & SignatureFlags.HasLiteralTypes);
@@ -1274,8 +1267,8 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
           addDeclaration(n);
           qf.each.child(n, visit);
           break;
-        case Syntax.Parameter:
-          if (!qf.has.syntacticModifier(n, ModifierFlags.ParameterPropertyModifier)) break;
+        case Syntax.Param:
+          if (!qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) break;
         case Syntax.VariableDeclaration:
         case Syntax.BindingElem: {
           const decl = n;
@@ -1553,7 +1546,7 @@ export function getExcludedSymbolFlags(f: SymbolFlags): SymbolFlags {
   if (f & SymbolFlags.RegularEnum) r |= SymbolFlags.RegularEnumExcludes;
   if (f & SymbolFlags.SetAccessor) r |= SymbolFlags.SetAccessorExcludes;
   if (f & SymbolFlags.TypeAlias) r |= SymbolFlags.TypeAliasExcludes;
-  if (f & SymbolFlags.TypeParameter) r |= SymbolFlags.TypeParameterExcludes;
+  if (f & SymbolFlags.TypeParam) r |= SymbolFlags.TypeParamExcludes;
   if (f & SymbolFlags.ValueModule) r |= SymbolFlags.ValueModuleExcludes;
   return r;
 }
@@ -1574,7 +1567,7 @@ export function createGetSymbolWalker(
   getTypeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
   getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
-  getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
+  getConstraintOfTypeParam: (typeParam: TypeParam) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {
@@ -1616,7 +1609,7 @@ export function createGetSymbolWalker(
         if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as InterfaceType);
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
-      if (t.flags & TypeFlags.TypeParameter) visitTypeParameter(t as TypeParameter);
+      if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as TypeParam);
       if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as UnionOrIntersectionType);
       if (t.flags & TypeFlags.Index) visitIndexType(t as IndexType);
       if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as IndexedAccessType);
@@ -1625,8 +1618,8 @@ export function createGetSymbolWalker(
       visitType(t.target);
       qu.each(getTypeArguments(t), visitType);
     }
-    function visitTypeParameter(t: TypeParameter) {
-      visitType(qf.get.constraintOfTypeParameter(t));
+    function visitTypeParam(t: TypeParam) {
+      visitType(qf.get.constraintOfTypeParam(t));
     }
     function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
       qu.each(t.types, visitType);
@@ -1640,7 +1633,7 @@ export function createGetSymbolWalker(
       visitType(t.constraint);
     }
     function visitMappedType(t: MappedType) {
-      visitType(t.typeParameter);
+      visitType(t.typeParam);
       visitType(t.constraintType);
       visitType(t.templateType);
       visitType(t.modifiersType);
@@ -1648,16 +1641,16 @@ export function createGetSymbolWalker(
     function visitSignature(signature: Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
       if (typePredicate) visitType(typePredicate.type);
-      qu.each(signature.typeParameters, visitType);
-      for (const parameter of signature.parameters) {
-        visitSymbol(parameter);
+      qu.each(signature.typeParams, visitType);
+      for (const param of signature.params) {
+        visitSymbol(param);
       }
       visitType(getRestTypeOfSignature(signature));
       visitType(qf.get.returnTypeOfSignature(signature));
     }
     function visitInterfaceType(interfaceT: InterfaceType) {
       visitObjectType(interfaceT);
-      qu.each(interfaceT.typeParameters, visitType);
+      qu.each(interfaceT.typeParams, visitType);
       qu.each(getBaseTypes(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
@@ -1918,8 +1911,8 @@ export const compute = new (class {
         return this.binaryExpression(n, f);
       case Syntax.ExpressionStatement:
         return this.expressionStatement(n, f);
-      case Syntax.Parameter:
-        return this.parameter(n, f);
+      case Syntax.Param:
+        return this.param(n, f);
       case Syntax.ArrowFunction:
         return this.arrowFunction(n, f);
       case Syntax.FunctionExpression:
@@ -2003,17 +1996,17 @@ export const compute = new (class {
     n.trafoFlags = r | TrafoFlags.HasComputedFlags;
     return r & ~TrafoFlags.NodeExcludes;
   }
-  parameter(n: qt.ParameterDeclaration, f: TrafoFlags) {
+  param(n: qt.ParamDeclaration, f: TrafoFlags) {
     let r = f;
     const name = n.name;
     const initer = n.initer;
     const dot3Token = n.dot3Token;
     if (n.questionToken || n.type || (f & TrafoFlags.ContainsTypeScriptClassSyntax && qu.some(n.decorators)) || isThisNode(Identifier, name)) r |= TrafoFlags.AssertTypeScript;
-    if (qf.has.syntacticModifier(n, ModifierFlags.ParameterPropertyModifier)) r |= TrafoFlags.AssertTypeScript | TrafoFlags.ContainsTypeScriptClassSyntax;
+    if (qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) r |= TrafoFlags.AssertTypeScript | TrafoFlags.ContainsTypeScriptClassSyntax;
     if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
     if (f & TrafoFlags.ContainsBindingPattern || initer || dot3Token) r |= TrafoFlags.AssertES2015;
     n.trafoFlags = r | TrafoFlags.HasComputedFlags;
-    return r & ~TrafoFlags.ParameterExcludes;
+    return r & ~TrafoFlags.ParamExcludes;
   }
   parenthesizedExpression(n: qt.ParenthesizedExpression, f: TrafoFlags) {
     let r = f;
@@ -2027,14 +2020,14 @@ export const compute = new (class {
     if (qf.has.syntacticModifier(n, ModifierFlags.Ambient)) r = TrafoFlags.AssertTypeScript;
     else {
       r = f | TrafoFlags.AssertES2015;
-      if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParameters) r |= TrafoFlags.AssertTypeScript;
+      if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParams) r |= TrafoFlags.AssertTypeScript;
     }
     n.trafoFlags = r | TrafoFlags.HasComputedFlags;
     return r & ~TrafoFlags.ClassExcludes;
   }
   classExpression(n: qt.ClassExpression, f: TrafoFlags) {
     let r = f | TrafoFlags.AssertES2015;
-    if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParameters) r |= TrafoFlags.AssertTypeScript;
+    if (f & TrafoFlags.ContainsTypeScriptClassSyntax || n.typeParams) r |= TrafoFlags.AssertTypeScript;
     n.trafoFlags = r | TrafoFlags.HasComputedFlags;
     return r & ~TrafoFlags.ClassExcludes;
   }
@@ -2076,7 +2069,7 @@ export const compute = new (class {
   }
   method(n: qt.MethodDeclaration, f: TrafoFlags) {
     let r = f | TrafoFlags.AssertES2015;
-    if (n.decorators || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type || !n.body || n.questionToken) r |= TrafoFlags.AssertTypeScript;
+    if (n.decorators || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParams || n.type || !n.body || n.questionToken) r |= TrafoFlags.AssertTypeScript;
     if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
     if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
     if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
@@ -2103,7 +2096,7 @@ export const compute = new (class {
     if (!n.body || m & ModifierFlags.Ambient) r = TrafoFlags.AssertTypeScript;
     else {
       r = f | TrafoFlags.ContainsHoistedDeclarationOrCompletion;
-      if (m & ModifierFlags.TypeScriptModifier || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+      if (m & ModifierFlags.TypeScriptModifier || n.typeParams || n.type) r |= TrafoFlags.AssertTypeScript;
       if (m & ModifierFlags.Async) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
       if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
       if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
@@ -2113,7 +2106,7 @@ export const compute = new (class {
   }
   functionExpression(n: qt.FunctionExpression, f: TrafoFlags) {
     let r = f;
-    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParams || n.type) r |= TrafoFlags.AssertTypeScript;
     if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= n.asteriskToken ? TrafoFlags.AssertES2018 : TrafoFlags.AssertES2017;
     if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
     if (n.asteriskToken) r |= TrafoFlags.AssertGenerator;
@@ -2122,7 +2115,7 @@ export const compute = new (class {
   }
   arrowFunction(n: qt.ArrowFunction, f: TrafoFlags) {
     let r = f | TrafoFlags.AssertES2015;
-    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParameters || n.type) r |= TrafoFlags.AssertTypeScript;
+    if (qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.typeParams || n.type) r |= TrafoFlags.AssertTypeScript;
     if (qf.has.syntacticModifier(n, ModifierFlags.Async)) r |= TrafoFlags.AssertES2017;
     if (f & TrafoFlags.ContainsObjectRestOrSpread) r |= TrafoFlags.AssertES2018;
     n.trafoFlags = r | TrafoFlags.HasComputedFlags;
@@ -2295,7 +2288,7 @@ export const compute = new (class {
       case Syntax.ThisTyping:
       case Syntax.TupleTyping:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.TypeParameter:
+      case Syntax.TypeParam:
       case Syntax.TypingLiteral:
       case Syntax.TypingOperator:
       case Syntax.TypingPredicate:
@@ -2408,5 +2401,5 @@ export function walkUpBindingElemsAndPatterns(e: qt.BindingElem) {
   while (n?.parent?.kind === Syntax.BindingElem) {
     n = n?.parent?.parent;
   }
-  return n?.parent as qt.ParameterDeclaration | qt.VariableDeclaration | undefined;
+  return n?.parent as qt.ParamDeclaration | qt.VariableDeclaration | undefined;
 }

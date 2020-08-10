@@ -12,7 +12,7 @@ export namespace ArrayBindingElem {
 export class ArrayBindingPattern extends qb.Nobj implements qt.ArrayBindingPattern {
   static readonly kind = Syntax.ArrayBindingPattern;
   kind!: Syntax.ArrayBindingPattern;
-  parent?: qt.VariableDeclaration | qt.ParameterDeclaration | qt.BindingElem;
+  parent?: qt.VariableDeclaration | qt.ParamDeclaration | qt.BindingElem;
   elems: qt.Nodes<qt.ArrayBindingElem>;
   constructor(es: readonly qt.ArrayBindingElem[]) {
     super(true);
@@ -59,8 +59,8 @@ export class ArrowFunction extends qb.FunctionLikeDecl implements qt.ArrowFuncti
   name: never;
   constructor(
     ms: readonly Modifier[] | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t: qt.Typing | undefined,
     a: qt.EqualsGreaterThanToken | undefined,
     b: qt.ConciseBody
@@ -72,13 +72,13 @@ export class ArrowFunction extends qb.FunctionLikeDecl implements qt.ArrowFuncti
   }
   update(
     ms: readonly Modifier[] | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t: qt.Typing | undefined,
     a: qt.EqualsGreaterThanToken,
     b: qt.ConciseBody
   ) {
-    return this.modifiers !== ms || this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.equalsGreaterThanToken !== a || this.body !== b
+    return this.modifiers !== ms || this.typeParams !== ts || this.params !== ps || this.type !== t || this.equalsGreaterThanToken !== a || this.body !== b
       ? new ArrowFunction(ms, ts, ps, t, a, b).updateFrom(this)
       : this;
   }
@@ -274,10 +274,10 @@ export class CallSignatureDeclaration extends qb.SignatureDecl implements qt.Cal
   kind!: Syntax.CallSignature;
   docCache?: readonly qt.DocTag[];
   questionToken?: qt.QuestionToken;
-  constructor(ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
+  constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.CallSignature, ts, ps, t);
   }
-  update(ts: qt.Nodes<qt.TypeParameterDeclaration> | undefined, ps: qt.Nodes<qt.ParameterDeclaration>, t?: qt.Typing) {
+  update(ts: qt.Nodes<qt.TypeParamDeclaration> | undefined, ps: qt.Nodes<qt.ParamDeclaration>, t?: qt.Typing) {
     return super.update(ts, ps, t);
   }
   _typeElemBrand: any;
@@ -339,7 +339,7 @@ export class ClassDeclaration extends qb.ClassLikeDecl implements qt.ClassDeclar
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     name: string | qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     es: readonly qt.ClassElem[]
   ) {
@@ -352,11 +352,11 @@ export class ClassDeclaration extends qb.ClassLikeDecl implements qt.ClassDeclar
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     name: qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     es: readonly qt.ClassElem[]
   ) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.typeParameters !== ts || this.heritageClauses !== hs || this.members !== es
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.typeParams !== ts || this.heritageClauses !== hs || this.members !== es
       ? new ClassDeclaration(ds, ms, name, ts, hs, es).updateFrom(this)
       : this;
   }
@@ -371,7 +371,7 @@ export class ClassExpression extends qb.ClassLikeDecl implements qt.ClassExpress
   constructor(
     ms: readonly Modifier[] | undefined,
     name: string | qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     es: readonly qt.ClassElem[]
   ) {
@@ -383,11 +383,11 @@ export class ClassExpression extends qb.ClassLikeDecl implements qt.ClassExpress
   update(
     ms: readonly Modifier[] | undefined,
     name: qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     es: readonly qt.ClassElem[]
   ) {
-    return this.modifiers !== ms || this.name !== name || this.typeParameters !== ts || this.heritageClauses !== hs || this.members !== es
+    return this.modifiers !== ms || this.name !== name || this.typeParams !== ts || this.heritageClauses !== hs || this.members !== es
       ? new ClassExpression(ms, name, ts, hs, es).updateFrom(this)
       : this;
   }
@@ -482,14 +482,14 @@ export class ConstructorDeclaration extends qb.FunctionLikeDecl implements qt.Co
   kind!: Syntax.Constructor;
   parent?: qt.ClassLikeDeclaration;
   body?: qt.FunctionBody;
-  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParameterDeclaration[], b?: qt.Block) {
+  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParamDeclaration[], b?: qt.Block) {
     super(true, Syntax.Constructor, undefined, ps);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.body = b;
   }
-  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParameterDeclaration[], b?: qt.Block) {
-    return this.decorators !== ds || this.modifiers !== ms || this.parameters !== ps || this.body !== b ? new ConstructorDeclaration(ds, ms, ps, b).updateFrom(this) : this;
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParamDeclaration[], b?: qt.Block) {
+    return this.decorators !== ds || this.modifiers !== ms || this.params !== ps || this.body !== b ? new ConstructorDeclaration(ds, ms, ps, b).updateFrom(this) : this;
   }
   _classElemBrand: any;
 }
@@ -499,10 +499,10 @@ export class ConstructorTyping extends qb.FunctionOrConstructorTobj implements q
   static readonly kind = Syntax.ConstructorTyping;
   kind!: Syntax.ConstructorTyping;
   docCache?: readonly qt.DocTag[];
-  constructor(ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
+  constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.ConstructorTyping, ts, ps, t);
   }
-  update(ts: qt.Nodes<qt.TypeParameterDeclaration> | undefined, ps: qt.Nodes<qt.ParameterDeclaration>, t?: qt.Typing) {
+  update(ts: qt.Nodes<qt.TypeParamDeclaration> | undefined, ps: qt.Nodes<qt.ParamDeclaration>, t?: qt.Typing) {
     return super.update(ts, ps, t);
   }
   _typingBrand: any;
@@ -513,10 +513,10 @@ export class ConstructSignatureDeclaration extends qb.SignatureDecl implements q
   kind!: Syntax.ConstructSignature;
   questionToken?: qt.QuestionToken;
   docCache?: readonly qt.DocTag[];
-  constructor(ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
+  constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.ConstructSignature, ts, ps, t);
   }
-  update(ts: qt.Nodes<qt.TypeParameterDeclaration> | undefined, ps: qt.Nodes<qt.ParameterDeclaration>, t?: qt.Typing) {
+  update(ts: qt.Nodes<qt.TypeParamDeclaration> | undefined, ps: qt.Nodes<qt.ParamDeclaration>, t?: qt.Typing) {
     return super.update(ts, ps, t);
   }
   _typeElemBrand: any;
@@ -713,14 +713,14 @@ export class DocPropertyLikeTag extends qb.DocTag implements qt.DocPropertyLikeT
   _declarationBrand: any;
 }
 qu.addMixins(DocPropertyLikeTag, [qb.Decl]);
-export class DocParameterTag extends DocPropertyLikeTag implements qt.DocParameterTag {
-  static readonly kind = Syntax.DocParameterTag;
-  kind!: Syntax.DocParameterTag;
+export class DocParamTag extends DocPropertyLikeTag implements qt.DocParamTag {
+  static readonly kind = Syntax.DocParamTag;
+  kind!: Syntax.DocParamTag;
   constructor(e: qt.DocTypingExpression | undefined, n: qt.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
-    super(Syntax.DocParameterTag, 'param', e, n, isNameFirst, isBracketed, c);
+    super(Syntax.DocParamTag, 'param', e, n, isNameFirst, isBracketed, c);
   }
 }
-DocParameterTag.prototype.kind = DocParameterTag.kind;
+DocParamTag.prototype.kind = DocParamTag.kind;
 export class DocPrivateTag extends qb.DocTag implements qt.DocPrivateTag {
   static readonly kind = Syntax.DocPrivateTag;
   kind!: Syntax.DocPrivateTag;
@@ -774,13 +774,13 @@ DocReturnTag.prototype.kind = DocReturnTag.kind;
 export class DocSignature extends qb.DocTobj implements qt.DocSignature {
   static readonly kind = Syntax.DocSignature;
   kind!: Syntax.DocSignature;
-  typeParameters?: readonly qt.DocTemplateTag[];
-  parameters: readonly qt.DocParameterTag[];
+  typeParams?: readonly qt.DocTemplateTag[];
+  params: readonly qt.DocParamTag[];
   type?: qt.DocReturnTag;
-  constructor(ts: readonly qt.DocTemplateTag[] | undefined, ps: readonly qt.DocParameterTag[], t?: qt.DocReturnTag) {
+  constructor(ts: readonly qt.DocTemplateTag[] | undefined, ps: readonly qt.DocParamTag[], t?: qt.DocReturnTag) {
     super(true);
-    this.typeParameters = ts;
-    this.parameters = ps;
+    this.typeParams = ts;
+    this.params = ps;
     this.type = t;
   }
   _declarationBrand: any;
@@ -791,11 +791,11 @@ export class DocTemplateTag extends qb.DocTag implements qt.DocTemplateTag {
   static readonly kind = Syntax.DocTemplateTag;
   kind!: Syntax.DocTemplateTag;
   constraint?: qt.DocTypingExpression;
-  typeParameters: qt.Nodes<qt.TypeParameterDeclaration>;
-  constructor(c: qt.DocTypingExpression | undefined, ts: readonly qt.TypeParameterDeclaration[], s?: string) {
+  typeParams: qt.Nodes<qt.TypeParamDeclaration>;
+  constructor(c: qt.DocTypingExpression | undefined, ts: readonly qt.TypeParamDeclaration[], s?: string) {
     super(Syntax.DocTemplateTag, 'template', s);
     this.constraint = c;
-    this.typeParameters = Nodes.from(ts);
+    this.typeParams = Nodes.from(ts);
   }
 }
 DocTemplateTag.prototype.kind = DocTemplateTag.kind;
@@ -1151,8 +1151,8 @@ export class FunctionDeclaration extends qb.FunctionLikeDecl implements qt.Funct
     ms: readonly Modifier[] | undefined,
     a: qt.AsteriskToken | undefined,
     name: string | qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t?: qt.Typing,
     b?: qt.Block
   ) {
@@ -1168,8 +1168,8 @@ export class FunctionDeclaration extends qb.FunctionLikeDecl implements qt.Funct
     ms: readonly Modifier[] | undefined,
     a: qt.AsteriskToken | undefined,
     name: qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t?: qt.Typing,
     b?: qt.Block
   ) {
@@ -1177,8 +1177,8 @@ export class FunctionDeclaration extends qb.FunctionLikeDecl implements qt.Funct
       this.modifiers !== ms ||
       this.asteriskToken !== a ||
       this.name !== name ||
-      this.typeParameters !== ts ||
-      this.parameters !== ps ||
+      this.typeParams !== ts ||
+      this.params !== ps ||
       this.type !== t ||
       this.body !== b
       ? new FunctionDeclaration(ds, ms, a, name, ts, ps, t, b).updateFrom(this)
@@ -1197,8 +1197,8 @@ export class FunctionExpression extends qb.FunctionLikeDecl implements qt.Functi
     ms: readonly Modifier[] | undefined,
     a: qt.AsteriskToken | undefined,
     name: string | qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[] | undefined,
     t: qt.Typing | undefined,
     b: qt.Block
   ) {
@@ -1212,12 +1212,12 @@ export class FunctionExpression extends qb.FunctionLikeDecl implements qt.Functi
     ms: readonly Modifier[] | undefined,
     a: qt.AsteriskToken | undefined,
     name: qt.Identifier | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t: qt.Typing | undefined,
     b: qt.Block
   ) {
-    return this.name !== name || this.modifiers !== ms || this.asteriskToken !== a || this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.body !== b
+    return this.name !== name || this.modifiers !== ms || this.asteriskToken !== a || this.typeParams !== ts || this.params !== ps || this.type !== t || this.body !== b
       ? new FunctionExpression(ms, a, name, ts, ps, t, b).updateFrom(this)
       : this;
   }
@@ -1234,10 +1234,10 @@ export class FunctionTyping extends qb.FunctionOrConstructorTobj implements qt.F
   static readonly kind = Syntax.FunctionTyping;
   kind!: Syntax.FunctionTyping;
   docCache?: readonly qt.DocTag[];
-  constructor(ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing) {
+  constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.FunctionTyping, ts, ps, t);
   }
-  update(ts: qt.Nodes<qt.TypeParameterDeclaration> | undefined, ps: qt.Nodes<qt.ParameterDeclaration>, t?: qt.Typing) {
+  update(ts: qt.Nodes<qt.TypeParamDeclaration> | undefined, ps: qt.Nodes<qt.ParamDeclaration>, t?: qt.Typing) {
     return super.update(ts, ps, t);
   }
   _typingBrand: any;
@@ -1255,15 +1255,15 @@ export class GetAccessorDeclaration extends qb.FunctionLikeDecl implements qt.Ge
   endFlowNode?: qt.FlowStart | qt.FlowLabel | qt.FlowAssignment | qt.FlowCall | qt.FlowCondition | qt.FlowSwitchClause | qt.FlowArrayMutation | qt.FlowReduceLabel;
   returnFlowNode?: qt.FlowStart | qt.FlowLabel | qt.FlowAssignment | qt.FlowCall | qt.FlowCondition | qt.FlowSwitchClause | qt.FlowArrayMutation | qt.FlowReduceLabel;
   docCache?: readonly qt.DocTag[];
-  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing, b?: qt.Block) {
+  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, ps: readonly qt.ParamDeclaration[], t?: qt.Typing, b?: qt.Block) {
     super(true, Syntax.GetAccessor, undefined, ps, t);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(p);
     this.body = b;
   }
-  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qt.PropertyName, ps: readonly qt.ParameterDeclaration[], t?: qt.Typing, b?: qt.Block) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.parameters !== ps || this.type !== t || this.body !== b
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qt.PropertyName, ps: readonly qt.ParamDeclaration[], t?: qt.Typing, b?: qt.Block) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.params !== ps || this.type !== t || this.body !== b
       ? new GetAccessorDeclaration(ds, ms, p, ps, t, b).updateFrom(this)
       : this;
   }
@@ -1294,15 +1294,15 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   kind!: Syntax.Identifier;
   escapedText!: qu.__String;
   autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
-  typeArguments?: qt.Nodes<qt.Typing | qt.TypeParameterDeclaration>;
+  typeArguments?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>;
   flowNode = undefined;
   originalKeywordKind?: Syntax;
   autoGenerateId = 0;
   isInDocNamespace?: boolean;
   jsdocDotPos?: number;
   constructor(t: string);
-  constructor(t: string, typeArgs: readonly (qt.Typing | qt.TypeParameterDeclaration)[] | undefined);
-  constructor(t: string, typeArgs?: readonly (qt.Typing | qt.TypeParameterDeclaration)[]) {
+  constructor(t: string, typeArgs: readonly (qt.Typing | qt.TypeParamDeclaration)[] | undefined);
+  constructor(t: string, typeArgs?: readonly (qt.Typing | qt.TypeParamDeclaration)[]) {
     super();
     this.escapedText = qy.get.escUnderscores(t);
     this.originalKeywordKind = t ? qy.fromString(t) : Syntax.Unknown;
@@ -1313,7 +1313,7 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   get text(): string {
     return qb.idText(this);
   }
-  update(ts?: qt.Nodes<qt.Typing | qt.TypeParameterDeclaration>) {
+  update(ts?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>) {
     return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
   }
   _primaryExpressionBrand: any;
@@ -1426,7 +1426,7 @@ export class ImportTyping extends qb.WithArgumentsTobj implements qt.ImportTypin
     super(true);
     this.argument = a;
     this.qualifier = q;
-    this.typeArguments = parenthesize.typeParameters(ts);
+    this.typeArguments = parenthesize.typeParams(ts);
     this.isTypeOf = tof;
   }
   update(a: qt.Typing, q?: qt.EntityName, ts?: readonly qt.Typing[], tof?: boolean) {
@@ -1455,13 +1455,13 @@ export class IndexSignatureDeclaration extends qb.SignatureDecl implements qt.In
   parent?: qt.ObjectTypeDeclaration;
   questionToken?: qt.QuestionToken;
   docCache?: readonly qt.DocTag[];
-  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParameterDeclaration[], t: qt.Typing) {
+  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParamDeclaration[], t: qt.Typing) {
     super(true, Syntax.IndexSignature, undefined, ps, t);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
   }
-  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParameterDeclaration[], t: qt.Typing) {
-    return this.parameters !== ps || this.type !== t || this.decorators !== ds || this.modifiers !== ms ? new IndexSignatureDeclaration(ds, ms, ps, t).updateFrom(this) : this;
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParamDeclaration[], t: qt.Typing) {
+    return this.params !== ps || this.type !== t || this.decorators !== ds || this.modifiers !== ms ? new IndexSignatureDeclaration(ds, ms, ps, t).updateFrom(this) : this;
   }
   _classElemBrand: any;
   _typeElemBrand: any;
@@ -1471,13 +1471,13 @@ qu.addMixins(IndexSignatureDeclaration, [qb.ClassElem, qb.TypeElem]);
 export class InferTyping extends qb.Tobj implements qt.InferTyping {
   static readonly kind = Syntax.InferTyping;
   kind!: Syntax.InferTyping;
-  typeParameter: qt.TypeParameterDeclaration;
-  constructor(p: qt.TypeParameterDeclaration) {
+  typeParam: qt.TypeParamDeclaration;
+  constructor(p: qt.TypeParamDeclaration) {
     super(true);
-    this.typeParameter = p;
+    this.typeParam = p;
   }
-  update(p: qt.TypeParameterDeclaration) {
-    return this.typeParameter !== p ? new InferTyping(p).updateFrom(this) : this;
+  update(p: qt.TypeParamDeclaration) {
+    return this.typeParam !== p ? new InferTyping(p).updateFrom(this) : this;
   }
 }
 InferTyping.prototype.kind = InferTyping.kind;
@@ -1614,7 +1614,7 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
   static readonly kind = Syntax.InterfaceDeclaration;
   kind!: Syntax.InterfaceDeclaration;
   name: qt.Identifier;
-  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
   members: qt.Nodes<qt.TypeElem>;
   docCache?: readonly qt.DocTag[] | undefined;
@@ -1622,7 +1622,7 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     name: string | qt.Identifier,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     members: readonly qt.TypeElem[]
   ) {
@@ -1630,7 +1630,7 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(name);
-    this.typeParameters = Nodes.from(ts);
+    this.typeParams = Nodes.from(ts);
     this.heritageClauses = Nodes.from(hs);
     this.members = new Nodes(members);
   }
@@ -1638,11 +1638,11 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     name: qt.Identifier,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
     hs: readonly qt.HeritageClause[] | undefined,
     members: readonly qt.TypeElem[]
   ) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.typeParameters !== ts || this.heritageClauses !== hs || this.members !== members
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.typeParams !== ts || this.heritageClauses !== hs || this.members !== members
       ? new InterfaceDeclaration(ds, ms, name, ts, hs, members).updateFrom(this)
       : this;
   }
@@ -1878,18 +1878,18 @@ export class MappedTyping extends qb.Tobj implements qt.MappedTyping {
   static readonly kind = Syntax.MappedTyping;
   kind!: Syntax.MappedTyping;
   readonlyToken?: qt.ReadonlyToken | qt.PlusToken | qt.MinusToken;
-  typeParameter: qt.TypeParameterDeclaration;
+  typeParam: qt.TypeParamDeclaration;
   questionToken?: qt.QuestionToken | qt.PlusToken | qt.MinusToken;
   type?: qt.Typing;
-  constructor(r: qt.ReadonlyToken | qt.PlusToken | qt.MinusToken | undefined, p: qt.TypeParameterDeclaration, q?: qt.QuestionToken | qt.PlusToken | qt.MinusToken, t?: qt.Typing) {
+  constructor(r: qt.ReadonlyToken | qt.PlusToken | qt.MinusToken | undefined, p: qt.TypeParamDeclaration, q?: qt.QuestionToken | qt.PlusToken | qt.MinusToken, t?: qt.Typing) {
     super(true);
     this.readonlyToken = r;
-    this.typeParameter = p;
+    this.typeParam = p;
     this.questionToken = q;
     this.type = t;
   }
-  update(r: qt.ReadonlyToken | qt.PlusToken | qt.MinusToken | undefined, p: qt.TypeParameterDeclaration, q?: qt.QuestionToken | qt.PlusToken | qt.MinusToken, t?: qt.Typing) {
-    return this.readonlyToken !== r || this.typeParameter !== p || this.questionToken !== q || this.type !== t ? new MappedTyping(r, p, q, t).updateFrom(this) : this;
+  update(r: qt.ReadonlyToken | qt.PlusToken | qt.MinusToken | undefined, p: qt.TypeParamDeclaration, q?: qt.QuestionToken | qt.PlusToken | qt.MinusToken, t?: qt.Typing) {
+    return this.readonlyToken !== r || this.typeParam !== p || this.questionToken !== q || this.type !== t ? new MappedTyping(r, p, q, t).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -1932,8 +1932,8 @@ export class MethodDeclaration extends qb.FunctionLikeDecl implements qt.MethodD
     a: qt.AsteriskToken | undefined,
     p: string | qt.PropertyName,
     q: qt.QuestionToken | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t?: qt.Typing,
     b?: qt.Block
   ) {
@@ -1951,8 +1951,8 @@ export class MethodDeclaration extends qb.FunctionLikeDecl implements qt.MethodD
     a: qt.AsteriskToken | undefined,
     p: qt.PropertyName,
     q: qt.QuestionToken | undefined,
-    ts: readonly qt.TypeParameterDeclaration[] | undefined,
-    ps: readonly qt.ParameterDeclaration[],
+    ts: readonly qt.TypeParamDeclaration[] | undefined,
+    ps: readonly qt.ParamDeclaration[],
     t?: qt.Typing,
     b?: qt.Block
   ) {
@@ -1961,8 +1961,8 @@ export class MethodDeclaration extends qb.FunctionLikeDecl implements qt.MethodD
       this.asteriskToken !== a ||
       this.name !== p ||
       this.questionToken !== q ||
-      this.typeParameters !== ts ||
-      this.parameters !== ps ||
+      this.typeParams !== ts ||
+      this.params !== ps ||
       this.type !== t ||
       this.body !== b
       ? new MethodDeclaration(ds, ms, a, p, q, ts, ps, t, b).updateFrom(this)
@@ -1980,13 +1980,13 @@ export class MethodSignature extends qb.SignatureDecl implements qt.MethodSignat
   name: qt.PropertyName;
   questionToken?: qt.QuestionToken;
   docCache?: readonly qt.DocTag[];
-  constructor(ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t: qt.Typing | undefined, p: string | qt.PropertyName, q?: qt.QuestionToken) {
+  constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t: qt.Typing | undefined, p: string | qt.PropertyName, q?: qt.QuestionToken) {
     super(false, Syntax.MethodSignature, ts, ps, t);
     this.name = asName(p);
     this.questionToken = q;
   }
-  update(ts: qt.Nodes<qt.TypeParameterDeclaration> | undefined, ps: qt.Nodes<qt.ParameterDeclaration>, t: qt.Typing | undefined, p: qt.PropertyName, q?: qt.QuestionToken) {
-    return this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.name !== p || this.questionToken !== q ? new MethodSignature(ts, ps, t, p, q).updateFrom(this) : this;
+  update(ts: qt.Nodes<qt.TypeParamDeclaration> | undefined, ps: qt.Nodes<qt.ParamDeclaration>, t: qt.Typing | undefined, p: qt.PropertyName, q?: qt.QuestionToken) {
+    return this.typeParams !== ts || this.params !== ps || this.type !== t || this.name !== p || this.questionToken !== q ? new MethodSignature(ts, ps, t, p, q).updateFrom(this) : this;
   }
   _typeElemBrand: any;
 }
@@ -2231,7 +2231,7 @@ qu.addMixins(NumericLiteral, [qb.Decl]);
 export class ObjectBindingPattern extends qb.Nobj implements qt.ObjectBindingPattern {
   static readonly kind = Syntax.ObjectBindingPattern;
   kind!: Syntax.ObjectBindingPattern;
-  parent?: qt.VariableDeclaration | qt.ParameterDeclaration | qt.BindingElem;
+  parent?: qt.VariableDeclaration | qt.ParamDeclaration | qt.BindingElem;
   elems: qt.Nodes<qt.BindingElem>;
   constructor(es: readonly qt.BindingElem[]) {
     super(true);
@@ -2278,9 +2278,9 @@ export class OptionalTyping extends qb.Tobj implements qt.OptionalTyping {
 }
 OptionalTyping.prototype.kind = OptionalTyping.kind;
 export namespace OuterExpression {}
-export class ParameterDeclaration extends qb.NamedDecl implements qt.ParameterDeclaration {
-  static readonly kind = Syntax.Parameter;
-  kind!: Syntax.Parameter;
+export class ParamDeclaration extends qb.NamedDecl implements qt.ParamDeclaration {
+  static readonly kind = Syntax.Param;
+  kind!: Syntax.Param;
   parent?: qt.SignatureDeclaration;
   dot3Token?: qt.Dot3Token;
   name: qt.BindingName;
@@ -2305,7 +2305,7 @@ export class ParameterDeclaration extends qb.NamedDecl implements qt.ParameterDe
     this.type = t;
     this.initer = i ? parenthesize.expressionForList(i) : undefined;
   }
-  updateParameter(
+  updateParam(
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     d3: qt.Dot3Token | undefined,
@@ -2315,12 +2315,12 @@ export class ParameterDeclaration extends qb.NamedDecl implements qt.ParameterDe
     i?: qt.Expression
   ) {
     return this.decorators !== ds || this.modifiers !== ms || this.dot3Token !== d3 || this.name !== name || this.questionToken !== q || this.type !== t || this.initer !== i
-      ? new ParameterDeclaration(ds, ms, d3, name, q, t, i).updateFrom(this)
+      ? new ParamDeclaration(ds, ms, d3, name, q, t, i).updateFrom(this)
       : this;
   }
 }
-ParameterDeclaration.prototype.kind = ParameterDeclaration.kind;
-qu.addMixins(ParameterDeclaration, [qb.DocContainer]);
+ParamDeclaration.prototype.kind = ParamDeclaration.kind;
+qu.addMixins(ParamDeclaration, [qb.DocContainer]);
 export class ParenthesizedExpression extends qb.PrimaryExpr implements qt.ParenthesizedExpression {
   static readonly kind = Syntax.ParenthesizedExpression;
   kind!: Syntax.ParenthesizedExpression;
@@ -2586,16 +2586,16 @@ export class SetAccessorDeclaration extends qb.FunctionLikeDecl implements qt.Se
   parent?: qt.ClassLikeDeclaration | qt.ObjectLiteralExpression;
   name: qt.PropertyName;
   body?: qt.FunctionBody;
-  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, ps: readonly qt.ParameterDeclaration[], b?: qt.Block) {
+  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, ps: readonly qt.ParamDeclaration[], b?: qt.Block) {
     super(true, Syntax.SetAccessor, undefined, ps);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(p);
-    this.parameters = new Nodes(ps);
+    this.params = new Nodes(ps);
     this.body = b;
   }
-  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qt.PropertyName, ps: readonly qt.ParameterDeclaration[], b?: qt.Block) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.parameters !== ps || this.body !== b ? new SetAccessorDeclaration(ds, ms, p, ps, b).updateFrom(this) : this;
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qt.PropertyName, ps: readonly qt.ParamDeclaration[], b?: qt.Block) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.params !== ps || this.body !== b ? new SetAccessorDeclaration(ds, ms, p, ps, b).updateFrom(this) : this;
   }
   _classElemBrand: any;
   _objectLiteralBrand: any;
@@ -2857,19 +2857,19 @@ export class TypeAliasDeclaration extends qb.DeclarationStmt implements qt.TypeA
   static readonly kind = Syntax.TypeAliasDeclaration;
   kind!: Syntax.TypeAliasDeclaration;
   name: qt.Identifier;
-  typeParameters?: qt.Nodes<qt.TypeParameterDeclaration>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   type: qt.Typing;
   docCache?: readonly qt.DocTag[] | undefined;
-  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | qt.Identifier, ts: readonly qt.TypeParameterDeclaration[] | undefined, t: qt.Typing) {
+  constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | qt.Identifier, ts: readonly qt.TypeParamDeclaration[] | undefined, t: qt.Typing) {
     super(true);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(n);
-    this.typeParameters = Nodes.from(ts);
+    this.typeParams = Nodes.from(ts);
     this.type = t;
   }
-  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: qt.Identifier, ts: readonly qt.TypeParameterDeclaration[] | undefined, t: qt.Typing) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.typeParameters !== ts || this.type !== t ? new TypeAliasDeclaration(ds, ms, n, ts, t).updateFrom(this) : this;
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: qt.Identifier, ts: readonly qt.TypeParamDeclaration[] | undefined, t: qt.Typing) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.typeParams !== ts || this.type !== t ? new TypeAliasDeclaration(ds, ms, n, ts, t).updateFrom(this) : this;
   }
   _statementBrand: any;
 }
@@ -2935,10 +2935,10 @@ export class TypingOperator extends qb.Tobj implements qt.TypingOperator {
   }
 }
 TypingOperator.prototype.kind = TypingOperator.kind;
-export class TypeParameterDeclaration extends qb.NamedDecl implements qt.TypeParameterDeclaration {
-  static readonly kind = Syntax.TypeParameter;
-  kind!: Syntax.TypeParameter;
-  parent?: qt.DeclarationWithTypeParameterChildren | qt.InferTyping;
+export class TypeParamDeclaration extends qb.NamedDecl implements qt.TypeParamDeclaration {
+  static readonly kind = Syntax.TypeParam;
+  kind!: Syntax.TypeParam;
+  parent?: qt.DeclarationWithTypeParamChildren | qt.InferTyping;
   name: qt.Identifier;
   constraint?: qt.Typing;
   default?: qt.Typing;
@@ -2950,28 +2950,28 @@ export class TypeParameterDeclaration extends qb.NamedDecl implements qt.TypePar
     this.default = d;
   }
   update(n: qt.Identifier, c?: qt.Typing, d?: qt.Typing) {
-    return this.name !== n || this.constraint !== c || this.default !== d ? new TypeParameterDeclaration(n, c, d).updateFrom(this) : this;
+    return this.name !== n || this.constraint !== c || this.default !== d ? new TypeParamDeclaration(n, c, d).updateFrom(this) : this;
   }
 }
-TypeParameterDeclaration.prototype.kind = TypeParameterDeclaration.kind;
+TypeParamDeclaration.prototype.kind = TypeParamDeclaration.kind;
 export class TypingPredicate extends qb.Tobj implements qt.TypingPredicate {
   static readonly kind = Syntax.TypingPredicate;
   kind!: Syntax.TypingPredicate;
   parent?: qt.SignatureDeclaration | qt.DocTypingExpression;
   assertsModifier?: qt.AssertsToken;
-  parameterName: qt.Identifier | qt.ThisTyping;
+  paramName: qt.Identifier | qt.ThisTyping;
   type?: qt.Typing;
   constructor(a: qt.AssertsToken | undefined, p: qt.Identifier | qt.ThisTyping | string, t?: qt.Typing) {
     super(true);
     this.assertsModifier = a;
-    this.parameterName = asName(p);
+    this.paramName = asName(p);
     this.type = t;
   }
   update(p: qt.Identifier | qt.ThisTyping, t: qt.Typing) {
     return this.updateWithModifier(this.assertsModifier, p, t);
   }
   updateWithModifier(a: qt.AssertsToken | undefined, p: qt.Identifier | qt.ThisTyping, t?: qt.Typing) {
-    return this.assertsModifier !== a || this.parameterName !== p || this.type !== t ? new TypingPredicate(a, p, t).updateFrom(this) : this;
+    return this.assertsModifier !== a || this.paramName !== p || this.type !== t ? new TypingPredicate(a, p, t).updateFrom(this) : this;
   }
 }
 TypingPredicate.prototype.kind = TypingPredicate.kind;
@@ -2995,7 +2995,7 @@ export class TypingReference extends qb.WithArgumentsTobj implements qt.TypingRe
   constructor(t: string | qt.EntityName, ts?: readonly qt.Typing[]) {
     super(true);
     this.typeName = asName(t);
-    this.typeArguments = ts && parenthesize.typeParameters(ts);
+    this.typeArguments = ts && parenthesize.typeParams(ts);
   }
   update(t: qt.EntityName, ts?: qt.Nodes<qt.Typing>) {
     return this.typeName !== t || this.typeArguments !== ts ? new TypingReference(t, ts).updateFrom(this) : this;
@@ -3324,12 +3324,12 @@ export namespace parenthesize {
   export function elemTypeMembers(ns: readonly qt.Typing[]) {
     return new Nodes(qu.sameMap(ns, elemTypeMember));
   }
-  export function typeParameters(ns?: readonly qt.Typing[]) {
+  export function typeParams(ns?: readonly qt.Typing[]) {
     if (qu.some(ns)) {
       const ps = [] as qt.Typing[];
       for (let i = 0; i < ns.length; ++i) {
         const p = ns[i] as qt.Node;
-        ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParameters ? new ParenthesizedTyping(p) : (p as qt.Typing));
+        ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new ParenthesizedTyping(p) : (p as qt.Typing));
       }
       return new Nodes(ps);
     }
@@ -3727,19 +3727,19 @@ export function pseudoBigIntToString({ negative, base10Value }: qt.PseudoBigInt)
 export function updateFunctionLikeBody(d: qt.FunctionLikeDeclaration, b: qt.Block): qt.FunctionLikeDeclaration {
   switch (d.kind) {
     case Syntax.FunctionDeclaration:
-      return new FunctionDeclaration(d.decorators, d.modifiers, d.asteriskToken, d.name, d.typeParameters, d.parameters, d.type, b);
+      return new FunctionDeclaration(d.decorators, d.modifiers, d.asteriskToken, d.name, d.typeParams, d.params, d.type, b);
     case Syntax.MethodDeclaration:
-      return new MethodDeclaration(d.decorators, d.modifiers, d.asteriskToken, d.name, d.questionToken, d.typeParameters, d.parameters, d.type, b);
+      return new MethodDeclaration(d.decorators, d.modifiers, d.asteriskToken, d.name, d.questionToken, d.typeParams, d.params, d.type, b);
     case Syntax.GetAccessor:
-      return new GetAccessorDeclaration(d.decorators, d.modifiers, d.name, d.parameters, d.type, b);
+      return new GetAccessorDeclaration(d.decorators, d.modifiers, d.name, d.params, d.type, b);
     case Syntax.SetAccessor:
-      return new SetAccessorDeclaration(d.decorators, d.modifiers, d.name, d.parameters, b);
+      return new SetAccessorDeclaration(d.decorators, d.modifiers, d.name, d.params, b);
     case Syntax.Constructor:
-      return new ConstructorDeclaration(d.decorators, d.modifiers, d.parameters, b);
+      return new ConstructorDeclaration(d.decorators, d.modifiers, d.params, b);
     case Syntax.FunctionExpression:
-      return new FunctionExpression(d.modifiers, d.asteriskToken, d.name, d.typeParameters, d.parameters, d.type, b);
+      return new FunctionExpression(d.modifiers, d.asteriskToken, d.name, d.typeParams, d.params, d.type, b);
     case Syntax.ArrowFunction:
-      return new ArrowFunction(d.modifiers, d.typeParameters, d.parameters, d.type, d.equalsGreaterThanToken, b);
+      return new ArrowFunction(d.modifiers, d.typeParams, d.params, d.type, d.equalsGreaterThanToken, b);
   }
 }
 export function updateOuterExpression(n: Node, e: qt.Expression) {
@@ -3814,7 +3814,7 @@ export type Node =
   | DocNonNullableTyping
   | DocNullableTyping
   | DocOptionalTyping
-  | DocParameterTag
+  | DocParamTag
   | DocPrivateTag
   | DocPropertyTag
   | DocProtectedTag
@@ -3901,7 +3901,7 @@ export type Node =
   | ObjectLiteralExpression
   | OmittedExpression
   | OptionalTyping
-  | ParameterDeclaration
+  | ParamDeclaration
   | ParenthesizedExpression
   | ParenthesizedTyping
   | PartiallyEmittedExpression
@@ -3938,7 +3938,7 @@ export type Node =
   | TypeAliasDeclaration
   | TypeAssertion
   | TypeOfExpression
-  | TypeParameterDeclaration
+  | TypeParamDeclaration
   | TypingLiteral
   | TypingOperator
   | TypingPredicate
@@ -4041,7 +4041,7 @@ export interface SynMap {
   [Syntax.DocNonNullableTyping]: DocNonNullableTyping;
   [Syntax.DocNullableTyping]: DocNullableTyping;
   [Syntax.DocOptionalTyping]: DocOptionalTyping;
-  [Syntax.DocParameterTag]: DocParameterTag;
+  [Syntax.DocParamTag]: DocParamTag;
   [Syntax.DocPrivateTag]: DocPrivateTag;
   [Syntax.DocPropertyTag]: DocPropertyTag;
   [Syntax.DocProtectedTag]: DocProtectedTag;
@@ -4096,7 +4096,7 @@ export interface SynMap {
   [Syntax.ObjectLiteralExpression]: ObjectLiteralExpression;
   [Syntax.OmittedExpression]: OmittedExpression;
   [Syntax.OptionalTyping]: OptionalTyping;
-  [Syntax.Parameter]: ParameterDeclaration;
+  [Syntax.Param]: ParamDeclaration;
   [Syntax.ParenthesizedExpression]: ParenthesizedExpression;
   [Syntax.ParenthesizedTyping]: ParenthesizedTyping;
   [Syntax.PartiallyEmittedExpression]: PartiallyEmittedExpression;
@@ -4140,7 +4140,7 @@ export interface SynMap {
   [Syntax.TypingLiteral]: TypingLiteral;
   [Syntax.TypeOfExpression]: TypeOfExpression;
   [Syntax.TypingOperator]: TypingOperator;
-  [Syntax.TypeParameter]: TypeParameterDeclaration;
+  [Syntax.TypeParam]: TypeParamDeclaration;
   [Syntax.TypingPredicate]: TypingPredicate;
   [Syntax.TypingQuery]: TypingQuery;
   [Syntax.TypingReference]: TypingReference;

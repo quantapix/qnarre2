@@ -10,7 +10,7 @@ import * as qy from '../syntax';
 type Tester = (n: Node) => boolean;
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
-const isTypeNodeOrTypeParameterDeclaration = qu.or(isTypeNode, isTypeParameterDeclaration);
+const isTypeNodeOrTypeParamDeclaration = qu.or(isTypeNode, isTypeParamDeclaration);
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
@@ -67,32 +67,27 @@ export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt
   if (strict) ss = ensureUseStrict(ss);
   return mergeLexicalEnvironment(ss, c.endLexicalEnvironment());
 }
-export function visitParameterList<T extends Node>(
-  ns: Nodes<T>,
-  cb: Visitor,
-  c: qt.TrafoContext,
-  v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>
-): Nodes<T>;
-export function visitParameterList<T extends Node>(
+export function visitParamList<T extends Node>(ns: Nodes<T>, cb: Visitor, c: qt.TrafoContext, v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>): Nodes<T>;
+export function visitParamList<T extends Node>(
   ns: Nodes<T> | undefined,
   cb: Visitor,
   c: qt.TrafoContext,
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
 ): Nodes<T> | undefined;
-export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TrafoContext, v = visitNodes) {
-  let updated: Nodes<ParameterDeclaration> | undefined;
+export function visitParamList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TrafoContext, v = visitNodes) {
+  let updated: Nodes<ParamDeclaration> | undefined;
   c.startLexicalEnvironment();
   if (ns) {
-    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParameters, true);
-    updated = v(ns, cb, qf.is.parameterDeclaration);
-    if (c.getLexicalEnvironmentFlags() & qt.LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addValueAssignments(updated!, c);
-    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParameters, false);
+    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParams, true);
+    updated = v(ns, cb, qf.is.paramDeclaration);
+    if (c.getLexicalEnvironmentFlags() & qt.LexicalEnvironmentFlags.VariablesHoistedInParams) updated = addValueAssignments(updated!, c);
+    c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParams, false);
   }
   c.suspendLexicalEnvironment();
   return updated;
 }
-function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.TrafoContext) {
-  let r: qc.ParameterDeclaration[] | undefined;
+function addValueAssignments(ps: Nodes<qc.ParamDeclaration>, c: qt.TrafoContext) {
+  let r: qc.ParamDeclaration[] | undefined;
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
     const updated = addValueAssignmentIfNeeded(p, c);
@@ -104,10 +99,10 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: qt.TrafoCont
   if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
   return ps;
 }
-function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: qt.TrafoContext) {
+function addValueAssignmentIfNeeded(p: qc.ParamDeclaration, c: qt.TrafoContext) {
   return p.dot3Token ? p : qf.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
-function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TrafoContext) {
+function addForBindingPattern(p: qc.ParamDeclaration, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.VariableStatement(
       undefined,
@@ -124,7 +119,7 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: qt.TrafoContext) {
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: qt.TrafoContext) {
+function addForIniter(p: qc.ParamDeclaration, name: Identifier, init: Expression, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -176,14 +171,14 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
   const n = node as qc.Node;
   switch (n.kind) {
     case Syntax.Identifier:
-      return n.update(nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParameterDeclaration));
+      return n.update(nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParamDeclaration));
     case Syntax.QualifiedName:
       return n.update(visitNode(n.left, cb, isEntityName), visitNode(n.right, cb, isIdentifier));
     case Syntax.ComputedPropertyName:
       return n.update(visitNode(n.expression, cb, isExpression));
-    case Syntax.TypeParameter:
+    case Syntax.TypeParam:
       return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.constraint, cb, isTypeNode), visitNode(n.default, cb, isTypeNode));
-    case Syntax.Parameter:
+    case Syntax.Param:
       return n.update(
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
@@ -214,8 +209,8 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
       );
     case Syntax.MethodSignature:
       return n.update(
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
+        nodesVisitor(n.params, cb, qf.is.paramDeclaration),
         visitNode(n.type, cb, isTypeNode),
         visitNode(n.name, cb, isPropertyName),
         visitNode(n.questionToken, tokenVisitor, isToken)
@@ -227,19 +222,19 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         visitNode(n.asteriskToken, tokenVisitor, isToken),
         visitNode(n.name, cb, isPropertyName),
         visitNode(n.questionToken, tokenVisitor, isToken),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitNode(n.type, cb, isTypeNode),
         visitFunctionBody(n.body!, cb, c)
       );
     case Syntax.Constructor:
-      return n.update(nodesVisitor(n.decorators, cb, isDecorator), nodesVisitor(n.modifiers, cb, isModifier), visitParameterList(n.parameters, cb, c, nodesVisitor), visitFunctionBody(n.body!, cb, c));
+      return n.update(nodesVisitor(n.decorators, cb, isDecorator), nodesVisitor(n.modifiers, cb, isModifier), visitParamList(n.params, cb, c, nodesVisitor), visitFunctionBody(n.body!, cb, c));
     case Syntax.GetAccessor:
       return n.update(
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isPropertyName),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitNode(n.type, cb, isTypeNode),
         visitFunctionBody(n.body!, cb, c)
       );
@@ -248,28 +243,23 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isPropertyName),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitFunctionBody(n.body!, cb, c)
       );
     case Syntax.CallSignature:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParams, cb, isTypeParamDeclaration), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.ConstructSignature:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParams, cb, isTypeParamDeclaration), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.IndexSignature:
-      return n.update(
-        nodesVisitor(n.decorators, cb, isDecorator),
-        nodesVisitor(n.modifiers, cb, isModifier),
-        nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration),
-        visitNode(n.type, cb, isTypeNode)
-      );
+      return n.update(nodesVisitor(n.decorators, cb, isDecorator), nodesVisitor(n.modifiers, cb, isModifier), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.TypingPredicate:
-      return n.update(visitNode(n.assertsModifier, cb), visitNode(n.parameterName, cb), visitNode(n.type, cb, isTypeNode));
+      return n.update(visitNode(n.assertsModifier, cb), visitNode(n.paramName, cb), visitNode(n.type, cb, isTypeNode));
     case Syntax.TypingReference:
       return n.update(visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArguments, cb, isTypeNode));
     case Syntax.FunctionTyping:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParams, cb, isTypeParamDeclaration), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.ConstructorTyping:
-      return n.update(nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, qf.is.parameterDeclaration), visitNode(n.type, cb, isTypeNode));
+      return n.update(nodesVisitor(n.typeParams, cb, isTypeParamDeclaration), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.TypingQuery:
       return n.update(visitNode(n.exprName, cb, isEntityName));
     case Syntax.TypingLiteral:
@@ -289,7 +279,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.ConditionalTyping:
       return n.update(visitNode(n.checkType, cb, isTypeNode), visitNode(n.extendsType, cb, isTypeNode), visitNode(n.trueType, cb, isTypeNode), visitNode(n.falseType, cb, isTypeNode));
     case Syntax.InferTyping:
-      return n.update(visitNode(n.typeParameter, cb, isTypeParameterDeclaration));
+      return n.update(visitNode(n.typeParam, cb, isTypeParamDeclaration));
     case Syntax.ImportTyping:
       return n.update(visitNode(n.argument, cb, isTypeNode), visitNode(n.qualifier, cb, isEntityName), Nodes.visit(n.typeArguments, cb, isTypeNode), n.isTypeOf);
     case Syntax.NamedTupleMember:
@@ -303,7 +293,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.MappedTyping:
       return n.update(
         visitNode(n.readonlyToken, tokenVisitor, isToken),
-        visitNode(n.typeParameter, cb, isTypeParameterDeclaration),
+        visitNode(n.typeParam, cb, isTypeParamDeclaration),
         visitNode(n.questionToken, tokenVisitor, isToken),
         visitNode(n.type, cb, isTypeNode)
       );
@@ -349,16 +339,16 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.asteriskToken, tokenVisitor, isToken),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitNode(n.type, cb, isTypeNode),
         visitFunctionBody(n.body, cb, c)
       );
     case Syntax.ArrowFunction:
       return n.update(
         nodesVisitor(n.modifiers, cb, isModifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitNode(n.type, cb, isTypeNode),
         visitNode(n.equalsGreaterThanToken, tokenVisitor, isToken),
         visitFunctionBody(n.body, cb, c)
@@ -395,7 +385,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
       return n.update(
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
         nodesVisitor(n.members, cb, isClassElem)
       );
@@ -458,8 +448,8 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.asteriskToken, tokenVisitor, isToken),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
-        visitParameterList(n.parameters, cb, c, nodesVisitor),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
+        visitParamList(n.params, cb, c, nodesVisitor),
         visitNode(n.type, cb, isTypeNode),
         visitFunctionBody(n.body, cb, c)
       );
@@ -468,7 +458,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
         nodesVisitor(n.members, cb, isClassElem)
       );
@@ -477,7 +467,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
         nodesVisitor(n.heritageClauses, cb, isHeritageClause),
         nodesVisitor(n.members, cb, isTypeElem)
       );
@@ -486,7 +476,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.decorators, cb, isDecorator),
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.name, cb, isIdentifier),
-        nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+        nodesVisitor(n.typeParams, cb, isTypeParamDeclaration),
         visitNode(n.type, cb, isTypeNode)
       );
     case Syntax.EnumDeclaration:
@@ -611,7 +601,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.ComputedPropertyName:
       r = reduceNode(n.expression, cb, r);
       break;
-    case Syntax.Parameter:
+    case Syntax.Param:
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
@@ -639,21 +629,21 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.type, cb, r);
       r = reduceNode(n.body, cb, r);
       break;
     case Syntax.Constructor:
       r = reduceNodes(n.modifiers, cbs, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.body, cb, r);
       break;
     case Syntax.GetAccessor:
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.type, cb, r);
       r = reduceNode(n.body, cb, r);
       break;
@@ -661,7 +651,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.body, cb, r);
       break;
     case Syntax.ObjectBindingPattern:
@@ -709,15 +699,15 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.FunctionExpression:
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.type, cb, r);
       r = reduceNode(n.body, cb, r);
       break;
     case Syntax.ArrowFunction:
       r = reduceNodes(n.modifiers, cbs, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.type, cb, r);
       r = reduceNode(n.body, cb, r);
       break;
@@ -751,7 +741,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.ClassExpression:
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
       r = reduceNodes(n.heritageClauses, cbs, r);
       r = reduceNodes(n.members, cbs, r);
       break;
@@ -832,8 +822,8 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
-      r = reduceNodes(n.parameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
+      r = reduceNodes(n.params, cbs, r);
       r = reduceNode(n.type, cb, r);
       r = reduceNode(n.body, cb, r);
       break;
@@ -841,7 +831,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNodes(n.typeParameters, cbs, r);
+      r = reduceNodes(n.typeParams, cbs, r);
       r = reduceNodes(n.heritageClauses, cbs, r);
       r = reduceNodes(n.members, cbs, r);
       break;

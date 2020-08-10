@@ -45,8 +45,8 @@ export const enum CheckFlags {
   ContainsStatic = 1 << 11,
   Late = 1 << 12,
   ReverseMapped = 1 << 13,
-  OptionalParameter = 1 << 14,
-  RestParameter = 1 << 15,
+  OptionalParam = 1 << 14,
+  RestParam = 1 << 15,
   DeferredType = 1 << 16,
   HasNeverType = 1 << 17,
   Mapped = 1 << 18,
@@ -103,7 +103,7 @@ export const enum EmitHint {
   SourceFile,
   Expression,
   IdentifierName,
-  MappedTypeParameter,
+  MappedTypeParam,
   Unspecified,
   EmbeddedStatement,
   JsxAttributeValue,
@@ -234,8 +234,8 @@ export const enum JsxReferenceKind {
 }
 export const enum LexicalEnvironmentFlags {
   None = 0,
-  InParameters = 1 << 0,
-  VariablesHoistedInParameters = 1 << 1,
+  InParams = 1 << 0,
+  VariablesHoistedInParams = 1 << 1,
 }
 export const enum ListFormat {
   None = 0,
@@ -301,9 +301,9 @@ export const enum ListFormat {
   SourceFileStatements = MultiLine | NoTrailingNewLine,
   Decorators = MultiLine | Optional | SpaceAfterList,
   TypeArguments = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
-  TypeParameters = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
-  Parameters = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
-  IndexSignatureParameters = CommaDelimited | SpaceBetweenSiblings | SingleLine | Indented | SquareBrackets,
+  TypeParams = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
+  Params = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
+  IndexSignatureParams = CommaDelimited | SpaceBetweenSiblings | SingleLine | Indented | SquareBrackets,
   DocComment = MultiLine | AsteriskDelimited,
 }
 export const enum ModifierFlags {
@@ -322,7 +322,7 @@ export const enum ModifierFlags {
   HasComputedDocModifiers = 1 << 12,
   HasComputedFlags = 1 << 29,
   AccessibilityModifier = Public | Private | Protected,
-  ParameterPropertyModifier = AccessibilityModifier | Readonly,
+  ParamPropertyModifier = AccessibilityModifier | Readonly,
   NonPublicAccessibilityModifier = Private | Protected,
   TypeScriptModifier = Ambient | Public | Private | Protected | Readonly | Abstract | Const,
   ExportDefault = Export | Default,
@@ -343,11 +343,11 @@ export const enum NodeBuilderFlags {
   UseFullyQualifiedType = 1 << 6,
   UseOnlyExternalAliasing = 1 << 7,
   SuppressAnyReturnType = 1 << 8,
-  WriteTypeParametersInQualifiedName = 1 << 9,
+  WriteTypeParamsInQualifiedName = 1 << 9,
   MultilineObjectLiterals = 1 << 10,
   WriteClassExpressionAsTypeLiteral = 1 << 11,
   UseTypeOfFunction = 1 << 12,
-  OmitParameterModifiers = 1 << 13,
+  OmitParamModifiers = 1 << 13,
   UseAliasDefinedOutsideCurrentScope = 1 << 14,
   UseSingleQuotesForStringLiteralType = 1 << 28,
   NoTypeReduction = 1 << 29,
@@ -391,7 +391,7 @@ export const enum NodeCheckFlags {
   BlockScopedBindingInLoop = 0x00080000,
   ClassWithBodyScopedClassBinding = 0x00100000,
   BodyScopedClassBinding = 0x00200000,
-  NeedsLoopOutParameter = 0x00400000,
+  NeedsLoopOutParam = 0x00400000,
   AssignmentsMarked = 0x00800000,
   ClassWithConstructorReference = 0x01000000,
   ConstructorReferenceInClass = 0x02000000,
@@ -510,12 +510,12 @@ export const enum ScriptTarget {
 }
 export const enum SignatureFlags {
   None = 0,
-  HasRestParameter = 1 << 0,
+  HasRestParam = 1 << 0,
   HasLiteralTypes = 1 << 1,
   IsInnerCallChain = 1 << 2,
   IsOuterCallChain = 1 << 3,
   IsUntypedSignatureInJSFile = 1 << 4,
-  PropagatingFlags = HasRestParameter | HasLiteralTypes,
+  PropagatingFlags = HasRestParam | HasLiteralTypes,
   CallChainFlags = IsInnerCallChain | IsOuterCallChain,
 }
 export const enum SignatureKind {
@@ -552,7 +552,7 @@ export const enum SymbolFlags {
   GetAccessor = 1 << 15,
   SetAccessor = 1 << 16,
   Signature = 1 << 17,
-  TypeParameter = 1 << 18,
+  TypeParam = 1 << 18,
   TypeAlias = 1 << 19,
   ExportValue = 1 << 20,
   Alias = 1 << 21,
@@ -580,7 +580,7 @@ export const enum SymbolFlags {
     GetAccessor |
     SetAccessor |
     Signature |
-    TypeParameter |
+    TypeParam |
     TypeAlias |
     ExportValue |
     Alias |
@@ -591,13 +591,13 @@ export const enum SymbolFlags {
   Enum = RegularEnum | ConstEnum,
   Variable = FunctionScopedVariable | BlockScopedVariable,
   Value = Variable | Property | EnumMember | ObjectLiteral | Function | Class | Enum | ValueModule | Method | GetAccessor | SetAccessor,
-  Type = Class | Interface | Enum | EnumMember | TypeLiteral | TypeParameter | TypeAlias,
+  Type = Class | Interface | Enum | EnumMember | TypeLiteral | TypeParam | TypeAlias,
   Namespace = ValueModule | NamespaceModule | Enum,
   Module = ValueModule | NamespaceModule,
   Accessor = GetAccessor | SetAccessor,
   FunctionScopedVariableExcludes = Value & ~FunctionScopedVariable,
   BlockScopedVariableExcludes = Value,
-  ParameterExcludes = Value,
+  ParamExcludes = Value,
   PropertyExcludes = None,
   EnumMemberExcludes = Value | Type,
   FunctionExcludes = Value & ~(Function | ValueModule | Class),
@@ -610,7 +610,7 @@ export const enum SymbolFlags {
   MethodExcludes = Value & ~Method,
   GetAccessorExcludes = Value & ~SetAccessor,
   SetAccessorExcludes = Value & ~GetAccessor,
-  TypeParameterExcludes = Type & ~TypeParameter,
+  TypeParamExcludes = Type & ~TypeParam,
   TypeAliasExcludes = Type,
   AliasExcludes = Alias,
   ModuleMember = Variable | Function | Class | Interface | Enum | Module | TypeAlias | Alias,
@@ -620,12 +620,12 @@ export const enum SymbolFlags {
   ClassMember = Method | Accessor | Property,
   ExportSupportsDefaultModifier = Class | Function | Interface,
   ExportDoesNotSupportDefaultModifier = ~ExportSupportsDefaultModifier,
-  Classifiable = Class | Enum | TypeAlias | Interface | TypeParameter | Module | Alias,
+  Classifiable = Class | Enum | TypeAlias | Interface | TypeParam | Module | Alias,
   LateBindingContainer = Class | Interface | TypeLiteral | ObjectLiteral | Function,
 }
 export const enum SymbolFormatFlags {
   None = 0x00000000,
-  WriteTypeParametersOrArguments = 0x00000001,
+  WriteTypeParamsOrArguments = 0x00000001,
   UseOnlyExternalAliasing = 0x00000002,
   AllowAnyNodeKind = 0x00000004,
   UseAliasDefinedOutsideCurrentScope = 0x00000008,
@@ -737,7 +737,7 @@ export const enum TrafoFlags {
   ObjectLiteralExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsComputedPropertyName | ContainsObjectRestOrSpread,
   ArrayLiteralOrCallOrNewExcludes = NodeExcludes | ContainsRestOrSpread,
   VariableDeclarationListExcludes = NodeExcludes | ContainsBindingPattern | ContainsObjectRestOrSpread,
-  ParameterExcludes = NodeExcludes,
+  ParamExcludes = NodeExcludes,
   CatchClauseExcludes = NodeExcludes | ContainsObjectRestOrSpread,
   BindingPatternExcludes = NodeExcludes | ContainsRestOrSpread,
   PropertyNamePropagatingFlags = ContainsLexicalThis,
@@ -761,7 +761,7 @@ export const enum TypeFlags {
   Undefined = 1 << 15,
   Null = 1 << 16,
   Never = 1 << 17,
-  TypeParameter = 1 << 18,
+  TypeParam = 1 << 18,
   Object = 1 << 19,
   Union = 1 << 20,
   Intersection = 1 << 21,
@@ -790,7 +790,7 @@ export const enum TypeFlags {
   DisjointDomains = NonPrimitive | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbolLike | VoidLike | Null,
   UnionOrIntersection = Union | Intersection,
   StructuredType = Object | Union | Intersection,
-  TypeVariable = TypeParameter | IndexedAccess,
+  TypeVariable = TypeParam | IndexedAccess,
   InstantiableNonPrimitive = TypeVariable | Conditional | Substitution,
   InstantiablePrimitive = Index,
   Instantiable = InstantiableNonPrimitive | InstantiablePrimitive,
@@ -802,7 +802,7 @@ export const enum TypeFlags {
   NotUnionOrUnit = Any | Unknown | ESSymbol | Object | NonPrimitive,
   NotPrimitiveUnion = Any | Unknown | Enum | Void | Never | StructuredOrInstantiable,
   IncludesMask = Any | Unknown | Primitive | Never | Object | Union | Intersection | NonPrimitive,
-  IncludesStructuredOrInstantiable = TypeParameter,
+  IncludesStructuredOrInstantiable = TypeParam,
   IncludesNonWideningType = Index,
   IncludesWildcard = IndexedAccess,
   IncludesEmptyObject = Conditional,
@@ -818,7 +818,7 @@ export const enum TypeFormatFlags {
   MultilineObjectLiterals = 1 << 10,
   WriteClassExpressionAsTypeLiteral = 1 << 11,
   UseTypeOfFunction = 1 << 12,
-  OmitParameterModifiers = 1 << 13,
+  OmitParamModifiers = 1 << 13,
   UseAliasDefinedOutsideCurrentScope = 1 << 14,
   UseSingleQuotesForStringLiteralType = 1 << 28,
   NoTypeReduction = 1 << 29,
@@ -839,7 +839,7 @@ export const enum TypeFormatFlags {
     MultilineObjectLiterals |
     WriteClassExpressionAsTypeLiteral |
     UseTypeOfFunction |
-    OmitParameterModifiers |
+    OmitParamModifiers |
     UseAliasDefinedOutsideCurrentScope |
     AllowUniqueESSymbolType |
     InTypeAlias |

@@ -551,8 +551,8 @@ export const notImplementedResolver: EmitResolver = {
   isLateBound: (_node): _node is LateBoundDecl => false,
   collectLinkedAliases: notImplemented,
   isImplementationOfOverload: notImplemented,
-  isRequiredInitializedParameter: notImplemented,
-  isOptionalUninitializedParameterProperty: notImplemented,
+  isRequiredInitializedParam: notImplemented,
+  isOptionalUninitializedParamProperty: notImplemented,
   isExpandoFunctionDeclaration: notImplemented,
   getPropertiesOfContainerFunction: notImplemented,
   createTypeOfDeclaration: notImplemented,
@@ -564,7 +564,7 @@ export const notImplementedResolver: EmitResolver = {
   getConstantValue: notImplemented,
   getReferencedValueDeclaration: notImplemented,
   getTypeReferenceSerializationKind: notImplemented,
-  isOptionalParameter: notImplemented,
+  isOptionalParam: notImplemented,
   moduleExportsSomeValue: notImplemented,
   isArgumentsLocalBinding: notImplemented,
   getExternalModuleFileFromDeclaration: notImplemented,
@@ -1064,7 +1064,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (hint === EmitHint.SourceFile) return emitSourceFile(cast(node, isSourceFile));
     if (hint === EmitHint.IdentifierName) return emitIdentifier(cast(node, isIdentifier));
     if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, isStringLiteral), true);
-    if (hint === EmitHint.MappedTypeParameter) return emitMappedTypeParameter(cast(node, isTypeParameterDeclaration));
+    if (hint === EmitHint.MappedTypeParam) return emitMappedTypeParam(cast(node, isTypeParamDeclaration));
     if (hint === EmitHint.EmbeddedStatement) {
       qc.assert.node(node, isEmptyStatement);
       return emitEmptyStatement(true);
@@ -1094,10 +1094,10 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitQualifiedName(<QualifiedName>node);
         case Syntax.ComputedPropertyName:
           return emitComputedPropertyName(<ComputedPropertyName>node);
-        case Syntax.TypeParameter:
-          return emitTypeParameter(<TypeParameterDeclaration>node);
-        case Syntax.Parameter:
-          return emitParameter(<ParameterDeclaration>node);
+        case Syntax.TypeParam:
+          return emitTypeParam(<TypeParamDeclaration>node);
+        case Syntax.Param:
+          return emitParam(<ParamDeclaration>node);
         case Syntax.Decorator:
           return emitDecorator(<Decorator>node);
         case Syntax.PropertySignature:
@@ -1308,7 +1308,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitSpreadAssignment(node as SpreadAssignment);
         case Syntax.EnumMember:
           return emitEnumMember(<EnumMember>node);
-        case Syntax.DocParameterTag:
+        case Syntax.DocParamTag:
         case Syntax.DocPropertyTag:
           return emitDocPropertyLikeTag(node as DocPropertyLikeTag);
         case Syntax.DocReturnTag:
@@ -1430,7 +1430,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       }
     }
   }
-  function emitMappedTypeParameter(node: TypeParameterDeclaration): void {
+  function emitMappedTypeParam(node: TypeParamDeclaration): void {
     emit(node.name);
     writeSpace();
     writeKeyword('in');
@@ -1546,7 +1546,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitIdentifier(node: Identifier) {
     const writeText = node.symbol ? writeSymbol : write;
     writeText(getTextOfNode(node, false), node.symbol);
-    emitList(node, node.typeArguments, ListFormat.TypeParameters);
+    emitList(node, node.typeArguments, ListFormat.TypeParams);
   }
   function emitPrivateIdentifier(node: PrivateIdentifier) {
     const writeText = node.symbol ? writeSymbol : write;
@@ -1569,7 +1569,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
     writePunctuation(']');
   }
-  function emitTypeParameter(node: TypeParameterDeclaration) {
+  function emitTypeParam(node: TypeParamDeclaration) {
     emit(node.name);
     if (node.constraint) {
       writeSpace();
@@ -1584,11 +1584,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(node.default);
     }
   }
-  function emitParameter(node: ParameterDeclaration) {
+  function emitParam(node: ParamDeclaration) {
     emitDecorators(node, node.decorators);
     emitModifiers(node, node.modifiers);
     emit(node.dot3Token);
-    emitNodeWithWriter(node.name, writeParameter);
+    emitNodeWithWriter(node.name, writeParam);
     emit(node.questionToken);
     if (node.parent && node.parent.kind === Syntax.DocFunctionTyping && !node.name) {
       emit(node.type);
@@ -1629,8 +1629,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitModifiers(node, node.modifiers);
     emit(node.name);
     emit(node.questionToken);
-    emitTypeParameters(node, node.typeParameters);
-    emitParameters(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParams(node, node.params);
     emitTypeAnnotation(node.type);
     writeTrailingSemicolon();
     popNameGenerationScope(node);
@@ -1660,8 +1660,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     pushNameGenerationScope(node);
     emitDecorators(node, node.decorators);
     emitModifiers(node, node.modifiers);
-    emitTypeParameters(node, node.typeParameters);
-    emitParameters(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParams(node, node.params);
     emitTypeAnnotation(node.type);
     writeTrailingSemicolon();
     popNameGenerationScope(node);
@@ -1672,8 +1672,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitModifiers(node, node.modifiers);
     writeKeyword('new');
     writeSpace();
-    emitTypeParameters(node, node.typeParameters);
-    emitParameters(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParams(node, node.params);
     emitTypeAnnotation(node.type);
     writeTrailingSemicolon();
     popNameGenerationScope(node);
@@ -1681,7 +1681,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitIndexSignature(node: IndexSignatureDeclaration) {
     emitDecorators(node, node.decorators);
     emitModifiers(node, node.modifiers);
-    emitParametersForIndexSignature(node, node.parameters);
+    emitParamsForIndexSignature(node, node.params);
     emitTypeAnnotation(node.type);
     writeTrailingSemicolon();
   }
@@ -1693,7 +1693,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(node.assertsModifier);
       writeSpace();
     }
-    emit(node.parameterName);
+    emit(node.paramName);
     if (node.type) {
       writeSpace();
       writeKeyword('is');
@@ -1707,8 +1707,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitFunctionType(node: FunctionTyping) {
     pushNameGenerationScope(node);
-    emitTypeParameters(node, node.typeParameters);
-    emitParametersForArrow(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParamsForArrow(node, node.params);
     writeSpace();
     writePunctuation('=>');
     writeSpace();
@@ -1717,7 +1717,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitDocFunctionTyping(node: DocFunctionTyping) {
     writeKeyword('function');
-    emitParameters(node, node.parameters);
+    emitParams(node, node.params);
     writePunctuation(':');
     emit(node.type);
   }
@@ -1737,8 +1737,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     pushNameGenerationScope(node);
     writeKeyword('new');
     writeSpace();
-    emitTypeParameters(node, node.typeParameters);
-    emitParameters(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParams(node, node.params);
     writeSpace();
     writePunctuation('=>');
     writeSpace();
@@ -1807,7 +1807,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitInferType(node: InferTyping) {
     writeKeyword('infer');
     writeSpace();
-    emit(node.typeParameter);
+    emit(node.typeParam);
   }
   function emitParenthesizedType(node: ParenthesizedTyping) {
     writePunctuation('(');
@@ -1845,7 +1845,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       writeSpace();
     }
     writePunctuation('[');
-    pipelineEmit(EmitHint.MappedTypeParameter, node.typeParameter);
+    pipelineEmit(EmitHint.MappedTypeParam, node.typeParam);
     writePunctuation(']');
     if (node.questionToken) {
       emit(node.questionToken);
@@ -2001,8 +2001,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitSignatureAndBody(node, emitArrowFunctionHead);
   }
   function emitArrowFunctionHead(node: ArrowFunction) {
-    emitTypeParameters(node, node.typeParameters);
-    emitParametersForArrow(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParamsForArrow(node, node.params);
     emitTypeAnnotation(node.type);
     writeSpace();
     emit(node.equalsGreaterThanToken);
@@ -2397,7 +2397,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           increaseIndent();
         }
         pushNameGenerationScope(node);
-        forEach(node.parameters, generateNames);
+        forEach(node.params, generateNames);
         generateNames(node.body);
         emitSignatureHead(node);
         if (onEmitNode) {
@@ -2420,8 +2420,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function emitSignatureHead(node: FunctionDeclaration | FunctionExpression | MethodDeclaration | AccessorDeclaration | ConstructorDeclaration) {
-    emitTypeParameters(node, node.typeParameters);
-    emitParameters(node, node.parameters);
+    emitTypeParams(node, node.typeParams);
+    emitParams(node, node.params);
     emitTypeAnnotation(node.type);
   }
   function shouldEmitBlockFunctionBodyOnSingleLine(body: Block) {
@@ -2480,7 +2480,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (indentedFlag) {
       increaseIndent();
     }
-    emitTypeParameters(node, node.typeParameters);
+    emitTypeParams(node, node.typeParams);
     emitList(node, node.heritageClauses, ListFormat.ClassHeritageClauses);
     writeSpace();
     writePunctuation('{');
@@ -2496,7 +2496,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeKeyword('interface');
     writeSpace();
     emit(node.name);
-    emitTypeParameters(node, node.typeParameters);
+    emitTypeParams(node, node.typeParams);
     emitList(node, node.heritageClauses, ListFormat.HeritageClauses);
     writeSpace();
     writePunctuation('{');
@@ -2509,7 +2509,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeKeyword('type');
     writeSpace();
     emit(node.name);
-    emitTypeParameters(node, node.typeParameters);
+    emitTypeParams(node, node.typeParams);
     writeSpace();
     writePunctuation('=');
     writeSpace();
@@ -2842,7 +2842,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitDocTagName(tag.tagName);
     emitDocTypingExpression(tag.constraint);
     writeSpace();
-    emitList(tag, tag.typeParameters, ListFormat.CommaListElems);
+    emitList(tag, tag.typeParams, ListFormat.CommaListElems);
     emitDocComment(tag.comment);
   }
   function emitDocTypedefTag(tag: DocTypedefTag) {
@@ -2887,11 +2887,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitList(lit, new Nodes(lit.docPropertyTags), ListFormat.DocComment);
   }
   function emitDocSignature(sig: DocSignature) {
-    if (sig.typeParameters) {
-      emitList(sig, new Nodes(sig.typeParameters), ListFormat.DocComment);
+    if (sig.typeParams) {
+      emitList(sig, new Nodes(sig.typeParams), ListFormat.DocComment);
     }
-    if (sig.parameters) {
-      emitList(sig, new Nodes(sig.parameters), ListFormat.DocComment);
+    if (sig.params) {
+      emitList(sig, new Nodes(sig.params), ListFormat.DocComment);
     }
     if (sig.type) {
       writeLine();
@@ -3183,44 +3183,44 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitTypeArguments(parentNode: Node, typeArguments: Nodes<Typing> | undefined) {
     emitList(parentNode, typeArguments, ListFormat.TypeArguments);
   }
-  function emitTypeParameters(
+  function emitTypeParams(
     parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression,
-    typeParameters: Nodes<TypeParameterDeclaration> | undefined
+    typeParams: Nodes<TypeParamDeclaration> | undefined
   ) {
     if (qc.is.functionLike(parentNode) && parentNode.typeArguments) return emitTypeArguments(parentNode, parentNode.typeArguments);
-    emitList(parentNode, typeParameters, ListFormat.TypeParameters);
+    emitList(parentNode, typeParams, ListFormat.TypeParams);
   }
-  function emitParameters(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
-    emitList(parentNode, parameters, ListFormat.Parameters);
+  function emitParams(parentNode: Node, params: Nodes<ParamDeclaration>) {
+    emitList(parentNode, params, ListFormat.Params);
   }
-  function canEmitSimpleArrowHead(parentNode: FunctionTyping | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
-    const parameter = singleOrUndefined(parameters);
+  function canEmitSimpleArrowHead(parentNode: FunctionTyping | ArrowFunction, params: Nodes<ParamDeclaration>) {
+    const param = singleOrUndefined(params);
     return (
-      parameter &&
-      parameter.pos === parentNode.pos &&
+      param &&
+      param.pos === parentNode.pos &&
       qc.is.kind(qc.ArrowFunction, parentNode) &&
       !parentNode.type &&
       !some(parentNode.decorators) &&
       !some(parentNode.modifiers) &&
-      !some(parentNode.typeParameters) &&
-      !some(parameter.decorators) &&
-      !some(parameter.modifiers) &&
-      !parameter.dot3Token &&
-      !parameter.questionToken &&
-      !parameter.type &&
-      !parameter.initer &&
-      qc.is.kind(qc.Identifier, parameter.name)
+      !some(parentNode.typeParams) &&
+      !some(param.decorators) &&
+      !some(param.modifiers) &&
+      !param.dot3Token &&
+      !param.questionToken &&
+      !param.type &&
+      !param.initer &&
+      qc.is.kind(qc.Identifier, param.name)
     );
   }
-  function emitParametersForArrow(parentNode: FunctionTyping | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
-    if (canEmitSimpleArrowHead(parentNode, parameters)) {
-      emitList(parentNode, parameters, ListFormat.Parameters & ~ListFormat.Parenthesis);
+  function emitParamsForArrow(parentNode: FunctionTyping | ArrowFunction, params: Nodes<ParamDeclaration>) {
+    if (canEmitSimpleArrowHead(parentNode, params)) {
+      emitList(parentNode, params, ListFormat.Params & ~ListFormat.Parenthesis);
     } else {
-      emitParameters(parentNode, parameters);
+      emitParams(parentNode, params);
     }
   }
-  function emitParametersForIndexSignature(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
-    emitList(parentNode, parameters, ListFormat.IndexSignatureParameters);
+  function emitParamsForIndexSignature(parentNode: Node, params: Nodes<ParamDeclaration>) {
+    emitList(parentNode, params, ListFormat.IndexSignatureParams);
   }
   function emitList(parentNode: TextRange, children: Nodes<Node> | undefined, format: ListFormat, start?: number, count?: number) {
     emitNodeList(emit, parentNode, children, format, start, count);
@@ -3387,8 +3387,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function writeOperator(s: string) {
     writer.writeOperator(s);
   }
-  function writeParameter(s: string) {
-    writer.writeParameter(s);
+  function writeParam(s: string) {
+    writer.writeParam(s);
   }
   function writeComment(s: string) {
     writer.writeComment(s);
@@ -3653,7 +3653,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         forEach((<VariableDeclarationList>node).declarations, generateNames);
         break;
       case Syntax.VariableDeclaration:
-      case Syntax.Parameter:
+      case Syntax.Param:
       case Syntax.BindingElem:
       case Syntax.ClassDeclaration:
         generateNameIfNeeded((<NamedDecl>node).name);
@@ -3661,7 +3661,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case Syntax.FunctionDeclaration:
         generateNameIfNeeded((<FunctionDeclaration>node).name);
         if (qc.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
-          forEach((<FunctionDeclaration>node).parameters, generateNames);
+          forEach((<FunctionDeclaration>node).params, generateNames);
           generateNames((<FunctionDeclaration>node).body);
         }
         break;
@@ -4246,7 +4246,7 @@ function createSingleLineStringWriter(): EmitTextWriter {
     writeSpace: writeText,
     writeStringLiteral: writeText,
     writeLiteral: writeText,
-    writeParameter: writeText,
+    writeParam: writeText,
     writeProperty: writeText,
     writeSymbol: (s, _) => writeText(s),
     writeTrailingSemicolon: writeText,
@@ -4372,7 +4372,7 @@ export function createTextWriter(newLine: string): EmitTextWriter {
     trackSymbol: noop,
     writeKeyword: write,
     writeOperator: write,
-    writeParameter: write,
+    writeParam: write,
     writeProperty: write,
     writePunctuation: write,
     writeSpace: write,
@@ -4420,9 +4420,9 @@ export function getTrailingSemicolonDeferringWriter(writer: EmitTextWriter): Emi
       commitPendingTrailingSemicolon();
       writer.writeOperator(s);
     },
-    writeParameter(s) {
+    writeParam(s) {
       commitPendingTrailingSemicolon();
-      writer.writeParameter(s);
+      writer.writeParam(s);
     },
     writeSpace(s) {
       commitPendingTrailingSemicolon();

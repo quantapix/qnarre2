@@ -1262,10 +1262,10 @@ export function createProgram(
       return diagnostics;
       function walk(node: Node, parent: Node) {
         switch (parent.kind) {
-          case Syntax.Parameter:
+          case Syntax.Param:
           case Syntax.PropertyDeclaration:
           case Syntax.MethodDeclaration:
-            if ((<ParameterDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
+            if ((<ParamDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
               return 'skip';
             }
@@ -1277,7 +1277,7 @@ export function createProgram(
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
           case Syntax.VariableDeclaration:
-            if ((<FunctionLikeDeclaration | VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
+            if ((<FunctionLikeDeclaration | VariableDeclaration | ParamDeclaration | PropertyDeclaration>parent).type === node) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1357,8 +1357,8 @@ export function createProgram(
           case Syntax.FunctionExpression:
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
-            if (nodes === (<DeclarationWithTypeParameterChildren>parent).typeParameters) {
-              diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
+            if (nodes === (<DeclarationWithTypeParamChildren>parent).typeParams) {
+              diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_param_declarations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
           case Syntax.VariableStatement:
@@ -1377,9 +1377,9 @@ export function createProgram(
               return 'skip';
             }
             break;
-          case Syntax.Parameter:
-            if (nodes === (<ParameterDeclaration>parent).modifiers) {
-              diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
+          case Syntax.Param:
+            if (nodes === (<ParamDeclaration>parent).modifiers) {
+              diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Param_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;

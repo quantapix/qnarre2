@@ -135,8 +135,8 @@ export function transformES2018(context: TrafoContext) {
         return doWithHierarchyFacts(visitFunctionExpression, node as FunctionExpression, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case Syntax.ArrowFunction:
         return doWithHierarchyFacts(visitArrowFunction, node as ArrowFunction, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
-      case Syntax.Parameter:
-        return visitParameter(node as ParameterDeclaration);
+      case Syntax.Param:
+        return visitParam(node as ParamDeclaration);
       case Syntax.ExpressionStatement:
         return visitExpressionStatement(node as ExpressionStatement);
       case Syntax.ParenthesizedExpression:
@@ -428,7 +428,7 @@ export function transformES2018(context: TrafoContext) {
       ])
     );
   }
-  function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
+  function visitParam(node: ParamDeclaration): ParamDeclaration {
     if (node.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return node.update(undefined, undefined, node.dot3Token, qf.get.generatedNameForNode(node), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     return visitEachChild(node, visitor, context);
@@ -436,28 +436,21 @@ export function transformES2018(context: TrafoContext) {
   function visitConstructorDeclaration(node: ConstructorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = node.update(undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
+    const updated = node.update(undefined, node.modifiers, visitParamList(node.params, visitor, context), transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
   function visitGetAccessorDeclaration(node: GetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = node.update(
-      undefined,
-      node.modifiers,
-      visitNode(node.name, visitor, isPropertyName),
-      visitParameterList(node.parameters, visitor, context),
-      undefined,
-      transformFunctionBody(node)
-    );
+    const updated = node.update(undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParamList(node.params, visitor, context), undefined, transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
   function visitSetAccessorDeclaration(node: SetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = node.update(undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
+    const updated = node.update(undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParamList(node.params, visitor, context), transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
@@ -471,7 +464,7 @@ export function transformES2018(context: TrafoContext) {
       visitNode(node.name, visitor, isPropertyName),
       visitNode<Token<Syntax.QuestionToken>>(undefined, visitor, isToken),
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
     );
@@ -487,7 +480,7 @@ export function transformES2018(context: TrafoContext) {
       enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
     );
@@ -497,7 +490,7 @@ export function transformES2018(context: TrafoContext) {
   function visitArrowFunction(node: ArrowFunction) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = qf.get.functionFlags(node);
-    const updated = node.update(node.modifiers, undefined, visitParameterList(node.parameters, visitor, context), undefined, node.equalsGreaterThanToken, transformFunctionBody(node));
+    const updated = node.update(node.modifiers, undefined, visitParamList(node.params, visitor, context), undefined, node.equalsGreaterThanToken, transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
@@ -509,7 +502,7 @@ export function transformES2018(context: TrafoContext) {
       enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
       node.name,
       undefined,
-      visitParameterList(node.parameters, visitor, context),
+      visitParamList(node.params, visitor, context),
       undefined,
       enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
     );
@@ -582,10 +575,10 @@ export function transformES2018(context: TrafoContext) {
     return body;
   }
   function appendObjectRestAssignmentsIfNeeded(statements: Statement[] | undefined, node: FunctionLikeDeclaration): Statement[] | undefined {
-    for (const parameter of node.parameters) {
-      if (parameter.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
-        const temp = qf.get.generatedNameForNode(parameter);
-        const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
+    for (const param of node.params) {
+      if (param.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
+        const temp = qf.get.generatedNameForNode(param);
+        const declarations = flattenDestructuringBinding(param, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
           const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(declarations));
           setEmitFlags(statement, EmitFlags.CustomPrologue);

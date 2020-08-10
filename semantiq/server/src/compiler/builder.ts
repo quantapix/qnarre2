@@ -62,7 +62,7 @@ export function createSemanticDiagnosticsBuilderProgram(
 ) {
   return createBuilderProgram(
     BuilderProgramKind.SemanticDiagnosticsBuilderProgram,
-    getBuilderCreationParameters(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
+    getBuilderCreationParams(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
   );
 }
 export function createEmitAndSemanticDiagnosticsBuilderProgram(
@@ -89,7 +89,7 @@ export function createEmitAndSemanticDiagnosticsBuilderProgram(
 ) {
   return createBuilderProgram(
     BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram,
-    getBuilderCreationParameters(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
+    getBuilderCreationParams(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
   );
 }
 export function createAbstractBuilder(newProgram: Program, host: BuilderProgramHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): BuilderProgram;
@@ -109,7 +109,7 @@ export function createAbstractBuilder(
   configFileParsingDiagnostics?: readonly Diagnostic[],
   projectReferences?: readonly ProjectReference[]
 ): BuilderProgram {
-  const { newProgram, configFileParsingDiagnostics: newConfigFileParsingDiagnostics } = getBuilderCreationParameters(
+  const { newProgram, configFileParsingDiagnostics: newConfigFileParsingDiagnostics } = getBuilderCreationParams(
     newProgramOrRootNames,
     hostOrOptions,
     oldProgramOrHost,
@@ -651,20 +651,20 @@ export enum BuilderProgramKind {
   SemanticDiagnosticsBuilderProgram,
   EmitAndSemanticDiagnosticsBuilderProgram,
 }
-export interface BuilderCreationParameters {
+export interface BuilderCreationParams {
   newProgram: Program;
   host: BuilderProgramHost;
   oldProgram: BuilderProgram | undefined;
   configFileParsingDiagnostics: readonly Diagnostic[];
 }
-export function getBuilderCreationParameters(
+export function getBuilderCreationParams(
   newProgramOrRootNames: Program | readonly string[] | undefined,
   hostOrOptions: BuilderProgramHost | CompilerOptions | undefined,
   oldProgramOrHost?: BuilderProgram | CompilerHost,
   configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | BuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
   projectReferences?: readonly ProjectReference[]
-): BuilderCreationParameters {
+): BuilderCreationParams {
   let host: BuilderProgramHost;
   let newProgram: Program;
   let oldProgram: BuilderProgram;
@@ -693,9 +693,9 @@ export function getBuilderCreationParameters(
   }
   return { host, newProgram, oldProgram, configFileParsingDiagnostics: configFileParsingDiagnostics || emptyArray };
 }
-export function createBuilderProgram(kind: BuilderProgramKind.SemanticDiagnosticsBuilderProgram, builderCreationParameters: BuilderCreationParameters): SemanticDiagnosticsBuilderProgram;
-export function createBuilderProgram(kind: BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram, builderCreationParameters: BuilderCreationParameters): EmitAndSemanticDiagnosticsBuilderProgram;
-export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, host, oldProgram, configFileParsingDiagnostics }: BuilderCreationParameters) {
+export function createBuilderProgram(kind: BuilderProgramKind.SemanticDiagnosticsBuilderProgram, builderCreationParams: BuilderCreationParams): SemanticDiagnosticsBuilderProgram;
+export function createBuilderProgram(kind: BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram, builderCreationParams: BuilderCreationParams): EmitAndSemanticDiagnosticsBuilderProgram;
+export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, host, oldProgram, configFileParsingDiagnostics }: BuilderCreationParams) {
   let oldState = oldProgram && oldProgram.getState();
   if (oldState && newProgram === oldState.program && configFileParsingDiagnostics === newProgram.getConfigFileParsingDiagnostics()) {
     newProgram = undefined!;

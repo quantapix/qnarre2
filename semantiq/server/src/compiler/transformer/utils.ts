@@ -92,16 +92,16 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
             externalImports.push(<ExportDeclaration>node);
           }
         } else {
-          for (const specifier of cast((<ExportDeclaration>node).exportClause, isNamedExports).elems) {
-            if (!uniqueExports.get(idText(specifier.name))) {
-              const name = specifier.propertyName || specifier.name;
-              exportSpecifiers.add(idText(name), specifier);
+          for (const spec of cast((<ExportDeclaration>node).exportClause, isNamedExports).elems) {
+            if (!uniqueExports.get(idText(spec.name))) {
+              const name = spec.propertyName || spec.name;
+              exportSpecifiers.add(idText(name), spec);
               const decl = resolver.getReferencedImportDeclaration(name) || resolver.getReferencedValueDeclaration(name);
               if (decl) {
-                multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(decl), specifier.name);
+                multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(decl), spec.name);
               }
-              uniqueExports.set(idText(specifier.name), true);
-              exportedNames = append(exportedNames, specifier.name);
+              uniqueExports.set(idText(spec.name), true);
+              exportedNames = append(exportedNames, spec.name);
             }
           }
         }

@@ -230,7 +230,7 @@ export function transformNodes<T extends Node>(
     const decl = setEmitFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
-    if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParameters) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParameters;
+    if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParams) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParams;
   }
   function hoistFunctionDeclaration(func: FunctionDeclaration): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
