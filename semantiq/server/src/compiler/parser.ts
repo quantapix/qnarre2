@@ -4602,10 +4602,15 @@ namespace IncrementalParser {
     }
   }
   function moveElemEntirelyPastChangeRange(elem: IncrementalElem, isArray: boolean, delta: number, oldText: string, newText: string, aggressiveChecks: boolean) {
-    if (isArray) visitArray(<IncrementalNodes>elem);
-    else visitNode(<IncrementalNode>elem);
-    return;
-    function visitNode(n: IncrementalNode) {
+    const visitArray = (ns: IncrementalNodes) => {
+      ns._children = undefined;
+      ns.pos += delta;
+      ns.end += delta;
+      for (const n of ns) {
+        visitNode(n);
+      }
+    };
+    const visitNode = (n: IncrementalNode) => {
       let text = '';
       const shouldCheck = (n: Node) => {
         switch (n.kind) {
@@ -4623,20 +4628,15 @@ namespace IncrementalParser {
       if (aggressiveChecks && shouldCheck(n)) qu.assert(text === newText.substring(n.pos, n.end));
       qf.each.child(n, visitNode, visitArray);
       if (qf.is.withDocNodes(n)) {
-        for (const docComment of n.doc!) {
-          visitNode(<IncrementalNode>(<Node>docComment));
+        for (const d of n.doc!) {
+          visitNode(d);
         }
       }
       checkNodePositions(n, aggressiveChecks);
-    }
-    function visitArray(array: IncrementalNodes) {
-      array._children = undefined;
-      array.pos += delta;
-      array.end += delta;
-      for (const node of array) {
-        visitNode(node);
-      }
-    }
+    };
+    if (isArray) visitArray(<IncrementalNodes>elem);
+    else visitNode(<IncrementalNode>elem);
+    return;
   }
   function adjustIntersectingElem(elem: IncrementalElem, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
     qu.assert(elem.end >= changeStart, 'Adjusting an elem that was entirely before the change range');
@@ -4662,6 +4662,25 @@ namespace IncrementalParser {
     newText: string,
     aggressiveChecks: boolean
   ): void {
+    const visitArray = (ns: IncrementalNodes) => {
+      qu.assert(ns.pos <= ns.end);
+      if (ns.pos > changeRangeOldEnd) {
+        moveElemEntirelyPastChangeRange(ns, true, delta, oldText, newText, aggressiveChecks);
+        return;
+      }
+      const fullEnd = ns.end;
+      if (fullEnd >= changeStart) {
+        ns.intersectsChange = true;
+        ns._children = undefined;
+        adjustIntersectingElem(ns, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
+        for (const node of ns) {
+          visitNode(node);
+        }
+        return;
+      }
+      qu.assert(fullEnd < changeStart);
+    };
+
     visitNode(source);
     return;
     function visitNode(child: IncrementalNode) {
@@ -4677,29 +4696,11 @@ namespace IncrementalParser {
         adjustIntersectingElem(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
         qf.each.child(child, visitNode, visitArray);
         if (qf.is.withDocNodes(child)) {
-          for (const docComment of child.doc!) {
-            visitNode(<IncrementalNode>(<Node>docComment));
+          for (const d of child.doc!) {
+            visitNode(d);
           }
         }
         checkNodePositions(child, aggressiveChecks);
-        return;
-      }
-      qu.assert(fullEnd < changeStart);
-    }
-    function visitArray(array: IncrementalNodes) {
-      qu.assert(array.pos <= array.end);
-      if (array.pos > changeRangeOldEnd) {
-        moveElemEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
-        return;
-      }
-      const fullEnd = array.end;
-      if (fullEnd >= changeStart) {
-        array.intersectsChange = true;
-        array._children = undefined;
-        adjustIntersectingElem(array, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
-        for (const node of array) {
-          visitNode(node);
-        }
         return;
       }
       qu.assert(fullEnd < changeStart);
@@ -4713,8 +4714,8 @@ namespace IncrementalParser {
         pos = c.end;
       };
       if (qf.is.withDocNodes(n)) {
-        for (const docComment of n.doc!) {
-          visitNode(docComment);
+        for (const d of n.doc!) {
+          visitNode(d);
         }
       }
       qf.each.child(n, visitNode);
@@ -4832,13 +4833,13 @@ namespace IncrementalParser {
         }
         return false;
       }
-      function visitArray(array: Nodes<Node>) {
-        if (position >= array.pos && position < array.end) {
-          for (let i = 0; i < array.length; i++) {
-            const child = array[i];
+      function visitArray(ns: Nodes<Node>) {
+        if (position >= ns.pos && position < ns.end) {
+          for (let i = 0; i < ns.length; i++) {
+            const child = ns[i];
             if (child) {
               if (child.pos === position) {
-                currentArray = array;
+                currentArray = ns;
                 currentArrayIndex = i;
                 current = child;
                 return true;

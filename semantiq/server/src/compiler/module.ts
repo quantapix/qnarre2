@@ -89,7 +89,7 @@ export function getModuleSpecifiers(
   const ambient = tryGetModuleNameFromAmbientModule(moduleSymbol);
   if (ambient) return [ambient];
   const info = getInfo(importingSourceFile.path, host);
-  const moduleSourceFile = (moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol)).sourceFileOf;
+  const moduleSourceFile = (moduleSymbol.valueDeclaration || moduleSymbol.nonAugmentationDeclaration()).sourceFileOf;
   const modulePaths = getAllModulePaths(importingSourceFile.path, moduleSourceFile.originalFileName, host);
   const preferences = getPreferences(userPreferences, compilerOptions, importingSourceFile);
   const global = mapDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions));

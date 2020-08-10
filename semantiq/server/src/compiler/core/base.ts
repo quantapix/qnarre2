@@ -608,19 +608,94 @@ export abstract class Symbol implements qt.Symbol {
     return qy.get.unescUnderscores(this.escName);
   }
   abstract getId(): number;
-  getName() {
-    return this.name;
+  isKnown() {
+    return qu.startsWith(this.escName as string, '__@');
   }
-  getEscName() {
-    return this.escName;
+  isExportDefault() {
+    const ds = this.declarations;
+    return qu.length(ds) > 0 && qf.has.syntacticModifier(ds![0] as Node, ModifierFlags.Default);
   }
-  getFlags() {
-    return this.flags;
+  isTransient(): this is qt.TransientSymbol {
+    return (this.flags & SymbolFlags.Transient) !== 0;
   }
-  getDeclarations() {
-    return this.declarations;
+  isAbstractConstructor() {
+    if (this.flags & SymbolFlags.Class) {
+      const d = this.classLikeDeclaration();
+      return !!d && qf.has.syntacticModifier(d, ModifierFlags.Abstract);
+    }
+    return false;
   }
-  getDocComment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+  isShorthandAmbientModule() {
+    return qf.is.shorthandAmbientModule(this.valueDeclaration);
+  }
+  isFunction() {
+    if (!this.valueDeclaration) return false;
+    const v = this.valueDeclaration;
+    return v.kind === Syntax.FunctionDeclaration || (qf.is.kind(qc.VariableDeclaration, v) && v.initer && qf.is.functionLike(v.initer));
+  }
+  isUMDExport() {
+    return this.declarations?.[0] && qf.is.kind(qc.NamespaceExportDeclaration, this.declarations[0]);
+  }
+  skipAlias(c: qt.TypeChecker) {
+    return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
+  }
+  propertyNameForUnique(): qu.__String {
+    return `__@${this.getId()}@${this.escName}` as qu.__String;
+  }
+  nameForPrivateIdentifier(s: qu.__String): qu.__String {
+    return `__#${this.getId()}@${s}` as qu.__String;
+  }
+  localForExportDefault() {
+    return this.isExportDefault() ? this.declarations![0].localSymbol : undefined;
+  }
+  nonAugmentationDeclaration() {
+    const ds = this.declarations;
+    return ds && qu.find(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
+  }
+  checkFlags(): CheckFlags {
+    return this.isTransient() ? this.checkFlags : 0;
+  }
+  setValueDeclaration(d: qt.Declaration) {
+    const v = this.valueDeclaration;
+    if (
+      !v ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && qf.is.assignmentDeclaration(v) && !qf.is.assignmentDeclaration(d)) ||
+      (v.kind !== d.kind && qf.is.effectiveModuleDeclaration(v))
+    ) {
+      this.valueDeclaration = d;
+    }
+  }
+  declarationModifierFlags(): ModifierFlags {
+    if (this.valueDeclaration) {
+      const f = qf.get.combinedModifierFlags(this.valueDeclaration);
+      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
+    }
+    if (this.isTransient() && this.checkFlags() & CheckFlags.Synthetic) {
+      const f = this.checkFlags;
+      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
+      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
+      return a | s;
+    }
+    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
+    return 0;
+  }
+  classLikeDeclaration(): qt.ClassLikeDeclaration | undefined {
+    const ds = this.declarations;
+    return ds && qu.find(ds, qf.is.classLike);
+  }
+  combinedLocalAndExportSymbolFlags(): SymbolFlags {
+    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
+  }
+  declarationOfKind<T extends qt.Declaration>(k: T['kind']): T | undefined {
+    const ds = this.declarations;
+    if (ds) {
+      for (const d of ds) {
+        if (d.kind === k) return d as T;
+      }
+    }
+    return;
+  }
+  comment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
       this.docComment = qu.empty;
       if (!this.declarations && (this as qt.TransientSymbol).target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
@@ -630,7 +705,7 @@ export abstract class Symbol implements qt.Symbol {
     }
     return this.docComment!;
   }
-  getCtxComment(n?: Node, c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+  commentFor(n?: Node, c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     switch (n?.kind) {
       case Syntax.GetAccessor:
         if (!this.getComment) {
@@ -644,100 +719,12 @@ export abstract class Symbol implements qt.Symbol {
           this.setComment = getDocComment(qu.filter(this.declarations, isSetAccessor), c);
         }
         return this.setComment!;
-      default:
-        return this.getDocComment(c);
     }
+    return this.comment(c);
   }
-  getDocTags(): qt.DocTagInfo[] {
+  docTags(): qt.DocTagInfo[] {
     if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
     return this.tags!;
-  }
-  getPropertyNameForUniqueESSymbol(): qu.__String {
-    return `__@${this.getId()}@${this.escName}` as qu.__String;
-  }
-  getSymbolNameForPrivateIdentifier(s: qu.__String): qu.__String {
-    return `__#${this.getId()}@${s}` as qu.__String;
-  }
-  isKnownSymbol() {
-    return qu.startsWith(this.escName as string, '__@');
-  }
-  getLocalSymbolForExportDefault() {
-    return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
-  }
-  isExportDefaultSymbol() {
-    const ds = this.declarations;
-    return qu.length(ds) > 0 && qf.has.syntacticModifier(ds![0] as Node, ModifierFlags.Default);
-  }
-  getDeclarationOfKind<T extends qt.Declaration>(k: T['kind']): T | undefined {
-    const ds = this.declarations;
-    if (ds) {
-      for (const d of ds) {
-        if (d.kind === k) return d as T;
-      }
-    }
-    return;
-  }
-  isTransientSymbol(): this is qt.TransientSymbol {
-    return (this.flags & SymbolFlags.Transient) !== 0;
-  }
-  getNonAugmentationDeclaration() {
-    const ds = this.declarations;
-    return ds && qu.find(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
-  }
-  setValueDeclaration(d: qt.Declaration) {
-    const v = this.valueDeclaration;
-    if (
-      !v ||
-      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && qf.is.assignmentDeclaration(v) && !qf.is.assignmentDeclaration(d)) ||
-      (v.kind !== d.kind && qf.is.effectiveModuleDeclaration(v))
-    ) {
-      this.valueDeclaration = d;
-    }
-  }
-  isFunctionSymbol() {
-    if (!this.valueDeclaration) return false;
-    const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (qf.is.kind(qc.VariableDeclaration, v) && v.initer && qf.is.functionLike(v.initer));
-  }
-  getCheckFlags(): CheckFlags {
-    return this.isTransientSymbol() ? this.checkFlags : 0;
-  }
-  getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
-    if (this.valueDeclaration) {
-      const f = qf.get.combinedModifierFlags(this.valueDeclaration);
-      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
-    }
-    if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
-      const f = this.checkFlags;
-      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
-      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
-      return a | s;
-    }
-    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
-    return 0;
-  }
-  skipAlias(c: qt.TypeChecker) {
-    return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
-  }
-  getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
-    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
-  }
-  isAbstractConstructorSymbol() {
-    if (this.flags & SymbolFlags.Class) {
-      const d = this.getClassLikeDeclarationOfSymbol();
-      return !!d && qf.has.syntacticModifier(d, ModifierFlags.Abstract);
-    }
-    return false;
-  }
-  getClassLikeDeclarationOfSymbol(): qt.ClassLikeDeclaration | undefined {
-    const ds = this.declarations;
-    return ds && qu.find(ds, qf.is.classLike);
-  }
-  isUMDExportSymbol() {
-    return this.declarations?.[0] && qf.is.kind(qc.NamespaceExportDeclaration, this.declarations[0]);
-  }
-  isShorthandAmbientModuleSymbol() {
-    return qf.is.shorthandAmbientModule(this.valueDeclaration);
   }
   abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
 }
@@ -830,7 +817,7 @@ export class Type implements qt.Type {
     return this.checker.is.nullableType(this);
   }
   isAbstractConstructorType() {
-    return !!(this.getObjectFlags() & ObjectFlags.Anonymous) && !!this.symbol?.isAbstractConstructorSymbol();
+    return !!(this.getObjectFlags() & ObjectFlags.Anonymous) && !!this.symbol?.isAbstractConstructor();
   }
   getFlags() {
     return this.flags;
@@ -1581,13 +1568,13 @@ export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | S
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: Signature) => Type,
   getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
-  qf.get.returnTypeOfSignature: (sig: Signature) => Type,
+  getReturnTypeOfSignature: (sig: Signature) => Type,
   getBaseTypes: (t: Type) => Type[],
   resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
-  qf.get.typeOfSymbol: (sym: Symbol) => Type,
+  getTypeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
-  qf.get.indexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
-  qf.get.constraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
+  getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
+  getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {

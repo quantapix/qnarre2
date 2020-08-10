@@ -263,7 +263,7 @@ export class QContext {
     if (this.flags & NodeBuilderFlags.WriteTypeParametersInQualifiedName && index < chain.length - 1) {
       const parentSymbol = symbol;
       const nextSymbol = chain[index + 1];
-      if (nextSymbol.getCheckFlags() & CheckFlags.Instantiated) {
+      if (nextSymbol.checkFlags() & CheckFlags.Instantiated) {
         const params = getTypeParametersOfClassOrInterface(parentSymbol.flags & SymbolFlags.Alias ? parentSymbol.resolveAlias() : parentSymbol);
         typeParameterNodes = mapToTypeNodes(
           map(params, (t) => getMappedType(t, (nextSymbol as TransientSymbol).mapper!)),
@@ -274,10 +274,10 @@ export class QContext {
     return typeParameterNodes;
   }
   getSpecifierForModuleSymbol(s: Symbol) {
-    let file = getDeclarationOfKind<SourceFile>(s, Syntax.SourceFile);
+    let file = s.declarationOfKind<SourceFile>(Syntax.SourceFile);
     if (!file) {
       const equivalentFileSymbol = firstDefined(s.declarations, (d) => getFileSymbolIfFileSymbolExportEqualsContainer(d, s));
-      if (equivalentFileSymbol) file = getDeclarationOfKind<SourceFile>(equivalentFileSymbol, Syntax.SourceFile);
+      if (equivalentFileSymbol) file = equivalentFileSymbol.declarationOfKind<SourceFile>(Syntax.SourceFile);
     }
     if (file && file.moduleName !== undefined) return file.moduleName;
     if (!file) {
@@ -293,7 +293,7 @@ export class QContext {
     }
     if (!this.enclosingDeclaration || !this.tracker.moduleResolverHost) {
       if (ambientModuleSymbolRegex.test(s.escName as string)) return (s.escName as string).substring(1, (s.escName as string).length - 1);
-      return getNonAugmentationDeclaration(s)!.sourceFile.fileName;
+      return s.nonAugmentationDeclaration()!.sourceFile.fileName;
     }
     const contextFile = qf.get.originalOf(this.enclosingDeclaration).sourceFile;
     const ls = s.getLinks();
@@ -540,7 +540,7 @@ export class QContext {
     const singleQuote = !!length(s.declarations) && every(s.declarations, isSingleQuotedStringNamed);
     const fromNameType = this.getPropertyNameNodeForSymbolFromNameType(s, singleQuote);
     if (fromNameType) return fromNameType;
-    if (isKnownSymbol(s)) return new qc.ComputedPropertyName(new qc.PropertyAccessExpression(new Identifier('Symbol'), (s.escName as string).substr(3)));
+    if (s.isKnown()) return new qc.ComputedPropertyName(new qc.PropertyAccessExpression(new Identifier('Symbol'), (s.escName as string).substr(3)));
     const rawName = qy.get.unescUnderscores(s.escName);
     return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
   }
@@ -557,11 +557,11 @@ export class QContext {
     }
   }
   addPropertyToElemList(propertySymbol: Symbol, typeElems: TypeElem[]) {
-    const propertyIsReverseMapped = !!(getCheckFlags(propertySymbol) & CheckFlags.ReverseMapped);
+    const propertyIsReverseMapped = !!(propertySymbol.checkFlags() & CheckFlags.ReverseMapped);
     const propertyType = propertyIsReverseMapped && this.flags & NodeBuilderFlags.InReverseMappedType ? anyType : qf.get.typeOfSymbol(propertySymbol);
     const saveEnclosingDeclaration = this.enclosingDeclaration;
     this.enclosingDeclaration = undefined;
-    if (this.tracker.trackSymbol && getCheckFlags(propertySymbol) & CheckFlags.Late) {
+    if (this.tracker.trackSymbol && propertySymbol.checkFlags() & CheckFlags.Late) {
       const decl = first(propertySymbol.declarations);
       if (hasLateBindableName(decl)) {
         if (decl.kind === Syntax.BinaryExpression) {
@@ -726,19 +726,19 @@ export class QContext {
     const constraintNode = constraint && this.typeToTypeNodeHelper(constraint);
     return this.typeParameterToDeclarationWithConstraint(type, constraintNode);
   }
-  symbolToParameterDeclaration(parameterSymbol: Symbol, preserveModifierFlags?: boolean, privateSymbolVisitor?: (s: Symbol) => void, bundledImports?: boolean): ParameterDeclaration {
-    let parameterDeclaration: ParameterDeclaration | DocParameterTag | undefined = getDeclarationOfKind<ParameterDeclaration>(parameterSymbol, Syntax.Parameter);
-    if (!parameterDeclaration && !isTransientSymbol(parameterSymbol)) {
-      parameterDeclaration = getDeclarationOfKind<DocParameterTag>(parameterSymbol, Syntax.DocParameterTag);
+  symbolToParameterDeclaration(s: Symbol, preserveModifierFlags?: boolean, privateSymbolVisitor?: (s: Symbol) => void, bundledImports?: boolean): ParameterDeclaration {
+    let parameterDeclaration: ParameterDeclaration | DocParameterTag | undefined = s.declarationOfKind<ParameterDeclaration>(Syntax.Parameter);
+    if (!parameterDeclaration && !s.isTransient()) {
+      parameterDeclaration = s.declarationOfKind<DocParameterTag>(Syntax.DocParameterTag);
     }
-    let parameterType = qf.get.typeOfSymbol(parameterSymbol);
+    let parameterType = qf.get.typeOfSymbol(s);
     if (parameterDeclaration && isRequiredInitializedParameter(parameterDeclaration)) parameterType = getOptionalType(parameterType);
-    const parameterTypeNode = this.serializeTypeForDeclaration(parameterType, parameterSymbol, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
+    const parameterTypeNode = this.serializeTypeForDeclaration(parameterType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
       !(this.flags & NodeBuilderFlags.OmitParameterModifiers) && preserveModifierFlags && parameterDeclaration && parameterDeclaration.modifiers
         ? parameterDeclaration.modifiers.map(getSynthesizedClone)
         : undefined;
-    const isRest = (parameterDeclaration && qf.is.restParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
+    const isRest = (parameterDeclaration && qf.is.restParameter(parameterDeclaration)) || s.checkFlags() & CheckFlags.RestParameter;
     const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: BindingName): BindingName => {
       const elideIniterAndSetEmitFlags = (node: Node): Node => {
@@ -759,12 +759,12 @@ export class QContext {
           : parameterDeclaration.name.kind === Syntax.QualifiedName
           ? setEmitFlags(getSynthesizedClone(parameterDeclaration.name.right), EmitFlags.NoAsciiEscaping)
           : cloneBindingName(parameterDeclaration.name)
-        : parameterSymbol.name
-      : parameterSymbol.name;
-    const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.OptionalParameter;
+        : s.name
+      : s.name;
+    const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || s.checkFlags() & CheckFlags.OptionalParameter;
     const questionToken = isOptional ? new Token(Syntax.QuestionToken) : undefined;
     const parameterNode = new qc.ParameterDeclaration(undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, undefined);
-    this.approximateLength += parameterSymbol.name.length + 3;
+    this.approximateLength += s.name.length + 3;
     return parameterNode;
   }
   trackComputedName(accessExpression: EntityNameOrEntityNameExpression, enclosingDeclaration: Node | undefined) {
@@ -1224,7 +1224,7 @@ export class QContext {
           i++;
           if (this.flags & NodeBuilderFlags.WriteClassExpressionAsTypeLiteral) {
             if (propertySymbol.flags & SymbolFlags.Prototype) continue;
-            if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | ModifierFlags.Protected) && this.tracker.reportPrivateInBaseOfClassExpression) {
+            if (propertySymbol.declarationModifierFlags() & (ModifierFlags.Private | ModifierFlags.Protected) && this.tracker.reportPrivateInBaseOfClassExpression) {
               this.tracker.reportPrivateInBaseOfClassExpression(qy.get.unescUnderscores(propertySymbol.escName));
             }
           }
@@ -1420,7 +1420,7 @@ export class QContext {
     useAccessors: boolean
   ): (p: Symbol, isStatic: boolean, baseType: Type | undefined) => T | AccessorDeclaration | (T | AccessorDeclaration)[] {
     return (p: Symbol, isStatic: boolean, baseType: Type | undefined) => {
-      const modifierFlags = getDeclarationModifierFlagsFromSymbol(p);
+      const modifierFlags = p.declarationModifierFlags();
       const isPrivate = !!(modifierFlags & ModifierFlags.Private);
       if (isStatic && p.flags & (SymbolFlags.Type | SymbolFlags.Namespace | SymbolFlags.Alias)) return [];
       if (

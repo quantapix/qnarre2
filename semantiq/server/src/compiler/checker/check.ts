@@ -1142,9 +1142,9 @@ export function newCheck(f: qt.Frame) {
         reportErrors: boolean,
         intersectionState: IntersectionState
       ): qt.Ternary {
-        const targetIsOptional = strictNullChecks && !!(getCheckFlags(targetProp) & qt.CheckFlags.Partial);
+        const targetIsOptional = strictNullChecks && !!(targetProp.checkFlags() & qt.CheckFlags.Partial);
         const source = getTypeOfSourceProperty(sourceProp);
-        if (getCheckFlags(targetProp) & qt.CheckFlags.DeferredType && !s.getLinks(targetProp).type) {
+        if (targetProp.checkFlags() & qt.CheckFlags.DeferredType && !s.getLinks(targetProp).type) {
           const links = s.getLinks(targetProp);
           qg.assertIsDefined(links.deferralParent);
           qg.assertIsDefined(links.deferralConstituents);
@@ -1176,8 +1176,8 @@ export function newCheck(f: qt.Frame) {
         intersectionState: IntersectionState,
         skipOptional: boolean
       ): qt.Ternary {
-        const sourcePropFlags = getDeclarationModifierFlagsFromSymbol(sourceProp);
-        const targetPropFlags = getDeclarationModifierFlagsFromSymbol(targetProp);
+        const sourcePropFlags = sourceProp.declarationModifierFlags();
+        const targetPropFlags = targetProp.declarationModifierFlags();
         if (sourcePropFlags & ModifierFlags.Private || targetPropFlags & ModifierFlags.Private) {
           if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
             if (reportErrors) {
@@ -1231,7 +1231,7 @@ export function newCheck(f: qt.Frame) {
           source.symbol.flags & qt.SymbolFlags.Class
         ) {
           const privateIdentifierDescription = unmatchedProperty.valueDeclaration.name.escapedText;
-          const symbolTableKey = getSymbolNameForPrivateIdentifier(source.symbol, privateIdentifierDescription);
+          const symbolTableKey = source.symbol.nameForPrivateIdentifier(privateIdentifierDescription);
           if (symbolTableKey && qf.get.propertyOfType(source, symbolTableKey)) {
             const sourceName = qf.get.declaration.name(source.symbol.valueDeclaration);
             const targetName = qf.get.declaration.name(target.symbol.valueDeclaration);
@@ -2057,7 +2057,7 @@ export function newCheck(f: qt.Frame) {
       type: qt.Type,
       prop: Symbol
     ): boolean {
-      const flags = getDeclarationModifierFlagsFromSymbol(prop);
+      const flags = prop.declarationModifierFlags();
       const errorNode = n.kind === Syntax.QualifiedName ? n.right : n.kind === Syntax.ImportTyping ? n : n.name;
       if (isSuper) {
         if (flags & ModifierFlags.Abstract) {
@@ -2066,7 +2066,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       if (flags & ModifierFlags.Abstract && qf.is.thisProperty(n) && symbolHasNonMethodDeclaration(prop)) {
-        const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(getParentOfSymbol(prop)!);
+        const declaringClassDeclaration = getParentOfSymbol(prop)!.classLikeDeclaration();
         if (declaringClassDeclaration && isNodeUsedDuringClassInitialization(n)) {
           error(errorNode, qd.msgs.Abstract_property_0_in_class_1_cannot_be_accessed_in_the_constructor, prop.symbolToString(), qf.get.textOfIdentifierOrLiteral(declaringClassDeclaration.name!));
           return false;
@@ -2081,7 +2081,7 @@ export function newCheck(f: qt.Frame) {
       }
       if (!(flags & ModifierFlags.NonPublicAccessibilityModifier)) return true;
       if (flags & ModifierFlags.Private) {
-        const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(getParentOfSymbol(prop)!)!;
+        const declaringClassDeclaration = getParentOfSymbol(prop)!.classLikeDeclaration()!;
         if (!isNodeWithinClass(n, declaringClassDeclaration)) {
           error(errorNode, qd.msgs.Property_0_is_private_and_only_accessible_within_class_1, prop.symbolToString(), typeToString(getDeclaringClass(prop)!));
           return false;
@@ -3779,7 +3779,7 @@ export function newCheck(f: qt.Frame) {
       if (!checkGrammar.constructorTypeParameters(n)) checkGrammar.constructorTypeAnnotation(n);
       this.sourceElem(n.body);
       const symbol = qf.get.symbolOfNode(n);
-      const firstDeclaration = getDeclarationOfKind(symbol, n.kind);
+      const firstDeclaration = symbol.declarationOfKind(n.kind);
       if (n === firstDeclaration) this.functionOrConstructorSymbol(symbol);
       if (qf.is.missing(n.body)) return;
       if (!produceDiagnostics) return;
@@ -3830,7 +3830,7 @@ export function newCheck(f: qt.Frame) {
         if (n.name.kind === Syntax.PrivateIdentifier) error(n.name, qd.msgs.An_accessor_cannot_be_named_with_a_private_identifier);
         if (!hasNonBindableDynamicName(n)) {
           const otherKind = n.kind === Syntax.GetAccessor ? Syntax.SetAccessor : Syntax.GetAccessor;
-          const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(qf.get.symbolOfNode(n), otherKind);
+          const otherAccessor = qf.get.symbolOfNode(n).declarationOfKind<AccessorDeclaration>(otherKind);
           if (otherAccessor) {
             const nodeFlags = qf.get.effectiveModifierFlags(n);
             const otherFlags = qf.get.effectiveModifierFlags(otherAccessor);
@@ -3949,7 +3949,7 @@ export function newCheck(f: qt.Frame) {
         const propertyName = getPropertyNameFromIndex(indexType, accessNode);
         if (propertyName) {
           const propertySymbol = forEachType(apparentObjectType, (t) => qf.get.propertyOfType(t, propertyName));
-          if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & ModifierFlags.NonPublicAccessibilityModifier) {
+          if (propertySymbol && propertySymbol.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier) {
             error(accessNode, qd.msgs.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, qy.qf.get.unescUnderscores(propertyName));
             return errorType;
           }
@@ -4006,7 +4006,7 @@ export function newCheck(f: qt.Frame) {
         symbol = qf.get.symbolOfNode(n)!;
         if (!symbol.exportSymbol) return;
       }
-      if (getDeclarationOfKind(symbol, n.kind) !== n) return;
+      if (symbol.declarationOfKind(n.kind) !== n) return;
       let exportedDeclarationSpaces = DeclarationSpaces.None;
       let nonExportedDeclarationSpaces = DeclarationSpaces.None;
       let defaultExportedDeclarationSpaces = DeclarationSpaces.None;
@@ -4156,7 +4156,7 @@ export function newCheck(f: qt.Frame) {
           case Syntax.GetAccessor:
           case Syntax.SetAccessor:
             const otherKind = n.kind === Syntax.GetAccessor ? Syntax.SetAccessor : Syntax.GetAccessor;
-            const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(qf.get.symbolOfNode(n as AccessorDeclaration), otherKind);
+            const otherAccessor = qf.get.symbolOfNode(n as AccessorDeclaration).declarationOfKind<AccessorDeclaration>(otherKind);
             markDecoratorMedataDataTypeNodeAsReferenced(getAnnotatedAccessorTypeNode(n as AccessorDeclaration) || (otherAccessor && getAnnotatedAccessorTypeNode(otherAccessor)));
             break;
           case Syntax.MethodDeclaration:
@@ -4262,7 +4262,7 @@ export function newCheck(f: qt.Frame) {
         const firstDeclaration = find(localSymbol.declarations, (declaration) => declaration.kind === n.kind && !(declaration.flags & NodeFlags.JavaScriptFile));
         if (n === firstDeclaration) this.functionOrConstructorSymbol(localSymbol);
         if (symbol.parent) {
-          if (getDeclarationOfKind(symbol, n.kind) === n) this.functionOrConstructorSymbol(symbol);
+          if (symbol.declarationOfKind(n.kind) === n) this.functionOrConstructorSymbol(symbol);
         }
       }
       const body = n.kind === Syntax.MethodSignature ? undefined : n.body;
@@ -4928,34 +4928,34 @@ export function newCheck(f: qt.Frame) {
       if (errorNode && !qf.is.typeAssignableTo(numberIndexType!, stringIndexType!))
         error(errorNode, qd.msgs.Numeric_index_type_0_is_not_assignable_to_string_index_type_1, typeToString(numberIndexType!), typeToString(stringIndexType!));
       function checkIndexConstraintForProperty(
-        prop: Symbol,
+        s: Symbol,
         propertyType: qt.Type,
         containingType: qt.Type,
         indexDeclaration: Declaration | undefined,
         indexType: qt.Type | undefined,
         indexKind: IndexKind
       ): void {
-        if (!indexType || isKnownSymbol(prop)) return;
-        const propDeclaration = prop.valueDeclaration;
+        if (!indexType || s.isKnown()) return;
+        const propDeclaration = s.valueDeclaration;
         const name = propDeclaration && qf.get.declaration.nameOf(propDeclaration);
         if (name && name.kind === Syntax.PrivateIdentifier) return;
-        if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : NumericLiteral.name(prop.escName))) return;
+        if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : NumericLiteral.name(s.escName))) return;
         let errorNode: Node | undefined;
-        if (propDeclaration && name && (propDeclaration.kind === Syntax.BinaryExpression || name.kind === Syntax.ComputedPropertyName || prop.parent === containingType.symbol))
+        if (propDeclaration && name && (propDeclaration.kind === Syntax.BinaryExpression || name.kind === Syntax.ComputedPropertyName || s.parent === containingType.symbol))
           errorNode = propDeclaration;
         else if (indexDeclaration) {
           errorNode = indexDeclaration;
         } else if (getObjectFlags(containingType) & ObjectFlags.Interface) {
           const someBaseClassHasBothPropertyAndIndexer = forEach(
             getBaseTypes(<InterfaceType>containingType),
-            (base) => getPropertyOfObjectType(base, prop.escName) && qf.get.indexTypeOfType(base, indexKind)
+            (base) => getPropertyOfObjectType(base, s.escName) && qf.get.indexTypeOfType(base, indexKind)
           );
           errorNode = someBaseClassHasBothPropertyAndIndexer ? undefined : containingType.symbol.declarations[0];
         }
         if (errorNode && !qf.is.typeAssignableTo(propertyType, indexType)) {
           const errorMessage =
             indexKind === IndexKind.String ? qd.msgs.Property_0_of_type_1_is_not_assignable_to_string_index_type_2 : qd.msgs.Property_0_of_type_1_is_not_assignable_to_numeric_index_type_2;
-          error(errorNode, errorMessage, prop.symbolToString(), typeToString(propertyType), typeToString(indexType));
+          error(errorNode, errorMessage, s.symbolToString(), typeToString(propertyType), typeToString(indexType));
         }
       }
     }
@@ -5107,7 +5107,7 @@ export function newCheck(f: qt.Frame) {
       if (signatures.length) {
         const declaration = signatures[0].declaration;
         if (declaration && qf.has.effectiveModifier(declaration, ModifierFlags.Private)) {
-          const typeClassDeclaration = getClassLikeDeclarationOfSymbol(type.symbol)!;
+          const typeClassDeclaration = type.symbol.classLikeDeclaration()!;
           if (!isNodeWithinClass(n, typeClassDeclaration)) error(n, qd.msgs.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, qf.get.fullyQualifiedName(type.symbol));
         }
       }
@@ -5120,10 +5120,10 @@ export function newCheck(f: qt.Frame) {
         const baseSymbol = getPropertyOfObjectType(type, base.escName);
         if (!baseSymbol) continue;
         const derived = getTargetSymbol(baseSymbol);
-        const baseDeclarationFlags = getDeclarationModifierFlagsFromSymbol(base);
+        const baseDeclarationFlags = base.declarationModifierFlags();
         qu.assert(!!derived, "derived should point to something, even if it is the base class' declaration.");
         if (derived === base) {
-          const derivedClassDecl = getClassLikeDeclarationOfSymbol(type.symbol)!;
+          const derivedClassDecl = type.symbol.classLikeDeclaration()!;
           if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !qf.has.syntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
             for (const otherBaseType of getBaseTypes(type)) {
               if (otherBaseType === baseType) continue;
@@ -5144,7 +5144,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
         } else {
-          const derivedDeclarationFlags = getDeclarationModifierFlagsFromSymbol(derived);
+          const derivedDeclarationFlags = derived.declarationModifierFlags();
           if (baseDeclarationFlags & ModifierFlags.Private || derivedDeclarationFlags & ModifierFlags.Private) continue;
           let errorMessage: qd.Message;
           const basePropertyFlags = base.flags & qt.SymbolFlags.PropertyOrAccessor;
@@ -5173,7 +5173,7 @@ export function newCheck(f: qt.Frame) {
                 !(derivedDeclarationFlags & ModifierFlags.Abstract) &&
                 !derived.declarations.some((d) => !!(d.flags & NodeFlags.Ambient))
               ) {
-                const constructor = findConstructorDeclaration(getClassLikeDeclarationOfSymbol(type.symbol)!);
+                const constructor = findConstructorDeclaration(type.symbol.classLikeDeclaration()!);
                 const propName = (uninitialized as PropertyDeclaration).name;
                 if (
                   (uninitialized as PropertyDeclaration).exclamationToken ||
@@ -5261,7 +5261,7 @@ export function newCheck(f: qt.Frame) {
         this.exportsOnMergedDeclarations(n);
         const symbol = qf.get.symbolOfNode(n);
         this.typeParameterListsIdentical(symbol);
-        const firstInterfaceDecl = getDeclarationOfKind<InterfaceDeclaration>(symbol, Syntax.InterfaceDeclaration);
+        const firstInterfaceDecl = symbol.declarationOfKind<InterfaceDeclaration>(Syntax.InterfaceDeclaration);
         if (n === firstInterfaceDecl) {
           const type = <InterfaceType>getDeclaredTypeOfSymbol(symbol);
           const typeWithThis = qf.get.typeWithThisArgument(type);
@@ -5303,7 +5303,7 @@ export function newCheck(f: qt.Frame) {
       n.members.forEach(checkEnumMember);
       computeEnumMemberValues(n);
       const enumSymbol = qf.get.symbolOfNode(n);
-      const firstDeclaration = getDeclarationOfKind(enumSymbol, n.kind);
+      const firstDeclaration = enumSymbol.declarationOfKind(n.kind);
       if (n === firstDeclaration) {
         if (enumSymbol.declarations.length > 1) {
           const enumIsConst = qf.is.enumConst(n);
@@ -5361,7 +5361,7 @@ export function newCheck(f: qt.Frame) {
               error(n.name, qd.msgs.A_namespace_declaration_cannot_be_located_prior_to_a_class_or_function_with_which_it_is_merged);
             }
           }
-          const mergedClass = getDeclarationOfKind(symbol, Syntax.ClassDeclaration);
+          const mergedClass = symbol.declarationOfKind(Syntax.ClassDeclaration);
           if (mergedClass && inSameLexicalScope(n, mergedClass)) qf.get.nodeLinks(n).flags |= NodeCheckFlags.LexicalModuleMergesWithClass;
         }
         if (isAmbientExternalModule) {

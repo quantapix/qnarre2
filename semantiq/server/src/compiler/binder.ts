@@ -214,22 +214,14 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     symbolCount++;
     return new Symbol(flags, name);
   }
-  function addDeclarationToSymbol(symbol: Symbol, node: Declaration, symbolFlags: SymbolFlags) {
-    symbol.flags |= symbolFlags;
-    node.symbol = symbol;
-    symbol.declarations = appendIfUnique(symbol.declarations, node);
-    if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !symbol.exports) {
-      symbol.exports = new SymbolTable();
-    }
-    if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !symbol.members) {
-      symbol.members = new SymbolTable();
-    }
-    if (symbol.constEnumOnlyModule && symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.RegularEnum)) {
-      symbol.constEnumOnlyModule = false;
-    }
-    if (symbolFlags & SymbolFlags.Value) {
-      setValueDeclaration(symbol, node);
-    }
+  function addDeclarationToSymbol(s: Symbol, node: qt.Declaration, f: SymbolFlags) {
+    s.flags |= f;
+    node.symbol = s;
+    s.declarations = appendIfUnique(s.declarations, node);
+    if (f & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !s.exports) s.exports = new SymbolTable();
+    if (f & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !s.members) s.members = new SymbolTable();
+    if (s.constEnumOnlyModule && s.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.RegularEnum)) s.constEnumOnlyModule = false;
+    if (f & SymbolFlags.Value) s.setValueDeclaration(node);
   }
   function getDeclarationName(node: Declaration): qu.__String | undefined {
     if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
@@ -253,7 +245,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           return;
         }
         const containingClassSymbol = containingClass.symbol;
-        return getSymbolNameForPrivateIdentifier(containingClassSymbol, name.escapedText);
+        return containingClassSymbol.nameForPrivateIdentifier(name.escapedText);
       }
       return qf.is.propertyNameLiteral(name) ? qf.get.escapedTextOfIdentifierOrLiteral(name) : undefined;
     }
@@ -1818,7 +1810,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
     }
   }
-  function qf.is.useStrictPrologueDirective(node: ExpressionStatement): boolean {
+  function isUseStrictPrologueDirective(node: ExpressionStatement): boolean {
     const nodeText = qf.get.sourceTextOfNodeFromSourceFile(file, node.expression);
     return nodeText === '"use strict"' || nodeText === "'use strict'";
   }
@@ -2053,7 +2045,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       const flags = qf.is.exportAssignmentAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property;
       const symbol = declareSymbol(container.symbol.exports, container.symbol, node, flags, SymbolFlags.All);
       if (node.isExportEquals) {
-        setValueDeclaration(symbol, node);
+        symbol.setValueDeclaration(node);
       }
     }
   }
@@ -2138,7 +2130,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     const flags = qf.is.exportAssignmentAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.ValueModule;
     const symbol = declareSymbol(file.symbol.exports!, file.symbol, node, flags | SymbolFlags.Assignment, SymbolFlags.None);
-    setValueDeclaration(symbol, node);
+    symbol.setValueDeclaration(node);
   }
   function bindThisNode(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     qu.assert(qf.is.inJSFile(node));
@@ -2244,9 +2236,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindSpecialPropertyAssignment(node: BindablePropertyAssignmentExpression) {
     const parentSymbol = lookupSymbolForPropertyAccess(node.left.expression, container) || lookupSymbolForPropertyAccess(node.left.expression, blockScopeContainer);
-    if (!qf.is.inJSFile(node) && !isFunctionSymbol(parentSymbol)) {
-      return;
-    }
+    if (!qf.is.inJSFile(node) && !parentSymbol.isFunction()) return;
+
     node.left.parent = node;
     node.right.parent = node;
     if (qf.is.kind(qc.Identifier, node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {

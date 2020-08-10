@@ -118,7 +118,7 @@ export function newCreate(f: qt.Frame) {
         const type = getApparentType(current);
         if (!(type === errorType || type.flags & qt.TypeFlags.Never)) {
           const prop = qf.get.propertyOfType(type, name);
-          const modifiers = prop ? getDeclarationModifierFlagsFromSymbol(prop) : 0;
+          const modifiers = prop ? prop.declarationModifierFlags() : 0;
           if (prop) {
             if (isUnion) optionalFlag |= prop.flags & qt.SymbolFlags.Optional;
             else optionalFlag &= prop.flags;
@@ -348,7 +348,7 @@ export function newCreate(f: qt.Frame) {
       return makeFunctionTypeMapper((t) => (findIndex(context.inferences, (info) => info.typeParameter === t) >= index ? unknownType : t));
     }
     symbolWithType(source: Symbol, type: Type | undefined) {
-      const symbol = new Symbol(source.flags, source.escName, getCheckFlags(source) & qt.CheckFlags.Readonly);
+      const symbol = new Symbol(source.flags, source.escName, source.checkFlags() & qt.CheckFlags.Readonly);
       symbol.declarations = source.declarations;
       symbol.parent = source.parent;
       symbol.type = type;
@@ -728,13 +728,13 @@ export function newCreate(f: qt.Frame) {
         isLateBound: (nodeIn: Declaration): nodeIn is LateBoundDecl => {
           const node = qf.get.parseTreeOf(nodeIn, isDeclaration);
           const symbol = node && qf.get.symbolOfNode(node);
-          return !!(symbol && this.getCheckFlags() & qt.CheckFlags.Late);
+          return !!(symbol && this.checkFlags() & qt.CheckFlags.Late);
         },
         getJsxFactoryEntity,
         getAllAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
           accessor = qf.get.parseTreeOf(accessor, qf.is.getOrSetKind)!;
           const otherKind = accessor.kind === Syntax.SetAccessor ? Syntax.GetAccessor : Syntax.SetAccessor;
-          const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(qf.get.symbolOfNode(accessor), otherKind);
+          const otherAccessor = qf.get.symbolOfNode(accessor).declarationOfKind<AccessorDeclaration>(otherKind);
           const firstAccessor = otherAccessor && otherAccessor.pos < accessor.pos ? otherAccessor : accessor;
           const secondAccessor = otherAccessor && otherAccessor.pos < accessor.pos ? accessor : otherAccessor;
           const setAccessor = accessor.kind === Syntax.SetAccessor ? accessor : (otherAccessor as SetAccessorDeclaration);
@@ -875,14 +875,14 @@ export function newInstantiate(f: qt.Frame) {
     symbol(symbol: Symbol, mapper: TypeMapper): Symbol {
       const links = s.getLinks(symbol);
       if (links.type && !couldContainTypeVariables(links.type)) return symbol;
-      if (this.getCheckFlags() & qt.CheckFlags.Instantiated) {
+      if (this.checkFlags() & qt.CheckFlags.Instantiated) {
         symbol = links.target!;
         mapper = combineTypeMappers(links.mapper, mapper);
       }
       const result = new Symbol(
         symbol.flags,
         symbol.escName,
-        qt.CheckFlags.Instantiated | (this.getCheckFlags() & (CheckFlags.Readonly | qt.CheckFlags.Late | qt.CheckFlags.OptionalParameter | qt.CheckFlags.RestParameter))
+        qt.CheckFlags.Instantiated | (this.checkFlags() & (CheckFlags.Readonly | qt.CheckFlags.Late | qt.CheckFlags.OptionalParameter | qt.CheckFlags.RestParameter))
       );
       result.declarations = symbol.declarations;
       result.parent = symbol.parent;
@@ -1174,16 +1174,12 @@ export function newResolve(f: qt.Frame) {
             const moduleExports = qf.get.symbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
             if (location.kind === Syntax.SourceFile || (location.kind === Syntax.ModuleDeclaration && location.flags & NodeFlags.Ambient && !qf.is.globalScopeAugmentation(location))) {
               if ((result = moduleExports.get(InternalSymbol.Default))) {
-                const localSymbol = getLocalSymbolForExportDefault(result);
+                const localSymbol = result.localForExportDefault();
                 if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;
                 result = undefined;
               }
               const moduleExport = moduleExports.get(name);
-              if (
-                moduleExport &&
-                moduleExport.flags === qt.SymbolFlags.Alias &&
-                (getDeclarationOfKind(moduleExport, Syntax.ExportSpecifier) || getDeclarationOfKind(moduleExport, Syntax.NamespaceExport))
-              ) {
+              if (moduleExport && moduleExport.flags === qt.SymbolFlags.Alias && (moduleExport.declarationOfKind(Syntax.ExportSpecifier) || moduleExport.declarationOfKind(Syntax.NamespaceExport))) {
                 break;
               }
             }
@@ -1432,7 +1428,7 @@ export function newResolve(f: qt.Frame) {
           return;
         }
       } else throw qc.assert.never(name, 'Unknown entity name kind.');
-      assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+      assert((this.checkFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
       if (!isSynthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
         markSymbolOfAliasDeclarationIfTypeOnly(qf.get.aliasDeclarationFromName(name), symbol, undefined, true);
       return symbol.flags & meaning || dontResolveAlias ? symbol : symbol.resolve.alias();
@@ -1532,7 +1528,7 @@ export function newResolve(f: qt.Frame) {
     eSModuleSymbol(moduleSymbol: Symbol | undefined, referencingLocation: Node, dontResolveAlias: boolean, suppressInteropError: boolean): Symbol | undefined {
       const symbol = this.externalModuleSymbol(moduleSymbol, dontResolveAlias);
       if (!dontResolveAlias && symbol) {
-        if (!suppressInteropError && !(symbol.flags & (SymbolFlags.Module | qt.SymbolFlags.Variable)) && !getDeclarationOfKind(symbol, Syntax.SourceFile)) {
+        if (!suppressInteropError && !(symbol.flags & (SymbolFlags.Module | qt.SymbolFlags.Variable)) && !symbol.declarationOfKind(Syntax.SourceFile)) {
           const compilerOptionName = moduleKind >= ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
           error(referencingLocation, qd.msgs.This_module_can_only_be_referenced_with_ECMAScript_imports_Slashexports_by_turning_on_the_0_flag_and_referencing_its_default_export, compilerOptionName);
           return symbol;
@@ -2150,7 +2146,7 @@ export function newResolve(f: qt.Frame) {
       const constructSignatures = getSignaturesOfType(expressionType, SignatureKind.Construct);
       if (constructSignatures.length) {
         if (!isConstructorAccessible(node, constructSignatures[0])) return this.errorCall(node);
-        const valueDecl = expressionType.symbol && getClassLikeDeclarationOfSymbol(expressionType.symbol);
+        const valueDecl = expressionType.symbol && expressionType.symbol.classLikeDeclaration();
         if (valueDecl && qf.has.syntacticModifier(valueDecl, ModifierFlags.Abstract)) {
           error(node, qd.msgs.Cannot_create_an_instance_of_an_abstract_class);
           return this.errorCall(node);

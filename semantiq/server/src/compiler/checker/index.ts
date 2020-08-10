@@ -1174,7 +1174,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function addDeclarationToLateBoundSymbol(symbol: Symbol, member: LateBoundDecl | BinaryExpression, symbolFlags: qt.SymbolFlags) {
-    assert(!!(this.getCheckFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
+    assert(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
     symbol.flags |= symbolFlags;
     s.getLinks(member.symbol).lateSymbol = symbol;
     if (!symbol.declarations) symbol.declarations = [member];
@@ -1670,7 +1670,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     function getAnonymousPartialType(type: Type) {
       const members = new SymbolTable();
       for (const prop of qf.get.propertiesOfType(type)) {
-        if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+        if (prop.declarationModifierFlags() & (ModifierFlags.Private | ModifierFlags.Protected)) {
         } else if (isSpreadableProperty(prop)) {
           const isSetonlyAccessor = prop.flags & qt.SymbolFlags.SetAccessor && !(prop.flags & qt.SymbolFlags.GetAccessor);
           const flags = qt.SymbolFlags.Property | qt.SymbolFlags.Optional;
@@ -2228,7 +2228,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const discriminable = target.types.map((_) => undefined) as (boolean | undefined)[];
     for (const [getDiscriminatingType, propertyName] of discriminators) {
       const targetProp = getUnionOrIntersectionProperty(target, propertyName);
-      if (skipPartial && targetProp && getCheckFlags(targetProp) & qt.CheckFlags.ReadPartial) continue;
+      if (skipPartial && targetProp && targetProp.checkFlags() & qt.CheckFlags.ReadPartial) continue;
       let i = 0;
       for (const type of target.types) {
         const targetType = qf.get.typeOfPropertyOfType(type, propertyName);
@@ -2243,7 +2243,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return match === -1 || discriminable.indexOf(true, match + 1) !== -1 ? defaultValue : target.types[match];
   }
   function forEachProperty<T>(prop: Symbol, callback: (p: Symbol) => T): T | undefined {
-    if (getCheckFlags(prop) & qt.CheckFlags.Synthetic) {
+    if (prop.checkFlags() & qt.CheckFlags.Synthetic) {
       for (const t of (<TransientSymbol>prop).containingType!.types) {
         const p = qf.get.propertyOfType(t, prop.escName);
         const result = p && forEachProperty(p, callback);
@@ -2255,8 +2255,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function compareProperties(sourceProp: Symbol, targetProp: Symbol, compareTypes: (source: Type, target: Type) => Ternary): Ternary {
     if (sourceProp === targetProp) return Ternary.True;
-    const sourcePropAccessibility = getDeclarationModifierFlagsFromSymbol(sourceProp) & ModifierFlags.NonPublicAccessibilityModifier;
-    const targetPropAccessibility = getDeclarationModifierFlagsFromSymbol(targetProp) & ModifierFlags.NonPublicAccessibilityModifier;
+    const sourcePropAccessibility = sourceProp.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier;
+    const targetPropAccessibility = targetProp.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier;
     if (sourcePropAccessibility !== targetPropAccessibility) return Ternary.False;
     if (sourcePropAccessibility) {
       if (getTargetSymbol(sourceProp) !== getTargetSymbol(targetProp)) return Ternary.False;
@@ -3239,7 +3239,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function lookupSymbolForPrivateIdentifierDeclaration(propName: qu.__String, location: Node): Symbol | undefined {
     for (let containingClass = qf.get.containingClass(location); !!containingClass; containingClass = qf.get.containingClass(containingClass)) {
       const { symbol } = containingClass;
-      const name = getSymbolNameForPrivateIdentifier(symbol, propName);
+      const name = symbol.nameForPrivateIdentifier(propName);
       const prop = (symbol.members && symbol.members.get(name)) || (symbol.exports && symbol.exports.get(name));
       if (prop) return prop;
     }
@@ -3297,7 +3297,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const containingMethod = qc.findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
       if (containingMethod && containingMethod.symbol === prop) return;
     }
-    (getCheckFlags(prop) & qt.CheckFlags.Instantiated ? s.getLinks(prop).target : prop)!.isReferenced = qt.SymbolFlags.All;
+    (prop.checkFlags() & qt.CheckFlags.Instantiated ? s.getLinks(prop).target : prop)!.isReferenced = qt.SymbolFlags.All;
   }
   function callLikeExpressionMayHaveTypeArguments(node: CallLikeExpression): node is CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElem {
     return qf.is.callOrNewExpression(node) || node.kind === Syntax.TaggedTemplateExpression || qc.isJsx.openingLikeElem(node);
@@ -3506,7 +3506,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (source) {
       const links = s.getLinks(source);
       if (!links.inferredClassSymbol || !links.inferredClassSymbol.has('' + target.getId())) {
-        const inferred = isTransientSymbol(target) ? target : (target.clone() as TransientSymbol);
+        const inferred = target.isTransient() ? target : (target.clone() as TransientSymbol);
         inferred.exports = inferred.exports || new SymbolTable();
         inferred.members = inferred.members || new SymbolTable();
         inferred.flags |= source.flags & qt.SymbolFlags.Class;
@@ -3564,7 +3564,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     if (signatureHasRestParameter(signature)) {
       const parameter = last(signature.parameters);
-      if (isTransientSymbol(parameter) || !get.effectiveTypeAnnotationNode(<ParameterDeclaration>parameter.valueDeclaration)) {
+      if (parameter.isTransient() || !get.effectiveTypeAnnotationNode(<ParameterDeclaration>parameter.valueDeclaration)) {
         const contextualParameterType = getRestTypeAtPosition(context, len);
         assignParameterType(parameter, contextualParameterType);
       }
@@ -4074,7 +4074,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function moduleExportsSomeValue(moduleReferenceExpression: Expression): boolean {
     let moduleSymbol = resolveExternalModuleName(moduleReferenceExpression.parent, moduleReferenceExpression);
-    if (!moduleSymbol || isShorthandAmbientModuleSymbol(moduleSymbol)) return true;
+    if (!moduleSymbol || moduleSymbol.isShorthandAmbientModule()) return true;
     const hasExportAssignment = hasExportAssignmentSymbol(moduleSymbol);
     moduleSymbol = resolveExternalModuleSymbol(moduleSymbol);
     const symbolLinks = s.getLinks(moduleSymbol);

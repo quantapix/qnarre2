@@ -531,13 +531,11 @@ export function newIs(f: qt.Frame) {
     }
     discriminantWithNeverType(s: Symbol) {
       return (
-        !(s.flags & qt.SymbolFlags.Optional) &&
-        (getCheckFlags(s) & (CheckFlags.Discriminant | CheckFlags.HasNeverType)) === CheckFlags.Discriminant &&
-        !!(qf.get.typeOfSymbol(s).flags & TypeFlags.Never)
+        !(s.flags & qt.SymbolFlags.Optional) && (s.checkFlags() & (CheckFlags.Discriminant | CheckFlags.HasNeverType)) === CheckFlags.Discriminant && !!(qf.get.typeOfSymbol(s).flags & TypeFlags.Never)
       );
     }
     conflictingPrivateProperty(s: Symbol) {
-      return !s.valueDeclaration && !!(getCheckFlags(s) & CheckFlags.ContainsPrivate);
+      return !s.valueDeclaration && !!(s.checkFlags() & CheckFlags.ContainsPrivate);
     }
     docOptionalParameter(n: qt.ParameterDeclaration) {
       return (
@@ -938,10 +936,10 @@ export function newIs(f: qt.Frame) {
       });
     }
     validOverrideOf(sProp: Symbol, tProp: Symbol) {
-      return !forEachProperty(tProp, (tp) => (getDeclarationModifierFlagsFromSymbol(tp) & ModifierFlags.Protected ? !isPropertyInClassDerivedFrom(sProp, getDeclaringClass(tp)) : false));
+      return !forEachProperty(tProp, (s) => (s.declarationModifierFlags() & ModifierFlags.Protected ? !isPropertyInClassDerivedFrom(sProp, getDeclaringClass(s)) : false));
     }
     classDerivedFromDeclaringClasses(checkClass: qt.Type, s: Symbol) {
-      return forEachProperty(s, (p) => (getDeclarationModifierFlagsFromSymbol(p) & ModifierFlags.Protected ? !hasBaseType(checkClass, getDeclaringClass(p)) : false)) ? undefined : checkClass;
+      return forEachProperty(s, (p) => (p.declarationModifierFlags() & ModifierFlags.Protected ? !hasBaseType(checkClass, getDeclaringClass(p)) : false)) ? undefined : checkClass;
     }
     deeplyNestedType(t: qt.Type, stack: qt.Type[], depth: number): boolean {
       if (depth >= 5 && t.flags & TypeFlags.Object && !this.objectOrArrayLiteralType(t)) {
@@ -1038,7 +1036,7 @@ export function newIs(f: qt.Frame) {
     }
     nonGenericTopLevelType(t: qt.Type) {
       if (t.aliasSymbol && !t.aliasTypeArguments) {
-        const d = getDeclarationOfKind(t.aliasSymbol, Syntax.TypeAliasDeclaration);
+        const d = t.aliasSymbol.declarationOfKind(Syntax.TypeAliasDeclaration);
         return !!(d && qc.findAncestor(d.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
       }
       return false;
@@ -1100,7 +1098,7 @@ export function newIs(f: qt.Frame) {
     discriminantProperty(t: qt.Type | undefined, name: qu.__String) {
       if (t && t.flags & TypeFlags.Union) {
         const s = getUnionOrIntersectionProperty(t, name);
-        if (s && getCheckFlags(s) & CheckFlags.SyntheticProperty) {
+        if (s && s.checkFlags() & CheckFlags.SyntheticProperty) {
           if ((<TransientSymbol>s).isDiscriminantProperty === undefined) {
             (<TransientSymbol>s).isDiscriminantProperty =
               ((<TransientSymbol>s).checkFlags & CheckFlags.Discriminant) === CheckFlags.Discriminant && !maybeTypeOfKind(qf.get.typeOfSymbol(s), TypeFlags.Instantiable);
@@ -1504,7 +1502,7 @@ export function newIs(f: qt.Frame) {
       const d = signature.declaration;
       const modifiers = qf.get.selectedEffectiveModifierFlags(d, ModifierFlags.NonPublicAccessibilityModifier);
       if (!modifiers || d.kind !== Syntax.Constructor) return true;
-      const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(d.parent.symbol)!;
+      const declaringClassDeclaration = d.parent.symbol.classLikeDeclaration()!;
       const declaringClass = getDeclaredTypeOfSymbol(d.parent.symbol);
       if (!isNodeWithinClass(n, declaringClassDeclaration)) {
         const containingClass = qf.get.containingClass(n);
@@ -1557,7 +1555,7 @@ export function newIs(f: qt.Frame) {
       const targetDeclarationKind =
         resolvedRequire.flags & qt.SymbolFlags.Function ? Syntax.FunctionDeclaration : resolvedRequire.flags & qt.SymbolFlags.Variable ? Syntax.VariableDeclaration : Syntax.Unknown;
       if (targetDeclarationKind !== Syntax.Unknown) {
-        const decl = getDeclarationOfKind(resolvedRequire, targetDeclarationKind)!;
+        const decl = resolvedRequire.declarationOfKind(targetDeclarationKind)!;
         return !!decl && !!(decl.flags & NodeFlags.Ambient);
       }
       return false;

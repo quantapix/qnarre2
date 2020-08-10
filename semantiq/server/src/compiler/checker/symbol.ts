@@ -50,7 +50,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       }
       if (this.flags & qt.SymbolFlags.ValueModule && t.flags & qt.SymbolFlags.ValueModule && t.constEnumOnlyModule && !this.constEnumOnlyModule) t.constEnumOnlyModule = false;
       t.flags |= this.flags;
-      if (this.valueDeclaration) setValueDeclaration(t, this.valueDeclaration);
+      if (this.valueDeclaration) t.setValueDeclaration(this.valueDeclaration);
       addRange(t.declarations, this.declarations);
       if (this.members) {
         if (!t.members) t.members = new SymbolTable();
@@ -335,7 +335,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       if (!symbolFromSymbolTable) return false;
       if (symbolFromSymbolTable === this) return true;
       symbolFromSymbolTable =
-        symbolFromSymbolTable.flags & qt.SymbolFlags.Alias && !getDeclarationOfKind(symbolFromSymbolTable, Syntax.ExportSpecifier) ? symbolFromSymbolTable.resolveAlias() : symbolFromSymbolTable;
+        symbolFromSymbolTable.flags & qt.SymbolFlags.Alias && !symbolFromSymbolTable.declarationOfKind(Syntax.ExportSpecifier) ? symbolFromSymbolTable.resolveAlias() : symbolFromSymbolTable;
       if (symbolFromSymbolTable.flags & meaning) {
         qualify = true;
         return true;
@@ -812,7 +812,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (!popTypeResolution()) {
       type = anyType;
       if (noImplicitAny) {
-        const getter = getDeclarationOfKind<AccessorDeclaration>(this, Syntax.GetAccessor);
+        const getter = this.declarationOfKind<AccessorDeclaration>(Syntax.GetAccessor);
         error(
           getter,
           qd._0_implicitly_has_return_type_any_because_it_does_not_have_a_return_type_annotation_and_is_referenced_directly_or_indirectly_in_one_of_its_return_expressions,
@@ -823,8 +823,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return type;
   }
   resolveTypeOfAccessors() {
-    const getter = getDeclarationOfKind<AccessorDeclaration>(this, Syntax.GetAccessor);
-    const setter = getDeclarationOfKind<AccessorDeclaration>(this, Syntax.SetAccessor);
+    const getter = this.declarationOfKind<AccessorDeclaration>(Syntax.GetAccessor);
+    const setter = this.declarationOfKind<AccessorDeclaration>(Syntax.SetAccessor);
     if (getter && qf.is.inJSFile(getter)) {
       const docType = getTypeForDeclarationFromDocComment(getter);
       if (docType) return docType;
@@ -867,7 +867,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   getTypeOfFuncClassEnumModuleWorker(): Type {
     const declaration = symbol.valueDeclaration;
-    if (symbol.flags & qt.SymbolFlags.Module && isShorthandAmbientModuleSymbol(symbol)) return anyType;
+    if (symbol.flags & qt.SymbolFlags.Module && symbol.isShorthandAmbientModule()) return anyType;
     else if (declaration && (declaration.kind === Syntax.BinaryExpression || (qf.is.accessExpression(declaration) && declaration.parent.kind === Syntax.BinaryExpression)))
       return qf.get.widenedTypeForAssignmentDeclaration(symbol);
     else if (symbol.flags & qt.SymbolFlags.ValueModule && declaration && declaration.kind === Syntax.SourceFile && declaration.commonJsModuleIndicator) {
@@ -930,7 +930,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return ls.type;
   }
   qf.get.typeOfSymbol(): Type {
-    const f = this.getCheckFlags();
+    const f = this.checkFlags();
     if (f & qt.CheckFlags.DeferredType) return this.qf.get.typeOfSymbolWithDeferredType();
     if (f & qt.CheckFlags.Instantiated) return this.getTypeOfInstantiatedSymbol();
     if (f & qt.CheckFlags.Mapped) return getTypeOfMappedSymbol(this as MappedSymbol);
@@ -943,7 +943,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return errorType;
   }
   getOuterTypeParametersOfClassOrInterface(): TypeParameter[] | undefined {
-    const d = this.flags & qt.SymbolFlags.Class ? this.valueDeclaration : this.getDeclarationOfKind(Syntax.InterfaceDeclaration)!;
+    const d = this.flags & qt.SymbolFlags.Class ? this.valueDeclaration : this.declarationOfKind(Syntax.InterfaceDeclaration)!;
     qu.assert(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
     return getOuterTypeParameters(d);
   }
@@ -1182,7 +1182,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return this.flags & qt.SymbolFlags.Variable && (getDeclarationNodeFlagsFromSymbol(this) & NodeFlags.Const) !== 0 && this.qf.get.typeOfSymbol() !== autoArrayType;
   }
   isCircularMappedProperty() {
-    return !!(this.getCheckFlags() & qt.CheckFlags.Mapped && !(this as MappedType).type && findResolutionCycleStartIndex(this, TypeSystemPropertyName.Type) >= 0);
+    return !!(this.checkFlags() & qt.CheckFlags.Mapped && !(this as MappedType).type && findResolutionCycleStartIndex(this, TypeSystemPropertyName.Type) >= 0);
   }
   getImmediateAliasedSymbol(): Symbol | undefined {
     qu.assert((this.flags & qt.SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
@@ -1195,7 +1195,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return ls.immediateTarget;
   }
   isPrototypeProperty() {
-    if (this.flags & qt.SymbolFlags.Method || this.getCheckFlags() & qt.CheckFlags.SyntheticMethod) return true;
+    if (this.flags & qt.SymbolFlags.Method || this.checkFlags() & qt.CheckFlags.SyntheticMethod) return true;
     if (qf.is.inJSFile(this.valueDeclaration)) {
       const p = this.valueDeclaration?.parent;
       return p && p.kind === Syntax.BinaryExpression && qf.get.assignmentDeclarationKind(p) === qt.AssignmentDeclarationKind.PrototypeProperty;
@@ -1214,8 +1214,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   isReadonlySymbol() {
     return !!(
-      this.getCheckFlags() & qt.CheckFlags.Readonly ||
-      (this.flags & qt.SymbolFlags.Property && this.getDeclarationModifierFlagsFromSymbol() & ModifierFlags.Readonly) ||
+      this.checkFlags() & qt.CheckFlags.Readonly ||
+      (this.flags & qt.SymbolFlags.Property && this.declarationModifierFlags() & ModifierFlags.Readonly) ||
       (this.flags & qt.SymbolFlags.Variable && this.getDeclarationNodeFlagsFromSymbol() & NodeFlags.Const) ||
       (this.flags & qt.SymbolFlags.Accessor && !(this.flags & qt.SymbolFlags.SetAccessor)) ||
       this.flags & qt.SymbolFlags.EnumMember ||
@@ -1407,7 +1407,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
   }
   getTargetSymbol() {
-    return this.getCheckFlags() & qt.CheckFlags.Instantiated ? this.target! : this;
+    return this.checkFlags() & qt.CheckFlags.Instantiated ? this.target! : this;
   }
   getClassOrInterfaceDeclarationsOfSymbol() {
     return filter(this.declarations, (d: Declaration): d is ClassDeclaration | InterfaceDeclaration => d.kind === Syntax.ClassDeclaration || d.kind === Syntax.InterfaceDeclaration);
@@ -1423,7 +1423,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return rs ? flatMap(rs, this.getRootSymbols) : [this];
   }
   getImmediateRootSymbols(): readonly Symbol[] | undefined {
-    if (this.getCheckFlags() & qt.CheckFlags.Synthetic) return mapDefined(this.getLinks().containingType!.types, (t) => qf.get.propertyOfType(t, this.escName));
+    if (this.checkFlags() & qt.CheckFlags.Synthetic) return mapDefined(this.getLinks().containingType!.types, (t) => qf.get.propertyOfType(t, this.escName));
     if (this.flags & qt.SymbolFlags.Transient) {
       const { leftSpread, rightSpread, syntheticOrigin } = this as TransientSymbol;
       return leftSpread ? [leftSpread, rightSpread!] : syntheticOrigin ? [syntheticOrigin] : singleElemArray(this.tryGetAliasTarget());
@@ -1622,7 +1622,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       const name = d && qf.get.declaration.nameOf(d);
       if (d && name) {
         if (d.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
-        if (name.kind === Syntax.ComputedPropertyName && !(this.getCheckFlags() & qt.CheckFlags.Late)) {
+        if (name.kind === Syntax.ComputedPropertyName && !(this.checkFlags() & qt.CheckFlags.Late)) {
           const nameType = this.getLinks().nameType;
           if (nameType && nameType.flags & qt.TypeFlags.StringOrNumberLiteral) {
             const result = getNameOfSymbolFromNameType(this, c);
@@ -1653,7 +1653,7 @@ class SymbolTable extends SymbolTable<Symbol> {
     if (meaning) {
       const symbol = qf.get.mergedSymbol(symbols.get(name));
       if (symbol) {
-        qu.assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+        qu.assert((this.checkFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
         if (symbol.flags & meaning) return symbol;
         if (symbol.flags & qt.SymbolFlags.Alias) {
           const target = this.resolveAlias();
