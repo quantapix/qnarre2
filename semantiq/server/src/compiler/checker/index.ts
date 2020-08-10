@@ -31,6 +31,21 @@ export function newFrame() {
 }
 export const qf = newFrame();
 
+export class TypeChecker implements Frame {
+  host: qt.TypeCheckerHost;
+  typeCount: number;
+  totalInstantiationCount: number;
+  mergedSymbols: Symbol[];
+  check: Fcheck;
+  create: Fcreate;
+  get: Fget;
+  has: Fhas;
+  instantiate: Finstantiate;
+  is: Fis;
+  resolve: Fresolve;
+
+}
+
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
 let nextMergeId = 1;
