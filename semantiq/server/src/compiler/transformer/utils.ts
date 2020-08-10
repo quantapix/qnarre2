@@ -56,7 +56,7 @@ export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): bool
     (qf.is.defaultImport(node) || (!!node.importClause && qc.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
   );
 }
-export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: CompilerOptions): ExternalModuleInfo {
+export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOpts: CompilerOpts): ExternalModuleInfo {
   const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
   const exportSpecifiers = new MultiMap<ExportSpecifier>();
   const exportedBindings: Identifier[][] = [];
@@ -154,7 +154,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         break;
     }
   }
-  const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(sourceFile, compilerOptions, hasExportStarsToExportValues, hasImportStar, hasImportDefault);
+  const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(sourceFile, compilerOpts, hasExportStarsToExportValues, hasImportStar, hasImportDefault);
   if (externalHelpersImportDeclaration) {
     externalImports.unshift(externalHelpersImportDeclaration);
   }

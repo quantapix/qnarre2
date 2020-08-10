@@ -34,7 +34,7 @@ interface ConvertedLoopState {
   labeledNonLocalContinues?: qu.QMap<string>;
   nonLocalJumps?: Jump;
   allowedNonLabeledJumps?: Jump;
-  argumentsName?: qc.Identifier;
+  argsName?: qc.Identifier;
   thisName?: qc.Identifier;
   containsLexicalThis?: boolean;
   hoistedLocalVariables?: qc.Identifier[];
@@ -95,7 +95,7 @@ const enum HierarchyFacts {
 }
 export function transformES2015(context: TrafoContext) {
   const { startLexicalEnvironment, resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   const resolver = context.getEmitResolver();
   const previousOnSubstituteNode = context.onSubstituteNode;
   const previousOnEmitNode = context.onEmitNode;
@@ -314,8 +314,8 @@ export function transformES2015(context: TrafoContext) {
   function visitIdentifier(node: qc.Identifier): qc.Identifier {
     if (!convertedLoopState) return node;
     if (qf.is.generatedIdentifier(node)) return node;
-    if (node.escapedText !== 'arguments' || !resolver.isArgumentsLocalBinding(node)) return node;
-    return convertedLoopState.argumentsName || (convertedLoopState.argumentsName = createUniqueName('arguments'));
+    if (node.escapedText !== 'args' || !resolver.isArgsLocalBinding(node)) return node;
+    return convertedLoopState.argsName || (convertedLoopState.argsName = createUniqueName('args'));
   }
   function visitBreakOrContinueStatement(node: BreakOrContinueStatement): qc.Statement {
     if (convertedLoopState) {
@@ -548,7 +548,7 @@ export function transformES2015(context: TrafoContext) {
     return qf.create.logicalOr(
       qf.create.logicalAnd(
         qf.create.strictInequality(createFileLevelUniqueName('_super'), new qc.NullLiteral()),
-        createFunctionApply(createFileLevelUniqueName('_super'), createActualThis(), new qc.Identifier('arguments'))
+        createFunctionApply(createFileLevelUniqueName('_super'), createActualThis(), new qc.Identifier('args'))
       ),
       createActualThis()
     );
@@ -649,7 +649,7 @@ export function transformES2015(context: TrafoContext) {
     );
     const forStatement = new qc.ForStatement(
       setRange(new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, qc.asLiteral(restIndex))]), param),
-      setRange(qf.create.lessThan(temp, new qc.PropertyAccessExpression(new qc.Identifier('arguments'), 'length')), param),
+      setRange(qf.create.lessThan(temp, new qc.PropertyAccessExpression(new qc.Identifier('args'), 'length')), param),
       setRange(qf.create.increment(temp), param),
       new Block([
         startOnNewLine(
@@ -657,7 +657,7 @@ export function transformES2015(context: TrafoContext) {
             new qc.ExpressionStatement(
               qf.create.assignment(
                 new qc.ElemAccessExpression(expressionName, restIndex === 0 ? temp : qf.create.subtract(temp, qc.asLiteral(restIndex))),
-                new qc.ElemAccessExpression(new qc.Identifier('arguments'), temp)
+                new qc.ElemAccessExpression(new qc.Identifier('args'), temp)
               )
             ),
             param
@@ -766,7 +766,7 @@ export function transformES2015(context: TrafoContext) {
     const memberFunction = transformFunctionLikeToExpression(member, undefined, container);
     const propertyName = visitNode(member.name, visitor, isPropertyName);
     let e: qc.Expression;
-    if (!qf.is.kind(qc.PrivateIdentifier, propertyName) && context.getCompilerOptions().useDefineForClassFields) {
+    if (!qf.is.kind(qc.PrivateIdentifier, propertyName) && context.getCompilerOpts().useDefineForClassFields) {
       const name = qf.is.kind(qc.ComputedPropertyName, propertyName)
         ? propertyName.expression
         : qf.is.kind(qc.Identifier, propertyName)
@@ -1135,7 +1135,7 @@ export function transformES2015(context: TrafoContext) {
       HierarchyFacts.ForInOrForOfStatementIncludes,
       node,
       outermostLabeledStatement,
-      compilerOptions.downlevelIteration ? convertForOfStatementForIterable : convertForOfStatementForArray
+      compilerOpts.downlevelIteration ? convertForOfStatementForIterable : convertForOfStatementForArray
     );
   }
   function convertForOfStatementHead(node: ForOfStatement, boundValue: qc.Expression, convertedLoopBodyStatements: qc.Statement[]) {
@@ -1470,8 +1470,8 @@ function createConvertedLoopState(node: IterationStmt) {
   }
   const currentState: ConvertedLoopState = { loopParams, loopOutParams };
   if (convertedLoopState) {
-    if (convertedLoopState.argumentsName) {
-      currentState.argumentsName = convertedLoopState.argumentsName;
+    if (convertedLoopState.argsName) {
+      currentState.argsName = convertedLoopState.argsName;
     }
     if (convertedLoopState.thisName) {
       currentState.thisName = convertedLoopState.thisName;
@@ -1484,11 +1484,11 @@ function createConvertedLoopState(node: IterationStmt) {
 }
 function addExtraDeclarationsForConvertedLoop(statements: qc.Statement[], state: ConvertedLoopState, outerState: ConvertedLoopState | undefined) {
   let extraVariableDeclarations: VariableDeclaration[] | undefined;
-  if (state.argumentsName) {
+  if (state.argsName) {
     if (outerState) {
-      outerState.argumentsName = state.argumentsName;
+      outerState.argsName = state.argsName;
     } else {
-      (extraVariableDeclarations || (extraVariableDeclarations = [])).push(new qc.VariableDeclaration(state.argumentsName, undefined, new qc.Identifier('arguments')));
+      (extraVariableDeclarations || (extraVariableDeclarations = [])).push(new qc.VariableDeclaration(state.argsName, undefined, new qc.Identifier('args')));
     }
   }
   if (state.thisName) {
@@ -1855,8 +1855,8 @@ function visitArrayLiteralExpression(node: ArrayLiteralExpression): qc.Expressio
 function visitCallExpression(node: CallExpression) {
   if (qf.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) return visitTypeScriptClassWrapper(node);
   const expression = qc.skip.outerExpressions(node.expression);
-  if (expression.kind === Syntax.SuperKeyword || qf.is.superProperty(expression) || some(node.arguments, isSpreadElem)) return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
-  return node.update(visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
+  if (expression.kind === Syntax.SuperKeyword || qf.is.superProperty(expression) || some(node.args, isSpreadElem)) return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
+  return node.update(visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
   const body = cast(cast(qc.skip.outerExpressions(node.expression), isArrowFunction).body, isBlock);
@@ -1902,12 +1902,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
       variable.initer,
       recreateOuterExpressions(
         aliasAssignment && aliasAssignment.right,
-        updateCall(
-          call,
-          recreateOuterExpressions(call.expression, func.update(undefined, undefined, undefined, undefined, func.params, undefined, func.body.update(statements))),
-          undefined,
-          call.arguments
-        )
+        updateCall(call, recreateOuterExpressions(call.expression, func.update(undefined, undefined, undefined, undefined, func.params, undefined, func.body.update(statements))), undefined, call.args)
       )
     )
   );
@@ -1926,13 +1921,13 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
       resultingCall = createFunctionApply(
         visitNode(target, callExpressionVisitor, isExpression),
         node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
-        transformAndSpreadElems(node.arguments, false)
+        transformAndSpreadElems(node.args, false)
       );
     } else {
       resultingCall = createFunctionCall(
         visitNode(target, callExpressionVisitor, isExpression),
         node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
-        Nodes.visit(node.arguments, visitor, isExpression),
+        Nodes.visit(node.args, visitor, isExpression),
         node
       );
     }
@@ -1945,10 +1940,10 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
   return visitEachChild(node, visitor, context);
 }
 function visitNewExpression(node: NewExpression): LeftExpression {
-  if (some(node.arguments, isSpreadElem)) {
+  if (some(node.args, isSpreadElem)) {
     const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
     return new qc.NewExpression(
-      createFunctionApply(visitNode(target, visitor, isExpression), thisArg, transformAndSpreadElems(new Nodes([qc.VoidExpression.zero(), ...node.arguments!]), false)),
+      createFunctionApply(visitNode(target, visitor, isExpression), thisArg, transformAndSpreadElems(new Nodes([qc.VoidExpression.zero(), ...node.args!]), false)),
       undefined,
       []
     );
@@ -1958,7 +1953,7 @@ function visitNewExpression(node: NewExpression): LeftExpression {
 function transformAndSpreadElems(elems: Nodes<Expression>, needsUniqueCopy: boolean, multiLine: boolean, trailingComma: boolean): qc.Expression {
   const numElems = elems.length;
   const segments = flatten<Expression>(spanMap(elems, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, trailingComma && end === numElems)));
-  if (compilerOptions.downlevelIteration) {
+  if (compilerOpts.downlevelIteration) {
     if (segments.length === 1) {
       const firstSegment = segments[0];
       if (isCallToHelper(firstSegment, '___spread' as __String)) return segments[0];
@@ -2153,10 +2148,10 @@ function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | un
   if (!isSynthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) return false;
   const callTarget = (<CallExpression>statementExpression).expression;
   if (!isSynthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) return false;
-  const callArgument = singleOrUndefined((<CallExpression>statementExpression).arguments);
-  if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== Syntax.SpreadElem) return false;
-  const expression = (<SpreadElem>callArgument).expression;
-  return qf.is.kind(qc.Identifier, expression) && expression.escapedText === 'arguments';
+  const callArg = singleOrUndefined((<CallExpression>statementExpression).args);
+  if (!callArg || !isSynthesized(callArg) || callArg.kind !== Syntax.SpreadElem) return false;
+  const expression = (<SpreadElem>callArg).expression;
+  return qf.is.kind(qc.Identifier, expression) && expression.escapedText === 'args';
 }
 function createExtendsHelper(context: TrafoContext, name: qc.Identifier) {
   context.requestEmitHelper(extendsHelper);

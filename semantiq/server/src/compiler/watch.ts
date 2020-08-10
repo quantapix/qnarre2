@@ -8,9 +8,9 @@ export interface ReadBuildProgramHost {
   getCurrentDirectory(): string;
   readFile(fileName: string): string | undefined;
 }
-export function readBuilderProgram(compilerOptions: CompilerOptions, host: ReadBuildProgramHost) {
-  if (compilerOptions.out || compilerOptions.outFile) return;
-  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(compilerOptions);
+export function readBuilderProgram(compilerOpts: CompilerOpts, host: ReadBuildProgramHost) {
+  if (compilerOpts.out || compilerOpts.outFile) return;
+  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(compilerOpts);
   if (!buildInfoPath) return;
   const content = host.readFile(buildInfoPath);
   if (!content) return;
@@ -19,16 +19,16 @@ export function readBuilderProgram(compilerOptions: CompilerOptions, host: ReadB
   if (!buildInfo.program) return;
   return createBuildProgramUsingProgramBuildInfo(buildInfo.program, buildInfoPath, host);
 }
-export function createIncrementalCompilerHost(options: CompilerOptions, system = sys): CompilerHost {
-  const host = createCompilerHostWorker(options, undefined, system);
+export function createIncrementalCompilerHost(opts: CompilerOpts, system = sys): CompilerHost {
+  const host = createCompilerHostWorker(opts, undefined, system);
   host.createHash = maybeBind(system, system.createHash);
   setGetSourceFileAsHashVersioned(host, system);
   changeCompilerHostLikeToUseCache(host, (fileName) => toPath(fileName, host.getCurrentDirectory(), host.getCanonicalFileName));
   return host;
 }
-export interface IncrementalProgramOptions<T extends BuilderProgram> {
+export interface IncrementalProgramOpts<T extends BuilderProgram> {
   rootNames: readonly string[];
-  options: CompilerOptions;
+  opts: CompilerOpts;
   configFileParsingDiagnostics?: readonly Diagnostic[];
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
@@ -36,30 +36,30 @@ export interface IncrementalProgramOptions<T extends BuilderProgram> {
 }
 export function createIncrementalProgram<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
   rootNames,
-  options,
+  opts,
   configFileParsingDiagnostics,
   projectReferences,
   host,
   createProgram,
-}: IncrementalProgramOptions<T>): T {
-  host = host || createIncrementalCompilerHost(options);
+}: IncrementalProgramOpts<T>): T {
+  host = host || createIncrementalCompilerHost(opts);
   createProgram = createProgram || ((createEmitAndSemanticDiagnosticsBuilderProgram as any) as CreateProgram<T>);
-  const oldProgram = (readBuilderProgram(options, host) as any) as T;
-  return createProgram(rootNames, options, host, oldProgram, configFileParsingDiagnostics, projectReferences);
+  const oldProgram = (readBuilderProgram(opts, host) as any) as T;
+  return createProgram(rootNames, opts, host, oldProgram, configFileParsingDiagnostics, projectReferences);
 }
-export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, options: CompilerOptions, errorCount?: number) => void;
+export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, opts: CompilerOpts, errorCount?: number) => void;
 export type CreateProgram<T extends BuilderProgram> = (
   rootNames: readonly string[] | undefined,
-  options: CompilerOptions | undefined,
+  opts: CompilerOpts | undefined,
   host?: CompilerHost,
   oldProgram?: T,
   configFileParsingDiagnostics?: readonly Diagnostic[],
   projectReferences?: readonly ProjectReference[] | undefined
 ) => T;
 export interface WatchHost {
-  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, options: CompilerOptions, errorCount?: number): void;
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: CompilerOptions): FileWatcher;
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: CompilerOptions): FileWatcher;
+  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, opts: CompilerOpts, errorCount?: number): void;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: CompilerOpts): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: CompilerOpts): FileWatcher;
   setTimeout?(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
   clearTimeout?(timeoutId: any): void;
 }
@@ -68,7 +68,7 @@ export interface ProgramHost<T extends BuilderProgram> {
   useCaseSensitiveFileNames(): boolean;
   getNewLine(): string;
   getCurrentDirectory(): string;
-  qc.get.defaultLibFileName(options: CompilerOptions): string;
+  qc.get.defaultLibFileName(opts: CompilerOpts): string;
   getDefaultLibLocation?(): string;
   createHash?(data: string): string;
   fileExists(path: string): boolean;
@@ -84,13 +84,13 @@ export interface ProgramHost<T extends BuilderProgram> {
     containingFile: string,
     reusedNames: string[] | undefined,
     redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
+    opts: CompilerOpts
   ): (ResolvedModule | undefined)[];
   resolveTypeReferenceDirectives?(
     typeReferenceDirectiveNames: string[],
     containingFile: string,
     redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
+    opts: CompilerOpts
   ): (ResolvedTypeReferenceDirective | undefined)[];
 }
 export interface ProgramHost<T extends BuilderProgram> {
@@ -101,16 +101,16 @@ export interface WatchCompilerHost<T extends BuilderProgram> extends ProgramHost
   useSourceOfProjectReferenceRedirect?(): boolean;
   afterProgramCreate?(program: T): void;
 }
-export interface WatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderProgram> extends WatchCompilerHost<T> {
+export interface WatchCompilerHostOfFilesAndCompilerOpts<T extends BuilderProgram> extends WatchCompilerHost<T> {
   rootFiles: string[];
-  options: CompilerOptions;
-  watchOptions?: WatchOptions;
+  opts: CompilerOpts;
+  watchOpts?: WatchOpts;
   projectReferences?: readonly ProjectReference[];
 }
 export interface WatchCompilerHostOfConfigFile<T extends BuilderProgram> extends WatchCompilerHost<T>, ConfigFileDiagnosticsReporter {
   configFileName: string;
-  optionsToExtend?: CompilerOptions;
-  watchOptionsToExtend?: WatchOptions;
+  optsToExtend?: CompilerOpts;
+  watchOptsToExtend?: WatchOpts;
   extraFileExtensions?: readonly FileExtensionInfo[];
   readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
 }
@@ -123,45 +123,45 @@ export interface Watch<T> {
   close(): void;
 }
 export interface WatchOfConfigFile<T> extends Watch<T> {}
-export interface WatchOfFilesAndCompilerOptions<T> extends Watch<T> {
+export interface WatchOfFilesAndCompilerOpts<T> extends Watch<T> {
   updateRootFileNames(fileNames: string[]): void;
 }
 export function createWatchCompilerHost<T extends BuilderProgram>(
   configFileName: string,
-  optionsToExtend: CompilerOptions | undefined,
+  optsToExtend: CompilerOpts | undefined,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  watchOptionsToExtend?: WatchOptions,
+  watchOptsToExtend?: WatchOpts,
   extraFileExtensions?: readonly FileExtensionInfo[]
 ): WatchCompilerHostOfConfigFile<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFiles: string[],
-  options: CompilerOptions,
+  opts: CompilerOpts,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
   projectReferences?: readonly ProjectReference[],
-  watchOptions?: WatchOptions
-): WatchCompilerHostOfFilesAndCompilerOptions<T>;
+  watchOpts?: WatchOpts
+): WatchCompilerHostOfFilesAndCompilerOpts<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFilesOrConfigFileName: string | string[],
-  options: CompilerOptions | undefined,
+  opts: CompilerOpts | undefined,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  projectReferencesOrWatchOptionsToExtend?: readonly ProjectReference[] | WatchOptions,
-  watchOptionsOrExtraFileExtensions?: WatchOptions | readonly FileExtensionInfo[]
-): WatchCompilerHostOfFilesAndCompilerOptions<T> | WatchCompilerHostOfConfigFile<T> {
+  projectReferencesOrWatchOptsToExtend?: readonly ProjectReference[] | WatchOpts,
+  watchOptsOrExtraFileExtensions?: WatchOpts | readonly FileExtensionInfo[]
+): WatchCompilerHostOfFilesAndCompilerOpts<T> | WatchCompilerHostOfConfigFile<T> {
   if (isArray(rootFilesOrConfigFileName)) {
-    return createWatchCompilerHostOfFilesAndCompilerOptions({
+    return createWatchCompilerHostOfFilesAndCompilerOpts({
       rootFiles: rootFilesOrConfigFileName,
-      options: options!,
-      watchOptions: watchOptionsOrExtraFileExtensions as WatchOptions,
-      projectReferences: projectReferencesOrWatchOptionsToExtend as readonly ProjectReference[],
+      opts: opts!,
+      watchOpts: watchOptsOrExtraFileExtensions as WatchOpts,
+      projectReferences: projectReferencesOrWatchOptsToExtend as readonly ProjectReference[],
       system,
       createProgram,
       reportDiagnostic,
@@ -170,9 +170,9 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
   } else {
     return createWatchCompilerHostOfConfigFile({
       configFileName: rootFilesOrConfigFileName,
-      optionsToExtend: options,
-      watchOptionsToExtend: projectReferencesOrWatchOptionsToExtend as WatchOptions,
-      extraFileExtensions: watchOptionsOrExtraFileExtensions as readonly FileExtensionInfo[],
+      optsToExtend: opts,
+      watchOptsToExtend: projectReferencesOrWatchOptsToExtend as WatchOpts,
+      extraFileExtensions: watchOptsOrExtraFileExtensions as readonly FileExtensionInfo[],
       system,
       createProgram,
       reportDiagnostic,
@@ -182,8 +182,8 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
 }
 const carriageReturnLineFeed = '\r\n';
 const lineFeed = '\n';
-export function getNewLineCharacter(options: qt.CompilerOptions | qt.PrinterOptions, getNewLine?: () => string): string {
-  switch (options.newLine) {
+export function getNewLineCharacter(opts: qt.CompilerOpts | qt.PrinterOpts, getNewLine?: () => string): string {
+  switch (opts.newLine) {
     case qt.NewLineKind.CarriageReturnLineFeed:
       return carriageReturnLineFeed;
     case qt.NewLineKind.LineFeed:
@@ -192,11 +192,11 @@ export function getNewLineCharacter(options: qt.CompilerOptions | qt.PrinterOpti
   return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
 }
 
-export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfFilesAndCompilerOptions<T>): WatchOfFilesAndCompilerOptions<T>;
+export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfFilesAndCompilerOpts<T>): WatchOfFilesAndCompilerOpts<T>;
 export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfConfigFile<T>): WatchOfConfigFile<T>;
 export function createWatchProgram<T extends BuilderProgram>(
-  host: WatchCompilerHostOfFilesAndCompilerOptions<T> & WatchCompilerHostOfConfigFile<T>
-): WatchOfFilesAndCompilerOptions<T> | WatchOfConfigFile<T> {
+  host: WatchCompilerHostOfFilesAndCompilerOpts<T> & WatchCompilerHostOfConfigFile<T>
+): WatchOfFilesAndCompilerOpts<T> | WatchOfConfigFile<T> {
   interface FilePresentOnHost {
     version: string;
     sourceFile: SourceFile;
@@ -216,12 +216,12 @@ export function createWatchProgram<T extends BuilderProgram>(
   let timerToUpdateProgram: any;
   const sourceFilesCache = createMap<HostFileInfo>();
   let missingFilePathsRequestedForRelease: Path[] | undefined;
-  let hasChangedCompilerOptions = false;
+  let hasChangedCompilerOpts = false;
   let hasChangedAutomaticTypeDirectiveNames = false;
   const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
   const currentDirectory = host.getCurrentDirectory();
-  const { configFileName, optionsToExtend: optionsToExtendForConfigFile = {}, watchOptionsToExtend, extraFileExtensions, createProgram } = host;
-  let { rootFiles: rootFileNames, options: compilerOptions, watchOptions, projectReferences } = host;
+  const { configFileName, optsToExtend: optsToExtendForConfigFile = {}, watchOptsToExtend, extraFileExtensions, createProgram } = host;
+  let { rootFiles: rootFileNames, opts: compilerOpts, watchOpts, projectReferences } = host;
   let configFileSpecs: ConfigFileSpecs;
   let configFileParsingDiagnostics: Diagnostic[] | undefined;
   let canConfigFileJsonReportNoInputFiles = false;
@@ -236,19 +236,19 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
   reportWatchDiagnostic(qd.Starting_compilation_in_watch_mode);
   if (configFileName && !host.configFileParsingResult) {
-    newLine = getNewLineCharacter(optionsToExtendForConfigFile, () => host.getNewLine());
+    newLine = getNewLineCharacter(optsToExtendForConfigFile, () => host.getNewLine());
     assert(!rootFileNames);
     parseConfigFile();
     newLine = updateNewLine();
   }
-  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<string>(host, compilerOptions);
+  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<string>(host, compilerOpts);
   const getCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
   writeLog(`Current directory: ${currentDirectory} CaseSensitiveFileNames: ${useCaseSensitiveFileNames}`);
   let configFileWatcher: FileWatcher | undefined;
   if (configFileName) {
-    configFileWatcher = watchFile(host, configFileName, scheduleProgramReload, PollingInterval.High, watchOptions, WatchType.ConfigFile);
+    configFileWatcher = watchFile(host, configFileName, scheduleProgramReload, PollingInterval.High, watchOpts, WatchType.ConfigFile);
   }
-  const compilerHost = createCompilerHostFromProgramHost(host, () => compilerOptions, directoryStructureHost) as CompilerHost & ResolutionCacheHost;
+  const compilerHost = createCompilerHostFromProgramHost(host, () => compilerOpts, directoryStructureHost) as CompilerHost & ResolutionCacheHost;
   setGetSourceFileAsHashVersioned(compilerHost, host);
   const getNewSourceFile = compilerHost.getSourceFile;
   compilerHost.getSourceFile = (fileName, ...args) => getVersionedSourceFileByPath(fileName, toPath(fileName), ...args);
@@ -257,10 +257,10 @@ export function createWatchProgram<T extends BuilderProgram>(
   compilerHost.fileExists = fileExists;
   compilerHost.onReleaseOldSourceFile = onReleaseOldSourceFile;
   compilerHost.toPath = toPath;
-  compilerHost.getCompilationSettings = () => compilerOptions;
+  compilerHost.getCompilationSettings = () => compilerOpts;
   compilerHost.useSourceOfProjectReferenceRedirect = maybeBind(host, host.useSourceOfProjectReferenceRedirect);
-  compilerHost.watchDirectoryOfFailedLookupLocation = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOptions, WatchType.FailedLookupLocations);
-  compilerHost.watchTypeRootsDirectory = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOptions, WatchType.TypeRoots);
+  compilerHost.watchDirectoryOfFailedLookupLocation = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOpts, WatchType.FailedLookupLocations);
+  compilerHost.watchTypeRootsDirectory = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOpts, WatchType.TypeRoots);
   compilerHost.getCachedDirectoryStructureHost = () => cachedDirectoryStructureHost;
   compilerHost.onInvalidatedResolution = scheduleProgramUpdate;
   compilerHost.onChangedAutomaticTypeDirectiveNames = () => {
@@ -278,7 +278,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     ? (...args) => host.resolveTypeReferenceDirectives!(...args)
     : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
   const userProvidedResolution = !!host.resolveModuleNames || !!host.resolveTypeReferenceDirectives;
-  builderProgram = (readBuilderProgram(compilerOptions, compilerHost) as any) as T;
+  builderProgram = (readBuilderProgram(compilerOpts, compilerHost) as any) as T;
   synchronizeProgram();
   watchConfigFileWildCardDirectories();
   return configFileName
@@ -314,14 +314,14 @@ export function createWatchProgram<T extends BuilderProgram>(
   function synchronizeProgram() {
     writeLog(`Synchronizing program`);
     const program = getCurrentBuilderProgram();
-    if (hasChangedCompilerOptions) {
+    if (hasChangedCompilerOpts) {
       newLine = updateNewLine();
-      if (program && changesAffectModuleResolution(program.getCompilerOptions(), compilerOptions)) {
+      if (program && changesAffectModuleResolution(program.getCompilerOpts(), compilerOpts)) {
         resolutionCache.clear();
       }
     }
     const hasInvalidatedResolution = resolutionCache.createHasInvalidatedResolution(userProvidedResolution);
-    if (isProgramUptoDate(getCurrentProgram(), rootFileNames, compilerOptions, getSourceVersion, fileExists, hasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames, projectReferences)) {
+    if (isProgramUptoDate(getCurrentProgram(), rootFileNames, compilerOpts, getSourceVersion, fileExists, hasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames, projectReferences)) {
       if (hasChangedConfigFileParsingErrors) {
         builderProgram = createProgram(undefined, compilerHost, builderProgram, configFileParsingDiagnostics, projectReferences);
         hasChangedConfigFileParsingErrors = false;
@@ -337,15 +337,15 @@ export function createWatchProgram<T extends BuilderProgram>(
   function createNewProgram(hasInvalidatedResolution: HasInvalidatedResolution) {
     writeLog('CreatingProgramWith::');
     writeLog(`  roots: ${JSON.stringify(rootFileNames)}`);
-    writeLog(`  options: ${JSON.stringify(compilerOptions)}`);
-    const needsUpdateInTypeRootWatch = hasChangedCompilerOptions || !getCurrentProgram();
-    hasChangedCompilerOptions = false;
+    writeLog(`  opts: ${JSON.stringify(compilerOpts)}`);
+    const needsUpdateInTypeRootWatch = hasChangedCompilerOpts || !getCurrentProgram();
+    hasChangedCompilerOpts = false;
     hasChangedConfigFileParsingErrors = false;
     resolutionCache.startCachingPerDirectoryResolution();
     compilerHost.hasInvalidatedResolution = hasInvalidatedResolution;
     compilerHost.hasChangedAutomaticTypeDirectiveNames = hasChangedAutomaticTypeDirectiveNames;
     hasChangedAutomaticTypeDirectiveNames = false;
-    builderProgram = createProgram(rootFileNames, compilerOptions, compilerHost, builderProgram, configFileParsingDiagnostics, projectReferences);
+    builderProgram = createProgram(rootFileNames, compilerOpts, compilerHost, builderProgram, configFileParsingDiagnostics, projectReferences);
     resolutionCache.finishCachingPerDirectoryResolution();
     updateMissingFilePathsWatch(builderProgram.getProgram(), missingFilesMap || (missingFilesMap = createMap()), watchMissingFilePath);
     if (needsUpdateInTypeRootWatch) {
@@ -366,7 +366,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     scheduleProgramUpdate();
   }
   function updateNewLine() {
-    return getNewLineCharacter(compilerOptions || optionsToExtendForConfigFile, () => host.getNewLine());
+    return getNewLineCharacter(compilerOpts || optsToExtendForConfigFile, () => host.getNewLine());
   }
   function toPath(fileName: string) {
     return qnr.toPath(fileName, currentDirectory, getCanonicalFileName);
@@ -394,7 +394,7 @@ export function createWatchProgram<T extends BuilderProgram>(
           (hostSourceFile as FilePresentOnHost).sourceFile = sourceFile;
           hostSourceFile.version = sourceFile.version;
           if (!hostSourceFile.fileWatcher) {
-            hostSourceFile.fileWatcher = watchFilePath(host, fileName, onSourceFileChange, PollingInterval.Low, watchOptions, path, WatchType.SourceFile);
+            hostSourceFile.fileWatcher = watchFilePath(host, fileName, onSourceFileChange, PollingInterval.Low, watchOpts, path, WatchType.SourceFile);
           }
         } else {
           if (hostSourceFile.fileWatcher) {
@@ -404,7 +404,7 @@ export function createWatchProgram<T extends BuilderProgram>(
         }
       } else {
         if (sourceFile) {
-          const fileWatcher = watchFilePath(host, fileName, onSourceFileChange, PollingInterval.Low, watchOptions, path, WatchType.SourceFile);
+          const fileWatcher = watchFilePath(host, fileName, onSourceFileChange, PollingInterval.Low, watchOpts, path, WatchType.SourceFile);
           sourceFilesCache.set(path, { sourceFile, version: sourceFile.version, fileWatcher });
         } else {
           sourceFilesCache.set(path, false);
@@ -428,7 +428,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     const hostSourceFile = sourceFilesCache.get(path);
     return !hostSourceFile || !hostSourceFile.version ? undefined : hostSourceFile.version;
   }
-  function onReleaseOldSourceFile(oldSourceFile: SourceFile, _oldOptions: CompilerOptions, hasSourceFileByPath: boolean) {
+  function onReleaseOldSourceFile(oldSourceFile: SourceFile, _oldOpts: CompilerOpts, hasSourceFileByPath: boolean) {
     const hostSourceFileInfo = sourceFilesCache.get(oldSourceFile.resolvedPath);
     if (hostSourceFileInfo !== undefined) {
       if (isFileMissingOnHost(hostSourceFileInfo)) {
@@ -446,7 +446,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
   function reportWatchDiagnostic(message: qd.Message) {
     if (host.onWatchStatusChange) {
-      host.onWatchStatusChange(createCompilerDiagnostic(message), newLine, compilerOptions || optionsToExtendForConfigFile);
+      host.onWatchStatusChange(createCompilerDiagnostic(message), newLine, compilerOpts || optsToExtendForConfigFile);
     }
   }
   function scheduleProgramUpdate() {
@@ -488,8 +488,8 @@ export function createWatchProgram<T extends BuilderProgram>(
     return getCurrentBuilderProgram();
   }
   function reloadFileNamesFromConfigFile() {
-    writeLog('Reloading new file names and options');
-    const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
+    writeLog('Reloading new file names and opts');
+    const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(getDirectoryPath(configFileName), currentDirectory), compilerOpts, parseConfigFileHost);
     if (updateErrorForNoInputFiles(result, getNormalizedAbsolutePath(configFileName, currentDirectory), configFileSpecs, configFileParsingDiagnostics!, canConfigFileJsonReportNoInputFiles)) {
       hasChangedConfigFileParsingErrors = true;
     }
@@ -503,17 +503,17 @@ export function createWatchProgram<T extends BuilderProgram>(
       cachedDirectoryStructureHost.clearCache();
     }
     parseConfigFile();
-    hasChangedCompilerOptions = true;
+    hasChangedCompilerOpts = true;
     synchronizeProgram();
     watchConfigFileWildCardDirectories();
   }
   function parseConfigFile() {
-    setConfigFileParsingResult(getParsedCommandLineOfConfigFile(configFileName, optionsToExtendForConfigFile, parseConfigFileHost, undefined, watchOptionsToExtend, extraFileExtensions)!);
+    setConfigFileParsingResult(getParsedCommandLineOfConfigFile(configFileName, optsToExtendForConfigFile, parseConfigFileHost, undefined, watchOptsToExtend, extraFileExtensions)!);
   }
   function setConfigFileParsingResult(configFileParseResult: ParsedCommandLine) {
     rootFileNames = configFileParseResult.fileNames;
-    compilerOptions = configFileParseResult.options;
-    watchOptions = configFileParseResult.watchOptions;
+    compilerOpts = configFileParseResult.opts;
+    watchOpts = configFileParseResult.watchOpts;
     configFileSpecs = configFileParseResult.configFileSpecs!;
     projectReferences = configFileParseResult.projectReferences;
     configFileParsingDiagnostics = getConfigFileParsingDiagnostics(configFileParseResult).slice();
@@ -535,7 +535,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     }
   }
   function watchMissingFilePath(missingFilePath: Path) {
-    return watchFilePath(host, missingFilePath, onMissingFileChange, PollingInterval.Medium, watchOptions, missingFilePath, WatchType.MissingFile);
+    return watchFilePath(host, missingFilePath, onMissingFileChange, PollingInterval.Medium, watchOpts, missingFilePath, WatchType.MissingFile);
   }
   function onMissingFileChange(fileName: string, eventKind: FileWatcherEventKind, missingFilePath: Path) {
     updateCachedSystemWithFile(fileName, missingFilePath, eventKind);
@@ -566,7 +566,7 @@ export function createWatchProgram<T extends BuilderProgram>(
         nextSourceFileVersion(fileOrDirectoryPath);
         fileOrDirectoryPath = removeIgnoredPath(fileOrDirectoryPath);
         if (!fileOrDirectoryPath) return;
-        if (fileOrDirectoryPath !== directory && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, compilerOptions)) {
+        if (fileOrDirectoryPath !== directory && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, compilerOpts)) {
           writeLog(`Project: ${configFileName} Detected file add/remove of non supported extension: ${fileOrDirectory}`);
           return;
         }
@@ -576,7 +576,7 @@ export function createWatchProgram<T extends BuilderProgram>(
         }
       },
       flags,
-      watchOptions,
+      watchOpts,
       WatchType.WildcardDirectory
     );
   }
@@ -605,8 +605,8 @@ export function createDiagnosticReporter(system: System, pretty?: boolean): Diag
     diagnostics[0] = undefined!;
   };
 }
-function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, options: CompilerOptions): boolean {
-  if (system.clearScreen && !options.preserveWatchOutput && !options.extendedDiagnostics && !options.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
+function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, opts: CompilerOpts): boolean {
+  if (system.clearScreen && !opts.preserveWatchOutput && !opts.extendedDiagnostics && !opts.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
     system.clearScreen();
     return true;
   }
@@ -621,15 +621,15 @@ export function getLocaleTimeString(system: System) {
 }
 export function createWatchStatusReporter(system: System, pretty?: boolean): WatchStatusReporter {
   return pretty
-    ? (diagnostic, newLine, options) => {
-        clearScreenIfNotWatchingForFileChanges(system, diagnostic, options);
+    ? (diagnostic, newLine, opts) => {
+        clearScreenIfNotWatchingForFileChanges(system, diagnostic, opts);
         let output = `[${formatColorAndReset(getLocaleTimeString(system), ForegroundColorEscapeSequences.Grey)}] `;
         output += `${flattenqd.MessageText(diagnostic.messageText, system.newLine)}${newLine + newLine}`;
         system.write(output);
       }
-    : (diagnostic, newLine, options) => {
+    : (diagnostic, newLine, opts) => {
         let output = '';
-        if (!clearScreenIfNotWatchingForFileChanges(system, diagnostic, options)) {
+        if (!clearScreenIfNotWatchingForFileChanges(system, diagnostic, opts)) {
           output += newLine;
         }
         output += `${getLocaleTimeString(system)} - `;
@@ -639,14 +639,14 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
 }
 export function parseConfigFileWithSystem(
   configFileName: string,
-  optionsToExtend: CompilerOptions,
-  watchOptionsToExtend: WatchOptions | undefined,
+  optsToExtend: CompilerOpts,
+  watchOptsToExtend: WatchOpts | undefined,
   system: System,
   reportDiagnostic: DiagnosticReporter
 ) {
   const host: ParseConfigFileHost = <any>system;
   host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, reportDiagnostic, diagnostic);
-  const result = getParsedCommandLineOfConfigFile(configFileName, optionsToExtend, host, undefined, watchOptionsToExtend);
+  const result = getParsedCommandLineOfConfigFile(configFileName, optsToExtend, host, undefined, watchOptsToExtend);
   host.onUnRecoverableConfigFileDiagnostic = undefined!;
   return result;
 }
@@ -663,10 +663,10 @@ export function getErrorSummaryText(errorCount: number, newLine: string) {
 }
 export interface ProgramToEmitFilesAndReportErrors {
   getCurrentDirectory(): string;
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   getSourceFiles(): readonly SourceFile[];
   getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
   getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
@@ -674,7 +674,7 @@ export interface ProgramToEmitFilesAndReportErrors {
   emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
 }
 export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileName: (s: string) => void) {
-  if (program.getCompilerOptions().listFiles || program.getCompilerOptions().listFilesOnly) {
+  if (program.getCompilerOpts().listFiles || program.getCompilerOpts().listFilesOnly) {
     forEach(program.getSourceFiles(), (file) => {
       writeFileName(file.fileName);
     });
@@ -690,12 +690,12 @@ export function emitFilesAndReportErrors(
   emitOnlyDtsFiles?: boolean,
   customTransformers?: CustomTransformers
 ) {
-  const isListFilesOnly = !!program.getCompilerOptions().listFilesOnly;
+  const isListFilesOnly = !!program.getCompilerOpts().listFilesOnly;
   const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
   const configFileParsingDiagnosticsLength = allqd.length;
   addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
   if (allqd.length === configFileParsingDiagnosticsLength) {
-    addRange(allDiagnostics, program.getOptionsDiagnostics(cancellationToken));
+    addRange(allDiagnostics, program.getOptsDiagnostics(cancellationToken));
     if (!isListFilesOnly) {
       addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
       if (allqd.length === configFileParsingDiagnosticsLength) {
@@ -770,14 +770,14 @@ export interface WatchTypeRegistry {
 interface WatchFactory<X, Y = undefined> extends qnr.WatchFactory<X, Y> {
   writeLog: (s: string) => void;
 }
-export function createWatchFactory<Y = undefined>(host: { trace?(s: string): void }, options: { extendedDiagnostics?: boolean; diagnostics?: boolean }) {
-  const watchLogLevel = host.trace ? (options.extendedDiagnostics ? WatchLogLevel.Verbose : options.diagnostics ? WatchLogLevel.TriggerOnly : WatchLogLevel.None) : WatchLogLevel.None;
+export function createWatchFactory<Y = undefined>(host: { trace?(s: string): void }, opts: { extendedDiagnostics?: boolean; diagnostics?: boolean }) {
+  const watchLogLevel = host.trace ? (opts.extendedDiagnostics ? WatchLogLevel.Verbose : opts.diagnostics ? WatchLogLevel.TriggerOnly : WatchLogLevel.None) : WatchLogLevel.None;
   const writeLog: (s: string) => void = watchLogLevel !== WatchLogLevel.None ? (s) => host.trace!(s) : noop;
   const result = getWatchFactory<WatchType, Y>(watchLogLevel, writeLog) as WatchFactory<WatchType, Y>;
   result.writeLog = writeLog;
   return result;
 }
-export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOptions: () => CompilerOptions, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
+export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOpts: () => CompilerOpts, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
   const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
   const hostGetNewLine = memoize(() => host.getNewLine());
   return {
@@ -785,7 +785,7 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
       let text: string | undefined;
       try {
         performance.mark('beforeIORead');
-        text = host.readFile(fileName, getCompilerOptions().charset);
+        text = host.readFile(fileName, getCompilerOpts().charset);
         performance.mark('afterIORead');
         performance.measure('I/O Read', 'beforeIORead', 'afterIORead');
       } catch (e) {
@@ -797,12 +797,12 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
       return text !== undefined ? qp_createSource(fileName, text, languageVersion) : undefined;
     },
     getDefaultLibLocation: maybeBind(host, host.getDefaultLibLocation),
-    getDefaultLibFileName: (options) => host.qc.get.defaultLibFileName(options),
+    getDefaultLibFileName: (opts) => host.qc.get.defaultLibFileName(opts),
     writeFile,
     getCurrentDirectory: memoize(() => host.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
     getCanonicalFileName: createGetCanonicalFileName(useCaseSensitiveFileNames),
-    getNewLine: () => getNewLineCharacter(getCompilerOptions(), hostGetNewLine),
+    getNewLine: () => getNewLineCharacter(getCompilerOpts(), hostGetNewLine),
     fileExists: (f) => host.fileExists(f),
     readFile: (f) => host.readFile(f),
     trace: maybeBind(host, host.trace),
@@ -851,7 +851,7 @@ export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiag
     getNewLine: () => system.newLine,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     getDefaultLibLocation,
-    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(options)),
+    getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(opts)),
     fileExists: (path) => system.fileExists(path),
     readFile: (path, encoding) => system.readFile(path, encoding),
     directoryExists: (path) => system.directoryExists(path),
@@ -876,10 +876,10 @@ function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagn
   const result = createProgramHost(system, createProgram) as WatchCompilerHost<T>;
   copyProperties(result, createWatchHost(system, reportWatchStatus));
   result.afterProgramCreate = (builderProgram) => {
-    const compilerOptions = builderProgram.getCompilerOptions();
-    const newLine = getNewLineCharacter(compilerOptions, () => system.newLine);
+    const compilerOpts = builderProgram.getCompilerOpts();
+    const newLine = getNewLineCharacter(compilerOpts, () => system.newLine);
     emitFilesAndReportErrors(builderProgram, reportDiagnostic, writeFileName, (errorCount) =>
-      result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryqd.Message(errorCount), errorCount), newLine, compilerOptions, errorCount)
+      result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryqd.Message(errorCount), errorCount), newLine, compilerOpts, errorCount)
     );
   };
   return result;
@@ -896,14 +896,14 @@ export interface CreateWatchCompilerHostInput<T extends BuilderProgram> {
 }
 export interface CreateWatchCompilerHostOfConfigFileInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   configFileName: string;
-  optionsToExtend?: CompilerOptions;
-  watchOptionsToExtend?: WatchOptions;
+  optsToExtend?: CompilerOpts;
+  watchOptsToExtend?: WatchOpts;
   extraFileExtensions?: readonly FileExtensionInfo[];
 }
 export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
   configFileName,
-  optionsToExtend,
-  watchOptionsToExtend,
+  optsToExtend,
+  watchOptsToExtend,
   extraFileExtensions,
   system,
   createProgram,
@@ -914,37 +914,37 @@ export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = E
   const host = createWatchCompilerHost(system, createProgram, diagnosticReporter, reportWatchStatus) as WatchCompilerHostOfConfigFile<T>;
   host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, diagnosticReporter, diagnostic);
   host.configFileName = configFileName;
-  host.optionsToExtend = optionsToExtend;
-  host.watchOptionsToExtend = watchOptionsToExtend;
+  host.optsToExtend = optsToExtend;
+  host.watchOptsToExtend = watchOptsToExtend;
   host.extraFileExtensions = extraFileExtensions;
   return host;
 }
-export interface CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
+export interface CreateWatchCompilerHostOfFilesAndCompilerOptsInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   rootFiles: string[];
-  options: CompilerOptions;
-  watchOptions: WatchOptions | undefined;
+  opts: CompilerOpts;
+  watchOpts: WatchOpts | undefined;
   projectReferences?: readonly ProjectReference[];
 }
-export function createWatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
+export function createWatchCompilerHostOfFilesAndCompilerOpts<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
   rootFiles,
-  options,
-  watchOptions,
+  opts,
+  watchOpts,
   projectReferences,
   system,
   createProgram,
   reportDiagnostic,
   reportWatchStatus,
-}: CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T>): WatchCompilerHostOfFilesAndCompilerOptions<T> {
-  const host = createWatchCompilerHost(system, createProgram, reportDiagnostic || createDiagnosticReporter(system), reportWatchStatus) as WatchCompilerHostOfFilesAndCompilerOptions<T>;
+}: CreateWatchCompilerHostOfFilesAndCompilerOptsInput<T>): WatchCompilerHostOfFilesAndCompilerOpts<T> {
+  const host = createWatchCompilerHost(system, createProgram, reportDiagnostic || createDiagnosticReporter(system), reportWatchStatus) as WatchCompilerHostOfFilesAndCompilerOpts<T>;
   host.rootFiles = rootFiles;
-  host.options = options;
-  host.watchOptions = watchOptions;
+  host.opts = opts;
+  host.watchOpts = watchOpts;
   host.projectReferences = projectReferences;
   return host;
 }
-export interface IncrementalCompilationOptions {
+export interface IncrementalCompilationOpts {
   rootNames: readonly string[];
-  options: CompilerOptions;
+  opts: CompilerOpts;
   configFileParsingDiagnostics?: readonly Diagnostic[];
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
@@ -953,15 +953,15 @@ export interface IncrementalCompilationOptions {
   afterProgramEmitAndDiagnostics?(program: EmitAndSemanticDiagnosticsBuilderProgram): void;
   system?: System;
 }
-export function performIncrementalCompilation(input: IncrementalCompilationOptions) {
+export function performIncrementalCompilation(input: IncrementalCompilationOpts) {
   const system = input.system || sys;
-  const host = input.host || (input.host = createIncrementalCompilerHost(input.options, system));
+  const host = input.host || (input.host = createIncrementalCompilerHost(input.opts, system));
   const builderProgram = createIncrementalProgram(input);
   const exitStatus = emitFilesAndReportErrorsAndGetExitStatus(
     builderProgram,
     input.reportDiagnostic || createDiagnosticReporter(system),
     (s) => host.trace && host.trace(s),
-    input.reportErrorSummary || input.options.pretty ? (errorCount) => system.write(getErrorSummaryText(errorCount, system.newLine)) : undefined
+    input.reportErrorSummary || input.opts.pretty ? (errorCount) => system.write(getErrorSummaryText(errorCount, system.newLine)) : undefined
   );
   if (input.afterProgramEmitAndDiagnostics) input.afterProgramEmitAndDiagnostics(builderProgram);
   return exitStatus;
@@ -1198,17 +1198,17 @@ export enum WatchLogLevel {
   Verbose,
 }
 export interface WatchFileHost {
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: WatchOptions): FileWatcher;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: WatchOpts): FileWatcher;
 }
 export interface WatchDirectoryHost {
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: WatchOptions): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: WatchOpts): FileWatcher;
 }
 export type WatchFile<X, Y> = (
   host: WatchFileHost,
   file: string,
   callback: FileWatcherCallback,
   pollingInterval: PollingInterval,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
@@ -1218,7 +1218,7 @@ export type WatchFilePath<X, Y> = (
   file: string,
   callback: FilePathWatcherCallback,
   pollingInterval: PollingInterval,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   path: Path,
   detailInfo1: X,
   detailInfo2?: Y
@@ -1228,7 +1228,7 @@ export type WatchDirectory<X, Y> = (
   directory: string,
   callback: DirectoryWatcherCallback,
   flags: WatchDirectoryFlags,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
@@ -1244,8 +1244,8 @@ function getWatchFactoryWith<X, Y = undefined>(
   watchLogLevel: WatchLogLevel,
   log: (s: string) => void,
   getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined,
-  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, options: WatchOptions | undefined) => FileWatcher,
-  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined) => FileWatcher
+  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, opts: WatchOpts | undefined) => FileWatcher,
+  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: WatchOpts | undefined) => FileWatcher
 ): WatchFactory<X, Y> {
   const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
   const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
@@ -1254,22 +1254,22 @@ function getWatchFactoryWith<X, Y = undefined>(
     setSysLog((s) => log(s));
   }
   return {
-    watchFile: (host, file, callback, pollingInterval, options, detailInfo1, detailInfo2) =>
-      createFileWatcher(host, file, callback, pollingInterval, options, undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
-    watchFilePath: (host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2) =>
-      createFilePathWatcher(host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
-    watchDirectory: (host, directory, callback, flags, options, detailInfo1, detailInfo2) =>
-      createDirectoryWatcher(host, directory, callback, flags, options, undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
+    watchFile: (host, file, callback, pollingInterval, opts, detailInfo1, detailInfo2) =>
+      createFileWatcher(host, file, callback, pollingInterval, opts, undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
+    watchFilePath: (host, file, callback, pollingInterval, opts, path, detailInfo1, detailInfo2) =>
+      createFilePathWatcher(host, file, callback, pollingInterval, opts, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
+    watchDirectory: (host, directory, callback, flags, opts, detailInfo1, detailInfo2) =>
+      createDirectoryWatcher(host, directory, callback, flags, opts, undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
   };
 }
-function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined): FileWatcher {
-  return host.watchFile(file, callback, pollingInterval, options);
+function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, opts: WatchOpts | undefined): FileWatcher {
+  return host.watchFile(file, callback, pollingInterval, opts);
 }
-function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, path: Path): FileWatcher {
-  return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, options);
+function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, opts: WatchOpts | undefined, path: Path): FileWatcher {
+  return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, opts);
 }
-function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined): FileWatcher {
-  return host.watchDirectory(directory, callback, (flags & WatchDirectoryFlags.Recursive) !== 0, options);
+function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: WatchOpts | undefined): FileWatcher {
+  return host.watchDirectory(directory, callback, (flags & WatchDirectoryFlags.Recursive) !== 0, opts);
 }
 type WatchCallback<T, U> = (fileName: string, cbOptional?: T, passThrough?: U) => void;
 type AddWatch<H, T, U, V> = (
@@ -1277,7 +1277,7 @@ type AddWatch<H, T, U, V> = (
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   passThrough?: V,
   detailInfo1?: undefined,
   detailInfo2?: undefined
@@ -1288,7 +1288,7 @@ type CreateFileWatcher<H, T, U, V, X, Y> = (
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1312,7 +1312,7 @@ function createFileWatcherWithLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1321,11 +1321,11 @@ function createFileWatcherWithLogging<H, T, U, V, X, Y>(
   watchCaption: string,
   getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
 ): FileWatcher {
-  log(`${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
-  const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
+  log(`${watchCaption}:: Added:: ${getWatchInfo(file, flags, opts, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
+  const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, opts, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
   return {
     close: () => {
-      log(`${watchCaption}:: Close:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
+      log(`${watchCaption}:: Close:: ${getWatchInfo(file, flags, opts, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
       watcher.close();
     },
   };
@@ -1335,7 +1335,7 @@ function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1344,15 +1344,15 @@ function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(
   watchCaption: string,
   getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
 ): FileWatcher {
-  const watchInfo = `${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
+  const watchInfo = `${watchCaption}:: Added:: ${getWatchInfo(file, flags, opts, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
   log(watchInfo);
   const start = timestamp();
-  const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
+  const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, opts, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
   const elapsed = timestamp() - start;
   log(`Elapsed:: ${elapsed}ms ${watchInfo}`);
   return {
     close: () => {
-      const watchInfo = `${watchCaption}:: Close:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
+      const watchInfo = `${watchCaption}:: Close:: ${getWatchInfo(file, flags, opts, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
       log(watchInfo);
       const start = timestamp();
       watcher.close();
@@ -1366,7 +1366,7 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  options: WatchOptions | undefined,
+  opts: WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1382,7 +1382,7 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
       const triggerredInfo = `${watchCaption}:: Triggered with ${fileName} ${cbOptional !== undefined ? cbOptional : ''}:: ${getWatchInfo(
         file,
         flags,
-        options,
+        opts,
         detailInfo1,
         detailInfo2,
         getDetailWatchInfo
@@ -1394,17 +1394,17 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
       log(`Elapsed:: ${elapsed}ms ${triggerredInfo}`);
     },
     flags,
-    options
+    opts
   );
 }
-export function getFallbackOptions(options: WatchOptions | undefined): WatchOptions {
-  const fallbackPolling = options?.fallbackPolling;
+export function getFallbackOpts(opts: WatchOpts | undefined): WatchOpts {
+  const fallbackPolling = opts?.fallbackPolling;
   return {
     watchFile: fallbackPolling !== undefined ? ((fallbackPolling as unknown) as WatchFileKind) : WatchFileKind.PriorityPollingInterval,
   };
 }
-function getWatchInfo<T, X, Y>(file: string, flags: T, options: WatchOptions | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
-  return `WatchInfo: ${file} ${flags} ${JSON.stringify(options)} ${
+function getWatchInfo<T, X, Y>(file: string, flags: T, opts: WatchOpts | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
+  return `WatchInfo: ${file} ${flags} ${JSON.stringify(opts)} ${
     getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`
   }`;
 }

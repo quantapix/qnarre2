@@ -16,8 +16,8 @@ const enum ContextFlags {
 export function transformES2017(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
-  const compilerOptions = context.getCompilerOptions();
-  const languageVersion = getEmitScriptTarget(compilerOptions);
+  const compilerOpts = context.getCompilerOpts();
+  const languageVersion = getEmitScriptTarget(compilerOpts);
   let enabledSubstitutions: ES2017SubstitutionFlags;
   let enclosingSuperContainerFlags: NodeCheckFlags = 0;
   let enclosingFunctionParamNames: EscapedMap<true>;
@@ -33,7 +33,7 @@ export function transformES2017(context: TrafoContext) {
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile) return node;
     setContextFlag(ContextFlags.NonTopLevel, false);
-    setContextFlag(ContextFlags.HasLexicalThis, !isEffectiveStrictModeSourceFile(node, compilerOptions));
+    setContextFlag(ContextFlags.HasLexicalThis, !isEffectiveStrictModeSourceFile(node, compilerOpts));
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;
@@ -292,7 +292,7 @@ export function transformES2017(context: TrafoContext) {
     const nodeType = original.type;
     const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
-    const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
+    const hasLexicalArgs = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArgs) !== 0;
     const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
     enclosingFunctionParamNames = qb.createEscapedMap<true>();
     for (const param of node.params) {
@@ -309,7 +309,7 @@ export function transformES2017(context: TrafoContext) {
       const statements: Statement[] = [];
       const statementOffset = addPrologue(statements, (<Block>node.body).statements, false, visitor);
       statements.push(
-        new qc.ReturnStatement(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)))
+        new qc.ReturnStatement(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArgs, promiseConstructor, transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)))
       );
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
       const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
@@ -332,7 +332,7 @@ export function transformES2017(context: TrafoContext) {
       }
       result = block;
     } else {
-      const expression = createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(node.body!));
+      const expression = createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArgs, promiseConstructor, transformAsyncFunctionBodyWorker(node.body!));
       const declarations = endLexicalEnvironment();
       if (some(declarations)) {
         const block = convertToFunctionBody(expression);
@@ -414,14 +414,14 @@ export function transformES2017(context: TrafoContext) {
     return node;
   }
   function substituteElemAccessExpression(node: ElemAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argumentExpression, node);
+    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argExpression, node);
     return node;
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
     if (qc.is.superProperty(expression)) {
-      const argumentExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
-      return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
+      const argExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
+      return new qs.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
     }
     return node;
   }
@@ -429,10 +429,10 @@ export function transformES2017(context: TrafoContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElemAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftExpression {
+  function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), 'value'), location);
-    return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);
+      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value'), location);
+    return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), location);
   }
 }
 export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: EscapedMap<true>) {
@@ -485,23 +485,23 @@ export const awaiterHelper: UnscopedEmitHelper = {
   scoped: false,
   priority: 5,
   text: `
-            var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+            var __awaiter = (this && this.__awaiter) || function (thisArg, _args, P, generator) {
                 function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
                 return new (P || (P = Promise))(function (resolve, reject) {
                     function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
                     function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
                     function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-                    step((generator = generator.apply(thisArg, _arguments || [])).next());
+                    step((generator = generator.apply(thisArg, _args || [])).next());
                 });
             };`,
 };
-function createAwaiterHelper(context: TrafoContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
+function createAwaiterHelper(context: TrafoContext, hasLexicalThis: boolean, hasLexicalArgs: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
   context.requestEmitHelper(awaiterHelper);
   const generatorFunc = new qs.FunctionExpression([], undefined, body);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
   return new qs.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
     hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(),
-    hasLexicalArguments ? new Identifier('arguments') : qs.VoidExpression.zero(),
+    hasLexicalArgs ? new Identifier('args') : qs.VoidExpression.zero(),
     promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qs.VoidExpression.zero(),
     generatorFunc,
   ]);

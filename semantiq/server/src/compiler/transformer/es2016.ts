@@ -39,15 +39,15 @@ export function transformES2016(context: TrafoContext) {
     if (qc.is.kind(qc.ElemAccessExpression, left)) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
-      const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
+      const argExpressionTemp = createTempVariable(hoistVariableDeclaration);
       target = setRange(
         new qs.ElemAccessExpression(
           setRange(qf.create.assignment(expressionTemp, left.expression), left.expression),
-          setRange(qf.create.assignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
+          setRange(qf.create.assignment(argExpressionTemp, left.argExpression), left.argExpression)
         ),
         left
       );
-      value = setRange(new qs.ElemAccessExpression(expressionTemp, argumentExpressionTemp), left);
+      value = setRange(new qs.ElemAccessExpression(expressionTemp, argExpressionTemp), left);
     } else if (qc.is.kind(qc.PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);

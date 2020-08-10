@@ -6,7 +6,7 @@ import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
 export function transformJsx(context: TrafoContext) {
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   let currentSourceFile: SourceFile;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
@@ -81,7 +81,7 @@ export function transformJsx(context: TrafoContext) {
     }
     const elem = qs.JsxElem.qf.create.expression(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
-      compilerOptions.reactNamespace!,
+      compilerOpts.reactNamespace!,
       tagName,
       objectProperties,
       mapDefined(children, transformJsxChildToExpression),
@@ -96,7 +96,7 @@ export function transformJsx(context: TrafoContext) {
   function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
     const elem = qf.create.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
-      compilerOptions.reactNamespace!,
+      compilerOpts.reactNamespace!,
       mapDefined(children, transformJsxChildToExpression),
       node,
       location

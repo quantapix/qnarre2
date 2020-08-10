@@ -34,7 +34,7 @@ interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends 
 export interface ResolutionCacheHost extends ModuleResolutionHost {
   toPath(fileName: string): Path;
   getCanonicalFileName: GetCanonicalFileName;
-  getCompilationSettings(): CompilerOptions;
+  getCompilationSettings(): CompilerOpts;
   watchDirectoryOfFailedLookupLocation(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
   onInvalidatedResolution(): void;
   watchTypeRootsDirectory(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
@@ -187,18 +187,18 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function resolveModuleName(
     moduleName: string,
     containingFile: string,
-    compilerOptions: CompilerOptions,
+    compilerOpts: CompilerOpts,
     host: ModuleResolutionHost,
     redirectedReference?: ResolvedProjectReference
   ): CachedResolvedModuleWithFailedLookupLocations {
-    const primaryResult = qnr.resolveModuleName(moduleName, containingFile, compilerOptions, host, moduleResolutionCache, redirectedReference);
+    const primaryResult = qnr.resolveModuleName(moduleName, containingFile, compilerOpts, host, moduleResolutionCache, redirectedReference);
     if (!resolutionHost.getGlobalCache) return primaryResult;
     const globalCache = resolutionHost.getGlobalCache();
     if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
       const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
         Debug.checkDefined(resolutionHost.globalCacheResolutionModuleName)(moduleName),
         resolutionHost.projectName,
-        compilerOptions,
+        compilerOpts,
         host,
         globalCache
       );
@@ -216,7 +216,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     redirectedReference: ResolvedProjectReference | undefined;
     cache: Map<Map<T>>;
     perDirectoryCacheWithRedirects: CacheWithRedirects<Map<T>>;
-    loader: (name: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
+    loader: (name: string, containingFile: string, opts: CompilerOpts, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>;
     shouldRetryResolution: (t: T) => boolean;
     reusedNames?: readonly string[];
@@ -244,7 +244,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       perDirectoryCache.set(dirPath, perDirectoryResolution);
     }
     const resolvedModules: (R | undefined)[] = [];
-    const compilerOptions = resolutionHost.getCompilationSettings();
+    const compilerOpts = resolutionHost.getCompilationSettings();
     const hasInvalidatedNonRelativeUnresolvedImport = logChanges && isFileWithInvalidatedNonRelativeUnresolvedImports(path);
     const program = resolutionHost.getCurrentProgram();
     const oldRedirect = program && program.getResolvedProjectReferenceToRedirect(containingFile);
@@ -263,7 +263,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
         if (resolutionInDirectory) {
           resolution = resolutionInDirectory;
         } else {
-          resolution = loader(name, containingFile, compilerOptions, resolutionHost.getCompilerHost?.() || resolutionHost, redirectedReference);
+          resolution = loader(name, containingFile, compilerOpts, resolutionHost.getCompilerHost?.() || resolutionHost, redirectedReference);
           perDirectoryResolution.set(name, resolution);
         }
         resolutionsInFile.set(name, resolution);
@@ -615,12 +615,12 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     );
   }
   function updateTypeRootsWatch() {
-    const options = resolutionHost.getCompilationSettings();
-    if (options.types) {
+    const opts = resolutionHost.getCompilationSettings();
+    if (opts.types) {
       closeTypeRootsWatch();
       return;
     }
-    const typeRoots = getEffectiveTypeRoots(options, { directoryExists: directoryExistsForTypeRootWatch, getCurrentDirectory });
+    const typeRoots = getEffectiveTypeRoots(opts, { directoryExists: directoryExistsForTypeRootWatch, getCurrentDirectory });
     if (typeRoots) {
       mutateMap(
         typeRootsWatches,

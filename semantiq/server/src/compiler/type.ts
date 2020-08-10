@@ -168,8 +168,8 @@ export interface CallExpression extends LeftExpr, Decl {
   kind: Syntax.CallExpression;
   expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
-  typeArguments?: Nodes<Typing>;
-  arguments: Nodes<Expression>;
+  typeArgs?: Nodes<Typing>;
+  args: Nodes<Expression>;
 }
 export interface CallSignatureDeclaration extends SignatureDecl, TypeElem {
   kind: Syntax.CallSignature;
@@ -270,7 +270,7 @@ export interface CompilerHost extends ModuleResolutionHost {
   getSourceFile(fileName: string, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getSourceFileByPath?(fileName: string, path: Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getCancellationToken?(): CancellationToken;
-  getDefaultLibFileName(options: CompilerOptions): string;
+  getDefaultLibFileName(opts: CompilerOpts): string;
   getDefaultLibLocation?(): string;
   writeFile: WriteFileCallback;
   getCurrentDirectory(): string;
@@ -283,16 +283,16 @@ export interface CompilerHost extends ModuleResolutionHost {
     containingFile: string,
     reusedNames: string[] | undefined,
     redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
+    opts: CompilerOpts
   ): (ResolvedModule | undefined)[];
   resolveTypeReferenceDirectives?(
     typeReferenceDirectiveNames: string[],
     containingFile: string,
     redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
+    opts: CompilerOpts
   ): (ResolvedTypeReferenceDirective | undefined)[];
   getEnvironmentVariable?(name: string): string | undefined;
-  onReleaseOldSourceFile?(oldSourceFile: SourceFile, oldOptions: CompilerOptions, hasSourceFileByPath: boolean): void;
+  onReleaseOldSourceFile?(oldSourceFile: SourceFile, oldOpts: CompilerOpts, hasSourceFileByPath: boolean): void;
   hasInvalidatedResolution?: HasInvalidatedResolution;
   hasChangedAutomaticTypeDirectiveNames?: boolean;
   createHash?(data: string): string;
@@ -301,7 +301,7 @@ export interface CompilerHost extends ModuleResolutionHost {
   createDirectory?(directory: string): void;
   getSymlinks?(): qu.QReadonlyMap<string>;
 }
-export interface CompilerOptions {
+export interface CompilerOpts {
   all?: boolean;
   allowJs?: boolean;
   allowNonTsExtensions?: boolean;
@@ -407,7 +407,7 @@ export interface CompilerOptions {
   esModuleInterop?: boolean;
   showConfig?: boolean;
   useDefineForClassFields?: boolean;
-  [option: string]: CompilerOptionsValue | TsConfigSourceFile | undefined;
+  [option: string]: CompilerOptsValue | TsConfigSourceFile | undefined;
 }
 export interface ComputedPropertyName extends Nobj {
   kind: Syntax.ComputedPropertyName;
@@ -432,7 +432,7 @@ export interface ConditionalRoot {
   outerTypeParams?: TypeParam[];
   instantiations?: qu.QMap<Type>;
   aliasSymbol?: Symbol;
-  aliasTypeArguments?: Type[];
+  aliasTypeArgs?: Type[];
 }
 export interface ConditionalType extends InstantiableType {
   root: ConditionalRoot;
@@ -475,9 +475,9 @@ export interface ContinueStatement extends Stmt {
   kind: Syntax.ContinueStatement;
   label?: Identifier;
 }
-export interface CreateProgramOptions {
+export interface CreateProgramOpts {
   rootNames: readonly string[];
-  options: CompilerOptions;
+  opts: CompilerOpts;
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
   oldProgram?: Program;
@@ -516,7 +516,7 @@ export interface DeleteExpression extends UnaryExpr {
   kind: Syntax.DeleteExpression;
   expression: UnaryExpression;
 }
-export interface DidYouMeanOptionsDiagnostics {
+export interface DidYouMeanOptsDiagnostics {
   optionDeclarations: CommandLineOption[];
   unknownOptionDiagnostic: qd.Message;
   unknownDidYouMeanDiagnostic: qd.Message;
@@ -702,7 +702,7 @@ export interface ElemAccessExpression extends MemberExpr {
   kind: Syntax.ElemAccessExpression;
   expression: LeftExpression;
   questionDotToken?: QuestionDotToken;
-  argumentExpression: Expression;
+  argExpression: Expression;
 }
 export interface EmitHelper {
   readonly name: string;
@@ -747,7 +747,7 @@ export interface EmitResolver {
   getReferencedDeclarationWithCollidingName(node: Identifier): Declaration | undefined;
   isDeclarationWithCollidingName(node: Declaration): boolean;
   isValueAliasDeclaration(node: Node): boolean;
-  isReferencedAliasDeclaration(node: Node, checkChildren?: boolean): boolean;
+  referencedAliasDeclaration(node: Node, checkChildren?: boolean): boolean;
   isTopLevelValueImportEqualsWithEntityName(node: ImportEqualsDeclaration): boolean;
   getNodeCheckFlags(node: Node): qt.NodeCheckFlags;
   isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
@@ -775,7 +775,7 @@ export interface EmitResolver {
   getTypeReferenceSerializationKind(typeName: EntityName, location?: Node): qt.TypeReferenceSerializationKind;
   isOptionalParam(node: ParamDeclaration): boolean;
   moduleExportsSomeValue(moduleReferenceExpression: Expression): boolean;
-  isArgumentsLocalBinding(node: Identifier): boolean;
+  isArgsLocalBinding(node: Identifier): boolean;
   getExternalModuleFileFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping): SourceFile | undefined;
   getTypeReferenceDirectivesForEntityName(name: EntityNameOrEntityNameExpression): string[] | undefined;
   getTypeReferenceDirectivesForSymbol(symbol: Symbol, meaning?: qt.SymbolFlags): string[] | undefined;
@@ -867,7 +867,7 @@ export interface ExpressionStatement extends Stmt, DocContainer {
   kind: Syntax.ExpressionStatement;
   expression: Expression;
 }
-export interface ExpressionWithTypings extends WithArgumentsTobj {
+export interface ExpressionWithTypings extends WithArgsTobj {
   kind: Syntax.ExpressionWithTypings;
   parent?: HeritageClause | DocAugmentsTag | DocImplementsTag;
   expression: LeftExpression;
@@ -1009,7 +1009,7 @@ export interface Identifier extends PrimaryExpr, Decl {
   autoGenerateFlags?: qt.GeneratedIdentifierFlags;
   autoGenerateId?: number;
   isInDocNamespace?: boolean;
-  typeArguments?: Nodes<Typing | TypeParamDeclaration>;
+  typeArgs?: Nodes<Typing | TypeParamDeclaration>;
   jsdocDotPos?: number;
 }
 export interface IdentifierTypePredicate extends TypePredicateBase {
@@ -1059,10 +1059,10 @@ export interface ImportSpecifier extends NamedDecl {
   propertyName?: Identifier;
   name: Identifier;
 }
-export interface ImportTyping extends WithArgumentsTobj {
+export interface ImportTyping extends WithArgsTobj {
   kind: Syntax.ImportTyping;
   isTypeOf?: boolean;
-  argument: Typing;
+  arg: Typing;
   qualifier?: EntityName;
 }
 export interface IncompleteType {
@@ -1238,7 +1238,7 @@ export interface JsxOpeningElem extends Expr {
   kind: Syntax.JsxOpeningElem;
   parent?: JsxElem;
   tagName: JsxTagNameExpression;
-  typeArguments?: Nodes<Typing>;
+  typeArgs?: Nodes<Typing>;
   attributes: JsxAttributes;
 }
 export interface JsxOpeningFragment extends Expr {
@@ -1248,7 +1248,7 @@ export interface JsxOpeningFragment extends Expr {
 export interface JsxSelfClosingElem extends PrimaryExpr {
   kind: Syntax.JsxSelfClosingElem;
   tagName: JsxTagNameExpression;
-  typeArguments?: Nodes<Typing>;
+  typeArgs?: Nodes<Typing>;
   attributes: JsxAttributes;
 }
 export interface JsxSpreadAttribute extends ObjectLiteralElem {
@@ -1292,7 +1292,7 @@ export interface LateBoundDecl extends DynamicNamedDecl {
   name: LateBoundName;
 }
 export interface LateBoundElemAccessExpression extends ElemAccessExpression {
-  argumentExpression: EntityNameExpression;
+  argExpression: EntityNameExpression;
 }
 export interface LateBoundName extends ComputedPropertyName {
   expression: EntityNameExpression;
@@ -1435,8 +1435,8 @@ export interface NamespaceImport extends NamedDecl {
 export interface NewExpression extends PrimaryExpr, Decl {
   kind: Syntax.NewExpression;
   expression: LeftExpression;
-  typeArguments?: Nodes<Typing>;
-  arguments?: Nodes<Expression>;
+  typeArgs?: Nodes<Typing>;
+  args?: Nodes<Expression>;
 }
 export interface Nobj extends qu.Range {
   contextualType?: Type;
@@ -1462,7 +1462,7 @@ export interface Nobj extends qu.Range {
 }
 export interface NodeLinks {
   capturedBlockScopeBindings?: Symbol[];
-  containsArgumentsReference?: boolean;
+  containsArgsReference?: boolean;
   contextFreeType?: Type;
   declarationRequiresScopeChange?: boolean;
   deferredNodes?: qu.QMap<Node>;
@@ -1492,8 +1492,8 @@ export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range
   trafoFlags: qt.TrafoFlags;
   visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: Nodes) => V | undefined): V | undefined;
 }
-export interface WithArgumentsTobj extends Tobj {
-  typeArguments?: Nodes<Typing>;
+export interface WithArgsTobj extends Tobj {
+  typeArgs?: Nodes<Typing>;
 }
 export interface NonNullChain extends NonNullExpression {
   _optionalChainBrand: any;
@@ -1588,11 +1588,11 @@ export interface ParseConfigHost {
   trace?(s: string): void;
 }
 export interface ParsedCommandLine {
-  options: CompilerOptions;
+  opts: CompilerOpts;
   typeAcquisition?: TypeAcquisition;
   fileNames: string[];
   projectReferences?: readonly ProjectReference[];
-  watchOptions?: WatchOptions;
+  watchOpts?: WatchOpts;
   raw?: any;
   errors: qd.Diagnostic[];
   wildcardDirectories?: qu.MapLike<qt.WatchDirectoryFlags>;
@@ -1617,10 +1617,10 @@ export interface PostfixUnaryExpression extends UpdateExpr {
 }
 export interface PragmaDefinition<T1 extends string = string, T2 extends string = string, T3 extends string = string, T4 extends string = string> {
   args?:
-    | readonly [PragmaArgumentSpecification<T1>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>, PragmaArgumentSpecification<T4>];
+    | readonly [PragmaArgSpecification<T1>]
+    | readonly [PragmaArgSpecification<T1>, PragmaArgSpecification<T2>]
+    | readonly [PragmaArgSpecification<T1>, PragmaArgSpecification<T2>, PragmaArgSpecification<T3>]
+    | readonly [PragmaArgSpecification<T1>, PragmaArgSpecification<T2>, PragmaArgSpecification<T3>, PragmaArgSpecification<T4>];
   kind?: qt.PragmaKindFlags;
 }
 export interface PragmaMap extends qu.QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
@@ -1647,13 +1647,13 @@ export interface Printer {
   writeBundle(bundle: Bundle, writer: EmitTextWriter, sourceMapGenerator: SourceMapGenerator | undefined): void;
   bundleFileInfo?: BundleFileInfo;
 }
-export interface PrinterOptions {
+export interface PrinterOpts {
   removeComments?: boolean;
   newLine?: qt.NewLineKind;
   omitTrailingSemicolon?: boolean;
   noEmitHelpers?: boolean;
-  module?: CompilerOptions['module'];
-  target?: CompilerOptions['target'];
+  module?: CompilerOpts['module'];
+  target?: CompilerOpts['target'];
   sourceMap?: boolean;
   inlineSourceMap?: boolean;
   inlineSources?: boolean;
@@ -1712,7 +1712,7 @@ export interface Program extends ScriptReferenceHost {
     customTransformers?: CustomTransformers,
     forceDtsEmit?: boolean
   ): EmitResult;
-  getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
   getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
   getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
   getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
@@ -1918,7 +1918,7 @@ export interface ReverseMappedType extends ObjectType {
   constraintType: IndexType;
 }
 export interface ScriptReferenceHost {
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   getSourceFile(fileName: string): SourceFile | undefined;
   getSourceFileByPath(path: Path): SourceFile | undefined;
   getCurrentDirectory(): string;
@@ -1943,23 +1943,23 @@ export interface ShorthandPropertyAssignment extends ObjectLiteralElem, DocConta
   objectAssignmentIniter?: Expression;
 }
 export interface Signature {
+  canonicalCache?: Signature;
   checker: TypeChecker;
-  flags: qt.SignatureFlags;
   declaration?: SignatureDeclaration | DocSignature;
-  typeParams?: readonly TypeParam[];
-  params: readonly Symbol[];
-  thisParam?: Symbol;
-  resolvedReturnType?: Type;
-  resolvedTypePredicate?: TypePredicate;
-  minArgumentCount: number;
-  target?: Signature;
-  mapper?: TypeMapper;
-  unionSignatures?: Signature[];
-  erasedSignatureCache?: Signature;
-  canonicalSignatureCache?: Signature;
-  optionalCallSignatureCache?: { inner?: Signature; outer?: Signature };
-  isolatedSignatureType?: ObjectType;
+  erasedCache?: Signature;
+  flags: qt.SignatureFlags;
   instantiations?: qu.QMap<Signature>;
+  isolatedSignatureType?: ObjectType;
+  mapper?: TypeMapper;
+  minArgCount: number;
+  optionalCallCache?: { inner?: Signature; outer?: Signature };
+  params: readonly Symbol[];
+  resolvedPredicate?: TypePredicate;
+  resolvedReturn?: Type;
+  target?: Signature;
+  thisParam?: Symbol;
+  typeParams?: readonly TypeParam[];
+  unions?: Signature[];
 }
 export interface SignatureDecl extends NamedDecl, DocContainer {
   kind: SignatureDeclaration['kind'];
@@ -1967,7 +1967,7 @@ export interface SignatureDecl extends NamedDecl, DocContainer {
   typeParams?: Nodes<TypeParamDeclaration>;
   params: Nodes<ParamDeclaration>;
   type?: Typing;
-  typeArguments?: Nodes<Typing>;
+  typeArgs?: Nodes<Typing>;
 }
 export interface Stmt extends Nobj {
   _statementBrand: any;
@@ -2026,7 +2026,7 @@ export interface SourceFileInfo {
   prologues?: SourceFilePrologueInfo[];
 }
 export interface SourceFileMayBeEmittedHost {
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   isSourceFileFromExternalLibrary(file: SourceFile): boolean;
   getResolvedProjectReferenceToRedirect(fileName: string): ResolvedProjectReference | undefined;
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
@@ -2115,6 +2115,7 @@ export interface SwitchStatement extends Stmt {
   possiblyExhaustive?: boolean;
 }
 export interface Symbol {
+  assigned?: boolean;
   assignmentDeclarations?: qu.QMap<Declaration>;
   constEnumOnlyModule?: boolean;
   declarations?: Declaration[];
@@ -2124,12 +2125,11 @@ export interface Symbol {
   flags: qt.SymbolFlags;
   globalExports?: SymbolTable;
   id?: number;
-  isAssigned?: boolean;
-  isReferenced?: qt.SymbolFlags;
-  isReplaceable?: boolean;
   members?: SymbolTable;
   mergeId?: number;
   parent?: Symbol;
+  referenced?: qt.SymbolFlags;
+  replaceable?: boolean;
   valueDeclaration?: Declaration;
 }
 export interface SymbolAccessibilityResult extends SymbolVisibilityResult {
@@ -2224,7 +2224,7 @@ export interface SyntheticReferenceExpression extends LeftExpr {
 export interface TaggedTemplateExpression extends MemberExpr {
   kind: Syntax.TaggedTemplateExpression;
   tag: LeftExpression;
-  typeArguments?: Nodes<Typing>;
+  typeArgs?: Nodes<Typing>;
   template: TemplateLiteral;
   questionDotToken?: QuestionDotToken;
 }
@@ -2279,7 +2279,7 @@ export interface Token<T extends Syntax> extends Nobj {
 export interface TrafoContext {
   getEmitResolver(): EmitResolver;
   getEmitHost(): EmitHost;
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   startLexicalEnvironment(): void;
   setLexicalEnvironmentFlags(flags: qt.LexicalEnvironmentFlags, value: boolean): void;
   getLexicalEnvironmentFlags(): qt.LexicalEnvironmentFlags;
@@ -2313,8 +2313,8 @@ export interface TryStatement extends Stmt {
 }
 export interface TsConfigOnlyOption extends CommandLineOptionBase {
   type: 'object';
-  elemOptions?: qu.QMap<CommandLineOption>;
-  extraKeyDiagnostics?: DidYouMeanOptionsDiagnostics;
+  elemOpts?: qu.QMap<CommandLineOption>;
+  extraKeyDiagnostics?: DidYouMeanOptsDiagnostics;
 }
 export interface TsConfigSourceFile extends JsonSourceFile {
   extendedSourceFiles?: string[];
@@ -2334,15 +2334,15 @@ export interface TupleTypeReference extends TypeReference {
 }
 export interface Type {
   aliasSymbol?: Symbol;
-  aliasTypeArguments?: readonly Type[];
-  aliasTypeArgumentsContainsMarker?: boolean;
+  aliasTypeArgs?: readonly Type[];
+  aliasTypeArgsContainsMarker?: boolean;
   checker: TypeChecker;
   flags: qt.TypeFlags;
   id: number;
   immediateBaseConstraint?: Type;
   pattern?: DestructuringPattern;
-  permissiveInstantiation?: Type;
-  restrictiveInstantiation?: Type;
+  permissive?: Type;
+  restrictive?: Type;
   symbol?: Symbol;
   widened?: Type;
 }
@@ -2377,7 +2377,7 @@ export interface CheckerGet {
   propertyOfType(t: Type, prop: string): Symbol | undefined;
   returnTypeOfSignature(s: Signature): Type;
   signaturesOfType(t: Type, l: qt.SignatureKind): readonly Signature[];
-  typeArguments(r: TypeReference): readonly Type[];
+  typeArgs(r: TypeReference): readonly Type[];
   typeAtLocation(n: Node): Type;
 }
 export interface CheckerIs {
@@ -2388,7 +2388,7 @@ export interface TypeChecker {
   is: CheckerIs;
 }
 export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   getSourceFiles(): readonly SourceFile[];
   getSourceFile(fileName: string): SourceFile | undefined;
   getResolvedTypeReferenceDirectives(): qu.QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
@@ -2449,10 +2449,10 @@ export interface TypeReference extends ObjectType {
   target: GenericType;
   node?: TypingReference | ArrayTyping | TupleTyping;
   mapper?: TypeMapper;
-  resolvedTypeArguments?: readonly Type[];
+  resolvedTypeArgs?: readonly Type[];
   literalType?: TypeReference;
 }
-export interface TypingReference extends WithArgumentsTobj {
+export interface TypingReference extends WithArgsTobj {
   kind: Syntax.TypingReference;
   typeName: EntityName;
 }
@@ -2549,7 +2549,7 @@ export interface UserPreferences {
   readonly providePrefixAndSuffixTextForRename?: boolean;
 }
 export interface ValidImportTyping extends ImportTyping {
-  argument: LiteralTyping & { literal: StringLiteral };
+  arg: LiteralTyping & { literal: StringLiteral };
 }
 export interface VariableDeclaration extends NamedDecl {
   kind: Syntax.VariableDeclaration;
@@ -2572,12 +2572,12 @@ export interface VoidExpression extends UnaryExpr {
   kind: Syntax.VoidExpression;
   expression: UnaryExpression;
 }
-export interface WatchOptions {
+export interface WatchOpts {
   watchFile?: qt.WatchFileKind;
   watchDirectory?: qt.WatchDirectoryKind;
   fallbackPolling?: qt.PollingWatchKind;
   synchronousWatchDirectory?: boolean;
-  [option: string]: CompilerOptionsValue | undefined;
+  [option: string]: CompilerOptsValue | undefined;
 }
 export interface WellKnownSymbolExpression extends PropertyAccessExpression {
   expression: Identifier & { escapedText: 'Symbol' };
@@ -2635,7 +2635,7 @@ export type BinaryOperator = AssignmentOperatorOrHigher | Syntax.CommaToken;
 export type BinaryOperatorToken = Token<BinaryOperator>;
 export type BindableAccessExpression = PropertyAccessEntityNameExpression | BindableElemAccessExpression;
 export type BindableElemAccessExpression = ElemAccessExpression & { expression: BindableStaticNameExpression };
-export type BindableObjectDefinePropertyCall = CallExpression & { arguments: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression } };
+export type BindableObjectDefinePropertyCall = CallExpression & { args: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression } };
 export type BindableStaticAccessExpression = PropertyAccessEntityNameExpression | BindableStaticElemAccessExpression;
 export type BindableStaticElemAccessExpression = LiteralLikeElemAccessExpression & { expression: BindableStaticNameExpression };
 export type BindableStaticNameExpression = EntityNameExpression | BindableStaticElemAccessExpression;
@@ -2672,7 +2672,7 @@ export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
 export type ColonToken = Token<Syntax.ColonToken>;
 export type CommaToken = Token<Syntax.CommaToken>;
 export type CommandLineOption = CommandLineOptionOfCustomType | CommandLineOptionOfPrimitiveType | TsConfigOnlyOption | CommandLineOptionOfListType;
-export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qu.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
+export type CompilerOptsValue = string | number | boolean | (string | number)[] | string[] | qu.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
 export type CompoundAssignmentOperator =
   | Syntax.AmpersandEqualsToken
   | Syntax.Asterisk2EqualsToken
@@ -2860,7 +2860,7 @@ export type HasType =
   | TypingOperator
   | TypingPredicate
   | VariableDeclaration;
-export type HasTypeArguments = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElem | JsxSelfClosingElem;
+export type HasTypeArgs = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElem | JsxSelfClosingElem;
 export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
 export type JsxAttributeLike = JsxAttribute | JsxSpreadAttribute;
 export type JsxChild = JsxText | JsxExpression | JsxElem | JsxSelfClosingElem | JsxFragment;
@@ -2877,8 +2877,8 @@ export type LateVisibilityPaintedStatement =
   | VariableStatement;
 export type LeftExpression = CallExpression | MemberExpression | NonNullExpression | PartiallyEmittedExpression | SyntheticReferenceExpression;
 export type LiteralExpression = BigIntLiteral | NoSubstitutionLiteral | NumericLiteral | RegexLiteral | StringLiteral;
-export type LiteralImportTyping = ImportTyping & { argument: LiteralTyping & { literal: StringLiteral } };
-export type LiteralLikeElemAccessExpression = ElemAccessExpression & Declaration & { argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression };
+export type LiteralImportTyping = ImportTyping & { arg: LiteralTyping & { literal: StringLiteral } };
+export type LiteralLikeElemAccessExpression = ElemAccessExpression & Declaration & { argExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression };
 export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
 export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
 export type MatchingKeys<TRecord, TMatch, K extends keyof TRecord = keyof TRecord> = K extends (TRecord[K] extends TMatch ? K : never) ? K : never;
@@ -3150,7 +3150,7 @@ export type ParamPropertyDeclaration = ParamDeclaration & { parent?: Constructor
 export type Path = string & { __pathBrand: any };
 export type PlusToken = Token<Syntax.PlusToken>;
 export type PostfixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token;
-export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { arguments: PragmaArgumentType<K>; range: CommentRange } };
+export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { args: PragmaArgType<K>; range: CommentRange } };
 export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
 export type PrefixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token | Syntax.PlusToken | Syntax.MinusToken | Syntax.TildeToken | Syntax.ExclamationToken;
 export type PrimaryExpression =
@@ -3181,7 +3181,7 @@ export type ReadonlyToken = Token<Syntax.ReadonlyKeyword>;
 export type RedirectTargetsMap = qu.QReadonlyMap<readonly string[]>;
 export type RelationalOperator = Syntax.LessThanToken | Syntax.LessThanEqualsToken | Syntax.GreaterThanToken | Syntax.GreaterThanEqualsToken | Syntax.InstanceOfKeyword | Syntax.InKeyword;
 export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
-export type RequireOrImportCall = CallExpression & { expression: Identifier; arguments: [StringLiteralLike] };
+export type RequireOrImportCall = CallExpression & { expression: Identifier; args: [StringLiteralLike] };
 export type RequireResult<T = {}> = { module: T; modulePath?: string; error: undefined } | { module: undefined; modulePath?: undefined; error: { stack?: string; message?: string } };
 export type ResolvedConfigFileName = string & { _isResolvedConfigFileName: never };
 export type ShiftOperator = Syntax.LessThan2Token | Syntax.GreaterThan2Token | Syntax.GreaterThan3Token;
@@ -3305,7 +3305,7 @@ export type VariableLikeDeclaration =
   | VariableDeclaration;
 export type WriteFileCallback = (fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void, sourceFiles?: readonly SourceFile[]) => void;
 export type xJsFileExtensionInfo = FileExtensionInfo;
-interface PragmaArgumentSpecification<TName extends string> {
+interface PragmaArgSpecification<TName extends string> {
   name: TName;
   optional?: boolean;
   captureSpan?: boolean;
@@ -3324,13 +3324,13 @@ interface SymbolWriter extends SymbolTracker {
   decreaseIndent(): void;
   clear(): void;
 }
-type ArgumentDefinitionToFieldUnion<T extends readonly PragmaArgumentSpecification<any>[]> = {
+type ArgDefinitionToFieldUnion<T extends readonly PragmaArgSpecification<any>[]> = {
   [K in keyof T]: PragmaArgTypeOptional<T[K], T[K] extends { name: infer TName } ? (TName extends string ? TName : never) : never>;
 }[Extract<keyof T, number>];
 type ConcretePragmaSpecs = typeof qt.commentPragmas;
 type PragmaArgTypeMaybeCapture<TDesc> = TDesc extends { captureSpan: true } ? { value: string; pos: number; end: number } : string;
 type PragmaArgTypeOptional<TDesc, TName extends string> = TDesc extends { optional: true } ? { [K in TName]?: PragmaArgTypeMaybeCapture<TDesc> } : { [K in TName]: PragmaArgTypeMaybeCapture<TDesc> };
-type PragmaArgumentType<KPrag extends keyof ConcretePragmaSpecs> = ConcretePragmaSpecs[KPrag] extends { args: readonly PragmaArgumentSpecification<any>[] }
-  ? UnionToIntersection<ArgumentDefinitionToFieldUnion<ConcretePragmaSpecs[KPrag]['args']>>
+type PragmaArgType<KPrag extends keyof ConcretePragmaSpecs> = ConcretePragmaSpecs[KPrag] extends { args: readonly PragmaArgSpecification<any>[] }
+  ? UnionToIntersection<ArgDefinitionToFieldUnion<ConcretePragmaSpecs[KPrag]['args']>>
   : never;
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;

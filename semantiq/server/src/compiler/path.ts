@@ -640,10 +640,10 @@ export const supportedJSExtensions: readonly Extension[] = [Extension.Js, Extens
 export const supportedJSAndJsonExtensions: readonly Extension[] = [Extension.Js, Extension.Jsx, Extension.Json];
 const allSupportedExtensions: readonly Extension[] = [...supportedTSExtensions, ...supportedJSExtensions];
 const allSupportedExtensionsWithJson: readonly Extension[] = [...supportedTSExtensions, ...supportedJSExtensions, Extension.Json];
-export function getSupportedExtensions(options?: qt.CompilerOptions): readonly Extension[];
-export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[];
-export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[] {
-  const needJsExtensions = options && options.allowJs;
+export function getSupportedExtensions(opts?: qt.CompilerOpts): readonly Extension[];
+export function getSupportedExtensions(opts?: qt.CompilerOpts, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[];
+export function getSupportedExtensions(opts?: qt.CompilerOpts, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[] {
+  const needJsExtensions = opts && opts.allowJs;
   if (!extraFileExtensions || extraFileExtensions.length === 0) return needJsExtensions ? allSupportedExtensions : supportedTSExtensions;
   const extensions = [
     ...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions),
@@ -651,8 +651,8 @@ export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileEx
   ];
   return qu.deduplicate<string>(extensions, qu.equateStringsCaseSensitive, qu.compareCaseSensitive);
 }
-export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(options: qt.CompilerOptions | undefined, supportedExtensions: readonly string[]): readonly string[] {
-  if (!options || !options.resolveJsonModule) return supportedExtensions;
+export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts: qt.CompilerOpts | undefined, supportedExtensions: readonly string[]): readonly string[] {
+  if (!opts || !opts.resolveJsonModule) return supportedExtensions;
   if (supportedExtensions === allSupportedExtensions) return allSupportedExtensionsWithJson;
   if (supportedExtensions === supportedTSExtensions) return supportedTSExtensionsWithJson;
   return [...supportedExtensions, Extension.Json];
@@ -666,10 +666,10 @@ export function hasJSFileExtension(fileName: string): boolean {
 export function hasTSFileExtension(fileName: string): boolean {
   return qu.some(supportedTSExtensions, (extension) => fileExtensionIs(fileName, extension));
 }
-export function isSupportedSourceFileName(fileName: string, compilerOptions?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]) {
+export function isSupportedSourceFileName(fileName: string, compilerOpts?: qt.CompilerOpts, extraFileExtensions?: readonly qt.FileExtensionInfo[]) {
   if (!fileName) return false;
-  const supportedExtensions = getSupportedExtensions(compilerOptions, extraFileExtensions);
-  for (const extension of getSuppoertedExtensionsWithJsonIfResolveJsonModule(compilerOptions, supportedExtensions)) {
+  const supportedExtensions = getSupportedExtensions(compilerOpts, extraFileExtensions);
+  for (const extension of getSuppoertedExtensionsWithJsonIfResolveJsonModule(compilerOpts, supportedExtensions)) {
     if (fileExtensionIs(fileName, extension)) return true;
   }
   return false;

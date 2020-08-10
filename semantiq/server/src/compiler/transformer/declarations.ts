@@ -6,8 +6,8 @@ import * as qy from '../syntax';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
   if (file && qc.is.jsonSourceFile(file)) return [];
-  const compilerOptions = host.getCompilerOptions();
-  const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], false);
+  const compilerOpts = host.getCompilerOpts();
+  const result = transformNodes(resolver, host, compilerOpts, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], false);
   return result.diagnostics;
 }
 function hasInternalAnnotation(range: CommentRange, currentSourceFile: SourceFile) {
@@ -70,8 +70,8 @@ export function transformDeclarations(context: TrafoContext) {
   let libs: QMap<boolean>;
   let emittedImports: readonly AnyImportSyntax[] | undefined;
   const resolver = context.getEmitResolver();
-  const options = context.getCompilerOptions();
-  const { noResolve, stripInternal } = options;
+  const opts = context.getCompilerOpts();
+  const { noResolve, stripInternal } = opts;
   return transformRoot;
   function recordTypeReferenceDirectivesIfNecessary(typeReferenceDirectives: readonly string[] | undefined): void {
     if (!typeReferenceDirectives) return;
@@ -317,7 +317,7 @@ export function transformDeclarations(context: TrafoContext) {
         }
         if (declFileName) {
           const spec = moduleSpecifiers.getModuleSpecifier(
-            { ...options, baseUrl: options.baseUrl && toPath(options.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
+            { ...opts, baseUrl: opts.baseUrl && toPath(opts.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
             currentSourceFile,
             toPath(outputFilePath, host.getCurrentDirectory(), host.getCanonicalFileName),
             toPath(declFileName, host.getCurrentDirectory(), host.getCanonicalFileName),
@@ -635,12 +635,12 @@ export function transformDeclarations(context: TrafoContext) {
         case Syntax.ExpressionWithTypings: {
           if (qc.is.entityName(input.expression) || qc.is.entityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(node.update(parenthesizeTypeParams(node.typeArguments), node.expression));
+          return cleanup(node.update(parenthesizeTypeParams(node.typeArgs), node.expression));
         }
         case Syntax.TypingReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(node.update(node.typeName, parenthesizeTypeParams(node.typeArguments)));
+          return cleanup(node.update(node.typeName, parenthesizeTypeParams(node.typeArgs)));
         }
         case Syntax.ConstructSignature:
           return cleanup(input.update(ensureTypeParams(input, input.typeParams), updateParamsList(input, input.params), ensureType(input, input.type)));
@@ -735,9 +735,9 @@ export function transformDeclarations(context: TrafoContext) {
           if (!qc.is.literalImportTyping(input)) return cleanup(input);
           return cleanup(
             input.update(
-              input.argument.update(rewriteModuleSpecifier(input, input.argument.literal)),
+              input.arg.update(rewriteModuleSpecifier(input, input.arg.literal)),
               input.qualifier,
-              Nodes.visit(input.typeArguments, visitDeclarationSubtree, isTypeNode),
+              Nodes.visit(input.typeArgs, visitDeclarationSubtree, isTypeNode),
               input.isTypeOf
             )
           );
@@ -965,7 +965,7 @@ export function transformDeclarations(context: TrafoContext) {
                 getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(clause.types[0]);
                 const newClause = updateHeritageClause(
                   clause,
-                  map(clause.types, (t) => updateExpressionWithTypings(t, Nodes.visit(t.typeArguments, visitDeclarationSubtree), newId))
+                  map(clause.types, (t) => updateExpressionWithTypings(t, Nodes.visit(t.typeArgs, visitDeclarationSubtree), newId))
                 );
                 getSymbolAccessibilityDiagnostic = oldDiag;
                 return newClause;

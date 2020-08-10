@@ -38,7 +38,7 @@ const enum Context {
   VariableDeclarations,
   ObjectBindingElems,
   ArrayBindingElems,
-  ArgumentExpressions,
+  ArgExpressions,
   ObjectLiteralMembers,
   JsxAttributes,
   JsxChildren,
@@ -47,7 +47,7 @@ const enum Context {
   DocParams,
   RestProperties,
   TypeParams,
-  TypeArguments,
+  TypeArgs,
   TupleElemTypes,
   HeritageClauses,
   ImportOrExportSpecifiers,
@@ -343,7 +343,7 @@ function create() {
         case Syntax.ArrayTyping:
           return this.objectOrObjectArrayTypeReference((n as qc.ArrayTyping).elemType);
         default:
-          return n.kind === Syntax.TypingReference && n.typeName.kind === Syntax.Identifier && n.typeName.escapedText === 'Object' && !n.typeArguments;
+          return n.kind === Syntax.TypingReference && n.typeName.kind === Syntax.Identifier && n.typeName.escapedText === 'Object' && !n.typeArgs;
       }
     }
   })();
@@ -361,7 +361,7 @@ function create() {
     followContextualOfKeyword() {
       return next.isIdentifier() && next.tok() === Syntax.CloseParenToken;
     }
-    followTypeArgumentsInExpression() {
+    followTypeArgsInExpression() {
       switch (tok()) {
         case Syntax.OpenParenToken: // foo<x>(
         case Syntax.NoSubstitutionLiteral: // foo<T> `...`
@@ -978,13 +978,13 @@ function create() {
             case Syntax.DotToken:
               return true;
           }
-        case Context.ArgumentExpressions:
+        case Context.ArgExpressions:
           return tok() === Syntax.Dot3Token || is.startOfExpression();
         case Context.Params:
           return is.startOfParam(false);
         case Context.DocParams:
           return is.startOfParam(true);
-        case Context.TypeArguments:
+        case Context.TypeArgs:
         case Context.TupleElemTypes:
           return tok() === Syntax.CommaToken || is.startOfType();
         case Context.HeritageClauses:
@@ -1024,7 +1024,7 @@ function create() {
           return isTerminator();
         case Context.TypeParams:
           return tok() === Syntax.GreaterThanToken || tok() === Syntax.OpenParenToken || tok() === Syntax.OpenBraceToken || tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
-        case Context.ArgumentExpressions:
+        case Context.ArgExpressions:
           return tok() === Syntax.CloseParenToken || tok() === Syntax.SemicolonToken;
         case Context.ArrayLiteralMembers:
         case Context.TupleElemTypes:
@@ -1034,7 +1034,7 @@ function create() {
         case Context.Params:
         case Context.RestProperties:
           return tok() === Syntax.CloseParenToken || tok() === Syntax.CloseBracketToken;
-        case Context.TypeArguments:
+        case Context.TypeArgs:
           return tok() !== Syntax.CommaToken;
         case Context.HeritageClauses:
           return tok() === Syntax.OpenBraceToken || tok() === Syntax.CloseBraceToken;
@@ -1077,8 +1077,8 @@ function create() {
             return qd.msgs.Property_destructuring_pattern_expected;
           case Context.ArrayBindingElems:
             return qd.msgs.Array_elem_destructuring_pattern_expected;
-          case Context.ArgumentExpressions:
-            return qd.msgs.Argument_expression_expected;
+          case Context.ArgExpressions:
+            return qd.msgs.Arg_expression_expected;
           case Context.ObjectLiteralMembers:
             return qd.msgs.Property_assignment_expected;
           case Context.ArrayLiteralMembers:
@@ -1089,8 +1089,8 @@ function create() {
             return qd.msgs.Param_declaration_expected;
           case Context.TypeParams:
             return qd.msgs.Type_param_declaration_expected;
-          case Context.TypeArguments:
-            return qd.msgs.Type_argument_expected;
+          case Context.TypeArgs:
+            return qd.msgs.Type_arg_expected;
           case Context.TupleElemTypes:
             return qd.msgs.Type_expected;
           case Context.HeritageClauses:
@@ -1389,7 +1389,7 @@ function create() {
       const n = create.node(Syntax.TypingReference);
       n.typeName = this.entityName(true, qd.msgs.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
-        n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
+        n.typeArgs = ctx.parseBracketedList(Context.TypeArgs, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
       return finishNode(n);
     }
@@ -1613,11 +1613,11 @@ function create() {
       if (this.optional(Syntax.TypeOfKeyword)) n.isTypeOf = true;
       this.expected(Syntax.ImportKeyword);
       this.expected(Syntax.OpenParenToken);
-      n.argument = this.type();
+      n.arg = this.type();
       this.expected(Syntax.CloseParenToken);
       if (this.optional(Syntax.DotToken)) n.qualifier = this.entityName(true, qd.msgs.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
-        n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
+        n.typeArgs = ctx.parseBracketedList(Context.TypeArgs, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
       return finishNode(n);
     }
@@ -2207,13 +2207,13 @@ function create() {
       const expression = this.tokenNode<PrimaryExpression>();
       if (tok() === Syntax.LessThanToken) {
         const startPos = getNodePos();
-        const typeArguments = tryParse(this.typeArgumentsInExpression);
-        if (typeArguments !== undefined) this.errorAt(startPos, getNodePos(), qd.msgs.super_may_not_use_type_arguments);
+        const typeArgs = tryParse(this.typeArgsInExpression);
+        if (typeArgs !== undefined) this.errorAt(startPos, getNodePos(), qd.msgs.super_may_not_use_type_args);
       }
       if (tok() === Syntax.OpenParenToken || tok() === Syntax.DotToken || tok() === Syntax.OpenBracketToken) return expression;
       const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
       n.expression = expression;
-      this.expectedToken(Syntax.DotToken, qd.msgs.super_must_be_followed_by_an_argument_list_or_member_access);
+      this.expectedToken(Syntax.DotToken, qd.msgs.super_must_be_followed_by_an_arg_list_or_member_access);
       n.name = this.rightSideOfDot(true, true);
       return finishNode(n);
     }
@@ -2241,11 +2241,11 @@ function create() {
       n.expression = expression;
       n.questionDotToken = questionDotToken;
       if (tok() === Syntax.CloseBracketToken) {
-        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_elem_access_expression_should_take_an_argument);
+        n.argExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_elem_access_expression_should_take_an_arg);
       } else {
-        const argument = flags.withoutDisallowIn(this.expression);
-        if (qf.is.stringOrNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
-        n.argumentExpression = argument;
+        const arg = flags.withoutDisallowIn(this.expression);
+        if (qf.is.stringOrNumericLiteralLike(arg)) arg.text = internIdentifier(arg.text);
+        n.argExpression = arg;
       }
       this.expected(Syntax.CloseBracketToken);
       if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
@@ -2284,11 +2284,11 @@ function create() {
         return <MemberExpression>expression;
       }
     }
-    taggedTemplateRest(tag: qt.LeftExpression, questionDotToken: qt.QuestionDotToken | undefined, typeArguments: Nodes<qt.Typing> | undefined) {
+    taggedTemplateRest(tag: qt.LeftExpression, questionDotToken: qt.QuestionDotToken | undefined, typeArgs: Nodes<qt.Typing> | undefined) {
       const n = create.node(Syntax.TaggedTemplateExpression, tag.pos);
       n.tag = tag;
       n.questionDotToken = questionDotToken;
-      n.typeArguments = typeArguments;
+      n.typeArgs = typeArgs;
       n.template = tok() === Syntax.NoSubstitutionLiteral ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionLiteral>this.literalNode()) : this.templateExpression(true);
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
@@ -2298,17 +2298,17 @@ function create() {
         expression = this.memberExpressionRest(expression, true);
         const questionDotToken = this.optionalToken(Syntax.QuestionDotToken);
         if (tok() === Syntax.LessThanToken || tok() === Syntax.LessThan2Token) {
-          const typeArguments = tryParse(this.typeArgumentsInExpression);
-          if (typeArguments) {
+          const typeArgs = tryParse(this.typeArgsInExpression);
+          if (typeArgs) {
             if (is.templateStartOfTaggedTemplate()) {
-              expression = this.taggedTemplateRest(expression, questionDotToken, typeArguments);
+              expression = this.taggedTemplateRest(expression, questionDotToken, typeArgs);
               continue;
             }
             const n = create.node(Syntax.CallExpression, expression.pos);
             n.expression = expression;
             n.questionDotToken = questionDotToken;
-            n.typeArguments = typeArguments;
-            n.arguments = this.argumentList();
+            n.typeArgs = typeArgs;
+            n.args = this.argList();
             if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
             expression = finishNode(n);
             continue;
@@ -2317,7 +2317,7 @@ function create() {
           const n = create.node(Syntax.CallExpression, expression.pos);
           n.expression = expression;
           n.questionDotToken = questionDotToken;
-          n.arguments = this.argumentList();
+          n.args = this.argList();
           if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
           expression = finishNode(n);
           continue;
@@ -2334,18 +2334,18 @@ function create() {
       }
       return expression;
     }
-    argumentList() {
+    argList() {
       this.expected(Syntax.OpenParenToken);
-      const result = ctx.parseDelimitedList(Context.ArgumentExpressions, this.argumentExpression);
+      const result = ctx.parseDelimitedList(Context.ArgExpressions, this.argExpression);
       this.expected(Syntax.CloseParenToken);
       return result;
     }
-    typeArgumentsInExpression() {
+    typeArgsInExpression() {
       if (reScanLessToken() !== Syntax.LessThanToken) return;
       next.tok();
-      const typeArguments = ctx.parseDelimitedList(Context.TypeArguments, this.type);
+      const typeArgs = ctx.parseDelimitedList(Context.TypeArgs, this.type);
       if (!this.expected(Syntax.GreaterThanToken)) return;
-      return typeArguments && can.followTypeArgumentsInExpression() ? typeArguments : undefined;
+      return typeArgs && can.followTypeArgsInExpression() ? typeArgs : undefined;
     }
     primaryExpression(): qc.PrimaryExpression {
       switch (tok()) {
@@ -2397,17 +2397,17 @@ function create() {
       n.expression = this.assignmentExpressionOrHigher();
       return finishNode(n);
     }
-    argumentOrArrayLiteralElem(): qt.Expression {
+    argOrArrayLiteralElem(): qt.Expression {
       return tok() === Syntax.Dot3Token ? this.spreadElem() : tok() === Syntax.CommaToken ? create.node(Syntax.OmittedExpression) : this.assignmentExpressionOrHigher();
     }
-    argumentExpression(): qt.Expression {
-      return flags.withoutContext(withDisallowInDecoratorContext, this.argumentOrArrayLiteralElem);
+    argExpression(): qt.Expression {
+      return flags.withoutContext(withDisallowInDecoratorContext, this.argOrArrayLiteralElem);
     }
     arrayLiteralExpression(): qc.ArrayLiteralExpression {
       const n = create.node(Syntax.ArrayLiteralExpression);
       this.expected(Syntax.OpenBracketToken);
       if (scanner.hasPrecedingLineBreak()) n.multiLine = true;
-      n.elems = ctx.parseDelimitedList(Context.ArrayLiteralMembers, this.argumentOrArrayLiteralElem);
+      n.elems = ctx.parseDelimitedList(Context.ArrayLiteralMembers, this.argOrArrayLiteralElem);
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
@@ -2492,22 +2492,22 @@ function create() {
         return finishNode(n);
       }
       let expression: qc.MemberExpression = this.primaryExpression();
-      let typeArguments;
+      let typeArgs;
       while (true) {
         expression = this.memberExpressionRest(expression, false);
-        typeArguments = tryParse(this.typeArgumentsInExpression);
+        typeArgs = tryParse(this.typeArgsInExpression);
         if (is.templateStartOfTaggedTemplate()) {
-          qu.assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
-          expression = this.taggedTemplateRest(expression, undefined, typeArguments);
-          typeArguments = undefined;
+          qu.assert(!!typeArgs, "Expected a type arg list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
+          expression = this.taggedTemplateRest(expression, undefined, typeArgs);
+          typeArgs = undefined;
         }
         break;
       }
       const n = create.node(Syntax.NewExpression, fullStart);
       n.expression = expression;
-      n.typeArguments = typeArguments;
-      if (tok() === Syntax.OpenParenToken) n.arguments = this.argumentList();
-      else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), qd.msgs.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
+      n.typeArgs = typeArgs;
+      if (tok() === Syntax.OpenParenToken) n.args = this.argList();
+      else if (n.typeArgs) this.errorAt(fullStart, scanner.getStartPos(), qd.msgs.A_new_expression_with_type_args_must_always_be_followed_by_a_parenthesized_arg_list);
       return finishNode(n);
     }
     block(ignoreMissingOpenBrace: boolean, m?: qd.Message): qt.Block {
@@ -3098,13 +3098,13 @@ function create() {
       const n = create.node(Syntax.HeritageClause);
       n.token = t;
       next.tok();
-      n.types = ctx.parseDelimitedList(Context.HeritageClauseElem, this.expressionWithTypeArguments);
+      n.types = ctx.parseDelimitedList(Context.HeritageClauseElem, this.expressionWithTypeArgs);
       return finishNode(n);
     }
-    expressionWithTypeArguments(): qt.ExpressionWithTypings {
+    expressionWithTypeArgs(): qt.ExpressionWithTypings {
       const n = create.node(Syntax.ExpressionWithTypings);
       n.expression = this.leftHandSideExpressionOrHigher();
-      n.typeArguments = parse.typeArguments();
+      n.typeArgs = parse.typeArgs();
       return finishNode(n);
     }
     classMembers(): Nodes<ClassElem> {
@@ -3361,8 +3361,8 @@ function create() {
       }
       return false;
     }
-    typeArguments(): Nodes<qt.Typing> | undefined {
-      return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Context.TypeArguments, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
+    typeArgs(): Nodes<qt.Typing> | undefined {
+      return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Context.TypeArgs, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
     }
   })();
   const parseJsx = new (class {
@@ -3467,7 +3467,7 @@ function create() {
         return finishNode(n);
       }
       const tagName = this.elemName();
-      const typeArguments = parse.typeArguments();
+      const typeArgs = parse.typeArgs();
       const attributes = this.attributes();
       let n: JsxOpeningLikeElem;
       if (tok() === Syntax.GreaterThanToken) {
@@ -3483,7 +3483,7 @@ function create() {
         n = create.node(Syntax.JsxSelfClosingElem, fullStart);
       }
       n.tagName = tagName;
-      n.typeArguments = typeArguments;
+      n.typeArgs = typeArgs;
       n.attributes = attributes;
       return finishNode(n);
     }
@@ -3819,7 +3819,7 @@ function create() {
           tag = this.enumTag(start, tagName);
           break;
         case 'arg':
-        case 'argument':
+        case 'arg':
         case 'param':
           return this.paramOrPropertyTag(start, tagName, PropertyLike.Param, margin);
         case 'return':
@@ -4046,16 +4046,16 @@ function create() {
     implementsTag(start: number, tagName: qc.Identifier): DocImplementsTag {
       const n = create.node(Syntax.DocImplementsTag, start);
       n.tagName = tagName;
-      n.class = this.expressionWithTypeArgumentsForAugments();
+      n.class = this.expressionWithTypeArgsForAugments();
       return finishNode(n);
     }
     augmentsTag(start: number, tagName: qc.Identifier): DocAugmentsTag {
       const n = create.node(Syntax.DocAugmentsTag, start);
       n.tagName = tagName;
-      n.class = this.expressionWithTypeArgumentsForAugments();
+      n.class = this.expressionWithTypeArgsForAugments();
       return finishNode(n);
     }
-    expressionWithTypeArgumentsForAugments(): qt.ExpressionWithTypings & {
+    expressionWithTypeArgsForAugments(): qt.ExpressionWithTypings & {
       expression: qc.Identifier | PropertyAccessEntityNameExpression;
     } {
       const usedBrace = parse.optional(Syntax.OpenBraceToken);
@@ -4063,7 +4063,7 @@ function create() {
         expression: qc.Identifier | PropertyAccessEntityNameExpression;
       };
       n.expression = this.propertyAccessEntityNameExpression();
-      n.typeArguments = parse.typeArguments();
+      n.typeArgs = parse.typeArgs();
       const res = finishNode(n);
       if (usedBrace) parse.expected(Syntax.CloseBraceToken);
       return res;
@@ -4234,7 +4234,7 @@ function create() {
           t = PropertyLike.Property;
           break;
         case 'arg':
-        case 'argument':
+        case 'arg':
         case 'param':
           t = PropertyLike.Param | PropertyLike.CallbackParam;
           break;
@@ -4903,8 +4903,8 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         const typeReferenceDirectives = c.typeReferenceDirectives;
         const libReferenceDirectives = c.libReferenceDirectives;
         forEach(toArray(entryOrList) as PragmaPseudoMap['reference'][], (arg) => {
-          const { types, lib, path } = arg.arguments;
-          if (arg.arguments['no-default-lib']) {
+          const { types, lib, path } = arg.args;
+          if (arg.args['no-default-lib']) {
             c.hasNoDefaultLib = true;
           } else if (types) typeReferenceDirectives.push({ pos: types.pos, end: types.end, fileName: types.value });
           else if (lib) libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value });
@@ -4915,8 +4915,8 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
       }
       case 'amd-dependency': {
         c.amdDependencies = map(toArray(entryOrList) as PragmaPseudoMap['amd-dependency'][], (x) => ({
-          name: x.arguments.name,
-          path: x.arguments.path,
+          name: x.args.name,
+          path: x.args.path,
         }));
         break;
       }
@@ -4924,9 +4924,9 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         if (entryOrList instanceof Array) {
           for (const entry of entryOrList) {
             if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, qd.msgs.An_AMD_module_cannot_have_multiple_name_assignments);
-            c.moduleName = (entry as PragmaPseudoMap['amd-module']).arguments.name;
+            c.moduleName = (entry as PragmaPseudoMap['amd-module']).args.name;
           }
-        } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).arguments.name;
+        } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).args.name;
         break;
       }
       case 'ts-nocheck':
@@ -4960,7 +4960,7 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
     const pragma = commentPragmas[name] as PragmaDefinition;
     if (!pragma || !(pragma.kind! & PragmaKindFlags.TripleSlashXML)) return;
     if (pragma.args) {
-      const argument: { [index: string]: string | { value: string; pos: number; end: number } } = {};
+      const arg: { [index: string]: string | { value: string; pos: number; end: number } } = {};
       for (const arg of pragma.args) {
         const getNamedArgRegEx = (name: string): RegExp => {
           if (namedArgRegExCache.has(name)) return namedArgRegExCache.get(name)!;
@@ -4974,16 +4974,16 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
         else if (matchResult) {
           if (arg.captureSpan) {
             const startPos = range.pos + matchResult.index + matchResult[1].length + matchResult[2].length;
-            argument[arg.name] = {
+            arg[arg.name] = {
               value: matchResult[3],
               pos: startPos,
               end: startPos + matchResult[3].length,
             };
-          } else argument[arg.name] = matchResult[3];
+          } else arg[arg.name] = matchResult[3];
         }
       }
-      pragmas.push({ name, args: { arguments: argument, range } } as PragmaPseudoMapEntry);
-    } else pragmas.push({ name, args: { arguments: {}, range } } as PragmaPseudoMapEntry);
+      pragmas.push({ name, args: { args: arg, range } } as PragmaPseudoMapEntry);
+    } else pragmas.push({ name, args: { args: {}, range } } as PragmaPseudoMapEntry);
     return;
   }
   const singleLine = range.kind === Syntax.SingleLineCommentTrivia && singleLinePragmaRegEx.exec(text);
@@ -4992,7 +4992,7 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
     const name = match[1].toLowerCase() as keyof PragmaPseudoMap;
     const p = commentPragmas[name] as PragmaDefinition;
     if (!p || !(p.kind! & k)) return;
-    const getNamedPragmaArguments = (text?: string): { [i: string]: string } | 'fail' => {
+    const getNamedPragmaArgs = (text?: string): { [i: string]: string } | 'fail' => {
       if (!text) return {};
       if (!p.args) return {};
       const args = text.split(/\s+/);
@@ -5006,9 +5006,9 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
       return m;
     };
     const args = match[2];
-    const a = getNamedPragmaArguments(args);
+    const a = getNamedPragmaArgs(args);
     if (a === 'fail') return;
-    ps.push({ name, args: { arguments: a, range } } as PragmaPseudoMapEntry);
+    ps.push({ name, args: { args: a, range } } as PragmaPseudoMapEntry);
     return;
   };
   if (singleLine) return addPragmaForMatch(pragmas, range, PragmaKindFlags.SingleLine, singleLine);

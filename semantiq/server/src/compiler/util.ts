@@ -965,7 +965,7 @@ export function reduceLeft<T>(ts: readonly T[] | undefined, f: (memo: T, t: T, i
       let pos = start === undefined || start < 0 ? 0 : start;
       const end = count === undefined || pos + count > size - 1 ? size - 1 : pos + count;
       let r: T;
-      if (arguments.length <= 2) {
+      if (args.length <= 2) {
         r = ts[pos];
         pos++;
       } else r = initial!;
@@ -1130,8 +1130,8 @@ export function compose<T>(...args: ((t: T) => T)[]): (t: T) => T;
 export function compose<T>(a: (t: T) => T, b: (t: T) => T, c: (t: T) => T, d: (t: T) => T, e: (t: T) => T): (t: T) => T {
   if (!!e) {
     const args: ((t: T) => T)[] = [];
-    for (let i = 0; i < arguments.length; i++) {
-      args[i] = arguments[i];
+    for (let i = 0; i < args.length; i++) {
+      args[i] = args[i];
     }
     return (t) => reduceLeft(args, (u, f) => f(u), t);
   } else if (d) {
@@ -1874,12 +1874,12 @@ export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['
   map.forEach(onDeleteValue);
   map.clear();
 }
-export interface MutateMapSkippingNewValuesOptions<T, U> {
+export interface MutateMapSkippingNewValuesOpts<T, U> {
   onDeleteValue(existingValue: T, key: string): void;
   onExistingValue?(existingValue: T, valueInNewMap: U, key: string): void;
 }
-export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
-  const { onDeleteValue, onExistingValue } = options;
+export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, opts: MutateMapSkippingNewValuesOpts<T, U>) {
+  const { onDeleteValue, onExistingValue } = opts;
   map.forEach((existingValue, key) => {
     const valueInNewMap = newMap.get(key);
     if (valueInNewMap === undefined) {
@@ -1890,12 +1890,12 @@ export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonly
     }
   });
 }
-export interface MutateMapOptions<T, U> extends MutateMapSkippingNewValuesOptions<T, U> {
+export interface MutateMapOpts<T, U> extends MutateMapSkippingNewValuesOpts<T, U> {
   createNewValue(key: string, valueInNewMap: U): T;
 }
-export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
-  mutateMapSkippingNewValues(map, newMap, options);
-  const { createNewValue } = options;
+export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, opts: MutateMapOpts<T, U>) {
+  mutateMapSkippingNewValues(map, newMap, opts);
+  const { createNewValue } = opts;
   newMap.forEach((valueInNewMap, key) => {
     if (!map.has(key)) {
       map.set(key, createNewValue(key, valueInNewMap));
@@ -2008,11 +2008,11 @@ export namespace semver {
         const result = checkDefined(tryParseComponents(major), 'Invalid version');
         ({ major, minor, patch, prerelease, build } = result);
       }
-      assert(major >= 0, 'Invalid argument: major');
-      assert(minor >= 0, 'Invalid argument: minor');
-      assert(patch >= 0, 'Invalid argument: patch');
-      assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid argument: prerelease');
-      assert(!build || buildRegExp.test(build), 'Invalid argument: build');
+      assert(major >= 0, 'Invalid arg: major');
+      assert(minor >= 0, 'Invalid arg: minor');
+      assert(patch >= 0, 'Invalid arg: patch');
+      assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid arg: prerelease');
+      assert(!build || buildRegExp.test(build), 'Invalid arg: build');
       this.major = major;
       this.minor = minor;
       this.patch = patch;

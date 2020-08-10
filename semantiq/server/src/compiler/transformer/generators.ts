@@ -138,7 +138,7 @@ const enum OpCode {
   Throw, // A completion instruction for the `throw` keyword
   Endfinally, // Marks the end of a `finally` block
 }
-type OperationArguments = [Label] | [Label, Expression] | [Statement] | [Expression | undefined] | [Expression, Expression];
+type OperationArgs = [Label] | [Label, Expression] | [Statement] | [Expression | undefined] | [Expression, Expression];
 // whether a generated code block is opening or closing at the current operation for a FunctionBuilder
 const enum BlockAction {
   Open,
@@ -227,8 +227,8 @@ function getInstructionName(instruction: Instruction): string {
 }
 export function transformGenerators(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistFunctionDeclaration, hoistVariableDeclaration } = context;
-  const compilerOptions = context.getCompilerOptions();
-  const languageVersion = getEmitScriptTarget(compilerOptions);
+  const compilerOpts = context.getCompilerOpts();
+  const languageVersion = getEmitScriptTarget(compilerOpts);
   const resolver = context.getEmitResolver();
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onSubstituteNode = onSubstituteNode;
@@ -258,7 +258,7 @@ export function transformGenerators(context: TrafoContext) {
   // allocating objects to store the same information to avoid GC overhead.
   //
   let operations: OpCode[] | undefined; // The operation to perform.
-  let operationArguments: (OperationArguments | undefined)[] | undefined; // The arguments to the operation.
+  let operationArgs: (OperationArgs | undefined)[] | undefined; // The args to the operation.
   let operationLocations: (TextRange | undefined)[] | undefined; // The source map location for the operation.
   let state: Identifier; // The name of the state object used by the generator at runtime.
   // The following variables store information used by the `build` function:
@@ -429,7 +429,7 @@ export function transformGenerators(context: TrafoContext) {
     const savedLabelExpressions = labelExpressions;
     const savedNextLabelId = nextLabelId;
     const savedOperations = operations;
-    const savedOperationArguments = operationArguments;
+    const savedOperationArgs = operationArgs;
     const savedOperationLocations = operationLocations;
     const savedState = state;
     // Initialize generator state
@@ -443,7 +443,7 @@ export function transformGenerators(context: TrafoContext) {
     labelExpressions = undefined;
     nextLabelId = 1;
     operations = undefined;
-    operationArguments = undefined;
+    operationArgs = undefined;
     operationLocations = undefined;
     state = createTempVariable(undefined);
     // Build the generator
@@ -464,7 +464,7 @@ export function transformGenerators(context: TrafoContext) {
     labelExpressions = savedLabelExpressions;
     nextLabelId = savedNextLabelId;
     operations = savedOperations;
-    operationArguments = savedOperationArguments;
+    operationArgs = savedOperationArgs;
     operationLocations = savedOperationLocations;
     state = savedState;
     return setRange(new Block(statements, body.multiLine), body);
@@ -532,7 +532,7 @@ export function transformGenerators(context: TrafoContext) {
           target = updateElemAccess(
             <ElemAccessExpression>left,
             cacheExpression(visitNode((<ElemAccessExpression>left).expression, visitor, isLeftExpression)),
-            cacheExpression(visitNode((<ElemAccessExpression>left).argumentExpression, visitor, isExpression))
+            cacheExpression(visitNode((<ElemAccessExpression>left).argExpression, visitor, isExpression))
           );
           break;
         default:
@@ -776,7 +776,7 @@ export function transformGenerators(context: TrafoContext) {
     }
   }
   function visitElemAccessExpression(node: ElemAccessExpression) {
-    if (containsYield(node.argumentExpression)) {
+    if (containsYield(node.argExpression)) {
       // [source]
       //      a = x[yield];
       //
@@ -788,13 +788,13 @@ export function transformGenerators(context: TrafoContext) {
       //      a = _a[%sent%]
       const clone = getMutableClone(node);
       clone.expression = cacheExpression(visitNode(node.expression, visitor, isLeftExpression));
-      clone.argumentExpression = visitNode(node.argumentExpression, visitor, isExpression);
+      clone.argExpression = visitNode(node.argExpression, visitor, isExpression);
       return clone;
     }
     return visitEachChild(node, visitor, context);
   }
   function visitCallExpression(node: CallExpression) {
-    if (!qc.is.importCall(node) && forEach(node.arguments, containsYield)) {
+    if (!qc.is.importCall(node) && forEach(node.args, containsYield)) {
       // [source]
       //      a.b(1, yield, 2);
       //
@@ -806,12 +806,12 @@ export function transformGenerators(context: TrafoContext) {
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
       const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
-      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftExpression)), thisArg, visitElems(node.arguments), node).setOriginal(node);
+      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftExpression)), thisArg, visitElems(node.args), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }
   function visitNewExpression(node: NewExpression) {
-    if (forEach(node.arguments, containsYield)) {
+    if (forEach(node.args, containsYield)) {
       // [source]
       //      new a.b(1, yield, 2);
       //
@@ -824,10 +824,7 @@ export function transformGenerators(context: TrafoContext) {
       //      new (_b.apply(_a, _c.concat([%sent%, 2])));
       const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
-        setRange(
-          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElems(node.arguments!, qc.VoidExpression.zero())), undefined, []),
-          node
-        ),
+        setRange(new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElems(node.args!, qc.VoidExpression.zero())), undefined, []), node),
         node
       );
     }
@@ -1798,10 +1795,10 @@ export function transformGenerators(context: TrafoContext) {
   function emitEndfinally(): void {
     emitWorker(OpCode.Endfinally);
   }
-  function emitWorker(code: OpCode, args?: OperationArguments, location?: TextRange): void {
+  function emitWorker(code: OpCode, args?: OperationArgs, location?: TextRange): void {
     if (operations === undefined) {
       operations = [];
-      operationArguments = [];
+      operationArgs = [];
       operationLocations = [];
     }
     if (labelOffsets === undefined) {
@@ -1810,7 +1807,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     const operationIndex = operations.length;
     operations[operationIndex] = code;
-    operationArguments![operationIndex] = args;
+    operationArgs![operationIndex] = args;
     operationLocations![operationIndex] = location;
   }
   function build() {
@@ -2005,7 +2002,7 @@ export function transformGenerators(context: TrafoContext) {
     } else if (opcode === OpCode.Endfinally) {
       return writeEndfinally();
     }
-    const args = operationArguments![operationIndex]!;
+    const args = operationArgs![operationIndex]!;
     if (opcode === OpCode.Statement) return writeStatement(<Statement>args[0]);
     const location = operationLocations![operationIndex];
     switch (opcode) {

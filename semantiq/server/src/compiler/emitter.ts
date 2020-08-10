@@ -29,26 +29,26 @@ export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newD
   return getSourceFilePathInNewDirWorker(fileName, newDirPath, host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
 }
 export function getOwnEmitOutputFilePath(fileName: string, host: EmitHost, extension: string) {
-  const compilerOptions = host.getCompilerOptions();
+  const compilerOpts = host.getCompilerOpts();
   let emitOutputFilePathWithoutExtension: string;
-  if (compilerOptions.outDir) {
-    emitOutputFilePathWithoutExtension = removeFileExtension(getSourceFilePathInNewDir(fileName, host, compilerOptions.outDir));
+  if (compilerOpts.outDir) {
+    emitOutputFilePathWithoutExtension = removeFileExtension(getSourceFilePathInNewDir(fileName, host, compilerOpts.outDir));
   } else {
     emitOutputFilePathWithoutExtension = removeFileExtension(fileName);
   }
   return emitOutputFilePathWithoutExtension + extension;
 }
 export function getDeclarationEmitOutputFilePath(fileName: string, host: EmitHost) {
-  return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
+  return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOpts(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
 }
 export function getDeclarationEmitOutputFilePathWorker(
   fileName: string,
-  options: CompilerOptions,
+  opts: CompilerOpts,
   currentDirectory: string,
   commonSourceDirectory: string,
   getCanonicalFileName: GetCanonicalFileName
 ): string {
-  const outputDir = options.declarationDir || options.outDir;
+  const outputDir = opts.declarationDir || opts.outDir;
   const path = outputDir ? getSourceFilePathInNewDirWorker(fileName, outputDir, currentDirectory, commonSourceDirectory, getCanonicalFileName) : fileName;
   return removeFileExtension(path) + Extension.Dts;
 }
@@ -82,8 +82,8 @@ export function forEachEmittedFile<T>(
   includeBuildInfo?: boolean
 ) {
   const sourceFiles = isArray(sourceFilesOrTargetSourceFile) ? sourceFilesOrTargetSourceFile : getSourceFilesToEmit(host, sourceFilesOrTargetSourceFile, forceDtsEmit);
-  const options = host.getCompilerOptions();
-  if (options.outFile || options.out) {
+  const opts = host.getCompilerOpts();
+  if (opts.outFile || opts.out) {
     const prepends = host.getPrependNodes();
     if (sourceFiles.length || prepends.length) {
       const bundle = new qc.Bundle(sourceFiles, prepends);
@@ -98,59 +98,59 @@ export function forEachEmittedFile<T>(
       }
     }
     if (includeBuildInfo) {
-      const buildInfoPath = getTsBuildInfoEmitOutputFilePath(host.getCompilerOptions());
+      const buildInfoPath = getTsBuildInfoEmitOutputFilePath(host.getCompilerOpts());
       if (buildInfoPath) return action({ buildInfoPath }, undefined);
     }
   }
 }
-export function getTsBuildInfoEmitOutputFilePath(options: CompilerOptions) {
-  const configFile = options.configFilePath;
-  if (!isIncrementalCompilation(options)) return;
-  if (options.tsBuildInfoFile) return options.tsBuildInfoFile;
-  const outPath = options.outFile || options.out;
+export function getTsBuildInfoEmitOutputFilePath(opts: CompilerOpts) {
+  const configFile = opts.configFilePath;
+  if (!isIncrementalCompilation(opts)) return;
+  if (opts.tsBuildInfoFile) return opts.tsBuildInfoFile;
+  const outPath = opts.outFile || opts.out;
   let buildInfoExtensionLess: string;
   if (outPath) {
     buildInfoExtensionLess = removeFileExtension(outPath);
   } else {
     if (!configFile) return;
     const configFileExtensionLess = removeFileExtension(configFile);
-    buildInfoExtensionLess = options.outDir
-      ? options.rootDir
-        ? resolvePath(options.outDir, getRelativePathFromDirectory(options.rootDir, configFileExtensionLess, true))
-        : combinePaths(options.outDir, getBaseFileName(configFileExtensionLess))
+    buildInfoExtensionLess = opts.outDir
+      ? opts.rootDir
+        ? resolvePath(opts.outDir, getRelativePathFromDirectory(opts.rootDir, configFileExtensionLess, true))
+        : combinePaths(opts.outDir, getBaseFileName(configFileExtensionLess))
       : configFileExtensionLess;
   }
   return buildInfoExtensionLess + Extension.TsBuildInfo;
 }
-export function getOutputPathsForBundle(options: CompilerOptions, forceDtsPaths: boolean): EmitFileNames {
-  const outPath = options.outFile || options.out!;
-  const jsFilePath = options.emitDeclarationOnly ? undefined : outPath;
-  const sourceMapFilePath = jsFilePath && getSourceMapFilePath(jsFilePath, options);
-  const declarationFilePath = forceDtsPaths || getEmitDeclarations(options) ? removeFileExtension(outPath) + Extension.Dts : undefined;
-  const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(options) ? declarationFilePath + '.map' : undefined;
-  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(options);
+export function getOutputPathsForBundle(opts: CompilerOpts, forceDtsPaths: boolean): EmitFileNames {
+  const outPath = opts.outFile || opts.out!;
+  const jsFilePath = opts.emitDeclarationOnly ? undefined : outPath;
+  const sourceMapFilePath = jsFilePath && getSourceMapFilePath(jsFilePath, opts);
+  const declarationFilePath = forceDtsPaths || getEmitDeclarations(opts) ? removeFileExtension(outPath) + Extension.Dts : undefined;
+  const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(opts) ? declarationFilePath + '.map' : undefined;
+  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(opts);
   return { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath };
 }
 export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHost, forceDtsPaths: boolean): EmitFileNames {
-  const options = host.getCompilerOptions();
-  if (sourceFile.kind === Syntax.Bundle) return getOutputPathsForBundle(options, forceDtsPaths);
+  const opts = host.getCompilerOpts();
+  if (sourceFile.kind === Syntax.Bundle) return getOutputPathsForBundle(opts, forceDtsPaths);
   else {
-    const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
+    const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, opts));
     const isJsonFile = qc.is.jsonSourceFile(sourceFile);
     const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
-    const jsFilePath = options.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
-    const sourceMapFilePath = !jsFilePath || qc.is.jsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
-    const declarationFilePath = forceDtsPaths || (getEmitDeclarations(options) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
-    const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(options) ? declarationFilePath + '.map' : undefined;
+    const jsFilePath = opts.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
+    const sourceMapFilePath = !jsFilePath || qc.is.jsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, opts);
+    const declarationFilePath = forceDtsPaths || (getEmitDeclarations(opts) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
+    const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(opts) ? declarationFilePath + '.map' : undefined;
     return { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath: undefined };
   }
 }
-function getSourceMapFilePath(jsFilePath: string, options: CompilerOptions) {
-  return options.sourceMap && !options.inlineSourceMap ? jsFilePath + '.map' : undefined;
+function getSourceMapFilePath(jsFilePath: string, opts: CompilerOpts) {
+  return opts.sourceMap && !opts.inlineSourceMap ? jsFilePath + '.map' : undefined;
 }
-export function getOutputExtension(sourceFile: SourceFile, options: CompilerOptions): Extension {
+export function getOutputExtension(sourceFile: SourceFile, opts: CompilerOpts): Extension {
   if (qc.is.jsonSourceFile(sourceFile)) return Extension.Json;
-  if (options.jsx === JsxEmit.Preserve) {
+  if (opts.jsx === JsxEmit.Preserve) {
     if (isSourceFileJS(sourceFile)) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
     } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
@@ -159,24 +159,24 @@ export function getOutputExtension(sourceFile: SourceFile, options: CompilerOpti
   }
   return Extension.Js;
 }
-function rootDirOfOptions(configFile: ParsedCommandLine) {
-  return configFile.options.rootDir || getDirectoryPath(Debug.checkDefined(configFile.options.configFilePath));
+function rootDirOfOpts(configFile: ParsedCommandLine) {
+  return configFile.opts.rootDir || getDirectoryPath(Debug.checkDefined(configFile.opts.configFilePath));
 }
 function getOutputPathWithoutChangingExt(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean, outputDir: string | undefined) {
-  return outputDir ? resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOptions(configFile), inputFileName, ignoreCase)) : inputFileName;
+  return outputDir ? resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOpts(configFile), inputFileName, ignoreCase)) : inputFileName;
 }
 export function getOutputDeclarationFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
   qu.assert(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
-  return changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.declarationDir || configFile.options.outDir), Extension.Dts);
+  return changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.opts.declarationDir || configFile.opts.outDir), Extension.Dts);
 }
 function getOutputJSFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
-  if (configFile.options.emitDeclarationOnly) return;
+  if (configFile.opts.emitDeclarationOnly) return;
   const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
   const outputFileName = changeExtension(
-    getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir),
-    isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js
+    getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.opts.outDir),
+    isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.opts.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js
   );
-  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
+  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.opts.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
 }
 function createAddOutput() {
   let outputs: string[] | undefined;
@@ -191,7 +191,7 @@ function createAddOutput() {
   }
 }
 function getSingleOutputFileNames(configFile: ParsedCommandLine, addOutput: ReturnType<typeof createAddOutput>['addOutput']) {
-  const { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath } = getOutputPathsForBundle(configFile.options, false);
+  const { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath } = getOutputPathsForBundle(configFile.opts, false);
   addOutput(jsFilePath);
   addOutput(sourceMapFilePath);
   addOutput(declarationFilePath);
@@ -203,26 +203,26 @@ function getOwnOutputFileNames(configFile: ParsedCommandLine, inputFileName: str
   const js = getOutputJSFileName(inputFileName, configFile, ignoreCase);
   addOutput(js);
   if (fileExtensionIs(inputFileName, Extension.Json)) return;
-  if (js && configFile.options.sourceMap) {
+  if (js && configFile.opts.sourceMap) {
     addOutput(`${js}.map`);
   }
-  if (getEmitDeclarations(configFile.options)) {
+  if (getEmitDeclarations(configFile.opts)) {
     const dts = getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
     addOutput(dts);
-    if (configFile.options.declarationMap) {
+    if (configFile.opts.declarationMap) {
       addOutput(`${dts}.map`);
     }
   }
 }
 export function getAllProjectOutputs(configFile: ParsedCommandLine, ignoreCase: boolean): readonly string[] {
   const { addOutput, getOutputs } = createAddOutput();
-  if (configFile.options.outFile || configFile.options.out) {
+  if (configFile.opts.outFile || configFile.opts.out) {
     getSingleOutputFileNames(configFile, addOutput);
   } else {
     for (const inputFileName of configFile.fileNames) {
       getOwnOutputFileNames(configFile, inputFileName, ignoreCase, addOutput);
     }
-    addOutput(getTsBuildInfoEmitOutputFilePath(configFile.options));
+    addOutput(getTsBuildInfoEmitOutputFilePath(configFile.opts));
   }
   return getOutputs();
 }
@@ -230,7 +230,7 @@ export function getOutputFileNames(commandLine: ParsedCommandLine, inputFileName
   inputFileName = normalizePath(inputFileName);
   qu.assert(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
   const { addOutput, getOutputs } = createAddOutput();
-  if (commandLine.options.outFile || commandLine.options.out) {
+  if (commandLine.opts.outFile || commandLine.opts.out) {
     getSingleOutputFileNames(commandLine, addOutput);
   } else {
     getOwnOutputFileNames(commandLine, inputFileName, ignoreCase, addOutput);
@@ -238,20 +238,20 @@ export function getOutputFileNames(commandLine: ParsedCommandLine, inputFileName
   return getOutputs();
 }
 export function getFirstProjectOutput(configFile: ParsedCommandLine, ignoreCase: boolean): string {
-  if (configFile.options.outFile || configFile.options.out) {
-    const { jsFilePath } = getOutputPathsForBundle(configFile.options, false);
-    return Debug.checkDefined(jsFilePath, `project ${configFile.options.configFilePath} expected to have at least one output`);
+  if (configFile.opts.outFile || configFile.opts.out) {
+    const { jsFilePath } = getOutputPathsForBundle(configFile.opts, false);
+    return Debug.checkDefined(jsFilePath, `project ${configFile.opts.configFilePath} expected to have at least one output`);
   }
   for (const inputFileName of configFile.fileNames) {
     if (fileExtensionIs(inputFileName, Extension.Dts)) continue;
     const jsFilePath = getOutputJSFileName(inputFileName, configFile, ignoreCase);
     if (jsFilePath) return jsFilePath;
     if (fileExtensionIs(inputFileName, Extension.Json)) continue;
-    if (getEmitDeclarations(configFile.options)) return getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
+    if (getEmitDeclarations(configFile.opts)) return getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
   }
-  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(configFile.options);
+  const buildInfoPath = getTsBuildInfoEmitOutputFilePath(configFile.opts);
   if (buildInfoPath) return buildInfoPath;
-  return fail(`project ${configFile.options.configFilePath} expected to have at least one output`);
+  return fail(`project ${configFile.opts.configFilePath} expected to have at least one output`);
 }
 export function emitFiles(
   resolver: EmitResolver,
@@ -262,11 +262,11 @@ export function emitFiles(
   onlyBuildInfo?: boolean,
   forceDtsEmit?: boolean
 ): EmitResult {
-  const compilerOptions = host.getCompilerOptions();
-  const sourceMapDataList: SourceMapEmitResult[] | undefined = compilerOptions.sourceMap || compilerOptions.inlineSourceMap || getAreDeclarationMapsEnabled(compilerOptions) ? [] : undefined;
-  const emittedFilesList: string[] | undefined = compilerOptions.listEmittedFiles ? [] : undefined;
+  const compilerOpts = host.getCompilerOpts();
+  const sourceMapDataList: SourceMapEmitResult[] | undefined = compilerOpts.sourceMap || compilerOpts.inlineSourceMap || getAreDeclarationMapsEnabled(compilerOpts) ? [] : undefined;
+  const emittedFilesList: string[] | undefined = compilerOpts.listEmittedFiles ? [] : undefined;
   const emitterDiagnostics = createDiagnosticCollection();
-  const newLine = getNewLineCharacter(compilerOptions, () => host.getNewLine());
+  const newLine = getNewLineCharacter(compilerOpts, () => host.getNewLine());
   const writer = createTextWriter(newLine);
   const { enter, exit } = performance.createTimer('printTime', 'beforePrint', 'afterPrint');
   let bundleBuildInfo: BundleBuildInfo | undefined;
@@ -320,7 +320,7 @@ export function emitFiles(
   function emitBuildInfo(bundle: BundleBuildInfo | undefined, buildInfoPath: string | undefined) {
     if (!buildInfoPath || targetSourceFile || emitSkipped) return;
     const program = host.getProgramBuildInfo();
-    if (host.isEmitBlocked(buildInfoPath) || compilerOptions.noEmit) {
+    if (host.isEmitBlocked(buildInfoPath) || compilerOpts.noEmit) {
       emitSkipped = true;
       return;
     }
@@ -336,32 +336,32 @@ export function emitFiles(
     if (!sourceFileOrBundle || emitOnlyDtsFiles || !jsFilePath) {
       return;
     }
-    if ((jsFilePath && host.isEmitBlocked(jsFilePath)) || compilerOptions.noEmit) {
+    if ((jsFilePath && host.isEmitBlocked(jsFilePath)) || compilerOpts.noEmit) {
       emitSkipped = true;
       return;
     }
-    const transform = transformNodes(resolver, host, compilerOptions, [sourceFileOrBundle], scriptTransformers, false);
-    const printerOptions: PrinterOptions = {
-      removeComments: compilerOptions.removeComments,
-      newLine: compilerOptions.newLine,
-      noEmitHelpers: compilerOptions.noEmitHelpers,
-      module: compilerOptions.module,
-      target: compilerOptions.target,
-      sourceMap: compilerOptions.sourceMap,
-      inlineSourceMap: compilerOptions.inlineSourceMap,
-      inlineSources: compilerOptions.inlineSources,
-      extendedDiagnostics: compilerOptions.extendedDiagnostics,
+    const transform = transformNodes(resolver, host, compilerOpts, [sourceFileOrBundle], scriptTransformers, false);
+    const printerOpts: PrinterOpts = {
+      removeComments: compilerOpts.removeComments,
+      newLine: compilerOpts.newLine,
+      noEmitHelpers: compilerOpts.noEmitHelpers,
+      module: compilerOpts.module,
+      target: compilerOpts.target,
+      sourceMap: compilerOpts.sourceMap,
+      inlineSourceMap: compilerOpts.inlineSourceMap,
+      inlineSources: compilerOpts.inlineSources,
+      extendedDiagnostics: compilerOpts.extendedDiagnostics,
       writeBundleFileInfo: !!bundleBuildInfo,
       relativeToBuildInfo,
     };
-    const printer = createPrinter(printerOptions, {
+    const printer = createPrinter(printerOpts, {
       hasGlobalName: resolver.hasGlobalName,
       onEmitNode: transform.emitNodeWithNotification,
       isEmitNotificationEnabled: transform.isEmitNotificationEnabled,
       substituteNode: transform.substituteNode,
     });
     qu.assert(transform.transformed.length === 1, 'Should only see one output from the transform');
-    printSourceFileOrBundle(jsFilePath, sourceMapFilePath, transform.transformed[0], printer, compilerOptions);
+    printSourceFileOrBundle(jsFilePath, sourceMapFilePath, transform.transformed[0], printer, compilerOpts);
     transform.dispose();
     if (bundleBuildInfo) bundleBuildInfo.js = printer.bundleFileInfo;
   }
@@ -373,51 +373,51 @@ export function emitFiles(
   ) {
     if (!sourceFileOrBundle) return;
     if (!declarationFilePath) {
-      if (emitOnlyDtsFiles || compilerOptions.emitDeclarationOnly) emitSkipped = true;
+      if (emitOnlyDtsFiles || compilerOpts.emitDeclarationOnly) emitSkipped = true;
       return;
     }
     const sourceFiles = qc.is.kind(qc.SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
     const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
     const inputListOrBundle =
-      compilerOptions.outFile || compilerOptions.out ? [new qc.Bundle(filesForEmit, !qc.is.kind(qc.SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
-    if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOptions)) {
+      compilerOpts.outFile || compilerOpts.out ? [new qc.Bundle(filesForEmit, !qc.is.kind(qc.SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
+    if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOpts)) {
       filesForEmit.forEach(collectLinkedAliases);
     }
-    const declarationTransform = transformNodes(resolver, host, compilerOptions, inputListOrBundle, declarationTransformers, false);
+    const declarationTransform = transformNodes(resolver, host, compilerOpts, inputListOrBundle, declarationTransformers, false);
     if (length(declarationTransform.diagnostics)) {
       for (const diagnostic of declarationTransform.diagnostics!) {
         emitterqd.add(diagnostic);
       }
     }
-    const printerOptions: PrinterOptions = {
-      removeComments: compilerOptions.removeComments,
-      newLine: compilerOptions.newLine,
+    const printerOpts: PrinterOpts = {
+      removeComments: compilerOpts.removeComments,
+      newLine: compilerOpts.newLine,
       noEmitHelpers: true,
-      module: compilerOptions.module,
-      target: compilerOptions.target,
-      sourceMap: compilerOptions.sourceMap,
-      inlineSourceMap: compilerOptions.inlineSourceMap,
-      extendedDiagnostics: compilerOptions.extendedDiagnostics,
+      module: compilerOpts.module,
+      target: compilerOpts.target,
+      sourceMap: compilerOpts.sourceMap,
+      inlineSourceMap: compilerOpts.inlineSourceMap,
+      extendedDiagnostics: compilerOpts.extendedDiagnostics,
       onlyPrintDocStyle: true,
       writeBundleFileInfo: !!bundleBuildInfo,
       recordInternalSection: !!bundleBuildInfo,
       relativeToBuildInfo,
     };
-    const declarationPrinter = createPrinter(printerOptions, {
+    const declarationPrinter = createPrinter(printerOpts, {
       hasGlobalName: resolver.hasGlobalName,
       onEmitNode: declarationTransform.emitNodeWithNotification,
       isEmitNotificationEnabled: declarationTransform.isEmitNotificationEnabled,
       substituteNode: declarationTransform.substituteNode,
     });
-    const declBlocked = (!!declarationTransform.diagnostics && !!declarationTransform.diagnostics.length) || !!host.isEmitBlocked(declarationFilePath) || !!compilerOptions.noEmit;
+    const declBlocked = (!!declarationTransform.diagnostics && !!declarationTransform.diagnostics.length) || !!host.isEmitBlocked(declarationFilePath) || !!compilerOpts.noEmit;
     emitSkipped = emitSkipped || declBlocked;
     if (!declBlocked || forceDtsEmit) {
       qu.assert(declarationTransform.transformed.length === 1, 'Should only see one output from the decl transform');
       printSourceFileOrBundle(declarationFilePath, declarationMapPath, declarationTransform.transformed[0], declarationPrinter, {
-        sourceMap: compilerOptions.declarationMap,
-        sourceRoot: compilerOptions.sourceRoot,
-        mapRoot: compilerOptions.mapRoot,
-        extendedDiagnostics: compilerOptions.extendedDiagnostics,
+        sourceMap: compilerOpts.declarationMap,
+        sourceRoot: compilerOpts.sourceRoot,
+        mapRoot: compilerOpts.mapRoot,
+        extendedDiagnostics: compilerOpts.extendedDiagnostics,
       });
       if (forceDtsEmit && declarationTransform.transformed[0].kind === Syntax.SourceFile) {
         const sourceFile = declarationTransform.transformed[0];
@@ -439,18 +439,18 @@ export function emitFiles(
     }
     qf.each.child(node, collectLinkedAliases);
   }
-  function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOptions: SourceMapOptions) {
+  function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOpts: SourceMapOpts) {
     const bundle = sourceFileOrBundle.kind === Syntax.Bundle ? sourceFileOrBundle : undefined;
     const sourceFile = sourceFileOrBundle.kind === Syntax.SourceFile ? sourceFileOrBundle : undefined;
     const sourceFiles = bundle ? bundle.sourceFiles : [sourceFile!];
     let sourceMapGenerator: SourceMapGenerator | undefined;
-    if (shouldEmitSourceMaps(mapOptions, sourceFileOrBundle)) {
+    if (shouldEmitSourceMaps(mapOpts, sourceFileOrBundle)) {
       sourceMapGenerator = createSourceMapGenerator(
         host,
         getBaseFileName(normalizeSlashes(jsFilePath)),
-        getSourceRoot(mapOptions),
-        getSourceMapDirectory(mapOptions, jsFilePath, sourceFile),
-        mapOptions
+        getSourceRoot(mapOpts),
+        getSourceMapDirectory(mapOpts, jsFilePath, sourceFile),
+        mapOpts
       );
     }
     if (bundle) {
@@ -465,7 +465,7 @@ export function emitFiles(
           sourceMap: sourceMapGenerator.toJSON(),
         });
       }
-      const sourceMappingURL = getSourceMappingURL(mapOptions, sourceMapGenerator, jsFilePath, sourceMapFilePath, sourceFile);
+      const sourceMappingURL = getSourceMappingURL(mapOpts, sourceMapGenerator, jsFilePath, sourceMapFilePath, sourceFile);
       if (sourceMappingURL) {
         if (!writer.isAtStartOfLine()) writer.rawWrite(newLine);
         writer.writeComment('');
@@ -477,10 +477,10 @@ export function emitFiles(
     } else {
       writer.writeLine();
     }
-    writeFile(host, emitterDiagnostics, jsFilePath, writer.getText(), !!compilerOptions.emitBOM, sourceFiles);
+    writeFile(host, emitterDiagnostics, jsFilePath, writer.getText(), !!compilerOpts.emitBOM, sourceFiles);
     writer.clear();
   }
-  interface SourceMapOptions {
+  interface SourceMapOpts {
     sourceMap?: boolean;
     inlineSourceMap?: boolean;
     inlineSources?: boolean;
@@ -488,17 +488,17 @@ export function emitFiles(
     mapRoot?: string;
     extendedDiagnostics?: boolean;
   }
-  function shouldEmitSourceMaps(mapOptions: SourceMapOptions, sourceFileOrBundle: SourceFile | Bundle) {
-    return (mapOptions.sourceMap || mapOptions.inlineSourceMap) && (sourceFileOrBundle.kind !== Syntax.SourceFile || !fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
+  function shouldEmitSourceMaps(mapOpts: SourceMapOpts, sourceFileOrBundle: SourceFile | Bundle) {
+    return (mapOpts.sourceMap || mapOpts.inlineSourceMap) && (sourceFileOrBundle.kind !== Syntax.SourceFile || !fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
   }
-  function getSourceRoot(mapOptions: SourceMapOptions) {
-    const sourceRoot = normalizeSlashes(mapOptions.sourceRoot || '');
+  function getSourceRoot(mapOpts: SourceMapOpts) {
+    const sourceRoot = normalizeSlashes(mapOpts.sourceRoot || '');
     return sourceRoot ? ensureTrailingDirectorySeparator(sourceRoot) : sourceRoot;
   }
-  function getSourceMapDirectory(mapOptions: SourceMapOptions, filePath: string, sourceFile: SourceFile | undefined) {
-    if (mapOptions.sourceRoot) return host.getCommonSourceDirectory();
-    if (mapOptions.mapRoot) {
-      let sourceMapDir = normalizeSlashes(mapOptions.mapRoot);
+  function getSourceMapDirectory(mapOpts: SourceMapOpts, filePath: string, sourceFile: SourceFile | undefined) {
+    if (mapOpts.sourceRoot) return host.getCommonSourceDirectory();
+    if (mapOpts.mapRoot) {
+      let sourceMapDir = normalizeSlashes(mapOpts.mapRoot);
       if (sourceFile) {
         sourceMapDir = getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
@@ -509,15 +509,15 @@ export function emitFiles(
     }
     return getDirectoryPath(normalizePath(filePath));
   }
-  function getSourceMappingURL(mapOptions: SourceMapOptions, sourceMapGenerator: SourceMapGenerator, filePath: string, sourceMapFilePath: string | undefined, sourceFile: SourceFile | undefined) {
-    if (mapOptions.inlineSourceMap) {
+  function getSourceMappingURL(mapOpts: SourceMapOpts, sourceMapGenerator: SourceMapGenerator, filePath: string, sourceMapFilePath: string | undefined, sourceFile: SourceFile | undefined) {
+    if (mapOpts.inlineSourceMap) {
       const sourceMapText = sourceMapGenerator.toString();
       const base64SourceMapText = base64encode(sys, sourceMapText);
       return `data:application/json;base64,${base64SourceMapText}`;
     }
     const sourceMapFile = getBaseFileName(normalizeSlashes(Debug.checkDefined(sourceMapFilePath)));
-    if (mapOptions.mapRoot) {
-      let sourceMapDir = normalizeSlashes(mapOptions.mapRoot);
+    if (mapOpts.mapRoot) {
+      let sourceMapDir = normalizeSlashes(mapOpts.mapRoot);
       if (sourceFile) {
         sourceMapDir = getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
@@ -544,7 +544,7 @@ export const notImplementedResolver: EmitResolver = {
   getReferencedDeclarationWithCollidingName: notImplemented,
   isDeclarationWithCollidingName: notImplemented,
   isValueAliasDeclaration: notImplemented,
-  isReferencedAliasDeclaration: notImplemented,
+  referencedAliasDeclaration: notImplemented,
   isTopLevelValueImportEqualsWithEntityName: notImplemented,
   getNodeCheckFlags: notImplemented,
   qf.is.declarationVisible: notImplemented,
@@ -566,7 +566,7 @@ export const notImplementedResolver: EmitResolver = {
   getTypeReferenceSerializationKind: notImplemented,
   isOptionalParam: notImplemented,
   moduleExportsSomeValue: notImplemented,
-  isArgumentsLocalBinding: notImplemented,
+  isArgsLocalBinding: notImplemented,
   getExternalModuleFileFromDeclaration: notImplemented,
   getTypeReferenceDirectivesForEntityName: notImplemented,
   getTypeReferenceDirectivesForSymbol: notImplemented,
@@ -615,17 +615,17 @@ export function emitUsingBuildInfo(
   getCommandLine: (ref: ProjectReference) => ParsedCommandLine | undefined,
   customTransformers?: CustomTransformers
 ): EmitUsingBuildInfoResult {
-  const { buildInfoPath, jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath } = getOutputPathsForBundle(config.options, false);
+  const { buildInfoPath, jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath } = getOutputPathsForBundle(config.opts, false);
   const buildInfoText = host.readFile(Debug.checkDefined(buildInfoPath));
   if (!buildInfoText) return buildInfoPath!;
   const jsFileText = host.readFile(Debug.checkDefined(jsFilePath));
   if (!jsFileText) return jsFilePath!;
   const sourceMapText = sourceMapFilePath && host.readFile(sourceMapFilePath);
-  if ((sourceMapFilePath && !sourceMapText) || config.options.inlineSourceMap) return sourceMapFilePath || 'inline sourcemap decoding';
+  if ((sourceMapFilePath && !sourceMapText) || config.opts.inlineSourceMap) return sourceMapFilePath || 'inline sourcemap decoding';
   const declarationText = declarationFilePath && host.readFile(declarationFilePath);
   if (declarationFilePath && !declarationText) return declarationFilePath;
   const declarationMapText = declarationMapPath && host.readFile(declarationMapPath);
-  if ((declarationMapPath && !declarationMapText) || config.options.inlineSourceMap) return declarationMapPath || 'inline sourcemap decoding';
+  if ((declarationMapPath && !declarationMapText) || config.opts.inlineSourceMap) return declarationMapPath || 'inline sourcemap decoding';
   const buildInfo = getBuildInfo(buildInfoText);
   if (!buildInfo.bundle || !buildInfo.bundle.js || (declarationText && !buildInfo.bundle.dts)) return buildInfoPath!;
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath!, host.getCurrentDirectory()));
@@ -649,7 +649,7 @@ export function emitUsingBuildInfo(
     getPrependNodes: memoize(() => [...prependNodes, ownPrependInput]),
     getCanonicalFileName: host.getCanonicalFileName,
     getCommonSourceDirectory: () => getNormalizedAbsolutePath(buildInfo.bundle!.commonSourceDirectory, buildInfoDirectory),
-    getCompilerOptions: () => config.options,
+    getCompilerOpts: () => config.opts,
     getCurrentDirectory: () => host.getCurrentDirectory(),
     getNewLine: () => host.getNewLine(),
     getSourceFile: () => undefined,
@@ -698,7 +698,7 @@ export function emitUsingBuildInfo(
     getSourceFileFromReference: () => undefined,
     redirectTargetsMap: new MultiMap(),
   };
-  emitFiles(notImplementedResolver, emitHost, undefined, getTransformers(config.options, customTransformers));
+  emitFiles(notImplementedResolver, emitHost, undefined, getTransformers(config.opts, customTransformers));
   return outputFiles;
 }
 const enum PipelinePhase {
@@ -708,7 +708,7 @@ const enum PipelinePhase {
   SourceMaps,
   Emit,
 }
-export function createPrinter(printerOptions: PrinterOptions = {}, handlers: PrintHandlers = {}): Printer {
+export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHandlers = {}): Printer {
   const {
     hasGlobalName,
     onEmitNode = noEmitNotification,
@@ -719,9 +719,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     onBeforeEmitToken,
     onAfterEmitToken,
   } = handlers;
-  const extendedDiagnostics = !!printerOptions.extendedDiagnostics;
-  const newLine = getNewLineCharacter(printerOptions);
-  const moduleKind = getEmitModuleKind(printerOptions);
+  const extendedDiagnostics = !!printerOpts.extendedDiagnostics;
+  const newLine = getNewLineCharacter(printerOpts);
+  const moduleKind = getEmitModuleKind(printerOpts);
   const bundledHelpers = createMap<boolean>();
   let currentSourceFile: SourceFile | undefined;
   let nodeIdToGeneratedName: string[];
@@ -731,14 +731,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   let tempFlags: TempFlags;
   let reservedNamesStack: qu.QMap<true>[];
   let reservedNames: qu.QMap<true>;
-  let preserveSourceNewlines = printerOptions.preserveSourceNewlines;
+  let preserveSourceNewlines = printerOpts.preserveSourceNewlines;
   let writer: EmitTextWriter;
   let ownWriter: EmitTextWriter;
   let write = writeBase;
   let isOwnFileEmit: boolean;
-  const bundleFileInfo = printerOptions.writeBundleFileInfo ? ({ sections: [] } as BundleFileInfo) : undefined;
-  const relativeToBuildInfo = bundleFileInfo ? Debug.checkDefined(printerOptions.relativeToBuildInfo) : undefined;
-  const recordInternalSection = printerOptions.recordInternalSection;
+  const bundleFileInfo = printerOpts.writeBundleFileInfo ? ({ sections: [] } as BundleFileInfo) : undefined;
+  const relativeToBuildInfo = bundleFileInfo ? Debug.checkDefined(printerOpts.relativeToBuildInfo) : undefined;
+  const recordInternalSection = printerOpts.recordInternalSection;
   let sourceFileTextPos = 0;
   let sourceFileTextKind: BundleFileTextLikeKind = BundleFileSectionKind.Text;
   let sourceMapsDisabled = true;
@@ -751,7 +751,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   let currentLineMap: readonly number[] | undefined;
   let detachedCommentsInfo: { nodePos: number; detachedCommentEndPos: number }[] | undefined;
   let hasWrittenComment = false;
-  let commentsDisabled = !!printerOptions.removeComments;
+  let commentsDisabled = !!printerOpts.removeComments;
   let lastNode: Node | undefined;
   let lastSubstitution: Node | undefined;
   const { enter: enterComment, exit: exitComment } = performance.createTimerIf(extendedDiagnostics, 'commentTime', 'beforeComment', 'afterComment');
@@ -968,7 +968,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function setWriter(_writer: EmitTextWriter | undefined, _sourceMapGenerator: SourceMapGenerator | undefined) {
-    if (_writer && printerOptions.omitTrailingSemicolon) {
+    if (_writer && printerOpts.omitTrailingSemicolon) {
       _writer = getTrailingSemicolonDeferringWriter(_writer);
     }
     writer = _writer!;
@@ -1445,7 +1445,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function getHelpersFromBundledSourceFiles(bundle: Bundle): string[] | undefined {
     let result: string[] | undefined;
-    if (moduleKind === ModuleKind.None || printerOptions.noEmitHelpers) {
+    if (moduleKind === ModuleKind.None || printerOpts.noEmitHelpers) {
       return;
     }
     const bundledHelpers = createMap<boolean>();
@@ -1473,7 +1473,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     for (let i = 0; i < numNodes; i++) {
       const currentNode = bundle ? (i < numPrepends ? bundle.prepends[i] : bundle.sourceFiles[i - numPrepends]) : node;
       const sourceFile = qc.is.kind(qc.SourceFile, currentNode) ? currentNode : qc.is.kind(qc.UnparsedSource, currentNode) ? undefined : currentSourceFile!;
-      const shouldSkip = printerOptions.noEmitHelpers || (!!sourceFile && hasRecordedExternalHelpers(sourceFile));
+      const shouldSkip = printerOpts.noEmitHelpers || (!!sourceFile && hasRecordedExternalHelpers(sourceFile));
       const shouldBundle = (qc.is.kind(qc.SourceFile, currentNode) || qc.is.kind(qc.UnparsedSource, currentNode)) && !isOwnFileEmit;
       const helpers = qc.is.kind(qc.UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
       if (helpers) {
@@ -1510,8 +1510,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitLiteral(node, false);
   }
   function emitLiteral(node: LiteralLikeNode, jsxAttributeEscape: boolean) {
-    const text = getLiteralTextOfNode(node, printerOptions.neverAsciiEscape, jsxAttributeEscape);
-    if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || qy.is.templateLiteral(node.kind))) {
+    const text = getLiteralTextOfNode(node, printerOpts.neverAsciiEscape, jsxAttributeEscape);
+    if ((printerOpts.sourceMap || printerOpts.inlineSourceMap) && (node.kind === Syntax.StringLiteral || qy.is.templateLiteral(node.kind))) {
       writeLiteral(text);
     } else {
       writeStringLiteral(text);
@@ -1546,7 +1546,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitIdentifier(node: Identifier) {
     const writeText = node.symbol ? writeSymbol : write;
     writeText(getTextOfNode(node, false), node.symbol);
-    emitList(node, node.typeArguments, ListFormat.TypeParams);
+    emitList(node, node.typeArgs, ListFormat.TypeParams);
   }
   function emitPrivateIdentifier(node: PrivateIdentifier) {
     const writeText = node.symbol ? writeSymbol : write;
@@ -1703,7 +1703,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitTypeReference(node: TypingReference) {
     emit(node.typeName);
-    emitTypeArguments(node, node.typeArguments);
+    emitTypeArgs(node, node.typeArgs);
   }
   function emitFunctionType(node: FunctionTyping) {
     pushNameGenerationScope(node);
@@ -1875,13 +1875,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
     writeKeyword('import');
     writePunctuation('(');
-    emit(node.argument);
+    emit(node.arg);
     writePunctuation(')');
     if (node.qualifier) {
       writePunctuation('.');
       emit(node.qualifier);
     }
-    emitTypeArguments(node, node.typeArguments);
+    emitTypeArgs(node, node.typeArgs);
   }
   function emitObjectBindingPattern(node: ObjectBindingPattern) {
     writePunctuation('{');
@@ -1955,25 +1955,25 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
     emit(node.questionDotToken);
     emitTokenWithComment(Syntax.OpenBracketToken, node.expression.end, writePunctuation, node);
-    emitExpression(node.argumentExpression);
-    emitTokenWithComment(Syntax.CloseBracketToken, node.argumentExpression.end, writePunctuation, node);
+    emitExpression(node.argExpression);
+    emitTokenWithComment(Syntax.CloseBracketToken, node.argExpression.end, writePunctuation, node);
   }
   function emitCallExpression(node: CallExpression) {
     emitExpression(node.expression);
     emit(node.questionDotToken);
-    emitTypeArguments(node, node.typeArguments);
-    emitExpressionList(node, node.arguments, ListFormat.CallExpressionArguments);
+    emitTypeArgs(node, node.typeArgs);
+    emitExpressionList(node, node.args, ListFormat.CallExpressionArgs);
   }
   function emitNewExpression(node: NewExpression) {
     emitTokenWithComment(Syntax.NewKeyword, node.pos, writeKeyword, node);
     writeSpace();
     emitExpression(node.expression);
-    emitTypeArguments(node, node.typeArguments);
-    emitExpressionList(node, node.arguments, ListFormat.NewExpressionArguments);
+    emitTypeArgs(node, node.typeArgs);
+    emitExpressionList(node, node.args, ListFormat.NewExpressionArgs);
   }
   function emitTaggedTemplateExpression(node: TaggedTemplateExpression) {
     emitExpression(node.tag);
-    emitTypeArguments(node, node.typeArguments);
+    emitTypeArgs(node, node.typeArgs);
     writeSpace();
     emitExpression(node.template);
   }
@@ -2140,7 +2140,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitExpressionWithTypings(node: ExpressionWithTypings) {
     emitExpression(node.expression);
-    emitTypeArguments(node, node.typeArguments);
+    emitTypeArgs(node, node.typeArgs);
   }
   function emitAsExpression(node: AsExpression) {
     emitExpression(node.expression);
@@ -2694,7 +2694,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitJsxSelfClosingElem(node: JsxSelfClosingElem) {
     writePunctuation('<');
     emitJsxTagName(node.tagName);
-    emitTypeArguments(node, node.typeArguments);
+    emitTypeArgs(node, node.typeArgs);
     writeSpace();
     emit(node.attributes);
     writePunctuation('/>');
@@ -2709,7 +2709,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (qc.is.kind(qc.JsxOpeningElem, node)) {
       const indented = writeLineSeparatorsAndIndentBefore(node.tagName, node);
       emitJsxTagName(node.tagName);
-      emitTypeArguments(node, node.typeArguments);
+      emitTypeArgs(node, node.typeArgs);
       if (node.attributes.properties && node.attributes.properties.length > 0) {
         writeSpace();
       }
@@ -3180,14 +3180,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitDecorators(parentNode: Node, decorators: Nodes<Decorator> | undefined) {
     emitList(parentNode, decorators, ListFormat.Decorators);
   }
-  function emitTypeArguments(parentNode: Node, typeArguments: Nodes<Typing> | undefined) {
-    emitList(parentNode, typeArguments, ListFormat.TypeArguments);
+  function emitTypeArgs(parentNode: Node, typeArgs: Nodes<Typing> | undefined) {
+    emitList(parentNode, typeArgs, ListFormat.TypeArgs);
   }
   function emitTypeParams(
     parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression,
     typeParams: Nodes<TypeParamDeclaration> | undefined
   ) {
-    if (qc.is.functionLike(parentNode) && parentNode.typeArguments) return emitTypeArguments(parentNode, parentNode.typeArguments);
+    if (qc.is.functionLike(parentNode) && parentNode.typeArgs) return emitTypeArgs(parentNode, parentNode.typeArgs);
     emitList(parentNode, typeParams, ListFormat.TypeParams);
   }
   function emitParams(parentNode: Node, params: Nodes<ParamDeclaration>) {
@@ -3985,7 +3985,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function shouldWriteComment(text: string, pos: number) {
-    if (printerOptions.onlyPrintDocStyle) return qy.is.docLike(text, pos) || qy.is.pinnedComment(text, pos);
+    if (printerOpts.onlyPrintDocStyle) return qy.is.docLike(text, pos) || qy.is.pinnedComment(text, pos);
     return true;
   }
   function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
@@ -4182,7 +4182,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       return;
     }
     sourceMapSourceIndex = sourceMapGenerator!.addSource(source.fileName);
-    if (printerOptions.inlineSources) {
+    if (printerOpts.inlineSources) {
       sourceMapGenerator!.setSourceContent(sourceMapSourceIndex, source.text);
     }
   }

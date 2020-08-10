@@ -26,8 +26,8 @@ const enum HierarchyFacts {
 export function transformES2018(context: TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
-  const compilerOptions = context.getCompilerOptions();
-  const languageVersion = getEmitScriptTarget(compilerOptions);
+  const compilerOpts = context.getCompilerOpts();
+  const languageVersion = getEmitScriptTarget(compilerOpts);
   const previousOnEmitNode = context.onEmitNode;
   context.onEmitNode = onEmitNode;
   const previousOnSubstituteNode = context.onSubstituteNode;
@@ -245,7 +245,7 @@ export function transformES2018(context: TrafoContext) {
   function visitSourceFile(node: SourceFile): SourceFile {
     const ancestorFacts = enterSubtree(
       HierarchyFacts.SourceFileExcludes,
-      isEffectiveStrictModeSourceFile(node, compilerOptions) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes
+      isEffectiveStrictModeSourceFile(node, compilerOpts) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes
     );
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
@@ -642,14 +642,14 @@ export function transformES2018(context: TrafoContext) {
     return node;
   }
   function substituteElemAccessExpression(node: ElemAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argumentExpression, node);
+    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argExpression, node);
     return node;
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
     if (qc.is.superProperty(expression)) {
-      const argumentExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
-      return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
+      const argExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
+      return new qs.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
     }
     return node;
   }
@@ -657,10 +657,10 @@ export function transformES2018(context: TrafoContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElemAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftExpression {
+  function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
-    return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);
+      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), 'value'), location);
+    return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), location);
   }
 }
 export const assignHelper: UnscopedEmitHelper = {
@@ -671,18 +671,18 @@ export const assignHelper: UnscopedEmitHelper = {
   text: `
             var __assign = (this && this.__assign) || function () {
                 __assign = Object.assign || function(t) {
-                    for (var s, i = 1, n = arguments.length; i < n; i++) {
-                        s = arguments[i];
+                    for (var s, i = 1, n = args.length; i < n; i++) {
+                        s = args[i];
                         for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
                             t[p] = s[p];
                     }
                     return t;
                 };
-                return __assign.apply(this, arguments);
+                return __assign.apply(this, args);
             };`,
 };
 export function createAssignHelper(context: TrafoContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) return new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
+  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }
@@ -703,9 +703,9 @@ export const asyncGeneratorHelper: UnscopedEmitHelper = {
   scoped: false,
   dependencies: [awaitHelper],
   text: `
-            var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+            var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _args, generator) {
                 if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-                var g = generator.apply(thisArg, _arguments || []), i, q = [];
+                var g = generator.apply(thisArg, _args || []), i, q = [];
                 return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
                 function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
                 function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
@@ -718,7 +718,7 @@ export const asyncGeneratorHelper: UnscopedEmitHelper = {
 function createAsyncGeneratorHelper(context: TrafoContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
   context.requestEmitHelper(asyncGeneratorHelper);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
-  return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(), new Identifier('arguments'), generatorFunc]);
+  return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(), new Identifier('args'), generatorFunc]);
 }
 export const asyncDelegator: UnscopedEmitHelper = {
   name: 'typescript:asyncDelegator',

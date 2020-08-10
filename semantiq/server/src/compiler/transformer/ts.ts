@@ -30,10 +30,10 @@ const enum ClassFacts {
 export function transformTypeScript(context: TrafoContext) {
   const { startLexicalEnvironment, resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
-  const compilerOptions = context.getCompilerOptions();
-  const strictNullChecks = getStrictOptionValue(compilerOptions, 'strictNullChecks');
-  const languageVersion = getEmitScriptTarget(compilerOptions);
-  const moduleKind = getEmitModuleKind(compilerOptions);
+  const compilerOpts = context.getCompilerOpts();
+  const strictNullChecks = getStrictOptionValue(compilerOpts, 'strictNullChecks');
+  const languageVersion = getEmitScriptTarget(compilerOpts);
+  const moduleKind = getEmitModuleKind(compilerOpts);
   const previousOnEmitNode = context.onEmitNode;
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onEmitNode = onEmitNode;
@@ -304,7 +304,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
   }
   function visitSourceFile(node: SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qc.is.externalModule(node) && moduleKind >= ModuleKind.ES2015) && !qc.is.jsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') && !(qc.is.externalModule(node) && moduleKind >= ModuleKind.ES2015) && !qc.is.jsonSourceFile(node);
     return qp_updateSourceNode(node, visitLexicalEnvironment(node.statements, sourceElemVisitor, context, 0, alwaysStrict));
   }
   function shouldEmitDecorateCallForClass(node: ClassDeclaration) {
@@ -614,7 +614,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
   }
   function addOldTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: Expression[]) {
-    if (compilerOptions.emitDecoratorMetadata) {
+    if (compilerOpts.emitDecoratorMetadata) {
       if (shouldAddTypeMetadata(node)) {
         decoratorExpressions.push(createMetadataHelper(context, 'design:type', serializeTypeOfNode(node)));
       }
@@ -627,7 +627,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
   }
   function addNewTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: Expression[]) {
-    if (compilerOptions.emitDecoratorMetadata) {
+    if (compilerOpts.emitDecoratorMetadata) {
       let properties: ObjectLiteralElemLike[] | undefined;
       if (shouldAddTypeMetadata(node)) {
         (properties || (properties = [])).push(
@@ -1125,10 +1125,10 @@ export function transformTypeScript(context: TrafoContext) {
     return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitCallExpression(node: CallExpression) {
-    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
+    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
   }
   function visitNewExpression(node: NewExpression) {
-    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
+    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
   }
   function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
     return node.update(visitNode(node.tag, visitor, isExpression), undefined, visitNode(node.template, visitor, isExpression));
@@ -1140,7 +1140,7 @@ export function transformTypeScript(context: TrafoContext) {
     return node.update(visitNode(node.tagName, visitor, isJsxTagNameExpression), undefined, visitNode(node.attributes, visitor, isJsxAttributes));
   }
   function shouldEmitEnumDeclaration(node: EnumDeclaration) {
-    return !qc.is.enumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
+    return !qc.is.enumConst(node) || compilerOpts.preserveConstEnums || compilerOpts.isolatedModules;
   }
   function visitEnumDeclaration(node: EnumDeclaration): VisitResult<Statement> {
     if (!shouldEmitEnumDeclaration(node)) return new qc.NotEmittedStatement(node);
@@ -1210,7 +1210,7 @@ export function transformTypeScript(context: TrafoContext) {
   function shouldEmitModuleDeclaration(nodeIn: ModuleDeclaration) {
     const node = qc.get.parseTreeOf(nodeIn, isModuleDeclaration);
     if (!node) return true;
-    return isInstantiatedModule(node, !!compilerOptions.preserveConstEnums || !!compilerOptions.isolatedModules);
+    return isInstantiatedModule(node, !!compilerOpts.preserveConstEnums || !!compilerOpts.isolatedModules);
   }
   function hasNamespaceQualifiedExportName(node: Node) {
     return (
@@ -1362,7 +1362,7 @@ export function transformTypeScript(context: TrafoContext) {
       return;
     }
     const importClause = visitNode(node.importClause, visitImportClause, isImportClause);
-    return importClause || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error
+    return importClause || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Error
       ? node.update(undefined, undefined, importClause, node.moduleSpecifier)
       : undefined;
   }
@@ -1370,19 +1370,19 @@ export function transformTypeScript(context: TrafoContext) {
     if (node.isTypeOnly) {
       return;
     }
-    const name = resolver.isReferencedAliasDeclaration(node) ? node.name : undefined;
+    const name = resolver.referencedAliasDeclaration(node) ? node.name : undefined;
     const namedBindings = visitNode(node.namedBindings, visitNamedImportBindings, isNamedImportBindings);
     return name || namedBindings ? node.update(name, namedBindings, false) : undefined;
   }
   function visitNamedImportBindings(node: NamedImportBindings): VisitResult<NamedImportBindings> {
-    if (node.kind === Syntax.NamespaceImport) return resolver.isReferencedAliasDeclaration(node) ? node : undefined;
+    if (node.kind === Syntax.NamespaceImport) return resolver.referencedAliasDeclaration(node) ? node : undefined;
     else {
       const elems = Nodes.visit(node.elems, visitImportSpecifier, isImportSpecifier);
       return some(elems) ? node.update(elems) : undefined;
     }
   }
   function visitImportSpecifier(node: ImportSpecifier): VisitResult<ImportSpecifier> {
-    return resolver.isReferencedAliasDeclaration(node) ? node : undefined;
+    return resolver.referencedAliasDeclaration(node) ? node : undefined;
   }
   function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
     return resolver.isValueAliasDeclaration(node) ? visitEachChild(node, visitor, context) : undefined;
@@ -1412,14 +1412,14 @@ export function transformTypeScript(context: TrafoContext) {
     return resolver.isValueAliasDeclaration(node) ? node : undefined;
   }
   function shouldEmitImportEqualsDeclaration(node: ImportEqualsDeclaration) {
-    return resolver.isReferencedAliasDeclaration(node) || (!qc.is.externalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
+    return resolver.referencedAliasDeclaration(node) || (!qc.is.externalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
   }
   function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
     if (qc.is.externalModuleImportEqualsDeclaration(node)) {
-      const isReferenced = resolver.isReferencedAliasDeclaration(node);
-      if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve)
+      const referenced = resolver.referencedAliasDeclaration(node);
+      if (!referenced && compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve)
         return setRange(new qc.ImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node).setOriginal(node);
-      return isReferenced ? visitEachChild(node, visitor, context) : undefined;
+      return referenced ? visitEachChild(node, visitor, context) : undefined;
     }
     if (!shouldEmitImportEqualsDeclaration(node)) {
       return;
@@ -1611,9 +1611,9 @@ export function transformTypeScript(context: TrafoContext) {
     if (constantValue !== undefined) {
       setConstantValue(node, constantValue);
       const substitute = qc.asLiteral(constantValue);
-      if (!compilerOptions.removeComments) {
+      if (!compilerOpts.removeComments) {
         const originalNode = qc.get.originalOf(node, isAccessExpression);
-        const propertyName = qc.is.kind(qc.PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qc.get.textOf(originalNode.argumentExpression);
+        const propertyName = qc.is.kind(qc.PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qc.get.textOf(originalNode.argExpression);
         addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
       }
       return substitute;
@@ -1621,24 +1621,24 @@ export function transformTypeScript(context: TrafoContext) {
     return node;
   }
   function tryGetConstEnumValue(node: Node): string | number | undefined {
-    if (compilerOptions.isolatedModules) {
+    if (compilerOpts.isolatedModules) {
       return;
     }
     return qc.is.kind(qc.PropertyAccessExpression, node) || qc.is.kind(qc.ElemAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
   }
 }
 function createDecorateHelper(context: TrafoContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {
-  const argumentsArray: Expression[] = [];
-  argumentsArray.push(new ArrayLiteralExpression(decoratorExpressions, true));
-  argumentsArray.push(target);
+  const argsArray: Expression[] = [];
+  argsArray.push(new ArrayLiteralExpression(decoratorExpressions, true));
+  argsArray.push(target);
   if (memberName) {
-    argumentsArray.push(memberName);
+    argsArray.push(memberName);
     if (descriptor) {
-      argumentsArray.push(descriptor);
+      argsArray.push(descriptor);
     }
   }
   context.requestEmitHelper(decorateHelper);
-  return setRange(new qc.CallExpression(getUnscopedHelperName('__decorate'), undefined, argumentsArray), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__decorate'), undefined, argsArray), location);
 }
 export const decorateHelper: UnscopedEmitHelper = {
   name: 'typescript:decorate',
@@ -1647,7 +1647,7 @@ export const decorateHelper: UnscopedEmitHelper = {
   priority: 2,
   text: `
             var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-                var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+                var c = args.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
                 if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
                 else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
                 return c > 3 && r && Object.defineProperty(target, key, r), r;

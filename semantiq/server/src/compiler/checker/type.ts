@@ -248,7 +248,7 @@ export const enum TypeSystemPropertyName {
   ResolvedReturnType,
   ImmediateBaseConstraint,
   EnumTagType,
-  ResolvedTypeArguments,
+  ResolvedTypeArgs,
 }
 export const enum CheckMode {
   Normal = 0,

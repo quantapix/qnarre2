@@ -6,10 +6,10 @@ import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
 export function transformES5(context: TrafoContext) {
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
   let noSubstitution: boolean[];
-  if (compilerOptions.jsx === JsxEmit.Preserve || compilerOptions.jsx === JsxEmit.ReactNative) {
+  if (compilerOpts.jsx === JsxEmit.Preserve || compilerOpts.jsx === JsxEmit.ReactNative) {
     previousOnEmitNode = context.onEmitNode;
     context.onEmitNode = onEmitNode;
     context.enableEmitNotification(Syntax.JsxOpeningElem);

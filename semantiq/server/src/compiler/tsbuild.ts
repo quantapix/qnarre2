@@ -5,7 +5,7 @@ import * as syntax from './syntax';
 import { Syntax } from './syntax';
 const minimumDate = new Date(-8640000000000000);
 const maximumDate = new Date(8640000000000000);
-export interface BuildOptions {
+export interface BuildOpts {
   dry?: boolean;
   force?: boolean;
   verbose?: boolean;
@@ -23,7 +23,7 @@ export interface BuildOptions {
   extendedDiagnostics?: boolean;
   locale?: string;
   generateCpuProfile?: string;
-  [option: string]: CompilerOptionsValue | undefined;
+  [option: string]: CompilerOptsValue | undefined;
 }
 enum BuildResultFlags {
   None = 0,
@@ -159,23 +159,23 @@ export function createSolutionBuilderWithWatchHost<T extends BuilderProgram = Em
   copyProperties(host, watchHost);
   return host;
 }
-function getCompilerOptionsOfBuildOptions(buildOptions: BuildOptions): CompilerOptions {
-  const result = {} as CompilerOptions;
-  commonOptionsWithBuild.forEach((option) => {
-    if (hasProperty(buildOptions, option.name)) result[option.name] = buildOptions[option.name];
+function getCompilerOptsOfBuildOpts(buildOpts: BuildOpts): CompilerOpts {
+  const result = {} as CompilerOpts;
+  commonOptsWithBuild.forEach((option) => {
+    if (hasProperty(buildOpts, option.name)) result[option.name] = buildOpts[option.name];
   });
   return result;
 }
-export function createSolutionBuilder<T extends BuilderProgram>(host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions): SolutionBuilder<T> {
-  return createSolutionBuilderWorker(false, host, rootNames, defaultOptions);
+export function createSolutionBuilder<T extends BuilderProgram>(host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOpts: BuildOpts): SolutionBuilder<T> {
+  return createSolutionBuilderWorker(false, host, rootNames, defaultOpts);
 }
 export function createSolutionBuilderWithWatch<T extends BuilderProgram>(
   host: SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
-  defaultOptions: BuildOptions,
-  baseWatchOptions?: WatchOptions
+  defaultOpts: BuildOpts,
+  baseWatchOpts?: WatchOpts
 ): SolutionBuilder<T> {
-  return createSolutionBuilderWorker(true, host, rootNames, defaultOptions, baseWatchOptions);
+  return createSolutionBuilderWorker(true, host, rootNames, defaultOpts, baseWatchOpts);
 }
 type ConfigFileCacheEntry = ParsedCommandLine | Diagnostic;
 interface SolutionBuilderStateCache {
@@ -194,10 +194,10 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly getCanonicalFileName: GetCanonicalFileName;
   readonly parseConfigFileHost: ParseConfigFileHost;
   readonly writeFileName: ((s: string) => void) | undefined;
-  readonly options: BuildOptions;
-  readonly baseCompilerOptions: CompilerOptions;
+  readonly opts: BuildOpts;
+  readonly baseCompilerOpts: CompilerOpts;
   readonly rootNames: readonly string[];
-  readonly baseWatchOptions: WatchOptions | undefined;
+  readonly baseWatchOpts: WatchOpts | undefined;
   readonly resolvedConfigFilePaths: Map<ResolvedConfigFilePath>;
   readonly configFileCache: ConfigFileMap<ConfigFileCacheEntry>;
   readonly projectStatus: ConfigFileMap<UpToDateStatus>;
@@ -211,7 +211,7 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly moduleResolutionCache: ModuleResolutionCache | undefined;
   buildOrder: AnyBuildOrder | undefined;
   readFileWithCache: (f: string) => string | undefined;
-  projectCompilerOptions: CompilerOptions;
+  projectCompilerOpts: CompilerOpts;
   cache: SolutionBuilderStateCache | undefined;
   allProjectBuildPending: boolean;
   needsSummary: boolean;
@@ -232,15 +232,15 @@ function createSolutionBuilderState<T extends BuilderProgram>(
   watch: boolean,
   hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
-  options: BuildOptions,
-  baseWatchOptions: WatchOptions | undefined
+  opts: BuildOpts,
+  baseWatchOpts: WatchOpts | undefined
 ): SolutionBuilderState<T> {
   const host = hostOrHostWithWatch as SolutionBuilderHost<T>;
   const hostWithWatch = hostOrHostWithWatch as SolutionBuilderWithWatchHost<T>;
   const currentDirectory = host.getCurrentDirectory();
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
-  const baseCompilerOptions = getCompilerOptionsOfBuildOptions(options);
-  const compilerHost = createCompilerHostFromProgramHost(host, () => state.projectCompilerOptions);
+  const baseCompilerOpts = getCompilerOptsOfBuildOpts(opts);
+  const compilerHost = createCompilerHostFromProgramHost(host, () => state.projectCompilerOpts);
   setGetSourceFileAsHashVersioned(compilerHost, host);
   compilerHost.getParsedCommandLine = (fileName) => parseConfigFile(state, fileName as ResolvedConfigFileName, toResolvedConfigFilePath(state, fileName as ResolvedConfigFileName));
   compilerHost.resolveModuleNames = maybeBind(host, host.resolveModuleNames);
@@ -248,11 +248,11 @@ function createSolutionBuilderState<T extends BuilderProgram>(
   const moduleResolutionCache = !compilerHost.resolveModuleNames ? createModuleResolutionCache(currentDirectory, getCanonicalFileName) : undefined;
   if (!compilerHost.resolveModuleNames) {
     const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
-      resolveModuleName(moduleName, containingFile, state.projectCompilerOptions, compilerHost, moduleResolutionCache, redirectedReference).resolvedModule!;
+      resolveModuleName(moduleName, containingFile, state.projectCompilerOpts, compilerHost, moduleResolutionCache, redirectedReference).resolvedModule!;
     compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
       loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
-  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<ResolvedConfigFileName>(hostWithWatch, options);
+  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<ResolvedConfigFileName>(hostWithWatch, opts);
   const state: SolutionBuilderState<T> = {
     host,
     hostWithWatch,
@@ -260,10 +260,10 @@ function createSolutionBuilderState<T extends BuilderProgram>(
     getCanonicalFileName,
     parseConfigFileHost: parseConfigHostFromCompilerHostLike(host),
     writeFileName: host.trace ? (s: string) => host.trace!(s) : undefined,
-    options,
-    baseCompilerOptions,
+    opts,
+    baseCompilerOpts,
     rootNames,
-    baseWatchOptions,
+    baseWatchOpts,
     resolvedConfigFilePaths: createMap(),
     configFileCache: createConfigFileMap(),
     projectStatus: createConfigFileMap(),
@@ -277,7 +277,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
     moduleResolutionCache,
     buildOrder: undefined,
     readFileWithCache: (f) => host.readFile(f),
-    projectCompilerOptions: baseCompilerOptions,
+    projectCompilerOpts: baseCompilerOpts,
     cache: undefined,
     allProjectBuildPending: true,
     needsSummary: true,
@@ -308,21 +308,21 @@ function toResolvedConfigFilePath(state: SolutionBuilderState, fileName: Resolve
   return resolvedPath;
 }
 function isParsedCommandLine(entry: ConfigFileCacheEntry): entry is ParsedCommandLine {
-  return !!(entry as ParsedCommandLine).options;
+  return !!(entry as ParsedCommandLine).opts;
 }
 function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): ParsedCommandLine | undefined {
   const { configFileCache } = state;
   const value = configFileCache.get(configFilePath);
   if (value) return isParsedCommandLine(value) ? value : undefined;
   let diagnostic: Diagnostic | undefined;
-  const { parseConfigFileHost, baseCompilerOptions, baseWatchOptions, extendedConfigCache, host } = state;
+  const { parseConfigFileHost, baseCompilerOpts, baseWatchOpts, extendedConfigCache, host } = state;
   let parsed: ParsedCommandLine | undefined;
   if (host.getParsedCommandLine) {
     parsed = host.getParsedCommandLine(configFileName);
     if (!parsed) diagnostic = createCompilerDiagnostic(qd.File_0_not_found, configFileName);
   } else {
     parseConfigFileHost.onUnRecoverableConfigFileDiagnostic = (d) => (diagnostic = d);
-    parsed = getParsedCommandLineOfConfigFile(configFileName, baseCompilerOptions, parseConfigFileHost, extendedConfigCache, baseWatchOptions);
+    parsed = getParsedCommandLineOfConfigFile(configFileName, baseCompilerOpts, parseConfigFileHost, extendedConfigCache, baseWatchOpts);
     parseConfigFileHost.onUnRecoverableConfigFileDiagnostic = noop;
   }
   configFileCache.set(configFilePath, parsed || diagnostic!);
@@ -466,7 +466,7 @@ function addProjToQueue({ projectPendingBuild }: SolutionBuilderState, proj: Res
 function setupInitialBuild(state: SolutionBuilderState, cancellationToken: CancellationToken | undefined) {
   if (!state.allProjectBuildPending) return;
   state.allProjectBuildPending = false;
-  if (state.options.watch) {
+  if (state.opts.watch) {
     reportWatchStatus(state, qd.Starting_compilation_in_watch_mode);
   }
   enableCache(state);
@@ -487,7 +487,7 @@ export interface InvalidatedProjectBase {
   readonly projectPath: ResolvedConfigFilePath;
   readonly buildOrder: readonly ResolvedConfigFileName[];
   done(cancellationToken?: CancellationToken, writeFile?: WriteFileCallback, customTransformers?: CustomTransformers): ExitStatus;
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOpts(): CompilerOpts;
   getCurrentDirectory(): string;
 }
 export interface UpdateOutputFileStampsProject extends InvalidatedProjectBase {
@@ -500,7 +500,7 @@ export interface BuildInvalidedProject<T extends BuilderProgram> extends Invalid
   getProgram(): Program | undefined;
   getSourceFile(fileName: string): SourceFile | undefined;
   getSourceFiles(): readonly SourceFile[];
-  getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
   getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
@@ -538,7 +538,7 @@ function createUpdateOutputFileStampsProject(
     project,
     projectPath,
     buildOrder,
-    getCompilerOptions: () => config.options,
+    getCompilerOpts: () => config.opts,
     getCurrentDirectory: () => state.currentDirectory,
     updateOutputFileStatmps: () => {
       updateOutputTimestamps(state, config, projectPath);
@@ -581,13 +581,13 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         project,
         projectPath,
         buildOrder,
-        getCompilerOptions: () => config.options,
+        getCompilerOpts: () => config.opts,
         getCurrentDirectory: () => state.currentDirectory,
         getBuilderProgram: () => withProgramOrUndefined(identity),
         getProgram: () => withProgramOrUndefined((program) => program.getProgramOrUndefined()),
         getSourceFile: (fileName) => withProgramOrUndefined((program) => program.getSourceFile(fileName)),
         getSourceFiles: () => withProgramOrEmptyArray((program) => program.getSourceFiles()),
-        getOptionsDiagnostics: (cancellationToken) => withProgramOrEmptyArray((program) => program.getOptionsDiagnostics(cancellationToken)),
+        getOptsDiagnostics: (cancellationToken) => withProgramOrEmptyArray((program) => program.getOptsDiagnostics(cancellationToken)),
         getGlobalDiagnostics: (cancellationToken) => withProgramOrEmptyArray((program) => program.getGlobalDiagnostics(cancellationToken)),
         getConfigFileParsingDiagnostics: () => withProgramOrEmptyArray((program) => program.getConfigFileParsingDiagnostics()),
         getSyntacticDiagnostics: (sourceFile, cancellationToken) => withProgramOrEmptyArray((program) => program.getSyntacticDiagnostics(sourceFile, cancellationToken)),
@@ -612,7 +612,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         project,
         projectPath,
         buildOrder,
-        getCompilerOptions: () => config.options,
+        getCompilerOpts: () => config.opts,
         getCurrentDirectory: () => state.currentDirectory,
         emit: (writeFile: WriteFileCallback | undefined, customTransformers: CustomTransformers | undefined) => {
           if (step !== Step.EmitBundle) return invalidatedProjectOfBundle;
@@ -633,13 +633,13 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
   }
   function createProgram() {
     assert(program === undefined);
-    if (state.options.dry) {
+    if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_build_project_0, project);
       buildResult = BuildResultFlags.Success;
       step = Step.QueueReferencingProjects;
       return;
     }
-    if (state.options.verbose) reportStatus(state, qd.Building_project_0, project);
+    if (state.opts.verbose) reportStatus(state, qd.Building_project_0, project);
     if (config.fileNames.length === 0) {
       reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
       buildResult = BuildResultFlags.None;
@@ -647,9 +647,9 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       return;
     }
     const { host, compilerHost } = state;
-    state.projectCompilerOptions = config.options;
+    state.projectCompilerOpts = config.opts;
     updateModuleResolutionCache(state, project, config);
-    program = host.createProgram(config.fileNames, config.options, compilerHost, getOldProgram(state, projectPath, config), getConfigFileParsingDiagnostics(config), config.projectReferences);
+    program = host.createProgram(config.fileNames, config.opts, compilerHost, getOldProgram(state, projectPath, config), getConfigFileParsingDiagnostics(config), config.projectReferences);
     step++;
   }
   function handleDiagnostics(diagnostics: readonly Diagnostic[], errorFlags: BuildResultFlags, errorType: string) {
@@ -665,7 +665,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     handleDiagnostics(
       [
         ...program.getConfigFileParsingDiagnostics(),
-        ...program.getOptionsDiagnostics(cancellationToken),
+        ...program.getOptsDiagnostics(cancellationToken),
         ...program.getGlobalDiagnostics(cancellationToken),
         ...program.getSyntacticDiagnostics(undefined, cancellationToken),
       ],
@@ -760,22 +760,22 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       oldestOutputFileName,
     });
     afterProgramDone(state, projectPath, program, config);
-    state.projectCompilerOptions = state.baseCompilerOptions;
+    state.projectCompilerOpts = state.baseCompilerOpts;
     step = Step.QueueReferencingProjects;
     buildResult = resultFlags;
     return emitDiagnostics;
   }
   function emitBundle(writeFileCallback?: WriteFileCallback, customTransformers?: CustomTransformers): EmitResult | BuildInvalidedProject<T> | undefined {
     assert(kind === InvalidatedProjectKind.UpdateBundle);
-    if (state.options.dry) {
+    if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_update_output_of_project_0, project);
       buildResult = BuildResultFlags.Success;
       step = Step.QueueReferencingProjects;
       return;
     }
-    if (state.options.verbose) reportStatus(state, qd.Updating_output_of_project_0, project);
+    if (state.opts.verbose) reportStatus(state, qd.Updating_output_of_project_0, project);
     const { compilerHost } = state;
-    state.projectCompilerOptions = config.options;
+    state.projectCompilerOpts = config.opts;
     const outputFiles = emitUsingBuildInfo(
       config,
       compilerHost,
@@ -837,15 +837,15 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     }
   }
 }
-function needsBuild({ options }: SolutionBuilderState, status: UpToDateStatus, config: ParsedCommandLine) {
-  if (status.type !== UpToDateStatusType.OutOfDateWithPrepend || options.force) return true;
-  return config.fileNames.length === 0 || !!getConfigFileParsingDiagnostics(config).length || !isIncrementalCompilation(config.options);
+function needsBuild({ opts }: SolutionBuilderState, status: UpToDateStatus, config: ParsedCommandLine) {
+  if (status.type !== UpToDateStatusType.OutOfDateWithPrepend || opts.force) return true;
+  return config.fileNames.length === 0 || !!getConfigFileParsingDiagnostics(config).length || !isIncrementalCompilation(config.opts);
 }
 function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuilderState<T>, buildOrder: AnyBuildOrder, reportQueue: boolean): InvalidatedProject<T> | undefined {
   if (!state.projectPendingBuild.size) return;
   if (isCircularBuildOrder(buildOrder)) return;
   if (state.currentInvalidatedProject) return arrayIsEqualTo(state.currentInvalidatedProject.buildOrder, buildOrder) ? state.currentInvalidatedProject : undefined;
-  const { options, projectPendingBuild } = state;
+  const { opts, projectPendingBuild } = state;
   for (let projectIndex = 0; projectIndex < buildOrder.length; projectIndex++) {
     const project = buildOrder[projectIndex];
     const projectPath = toResolvedConfigFilePath(state, project);
@@ -866,18 +866,18 @@ function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuil
       watchWildCardDirectories(state, project, projectPath, config);
       watchInputFiles(state, project, projectPath, config);
     } else if (reloadLevel === ConfigFileProgramReloadLevel.Partial) {
-      const result = getFileNamesFromConfigSpecs(config.configFileSpecs!, getDirectoryPath(project), config.options, state.parseConfigFileHost);
+      const result = getFileNamesFromConfigSpecs(config.configFileSpecs!, getDirectoryPath(project), config.opts, state.parseConfigFileHost);
       updateErrorForNoInputFiles(result, project, config.configFileSpecs!, config.errors, canJsonReportNoInutFiles(config.raw));
       config.fileNames = result.fileNames;
       watchInputFiles(state, project, projectPath, config);
     }
     const status = getUpToDateStatus(state, config, projectPath);
     verboseReportProjectStatus(state, project, status);
-    if (!options.force) {
+    if (!opts.force) {
       if (status.type === UpToDateStatusType.UpToDate) {
         reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
         projectPendingBuild.delete(projectPath);
-        if (options.dry) {
+        if (opts.dry) {
           reportStatus(state, qd.Project_0_is_up_to_date, project);
         }
         continue;
@@ -890,7 +890,7 @@ function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuil
     if (status.type === UpToDateStatusType.UpstreamBlocked) {
       reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
       projectPendingBuild.delete(projectPath);
-      if (options.verbose) {
+      if (opts.verbose) {
         reportStatus(
           state,
           status.upstreamProjectBlocked ? qd.Skipping_build_of_project_0_because_its_dependency_1_was_not_built : qd.Skipping_build_of_project_0_because_its_dependency_1_has_errors,
@@ -918,15 +918,15 @@ function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuil
   return;
 }
 function listEmittedFile({ writeFileName }: SolutionBuilderState, proj: ParsedCommandLine, file: string) {
-  if (writeFileName && proj.options.listEmittedFiles) {
+  if (writeFileName && proj.opts.listEmittedFiles) {
     writeFileName(`TSFILE: ${file}`);
   }
 }
-function getOldProgram<T extends BuilderProgram>({ options, builderPrograms, compilerHost }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
-  if (options.force) return;
+function getOldProgram<T extends BuilderProgram>({ opts, builderPrograms, compilerHost }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
+  if (opts.force) return;
   const value = builderPrograms.get(proj);
   if (value) return value;
-  return (readBuilderProgram(parsed.options, compilerHost) as any) as T;
+  return (readBuilderProgram(parsed.opts, compilerHost) as any) as T;
 }
 function afterProgramDone<T extends BuilderProgram>({ host, watch, builderPrograms }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, program: T | undefined, config: ParsedCommandLine) {
   if (program) {
@@ -954,7 +954,7 @@ function buildErrors<T extends BuilderProgram>(
   if (program && state.writeFileName) listFiles(program, state.writeFileName);
   state.projectStatus.set(resolvedPath, { type: UpToDateStatusType.Unbuildable, reason: `${errorType} errors` });
   afterProgramDone(state, resolvedPath, program, config);
-  state.projectCompilerOptions = state.baseCompilerOptions;
+  state.projectCompilerOpts = state.baseCompilerOpts;
   return errorFlags;
 }
 function updateModuleResolutionCache(state: SolutionBuilderState, proj: ResolvedConfigFileName, config: ParsedCommandLine) {
@@ -968,14 +968,14 @@ function updateModuleResolutionCache(state: SolutionBuilderState, proj: Resolved
   } else {
     assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
     const ref: ResolvedProjectReference = {
-      sourceFile: config.options.configFile!,
+      sourceFile: config.opts.configFile!,
       commandLine: config,
     };
     moduleResolutionCache.directoryToModuleNameMap.setOwnMap(moduleResolutionCache.directoryToModuleNameMap.getOrCreateMapOfCacheRedirects(ref));
     moduleResolutionCache.moduleNameToDirectoryMap.setOwnMap(moduleResolutionCache.moduleNameToDirectoryMap.getOrCreateMapOfCacheRedirects(ref));
   }
-  moduleResolutionCache.directoryToModuleNameMap.setOwnOptions(config.options);
-  moduleResolutionCache.moduleNameToDirectoryMap.setOwnOptions(config.options);
+  moduleResolutionCache.directoryToModuleNameMap.setOwnOpts(config.opts);
+  moduleResolutionCache.moduleNameToDirectoryMap.setOwnOpts(config.opts);
 }
 function checkConfigFileUpToDateStatus(state: SolutionBuilderState, configFile: string, oldestOutputFileTime: Date, oldestOutputFileName: string): Status.OutOfDateWithSelf | undefined {
   const tsconfigTime = state.host.getModifiedTime(configFile) || missingFileModifiedTime;
@@ -1097,16 +1097,16 @@ function getUpToDateStatusWorker(state: SolutionBuilderState, project: ParsedCom
       newerInputFileName: newestInputFileName,
     };
   } else {
-    const configStatus = checkConfigFileUpToDateStatus(state, project.options.configFilePath!, oldestOutputFileTime, oldestOutputFileName);
+    const configStatus = checkConfigFileUpToDateStatus(state, project.opts.configFilePath!, oldestOutputFileTime, oldestOutputFileName);
     if (configStatus) return configStatus;
-    const extendedConfigStatus = forEach(project.options.configFile!.extendedSourceFiles || emptyArray, (configFile) =>
+    const extendedConfigStatus = forEach(project.opts.configFile!.extendedSourceFiles || emptyArray, (configFile) =>
       checkConfigFileUpToDateStatus(state, configFile, oldestOutputFileTime, oldestOutputFileName)
     );
     if (extendedConfigStatus) return extendedConfigStatus;
   }
   if (!state.buildInfoChecked.has(resolvedPath)) {
     state.buildInfoChecked.set(resolvedPath, true);
-    const buildInfoPath = getTsBuildInfoEmitOutputFilePath(project.options);
+    const buildInfoPath = getTsBuildInfoEmitOutputFilePath(project.opts);
     if (buildInfoPath) {
       const value = state.readFileWithCache(buildInfoPath);
       const buildInfo = value && getBuildInfo(value);
@@ -1147,7 +1147,7 @@ function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedC
   const { host } = state;
   const outputs = getAllProjectOutputs(proj, !host.useCaseSensitiveFileNames());
   if (!skipOutputs || outputs.length !== skipOutputs.size) {
-    let reportVerbose = !!state.options.verbose;
+    let reportVerbose = !!state.opts.verbose;
     const now = host.now ? host.now() : new Date();
     for (const file of outputs) {
       if (skipOutputs && skipOutputs.has(toPath(state, file))) {
@@ -1155,7 +1155,7 @@ function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedC
       }
       if (reportVerbose) {
         reportVerbose = false;
-        reportStatus(state, verboseMessage, proj.options.configFilePath!);
+        reportStatus(state, verboseMessage, proj.opts.configFilePath!);
       }
       if (isDeclarationFile(file)) {
         priorNewestUpdateTime = newer(priorNewestUpdateTime, host.getModifiedTime(file) || missingFileModifiedTime);
@@ -1166,7 +1166,7 @@ function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedC
   return priorNewestUpdateTime;
 }
 function updateOutputTimestamps(state: SolutionBuilderState, proj: ParsedCommandLine, resolvedPath: ResolvedConfigFilePath) {
-  if (state.options.dry) return reportStatus(state, qd.A_non_dry_build_would_update_timestamps_for_output_of_project_0, proj.options.configFilePath!);
+  if (state.opts.dry) return reportStatus(state, qd.A_non_dry_build_would_update_timestamps_for_output_of_project_0, proj.opts.configFilePath!);
   const priorNewestUpdateTime = updateOutputTimestampsWorker(state, proj, minimumDate, qd.Updating_output_timestamps_of_project_0);
   state.projectStatus.set(resolvedPath, {
     type: UpToDateStatusType.UpToDate,
@@ -1184,7 +1184,7 @@ function queueReferencingProjects(
   buildResult: BuildResultFlags
 ) {
   if (buildResult & BuildResultFlags.AnyErrors) return;
-  if (!config.options.composite) return;
+  if (!config.opts.composite) return;
   for (let index = projectIndex + 1; index < buildOrder.length; index++) {
     const nextProject = buildOrder[index];
     const nextProjectPath = toResolvedConfigFilePath(state, nextProject);
@@ -1263,8 +1263,8 @@ function clean(state: SolutionBuilderState, project?: string, onlyReferences?: b
     reportErrors(state, buildOrder.circularDiagnostics);
     return ExitStatus.ProjectReferenceCycle_OutputsSkipped;
   }
-  const { options, host } = state;
-  const filesToDelete = options.dry ? ([] as string[]) : undefined;
+  const { opts, host } = state;
+  const filesToDelete = opts.dry ? ([] as string[]) : undefined;
   for (const proj of buildOrder) {
     const resolvedPath = toResolvedConfigFilePath(state, proj);
     const parsed = parseConfigFile(state, proj, resolvedPath);
@@ -1349,7 +1349,7 @@ function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFi
         invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.Full);
       },
       PollingInterval.High,
-      parsed?.watchOptions,
+      parsed?.watchOpts,
       WatchType.ConfigFile,
       resolved
     )
@@ -1359,12 +1359,12 @@ function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
   return comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
 }
 function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
-  if (configFile.options.noEmit) return false;
+  if (configFile.opts.noEmit) return false;
   if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) return false;
-  const out = configFile.options.outFile || configFile.options.out;
+  const out = configFile.opts.outFile || configFile.opts.out;
   if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + Extension.Dts))) return true;
-  if (configFile.options.declarationDir && containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
-  if (configFile.options.outDir && containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
+  if (configFile.opts.declarationDir && containsPath(configFile.opts.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
+  if (configFile.opts.outDir && containsPath(configFile.opts.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   return !forEach(configFile.fileNames, (inputFile) => isSameFile(state, fileName, inputFile));
 }
 function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
@@ -1375,7 +1375,7 @@ function watchWildCardDirectories(state: SolutionBuilderState, resolved: Resolve
       dir,
       (fileOrDirectory) => {
         const fileOrDirectoryPath = toPath(state, fileOrDirectory);
-        if (fileOrDirectoryPath !== toPath(state, dir) && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, parsed.options)) {
+        if (fileOrDirectoryPath !== toPath(state, dir) && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, parsed.opts)) {
           state.writeLog(`Project: ${resolved} Detected file add/remove of non supported extension: ${fileOrDirectory}`);
           return;
         }
@@ -1386,7 +1386,7 @@ function watchWildCardDirectories(state: SolutionBuilderState, resolved: Resolve
         invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.Partial);
       },
       flags,
-      parsed?.watchOptions,
+      parsed?.watchOpts,
       WatchType.WildcardDirectory,
       resolved
     )
@@ -1404,7 +1404,7 @@ function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFi
           input,
           () => invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.None),
           PollingInterval.Low,
-          parsed?.watchOptions,
+          parsed?.watchOpts,
           path as Path,
           WatchType.SourceFile,
           resolved
@@ -1431,22 +1431,22 @@ function stopWatching(state: SolutionBuilderState) {
   clearMap(state.allWatchedWildcardDirectories, (watchedWildcardDirectories) => clearMap(watchedWildcardDirectories, closeFileWatcherOf));
   clearMap(state.allWatchedInputFiles, (watchedWildcardDirectories) => clearMap(watchedWildcardDirectories, closeFileWatcher));
 }
-function createSolutionBuilderWorker<T extends BuilderProgram>(watch: false, host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions): SolutionBuilder<T>;
+function createSolutionBuilderWorker<T extends BuilderProgram>(watch: false, host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOpts: BuildOpts): SolutionBuilder<T>;
 function createSolutionBuilderWorker<T extends BuilderProgram>(
   watch: true,
   host: SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
-  defaultOptions: BuildOptions,
-  baseWatchOptions?: WatchOptions
+  defaultOpts: BuildOpts,
+  baseWatchOpts?: WatchOpts
 ): SolutionBuilder<T>;
 function createSolutionBuilderWorker<T extends BuilderProgram>(
   watch: boolean,
   hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
-  options: BuildOptions,
-  baseWatchOptions?: WatchOptions
+  opts: BuildOpts,
+  baseWatchOpts?: WatchOpts
 ): SolutionBuilder<T> {
-  const state = createSolutionBuilderState(watch, hostOrHostWithWatch, rootNames, options, baseWatchOptions);
+  const state = createSolutionBuilderState(watch, hostOrHostWithWatch, rootNames, opts, baseWatchOpts);
   return {
     build: (project, cancellationToken) => build(state, project, cancellationToken),
     clean: (project) => clean(state, project),
@@ -1476,7 +1476,7 @@ function reportStatus(state: SolutionBuilderState, message: qd.Message, ...args:
 }
 function reportWatchStatus(state: SolutionBuilderState, message: qd.Message, ...args: (string | number | undefined)[]) {
   if (state.hostWithWatch.onWatchStatusChange) {
-    state.hostWithWatch.onWatchStatusChange(createCompilerDiagnostic(message, ...args), state.host.getNewLine(), state.baseCompilerOptions);
+    state.hostWithWatch.onWatchStatusChange(createCompilerDiagnostic(message, ...args), state.host.getNewLine(), state.baseCompilerOpts);
   }
 }
 function reportErrors({ host }: SolutionBuilderState, errors: readonly Diagnostic[]) {
@@ -1518,7 +1518,7 @@ function reportErrorSummary(state: SolutionBuilderState, buildOrder: AnyBuildOrd
   }
 }
 function reportBuildQueue(state: SolutionBuilderState, buildQueue: readonly ResolvedConfigFileName[]) {
-  if (state.options.verbose) {
+  if (state.opts.verbose) {
     reportStatus(state, qd.Projects_in_this_build_Colon_0, buildQueue.map((s) => '\r\n    * ' + relName(state, s)).join(''));
   }
 }
@@ -1584,7 +1584,7 @@ function reportUpToDateStatus(state: SolutionBuilderState, configFileName: strin
   }
 }
 function verboseReportProjectStatus(state: SolutionBuilderState, configFileName: string, status: UpToDateStatus) {
-  if (state.options.verbose) {
+  if (state.opts.verbose) {
     reportUpToDateStatus(state, configFileName, status);
   }
 }

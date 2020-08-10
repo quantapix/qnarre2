@@ -21,11 +21,11 @@ export function transformModule(context: TrafoContext) {
     }
   }
   const { startLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   const resolver = context.getEmitResolver();
   const host = context.getEmitHost();
-  const languageVersion = getEmitScriptTarget(compilerOptions);
-  const moduleKind = getEmitModuleKind(compilerOptions);
+  const languageVersion = getEmitScriptTarget(compilerOpts);
+  const moduleKind = getEmitModuleKind(compilerOpts);
   const previousOnSubstituteNode = context.onSubstituteNode;
   const previousOnEmitNode = context.onEmitNode;
   context.onSubstituteNode = onSubstituteNode;
@@ -47,15 +47,15 @@ export function transformModule(context: TrafoContext) {
     if (
       node.isDeclarationFile ||
       !(
-        isEffectiveExternalModule(node, compilerOptions) ||
+        isEffectiveExternalModule(node, compilerOpts) ||
         node.trafoFlags & TrafoFlags.ContainsDynamicImport ||
-        (qc.is.jsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile))
+        (qc.is.jsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOpts) && (compilerOpts.out || compilerOpts.outFile))
       )
     ) {
       return node;
     }
     currentSourceFile = node;
-    currentModuleInfo = collectExternalModuleInfo(node, resolver, compilerOptions);
+    currentModuleInfo = collectExternalModuleInfo(node, resolver, compilerOpts);
     moduleInfoMap[getOriginalNodeId(node)] = currentModuleInfo;
     const transformModule = getTransformModuleDelegate(moduleKind);
     const updated = transformModule(node);
@@ -71,7 +71,7 @@ export function transformModule(context: TrafoContext) {
   function transformCommonJSModule(node: SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
-    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
+    const ensureUseStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') || (!compilerOpts.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qc.is.jsonSourceFile(node), sourceElemVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
@@ -98,7 +98,7 @@ export function transformModule(context: TrafoContext) {
   }
   function transformAMDModule(node: SourceFile) {
     const define = new Identifier('define');
-    const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
+    const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
     const jsonSourceFile = qc.is.jsonSourceFile(node) && node;
     const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, true);
     const updated = qp_updateSourceNode(
@@ -133,7 +133,7 @@ export function transformModule(context: TrafoContext) {
   }
   function transformUMDModule(node: SourceFile) {
     const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, false);
-    const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
+    const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
     const umdHeader = new qs.FunctionExpression(
       undefined,
       undefined,
@@ -214,7 +214,7 @@ export function transformModule(context: TrafoContext) {
       }
     }
     for (const importNode of currentModuleInfo.externalImports) {
-      const externalModuleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
+      const externalModuleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOpts);
       const importAliasName = qf.get.declaration.localNameForExternalImport(importNode, currentSourceFile);
       if (externalModuleName) {
         if (includeNonAmdDependencies && importAliasName) {
@@ -229,7 +229,7 @@ export function transformModule(context: TrafoContext) {
     return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
   }
   function getAMDImportExpressionForImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration) {
-    if (qc.is.kind(qc.ImportEqualsDeclaration, node) || qc.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)) {
+    if (qc.is.kind(qc.ImportEqualsDeclaration, node) || qc.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOpts)) {
       return;
     }
     const name = qf.get.declaration.localNameForExternalImport(node, currentSourceFile)!;
@@ -242,7 +242,7 @@ export function transformModule(context: TrafoContext) {
   function transformAsynchronousModuleBody(node: SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
-    const statementOffset = addPrologue(statements, node.statements, !compilerOptions.noImplicitUseStrict, sourceElemVisitor);
+    const statementOffset = addPrologue(statements, node.statements, !compilerOpts.noImplicitUseStrict, sourceElemVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
     }
@@ -356,16 +356,16 @@ export function transformModule(context: TrafoContext) {
     return visitEachChild(node, moduleExpressionElemVisitor, context);
   }
   function visitImportCallExpression(node: ImportCall): Expression {
-    const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElemVisitor);
+    const arg = visitNode(firstOrUndefined(node.args), moduleExpressionElemVisitor);
     const containsLexicalThis = !!(node.trafoFlags & TrafoFlags.ContainsLexicalThis);
-    switch (compilerOptions.module) {
+    switch (compilerOpts.module) {
       case ModuleKind.AMD:
-        return createImportCallExpressionAMD(argument, containsLexicalThis);
+        return createImportCallExpressionAMD(arg, containsLexicalThis);
       case ModuleKind.UMD:
-        return createImportCallExpressionUMD(argument, containsLexicalThis);
+        return createImportCallExpressionUMD(arg, containsLexicalThis);
       case ModuleKind.CommonJS:
       default:
-        return createImportCallExpressionCommonJS(argument, containsLexicalThis);
+        return createImportCallExpressionCommonJS(arg, containsLexicalThis);
     }
   }
   function createImportCallExpressionUMD(arg: Expression, containsLexicalThis: boolean): Expression {
@@ -398,7 +398,7 @@ export function transformModule(context: TrafoContext) {
       }
     }
     const promise = new qc.NewExpression(new Identifier('Promise'), undefined, [func]);
-    if (compilerOptions.esModuleInterop) {
+    if (compilerOpts.esModuleInterop) {
       context.requestEmitHelper(importStarHelper);
       return new qs.CallExpression(new qc.PropertyAccessExpression(promise, new Identifier('then')), undefined, [getUnscopedHelperName('__importStar')]);
     }
@@ -407,7 +407,7 @@ export function transformModule(context: TrafoContext) {
   function createImportCallExpressionCommonJS(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
     const promiseResolveCall = new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Promise'), 'resolve'), []);
     let requireCall = new qs.CallExpression(new Identifier('require'), undefined, arg ? [arg] : []);
-    if (compilerOptions.esModuleInterop) {
+    if (compilerOpts.esModuleInterop) {
       context.requestEmitHelper(importStarHelper);
       requireCall = new qs.CallExpression(getUnscopedHelperName('__importStar'), undefined, [requireCall]);
     }
@@ -423,7 +423,7 @@ export function transformModule(context: TrafoContext) {
     return new qs.CallExpression(new qc.PropertyAccessExpression(promiseResolveCall, 'then'), undefined, [func]);
   }
   function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || qc.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
+    if (!compilerOpts.esModuleInterop || qc.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
     if (getExportNeedsImportStarHelper(node)) {
       context.requestEmitHelper(importStarHelper);
       return new qs.CallExpression(getUnscopedHelperName('__importStar'), undefined, [innerExpr]);
@@ -431,7 +431,7 @@ export function transformModule(context: TrafoContext) {
     return innerExpr;
   }
   function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || qc.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
+    if (!compilerOpts.esModuleInterop || qc.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
     if (getImportNeedsImportStarHelper(node)) {
       context.requestEmitHelper(importStarHelper);
       return new qs.CallExpression(getUnscopedHelperName('__importStar'), undefined, [innerExpr]);
@@ -486,7 +486,7 @@ export function transformModule(context: TrafoContext) {
     return singleOrMany(statements);
   }
   function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
-    const moduleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
+    const moduleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOpts);
     const args: Expression[] = [];
     if (moduleName) {
       args.push(moduleName);
@@ -1047,7 +1047,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };`,
 };
 export function transformECMAScriptModule(context: TrafoContext) {
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   const previousOnEmitNode = context.onEmitNode;
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onEmitNode = onEmitNode;
@@ -1058,7 +1058,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile) return node;
-    if (qc.is.externalModule(node) || compilerOptions.isolatedModules) {
+    if (qc.is.externalModule(node) || compilerOpts.isolatedModules) {
       const result = updateExternalModule(node);
       if (!qc.is.externalModule(node) || some(result.statements, isExternalModuleIndicator)) return result;
       return qp_updateSourceNode(result, setRange(new Nodes([...result.statements, qf.create.emptyExports()]), result.statements));
@@ -1066,7 +1066,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
     return node;
   }
   function updateExternalModule(node: SourceFile) {
-    const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(node, compilerOptions);
+    const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(node, compilerOpts);
     if (externalHelpersImportDeclaration) {
       const statements: Statement[] = [];
       const statementOffset = addPrologue(statements, node.statements);
@@ -1092,7 +1092,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
     return node.isExportEquals ? undefined : node;
   }
   function visitExportDeclaration(node: ExportDeclaration) {
-    if (compilerOptions.module !== undefined && compilerOptions.module > ModuleKind.ES2015) return node;
+    if (compilerOpts.module !== undefined && compilerOpts.module > ModuleKind.ES2015) return node;
     if (!node.exportClause || !qc.is.kind(qc.NamespaceExport, node.exportClause) || !node.moduleSpecifier) return node;
     const oldIdentifier = node.exportClause.name;
     const synthName = qf.get.generatedNameForNode(oldIdentifier);
@@ -1104,7 +1104,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     if (qc.is.kind(qc.SourceFile, node)) {
-      if ((qc.is.externalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
+      if ((qc.is.externalModule(node) || compilerOpts.isolatedModules) && compilerOpts.importHelpers) {
         helperNameSubstitutions = createMap<Identifier>();
       }
       previousOnEmitNode(hint, node, emitCallback);
@@ -1133,7 +1133,7 @@ export function transformSystemModule(context: TrafoContext) {
     externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];
   }
   const { startLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
-  const compilerOptions = context.getCompilerOptions();
+  const compilerOpts = context.getCompilerOpts();
   const resolver = context.getEmitResolver();
   const host = context.getEmitHost();
   const previousOnSubstituteNode = context.onSubstituteNode;
@@ -1161,18 +1161,18 @@ export function transformSystemModule(context: TrafoContext) {
   let noSubstitution: boolean[] | undefined;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
+    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOpts) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
     const id = getOriginalNodeId(node);
     currentSourceFile = node;
     enclosingBlockScopedContainer = node;
-    moduleInfo = moduleInfoMap[id] = collectExternalModuleInfo(node, resolver, compilerOptions);
+    moduleInfo = moduleInfoMap[id] = collectExternalModuleInfo(node, resolver, compilerOpts);
     exportFunction = createUniqueName('exports');
     exportFunctionsMap[id] = exportFunction;
     contextObject = contextObjectMap[id] = createUniqueName('context');
     const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
     const moduleBodyFunction = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
-    const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
+    const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
     const dependencies = new ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
     const updated = setEmitFlags(
       qp_updateSourceNode(
@@ -1192,7 +1192,7 @@ export function transformSystemModule(context: TrafoContext) {
       ),
       EmitFlags.NoTrailingComments
     );
-    if (!(compilerOptions.outFile || compilerOptions.out)) {
+    if (!(compilerOpts.outFile || compilerOpts.out)) {
       moveEmitHelpers(updated, moduleBodyBlock, (helper) => !helper.scoped);
     }
     if (noSubstitution) {
@@ -1211,7 +1211,7 @@ export function transformSystemModule(context: TrafoContext) {
     const groupIndices = createMap<number>();
     const dependencyGroups: DependencyGroup[] = [];
     for (const externalImport of externalImports) {
-      const externalModuleName = qf.get.externalModuleNameLiteral(externalImport, currentSourceFile, host, resolver, compilerOptions);
+      const externalModuleName = qf.get.externalModuleNameLiteral(externalImport, currentSourceFile, host, resolver, compilerOpts);
       if (externalModuleName) {
         const text = externalModuleName.text;
         const groupIndex = groupIndices.get(text);
@@ -1231,7 +1231,7 @@ export function transformSystemModule(context: TrafoContext) {
   function createSystemModuleBody(node: SourceFile, dependencyGroups: DependencyGroup[]) {
     const statements: Statement[] = [];
     startLexicalEnvironment();
-    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
+    const ensureUseStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') || (!compilerOpts.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElemVisitor);
     statements.push(
       new qc.VariableStatement(
@@ -1823,7 +1823,7 @@ export function transformSystemModule(context: TrafoContext) {
     return new qs.CallExpression(
       new qc.PropertyAccessExpression(contextObject, new Identifier('import')),
       undefined,
-      some(node.arguments) ? [visitNode(node.arguments[0], destructuringAndImportCallVisitor)] : []
+      some(node.args) ? [visitNode(node.args[0], destructuringAndImportCallVisitor)] : []
     );
   }
   function visitDestructuringAssignment(node: DestructuringAssignment): VisitResult<Expression> {

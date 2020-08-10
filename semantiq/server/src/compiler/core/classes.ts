@@ -240,17 +240,17 @@ export class CallExpression extends qb.LeftExpr implements qt.CallExpression {
   kind!: Syntax.CallExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
-  typeArguments?: qt.Nodes<qt.Typing>;
-  arguments: qt.Nodes<qt.Expression>;
+  typeArgs?: qt.Nodes<qt.Typing>;
+  args: qt.Nodes<qt.Expression>;
   constructor(e: qt.Expression, ts?: readonly qt.Typing[], es?: readonly qt.Expression[]) {
     super(true);
     this.expression = parenthesize.forAccess(e);
-    this.typeArguments = Nodes.from(ts);
-    this.arguments = parenthesize.listElems(new Nodes(es));
+    this.typeArgs = Nodes.from(ts);
+    this.args = parenthesize.listElems(new Nodes(es));
   }
   update(e: qt.Expression, ts: readonly qt.Typing[] | undefined, es: readonly qt.Expression[]): CallExpression {
     if (qf.is.optionalChain(this)) return super.update(e, this.questionDotToken, ts, es);
-    return this.expression !== e || this.typeArguments !== ts || this.arguments !== es ? new CallExpression(e, ts, es).updateFrom(this) : this;
+    return this.expression !== e || this.typeArgs !== ts || this.args !== es ? new CallExpression(e, ts, es).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -265,7 +265,7 @@ export class CallChain extends CallExpression implements qt.CallChain {
   }
   update(e: qt.Expression, ts: readonly qt.Typing[] | undefined, es: readonly qt.Expression[], q?: qt.QuestionDotToken) {
     qu.assert(!!(this.flags & NodeFlags.OptionalChain));
-    return this.expression !== e || this.questionDotToken !== q || this.typeArguments !== ts || this.arguments !== es ? new CallChain(e, q, ts, es).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.typeArgs !== ts || this.args !== es ? new CallChain(e, q, ts, es).updateFrom(this) : this;
   }
 }
 CallChain.prototype.kind = CallChain.kind;
@@ -703,7 +703,7 @@ export class DocPropertyLikeTag extends qb.DocTag implements qt.DocPropertyLikeT
   typeExpression?: qt.DocTypingExpression;
   isNameFirst: boolean;
   isBracketed: boolean;
-  constructor(kind: Syntax, tagName: 'arg' | 'argument' | 'param', e: qt.DocTypingExpression | undefined, n: qt.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+  constructor(kind: Syntax, tagName: 'arg' | 'arg' | 'param', e: qt.DocTypingExpression | undefined, n: qt.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
     super(kind, tagName, c);
     this.typeExpression = e;
     this.name = n;
@@ -910,15 +910,15 @@ export class ElemAccessExpression extends qb.MemberExpr implements qt.ElemAccess
   kind!: Syntax.ElemAccessExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
-  argumentExpression: qt.Expression;
+  argExpression: qt.Expression;
   constructor(e: qt.Expression, i: number | qt.Expression) {
     super(true);
     this.expression = parenthesize.forAccess(e);
-    this.argumentExpression = asExpression(i);
+    this.argExpression = asExpression(i);
   }
   update(e: qt.Expression, a: qt.Expression): ElemAccessExpression {
     if (qf.is.optionalChain(this)) return super.update(e, a, this.questionDotToken);
-    return this.expression !== e || this.argumentExpression !== a ? new ElemAccessExpression(e, a).updateFrom(this) : this;
+    return this.expression !== e || this.argExpression !== a ? new ElemAccessExpression(e, a).updateFrom(this) : this;
   }
 }
 ElemAccessExpression.prototype.kind = ElemAccessExpression.kind;
@@ -931,7 +931,7 @@ export class ElemAccessChain extends ElemAccessExpression implements qt.ElemAcce
   }
   update(e: qt.Expression, a: qt.Expression, q?: qt.QuestionDotToken) {
     qu.assert(!!(this.flags & NodeFlags.OptionalChain));
-    return this.expression !== e || this.questionDotToken !== q || this.argumentExpression !== a ? new ElemAccessChain(e, q, a).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.argExpression !== a ? new ElemAccessChain(e, q, a).updateFrom(this) : this;
   }
 }
 ElemAccessChain.prototype.kind = ElemAccessChain.kind;
@@ -1060,7 +1060,7 @@ export class ExpressionStatement extends qb.Stmt implements qt.ExpressionStateme
 }
 ExpressionStatement.prototype.kind = ExpressionStatement.kind;
 qu.addMixins(ExpressionStatement, [qb.DocContainer]);
-export class ExpressionWithTypings extends qb.WithArgumentsTobj implements qt.ExpressionWithTypings {
+export class ExpressionWithTypings extends qb.WithArgsTobj implements qt.ExpressionWithTypings {
   static readonly kind = Syntax.ExpressionWithTypings;
   kind!: Syntax.ExpressionWithTypings;
   parent?: qt.HeritageClause | qt.DocAugmentsTag | qt.DocImplementsTag;
@@ -1068,10 +1068,10 @@ export class ExpressionWithTypings extends qb.WithArgumentsTobj implements qt.Ex
   constructor(ts: readonly qt.Typing[] | undefined, e: qt.Expression) {
     super(true);
     this.expression = parenthesize.forAccess(e);
-    this.typeArguments = Nodes.from(ts);
+    this.typeArgs = Nodes.from(ts);
   }
   update(ts: readonly qt.Typing[] | undefined, e: qt.Expression) {
-    return this.typeArguments !== ts || this.expression !== e ? new ExpressionWithTypings(ts, e).updateFrom(this) : this;
+    return this.typeArgs !== ts || this.expression !== e ? new ExpressionWithTypings(ts, e).updateFrom(this) : this;
   }
 }
 ExpressionWithTypings.prototype.kind = ExpressionWithTypings.kind;
@@ -1294,7 +1294,7 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   kind!: Syntax.Identifier;
   escapedText!: qu.__String;
   autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
-  typeArguments?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>;
+  typeArgs?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>;
   flowNode = undefined;
   originalKeywordKind?: Syntax;
   autoGenerateId = 0;
@@ -1307,14 +1307,14 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
     this.escapedText = qy.get.escUnderscores(t);
     this.originalKeywordKind = t ? qy.fromString(t) : Syntax.Unknown;
     if (typeArgs) {
-      this.typeArguments = new Nodes(typeArgs as readonly qt.Typing[]);
+      this.typeArgs = new Nodes(typeArgs as readonly qt.Typing[]);
     }
   }
   get text(): string {
     return qb.idText(this);
   }
   update(ts?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>) {
-    return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
+    return this.typeArgs !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
@@ -1416,21 +1416,21 @@ export class ImportSpecifier extends qb.NamedDecl implements qt.ImportSpecifier 
   }
 }
 ImportSpecifier.prototype.kind = ImportSpecifier.kind;
-export class ImportTyping extends qb.WithArgumentsTobj implements qt.ImportTyping {
+export class ImportTyping extends qb.WithArgsTobj implements qt.ImportTyping {
   static readonly kind = Syntax.ImportTyping;
   kind!: Syntax.ImportTyping;
   isTypeOf?: boolean;
-  argument: qt.Typing;
+  arg: qt.Typing;
   qualifier?: qt.EntityName;
   constructor(a: qt.Typing, q?: qt.EntityName, ts?: readonly qt.Typing[], tof?: boolean) {
     super(true);
-    this.argument = a;
+    this.arg = a;
     this.qualifier = q;
-    this.typeArguments = parenthesize.typeParams(ts);
+    this.typeArgs = parenthesize.typeParams(ts);
     this.isTypeOf = tof;
   }
   update(a: qt.Typing, q?: qt.EntityName, ts?: readonly qt.Typing[], tof?: boolean) {
-    return this.argument !== a || this.qualifier !== q || this.typeArguments !== ts || this.isTypeOf !== tof ? new ImportTyping(a, q, ts, tof).updateFrom(this) : this;
+    return this.arg !== a || this.qualifier !== q || this.typeArgs !== ts || this.isTypeOf !== tof ? new ImportTyping(a, q, ts, tof).updateFrom(this) : this;
   }
 }
 ImportTyping.prototype.kind = ImportTyping.kind;
@@ -1770,16 +1770,16 @@ export class JsxOpeningElem extends qb.Expr implements qt.JsxOpeningElem {
   kind!: Syntax.JsxOpeningElem;
   parent?: qt.JsxElem;
   tagName: qt.JsxTagNameExpression;
-  typeArguments?: qt.Nodes<qt.Typing>;
+  typeArgs?: qt.Nodes<qt.Typing>;
   attributes: qt.JsxAttributes;
   constructor(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, a: qt.JsxAttributes) {
     super(true);
     this.tagName = e;
-    this.typeArguments = Nodes.from(ts);
+    this.typeArgs = Nodes.from(ts);
     this.attributes = a;
   }
   update(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, s: qt.JsxAttributes) {
-    return this.tagName !== e || this.typeArguments !== ts || this.attributes !== s ? new JsxOpeningElem(e, ts, s).updateFrom(this) : this;
+    return this.tagName !== e || this.typeArgs !== ts || this.attributes !== s ? new JsxOpeningElem(e, ts, s).updateFrom(this) : this;
   }
 }
 JsxOpeningElem.prototype.kind = JsxOpeningElem.kind;
@@ -1796,16 +1796,16 @@ export class JsxSelfClosingElem extends qb.PrimaryExpr implements qt.JsxSelfClos
   static readonly kind = Syntax.JsxSelfClosingElem;
   kind!: Syntax.JsxSelfClosingElem;
   tagName: qt.JsxTagNameExpression;
-  typeArguments?: qt.Nodes<qt.Typing>;
+  typeArgs?: qt.Nodes<qt.Typing>;
   attributes: qt.JsxAttributes;
   constructor(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, a: qt.JsxAttributes) {
     super(true);
     this.tagName = e;
-    this.typeArguments = Nodes.from(ts);
+    this.typeArgs = Nodes.from(ts);
     this.attributes = a;
   }
   update(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, a: qt.JsxAttributes) {
-    return this.tagName !== e || this.typeArguments !== ts || this.attributes !== a ? new JsxSelfClosingElem(e, ts, a).updateFrom(this) : this;
+    return this.tagName !== e || this.typeArgs !== ts || this.attributes !== a ? new JsxSelfClosingElem(e, ts, a).updateFrom(this) : this;
   }
 }
 JsxSelfClosingElem.prototype.kind = JsxSelfClosingElem.kind;
@@ -2135,16 +2135,16 @@ export class NewExpression extends qb.PrimaryExpr implements qt.NewExpression {
   static readonly kind = Syntax.NewExpression;
   kind!: Syntax.NewExpression;
   expression: qt.LeftExpression;
-  typeArguments?: qt.Nodes<qt.Typing>;
-  arguments?: qt.Nodes<qt.Expression>;
+  typeArgs?: qt.Nodes<qt.Typing>;
+  args?: qt.Nodes<qt.Expression>;
   constructor(e: qt.Expression, ts?: readonly qt.Typing[], a?: readonly qt.Expression[]) {
     super(true);
     this.expression = parenthesize.forNew(e);
-    this.typeArguments = Nodes.from(ts);
-    this.arguments = a ? parenthesize.listElems(new Nodes(a)) : undefined;
+    this.typeArgs = Nodes.from(ts);
+    this.args = a ? parenthesize.listElems(new Nodes(a)) : undefined;
   }
   update(e: qt.Expression, ts?: readonly qt.Typing[], a?: readonly qt.Expression[]) {
-    return this.expression !== e || this.typeArguments !== ts || this.arguments !== a ? new NewExpression(e, ts, a).updateFrom(this) : this;
+    return this.expression !== e || this.typeArgs !== ts || this.args !== a ? new NewExpression(e, ts, a).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -2707,7 +2707,7 @@ export class TaggedTemplateExpression extends qb.MemberExpr implements qt.Tagged
   static readonly kind = Syntax.TaggedTemplateExpression;
   kind!: Syntax.TaggedTemplateExpression;
   tag: qt.LeftExpression;
-  typeArguments?: qt.Nodes<qt.Typing>;
+  typeArgs?: qt.Nodes<qt.Typing>;
   template: qt.TemplateLiteral;
   questionDotToken?: qt.QuestionDotToken;
   constructor(tag: qt.Expression, ts: readonly qt.Typing[] | undefined, template: qt.TemplateLiteral);
@@ -2716,16 +2716,16 @@ export class TaggedTemplateExpression extends qb.MemberExpr implements qt.Tagged
     super(true);
     this.tag = parenthesize.forAccess(tag);
     if (template) {
-      this.typeArguments = Nodes.from(ts as readonly qt.Typing[]);
+      this.typeArgs = Nodes.from(ts as readonly qt.Typing[]);
       this.template = template;
     } else {
-      this.typeArguments = undefined;
+      this.typeArgs = undefined;
       this.template = ts as qt.TemplateLiteral;
     }
   }
   update(tag: qt.Expression, ts: readonly qt.Typing[] | undefined, template: qt.TemplateLiteral): TaggedTemplateExpression;
   update(tag: qt.Expression, ts?: readonly qt.Typing[] | qt.TemplateLiteral, template?: qt.TemplateLiteral) {
-    return this.tag !== tag || (template ? this.typeArguments !== ts || this.template !== template : this.typeArguments || this.template !== ts)
+    return this.tag !== tag || (template ? this.typeArgs !== ts || this.template !== template : this.typeArgs || this.template !== ts)
       ? new TaggedTemplateExpression(tag, ts, template).updateFrom(this)
       : this;
   }
@@ -2988,17 +2988,17 @@ export class TypingQuery extends qb.Tobj implements qt.TypingQuery {
   }
 }
 TypingQuery.prototype.kind = TypingQuery.kind;
-export class TypingReference extends qb.WithArgumentsTobj implements qt.TypingReference {
+export class TypingReference extends qb.WithArgsTobj implements qt.TypingReference {
   static readonly kind = Syntax.TypingReference;
   kind!: Syntax.TypingReference;
   typeName: qt.EntityName;
   constructor(t: string | qt.EntityName, ts?: readonly qt.Typing[]) {
     super(true);
     this.typeName = asName(t);
-    this.typeArguments = ts && parenthesize.typeParams(ts);
+    this.typeArgs = ts && parenthesize.typeParams(ts);
   }
   update(t: qt.EntityName, ts?: qt.Nodes<qt.Typing>) {
-    return this.typeName !== t || this.typeArguments !== ts ? new TypingReference(t, ts).updateFrom(this) : this;
+    return this.typeName !== t || this.typeArgs !== ts ? new TypingReference(t, ts).updateFrom(this) : this;
   }
 }
 TypingReference.prototype.kind = TypingReference.kind;
@@ -3257,7 +3257,7 @@ export namespace parenthesize {
   export function forAccess(e: qt.Expression): qt.LeftExpression {
     const e2 = qb.skip.partiallyEmittedExpressions(e);
     const n = e2 as qt.Node;
-    if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.arguments)) return e as qt.LeftExpression;
+    if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.args)) return e as qt.LeftExpression;
     return new ParenthesizedExpression(e).setRange(e);
   }
   export function postfixOperand(e: qt.Expression): qt.LeftExpression {
@@ -3353,7 +3353,7 @@ export namespace parenthesize {
       case Syntax.CallExpression:
         return new ParenthesizedExpression(e);
       case Syntax.NewExpression:
-        return !n.arguments ? new ParenthesizedExpression(e) : (e as qt.LeftExpression);
+        return !n.args ? new ParenthesizedExpression(e) : (e as qt.LeftExpression);
     }
     return forAccess(e);
   }
@@ -3583,14 +3583,14 @@ export namespace fixme {
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
     sourceFile: SourceFile,
-    compilerOptions: qt.CompilerOptions,
+    compilerOpts: qt.CompilerOpts,
     hasExportStarsToExportValues?: boolean,
     hasImportStar?: boolean,
     hasImportDefault?: boolean
   ) {
-    if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
+    if (compilerOpts.importHelpers && isEffectiveExternalModule(sourceFile, compilerOpts)) {
       let namedBindings: qt.NamedImportBindings | undefined;
-      const moduleKind = getEmitModuleKind(compilerOptions);
+      const moduleKind = getEmitModuleKind(compilerOpts);
       if (moduleKind >= qt.ModuleKind.ES2015 && moduleKind <= qt.ModuleKind.ESNext) {
         const helpers = getEmitHelpers(sourceFile);
         if (helpers) {
@@ -3616,7 +3616,7 @@ export namespace fixme {
           }
         }
       } else {
-        const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOptions, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
+        const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOpts, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
         if (externalHelpersModuleName) {
           namedBindings = new NamespaceImport(externalHelpersModuleName);
         }
@@ -3629,12 +3629,12 @@ export namespace fixme {
     }
     return;
   }
-  export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOptions: qt.CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
-    if (compilerOptions.importHelpers && isEffectiveExternalModule(node, compilerOptions)) {
+  export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOpts: qt.CompilerOpts, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
+    if (compilerOpts.importHelpers && isEffectiveExternalModule(node, compilerOpts)) {
       const externalHelpersModuleName = getExternalHelpersModuleName(node);
       if (externalHelpersModuleName) return externalHelpersModuleName;
-      const moduleKind = getEmitModuleKind(compilerOptions);
-      let create = (hasExportStarsToExportValues || (compilerOptions.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== qt.ModuleKind.System && moduleKind < qt.ModuleKind.ES2015;
+      const moduleKind = getEmitModuleKind(compilerOpts);
+      let create = (hasExportStarsToExportValues || (compilerOpts.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== qt.ModuleKind.System && moduleKind < qt.ModuleKind.ES2015;
       if (!create) {
         const helpers = getEmitHelpers(node);
         if (helpers) {
@@ -3659,7 +3659,7 @@ export namespace fixme {
     sourceFile: SourceFile,
     host: qt.EmitHost,
     resolver: qt.EmitResolver,
-    compilerOptions: qt.CompilerOptions
+    compilerOpts: qt.CompilerOpts
   ) {
     const moduleName = qf.get.externalModuleName(importNode)!;
     if (moduleName.kind === Syntax.StringLiteral) {
@@ -3671,22 +3671,22 @@ export namespace fixme {
         declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration,
         host: qt.EmitHost,
         resolver: qt.EmitResolver,
-        compilerOptions: qt.CompilerOptions
+        compilerOpts: qt.CompilerOpts
       ) {
-        return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
+        return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOpts);
       }
       return (
-        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
+        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
       );
     }
     return;
   }
-  export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: qt.EmitHost, options: qt.CompilerOptions): StringLiteral | undefined {
+  export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: qt.EmitHost, opts: qt.CompilerOpts): StringLiteral | undefined {
     if (!file) {
       return;
     }
     if (file.moduleName) return asLiteral(file.moduleName);
-    if (!file.isDeclarationFile && (options.out || options.outFile)) return asLiteral(qf.get.externalModuleNameFromPath(host, file.fileName));
+    if (!file.isDeclarationFile && (opts.out || opts.outFile)) return asLiteral(qf.get.externalModuleNameFromPath(host, file.fileName));
     return;
   }
 }

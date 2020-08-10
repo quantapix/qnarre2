@@ -52,13 +52,13 @@ export function getLocaleSpecificMessage(m: Message) {
 export function formatMessage(_: any, m: Message, ...args: (string | number | undefined)[]): string;
 export function formatMessage(_: any, m: Message): string {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 2) t = qu.formatStringFromArgs(t, arguments, 2);
+  if (args.length > 2) t = qu.formatStringFromArgs(t, args, 2);
   return t;
 }
 export function createCompilerDiagnostic(m: Message, ...args: (string | number | undefined)[]): Diagnostic;
 export function createCompilerDiagnostic(m: Message): Diagnostic {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 1) t = qu.formatStringFromArgs(t, arguments, 1);
+  if (args.length > 1) t = qu.formatStringFromArgs(t, args, 1);
   return { file: undefined, start: undefined, length: undefined, text: t, cat: m.cat, code: m.code, reportsUnnecessary: m.reportsUnnecessary };
 }
 export function createCompilerDiagnosticFromMessageChain(c: MessageChain): Diagnostic {
@@ -67,7 +67,7 @@ export function createCompilerDiagnosticFromMessageChain(c: MessageChain): Diagn
 export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message, ...args: (string | number | undefined)[]): MessageChain;
 export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message): MessageChain {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 2) t = qu.formatStringFromArgs(t, arguments, 2);
+  if (args.length > 2) t = qu.formatStringFromArgs(t, args, 2);
   return { text: t, cat: m.cat, code: m.code, next: c === undefined || Array.isArray(c) ? c : [c] };
 }
 export function concatenateMessageChains(head: MessageChain, tail: MessageChain) {
@@ -209,7 +209,7 @@ export const msgs = {
   ),
   Trailing_comma_not_allowed: new Message(1009, Category.Error, 'Trailing_comma_not_allowed_1009', 'Trailing comma not allowed.'),
   Asterisk_Slash_expected: new Message(1010, Category.Error, 'Asterisk_Slash_expected_1010', "'*/' expected."),
-  An_elem_access_expression_should_take_an_argument: new Message(1011, Category.Error, 'An_elem_access_expression_should_take_an_argument_1011', 'An elem access expression should take an argument.'),
+  An_elem_access_expression_should_take_an_arg: new Message(1011, Category.Error, 'An_elem_access_expression_should_take_an_arg_1011', 'An elem access expression should take an arg.'),
   Unexpected_token: new Message(1012, Category.Error, 'Unexpected_token_1012', 'Unexpected token.'),
   A_rest_param_or_binding_pattern_may_not_have_a_trailing_comma: new Message(
     1013,
@@ -258,11 +258,11 @@ export const msgs = {
   _0_modifier_must_precede_1_modifier: new Message(1029, Category.Error, '_0_modifier_must_precede_1_modifier_1029', "'{0}' modifier must precede '{1}' modifier."),
   _0_modifier_already_seen: new Message(1030, Category.Error, '_0_modifier_already_seen_1030', "'{0}' modifier already seen."),
   _0_modifier_cannot_appear_on_a_class_elem: new Message(1031, Category.Error, '_0_modifier_cannot_appear_on_a_class_elem_1031', "'{0}' modifier cannot appear on a class elem."),
-  super_must_be_followed_by_an_argument_list_or_member_access: new Message(
+  super_must_be_followed_by_an_arg_list_or_member_access: new Message(
     1034,
     Category.Error,
-    'super_must_be_followed_by_an_argument_list_or_member_access_1034',
-    "'super' must be followed by an argument list or member access."
+    'super_must_be_followed_by_an_arg_list_or_member_access_1034',
+    "'super' must be followed by an arg list or member access."
   ),
   Only_ambient_modules_can_use_quoted_names: new Message(1035, Category.Error, 'Only_ambient_modules_can_use_quoted_names_1035', 'Only ambient modules can use quoted names.'),
   Statements_are_not_allowed_in_ambient_contexts: new Message(1036, Category.Error, 'Statements_are_not_allowed_in_ambient_contexts_1036', 'Statements are not allowed in ambient contexts.'),
@@ -425,7 +425,7 @@ export const msgs = {
   An_index_signature_must_have_exactly_one_param: new Message(1096, Category.Error, 'An_index_signature_must_have_exactly_one_param_1096', 'An index signature must have exactly one param.'),
   _0_list_cannot_be_empty: new Message(1097, Category.Error, '_0_list_cannot_be_empty_1097', "'{0}' list cannot be empty."),
   Type_param_list_cannot_be_empty: new Message(1098, Category.Error, 'Type_param_list_cannot_be_empty_1098', 'Type param list cannot be empty.'),
-  Type_argument_list_cannot_be_empty: new Message(1099, Category.Error, 'Type_argument_list_cannot_be_empty_1099', 'Type argument list cannot be empty.'),
+  Type_arg_list_cannot_be_empty: new Message(1099, Category.Error, 'Type_arg_list_cannot_be_empty_1099', 'Type arg list cannot be empty.'),
   Invalid_use_of_0_in_strict_mode: new Message(1100, Category.Error, 'Invalid_use_of_0_in_strict_mode_1100', "Invalid use of '{0}' in strict mode."),
   with_statements_are_not_allowed_in_strict_mode: new Message(1101, Category.Error, 'with_statements_are_not_allowed_in_strict_mode_1101', "'with' statements are not allowed in strict mode."),
   delete_cannot_be_called_on_an_identifier_in_strict_mode: new Message(
@@ -511,12 +511,12 @@ export const msgs = {
   Property_or_signature_expected: new Message(1131, Category.Error, 'Property_or_signature_expected_1131', 'Property or signature expected.'),
   Enum_member_expected: new Message(1132, Category.Error, 'Enum_member_expected_1132', 'Enum member expected.'),
   Variable_declaration_expected: new Message(1134, Category.Error, 'Variable_declaration_expected_1134', 'Variable declaration expected.'),
-  Argument_expression_expected: new Message(1135, Category.Error, 'Argument_expression_expected_1135', 'Argument expression expected.'),
+  Arg_expression_expected: new Message(1135, Category.Error, 'Arg_expression_expected_1135', 'Arg expression expected.'),
   Property_assignment_expected: new Message(1136, Category.Error, 'Property_assignment_expected_1136', 'Property assignment expected.'),
   Expression_or_comma_expected: new Message(1137, Category.Error, 'Expression_or_comma_expected_1137', 'Expression or comma expected.'),
   Param_declaration_expected: new Message(1138, Category.Error, 'Param_declaration_expected_1138', 'Param declaration expected.'),
   Type_param_declaration_expected: new Message(1139, Category.Error, 'Type_param_declaration_expected_1139', 'Type param declaration expected.'),
-  Type_argument_expected: new Message(1140, Category.Error, 'Type_argument_expected_1140', 'Type argument expected.'),
+  Type_arg_expected: new Message(1140, Category.Error, 'Type_arg_expected_1140', 'Type arg expected.'),
   String_literal_expected: new Message(1141, Category.Error, 'String_literal_expected_1141', 'String literal expected.'),
   Line_break_not_permitted_here: new Message(1142, Category.Error, 'Line_break_not_permitted_here_1142', 'Line break not permitted here.'),
   or_expected: new Message(1144, Category.Error, 'or_expected_1144', "'{' or ';' expected."),
@@ -1018,9 +1018,9 @@ export const msgs = {
     'Dynamic_imports_are_only_supported_when_the_module_flag_is_set_to_es2020_esnext_commonjs_amd_system__1323',
     "Dynamic imports are only supported when the '--module' flag is set to 'es2020', 'esnext', 'commonjs', 'amd', 'system', or 'umd'."
   ),
-  Dynamic_import_must_have_one_spec_as_an_argument: new Message(1324, Category.Error, 'Dynamic_import_must_have_one_spec_as_an_argument_1324', 'Dynamic import must have one spec as an argument.'),
+  Dynamic_import_must_have_one_spec_as_an_arg: new Message(1324, Category.Error, 'Dynamic_import_must_have_one_spec_as_an_arg_1324', 'Dynamic import must have one spec as an arg.'),
   Specifier_of_dynamic_import_cannot_be_spread_elem: new Message(1325, Category.Error, 'Specifier_of_dynamic_import_cannot_be_spread_elem_1325', 'Specifier of dynamic import cannot be spread elem.'),
-  Dynamic_import_cannot_have_type_arguments: new Message(1326, Category.Error, 'Dynamic_import_cannot_have_type_arguments_1326', 'Dynamic import cannot have type arguments'),
+  Dynamic_import_cannot_have_type_args: new Message(1326, Category.Error, 'Dynamic_import_cannot_have_type_args_1326', 'Dynamic import cannot have type args'),
   String_literal_with_double_quotes_expected: new Message(1327, Category.Error, 'String_literal_with_double_quotes_expected_1327', 'String literal with double quotes expected.'),
   Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal: new Message(
     1328,
@@ -1028,11 +1028,11 @@ export const msgs = {
     'Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_li_1328',
     "Property value can only be string literal, numeric literal, 'true', 'false', 'null', object literal or array literal."
   ),
-  _0_accepts_too_few_arguments_to_be_used_as_a_decorator_here_Did_you_mean_to_call_it_first_and_write_0: new Message(
+  _0_accepts_too_few_args_to_be_used_as_a_decorator_here_Did_you_mean_to_call_it_first_and_write_0: new Message(
     1329,
     Category.Error,
-    '_0_accepts_too_few_arguments_to_be_used_as_a_decorator_here_Did_you_mean_to_call_it_first_and_write__1329',
-    "'{0}' accepts too few arguments to be used as a decorator here. Did you mean to call it first and write '@{0}()'?"
+    '_0_accepts_too_few_args_to_be_used_as_a_decorator_here_Did_you_mean_to_call_it_first_and_write__1329',
+    "'{0}' accepts too few args to be used as a decorator here. Did you mean to call it first and write '@{0}()'?"
   ),
   A_property_of_an_interface_or_type_literal_whose_type_is_a_unique_symbol_type_must_be_readonly: new Message(
     1330,
@@ -1095,7 +1095,7 @@ export const msgs = {
     'Module_0_does_not_refer_to_a_type_but_is_used_as_a_type_here_Did_you_mean_typeof_import_0_1340',
     "Module '{0}' does not refer to a type, but is used as a type here. Did you mean 'typeof import('{0}')'?"
   ),
-  Type_arguments_cannot_be_used_here: new Message(1342, Category.Error, 'Type_arguments_cannot_be_used_here_1342', 'Type arguments cannot be used here.'),
+  Type_args_cannot_be_used_here: new Message(1342, Category.Error, 'Type_args_cannot_be_used_here_1342', 'Type args cannot be used here.'),
   The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system: new Message(
     1343,
     Category.Error,
@@ -1241,11 +1241,11 @@ export const msgs = {
   Unexpected_token_Did_you_mean_or_rbrace: new Message(1381, Category.Error, 'Unexpected_token_Did_you_mean_or_rbrace_1381', "Unexpected token. Did you mean `{'}'}` or `&rbrace;`?"),
   Unexpected_token_Did_you_mean_or_gt: new Message(1382, Category.Error, 'Unexpected_token_Did_you_mean_or_gt_1382', "Unexpected token. Did you mean `{'>'}` or `&gt;`?"),
   Only_named_exports_may_use_export_type: new Message(1383, Category.Error, 'Only_named_exports_may_use_export_type_1383', "Only named exports may use 'export type'."),
-  A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list: new Message(
+  A_new_expression_with_type_args_must_always_be_followed_by_a_parenthesized_arg_list: new Message(
     1384,
     Category.Error,
-    'A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list_1384',
-    "A 'new' expression with type arguments must always be followed by a parenthesized argument list."
+    'A_new_expression_with_type_args_must_always_be_followed_by_a_parenthesized_arg_list_1384',
+    "A 'new' expression with type args must always be followed by a parenthesized arg list."
   ),
   The_types_of_0_are_incompatible_between_these_types: new Message(
     2200,
@@ -1275,19 +1275,19 @@ export const msgs = {
     undefined,
     true
   ),
-  Call_signatures_with_no_arguments_have_incompatible_return_types_0_and_1: new Message(
+  Call_signatures_with_no_args_have_incompatible_return_types_0_and_1: new Message(
     2204,
     Category.Error,
-    'Call_signatures_with_no_arguments_have_incompatible_return_types_0_and_1_2204',
-    "Call signatures with no arguments have incompatible return types '{0}' and '{1}'.",
+    'Call_signatures_with_no_args_have_incompatible_return_types_0_and_1_2204',
+    "Call signatures with no args have incompatible return types '{0}' and '{1}'.",
     undefined,
     true
   ),
-  Construct_signatures_with_no_arguments_have_incompatible_return_types_0_and_1: new Message(
+  Construct_signatures_with_no_args_have_incompatible_return_types_0_and_1: new Message(
     2205,
     Category.Error,
-    'Construct_signatures_with_no_arguments_have_incompatible_return_types_0_and_1_2205',
-    "Construct signatures with no arguments have incompatible return types '{0}' and '{1}'.",
+    'Construct_signatures_with_no_args_have_incompatible_return_types_0_and_1_2205',
+    "Construct signatures with no args have incompatible return types '{0}' and '{1}'.",
     undefined,
     true
   ),
@@ -1335,7 +1335,7 @@ export const msgs = {
     'An interface can only extend an object type or intersection of object types with statically known members.'
   ),
   Type_param_0_has_a_circular_constraint: new Message(2313, Category.Error, 'Type_param_0_has_a_circular_constraint_2313', "Type param '{0}' has a circular constraint."),
-  Generic_type_0_requires_1_type_argument_s: new Message(2314, Category.Error, 'Generic_type_0_requires_1_type_argument_s_2314', "Generic type '{0}' requires {1} type argument(s)."),
+  Generic_type_0_requires_1_type_arg_s: new Message(2314, Category.Error, 'Generic_type_0_requires_1_type_arg_s_2314', "Generic type '{0}' requires {1} type arg(s)."),
   Type_0_is_not_generic: new Message(2315, Category.Error, 'Type_0_is_not_generic_2315', "Type '{0}' is not generic."),
   Global_type_0_must_be_a_class_or_interface_type: new Message(2316, Category.Error, 'Global_type_0_must_be_a_class_or_interface_type_2316', "Global type '{0}' must be a class or interface type."),
   Global_type_0_must_have_1_type_param_s: new Message(2317, Category.Error, 'Global_type_0_must_have_1_type_param_s_2317', "Global type '{0}' must have {1} type param(s)."),
@@ -1379,12 +1379,7 @@ export const msgs = {
     "'this' cannot be referenced in a module or namespace body."
   ),
   this_cannot_be_referenced_in_current_location: new Message(2332, Category.Error, 'this_cannot_be_referenced_in_current_location_2332', "'this' cannot be referenced in current location."),
-  this_cannot_be_referenced_in_constructor_arguments: new Message(
-    2333,
-    Category.Error,
-    'this_cannot_be_referenced_in_constructor_arguments_2333',
-    "'this' cannot be referenced in constructor arguments."
-  ),
+  this_cannot_be_referenced_in_constructor_args: new Message(2333, Category.Error, 'this_cannot_be_referenced_in_constructor_args_2333', "'this' cannot be referenced in constructor args."),
   this_cannot_be_referenced_in_a_static_property_initer: new Message(
     2334,
     Category.Error,
@@ -1392,12 +1387,7 @@ export const msgs = {
     "'this' cannot be referenced in a static property initer."
   ),
   super_can_only_be_referenced_in_a_derived_class: new Message(2335, Category.Error, 'super_can_only_be_referenced_in_a_derived_class_2335', "'super' can only be referenced in a derived class."),
-  super_cannot_be_referenced_in_constructor_arguments: new Message(
-    2336,
-    Category.Error,
-    'super_cannot_be_referenced_in_constructor_arguments_2336',
-    "'super' cannot be referenced in constructor arguments."
-  ),
+  super_cannot_be_referenced_in_constructor_args: new Message(2336, Category.Error, 'super_cannot_be_referenced_in_constructor_args_2336', "'super' cannot be referenced in constructor args."),
   Super_calls_are_not_permitted_outside_constructors_or_in_nested_functions_inside_constructors: new Message(
     2337,
     Category.Error,
@@ -1423,11 +1413,11 @@ export const msgs = {
     'Property_0_is_private_and_only_accessible_within_class_1_2341',
     "Property '{0}' is private and only accessible within class '{1}'."
   ),
-  An_index_expression_argument_must_be_of_type_string_number_symbol_or_any: new Message(
+  An_index_expression_arg_must_be_of_type_string_number_symbol_or_any: new Message(
     2342,
     Category.Error,
-    'An_index_expression_argument_must_be_of_type_string_number_symbol_or_any_2342',
-    "An index expression argument must be of type 'string', 'number', 'symbol', or 'any'."
+    'An_index_expression_arg_must_be_of_type_string_number_symbol_or_any_2342',
+    "An index expression arg must be of type 'string', 'number', 'symbol', or 'any'."
   ),
   This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0: new Message(
     2343,
@@ -1436,19 +1426,14 @@ export const msgs = {
     "This syntax requires an imported helper named '{1}' which does not exist in '{0}'. Consider upgrading your version of '{0}'."
   ),
   Type_0_does_not_satisfy_the_constraint_1: new Message(2344, Category.Error, 'Type_0_does_not_satisfy_the_constraint_1_2344', "Type '{0}' does not satisfy the constraint '{1}'."),
-  Argument_of_type_0_is_not_assignable_to_param_of_type_1: new Message(
+  Arg_of_type_0_is_not_assignable_to_param_of_type_1: new Message(
     2345,
     Category.Error,
-    'Argument_of_type_0_is_not_assignable_to_param_of_type_1_2345',
-    "Argument of type '{0}' is not assignable to param of type '{1}'."
+    'Arg_of_type_0_is_not_assignable_to_param_of_type_1_2345',
+    "Arg of type '{0}' is not assignable to param of type '{1}'."
   ),
   Call_target_does_not_contain_any_signatures: new Message(2346, Category.Error, 'Call_target_does_not_contain_any_signatures_2346', 'Call target does not contain any signatures.'),
-  Untyped_function_calls_may_not_accept_type_arguments: new Message(
-    2347,
-    Category.Error,
-    'Untyped_function_calls_may_not_accept_type_arguments_2347',
-    'Untyped function calls may not accept type arguments.'
-  ),
+  Untyped_function_calls_may_not_accept_type_args: new Message(2347, Category.Error, 'Untyped_function_calls_may_not_accept_type_args_2347', 'Untyped function calls may not accept type args.'),
   Value_of_type_0_is_not_callable_Did_you_mean_to_include_new: new Message(
     2348,
     Category.Error,
@@ -1662,11 +1647,11 @@ export const msgs = {
     'Individual_declarations_in_merged_declaration_0_must_be_all_exported_or_all_local_2395',
     "Individual declarations in merged declaration '{0}' must be all exported or all local."
   ),
-  Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_params: new Message(
+  Duplicate_identifier_args_Compiler_uses_args_to_initialize_rest_params: new Message(
     2396,
     Category.Error,
-    'Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_params_2396',
-    "Duplicate identifier 'arguments'. Compiler uses 'arguments' to initialize rest params."
+    'Duplicate_identifier_args_Compiler_uses_args_to_initialize_rest_params_2396',
+    "Duplicate identifier 'args'. Compiler uses 'args' to initialize rest params."
   ),
   Declaration_name_conflicts_with_built_in_global_identifier_0: new Message(
     2397,
@@ -1920,18 +1905,18 @@ export const msgs = {
   Enum_0_used_before_its_declaration: new Message(2450, Category.Error, 'Enum_0_used_before_its_declaration_2450', "Enum '{0}' used before its declaration."),
   Cannot_redeclare_block_scoped_variable_0: new Message(2451, Category.Error, 'Cannot_redeclare_block_scoped_variable_0_2451', "Cannot redeclare block-scoped variable '{0}'."),
   An_enum_member_cannot_have_a_numeric_name: new Message(2452, Category.Error, 'An_enum_member_cannot_have_a_numeric_name_2452', 'An enum member cannot have a numeric name.'),
-  The_type_argument_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_type_arguments_explicitly: new Message(
+  The_type_arg_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_type_args_explicitly: new Message(
     2453,
     Category.Error,
-    'The_type_argument_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_typ_2453',
-    "The type argument for type param '{0}' cannot be inferred from the usage. Consider specifying the type arguments explicitly."
+    'The_type_arg_for_type_param_0_cannot_be_inferred_from_the_usage_Consider_specifying_the_typ_2453',
+    "The type arg for type param '{0}' cannot be inferred from the usage. Consider specifying the type args explicitly."
   ),
   Variable_0_is_used_before_being_assigned: new Message(2454, Category.Error, 'Variable_0_is_used_before_being_assigned_2454', "Variable '{0}' is used before being assigned."),
-  Type_argument_candidate_1_is_not_a_valid_type_argument_because_it_is_not_a_supertype_of_candidate_0: new Message(
+  Type_arg_candidate_1_is_not_a_valid_type_arg_because_it_is_not_a_supertype_of_candidate_0: new Message(
     2455,
     Category.Error,
-    'Type_argument_candidate_1_is_not_a_valid_type_argument_because_it_is_not_a_supertype_of_candidate_0_2455',
-    "Type argument candidate '{1}' is not a valid type argument because it is not a supertype of candidate '{0}'."
+    'Type_arg_candidate_1_is_not_a_valid_type_arg_because_it_is_not_a_supertype_of_candidate_0_2455',
+    "Type arg candidate '{1}' is not a valid type arg because it is not a supertype of candidate '{0}'."
   ),
   Type_alias_0_circularly_references_itself: new Message(2456, Category.Error, 'Type_alias_0_circularly_references_itself_2456', "Type alias '{0}' circularly references itself."),
   Type_alias_name_cannot_be_0: new Message(2457, Category.Error, 'Type_alias_name_cannot_be_0_2457', "Type alias name cannot be '{0}'."),
@@ -2105,11 +2090,11 @@ export const msgs = {
     "Using a string in a 'for...of' statement is only supported in ECMAScript 5 and higher."
   ),
   Type_0_is_not_an_array_type_or_a_string_type: new Message(2495, Category.Error, 'Type_0_is_not_an_array_type_or_a_string_type_2495', "Type '{0}' is not an array type or a string type."),
-  The_arguments_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_standard_function_expression: new Message(
+  The_args_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_standard_function_expression: new Message(
     2496,
     Category.Error,
-    'The_arguments_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_stand_2496',
-    "The 'arguments' object cannot be referenced in an arrow function in ES3 and ES5. Consider using a standard function expression."
+    'The_args_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_stand_2496',
+    "The 'args' object cannot be referenced in an arrow function in ES3 and ES5. Consider using a standard function expression."
   ),
   This_module_can_only_be_referenced_with_ECMAScript_imports_Slashexports_by_turning_on_the_0_flag_and_referencing_its_default_export: new Message(
     2497,
@@ -2123,17 +2108,17 @@ export const msgs = {
     'Module_0_uses_export_and_cannot_be_used_with_export_Asterisk_2498',
     "Module '{0}' uses 'export =' and cannot be used with 'export *'."
   ),
-  An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_arguments: new Message(
+  An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_args: new Message(
     2499,
     Category.Error,
-    'An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_arguments_2499',
-    'An interface can only extend an identifier/qualified-name with optional type arguments.'
+    'An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_args_2499',
+    'An interface can only extend an identifier/qualified-name with optional type args.'
   ),
-  A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments: new Message(
+  A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_args: new Message(
     2500,
     Category.Error,
-    'A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments_2500',
-    'A class can only implement an identifier/qualified-name with optional type arguments.'
+    'A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_args_2500',
+    'A class can only implement an identifier/qualified-name with optional type args.'
   ),
   A_rest_elem_cannot_contain_a_binding_pattern: new Message(2501, Category.Error, 'A_rest_elem_cannot_contain_a_binding_pattern_2501', 'A rest elem cannot contain a binding pattern.'),
   _0_is_referenced_directly_or_indirectly_in_its_own_type_annotation: new Message(
@@ -2157,11 +2142,11 @@ export const msgs = {
     "'{0}' is referenced directly or indirectly in its own base expression."
   ),
   Type_0_is_not_a_constructor_function_type: new Message(2507, Category.Error, 'Type_0_is_not_a_constructor_function_type_2507', "Type '{0}' is not a constructor function type."),
-  No_base_constructor_has_the_specified_number_of_type_arguments: new Message(
+  No_base_constructor_has_the_specified_number_of_type_args: new Message(
     2508,
     Category.Error,
-    'No_base_constructor_has_the_specified_number_of_type_arguments_2508',
-    'No base constructor has the specified number of type arguments.'
+    'No_base_constructor_has_the_specified_number_of_type_args_2508',
+    'No base constructor has the specified number of type args.'
   ),
   Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members: new Message(
     2509,
@@ -2231,11 +2216,11 @@ export const msgs = {
     'Expression_resolves_to_variable_declaration_0_that_compiler_uses_to_support_async_functions_2521',
     "Expression resolves to variable declaration '{0}' that compiler uses to support async functions."
   ),
-  The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_using_a_standard_function_or_method: new Message(
+  The_args_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_using_a_standard_function_or_method: new Message(
     2522,
     Category.Error,
-    'The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_usi_2522',
-    "The 'arguments' object cannot be referenced in an async function or method in ES3 and ES5. Consider using a standard function or method."
+    'The_args_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_usi_2522',
+    "The 'args' object cannot be referenced in an async function or method in ES3 and ES5. Consider using a standard function or method."
   ),
   yield_expressions_cannot_be_used_in_a_param_initer: new Message(
     2523,
@@ -2361,11 +2346,11 @@ export const msgs = {
     'Computed_values_are_not_permitted_in_an_enum_with_string_valued_members_2553',
     'Computed values are not permitted in an enum with string valued members.'
   ),
-  Expected_0_arguments_but_got_1: new Message(2554, Category.Error, 'Expected_0_arguments_but_got_1_2554', 'Expected {0} arguments, but got {1}.'),
-  Expected_at_least_0_arguments_but_got_1: new Message(2555, Category.Error, 'Expected_at_least_0_arguments_but_got_1_2555', 'Expected at least {0} arguments, but got {1}.'),
-  Expected_0_arguments_but_got_1_or_more: new Message(2556, Category.Error, 'Expected_0_arguments_but_got_1_or_more_2556', 'Expected {0} arguments, but got {1} or more.'),
-  Expected_at_least_0_arguments_but_got_1_or_more: new Message(2557, Category.Error, 'Expected_at_least_0_arguments_but_got_1_or_more_2557', 'Expected at least {0} arguments, but got {1} or more.'),
-  Expected_0_type_arguments_but_got_1: new Message(2558, Category.Error, 'Expected_0_type_arguments_but_got_1_2558', 'Expected {0} type arguments, but got {1}.'),
+  Expected_0_args_but_got_1: new Message(2554, Category.Error, 'Expected_0_args_but_got_1_2554', 'Expected {0} args, but got {1}.'),
+  Expected_at_least_0_args_but_got_1: new Message(2555, Category.Error, 'Expected_at_least_0_args_but_got_1_2555', 'Expected at least {0} args, but got {1}.'),
+  Expected_0_args_but_got_1_or_more: new Message(2556, Category.Error, 'Expected_0_args_but_got_1_or_more_2556', 'Expected {0} args, but got {1} or more.'),
+  Expected_at_least_0_args_but_got_1_or_more: new Message(2557, Category.Error, 'Expected_at_least_0_args_but_got_1_or_more_2557', 'Expected at least {0} args, but got {1} or more.'),
+  Expected_0_type_args_but_got_1: new Message(2558, Category.Error, 'Expected_0_type_args_but_got_1_2558', 'Expected {0} type args, but got {1}.'),
   Type_0_has_no_properties_in_common_with_type_1: new Message(2559, Category.Error, 'Type_0_has_no_properties_in_common_with_type_1_2559', "Type '{0}' has no properties in common with type '{1}'."),
   Value_of_type_0_has_no_properties_in_common_with_type_1_Did_you_mean_to_call_it: new Message(
     2560,
@@ -2415,11 +2400,11 @@ export const msgs = {
   Rest_signatures_are_incompatible: new Message(2572, Category.Error, 'Rest_signatures_are_incompatible_2572', 'Rest signatures are incompatible.'),
   Property_0_is_incompatible_with_rest_elem_type: new Message(2573, Category.Error, 'Property_0_is_incompatible_with_rest_elem_type_2573', "Property '{0}' is incompatible with rest elem type."),
   A_rest_elem_type_must_be_an_array_type: new Message(2574, Category.Error, 'A_rest_elem_type_must_be_an_array_type_2574', 'A rest elem type must be an array type.'),
-  No_overload_expects_0_arguments_but_overloads_do_exist_that_expect_either_1_or_2_arguments: new Message(
+  No_overload_expects_0_args_but_overloads_do_exist_that_expect_either_1_or_2_args: new Message(
     2575,
     Category.Error,
-    'No_overload_expects_0_arguments_but_overloads_do_exist_that_expect_either_1_or_2_arguments_2575',
-    'No overload expects {0} arguments, but overloads do exist that expect either {1} or {2} arguments.'
+    'No_overload_expects_0_args_but_overloads_do_exist_that_expect_either_1_or_2_args_2575',
+    'No overload expects {0} args, but overloads do exist that expect either {1} or {2} args.'
   ),
   Property_0_is_a_static_member_of_type_1: new Message(2576, Category.Error, 'Property_0_is_a_static_member_of_type_1_2576', "Property '{0}' is a static member of type '{1}'"),
   Return_type_annotation_circularly_references_itself: new Message(
@@ -2917,11 +2902,11 @@ export const msgs = {
     'Required_type_params_may_not_follow_optional_type_params_2706',
     'Required type params may not follow optional type params.'
   ),
-  Generic_type_0_requires_between_1_and_2_type_arguments: new Message(
+  Generic_type_0_requires_between_1_and_2_type_args: new Message(
     2707,
     Category.Error,
-    'Generic_type_0_requires_between_1_and_2_type_arguments_2707',
-    "Generic type '{0}' requires between {1} and {2} type arguments."
+    'Generic_type_0_requires_between_1_and_2_type_args_2707',
+    "Generic type '{0}' requires between {1} and {2} type args."
   ),
   Cannot_use_namespace_0_as_a_value: new Message(2708, Category.Error, 'Cannot_use_namespace_0_as_a_value_2708', "Cannot use namespace '{0}' as a value."),
   Cannot_use_namespace_0_as_a_type: new Message(2709, Category.Error, 'Cannot_use_namespace_0_as_a_type_2709', "Cannot use namespace '{0}' as a type."),
@@ -3073,11 +3058,11 @@ export const msgs = {
     'The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_a_2742',
     "The inferred type of '{0}' cannot be named without a reference to '{1}'. This is likely not portable. A type annotation is necessary."
   ),
-  No_overload_expects_0_type_arguments_but_overloads_do_exist_that_expect_either_1_or_2_type_arguments: new Message(
+  No_overload_expects_0_type_args_but_overloads_do_exist_that_expect_either_1_or_2_type_args: new Message(
     2743,
     Category.Error,
-    'No_overload_expects_0_type_arguments_but_overloads_do_exist_that_expect_either_1_or_2_type_arguments_2743',
-    'No overload expects {0} type arguments, but overloads do exist that expect either {1} or {2} type arguments.'
+    'No_overload_expects_0_type_args_but_overloads_do_exist_that_expect_either_1_or_2_type_args_2743',
+    'No overload expects {0} type args, but overloads do exist that expect either {1} or {2} type args.'
   ),
   Type_param_defaults_can_only_reference_previously_declared_type_params: new Message(
     2744,
@@ -3119,7 +3104,7 @@ export const msgs = {
   Circularity_originates_in_type_at_this_location: new Message(2751, Category.Error, 'Circularity_originates_in_type_at_this_location_2751', 'Circularity originates in type at this location.'),
   The_first_export_default_is_here: new Message(2752, Category.Error, 'The_first_export_default_is_here_2752', 'The first export default is here.'),
   Another_export_default_is_here: new Message(2753, Category.Error, 'Another_export_default_is_here_2753', 'Another export default is here.'),
-  super_may_not_use_type_arguments: new Message(2754, Category.Error, 'super_may_not_use_type_arguments_2754', "'super' may not use type arguments."),
+  super_may_not_use_type_args: new Message(2754, Category.Error, 'super_may_not_use_type_args_2754', "'super' may not use type args."),
   No_constituent_of_type_0_is_callable: new Message(2755, Category.Error, 'No_constituent_of_type_0_is_callable_2755', "No constituent of type '{0}' is callable."),
   Not_all_constituents_of_type_0_are_callable: new Message(2756, Category.Error, 'Not_all_constituents_of_type_0_are_callable_2756', "Not all constituents of type '{0}' are callable."),
   Type_0_has_no_call_signatures: new Message(2757, Category.Error, 'Type_0_has_no_call_signatures_2757', "Type '{0}' has no call signatures."),
@@ -3781,18 +3766,8 @@ export const msgs = {
     'Param_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named_4108',
     "Param '{0}' of accessor has or is using name '{1}' from external module '{2}' but cannot be named."
   ),
-  Type_arguments_for_0_circularly_reference_themselves: new Message(
-    4109,
-    Category.Error,
-    'Type_arguments_for_0_circularly_reference_themselves_4109',
-    "Type arguments for '{0}' circularly reference themselves."
-  ),
-  Tuple_type_arguments_circularly_reference_themselves: new Message(
-    4110,
-    Category.Error,
-    'Tuple_type_arguments_circularly_reference_themselves_4110',
-    'Tuple type arguments circularly reference themselves.'
-  ),
+  Type_args_for_0_circularly_reference_themselves: new Message(4109, Category.Error, 'Type_args_for_0_circularly_reference_themselves_4109', "Type args for '{0}' circularly reference themselves."),
+  Tuple_type_args_circularly_reference_themselves: new Message(4110, Category.Error, 'Tuple_type_args_circularly_reference_themselves_4110', 'Tuple type args circularly reference themselves.'),
   The_current_host_does_not_support_the_0_option: new Message(5001, Category.Error, 'The_current_host_does_not_support_the_0_option_5001', "The current host does not support the '{0}' option."),
   Cannot_find_the_common_subdirectory_path_for_the_input_files: new Message(
     5009,
@@ -4053,17 +4028,12 @@ export const msgs = {
     "Compile the project given the path to its configuration file, or to a folder with a 'tsconfig.json'."
   ),
   Syntax_Colon_0: new Message(6023, Category.Message, 'Syntax_Colon_0_6023', 'Syntax: {0}'),
-  options: new Message(6024, Category.Message, 'options_6024', 'options'),
+  opts: new Message(6024, Category.Message, 'opts_6024', 'opts'),
   file: new Message(6025, Category.Message, 'file_6025', 'file'),
   Examples_Colon_0: new Message(6026, Category.Message, 'Examples_Colon_0_6026', 'Examples: {0}'),
-  Options_Colon: new Message(6027, Category.Message, 'Options_Colon_6027', 'Options:'),
+  Opts_Colon: new Message(6027, Category.Message, 'Opts_Colon_6027', 'Opts:'),
   Version_0: new Message(6029, Category.Message, 'Version_0_6029', 'Version {0}'),
-  Insert_command_line_options_and_files_from_a_file: new Message(
-    6030,
-    Category.Message,
-    'Insert_command_line_options_and_files_from_a_file_6030',
-    'Insert command line options and files from a file.'
-  ),
+  Insert_command_line_opts_and_files_from_a_file: new Message(6030, Category.Message, 'Insert_command_line_opts_and_files_from_a_file_6030', 'Insert command line opts and files from a file.'),
   Starting_compilation_in_watch_mode: new Message(6031, Category.Message, 'Starting_compilation_in_watch_mode_6031', 'Starting compilation in watch mode...'),
   File_change_detected_Starting_incremental_compilation: new Message(
     6032,
@@ -4079,9 +4049,9 @@ export const msgs = {
   STRATEGY: new Message(6039, Category.Message, 'STRATEGY_6039', 'STRATEGY'),
   FILE_OR_DIRECTORY: new Message(6040, Category.Message, 'FILE_OR_DIRECTORY_6040', 'FILE OR DIRECTORY'),
   Generates_corresponding_map_file: new Message(6043, Category.Message, 'Generates_corresponding_map_file_6043', "Generates corresponding '.map' file."),
-  Compiler_option_0_expects_an_argument: new Message(6044, Category.Error, 'Compiler_option_0_expects_an_argument_6044', "Compiler option '{0}' expects an argument."),
+  Compiler_option_0_expects_an_arg: new Message(6044, Category.Error, 'Compiler_option_0_expects_an_arg_6044', "Compiler option '{0}' expects an arg."),
   Unterminated_quoted_string_in_response_file_0: new Message(6045, Category.Error, 'Unterminated_quoted_string_in_response_file_0_6045', "Unterminated quoted string in response file '{0}'."),
-  Argument_for_0_option_must_be_Colon_1: new Message(6046, Category.Error, 'Argument_for_0_option_must_be_Colon_1_6046', "Argument for '{0}' option must be: {1}."),
+  Arg_for_0_option_must_be_Colon_1: new Message(6046, Category.Error, 'Arg_for_0_option_must_be_Colon_1_6046', "Arg for '{0}' option must be: {1}."),
   Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1: new Message(
     6048,
     Category.Error,
@@ -4553,28 +4523,28 @@ export const msgs = {
     'List_of_root_folders_whose_combined_content_represents_the_structure_of_the_project_at_runtime_6168',
     'List of root folders whose combined content represents the structure of the project at runtime.'
   ),
-  Show_all_compiler_options: new Message(6169, Category.Message, 'Show_all_compiler_options_6169', 'Show all compiler options.'),
+  Show_all_compiler_opts: new Message(6169, Category.Message, 'Show_all_compiler_opts_6169', 'Show all compiler opts.'),
   Deprecated_Use_outFile_instead_Concatenate_and_emit_output_to_single_file: new Message(
     6170,
     Category.Message,
     'Deprecated_Use_outFile_instead_Concatenate_and_emit_output_to_single_file_6170',
     "[Deprecated] Use '--outFile' instead. Concatenate and emit output to single file"
   ),
-  Command_line_Options: new Message(6171, Category.Message, 'Command_line_Options_6171', 'Command-line Options'),
-  Basic_Options: new Message(6172, Category.Message, 'Basic_Options_6172', 'Basic Options'),
-  Strict_Type_Checking_Options: new Message(6173, Category.Message, 'Strict_Type_Checking_Options_6173', 'Strict Type-Checking Options'),
-  Module_Resolution_Options: new Message(6174, Category.Message, 'Module_Resolution_Options_6174', 'Module Resolution Options'),
-  Source_Map_Options: new Message(6175, Category.Message, 'Source_Map_Options_6175', 'Source Map Options'),
+  Command_line_Opts: new Message(6171, Category.Message, 'Command_line_Opts_6171', 'Command-line Opts'),
+  Basic_Opts: new Message(6172, Category.Message, 'Basic_Opts_6172', 'Basic Opts'),
+  Strict_Type_Checking_Opts: new Message(6173, Category.Message, 'Strict_Type_Checking_Opts_6173', 'Strict Type-Checking Opts'),
+  Module_Resolution_Opts: new Message(6174, Category.Message, 'Module_Resolution_Opts_6174', 'Module Resolution Opts'),
+  Source_Map_Opts: new Message(6175, Category.Message, 'Source_Map_Opts_6175', 'Source Map Opts'),
   Additional_Checks: new Message(6176, Category.Message, 'Additional_Checks_6176', 'Additional Checks'),
-  Experimental_Options: new Message(6177, Category.Message, 'Experimental_Options_6177', 'Experimental Options'),
-  Advanced_Options: new Message(6178, Category.Message, 'Advanced_Options_6178', 'Advanced Options'),
+  Experimental_Opts: new Message(6177, Category.Message, 'Experimental_Opts_6177', 'Experimental Opts'),
+  Advanced_Opts: new Message(6178, Category.Message, 'Advanced_Opts_6178', 'Advanced Opts'),
   Provide_full_support_for_iterables_in_for_of_spread_and_destructuring_when_targeting_ES5_or_ES3: new Message(
     6179,
     Category.Message,
     'Provide_full_support_for_iterables_in_for_of_spread_and_destructuring_when_targeting_ES5_or_ES3_6179',
     "Provide full support for iterables in 'for-of', spread, and destructuring when targeting 'ES5' or 'ES3'."
   ),
-  Enable_all_strict_type_checking_options: new Message(6180, Category.Message, 'Enable_all_strict_type_checking_options_6180', 'Enable all strict type-checking options.'),
+  Enable_all_strict_type_checking_opts: new Message(6180, Category.Message, 'Enable_all_strict_type_checking_opts_6180', 'Enable all strict type-checking opts.'),
   List_of_language_service_plugins: new Message(6181, Category.Message, 'List_of_language_service_plugins_6181', 'List of language service plugins.'),
   Scoped_package_detected_looking_in_0: new Message(6182, Category.Message, 'Scoped_package_detected_looking_in_0_6182', "Scoped package detected, looking in '{0}'"),
   Reusing_resolution_of_module_0_to_file_1_from_old_program: new Message(
@@ -4668,12 +4638,12 @@ export const msgs = {
     'package_json_has_a_typesVersions_entry_0_that_is_not_a_valid_semver_range_6209',
     "'package.json' has a 'typesVersions' entry '{0}' that is not a valid semver range."
   ),
-  An_argument_for_0_was_not_provided: new Message(6210, Category.Message, 'An_argument_for_0_was_not_provided_6210', "An argument for '{0}' was not provided."),
-  An_argument_matching_this_binding_pattern_was_not_provided: new Message(
+  An_arg_for_0_was_not_provided: new Message(6210, Category.Message, 'An_arg_for_0_was_not_provided_6210', "An arg for '{0}' was not provided."),
+  An_arg_matching_this_binding_pattern_was_not_provided: new Message(
     6211,
     Category.Message,
-    'An_argument_matching_this_binding_pattern_was_not_provided_6211',
-    'An argument matching this binding pattern was not provided.'
+    'An_arg_matching_this_binding_pattern_was_not_provided_6211',
+    'An arg matching this binding pattern was not provided.'
   ),
   Did_you_mean_to_call_this_expression: new Message(6212, Category.Message, 'Did_you_mean_to_call_this_expression_6212', 'Did you mean to call this expression?'),
   Did_you_mean_to_use_new_with_this_expression: new Message(6213, Category.Message, 'Did_you_mean_to_use_new_with_this_expression_6213', "Did you mean to use 'new' with this expression?"),
@@ -4683,11 +4653,11 @@ export const msgs = {
     'Enable_strict_bind_call_and_apply_methods_on_functions_6214',
     "Enable strict 'bind', 'call', and 'apply' methods on functions."
   ),
-  Using_compiler_options_of_project_reference_redirect_0: new Message(
+  Using_compiler_opts_of_project_reference_redirect_0: new Message(
     6215,
     Category.Message,
-    'Using_compiler_options_of_project_reference_redirect_0_6215',
-    "Using compiler options of project reference redirect '{0}'."
+    'Using_compiler_opts_of_project_reference_redirect_0_6215',
+    "Using compiler opts of project reference redirect '{0}'."
   ),
   Found_1_error: new Message(6216, Category.Message, 'Found_1_error_6216', 'Found 1 error.'),
   Found_0_errors: new Message(6217, Category.Message, 'Found_0_errors_6217', 'Found {0} errors.'),
@@ -4737,11 +4707,11 @@ export const msgs = {
     'Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_supp_6228',
     "Synchronously call callbacks and update the state of directory watchers on platforms that don't support recursive watching natively."
   ),
-  Tag_0_expects_at_least_1_arguments_but_the_JSX_factory_2_provides_at_most_3: new Message(
+  Tag_0_expects_at_least_1_args_but_the_JSX_factory_2_provides_at_most_3: new Message(
     6229,
     Category.Error,
-    'Tag_0_expects_at_least_1_arguments_but_the_JSX_factory_2_provides_at_most_3_6229',
-    "Tag '{0}' expects at least '{1}' arguments, but the JSX factory '{2}' provides at most '{3}'."
+    'Tag_0_expects_at_least_1_args_but_the_JSX_factory_2_provides_at_most_3_6229',
+    "Tag '{0}' expects at least '{1}' args, but the JSX factory '{2}' provides at most '{3}'."
   ),
   Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line: new Message(
     6230,
@@ -4885,13 +4855,8 @@ export const msgs = {
     'Build_all_projects_including_those_that_appear_to_be_up_to_date_6368',
     'Build all projects, including those that appear to be up to date'
   ),
-  Option_build_must_be_the_first_command_line_argument: new Message(
-    6369,
-    Category.Error,
-    'Option_build_must_be_the_first_command_line_argument_6369',
-    "Option '--build' must be the first command line argument."
-  ),
-  Options_0_and_1_cannot_be_combined: new Message(6370, Category.Error, 'Options_0_and_1_cannot_be_combined_6370', "Options '{0}' and '{1}' cannot be combined."),
+  Option_build_must_be_the_first_command_line_arg: new Message(6369, Category.Error, 'Option_build_must_be_the_first_command_line_arg_6369', "Option '--build' must be the first command line arg."),
+  Opts_0_and_1_cannot_be_combined: new Message(6370, Category.Error, 'Opts_0_and_1_cannot_be_combined_6370', "Opts '{0}' and '{1}' cannot be combined."),
   Updating_unchanged_output_timestamps_of_project_0: new Message(
     6371,
     Category.Message,
@@ -5279,12 +5244,7 @@ export const msgs = {
     'Type_annotations_can_only_be_used_in_TypeScript_files_8010',
     'Type annotations can only be used in TypeScript files.'
   ),
-  Type_arguments_can_only_be_used_in_TypeScript_files: new Message(
-    8011,
-    Category.Error,
-    'Type_arguments_can_only_be_used_in_TypeScript_files_8011',
-    'Type arguments can only be used in TypeScript files.'
-  ),
+  Type_args_can_only_be_used_in_TypeScript_files: new Message(8011, Category.Error, 'Type_args_can_only_be_used_in_TypeScript_files_8011', 'Type args can only be used in TypeScript files.'),
   Param_modifiers_can_only_be_used_in_TypeScript_files: new Message(
     8012,
     Category.Error,
@@ -5342,17 +5302,17 @@ export const msgs = {
     'Class_declarations_cannot_have_more_than_one_augments_or_extends_tag_8025',
     'Class declarations cannot have more than one `@augments` or `@extends` tag.'
   ),
-  Expected_0_type_arguments_provide_these_with_an_extends_tag: new Message(
+  Expected_0_type_args_provide_these_with_an_extends_tag: new Message(
     8026,
     Category.Error,
-    'Expected_0_type_arguments_provide_these_with_an_extends_tag_8026',
-    "Expected {0} type arguments; provide these with an '@extends' tag."
+    'Expected_0_type_args_provide_these_with_an_extends_tag_8026',
+    "Expected {0} type args; provide these with an '@extends' tag."
   ),
-  Expected_0_1_type_arguments_provide_these_with_an_extends_tag: new Message(
+  Expected_0_1_type_args_provide_these_with_an_extends_tag: new Message(
     8027,
     Category.Error,
-    'Expected_0_1_type_arguments_provide_these_with_an_extends_tag_8027',
-    "Expected {0}-{1} type arguments; provide these with an '@extends' tag."
+    'Expected_0_1_type_args_provide_these_with_an_extends_tag_8027',
+    "Expected {0}-{1} type args; provide these with an '@extends' tag."
   ),
   Doc_may_only_appear_in_the_last_param_of_a_signature: new Message(
     8028,
@@ -5360,11 +5320,11 @@ export const msgs = {
     'Doc_may_only_appear_in_the_last_param_of_a_signature_8028',
     "Doc '...' may only appear in the last param of a signature."
   ),
-  Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_arguments_if_it_had_an_array_type: new Message(
+  Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_args_if_it_had_an_array_type: new Message(
     8029,
     Category.Error,
-    'Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_arguments_if_it_h_8029',
-    "Doc '@param' tag has name '{0}', but there is no param with that name. It would match 'arguments' if it had an array type."
+    'Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_args_if_it_h_8029',
+    "Doc '@param' tag has name '{0}', but there is no param with that name. It would match 'args' if it had an array type."
   ),
   The_type_of_a_function_declaration_must_match_the_function_s_signature: new Message(
     8030,
@@ -5386,11 +5346,11 @@ export const msgs = {
     "A Doc '@typedef' comment may not contain multiple '@type' tags."
   ),
   The_tag_was_first_specified_here: new Message(8034, Category.Error, 'The_tag_was_first_specified_here_8034', 'The tag was first specified here.'),
-  Only_identifiers_Slashqualified_names_with_optional_type_arguments_are_currently_supported_in_a_class_extends_clause: new Message(
+  Only_identifiers_Slashqualified_names_with_optional_type_args_are_currently_supported_in_a_class_extends_clause: new Message(
     9002,
     Category.Error,
-    'Only_identifiers_Slashqualified_names_with_optional_type_arguments_are_currently_supported_in_a_clas_9002',
-    "Only identifiers/qualified-names with optional type arguments are currently supported in a class 'extends' clause."
+    'Only_identifiers_Slashqualified_names_with_optional_type_args_are_currently_supported_in_a_clas_9002',
+    "Only identifiers/qualified-names with optional type args are currently supported in a class 'extends' clause."
   ),
   class_expressions_are_not_currently_supported: new Message(9003, Category.Error, 'class_expressions_are_not_currently_supported_9003', "'class' expressions are not currently supported."),
   Language_service_is_disabled: new Message(9004, Category.Error, 'Language_service_is_disabled_9004', 'Language service is disabled.'),

@@ -171,7 +171,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
   const n = node as qc.Node;
   switch (n.kind) {
     case Syntax.Identifier:
-      return n.update(nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParamDeclaration));
+      return n.update(nodesVisitor(n.typeArgs, cb, isTypeNodeOrTypeParamDeclaration));
     case Syntax.QualifiedName:
       return n.update(visitNode(n.left, cb, isEntityName), visitNode(n.right, cb, isIdentifier));
     case Syntax.ComputedPropertyName:
@@ -255,7 +255,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.TypingPredicate:
       return n.update(visitNode(n.assertsModifier, cb), visitNode(n.paramName, cb), visitNode(n.type, cb, isTypeNode));
     case Syntax.TypingReference:
-      return n.update(visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArguments, cb, isTypeNode));
+      return n.update(visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArgs, cb, isTypeNode));
     case Syntax.FunctionTyping:
       return n.update(nodesVisitor(n.typeParams, cb, isTypeParamDeclaration), nodesVisitor(n.params, cb, qf.is.paramDeclaration), visitNode(n.type, cb, isTypeNode));
     case Syntax.ConstructorTyping:
@@ -281,7 +281,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.InferTyping:
       return n.update(visitNode(n.typeParam, cb, isTypeParamDeclaration));
     case Syntax.ImportTyping:
-      return n.update(visitNode(n.argument, cb, isTypeNode), visitNode(n.qualifier, cb, isEntityName), Nodes.visit(n.typeArguments, cb, isTypeNode), n.isTypeOf);
+      return n.update(visitNode(n.arg, cb, isTypeNode), visitNode(n.qualifier, cb, isEntityName), Nodes.visit(n.typeArgs, cb, isTypeNode), n.isTypeOf);
     case Syntax.NamedTupleMember:
       return n.update(visitNode(n.dot3Token, cb, isToken), visitNode(n.name, cb, isIdentifier), visitNode(n.questionToken, cb, isToken), visitNode(n.type, cb, isTypeNode));
     case Syntax.ParenthesizedTyping:
@@ -314,22 +314,22 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.name, cb, isIdentifierOrPrivateIdentifier));
     case Syntax.ElemAccessExpression:
       if (node.flags & NodeFlags.OptionalChain)
-        return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.argumentExpression, cb, isExpression));
-      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.argumentExpression, cb, isExpression));
+        return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.argExpression, cb, isExpression));
+      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.argExpression, cb, isExpression));
     case Syntax.CallExpression:
       if (node.flags & NodeFlags.OptionalChain) {
         return n.update(
           visitNode(n.expression, cb, isExpression),
           visitNode(n.questionDotToken, tokenVisitor, isToken),
-          nodesVisitor(n.typeArguments, cb, isTypeNode),
-          nodesVisitor(n.arguments, cb, isExpression)
+          nodesVisitor(n.typeArgs, cb, isTypeNode),
+          nodesVisitor(n.args, cb, isExpression)
         );
       }
-      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), nodesVisitor(n.arguments, cb, isExpression));
+      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArgs, cb, isTypeNode), nodesVisitor(n.args, cb, isExpression));
     case Syntax.NewExpression:
-      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), nodesVisitor(n.arguments, cb, isExpression));
+      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArgs, cb, isTypeNode), nodesVisitor(n.args, cb, isExpression));
     case Syntax.TaggedTemplateExpression:
-      return n.update(visitNode(n.tag, cb, isExpression), Nodes.visit(n.typeArguments, cb, isExpression), visitNode(n.template, cb, isTemplateLiteral));
+      return n.update(visitNode(n.tag, cb, isExpression), Nodes.visit(n.typeArgs, cb, isExpression), visitNode(n.template, cb, isTemplateLiteral));
     case Syntax.TypeAssertionExpression:
       return n.update(visitNode(n.type, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
     case Syntax.ParenthesizedExpression:
@@ -390,7 +390,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.members, cb, isClassElem)
       );
     case Syntax.ExpressionWithTypings:
-      return n.update(nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
+      return n.update(nodesVisitor(n.typeArgs, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
     case Syntax.AsExpression:
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.type, cb, isTypeNode));
     case Syntax.NonNullExpression:
@@ -527,9 +527,9 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.JsxElem:
       return n.update(visitNode(n.openingElem, cb, isJsxOpeningElem), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingElem, cb, isJsxClosingElem));
     case Syntax.JsxSelfClosingElem:
-      return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
+      return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArgs, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
     case Syntax.JsxOpeningElem:
-      return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
+      return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArgs, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
     case Syntax.JsxClosingElem:
       return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression));
     case Syntax.JsxFragment:
@@ -675,21 +675,21 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.ElemAccessExpression:
       r = reduceNode(n.expression, cb, r);
-      r = reduceNode(n.argumentExpression, cb, r);
+      r = reduceNode(n.argExpression, cb, r);
       break;
     case Syntax.CallExpression:
       r = reduceNode(n.expression, cb, r);
-      r = reduceNodes(n.typeArguments, cbs, r);
-      r = reduceNodes(n.arguments, cbs, r);
+      r = reduceNodes(n.typeArgs, cbs, r);
+      r = reduceNodes(n.args, cbs, r);
       break;
     case Syntax.NewExpression:
       r = reduceNode(n.expression, cb, r);
-      r = reduceNodes(n.typeArguments, cbs, r);
-      r = reduceNodes(n.arguments, cbs, r);
+      r = reduceNodes(n.typeArgs, cbs, r);
+      r = reduceNodes(n.args, cbs, r);
       break;
     case Syntax.TaggedTemplateExpression:
       r = reduceNode(n.tag, cb, r);
-      r = reduceNodes(n.typeArguments, cbs, r);
+      r = reduceNodes(n.typeArgs, cbs, r);
       r = reduceNode(n.template, cb, r);
       break;
     case Syntax.TypeAssertionExpression:
@@ -747,7 +747,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.ExpressionWithTypings:
       r = reduceNode(n.expression, cb, r);
-      r = reduceNodes(n.typeArguments, cbs, r);
+      r = reduceNodes(n.typeArgs, cbs, r);
       break;
     case Syntax.AsExpression:
       r = reduceNode(n.expression, cb, r);
@@ -911,7 +911,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.JsxSelfClosingElem:
     case Syntax.JsxOpeningElem:
       r = reduceNode(n.tagName, cb, r);
-      r = reduceNodes(n.typeArguments, cb, r);
+      r = reduceNodes(n.typeArgs, cb, r);
       r = reduceNode(n.attributes, cb, r);
       break;
     case Syntax.JsxAttributes:

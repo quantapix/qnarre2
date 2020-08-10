@@ -46,7 +46,7 @@ export function flattenDestructuringAssignment(
   const flattenContext: FlattenContext = {
     context,
     level,
-    downlevelIteration: !!context.getCompilerOptions().downlevelIteration,
+    downlevelIteration: !!context.getCompilerOpts().downlevelIteration,
     hoistTempVariables: true,
     emitExpression,
     emitBindingOrAssignment,
@@ -127,7 +127,7 @@ export function flattenDestructuringBinding(
   const flattenContext: FlattenContext = {
     context,
     level,
-    downlevelIteration: !!context.getCompilerOptions().downlevelIteration,
+    downlevelIteration: !!context.getCompilerOpts().downlevelIteration,
     hoistTempVariables,
     emitExpression,
     emitBindingOrAssignment,
@@ -229,7 +229,7 @@ function flattenObjectBindingOrAssignmentPattern(
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
         if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
-          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElemAccessExpression).argumentExpression);
+          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElemAccessExpression).argExpression);
         }
         flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
       }
@@ -300,12 +300,12 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftExpression {
   if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
-    const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
-    return new qs.ElemAccessExpression(value, argumentExpression);
+    const argExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
+    return new qs.ElemAccessExpression(value, argExpression);
   } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
-    const argumentExpression = getSynthesizedClone(propertyName);
-    argumentExpression.text = argumentExpression.text;
-    return new qs.ElemAccessExpression(value, argumentExpression);
+    const argExpression = getSynthesizedClone(propertyName);
+    argExpression.text = argExpression.text;
+    return new qs.ElemAccessExpression(value, argExpression);
   } else {
     const name = new Identifier(idText(propertyName));
     return new qc.PropertyAccessExpression(value, name);

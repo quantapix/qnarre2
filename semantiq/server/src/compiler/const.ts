@@ -280,8 +280,8 @@ export const enum ListFormat {
   ObjectLiteralExpressionProperties = PreserveLines | CommaDelimited | SpaceBetweenSiblings | SpaceBetweenBraces | Indented | Braces | NoSpaceIfEmpty,
   ArrayLiteralExpressionElems = PreserveLines | CommaDelimited | SpaceBetweenSiblings | AllowTrailingComma | Indented | SquareBrackets,
   CommaListElems = CommaDelimited | SpaceBetweenSiblings | SingleLine,
-  CallExpressionArguments = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
-  NewExpressionArguments = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis | OptionalIfUndefined,
+  CallExpressionArgs = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
+  NewExpressionArgs = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis | OptionalIfUndefined,
   TemplateExpressionSpans = SingleLine | NoInterveningComments,
   SingleLineBlockStatements = SpaceBetweenBraces | SpaceBetweenSiblings | SingleLine,
   MultiLineBlockStatements = Indented | MultiLine,
@@ -300,7 +300,7 @@ export const enum ListFormat {
   HeritageClauseTypes = CommaDelimited | SpaceBetweenSiblings | SingleLine,
   SourceFileStatements = MultiLine | NoTrailingNewLine,
   Decorators = MultiLine | Optional | SpaceAfterList,
-  TypeArguments = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
+  TypeArgs = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
   TypeParams = CommaDelimited | SpaceBetweenSiblings | SingleLine | AngleBrackets | Optional,
   Params = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
   IndexSignatureParams = CommaDelimited | SpaceBetweenSiblings | SingleLine | Indented | SquareBrackets,
@@ -339,7 +339,7 @@ export const enum NodeBuilderFlags {
   GenerateNamesForShadowedTypeParams = 1 << 2,
   UseStructuralFallback = 1 << 3,
   ForbidIndexedAccessSymbolReferences = 1 << 4,
-  WriteTypeArgumentsOfSignature = 1 << 5,
+  WriteTypeArgsOfSignature = 1 << 5,
   UseFullyQualifiedType = 1 << 6,
   UseOnlyExternalAliasing = 1 << 7,
   SuppressAnyReturnType = 1 << 8,
@@ -382,7 +382,7 @@ export const enum NodeCheckFlags {
   ContextChecked = 0x00000400,
   AsyncMethodWithSuper = 0x00000800,
   AsyncMethodWithSuperBinding = 0x00001000,
-  CaptureArguments = 0x00002000,
+  CaptureArgs = 0x00002000,
   EnumValuesComputed = 0x00004000,
   LexicalModuleMergesWithClass = 0x00008000,
   LoopWithCapturedBlockScopedBinding = 0x00010000,
@@ -625,7 +625,7 @@ export const enum SymbolFlags {
 }
 export const enum SymbolFormatFlags {
   None = 0x00000000,
-  WriteTypeParamsOrArguments = 0x00000001,
+  WriteTypeParamsOrArgs = 0x00000001,
   UseOnlyExternalAliasing = 0x00000002,
   AllowAnyNodeKind = 0x00000004,
   UseAliasDefinedOutsideCurrentScope = 0x00000008,
@@ -812,7 +812,7 @@ export const enum TypeFormatFlags {
   NoTruncation = 1 << 0,
   WriteArrayAsGenericType = 1 << 1,
   UseStructuralFallback = 1 << 3,
-  WriteTypeArgumentsOfSignature = 1 << 5,
+  WriteTypeArgsOfSignature = 1 << 5,
   UseFullyQualifiedType = 1 << 6,
   SuppressAnyReturnType = 1 << 8,
   MultilineObjectLiterals = 1 << 10,
@@ -827,13 +827,13 @@ export const enum TypeFormatFlags {
   WriteArrowStyleSignature = 1 << 18,
   InArrayType = 1 << 19,
   InElemType = 1 << 21,
-  InFirstTypeArgument = 1 << 22,
+  InFirstTypeArg = 1 << 22,
   InTypeAlias = 1 << 23,
   WriteOwnNameForAnyLike = 0,
   NodeBuilderFlagsMask = NoTruncation |
     WriteArrayAsGenericType |
     UseStructuralFallback |
-    WriteTypeArgumentsOfSignature |
+    WriteTypeArgsOfSignature |
     UseFullyQualifiedType |
     SuppressAnyReturnType |
     MultilineObjectLiterals |

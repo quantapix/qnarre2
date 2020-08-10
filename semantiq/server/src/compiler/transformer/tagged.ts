@@ -18,7 +18,7 @@ export function processTaggedTemplateExpression(
   level: ProcessLevel
 ) {
   const tag = visitNode(node.tag, visitor, isExpression);
-  const templateArguments: Expression[] = [undefined!];
+  const templateArgs: Expression[] = [undefined!];
   const cookedStrings: Expression[] = [];
   const rawStrings: Expression[] = [];
   const template = node.template;
@@ -32,18 +32,18 @@ export function processTaggedTemplateExpression(
     for (const templateSpan of template.templateSpans) {
       cookedStrings.push(createTemplateCooked(templateSpan.literal));
       rawStrings.push(getRawLiteral(templateSpan.literal, currentSourceFile));
-      templateArguments.push(visitNode(templateSpan.expression, visitor, isExpression));
+      templateArgs.push(visitNode(templateSpan.expression, visitor, isExpression));
     }
   }
   const helperCall = createTemplateObjectHelper(context, new ArrayLiteralExpression(cookedStrings), new ArrayLiteralExpression(rawStrings));
   if (qc.is.externalModule(currentSourceFile)) {
     const tempVar = createUniqueName('templateObject');
     recordTaggedTemplateString(tempVar);
-    templateArguments[0] = qf.create.logicalOr(tempVar, qf.create.assignment(tempVar, helperCall));
+    templateArgs[0] = qf.create.logicalOr(tempVar, qf.create.assignment(tempVar, helperCall));
   } else {
-    templateArguments[0] = helperCall;
+    templateArgs[0] = helperCall;
   }
-  return new qs.CallExpression(tag, undefined, templateArguments);
+  return new qs.CallExpression(tag, undefined, templateArgs);
 }
 function createTemplateCooked(template: TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral) {
   return template.templateFlags ? qs.VoidExpression.zero() : qc.asLiteral(template.text);

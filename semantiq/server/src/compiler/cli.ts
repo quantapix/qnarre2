@@ -61,7 +61,7 @@ const libEntries: [string, string][] = [
 ];
 export const libs = libEntries.map((entry) => entry[0]);
 export const libMap = createMap(libEntries);
-export const optionsForWatch: qt.CommandLineOption[] = [
+export const optsForWatch: qt.CommandLineOption[] = [
   {
     name: 'watchFile',
     type: createMap({
@@ -71,7 +71,7 @@ export const optionsForWatch: qt.CommandLineOption[] = [
       usefsevents: WatchFileKind.UseFsEvents,
       usefseventsonparentdirectory: WatchFileKind.UseFsEventsOnParentDirectory,
     }),
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
   },
   {
@@ -81,7 +81,7 @@ export const optionsForWatch: qt.CommandLineOption[] = [
       fixedpollinginterval: WatchDirectoryKind.FixedPollingInterval,
       dynamicprioritypolling: WatchDirectoryKind.DynamicPriorityPolling,
     }),
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_watching_directory_on_platforms_that_don_t_support_recursive_watching_natively_Colon_UseFsEvents_default_FixedPollingInterval_DynamicPriorityPolling,
   },
   {
@@ -91,23 +91,23 @@ export const optionsForWatch: qt.CommandLineOption[] = [
       priorityinterval: PollingWatchKind.PriorityInterval,
       dynamicpriority: PollingWatchKind.DynamicPriority,
     }),
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
   },
   {
     name: 'synchronousWatchDirectory',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_support_recursive_watching_natively,
   },
 ];
-export const commonOptionsWithBuild: qt.CommandLineOption[] = [
+export const commonOptsWithBuild: qt.CommandLineOption[] = [
   {
     name: 'help',
     shortName: 'h',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Print_this_message,
   },
   {
@@ -120,51 +120,51 @@ export const commonOptionsWithBuild: qt.CommandLineOption[] = [
     shortName: 'w',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Watch_input_files,
   },
   {
     name: 'preserveWatchOutput',
     type: 'boolean',
     showInSimplifiedHelpView: false,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Whether_to_keep_outdated_console_output_in_watch_mode_instead_of_clearing_the_screen,
   },
   {
     name: 'listFiles',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Print_names_of_files_part_of_the_compilation,
   },
   {
     name: 'listEmittedFiles',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Print_names_of_generated_files_part_of_the_compilation,
   },
   {
     name: 'pretty',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Stylize_errors_and_messages_using_color_and_context_experimental,
   },
   {
     name: 'traceResolution',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Enable_tracing_of_the_name_resolution_process,
   },
   {
     name: 'diagnostics',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Show_diagnostic_information,
   },
   {
     name: 'extendedDiagnostics',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Show_verbose_diagnostic_information,
   },
   {
@@ -172,14 +172,14 @@ export const commonOptionsWithBuild: qt.CommandLineOption[] = [
     type: 'string',
     isFilePath: true,
     paramType: qd.FILE_OR_DIRECTORY,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Generates_a_CPU_profile,
   },
   {
     name: 'incremental',
     shortName: 'i',
     type: 'boolean',
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Enable_incremental_compilation,
     transpileOptionValue: undefined,
   },
@@ -188,38 +188,38 @@ export const commonOptionsWithBuild: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Have_recompiles_in_incremental_and_watch_assume_that_changes_within_a_file_will_only_affect_files_directly_depending_on_it,
   },
   {
     name: 'locale',
     type: 'string',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.The_locale_used_when_displaying_messages_to_the_user_e_g_en_us,
   },
 ];
 export const optionDeclarations: qt.CommandLineOption[] = [
-  ...commonOptionsWithBuild,
+  ...commonOptsWithBuild,
   {
     name: 'all',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
-    description: qd.Show_all_compiler_options,
+    category: qd.Command_line_Opts,
+    description: qd.Show_all_compiler_opts,
   },
   {
     name: 'version',
     shortName: 'v',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Print_the_compiler_s_version,
   },
   {
     name: 'init',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Initializes_a_TypeScript_project_and_creates_a_tsconfig_json_file,
   },
   {
@@ -228,7 +228,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     isFilePath: true,
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     paramType: qd.FILE_OR_DIRECTORY,
     description: qd.Compile_the_project_given_the_path_to_its_configuration_file_or_to_a_folder_with_a_tsconfig_json,
   },
@@ -237,20 +237,20 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     shortName: 'b',
     showInSimplifiedHelpView: true,
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Build_one_or_more_projects_and_their_dependencies_if_out_of_date,
   },
   {
     name: 'showConfig',
     type: 'boolean',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     isCommandLineOnly: true,
     description: qd.Print_the_final_configuration_instead_of_building,
   },
   {
     name: 'listFilesOnly',
     type: 'boolean',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
     isCommandLineOnly: true,
@@ -267,7 +267,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsEmit: true,
     paramType: qd.VERSION,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_ECMAScript_target_version_Colon_ES3_default_ES5_ES2015_ES2016_ES2017_ES2018_ES2019_ES2020_or_ESNEXT,
   },
   {
@@ -288,7 +288,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsEmit: true,
     paramType: qd.KIND,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_module_code_generation_Colon_none_commonjs_amd_system_umd_es2015_es2020_or_ESNext,
   },
   {
@@ -300,7 +300,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     },
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_library_files_to_be_included_in_the_compilation,
     transpileOptionValue: undefined,
   },
@@ -309,13 +309,13 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Allow_javascript_files_to_be_compiled,
   },
   {
     name: 'checkJs',
     type: 'boolean',
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Report_errors_in_js_files,
   },
   {
@@ -328,7 +328,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSourceFile: true,
     paramType: qd.KIND,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_JSX_code_generation_Colon_preserve_react_native_or_react,
   },
   {
@@ -337,7 +337,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Generates_corresponding_d_ts_file,
     transpileOptionValue: undefined,
   },
@@ -346,7 +346,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Generates_a_sourcemap_for_each_corresponding_d_ts_file,
     transpileOptionValue: undefined,
   },
@@ -354,7 +354,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'emitDeclarationOnly',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Only_emit_d_ts_declaration_files,
     transpileOptionValue: undefined,
   },
@@ -363,7 +363,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Generates_corresponding_map_file,
   },
   {
@@ -373,7 +373,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     isFilePath: true,
     paramType: qd.FILE,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Concatenate_and_emit_output_to_single_file,
     transpileOptionValue: undefined,
   },
@@ -384,7 +384,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     isFilePath: true,
     paramType: qd.DIRECTORY,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Redirect_output_structure_to_the_directory,
   },
   {
@@ -393,7 +393,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsEmit: true,
     isFilePath: true,
     paramType: qd.LOCATION,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_the_root_directory_of_input_files_Use_to_control_the_output_directory_structure_with_outDir,
   },
   {
@@ -401,7 +401,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     isTSConfigOnly: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Enable_project_compilation,
     transpileOptionValue: undefined,
   },
@@ -411,7 +411,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsEmit: true,
     isFilePath: true,
     paramType: qd.FILE,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Specify_file_to_store_incremental_compilation_information,
     transpileOptionValue: undefined,
   },
@@ -420,7 +420,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Do_not_emit_comments_to_output,
   },
   {
@@ -428,7 +428,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Do_not_emit_outputs,
     transpileOptionValue: undefined,
   },
@@ -436,7 +436,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'importHelpers',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Import_emit_helpers_from_tslib,
   },
   {
@@ -448,20 +448,20 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     }),
     affectsEmit: true,
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_emit_Slashchecking_behavior_for_imports_that_are_only_used_for_types,
   },
   {
     name: 'downlevelIteration',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Provide_full_support_for_iterables_in_for_of_spread_and_destructuring_when_targeting_ES5_or_ES3,
   },
   {
     name: 'isolatedModules',
     type: 'boolean',
-    category: qd.Basic_Options,
+    category: qd.Basic_Opts,
     description: qd.Transpile_each_file_as_a_separate_module_similar_to_ts_transpileModule,
     transpileOptionValue: true,
   },
@@ -469,8 +469,8 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'strict',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
-    description: qd.Enable_all_strict_type_checking_options,
+    category: qd.Strict_Type_Checking_Opts,
+    description: qd.Enable_all_strict_type_checking_opts,
   },
   {
     name: 'noImplicitAny',
@@ -478,7 +478,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Raise_error_on_expressions_and_declarations_with_an_implied_any_type,
   },
   {
@@ -487,7 +487,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Enable_strict_null_checks,
   },
   {
@@ -496,7 +496,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Enable_strict_checking_of_function_types,
   },
   {
@@ -504,7 +504,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Enable_strict_bind_call_and_apply_methods_on_functions,
   },
   {
@@ -513,7 +513,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Enable_strict_checking_of_property_initialization_in_classes,
   },
   {
@@ -522,7 +522,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Raise_error_on_this_expressions_with_an_implied_any_type,
   },
   {
@@ -531,7 +531,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSourceFile: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: qd.Strict_Type_Checking_Options,
+    category: qd.Strict_Type_Checking_Opts,
     description: qd.Parse_in_strict_mode_and_emit_use_strict_for_each_source_file,
   },
   {
@@ -575,7 +575,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     }),
     affectsModuleResolution: true,
     paramType: qd.STRATEGY,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Specify_module_resolution_strategy_Colon_node_Node_js_or_classic_TypeScript_pre_1_6,
   },
   {
@@ -583,7 +583,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     affectsModuleResolution: true,
     isFilePath: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Base_directory_to_resolve_non_absolute_module_names,
   },
   {
@@ -591,7 +591,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'object',
     affectsModuleResolution: true,
     isTSConfigOnly: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.A_series_of_entries_which_re_map_imports_to_lookup_locations_relative_to_the_baseUrl,
     transpileOptionValue: undefined,
   },
@@ -605,7 +605,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
       isFilePath: true,
     },
     affectsModuleResolution: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.List_of_root_folders_whose_combined_content_represents_the_structure_of_the_project_at_runtime,
     transpileOptionValue: undefined,
   },
@@ -618,7 +618,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
       isFilePath: true,
     },
     affectsModuleResolution: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.List_of_folders_to_include_type_definitions_from,
   },
   {
@@ -630,7 +630,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     },
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Type_declaration_files_to_be_included_in_compilation,
     transpileOptionValue: undefined,
   },
@@ -638,7 +638,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'allowSyntheticDefaultImports',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Allow_default_imports_from_modules_with_no_default_export_This_does_not_affect_code_emit_just_typechecking,
   },
   {
@@ -647,20 +647,20 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports,
   },
   {
     name: 'preserveSymlinks',
     type: 'boolean',
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Do_not_resolve_the_real_path_of_symlinks,
   },
   {
     name: 'allowUmdGlobalAccess',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Module_Resolution_Options,
+    category: qd.Module_Resolution_Opts,
     description: qd.Allow_accessing_UMD_globals_from_modules,
   },
   {
@@ -668,7 +668,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     paramType: qd.LOCATION,
-    category: qd.Source_Map_Options,
+    category: qd.Source_Map_Opts,
     description: qd.Specify_the_location_where_debugger_should_locate_TypeScript_files_instead_of_source_locations,
   },
   {
@@ -676,28 +676,28 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     paramType: qd.LOCATION,
-    category: qd.Source_Map_Options,
+    category: qd.Source_Map_Opts,
     description: qd.Specify_the_location_where_debugger_should_locate_map_files_instead_of_generated_locations,
   },
   {
     name: 'inlineSourceMap',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Source_Map_Options,
+    category: qd.Source_Map_Opts,
     description: qd.Emit_a_single_file_with_source_maps_instead_of_having_a_separate_file,
   },
   {
     name: 'inlineSources',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Source_Map_Options,
+    category: qd.Source_Map_Opts,
     description: qd.Emit_the_source_alongside_the_sourcemaps_within_a_single_file_requires_inlineSourceMap_or_sourceMap_to_be_set,
   },
   {
     name: 'experimentalDecorators',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Experimental_Options,
+    category: qd.Experimental_Opts,
     description: qd.Enables_experimental_support_for_ES7_decorators,
   },
   {
@@ -705,20 +705,20 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: qd.Experimental_Options,
+    category: qd.Experimental_Opts,
     description: qd.Enables_experimental_support_for_emitting_type_metadata_for_decorators,
   },
   {
     name: 'jsxFactory',
     type: 'string',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElem_or_h,
   },
   {
     name: 'resolveJsonModule',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Include_modules_imported_with_json_extension,
   },
   {
@@ -726,7 +726,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     isFilePath: false,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     paramType: qd.FILE,
     description: qd.Deprecated_Use_outFile_instead_Concatenate_and_emit_output_to_single_file,
     transpileOptionValue: undefined,
@@ -735,26 +735,26 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'reactNamespace',
     type: 'string',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElem_when_targeting_react_JSX_emit,
   },
   {
     name: 'skipDefaultLibCheck',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Deprecated_Use_skipLibCheck_instead_Skip_type_checking_of_default_library_declaration_files,
   },
   {
     name: 'charset',
     type: 'string',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.The_character_set_of_the_input_files,
   },
   {
     name: 'emitBOM',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Emit_a_UTF_8_Byte_Order_Mark_BOM_in_the_beginning_of_output_files,
   },
   {
@@ -765,21 +765,21 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     }),
     affectsEmit: true,
     paramType: qd.NEWLINE,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Specify_the_end_of_line_sequence_to_be_used_when_emitting_files_Colon_CRLF_dos_or_LF_unix,
   },
   {
     name: 'noErrorTruncation',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_truncate_error_messages,
   },
   {
     name: 'noLib',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_include_the_default_library_file_lib_d_ts,
     transpileOptionValue: true,
   },
@@ -787,7 +787,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'noResolve',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_add_triple_slash_references_or_imported_modules_to_the_list_of_compiled_files,
     transpileOptionValue: true,
   },
@@ -795,49 +795,49 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'stripInternal',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_emit_declarations_for_code_that_has_an_internal_annotation,
   },
   {
     name: 'disableSizeLimit',
     type: 'boolean',
     affectsSourceFile: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Disable_size_limitations_on_JavaScript_projects,
   },
   {
     name: 'disableSourceOfProjectReferenceRedirect',
     type: 'boolean',
     isTSConfigOnly: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Disable_use_of_source_files_instead_of_declaration_files_from_referenced_projects,
   },
   {
     name: 'disableSolutionSearching',
     type: 'boolean',
     isTSConfigOnly: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Disable_solution_searching_for_this_project,
   },
   {
     name: 'noImplicitUseStrict',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_emit_use_strict_directives_in_module_output,
   },
   {
     name: 'noEmitHelpers',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_generate_custom_helper_functions_like_extends_in_compiled_output,
   },
   {
     name: 'noEmitOnError',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_emit_outputs_if_any_errors_were_reported,
     transpileOptionValue: undefined,
   },
@@ -845,7 +845,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'preserveConstEnums',
     type: 'boolean',
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_erase_const_enum_declarations_in_generated_code,
   },
   {
@@ -854,14 +854,14 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsEmit: true,
     isFilePath: true,
     paramType: qd.DIRECTORY,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Output_directory_for_generated_declaration_files,
     transpileOptionValue: undefined,
   },
   {
     name: 'skipLibCheck',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Skip_type_checking_of_declaration_files,
   },
   {
@@ -869,7 +869,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsBindDiagnostics: true,
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_report_errors_on_unused_labels,
   },
   {
@@ -877,42 +877,42 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsBindDiagnostics: true,
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Do_not_report_errors_on_unreachable_code,
   },
   {
     name: 'suppressExcessPropertyErrors',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Suppress_excess_property_checks_for_object_literals,
   },
   {
     name: 'suppressImplicitAnyIndexErrors',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Suppress_noImplicitAny_errors_for_indexing_objects_lacking_index_signatures,
   },
   {
     name: 'forceConsistentCasingInFileNames',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Disallow_inconsistently_cased_references_to_the_same_file,
   },
   {
     name: 'maxNodeModuleJsDepth',
     type: 'number',
     affectsModuleResolution: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.The_maximum_dependency_depth_to_search_under_node_modules_and_load_JavaScript_files,
   },
   {
     name: 'noStrictGenericChecks',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Disable_strict_checking_of_generic_signatures_in_function_types,
   },
   {
@@ -920,13 +920,13 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Emit_class_fields_with_Define_instead_of_Set,
   },
   {
     name: 'keyofStringsOnly',
     type: 'boolean',
-    category: qd.Advanced_Options,
+    category: qd.Advanced_Opts,
     description: qd.Resolve_keyof_to_string_valued_property_names_only_no_numbers_or_symbols,
   },
   {
@@ -943,36 +943,36 @@ export const optionDeclarations: qt.CommandLineOption[] = [
 export const semanticDiagnosticsOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSemanticDiagnostics);
 export const affectsEmitOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsEmit);
 export const moduleResolutionOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsModuleResolution);
-export const sourceFileAffectingCompilerOptions: readonly qt.CommandLineOption[] = optionDeclarations.filter(
+export const sourceFileAffectingCompilerOpts: readonly qt.CommandLineOption[] = optionDeclarations.filter(
   (option) => !!option.affectsSourceFile || !!option.affectsModuleResolution || !!option.affectsBindDiagnostics
 );
-export const transpileOptionValueCompilerOptions: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => hasProperty(option, 'transpileOptionValue'));
+export const transpileOptionValueCompilerOpts: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => hasProperty(option, 'transpileOptionValue'));
 export const buildOpts: qt.CommandLineOption[] = [
-  ...commonOptionsWithBuild,
+  ...commonOptsWithBuild,
   {
     name: 'verbose',
     shortName: 'v',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Enable_verbose_logging,
     type: 'boolean',
   },
   {
     name: 'dry',
     shortName: 'd',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Show_what_would_be_built_or_deleted_if_specified_with_clean,
     type: 'boolean',
   },
   {
     name: 'force',
     shortName: 'f',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Build_all_projects_including_those_that_appear_to_be_up_to_date,
     type: 'boolean',
   },
   {
     name: 'clean',
-    category: qd.Command_line_Options,
+    category: qd.Command_line_Opts,
     description: qd.Delete_the_outputs_of_all_projects,
     type: 'boolean',
   },
@@ -1003,26 +1003,26 @@ export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
     },
   },
 ];
-export interface OptionsNameMap {
-  optionsNameMap: qu.QMap<CommandLineOption>;
+export interface OptsNameMap {
+  optsNameMap: qu.QMap<CommandLineOption>;
   shortOptionNames: qu.QMap<string>;
 }
-export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptionsNameMap {
-  const optionsNameMap = createMap<CommandLineOption>();
+export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptsNameMap {
+  const optsNameMap = createMap<CommandLineOption>();
   const shortOptionNames = createMap<string>();
   forEach(optionDeclarations, (option) => {
-    optionsNameMap.set(option.name.toLowerCase(), option);
+    optsNameMap.set(option.name.toLowerCase(), option);
     if (option.shortName) {
       shortOptionNames.set(option.shortName, option.name);
     }
   });
-  return { optionsNameMap, shortOptionNames };
+  return { optsNameMap, shortOptionNames };
 }
-let optionsNameMapCache: OptionsNameMap;
-export function getOptionsNameMap(): OptionsNameMap {
-  return optionsNameMapCache || (optionsNameMapCache = createOptionNameMap(optionDeclarations));
+let optsNameMapCache: OptsNameMap;
+export function getOptsNameMap(): OptsNameMap {
+  return optsNameMapCache || (optsNameMapCache = createOptionNameMap(optionDeclarations));
 }
-export const defaultInitCompilerOptions: qt.CompilerOptions = {
+export const defaultInitCompilerOpts: qt.CompilerOpts = {
   module: ModuleKind.CommonJS,
   target: ScriptTarget.ES2020,
   strict: true,
@@ -1047,7 +1047,7 @@ function createDiagnosticForInvalidCustomType(opt: qt.CommandLineOptionOfCustomT
   const namesOfType = arrayFrom(opt.type.keys())
     .map((key) => `'${key}'`)
     .join(', ');
-  return createDiagnostic(qd.Argument_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
+  return createDiagnostic(qd.Arg_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
 }
 export function parseCustomTypeOption(opt: qt.CommandLineOptionOfCustomType, value: string, errors: Push<Diagnostic>) {
   return convertJsonOptionOfCustomType(opt, trimString(value || ''), errors);
@@ -1068,25 +1068,25 @@ export function parseListTypeOption(opt: qt.CommandLineOptionOfListType, value =
       return mapDefined(values, (v) => parseCustomTypeOption(<CommandLineOptionOfCustomType>opt.elem, v, errors));
   }
 }
-export interface OptionsBase {
-  [option: string]: qt.CompilerOptionsValue | TsConfigSourceFile | undefined;
+export interface OptsBase {
+  [option: string]: qt.CompilerOptsValue | TsConfigSourceFile | undefined;
 }
-export interface ParseCommandLineWorkerDiagnostics extends DidYouMeanOptionsDiagnostics {
-  getOptionsNameMap: () => OptionsNameMap;
+export interface ParseCommandLineWorkerDiagnostics extends DidYouMeanOptsDiagnostics {
+  getOptsNameMap: () => OptsNameMap;
   optionTypeMismatchDiagnostic: qd.Message;
 }
 function getOptionName(option: qt.CommandLineOption) {
   return option.name;
 }
-export function changesAffectModuleResolution(oldOptions: qt.CompilerOptions, newOptions: qt.CompilerOptions): boolean {
-  return oldOptions.configFilePath !== newOptions.configFilePath || optionsHaveModuleResolutionChanges(oldOptions, newOptions);
+export function changesAffectModuleResolution(oldOpts: qt.CompilerOpts, newOpts: qt.CompilerOpts): boolean {
+  return oldOpts.configFilePath !== newOpts.configFilePath || optsHaveModuleResolutionChanges(oldOpts, newOpts);
 }
-export function optionsHaveModuleResolutionChanges(oldOptions: qt.CompilerOptions, newOptions: qt.CompilerOptions) {
-  return moduleResolutionOptionDeclarations.some((o) => !isJsonEqual(getCompilerOptionValue(oldOptions, o), getCompilerOptionValue(newOptions, o)));
+export function optsHaveModuleResolutionChanges(oldOpts: qt.CompilerOpts, newOpts: qt.CompilerOpts) {
+  return moduleResolutionOptionDeclarations.some((o) => !isJsonEqual(getCompilerOptionValue(oldOpts, o), getCompilerOptionValue(newOpts, o)));
 }
 function createUnknownOptionError(
   unknownOption: string,
-  diagnostics: DidYouMeanOptionsDiagnostics,
+  diagnostics: DidYouMeanOptsDiagnostics,
   createDiagnostics: (message: qd.Message, arg0: string, arg1?: string) => Diagnostic,
   unknownOptionErrorText?: string
 ) {
@@ -1096,14 +1096,14 @@ function createUnknownOptionError(
     : createDiagnostics(diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
 }
 export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagnostics, commandLine: readonly string[], readFile?: (path: string) => string | undefined) {
-  const options = {} as OptionsBase;
-  let watchOptions: WatchOptions | undefined;
+  const opts = {} as OptsBase;
+  let watchOpts: WatchOpts | undefined;
   const fileNames: string[] = [];
   const errors: Diagnostic[] = [];
   parseStrings(commandLine);
   return {
-    options,
-    watchOptions,
+    opts,
+    watchOpts,
     fileNames,
     errors,
   };
@@ -1116,13 +1116,13 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
         parseResponseFile(s.slice(1));
       } else if (s.charCodeAt(0) === Codes.minus) {
         const inputOptionName = s.slice(s.charCodeAt(1) === Codes.minus ? 2 : 1);
-        const opt = getOptionDeclarationFromName(diagnostics.getOptionsNameMap, inputOptionName, true);
+        const opt = getOptionDeclarationFromName(diagnostics.getOptsNameMap, inputOptionName, true);
         if (opt) {
-          i = parseOptionValue(args, i, diagnostics, opt, options, errors);
+          i = parseOptionValue(args, i, diagnostics, opt, opts, errors);
         } else {
-          const watchOpt = getOptionDeclarationFromName(watchOptionsDidYouMeanqd.getOptionsNameMap, inputOptionName, true);
+          const watchOpt = getOptionDeclarationFromName(watchOptsDidYouMeanqd.getOptsNameMap, inputOptionName, true);
           if (watchOpt) {
-            i = parseOptionValue(args, i, watchOptionsDidYouMeanDiagnostics, watchOpt, watchOptions || (watchOptions = {}), errors);
+            i = parseOptionValue(args, i, watchOptsDidYouMeanDiagnostics, watchOpt, watchOpts || (watchOpts = {}), errors);
           } else {
             errors.push(createUnknownOptionError(inputOptionName, diagnostics, createCompilerDiagnostic, s));
           }
@@ -1161,15 +1161,15 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
     parseStrings(args);
   }
 }
-function parseOptionValue(args: readonly string[], i: number, diagnostics: ParseCommandLineWorkerDiagnostics, opt: qt.CommandLineOption, options: OptionsBase, errors: Diagnostic[]) {
+function parseOptionValue(args: readonly string[], i: number, diagnostics: ParseCommandLineWorkerDiagnostics, opt: qt.CommandLineOption, opts: OptsBase, errors: Diagnostic[]) {
   if (opt.isTSConfigOnly) {
     const optValue = args[i];
     if (optValue === 'null') {
-      options[opt.name] = undefined;
+      opts[opt.name] = undefined;
       i++;
     } else if (opt.type === 'boolean') {
       if (optValue === 'false') {
-        options[opt.name] = false;
+        opts[opt.name] = false;
         i++;
       } else {
         if (optValue === 'true') i++;
@@ -1186,99 +1186,99 @@ function parseOptionValue(args: readonly string[], i: number, diagnostics: Parse
     if (args[i] !== 'null') {
       switch (opt.type) {
         case 'number':
-          options[opt.name] = parseInt(args[i]);
+          opts[opt.name] = parseInt(args[i]);
           i++;
           break;
         case 'boolean':
           const optValue = args[i];
-          options[opt.name] = optValue !== 'false';
+          opts[opt.name] = optValue !== 'false';
           if (optValue === 'false' || optValue === 'true') {
             i++;
           }
           break;
         case 'string':
-          options[opt.name] = args[i] || '';
+          opts[opt.name] = args[i] || '';
           i++;
           break;
         case 'list':
           const result = parseListTypeOption(opt, args[i], errors);
-          options[opt.name] = result || [];
+          opts[opt.name] = result || [];
           if (result) {
             i++;
           }
           break;
         default:
-          options[opt.name] = parseCustomTypeOption(<CommandLineOptionOfCustomType>opt, args[i], errors);
+          opts[opt.name] = parseCustomTypeOption(<CommandLineOptionOfCustomType>opt, args[i], errors);
           i++;
           break;
       }
     } else {
-      options[opt.name] = undefined;
+      opts[opt.name] = undefined;
       i++;
     }
   }
   return i;
 }
-export const compilerOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
-  getOptionsNameMap,
+export const compilerOptsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
+  getOptsNameMap,
   optionDeclarations,
   unknownOptionDiagnostic: qd.Unknown_compiler_option_0,
   unknownDidYouMeanDiagnostic: qd.Unknown_compiler_option_0_Did_you_mean_1,
-  optionTypeMismatchDiagnostic: qd.Compiler_option_0_expects_an_argument,
+  optionTypeMismatchDiagnostic: qd.Compiler_option_0_expects_an_arg,
 };
 export function parseCommandLine(commandLine: readonly string[], readFile?: (path: string) => string | undefined): ParsedCommandLine {
-  return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile);
+  return parseCommandLineWorker(compilerOptsDidYouMeanDiagnostics, commandLine, readFile);
 }
 export function getOptionFromName(optionName: string, allowShort?: boolean): qt.CommandLineOption | undefined {
-  return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
+  return getOptionDeclarationFromName(getOptsNameMap, optionName, allowShort);
 }
-function getOptionDeclarationFromName(getOptionNameMap: () => OptionsNameMap, optionName: string, allowShort = false): qt.CommandLineOption | undefined {
+function getOptionDeclarationFromName(getOptionNameMap: () => OptsNameMap, optionName: string, allowShort = false): qt.CommandLineOption | undefined {
   optionName = optionName.toLowerCase();
-  const { optionsNameMap, shortOptionNames } = getOptionNameMap();
+  const { optsNameMap, shortOptionNames } = getOptionNameMap();
   if (allowShort) {
     const short = shortOptionNames.get(optionName);
     if (short !== undefined) {
       optionName = short;
     }
   }
-  return optionsNameMap.get(optionName);
+  return optsNameMap.get(optionName);
 }
 export interface ParsedBuildCommand {
-  buildOptions: BuildOptions;
-  watchOptions: WatchOptions | undefined;
+  buildOpts: BuildOpts;
+  watchOpts: WatchOpts | undefined;
   projects: string[];
   errors: Diagnostic[];
 }
-let buildOptionsNameMapCache: OptionsNameMap;
-function getBuildOptionsNameMap(): OptionsNameMap {
-  return buildOptionsNameMapCache || (buildOptionsNameMapCache = createOptionNameMap(buildOpts));
+let buildOptsNameMapCache: OptsNameMap;
+function getBuildOptsNameMap(): OptsNameMap {
+  return buildOptsNameMapCache || (buildOptsNameMapCache = createOptionNameMap(buildOpts));
 }
-const buildOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
-  getOptionsNameMap: getBuildOptionsNameMap,
+const buildOptsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
+  getOptsNameMap: getBuildOptsNameMap,
   optionDeclarations: buildOpts,
   unknownOptionDiagnostic: qd.Unknown_build_option_0,
   unknownDidYouMeanDiagnostic: qd.Unknown_build_option_0_Did_you_mean_1,
   optionTypeMismatchDiagnostic: qd.Build_option_0_requires_a_value_of_type_1,
 };
 export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
-  const { options, watchOptions, fileNames: projects, errors } = parseCommandLineWorker(buildOptionsDidYouMeanDiagnostics, args);
-  const buildOptions = options as BuildOptions;
+  const { opts, watchOpts, fileNames: projects, errors } = parseCommandLineWorker(buildOptsDidYouMeanDiagnostics, args);
+  const buildOpts = opts as BuildOpts;
   if (projects.length === 0) {
     projects.push('.');
   }
-  if (buildOptions.clean && buildOptions.force) {
-    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'force'));
+  if (buildOpts.clean && buildOpts.force) {
+    errors.push(createCompilerDiagnostic(qd.Opts_0_and_1_cannot_be_combined, 'clean', 'force'));
   }
-  if (buildOptions.clean && buildOptions.verbose) {
-    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'verbose'));
+  if (buildOpts.clean && buildOpts.verbose) {
+    errors.push(createCompilerDiagnostic(qd.Opts_0_and_1_cannot_be_combined, 'clean', 'verbose'));
   }
-  if (buildOptions.clean && buildOptions.watch) {
-    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'watch'));
+  if (buildOpts.clean && buildOpts.watch) {
+    errors.push(createCompilerDiagnostic(qd.Opts_0_and_1_cannot_be_combined, 'clean', 'watch'));
   }
-  if (buildOptions.watch && buildOptions.dry) {
-    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'watch', 'dry'));
+  if (buildOpts.watch && buildOpts.dry) {
+    errors.push(createCompilerDiagnostic(qd.Opts_0_and_1_cannot_be_combined, 'watch', 'dry'));
   }
-  return { buildOptions, watchOptions, projects, errors };
+  return { buildOpts, watchOpts, projects, errors };
 }
 export function getDiagnosticText(_message: qd.Message, ...args: any[]): string {
   const diagnostic = createCompilerDiagnostic.apply(undefined, args);
@@ -1293,10 +1293,10 @@ export interface ParseConfigFileHost extends ParseConfigHost, ConfigFileDiagnost
 }
 export function getParsedCommandLineOfConfigFile(
   configFileName: string,
-  optionsToExtend: qt.CompilerOptions,
+  optsToExtend: qt.CompilerOpts,
   host: ParseConfigFileHost,
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
-  watchOptionsToExtend?: WatchOptions,
+  watchOptsToExtend?: WatchOpts,
   extraFileExtensions?: readonly FileExtensionInfo[]
 ): ParsedCommandLine | undefined {
   const configFileText = tryReadFile(configFileName, (fileName) => host.readFile(fileName));
@@ -1313,12 +1313,12 @@ export function getParsedCommandLineOfConfigFile(
     result,
     host,
     getNormalizedAbsolutePath(getDirectoryPath(configFileName), cwd),
-    optionsToExtend,
+    optsToExtend,
     getNormalizedAbsolutePath(configFileName, cwd),
     undefined,
     extraFileExtensions,
     extendedConfigCache,
-    watchOptionsToExtend
+    watchOptsToExtend
   );
 }
 export function readConfigFile(fileName: string, readFile: (path: string) => string | undefined): { config?: any; error?: Diagnostic } {
@@ -1345,66 +1345,66 @@ export function tryReadFile(fileName: string, readFile: (path: string) => string
   }
   return text === undefined ? createCompilerDiagnostic(qd.Cannot_read_file_0, fileName) : text;
 }
-function commandLineOptionsToMap(options: readonly qt.CommandLineOption[]) {
-  return arrayToMap(options, getOptionName);
+function commandLineOptsToMap(opts: readonly qt.CommandLineOption[]) {
+  return arrayToMap(opts, getOptionName);
 }
-const typeAcquisitionDidYouMeanDiagnostics: DidYouMeanOptionsDiagnostics = {
+const typeAcquisitionDidYouMeanDiagnostics: DidYouMeanOptsDiagnostics = {
   optionDeclarations: typeAcquisitionDeclarations,
   unknownOptionDiagnostic: qd.Unknown_type_acquisition_option_0,
   unknownDidYouMeanDiagnostic: qd.Unknown_type_acquisition_option_0_Did_you_mean_1,
 };
-let watchOptionsNameMapCache: OptionsNameMap;
-function getWatchOptionsNameMap(): OptionsNameMap {
-  return watchOptionsNameMapCache || (watchOptionsNameMapCache = createOptionNameMap(optionsForWatch));
+let watchOptsNameMapCache: OptsNameMap;
+function getWatchOptsNameMap(): OptsNameMap {
+  return watchOptsNameMapCache || (watchOptsNameMapCache = createOptionNameMap(optsForWatch));
 }
-const watchOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
-  getOptionsNameMap: getWatchOptionsNameMap,
-  optionDeclarations: optionsForWatch,
+const watchOptsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
+  getOptsNameMap: getWatchOptsNameMap,
+  optionDeclarations: optsForWatch,
   unknownOptionDiagnostic: qd.Unknown_watch_option_0,
   unknownDidYouMeanDiagnostic: qd.Unknown_watch_option_0_Did_you_mean_1,
   optionTypeMismatchDiagnostic: qd.Watch_option_0_requires_a_value_of_type_1,
 };
-let commandLineCompilerOptionsMapCache: qu.QMap<CommandLineOption>;
-function getCommandLineCompilerOptionsMap() {
-  return commandLineCompilerOptionsMapCache || (commandLineCompilerOptionsMapCache = commandLineOptionsToMap(optionDeclarations));
+let commandLineCompilerOptsMapCache: qu.QMap<CommandLineOption>;
+function getCommandLineCompilerOptsMap() {
+  return commandLineCompilerOptsMapCache || (commandLineCompilerOptsMapCache = commandLineOptsToMap(optionDeclarations));
 }
-let commandLineWatchOptionsMapCache: qu.QMap<CommandLineOption>;
-function getCommandLineWatchOptionsMap() {
-  return commandLineWatchOptionsMapCache || (commandLineWatchOptionsMapCache = commandLineOptionsToMap(optionsForWatch));
+let commandLineWatchOptsMapCache: qu.QMap<CommandLineOption>;
+function getCommandLineWatchOptsMap() {
+  return commandLineWatchOptsMapCache || (commandLineWatchOptsMapCache = commandLineOptsToMap(optsForWatch));
 }
 let commandLineTypeAcquisitionMapCache: qu.QMap<CommandLineOption>;
 function getCommandLineTypeAcquisitionMap() {
-  return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptionsToMap(typeAcquisitionDeclarations));
+  return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptsToMap(typeAcquisitionDeclarations));
 }
-let _tsconfigRootOptions: TsConfigOnlyOption;
-function getTsconfigRootOptionsMap() {
-  if (_tsconfigRootOptions === undefined) {
-    _tsconfigRootOptions = {
+let _tsconfigRootOpts: TsConfigOnlyOption;
+function getTsconfigRootOptsMap() {
+  if (_tsconfigRootOpts === undefined) {
+    _tsconfigRootOpts = {
       name: undefined!,
       type: 'object',
-      elemOptions: commandLineOptionsToMap([
+      elemOpts: commandLineOptsToMap([
         {
-          name: 'compilerOptions',
+          name: 'compilerOpts',
           type: 'object',
-          elemOptions: getCommandLineCompilerOptionsMap(),
-          extraKeyDiagnostics: compilerOptionsDidYouMeanDiagnostics,
+          elemOpts: getCommandLineCompilerOptsMap(),
+          extraKeyDiagnostics: compilerOptsDidYouMeanDiagnostics,
         },
         {
-          name: 'watchOptions',
+          name: 'watchOpts',
           type: 'object',
-          elemOptions: getCommandLineWatchOptionsMap(),
-          extraKeyDiagnostics: watchOptionsDidYouMeanDiagnostics,
+          elemOpts: getCommandLineWatchOptsMap(),
+          extraKeyDiagnostics: watchOptsDidYouMeanDiagnostics,
         },
         {
-          name: 'typingOptions',
+          name: 'typingOpts',
           type: 'object',
-          elemOptions: getCommandLineTypeAcquisitionMap(),
+          elemOpts: getCommandLineTypeAcquisitionMap(),
           extraKeyDiagnostics: typeAcquisitionDidYouMeanDiagnostics,
         },
         {
           name: 'typeAcquisition',
           type: 'object',
-          elemOptions: getCommandLineTypeAcquisitionMap(),
+          elemOpts: getCommandLineTypeAcquisitionMap(),
           extraKeyDiagnostics: typeAcquisitionDidYouMeanDiagnostics,
         },
         {
@@ -1447,12 +1447,12 @@ function getTsconfigRootOptionsMap() {
       ]),
     };
   }
-  return _tsconfigRootOptions;
+  return _tsconfigRootOpts;
 }
 interface JsonConversionNotifier {
-  onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptionsValue): void;
-  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression): void;
-  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression): void;
+  onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptsValue): void;
+  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression): void;
+  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression): void;
 }
 export function convertToObject(sourceFile: JsonSourceFile, errors: Push<Diagnostic>): any {
   return convertToObjectWorker(sourceFile, errors, undefined);
@@ -1461,18 +1461,18 @@ export function convertToObjectWorker(
   sourceFile: JsonSourceFile,
   errors: Push<Diagnostic>,
   returnValue: boolean,
-  knownRootOptions: qt.CommandLineOption | undefined,
+  knownRootOpts: qt.CommandLineOption | undefined,
   jsonConversionNotifier: JsonConversionNotifier | undefined
 ): any {
   if (!sourceFile.statements.length) return returnValue ? {} : undefined;
-  return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
-  function isRootOptionMap(knownOptions: qu.QMap<CommandLineOption> | undefined) {
-    return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elemOptions === knownOptions;
+  return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOpts);
+  function isRootOptionMap(knownOpts: qu.QMap<CommandLineOption> | undefined) {
+    return knownRootOpts && (knownRootOpts as TsConfigOnlyOption).elemOpts === knownOpts;
   }
   function convertObjectLiteralExpressionToJson(
     node: ObjectLiteralExpression,
-    knownOptions: qu.QMap<CommandLineOption> | undefined,
-    extraKeyDiagnostics: DidYouMeanOptionsDiagnostics | undefined,
+    knownOpts: qu.QMap<CommandLineOption> | undefined,
+    extraKeyDiagnostics: DidYouMeanOptsDiagnostics | undefined,
     parentOption: string | undefined
   ): any {
     const result: any = returnValue ? {} : undefined;
@@ -1489,9 +1489,9 @@ export function convertToObjectWorker(
       }
       const textOfKey = qf.is.computedNonLiteralName(elem.name) ? undefined : qc.get.textOfPropertyName(elem.name);
       const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
-      const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
+      const option = keyText && knownOpts ? knownOpts.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
-        if (knownOptions) {
+        if (knownOpts) {
           errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, message, arg0, arg1)));
         } else {
           errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, extraKeyqd.unknownOptionDiagnostic, keyText));
@@ -1502,13 +1502,13 @@ export function convertToObjectWorker(
         if (returnValue) {
           result[keyText] = value;
         }
-        if (jsonConversionNotifier && (parentOption || isRootOptionMap(knownOptions))) {
-          const isValidOptionValue = isCompilerOptionsValue(option, value);
+        if (jsonConversionNotifier && (parentOption || isRootOptionMap(knownOpts))) {
+          const isValidOptionValue = isCompilerOptsValue(option, value);
           if (parentOption) {
             if (isValidOptionValue) {
               jsonConversionNotifier.onSetValidOptionKeyValueInParent(parentOption, option!, value);
             }
-          } else if (isRootOptionMap(knownOptions)) {
+          } else if (isRootOptionMap(knownOpts)) {
             if (isValidOptionValue) {
               jsonConversionNotifier.onSetValidOptionKeyValueInRoot(keyText, elem.name, value, elem.initer);
             } else if (!option) {
@@ -1564,8 +1564,8 @@ export function convertToObjectWorker(
         reportInvalidOptionValue(option && option.type !== 'object');
         const objectLiteralExpression = <ObjectLiteralExpression>valueExpression;
         if (option) {
-          const { elemOptions, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
-          return convertObjectLiteralExpressionToJson(objectLiteralExpression, elemOptions, extraKeyDiagnostics, optionName);
+          const { elemOpts, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
+          return convertObjectLiteralExpressionToJson(objectLiteralExpression, elemOpts, extraKeyDiagnostics, optionName);
         } else {
           return convertObjectLiteralExpressionToJson(objectLiteralExpression, undefined);
         }
@@ -1592,7 +1592,7 @@ export function convertToObjectWorker(
 function getCompilerOptionValueTypeString(option: qt.CommandLineOption) {
   return option.type === 'list' ? 'Array' : isString(option.type) ? option.type : 'string';
 }
-function isCompilerOptionsValue(option: qt.CommandLineOption | undefined, value: any): value is qt.CompilerOptionsValue {
+function isCompilerOptsValue(option: qt.CommandLineOption | undefined, value: any): value is qt.CompilerOptsValue {
   if (option) {
     if (isNullOrUndefined(value)) return true;
     if (option.type === 'list') return isArray(value);
@@ -1602,7 +1602,7 @@ function isCompilerOptionsValue(option: qt.CommandLineOption | undefined, value:
   return false;
 }
 export interface TSConfig {
-  compilerOptions: qt.CompilerOptions;
+  compilerOpts: qt.CompilerOpts;
   compileOnSave: boolean | undefined;
   exclude?: readonly string[];
   files: readonly string[] | undefined;
@@ -1624,13 +1624,13 @@ export function convertToTSConfig(configParseResult: ParsedCommandLine, configFi
     ),
     (f) => getRelativePathFromFile(getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()), getNormalizedAbsolutePath(f, host.getCurrentDirectory()), getCanonicalFileName)
   );
-  const optionMap = serializeCompilerOptions(configParseResult.options, {
+  const optionMap = serializeCompilerOpts(configParseResult.opts, {
     configFilePath: getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()),
     useCaseSensitiveFileNames: host.useCaseSensitiveFileNames,
   });
-  const watchOptionMap = configParseResult.watchOptions && serializeWatchOptions(configParseResult.watchOptions);
+  const watchOptionMap = configParseResult.watchOpts && serializeWatchOpts(configParseResult.watchOpts);
   const config = {
-    compilerOptions: {
+    compilerOpts: {
       ...optionMapToObject(optionMap),
       showConfig: undefined,
       configFile: undefined,
@@ -1643,7 +1643,7 @@ export function convertToTSConfig(configParseResult: ParsedCommandLine, configFi
       build: undefined,
       version: undefined,
     },
-    watchOptions: watchOptionMap && optionMapToObject(watchOptionMap),
+    watchOpts: watchOptionMap && optionMapToObject(watchOptionMap),
     references: map(configParseResult.projectReferences, (r) => ({ ...r, path: r.originalPath ? r.originalPath : '', originalPath: undefined })),
     files: length(files) ? files : undefined,
     ...(configParseResult.configFileSpecs
@@ -1656,7 +1656,7 @@ export function convertToTSConfig(configParseResult: ParsedCommandLine, configFi
   };
   return config;
 }
-function optionMapToObject(optionMap: qu.QMap<CompilerOptionsValue>): object {
+function optionMapToObject(optionMap: qu.QMap<CompilerOptsValue>): object {
   return {
     ...arrayFrom(optionMap.entries()).reduce((prev, cur) => ({ ...prev, [cur[0]]: cur[1] }), {}),
   };
@@ -1682,37 +1682,33 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOpt
     return (<CommandLineOptionOfCustomType>optionDefinition).type;
   }
 }
-function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: qu.QMap<string | number>): string | undefined {
+function getNameOfCompilerOptionValue(value: qt.CompilerOptsValue, customTypeMap: qu.QMap<string | number>): string | undefined {
   return qu.forEachEntry(customTypeMap, (mapValue, key) => {
     if (mapValue === value) return key;
     return;
   });
 }
-function serializeCompilerOptions(options: qt.CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptionsValue> {
-  return serializeOptionBaseObject(options, getOptionsNameMap(), pathOptions);
+function serializeCompilerOpts(opts: qt.CompilerOpts, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptsValue> {
+  return serializeOptionBaseObject(opts, getOptsNameMap(), pathOpts);
 }
-function serializeWatchOptions(options: WatchOptions) {
-  return serializeOptionBaseObject(options, getWatchOptionsNameMap());
+function serializeWatchOpts(opts: WatchOpts) {
+  return serializeOptionBaseObject(opts, getWatchOptsNameMap());
 }
-function serializeOptionBaseObject(
-  options: OptionsBase,
-  { optionsNameMap }: OptionsNameMap,
-  pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }
-): qu.QMap<CompilerOptionsValue> {
-  const result = createMap<CompilerOptionsValue>();
-  const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
-  for (const name in options) {
-    if (hasProperty(options, name)) {
-      if (optionsNameMap.has(name) && optionsNameMap.get(name)!.category === qd.Command_line_Options) {
+function serializeOptionBaseObject(opts: OptsBase, { optsNameMap }: OptsNameMap, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptsValue> {
+  const result = createMap<CompilerOptsValue>();
+  const getCanonicalFileName = pathOpts && createGetCanonicalFileName(pathOpts.useCaseSensitiveFileNames);
+  for (const name in opts) {
+    if (hasProperty(opts, name)) {
+      if (optsNameMap.has(name) && optsNameMap.get(name)!.category === qd.Command_line_Opts) {
         continue;
       }
-      const value = <CompilerOptionsValue>options[name];
-      const optionDefinition = optionsNameMap.get(name.toLowerCase());
+      const value = <CompilerOptsValue>opts[name];
+      const optionDefinition = optsNameMap.get(name.toLowerCase());
       if (optionDefinition) {
         const customTypeMap = getCustomTypeMapOfCommandLineOption(optionDefinition);
         if (!customTypeMap) {
-          if (pathOptions && optionDefinition.isFilePath) {
-            result.set(name, getRelativePathFromFile(pathOptions.configFilePath, getNormalizedAbsolutePath(value as string, getDirectoryPath(pathOptions.configFilePath)), getCanonicalFileName!));
+          if (pathOpts && optionDefinition.isFilePath) {
+            result.set(name, getRelativePathFromFile(pathOpts.configFilePath, getNormalizedAbsolutePath(value as string, getDirectoryPath(pathOpts.configFilePath)), getCanonicalFileName!));
           } else {
             result.set(name, value);
           }
@@ -1731,9 +1727,9 @@ function serializeOptionBaseObject(
   }
   return result;
 }
-export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonly string[], newLine: string): string {
-  const compilerOptions = extend(options, defaultInitCompilerOptions);
-  const compilerOptionsMap = serializeCompilerOptions(compilerOptions);
+export function generateTSConfig(opts: qt.CompilerOpts, fileNames: readonly string[], newLine: string): string {
+  const compilerOpts = extend(opts, defaultInitCompilerOpts);
+  const compilerOptsMap = serializeCompilerOpts(compilerOpts);
   return writeConfigurations();
   function getDefaultValueForOption(option: qt.CommandLineOption) {
     switch (option.type) {
@@ -1757,28 +1753,28 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
     return Array(paddingLength + 1).join(' ');
   }
   function isAllowedOption({ category, name }: qt.CommandLineOption): boolean {
-    return category !== undefined && category !== qd.Command_line_Options && (category !== qd.Advanced_Options || compilerOptionsMap.has(name));
+    return category !== undefined && category !== qd.Command_line_Opts && (category !== qd.Advanced_Opts || compilerOptsMap.has(name));
   }
   function writeConfigurations() {
-    const categorizedOptions = new MultiMap<CommandLineOption>();
+    const categorizedOpts = new MultiMap<CommandLineOption>();
     for (const option of optionDeclarations) {
       const { category } = option;
       if (isAllowedOption(option)) {
-        categorizedOptions.add(getLocaleSpecificMessage(category!), option);
+        categorizedOpts.add(getLocaleSpecificMessage(category!), option);
       }
     }
     let marginLength = 0;
     let seenKnownKeys = 0;
     const entries: { value: string; description?: string }[] = [];
-    categorizedOptions.forEach((options, category) => {
+    categorizedOpts.forEach((opts, category) => {
       if (entries.length !== 0) {
         entries.push({ value: '' });
       }
       entries.push({ value: `` });
-      for (const option of options) {
+      for (const option of opts) {
         let optionName;
-        if (compilerOptionsMap.has(option.name)) {
-          optionName = `"${option.name}": ${JSON.stringify(compilerOptionsMap.get(option.name))}${(seenKnownKeys += 1) === compilerOptionsMap.size ? '' : ','}`;
+        if (compilerOptsMap.has(option.name)) {
+          optionName = `"${option.name}": ${JSON.stringify(compilerOptsMap.get(option.name))}${(seenKnownKeys += 1) === compilerOptsMap.size ? '' : ','}`;
         } else {
           optionName = ``;
         }
@@ -1792,7 +1788,7 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
     const tab = makePadding(2);
     const result: string[] = [];
     result.push(`{`);
-    result.push(`${tab}"compilerOptions": {`);
+    result.push(`${tab}"compilerOpts": {`);
     result.push(`${tab}${tab}`);
     result.push('');
     for (const entry of entries) {
@@ -1813,12 +1809,12 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
     return result.join(newLine) + newLine;
   }
 }
-export function convertToOptionsWithAbsolutePaths(options: qt.CompilerOptions, toAbsolutePath: (path: string) => string) {
-  const result: qt.CompilerOptions = {};
-  const optionsNameMap = getOptionsNameMap().optionsNameMap;
-  for (const name in options) {
-    if (hasProperty(options, name)) {
-      result[name] = convertToOptionValueWithAbsolutePaths(optionsNameMap.get(name.toLowerCase()), options[name] as qt.CompilerOptionsValue, toAbsolutePath);
+export function convertToOptsWithAbsolutePaths(opts: qt.CompilerOpts, toAbsolutePath: (path: string) => string) {
+  const result: qt.CompilerOpts = {};
+  const optsNameMap = getOptsNameMap().optsNameMap;
+  for (const name in opts) {
+    if (hasProperty(opts, name)) {
+      result[name] = convertToOptionValueWithAbsolutePaths(optsNameMap.get(name.toLowerCase()), opts[name] as qt.CompilerOptsValue, toAbsolutePath);
     }
   }
   if (result.configFilePath) {
@@ -1826,7 +1822,7 @@ export function convertToOptionsWithAbsolutePaths(options: qt.CompilerOptions, t
   }
   return result;
 }
-function convertToOptionValueWithAbsolutePaths(option: qt.CommandLineOption | undefined, value: qt.CompilerOptionsValue, toAbsolutePath: (path: string) => string) {
+function convertToOptionValueWithAbsolutePaths(option: qt.CommandLineOption | undefined, value: qt.CompilerOptsValue, toAbsolutePath: (path: string) => string) {
   if (option && !isNullOrUndefined(value)) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
@@ -1841,31 +1837,31 @@ export function parseJsonConfigFileContent(
   json: any,
   host: ParseConfigHost,
   basePath: string,
-  existingOptions?: qt.CompilerOptions,
+  existingOpts?: qt.CompilerOpts,
   configFileName?: string,
   resolutionStack?: Path[],
   extraFileExtensions?: readonly FileExtensionInfo[],
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
-  existingWatchOptions?: WatchOptions
+  existingWatchOpts?: WatchOpts
 ): ParsedCommandLine {
-  return parseJsonConfigFileContentWorker(json, undefined, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
+  return parseJsonConfigFileContentWorker(json, undefined, host, basePath, existingOpts, existingWatchOpts, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
 export function parseJsonSourceFileConfigFileContent(
   sourceFile: TsConfigSourceFile,
   host: ParseConfigHost,
   basePath: string,
-  existingOptions?: qt.CompilerOptions,
+  existingOpts?: qt.CompilerOpts,
   configFileName?: string,
   resolutionStack?: Path[],
   extraFileExtensions?: readonly FileExtensionInfo[],
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
-  existingWatchOptions?: WatchOptions
+  existingWatchOpts?: WatchOpts
 ): ParsedCommandLine {
-  return parseJsonConfigFileContentWorker(undefined, sourceFile, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
+  return parseJsonConfigFileContentWorker(undefined, sourceFile, host, basePath, existingOpts, existingWatchOpts, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
-export function setConfigFileInOptions(options: qt.CompilerOptions, configFile: TsConfigSourceFile | undefined) {
+export function setConfigFileInOpts(opts: qt.CompilerOpts, configFile: TsConfigSourceFile | undefined) {
   if (configFile) {
-    Object.defineProperty(options, 'configFile', { enumerable: false, writable: false, value: configFile });
+    Object.defineProperty(opts, 'configFile', { enumerable: false, writable: false, value: configFile });
   }
 }
 function isNullOrUndefined(x: any): x is null | undefined {
@@ -1879,8 +1875,8 @@ function parseJsonConfigFileContentWorker(
   sourceFile: TsConfigSourceFile | undefined,
   host: ParseConfigHost,
   basePath: string,
-  existingOptions: qt.CompilerOptions = {},
-  existingWatchOptions: WatchOptions | undefined,
+  existingOpts: qt.CompilerOpts = {},
+  existingWatchOpts: WatchOpts | undefined,
   configFileName?: string,
   resolutionStack: Path[] = [],
   extraFileExtensions: readonly FileExtensionInfo[] = [],
@@ -1890,15 +1886,15 @@ function parseJsonConfigFileContentWorker(
   const errors: Diagnostic[] = [];
   const parsedConfig = parseConfig(json, sourceFile, host, basePath, configFileName, resolutionStack, errors, extendedConfigCache);
   const { raw } = parsedConfig;
-  const options = extend(existingOptions, parsedConfig.options || {});
-  const watchOptions = existingWatchOptions && parsedConfig.watchOptions ? extend(existingWatchOptions, parsedConfig.watchOptions) : parsedConfig.watchOptions || existingWatchOptions;
-  options.configFilePath = configFileName && normalizeSlashes(configFileName);
-  setConfigFileInOptions(options, sourceFile);
+  const opts = extend(existingOpts, parsedConfig.opts || {});
+  const watchOpts = existingWatchOpts && parsedConfig.watchOpts ? extend(existingWatchOpts, parsedConfig.watchOpts) : parsedConfig.watchOpts || existingWatchOpts;
+  opts.configFilePath = configFileName && normalizeSlashes(configFileName);
+  setConfigFileInOpts(opts, sourceFile);
   let projectReferences: ProjectReference[] | undefined;
   const { fileNames, wildcardDirectories, spec } = getFileNames();
   return {
-    options,
-    watchOptions,
+    opts,
+    watchOpts,
     fileNames,
     projectReferences,
     typeAcquisition: parsedConfig.typeAcquisition || getDefaultTypeAcquisition(),
@@ -1942,13 +1938,13 @@ export function updateErrorForNoInputFiles(result: ExpandResult, configFileName:
 }
 export interface ParsedTsconfig {
   raw: any;
-  options?: qt.CompilerOptions;
-  watchOptions?: WatchOptions;
+  opts?: qt.CompilerOpts;
+  watchOpts?: WatchOpts;
   typeAcquisition?: TypeAcquisition;
   extendedConfigPath?: string;
 }
 function isSuccessfulParsedTsconfig(value: ParsedTsconfig) {
-  return !!value.options;
+  return !!value.opts;
 }
 function parseConfig(
   json: any,
@@ -1985,9 +1981,8 @@ function parseConfig(
       if (raw.compileOnSave === undefined) {
         raw.compileOnSave = baseRaw.compileOnSave;
       }
-      ownConfig.options = assign({}, extendedConfig.options, ownConfig.options);
-      ownConfig.watchOptions =
-        ownConfig.watchOptions && extendedConfig.watchOptions ? assign({}, extendedConfig.watchOptions, ownConfig.watchOptions) : ownConfig.watchOptions || extendedConfig.watchOptions;
+      ownConfig.opts = assign({}, extendedConfig.opts, ownConfig.opts);
+      ownConfig.watchOpts = ownConfig.watchOpts && extendedConfig.watchOpts ? assign({}, extendedConfig.watchOpts, ownConfig.watchOpts) : ownConfig.watchOpts || extendedConfig.watchOpts;
     }
   }
   return ownConfig;
@@ -1996,9 +1991,9 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
   if (hasProperty(json, 'excludes')) {
     errors.push(createCompilerDiagnostic(qd.Unknown_option_excludes_Did_you_mean_exclude));
   }
-  const options = convertCompilerOptionsFromJsonWorker(json.compilerOptions, basePath, errors, configFileName);
-  const typeAcquisition = convertTypeAcquisitionFromJsonWorker(json.typeAcquisition || json.typingOptions, basePath, errors, configFileName);
-  const watchOptions = convertWatchOptionsFromJsonWorker(json.watchOptions, basePath, errors);
+  const opts = convertCompilerOptsFromJsonWorker(json.compilerOpts, basePath, errors, configFileName);
+  const typeAcquisition = convertTypeAcquisitionFromJsonWorker(json.typeAcquisition || json.typingOpts, basePath, errors, configFileName);
+  const watchOpts = convertWatchOptsFromJsonWorker(json.watchOpts, basePath, errors);
   json.compileOnSave = convertCompileOnSaveOptionFromJson(json, basePath, errors);
   let extendedConfigPath: string | undefined;
   if (json.extends) {
@@ -2009,35 +2004,35 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
       extendedConfigPath = getExtendsConfigPath(json.extends, host, newBase, errors, createCompilerDiagnostic);
     }
   }
-  return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
+  return { raw: json, opts, watchOpts, typeAcquisition, extendedConfigPath };
 }
 function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: Push<Diagnostic>): ParsedTsconfig {
-  const options = getDefaultCompilerOptions(configFileName);
-  let typeAcquisition: TypeAcquisition | undefined, typingOptionstypeAcquisition: TypeAcquisition | undefined;
-  let watchOptions: WatchOptions | undefined;
+  const opts = getDefaultCompilerOpts(configFileName);
+  let typeAcquisition: TypeAcquisition | undefined, typingOptstypeAcquisition: TypeAcquisition | undefined;
+  let watchOpts: WatchOpts | undefined;
   let extendedConfigPath: string | undefined;
-  const optionsIterator: JsonConversionNotifier = {
-    onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptionsValue) {
+  const optsIterator: JsonConversionNotifier = {
+    onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptsValue) {
       let currentOption;
       switch (parentOption) {
-        case 'compilerOptions':
-          currentOption = options;
+        case 'compilerOpts':
+          currentOption = opts;
           break;
-        case 'watchOptions':
-          currentOption = watchOptions || (watchOptions = {});
+        case 'watchOpts':
+          currentOption = watchOpts || (watchOpts = {});
           break;
         case 'typeAcquisition':
           currentOption = typeAcquisition || (typeAcquisition = getDefaultTypeAcquisition(configFileName));
           break;
-        case 'typingOptions':
-          currentOption = typingOptionstypeAcquisition || (typingOptionstypeAcquisition = getDefaultTypeAcquisition(configFileName));
+        case 'typingOpts':
+          currentOption = typingOptstypeAcquisition || (typingOptstypeAcquisition = getDefaultTypeAcquisition(configFileName));
           break;
         default:
           fail('Unknown option');
       }
       currentOption[option.name] = normalizeOptionValue(option, basePath, value);
     },
-    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression) {
+    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression) {
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
@@ -2045,28 +2040,28 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
           return;
       }
     },
-    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptionsValue, _valueNode: Expression) {
+    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptsValue, _valueNode: Expression) {
       if (key === 'excludes') {
         errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, keyNode, qd.Unknown_option_excludes_Did_you_mean_exclude));
       }
     },
   };
-  const json = convertToObjectWorker(sourceFile, errors, true, getTsconfigRootOptionsMap(), optionsIterator);
+  const json = convertToObjectWorker(sourceFile, errors, true, getTsconfigRootOptsMap(), optsIterator);
   if (!typeAcquisition) {
-    if (typingOptionstypeAcquisition) {
+    if (typingOptstypeAcquisition) {
       typeAcquisition =
-        typingOptionstypeAcquisition.enableAutoDiscovery !== undefined
+        typingOptstypeAcquisition.enableAutoDiscovery !== undefined
           ? {
-              enable: typingOptionstypeAcquisition.enableAutoDiscovery,
-              include: typingOptionstypeAcquisition.include,
-              exclude: typingOptionstypeAcquisition.exclude,
+              enable: typingOptstypeAcquisition.enableAutoDiscovery,
+              include: typingOptstypeAcquisition.include,
+              exclude: typingOptstypeAcquisition.exclude,
             }
-          : typingOptionstypeAcquisition;
+          : typingOptstypeAcquisition;
     } else {
       typeAcquisition = getDefaultTypeAcquisition(configFileName);
     }
   }
-  return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
+  return { raw: json, opts, watchOpts, typeAcquisition, extendedConfigPath };
 }
 function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, basePath: string, errors: Push<Diagnostic>, createDiagnostic: (message: qd.Message, arg1?: string) => Diagnostic) {
   extendedConfig = normalizeSlashes(extendedConfig);
@@ -2145,80 +2140,80 @@ function convertCompileOnSaveOptionFromJson(jsonOption: any, basePath: string, e
   const result = convertJsonOption(compileOnSaveCommandLineOption, jsonOption.compileOnSave, basePath, errors);
   return typeof result === 'boolean' && result;
 }
-export function convertCompilerOptionsFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: qt.CompilerOptions; errors: Diagnostic[] } {
+export function convertCompilerOptsFromJson(jsonOpts: any, basePath: string, configFileName?: string): { opts: qt.CompilerOpts; errors: Diagnostic[] } {
   const errors: Diagnostic[] = [];
-  const options = convertCompilerOptionsFromJsonWorker(jsonOptions, basePath, errors, configFileName);
-  return { options, errors };
+  const opts = convertCompilerOptsFromJsonWorker(jsonOpts, basePath, errors, configFileName);
+  return { opts, errors };
 }
-export function convertTypeAcquisitionFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: TypeAcquisition; errors: Diagnostic[] } {
+export function convertTypeAcquisitionFromJson(jsonOpts: any, basePath: string, configFileName?: string): { opts: TypeAcquisition; errors: Diagnostic[] } {
   const errors: Diagnostic[] = [];
-  const options = convertTypeAcquisitionFromJsonWorker(jsonOptions, basePath, errors, configFileName);
-  return { options, errors };
+  const opts = convertTypeAcquisitionFromJsonWorker(jsonOpts, basePath, errors, configFileName);
+  return { opts, errors };
 }
-function getDefaultCompilerOptions(configFileName?: string) {
-  const options: qt.CompilerOptions =
+function getDefaultCompilerOpts(configFileName?: string) {
+  const opts: qt.CompilerOpts =
     configFileName && getBaseFileName(configFileName) === 'jsconfig.json' ? { allowJs: true, maxNodeModuleJsDepth: 2, allowSyntheticDefaultImports: true, skipLibCheck: true, noEmit: true } : {};
-  return options;
+  return opts;
 }
-function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): qt.CompilerOptions {
-  const options = getDefaultCompilerOptions(configFileName);
-  convertOptionsFromJson(getCommandLineCompilerOptionsMap(), jsonOptions, basePath, options, compilerOptionsDidYouMeanDiagnostics, errors);
+function convertCompilerOptsFromJsonWorker(jsonOpts: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): qt.CompilerOpts {
+  const opts = getDefaultCompilerOpts(configFileName);
+  convertOptsFromJson(getCommandLineCompilerOptsMap(), jsonOpts, basePath, opts, compilerOptsDidYouMeanDiagnostics, errors);
   if (configFileName) {
-    options.configFilePath = normalizeSlashes(configFileName);
+    opts.configFilePath = normalizeSlashes(configFileName);
   }
-  return options;
+  return opts;
 }
 function getDefaultTypeAcquisition(configFileName?: string): TypeAcquisition {
   return { enable: !!configFileName && getBaseFileName(configFileName) === 'jsconfig.json', include: [], exclude: [] };
 }
-function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): TypeAcquisition {
-  const options = getDefaultTypeAcquisition(configFileName);
-  const typeAcquisition = convertEnableAutoDiscoveryToEnable(jsonOptions);
-  convertOptionsFromJson(getCommandLineTypeAcquisitionMap(), typeAcquisition, basePath, options, typeAcquisitionDidYouMeanDiagnostics, errors);
-  return options;
+function convertTypeAcquisitionFromJsonWorker(jsonOpts: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): TypeAcquisition {
+  const opts = getDefaultTypeAcquisition(configFileName);
+  const typeAcquisition = convertEnableAutoDiscoveryToEnable(jsonOpts);
+  convertOptsFromJson(getCommandLineTypeAcquisitionMap(), typeAcquisition, basePath, opts, typeAcquisitionDidYouMeanDiagnostics, errors);
+  return opts;
 }
-function convertWatchOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>): WatchOptions | undefined {
-  return convertOptionsFromJson(getCommandLineWatchOptionsMap(), jsonOptions, basePath, undefined, watchOptionsDidYouMeanDiagnostics, errors);
+function convertWatchOptsFromJsonWorker(jsonOpts: any, basePath: string, errors: Push<Diagnostic>): WatchOpts | undefined {
+  return convertOptsFromJson(getCommandLineWatchOptsMap(), jsonOpts, basePath, undefined, watchOptsDidYouMeanDiagnostics, errors);
 }
-function convertOptionsFromJson(
-  optionsNameMap: qu.QMap<CommandLineOption>,
-  jsonOptions: any,
+function convertOptsFromJson(
+  optsNameMap: qu.QMap<CommandLineOption>,
+  jsonOpts: any,
   basePath: string,
-  defaultOptions: undefined,
-  diagnostics: DidYouMeanOptionsDiagnostics,
+  defaultOpts: undefined,
+  diagnostics: DidYouMeanOptsDiagnostics,
   errors: Push<Diagnostic>
-): WatchOptions | undefined;
-function convertOptionsFromJson(
-  optionsNameMap: qu.QMap<CommandLineOption>,
-  jsonOptions: any,
+): WatchOpts | undefined;
+function convertOptsFromJson(
+  optsNameMap: qu.QMap<CommandLineOption>,
+  jsonOpts: any,
   basePath: string,
-  defaultOptions: qt.CompilerOptions | TypeAcquisition,
-  diagnostics: DidYouMeanOptionsDiagnostics,
+  defaultOpts: qt.CompilerOpts | TypeAcquisition,
+  diagnostics: DidYouMeanOptsDiagnostics,
   errors: Push<Diagnostic>
-): qt.CompilerOptions | TypeAcquisition;
-function convertOptionsFromJson(
-  optionsNameMap: qu.QMap<CommandLineOption>,
-  jsonOptions: any,
+): qt.CompilerOpts | TypeAcquisition;
+function convertOptsFromJson(
+  optsNameMap: qu.QMap<CommandLineOption>,
+  jsonOpts: any,
   basePath: string,
-  defaultOptions: qt.CompilerOptions | TypeAcquisition | WatchOptions | undefined,
-  diagnostics: DidYouMeanOptionsDiagnostics,
+  defaultOpts: qt.CompilerOpts | TypeAcquisition | WatchOpts | undefined,
+  diagnostics: DidYouMeanOptsDiagnostics,
   errors: Push<Diagnostic>
 ) {
-  if (!jsonOptions) {
+  if (!jsonOpts) {
     return;
   }
-  for (const id in jsonOptions) {
-    const opt = optionsNameMap.get(id);
+  for (const id in jsonOpts) {
+    const opt = optsNameMap.get(id);
     if (opt) {
-      (defaultOptions || (defaultOptions = {}))[opt.name] = convertJsonOption(opt, jsonOptions[id], basePath, errors);
+      (defaultOpts || (defaultOpts = {}))[opt.name] = convertJsonOption(opt, jsonOpts[id], basePath, errors);
     } else {
       errors.push(createUnknownOptionError(id, diagnostics, createCompilerDiagnostic));
     }
   }
-  return defaultOptions;
+  return defaultOpts;
 }
-function convertJsonOption(opt: qt.CommandLineOption, value: any, basePath: string, errors: Push<Diagnostic>): qt.CompilerOptionsValue {
-  if (isCompilerOptionsValue(opt, value)) {
+function convertJsonOption(opt: qt.CommandLineOption, value: any, basePath: string, errors: Push<Diagnostic>): qt.CompilerOptsValue {
+  if (isCompilerOptsValue(opt, value)) {
     const optType = opt.type;
     if (optType === 'list' && isArray(value)) return convertJsonOptionOfListType(<CommandLineOptionOfListType>opt, value, basePath, errors);
     if (!isString(optType)) return convertJsonOptionOfCustomType(<CommandLineOptionOfCustomType>opt, <string>value, errors);
@@ -2228,12 +2223,12 @@ function convertJsonOption(opt: qt.CommandLineOption, value: any, basePath: stri
   }
   return;
 }
-function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
+function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptsValue {
   if (isNullOrUndefined(value)) return;
   if (option.type === 'list') {
     const listOption = option;
     if (listOption.elem.isFilePath || !isString(listOption.elem.type)) {
-      return <CompilerOptionsValue>filter(
+      return <CompilerOptsValue>filter(
         map(value, (v) => normalizeOptionValue(listOption.elem, basePath, v)),
         (v) => !!v
       );
@@ -2244,7 +2239,7 @@ function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, va
   }
   return normalizeNonListOptionValue(option, basePath, value);
 }
-function normalizeNonListOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
+function normalizeNonListOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptsValue {
   if (option.isFilePath) {
     value = getNormalizedAbsolutePath(value, basePath);
     if (value === '') {
@@ -2281,7 +2276,7 @@ function matchFileNames(
   includeSpecs: readonly string[] | undefined,
   excludeSpecs: readonly string[] | undefined,
   basePath: string,
-  options: qt.CompilerOptions,
+  opts: qt.CompilerOpts,
   host: ParseConfigHost,
   errors: Push<Diagnostic>,
   extraFileExtensions: readonly FileExtensionInfo[],
@@ -2297,12 +2292,12 @@ function matchFileNames(
   }
   const wildcardDirectories = getWildcardDirectories(validatedIncludeSpecs, validatedExcludeSpecs, basePath, host.useCaseSensitiveFileNames);
   const spec: ConfigFileSpecs = { filesSpecs, includeSpecs, excludeSpecs, validatedIncludeSpecs, validatedExcludeSpecs, wildcardDirectories };
-  return getFileNamesFromConfigSpecs(spec, basePath, options, host, extraFileExtensions);
+  return getFileNamesFromConfigSpecs(spec, basePath, opts, host, extraFileExtensions);
 }
 export function getFileNamesFromConfigSpecs(
   spec: ConfigFileSpecs,
   basePath: string,
-  options: qt.CompilerOptions,
+  opts: qt.CompilerOpts,
   host: ParseConfigHost,
   extraFileExtensions: readonly FileExtensionInfo[] = []
 ): ExpandResult {
@@ -2312,8 +2307,8 @@ export function getFileNamesFromConfigSpecs(
   const wildcardFileMap = createMap<string>();
   const wildCardJsonFileMap = createMap<string>();
   const { filesSpecs, validatedIncludeSpecs, validatedExcludeSpecs, wildcardDirectories } = spec;
-  const supportedExtensions = getSupportedExtensions(options, extraFileExtensions);
-  const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(options, supportedExtensions);
+  const supportedExtensions = getSupportedExtensions(opts, extraFileExtensions);
+  const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts, supportedExtensions);
   if (filesSpecs) {
     for (const fileName of filesSpecs) {
       const file = getNormalizedAbsolutePath(fileName, basePath);
@@ -2440,8 +2435,8 @@ function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFil
     wildcardFiles.delete(lowerPriorityPath);
   }
 }
-export function convertCompilerOptionsForTelemetry(opts: qt.CompilerOptions): qt.CompilerOptions {
-  const out: qt.CompilerOptions = {};
+export function convertCompilerOptsForTelemetry(opts: qt.CompilerOpts): qt.CompilerOpts {
+  const out: qt.CompilerOpts = {};
   for (const key in opts) {
     if (opts.hasOwnProperty(key)) {
       const type = getOptionFromName(key);
@@ -2510,9 +2505,9 @@ function getFileNames(): ExpandResult {
     } else {
       createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
     }
-  } else if (raw.compilerOptions) {
-    const outDir = raw.compilerOptions.outDir;
-    const declarationDir = raw.compilerOptions.declarationDir;
+  } else if (raw.compilerOpts) {
+    const outDir = raw.compilerOpts.outDir;
+    const declarationDir = raw.compilerOpts.declarationDir;
     if (outDir || declarationDir) {
       excludeSpecs = [outDir, declarationDir].filter((d) => !!d);
     }
@@ -2525,7 +2520,7 @@ function getFileNames(): ExpandResult {
     includeSpecs,
     excludeSpecs,
     configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath,
-    options,
+    opts,
     host,
     errors,
     extraFileExtensions,
@@ -2560,21 +2555,21 @@ function filterSameAsDefaultInclude(specs: readonly string[] | undefined) {
   if (specs![0] === '**/*') return;
   return specs;
 }
-export function getEmitScriptTarget(compilerOptions: CompilerOptions) {
-  return compilerOptions.target || ScriptTarget.ES2020;
+export function getEmitScriptTarget(compilerOpts: CompilerOpts) {
+  return compilerOpts.target || ScriptTarget.ES2020;
 }
-export function getEmitModuleKind(compilerOptions: { module?: CompilerOptions['module']; target?: CompilerOptions['target'] }) {
-  return typeof compilerOptions.module === 'number' ? compilerOptions.module : ModuleKind.ES2015;
+export function getEmitModuleKind(compilerOpts: { module?: CompilerOpts['module']; target?: CompilerOpts['target'] }) {
+  return typeof compilerOpts.module === 'number' ? compilerOpts.module : ModuleKind.ES2015;
 }
-export function getEmitModuleResolutionKind(compilerOptions: CompilerOptions) {
-  let moduleResolution = compilerOptions.moduleResolution;
+export function getEmitModuleResolutionKind(compilerOpts: CompilerOpts) {
+  let moduleResolution = compilerOpts.moduleResolution;
   if (moduleResolution === undefined) {
-    moduleResolution = getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+    moduleResolution = getEmitModuleKind(compilerOpts) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
   }
   return moduleResolution;
 }
-export function hasJsonModuleEmitEnabled(options: CompilerOptions) {
-  switch (getEmitModuleKind(options)) {
+export function hasJsonModuleEmitEnabled(opts: CompilerOpts) {
+  switch (getEmitModuleKind(opts)) {
     case ModuleKind.CommonJS:
     case ModuleKind.AMD:
     case ModuleKind.ES2015:
@@ -2585,35 +2580,35 @@ export function hasJsonModuleEmitEnabled(options: CompilerOptions) {
       return false;
   }
 }
-export function unreachableCodeIsError(options: CompilerOptions): boolean {
-  return options.allowUnreachableCode === false;
+export function unreachableCodeIsError(opts: CompilerOpts): boolean {
+  return opts.allowUnreachableCode === false;
 }
-export function unusedLabelIsError(options: CompilerOptions): boolean {
-  return options.allowUnusedLabels === false;
+export function unusedLabelIsError(opts: CompilerOpts): boolean {
+  return opts.allowUnusedLabels === false;
 }
-export function getAreDeclarationMapsEnabled(options: CompilerOptions) {
-  return !!(getEmitDeclarations(options) && options.declarationMap);
+export function getAreDeclarationMapsEnabled(opts: CompilerOpts) {
+  return !!(getEmitDeclarations(opts) && opts.declarationMap);
 }
-export function getAllowSyntheticDefaultImports(compilerOptions: CompilerOptions) {
-  const moduleKind = getEmitModuleKind(compilerOptions);
-  return compilerOptions.allowSyntheticDefaultImports !== undefined ? compilerOptions.allowSyntheticDefaultImports : compilerOptions.esModuleInterop || moduleKind === ModuleKind.System;
+export function getAllowSyntheticDefaultImports(compilerOpts: CompilerOpts) {
+  const moduleKind = getEmitModuleKind(compilerOpts);
+  return compilerOpts.allowSyntheticDefaultImports !== undefined ? compilerOpts.allowSyntheticDefaultImports : compilerOpts.esModuleInterop || moduleKind === ModuleKind.System;
 }
-export function getEmitDeclarations(compilerOptions: CompilerOptions): boolean {
-  return !!(compilerOptions.declaration || compilerOptions.composite);
+export function getEmitDeclarations(compilerOpts: CompilerOpts): boolean {
+  return !!(compilerOpts.declaration || compilerOpts.composite);
 }
-export function isIncrementalCompilation(options: CompilerOptions) {
-  return !!(options.incremental || options.composite);
+export function isIncrementalCompilation(opts: CompilerOpts) {
+  return !!(opts.incremental || opts.composite);
 }
 export type StrictOptionName = 'noImplicitAny' | 'noImplicitThis' | 'strictNullChecks' | 'strictFunctionTypes' | 'strictBindCallApply' | 'strictPropertyInitialization' | 'alwaysStrict';
-export function getStrictOptionValue(compilerOptions: CompilerOptions, flag: StrictOptionName): boolean {
-  return compilerOptions[flag] === undefined ? !!compilerOptions.strict : !!compilerOptions[flag];
+export function getStrictOptionValue(compilerOpts: CompilerOpts, flag: StrictOptionName): boolean {
+  return compilerOpts[flag] === undefined ? !!compilerOpts.strict : !!compilerOpts[flag];
 }
-export function compilerOptionsAffectSemanticDiagnostics(newOptions: CompilerOptions, oldOptions: CompilerOptions): boolean {
-  return oldOptions !== newOptions && semanticDiagnosticsOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
+export function compilerOptsAffectSemanticDiagnostics(newOpts: CompilerOpts, oldOpts: CompilerOpts): boolean {
+  return oldOpts !== newOpts && semanticDiagnosticsOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
 }
-export function compilerOptionsAffectEmit(newOptions: CompilerOptions, oldOptions: CompilerOptions): boolean {
-  return oldOptions !== newOptions && affectsEmitOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
+export function compilerOptsAffectEmit(newOpts: CompilerOpts, oldOpts: CompilerOpts): boolean {
+  return oldOpts !== newOpts && affectsEmitOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
 }
-export function getCompilerOptionValue(options: CompilerOptions, option: CommandLineOption): unknown {
-  return option.strictFlag ? getStrictOptionValue(options, option.name as StrictOptionName) : options[option.name];
+export function getCompilerOptionValue(opts: CompilerOpts, option: CommandLineOption): unknown {
+  return option.strictFlag ? getStrictOptionValue(opts, option.name as StrictOptionName) : opts[option.name];
 }

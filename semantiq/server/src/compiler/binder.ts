@@ -125,17 +125,17 @@ function initFlowNode<T extends FlowNode>(node: T) {
   return node;
 }
 const binder = createBinder();
-export function bindSourceFile(file: SourceFile, options: CompilerOptions) {
+export function bindSourceFile(file: SourceFile, opts: CompilerOpts) {
   performance.mark('beforeBind');
   perfLogger.logStartBindFile('' + file.fileName);
-  binder(file, options);
+  binder(file, opts);
   perfLogger.logStopBindFile();
   performance.mark('afterBind');
   performance.measure('Bind', 'beforeBind', 'afterBind');
 }
-function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
+function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   let file: SourceFile;
-  let options: CompilerOptions;
+  let opts: CompilerOpts;
   let languageVersion: ScriptTarget;
   let parent: Node;
   let container: Node;
@@ -166,10 +166,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
     return qf.create.diagnosticForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
   }
-  function bindSourceFile(f: SourceFile, opts: CompilerOptions) {
+  function bindSourceFile(f: SourceFile, opts: CompilerOpts) {
     file = f;
-    options = opts;
-    languageVersion = getEmitScriptTarget(options);
+    opts = opts;
+    languageVersion = getEmitScriptTarget(opts);
     inStrictMode = bindInStrictMode(file, opts);
     classifiableNames = qu.createEscapedMap<true>();
     symbolCount = 0;
@@ -184,7 +184,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       delayedBindDocTypedefTag();
     }
     file = undefined!;
-    options = undefined!;
+    opts = undefined!;
     languageVersion = undefined!;
     parent = undefined!;
     container = undefined!;
@@ -206,7 +206,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     subtreeTrafoFlags = TrafoFlags.None;
   }
   return bindSourceFile;
-  function bindInStrictMode(file: SourceFile, opts: CompilerOptions): boolean {
+  function bindInStrictMode(file: SourceFile, opts: CompilerOpts): boolean {
     if (getStrictOptionValue(opts, 'alwaysStrict') && !file.isDeclarationFile) return true;
     else return !!file.externalModuleIndicator;
   }
@@ -285,7 +285,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function getDisplayName(node: Declaration): string {
     return qf.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
   }
-  function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceable?: boolean): Symbol {
+  function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, replaceable?: boolean): Symbol {
     qu.assert(!qf.has.dynamicName(node));
     const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (qf.is.kind(qc.ExportSpecifier, node) && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
@@ -299,11 +299,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
       if (!symbol) {
         symbolTable.set(name, (symbol = newSymbol(SymbolFlags.None, name)));
-        if (isReplaceable) symbol.isReplaceable = true;
-      } else if (isReplaceable && !symbol.isReplaceable) {
+        if (replaceable) symbol.replaceable = true;
+      } else if (replaceable && !symbol.replaceable) {
         return symbol;
       } else if (symbol.flags & excludes) {
-        if (symbol.isReplaceable) {
+        if (symbol.replaceable) {
           symbolTable.set(name, (symbol = newSymbol(SymbolFlags.None, name)));
         } else if (!(includes & SymbolFlags.Variable && symbol.flags & SymbolFlags.Assignment)) {
           if (qf.is.namedDeclaration(node)) {
@@ -505,7 +505,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       bindDoc(node);
       return;
     }
-    if (node.kind >= Syntax.FirstStatement && node.kind <= Syntax.LastStatement && !options.allowUnreachableCode) {
+    if (node.kind >= Syntax.FirstStatement && node.kind <= Syntax.LastStatement && !opts.allowUnreachableCode) {
       node.flowNode = currentFlow;
     }
     switch (node.kind) {
@@ -607,7 +607,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.ElemAccessExpression:
         return containsNarrowableReference(expr);
       case Syntax.CallExpression:
-        return hasNarrowableArgument(<CallExpression>expr);
+        return hasNarrowableArg(<CallExpression>expr);
       case Syntax.ParenthesizedExpression:
         return isNarrowingExpression((<ParenthesizedExpression>expr).expression);
       case Syntax.BinaryExpression:
@@ -625,16 +625,16 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       expr.kind === Syntax.ThisKeyword ||
       expr.kind === Syntax.SuperKeyword ||
       ((qf.is.kind(qc.PropertyAccessExpression, expr) || qf.is.kind(qc.NonNullExpression, expr) || qf.is.kind(qc.ParenthesizedExpression, expr)) && isNarrowableReference(expr.expression)) ||
-      (qf.is.kind(qc.ElemAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
+      (qf.is.kind(qc.ElemAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argExpression) && isNarrowableReference(expr.expression))
     );
   }
   function containsNarrowableReference(expr: Expression): boolean {
     return isNarrowableReference(expr) || (qf.is.optionalChain(expr) && containsNarrowableReference(expr.expression));
   }
-  function hasNarrowableArgument(expr: CallExpression) {
-    if (expr.arguments) {
-      for (const argument of expr.arguments) {
-        if (containsNarrowableReference(argument)) return true;
+  function hasNarrowableArg(expr: CallExpression) {
+    if (expr.args) {
+      for (const arg of expr.args) {
+        if (containsNarrowableReference(arg)) return true;
       }
     }
     if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) return true;
@@ -982,7 +982,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       const clause = clauses[i];
       bind(clause);
       fallthroughFlow = currentFlow;
-      if (!(currentFlow.flags & FlowFlags.Unreachable) && i !== clauses.length - 1 && options.noFallthroughCasesInSwitch) {
+      if (!(currentFlow.flags & FlowFlags.Unreachable) && i !== clauses.length - 1 && opts.noFallthroughCasesInSwitch) {
         clause.fallthroughFlowNode = currentFlow;
       }
     }
@@ -1016,8 +1016,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     };
     bind(node.label);
     bind(node.statement);
-    if (!activeLabelList.referenced && !options.allowUnusedLabels) {
-      errorOrSuggestionOnNode(unusedLabelIsError(options), node.label, qd.Unused_label);
+    if (!activeLabelList.referenced && !opts.allowUnusedLabels) {
+      errorOrSuggestionOnNode(unusedLabelIsError(opts), node.label, qd.Unused_label);
     }
     activeLabelList = activeLabelList.next;
     addAntecedent(postStatementLabel, currentFlow);
@@ -1277,12 +1277,12 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         break;
       case Syntax.ElemAccessExpression:
         bind(node.questionDotToken);
-        bind(node.argumentExpression);
+        bind(node.argExpression);
         break;
       case Syntax.CallExpression:
         bind(node.questionDotToken);
-        bindEach(node.typeArguments);
-        bindEach(node.arguments);
+        bindEach(node.typeArgs);
+        bindEach(node.args);
         break;
     }
   }
@@ -1327,8 +1327,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     } else {
       const expr = qc.skip.parentheses(node.expression);
       if (expr.kind === Syntax.FunctionExpression || expr.kind === Syntax.ArrowFunction) {
-        bindEach(node.typeArguments);
-        bindEach(node.arguments);
+        bindEach(node.typeArgs);
+        bindEach(node.args);
         bind(node.expression);
       } else {
         bindEachChild(node);
@@ -1662,12 +1662,12 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function checkStrictModeBinaryExpression(node: BinaryExpression) {
     if (inStrictMode && qf.is.leftHandSideExpression(node.left) && qy.is.assignmentOperator(node.operatorToken.kind)) {
-      checkStrictModeEvalOrArguments(node, <Identifier>node.left);
+      checkStrictModeEvalOrArgs(node, <Identifier>node.left);
     }
   }
   function checkStrictModeCatchClause(node: CatchClause) {
     if (inStrictMode && node.variableDeclaration) {
-      checkStrictModeEvalOrArguments(node, node.variableDeclaration.name);
+      checkStrictModeEvalOrArgs(node, node.variableDeclaration.name);
     }
   }
   function checkStrictModeDeleteExpression(node: DeleteExpression) {
@@ -1676,26 +1676,26 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
     }
   }
-  function isEvalOrArgumentsIdentifier(node: Node): boolean {
-    return qf.is.kind(qc.Identifier, node) && (node.escapedText === 'eval' || node.escapedText === 'arguments');
+  function isEvalOrArgsIdentifier(node: Node): boolean {
+    return qf.is.kind(qc.Identifier, node) && (node.escapedText === 'eval' || node.escapedText === 'args');
   }
-  function checkStrictModeEvalOrArguments(contextNode: Node, name: Node | undefined) {
+  function checkStrictModeEvalOrArgs(contextNode: Node, name: Node | undefined) {
     if (name && name.kind === Syntax.Identifier) {
       const identifier = <Identifier>name;
-      if (isEvalOrArgumentsIdentifier(identifier)) {
+      if (isEvalOrArgsIdentifier(identifier)) {
         const span = qf.get.errorSpanForNode(file, name);
-        file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier)));
+        file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgsMessage(contextNode), idText(identifier)));
       }
     }
   }
-  function getStrictModeEvalOrArgumentsMessage(node: Node) {
+  function getStrictModeEvalOrArgsMessage(node: Node) {
     if (qf.get.containingClass(node)) return qd.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode;
     if (file.externalModuleIndicator) return qd.Invalid_use_of_0_Modules_are_automatically_in_strict_mode;
     return qd.Invalid_use_of_0_in_strict_mode;
   }
   function checkStrictModeFunctionName(node: FunctionLikeDeclaration) {
     if (inStrictMode) {
-      checkStrictModeEvalOrArguments(node, node.name);
+      checkStrictModeEvalOrArgs(node, node.name);
     }
   }
   function getStrictModeBlockScopeFunctionDeclarationMessage(node: Node) {
@@ -1718,13 +1718,13 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function checkStrictModePostfixUnaryExpression(node: PostfixUnaryExpression) {
     if (inStrictMode) {
-      checkStrictModeEvalOrArguments(node, <Identifier>node.operand);
+      checkStrictModeEvalOrArgs(node, <Identifier>node.operand);
     }
   }
   function checkStrictModePrefixUnaryExpression(node: PrefixUnaryExpression) {
     if (inStrictMode) {
       if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
-        checkStrictModeEvalOrArguments(node, <Identifier>node.operand);
+        checkStrictModeEvalOrArgs(node, <Identifier>node.operand);
       }
     }
   }
@@ -1734,7 +1734,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function checkStrictModeLabeledStatement(node: LabeledStatement) {
-    if (inStrictMode && options.target! >= ScriptTarget.ES2015) {
+    if (inStrictMode && opts.target! >= ScriptTarget.ES2015) {
       if (qf.is.declarationStatement(node.statement) || qf.is.kind(qc.VariableStatement, node.statement)) {
         errorOnFirstToken(node.label, qd.A_label_is_not_allowed_here);
       }
@@ -2094,7 +2094,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (!setCommonJsModuleIndicator(node)) {
       return;
     }
-    const symbol = forEachIdentifierInEntityName(node.arguments[0], undefined, (id, symbol) => {
+    const symbol = forEachIdentifierInEntityName(node.args[0], undefined, (id, symbol) => {
       if (symbol) {
         addDeclarationToSymbol(symbol, id, SymbolFlags.Module | SymbolFlags.Assignment);
       }
@@ -2214,7 +2214,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     bindPropertyAssignment(node.left.expression, node.left, true);
   }
   function bindObjectDefinePrototypeProperty(node: BindableObjectDefinePropertyCall) {
-    const namespaceSymbol = lookupSymbolForPropertyAccess((node.arguments[0] as PropertyAccessExpression).expression as EntityNameExpression);
+    const namespaceSymbol = lookupSymbolForPropertyAccess((node.args[0] as PropertyAccessExpression).expression as EntityNameExpression);
     if (namespaceSymbol && namespaceSymbol.valueDeclaration) {
       addDeclarationToSymbol(namespaceSymbol, namespaceSymbol.valueDeclaration, SymbolFlags.Class);
     }
@@ -2229,9 +2229,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     bindPropertyAssignment(constructorFunction, lhs, true);
   }
   function bindObjectDefinePropertyAssignment(node: BindableObjectDefinePropertyCall) {
-    let namespaceSymbol = lookupSymbolForPropertyAccess(node.arguments[0]);
+    let namespaceSymbol = lookupSymbolForPropertyAccess(node.args[0]);
     const isToplevel = node.parent.parent.kind === Syntax.SourceFile;
-    namespaceSymbol = bindPotentiallyMissingNamespaces(namespaceSymbol, node.arguments[0], isToplevel, false);
+    namespaceSymbol = bindPotentiallyMissingNamespaces(namespaceSymbol, node.args[0], isToplevel, false);
     bindPotentiallyNewExpandoMemberToNamespace(node, namespaceSymbol, false);
   }
   function bindSpecialPropertyAssignment(node: BindablePropertyAssignmentExpression) {
@@ -2292,7 +2292,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       excludes = SymbolFlags.MethodExcludes;
     } else if (qf.is.kind(qc.CallExpression, declaration) && qf.is.bindableObjectDefinePropertyCall(declaration)) {
       if (
-        some(declaration.arguments[2].properties, (p) => {
+        some(declaration.args[2].properties, (p) => {
           const id = qf.get.declaration.nameOf(p);
           return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'set';
         })
@@ -2301,7 +2301,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         excludes |= SymbolFlags.SetAccessorExcludes;
       }
       if (
-        some(declaration.arguments[2].properties, (p) => {
+        some(declaration.args[2].properties, (p) => {
           const id = qf.get.declaration.nameOf(p);
           return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'get';
         })
@@ -2372,7 +2372,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qf.is.kind(qc.Identifier, e)) return action(e, lookupSymbolForPropertyAccess(e), parent);
     else {
       const s = forEachIdentifierInEntityName(e.expression, parent, action);
-      const name = qf.get.nameOrArgument(e);
+      const name = qf.get.nameOrArg(e);
       if (qf.is.kind(qc.PrivateIdentifier, name)) {
         fail('unexpected PrivateIdentifier');
       }
@@ -2413,7 +2413,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindVariableDeclarationOrBindingElem(node: VariableDeclaration | BindingElem) {
     if (inStrictMode) {
-      checkStrictModeEvalOrArguments(node, node.name);
+      checkStrictModeEvalOrArgs(node, node.name);
     }
     if (!qf.is.kind(qc.BindingPattern, node.name)) {
       if (qf.is.blockOrCatchScoped(node)) {
@@ -2430,7 +2430,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       return;
     }
     if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
-      checkStrictModeEvalOrArguments(node, node.name);
+      checkStrictModeEvalOrArgs(node, node.name);
     }
     if (qf.is.kind(qc.BindingPattern, node.name)) {
       bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParamDeclaration).parent.params.indexOf(node as ParamDeclaration)) as qu.__String);
@@ -2515,7 +2515,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function shouldReportErrorOnModuleDeclaration(node: ModuleDeclaration): boolean {
     const instanceState = getModuleInstanceState(node);
-    return instanceState === ModuleInstanceState.Instantiated || (instanceState === ModuleInstanceState.ConstEnumOnly && !!options.preserveConstEnums);
+    return instanceState === ModuleInstanceState.Instantiated || (instanceState === ModuleInstanceState.ConstEnumOnly && !!opts.preserveConstEnums);
   }
   function checkUnreachable(node: Node): boolean {
     if (!(currentFlow.flags & FlowFlags.Unreachable)) return false;
@@ -2526,9 +2526,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         (node.kind === Syntax.ModuleDeclaration && shouldReportErrorOnModuleDeclaration(<ModuleDeclaration>node));
       if (reportError) {
         currentFlow = reportedUnreachableFlow;
-        if (!options.allowUnreachableCode) {
+        if (!opts.allowUnreachableCode) {
           const isError =
-            unreachableCodeIsError(options) &&
+            unreachableCodeIsError(opts) &&
             !(node.flags & NodeFlags.Ambient) &&
             (!qf.is.kind(qc.VariableStatement, node) || !!(qf.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initer));
           eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, qd.Unreachable_code_detected));

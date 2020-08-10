@@ -72,7 +72,7 @@ export function transformES2020(context: TrafoContext) {
     expression =
       node.kind === Syntax.PropertyAccessExpression
         ? node.update(expression, visitNode(node.name, visitor, isIdentifier))
-        : node.update(expression, visitNode(node.argumentExpression, visitor, isExpression));
+        : node.update(expression, visitNode(node.argExpression, visitor, isExpression));
     return thisArg ? new qs.SyntheticReferenceExpression(expression, thisArg) : expression;
   }
   function visitNonOptionalCallExpression(node: CallExpression, captureThisArg: boolean): Expression {
@@ -122,17 +122,13 @@ export function transformES2020(context: TrafoContext) {
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
               ? new qc.PropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier))
-              : new qs.ElemAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
+              : new qs.ElemAccessExpression(rightExpression, visitNode(segment.argExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {
-            rightExpression = createFunctionCall(
-              rightExpression,
-              leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg,
-              Nodes.visit(segment.arguments, visitor, isExpression)
-            );
+            rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg, Nodes.visit(segment.args, visitor, isExpression));
           } else {
-            rightExpression = new qs.CallExpression(rightExpression, undefined, Nodes.visit(segment.arguments, visitor, isExpression));
+            rightExpression = new qs.CallExpression(rightExpression, undefined, Nodes.visit(segment.args, visitor, isExpression));
           }
           break;
       }

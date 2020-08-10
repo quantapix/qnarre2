@@ -99,7 +99,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   symbolToString(decl?: Node, meaning?: qt.SymbolFlags, flags: qt.SymbolFormatFlags = qt.SymbolFormatFlags.AllowAnyNodeKind, w?: EmitTextWriter): string {
     let f = qt.NodeBuilderFlags.IgnoreErrors;
     if (flags & qt.SymbolFormatFlags.UseOnlyExternalAliasing) f |= qt.NodeBuilderFlags.UseOnlyExternalAliasing;
-    if (flags & qt.SymbolFormatFlags.WriteTypeParamsOrArguments) f |= qt.NodeBuilderFlags.WriteTypeParamsInQualifiedName;
+    if (flags & qt.SymbolFormatFlags.WriteTypeParamsOrArgs) f |= qt.NodeBuilderFlags.WriteTypeParamsInQualifiedName;
     if (flags & qt.SymbolFormatFlags.UseAliasDefinedOutsideCurrentScope) f |= qt.NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope;
     if (flags & qt.SymbolFormatFlags.DoNotIncludeSymbolChain) f |= qt.NodeBuilderFlags.DoNotIncludeSymbolChain;
     const builder = flags & qt.SymbolFormatFlags.AllowAnyNodeKind ? nodeBuilder.symbolToExpression : nodeBuilder.symbolToEntityName;
@@ -573,7 +573,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const target = qf.get.mergedSymbol(getTargetOfAliasDeclaration(node, true));
     if (!target) return;
     let verbatimTargetName = qy.get.unescUnderscores(target.escName);
-    if (verbatimTargetName === InternalSymbol.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) verbatimTargetName = InternalSymbol.Default;
+    if (verbatimTargetName === InternalSymbol.ExportEquals && (compilerOpts.esModuleInterop || compilerOpts.allowSyntheticDefaultImports)) verbatimTargetName = InternalSymbol.Default;
     const targetName = getInternalSymbol(target, verbatimTargetName);
     includePrivateSymbol(target);
     switch (node.kind) {
@@ -701,7 +701,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
             (declaration) =>
               declaration.kind === Syntax.BinaryExpression &&
               qf.get.assignmentDeclarationKind(declaration) === qt.AssignmentDeclarationKind.ThisProperty &&
-              (declaration.left.kind !== Syntax.ElemAccessExpression || qf.is.stringOrNumericLiteralLike((<ElemAccessExpression>declaration.left).argumentExpression)) &&
+              (declaration.left.kind !== Syntax.ElemAccessExpression || qf.is.stringOrNumericLiteralLike((<ElemAccessExpression>declaration.left).argExpression)) &&
               !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
           );
       }
@@ -998,7 +998,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         (<GenericType>type).instantiations = new qu.QMap<TypeReference>();
         (<GenericType>type).instantiations.set(getTypeListId(type.typeParams), <GenericType>type);
         (<GenericType>type).target = <GenericType>type;
-        (<GenericType>type).resolvedTypeArguments = type.typeParams;
+        (<GenericType>type).resolvedTypeArgs = type.typeParams;
         type.thisType = createTypeParam(this);
         type.thisType.isThisType = true;
         type.thisType.constraint = type;
@@ -1165,7 +1165,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const ls = this.getLinks();
     return getVariancesWorker(ls.typeParams, ls, (_links, param, marker) => {
       const type = qf.get.typeAliasInstantiation(this, instantiateTypes(ls.typeParams!, makeUnaryTypeMapper(param, marker)));
-      type.aliasTypeArgumentsContainsMarker = true;
+      type.aliasTypeArgsContainsMarker = true;
       return type;
     });
   }
@@ -1176,7 +1176,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       ls.flags |= NodeCheckFlags.AssignmentsMarked;
       if (!hasParentWithAssignmentsMarked(f)) markParamAssignments(f);
     }
-    return this.isAssigned || false;
+    return this.assigned || false;
   }
   isConstVariable() {
     return this.flags & qt.SymbolFlags.Variable && (getDeclarationNodeFlagsFromSymbol(this) & NodeFlags.Const) !== 0 && this.qf.get.typeOfSymbol() !== autoArrayType;
@@ -1466,7 +1466,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   isAliasResolvedToValue() {
     const target = this.resolveAlias();
     if (target === unknownSymbol) return true;
-    return !!(target.flags & qt.SymbolFlags.Value) && (compilerOptions.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target));
+    return !!(target.flags & qt.SymbolFlags.Value) && (compilerOpts.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target));
   }
   isConstEnumOrConstEnumOnlyModule() {
     return this.isConstEnumSymbol() || !!this.constEnumOnlyModule;
@@ -1649,28 +1649,28 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
 }
 class SymbolTable extends SymbolTable<Symbol> {
-  getSymbol(symbols: SymbolTable, name: qu.__String, meaning: qt.SymbolFlags): Symbol | undefined {
-    if (meaning) {
-      const symbol = qf.get.mergedSymbol(symbols.get(name));
-      if (symbol) {
-        qu.assert((this.checkFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
-        if (symbol.flags & meaning) return symbol;
-        if (symbol.flags & qt.SymbolFlags.Alias) {
-          const target = this.resolveAlias();
-          if (target === unknownSymbol || target.flags & meaning) return symbol;
+  getSymbol(ss: SymbolTable, name: qu.__String, f: qt.SymbolFlags): Symbol | undefined {
+    if (f) {
+      const s = qf.get.mergedSymbol(ss.get(name));
+      if (s) {
+        qu.assert((this.checkFlags() & qt.CheckFlags.Instantiated) === 0);
+        if (s.flags & f) return s;
+        if (s.flags & qt.SymbolFlags.Alias) {
+          const t = this.resolveAlias();
+          if (t === unknownSymbol || t.flags & f) return s;
         }
       }
     }
   }
-  visitSymbolTable(symbolTable: SymbolTable, suppressNewPrivateContext?: boolean, propertyAsAlias?: boolean) {
+  visitSymbolTable(ss: SymbolTable, suppressNewPrivateContext?: boolean, propertyAsAlias?: boolean) {
     const oldDeferredPrivates = deferredPrivates;
     if (!suppressNewPrivateContext) deferredPrivates = new qu.QMap();
-    symbolTable.forEach((s: Symbol) => {
-      serializeSymbol(symbol, false, !!propertyAsAlias);
+    ss.forEach((s) => {
+      serializeSymbol(s, false, !!propertyAsAlias);
     });
     if (!suppressNewPrivateContext) {
       deferredPrivates!.forEach((s: Symbol) => {
-        serializeSymbol(symbol, true, !!propertyAsAlias);
+        serializeSymbol(s, true, !!propertyAsAlias);
       });
     }
     deferredPrivates = oldDeferredPrivates;

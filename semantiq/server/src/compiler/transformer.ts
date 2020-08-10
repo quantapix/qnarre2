@@ -5,7 +5,7 @@ export const nullTrafoContext: qt.TrafoContext = {
   enableEmitNotification: qu.noop,
   enableSubstitution: qu.noop,
   endLexicalEnvironment: () => undefined,
-  getCompilerOptions: () => ({}),
+  getCompilerOpts: () => ({}),
   getEmitHost: qu.notImplemented,
   getEmitResolver: qu.notImplemented,
   setLexicalEnvironmentFlags: qu.noop,
@@ -57,17 +57,17 @@ const enum SyntaxKindFeatureFlags {
   EmitNotifications = 1 << 1,
 }
 export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
-export function getTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
+export function getTransformers(compilerOpts: CompilerOpts, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
   return {
-    scriptTransformers: getScriptTransformers(compilerOptions, customTransformers, emitOnlyDtsFiles),
+    scriptTransformers: getScriptTransformers(compilerOpts, customTransformers, emitOnlyDtsFiles),
     declarationTransformers: getDeclarationTransformers(customTransformers),
   };
 }
-function getScriptTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
+function getScriptTransformers(compilerOpts: CompilerOpts, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
   if (emitOnlyDtsFiles) return emptyArray;
-  const jsx = compilerOptions.jsx;
-  const languageVersion = getEmitScriptTarget(compilerOptions);
-  const moduleKind = getEmitModuleKind(compilerOptions);
+  const jsx = compilerOpts.jsx;
+  const languageVersion = getEmitScriptTarget(compilerOpts);
+  const moduleKind = getEmitModuleKind(compilerOpts);
   const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.before, wrapScriptTransformerFactory));
   transformers.push(transformTypeScript);
@@ -112,7 +112,7 @@ export function noEmitNotification(hint: EmitHint, node: Node, callback: (hint: 
 export function transformNodes<T extends Node>(
   resolver: EmitResolver | undefined,
   host: EmitHost | undefined,
-  options: CompilerOptions,
+  opts: CompilerOpts,
   nodes: readonly T[],
   transformers: readonly TransformerFactory<T>[],
   allowDtsFiles: boolean
@@ -134,7 +134,7 @@ export function transformNodes<T extends Node>(
   let state = TransformationState.Uninitialized;
   const diagnostics: DiagnosticWithLocation[] = [];
   const context: qt.TrafoContext = {
-    getCompilerOptions: () => options,
+    getCompilerOpts: () => opts,
     getEmitResolver: () => resolver!,
     getEmitHost: () => host!,
     startLexicalEnvironment,
@@ -397,13 +397,13 @@ export const spreadHelper: UnscopedEmitHelper = {
   dependencies: [readHelper],
   text: `
             var __spread = (this && this.__spread) || function () {
-                for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+                for (var ar = [], i = 0; i < args.length; i++) ar = ar.concat(__read(args[i]));
                 return ar;
             };`,
 };
-export function createSpreadHelper(context: qt.TrafoContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadHelper(context: qt.TrafoContext, argList: readonly Expression[], location?: TextRange) {
   context.requestEmitHelper(spreadHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__spread'), undefined, argumentList), location);
+  return setRange(new qs.CallExpression(getUnscopedHelperName('__spread'), undefined, argList), location);
 }
 export const spreadArraysHelper: UnscopedEmitHelper = {
   name: 'typescript:spreadArrays',
@@ -411,14 +411,14 @@ export const spreadArraysHelper: UnscopedEmitHelper = {
   scoped: false,
   text: `
             var __spreadArrays = (this && this.__spreadArrays) || function () {
-                for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+                for (var s = 0, i = 0, il = args.length; i < il; i++) s += args[i].length;
                 for (var r = Array(s), k = 0, i = 0; i < il; i++)
-                    for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+                    for (var a = args[i], j = 0, jl = a.length; j < jl; j++, k++)
                         r[k] = a[j];
                 return r;
             };`,
 };
-export function createSpreadArraysHelper(context: qt.TrafoContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadArraysHelper(context: qt.TrafoContext, argList: readonly Expression[], location?: TextRange) {
   context.requestEmitHelper(spreadArraysHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__spreadArrays'), undefined, argumentList), location);
+  return setRange(new qs.CallExpression(getUnscopedHelperName('__spreadArrays'), undefined, argList), location);
 }

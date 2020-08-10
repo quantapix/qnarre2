@@ -4,11 +4,11 @@ import * as qt from './type';
 import * as qu from '../util';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-export interface SourceMapGeneratorOptions {
+export interface SourceMapGeneratorOpts {
   extendedDiagnostics?: boolean;
 }
-export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOptions: SourceMapGeneratorOptions): SourceMapGenerator {
-  const { enter, exit } = generatorOptions.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
+export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOpts: SourceMapGeneratorOpts): SourceMapGenerator {
+  const { enter, exit } = generatorOpts.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
   const rawSources: string[] = [];
   const sources: string[] = [];
   const sourceToSourceIndexMap = createMap<number>();
