@@ -4367,7 +4367,7 @@ export function newCheck(f: qt.Frame) {
         const { parent } = typeParam;
         if (parent.kind !== Syntax.InferTyping && parent.typeParams!.every(isTypeParamUnused)) {
           if (seenParentsWithEveryUnused.tryAdd(parent)) {
-            const range = parent.kind === Syntax.DocTemplateTag ? parent.getRange() : parent.typeParams!.getRange();
+            const range = parent.kind === Syntax.DocTemplateTag ? parent.range : parent.typeParams!.range;
             const only = parent.typeParams!.length === 1;
             const message = only ? qd.msgs._0_is_declared_but_its_value_is_never_read : qd.msgs.All_type_params_are_unused;
             const arg0 = only ? name : undefined;

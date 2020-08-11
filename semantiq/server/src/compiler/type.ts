@@ -552,7 +552,7 @@ export interface DocClassTag extends DocTag {
 }
 export interface DocContainer {
   doc?: Doc[];
-  docCache?: readonly DocTag[];
+  cache?: readonly DocTag[];
 }
 export interface DocEnumTag extends DocTag, Decl {
   kind: Syntax.DocEnumTag;
@@ -2199,7 +2199,7 @@ export interface SymbolWalker {
   walkType(root: Type): { visitedTypes: readonly Type[]; visitedSymbols: readonly Symbol[] };
 }
 export interface SyntaxList extends Nobj {
-  children: Node[];
+  children: Nobj[];
 }
 export interface SynthesizedComment extends CommentRange {
   text: string;

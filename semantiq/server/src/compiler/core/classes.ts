@@ -272,7 +272,7 @@ CallChain.prototype.kind = CallChain.kind;
 export class CallSignatureDeclaration extends qb.SignatureDecl implements qt.CallSignatureDeclaration {
   static readonly kind = Syntax.CallSignature;
   kind!: Syntax.CallSignature;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   questionToken?: qt.QuestionToken;
   constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.CallSignature, ts, ps, t);
@@ -334,7 +334,7 @@ export class ClassDeclaration extends qb.ClassLikeDecl implements qt.ClassDeclar
   static readonly kind = Syntax.ClassDeclaration;
   kind!: Syntax.ClassDeclaration;
   name?: qt.Identifier;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -367,7 +367,7 @@ qu.addMixins(ClassDeclaration, [qb.DeclarationStmt]);
 export class ClassExpression extends qb.ClassLikeDecl implements qt.ClassExpression {
   static readonly kind = Syntax.ClassExpression;
   kind!: Syntax.ClassExpression;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(
     ms: readonly Modifier[] | undefined,
     name: string | qt.Identifier | undefined,
@@ -498,7 +498,7 @@ qu.addMixins(ConstructorDeclaration, [qb.ClassElem, qb.DocContainer]);
 export class ConstructorTyping extends qb.FunctionOrConstructorTobj implements qt.ConstructorTyping {
   static readonly kind = Syntax.ConstructorTyping;
   kind!: Syntax.ConstructorTyping;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.ConstructorTyping, ts, ps, t);
   }
@@ -512,7 +512,7 @@ export class ConstructSignatureDeclaration extends qb.SignatureDecl implements q
   static readonly kind = Syntax.ConstructSignature;
   kind!: Syntax.ConstructSignature;
   questionToken?: qt.QuestionToken;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.ConstructSignature, ts, ps, t);
   }
@@ -661,7 +661,7 @@ export class DocEnumTag extends qb.DocTag implements qt.DocEnumTag {
 DocEnumTag.prototype.kind = DocEnumTag.kind;
 qu.addMixins(DocEnumTag, [qb.Decl]);
 export class DocFunctionTyping extends qb.SignatureDecl implements qt.DocFunctionTyping {
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   static readonly kind = Syntax.DocFunctionTyping;
   kind!: Syntax.DocFunctionTyping;
   _docTypeBrand: any;
@@ -840,11 +840,11 @@ export class DocTypingLiteral extends qb.DocTobj implements qt.DocTypingLiteral 
   static readonly kind = Syntax.DocTypingLiteral;
   kind!: Syntax.DocTypingLiteral;
   docPropertyTags?: readonly qt.DocPropertyLikeTag[];
-  qf.is.arrayType?: boolean;
+  isArrayType?: boolean;
   constructor(ts?: readonly qt.DocPropertyLikeTag[], isArray?: boolean) {
     super(true);
     this.docPropertyTags = ts;
-    this.qf.is.arrayType = isArray;
+    this.isArrayType = isArray;
   }
 }
 DocTypingLiteral.prototype.kind = DocTypingLiteral.kind;
@@ -962,7 +962,7 @@ export class EnumDeclaration extends qb.DeclarationStmt implements qt.EnumDeclar
     this.name = asName(n);
     this.members = new Nodes(es);
   }
-  docCache?: readonly qt.DocTag[] | undefined;
+  cache?: readonly qt.DocTag[] | undefined;
   update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: qt.Identifier, es: readonly qt.EnumMember[]) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.members !== es ? new EnumDeclaration(ds, ms, n, es).updateFrom(this) : this;
   }
@@ -1012,7 +1012,7 @@ export class ExportDeclaration extends qb.DeclarationStmt implements qt.ExportDe
   isTypeOnly: boolean;
   exportClause?: qt.NamedExportBindings;
   moduleSpecifier?: qt.Expression;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ds?: readonly qt.Decorator[], ms?: readonly Modifier[], e?: qt.NamedExportBindings, m?: qt.Expression, t = false) {
     super();
     this.decorators = Nodes.from(ds);
@@ -1173,14 +1173,7 @@ export class FunctionDeclaration extends qb.FunctionLikeDecl implements qt.Funct
     t?: qt.Typing,
     b?: qt.Block
   ) {
-    return this.decorators !== ds ||
-      this.modifiers !== ms ||
-      this.asteriskToken !== a ||
-      this.name !== name ||
-      this.typeParams !== ts ||
-      this.params !== ps ||
-      this.type !== t ||
-      this.body !== b
+    return this.decorators !== ds || this.modifiers !== ms || this.asteriskToken !== a || this.name !== name || this.typeParams !== ts || this.params !== ps || this.type !== t || this.body !== b
       ? new FunctionDeclaration(ds, ms, a, name, ts, ps, t, b).updateFrom(this)
       : this;
   }
@@ -1233,7 +1226,7 @@ qu.addMixins(FunctionExpression, [qb.PrimaryExpr, qb.DocContainer]);
 export class FunctionTyping extends qb.FunctionOrConstructorTobj implements qt.FunctionTyping {
   static readonly kind = Syntax.FunctionTyping;
   kind!: Syntax.FunctionTyping;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(true, Syntax.FunctionTyping, ts, ps, t);
   }
@@ -1254,7 +1247,7 @@ export class GetAccessorDeclaration extends qb.FunctionLikeDecl implements qt.Ge
   exclamationToken?: qt.ExclamationToken;
   endFlowNode?: qt.FlowStart | qt.FlowLabel | qt.FlowAssignment | qt.FlowCall | qt.FlowCondition | qt.FlowSwitchClause | qt.FlowArrayMutation | qt.FlowReduceLabel;
   returnFlowNode?: qt.FlowStart | qt.FlowLabel | qt.FlowAssignment | qt.FlowCall | qt.FlowCondition | qt.FlowSwitchClause | qt.FlowArrayMutation | qt.FlowReduceLabel;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, ps: readonly qt.ParamDeclaration[], t?: qt.Typing, b?: qt.Block) {
     super(true, Syntax.GetAccessor, undefined, ps, t);
     this.decorators = Nodes.from(ds);
@@ -1386,7 +1379,7 @@ export class ImportEqualsDeclaration extends qb.DeclarationStmt implements qt.Im
   parent?: qt.SourceFile | qt.ModuleBlock;
   name: qt.Identifier;
   moduleReference: qt.ModuleReference;
-  docCache?: readonly qt.DocTag[] | undefined;
+  cache?: readonly qt.DocTag[] | undefined;
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: string | qt.Identifier, r: qt.ModuleReference) {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -1454,7 +1447,7 @@ export class IndexSignatureDeclaration extends qb.SignatureDecl implements qt.In
   kind!: Syntax.IndexSignature;
   parent?: qt.ObjectTypeDeclaration;
   questionToken?: qt.QuestionToken;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly qt.ParamDeclaration[], t: qt.Typing) {
     super(true, Syntax.IndexSignature, undefined, ps, t);
     this.decorators = Nodes.from(ds);
@@ -1617,7 +1610,7 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
   typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
   members: qt.Nodes<qt.TypeElem>;
-  docCache?: readonly qt.DocTag[] | undefined;
+  cache?: readonly qt.DocTag[] | undefined;
   constructor(
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -1979,7 +1972,7 @@ export class MethodSignature extends qb.SignatureDecl implements qt.MethodSignat
   parent?: qt.ObjectTypeDeclaration;
   name: qt.PropertyName;
   questionToken?: qt.QuestionToken;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t: qt.Typing | undefined, p: string | qt.PropertyName, q?: qt.QuestionToken) {
     super(false, Syntax.MethodSignature, ts, ps, t);
     this.name = asName(p);
@@ -2019,7 +2012,7 @@ export class ModuleDeclaration extends qb.DeclarationStmt implements qt.ModuleDe
   parent?: qt.ModuleBody | qt.SourceFile;
   name: qt.ModuleName;
   body?: qt.ModuleBody | qt.DocNamespaceDeclaration;
-  docCache?: readonly qt.DocTag[] | undefined;
+  cache?: readonly qt.DocTag[] | undefined;
   constructor(decorators: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: qt.ModuleName, b?: qt.ModuleBody, flags = NodeFlags.None) {
     super(true);
     this.flags |= flags & (NodeFlags.Namespace | NodeFlags.NestedNamespace | NodeFlags.GlobalAugmentation);
@@ -2074,7 +2067,7 @@ export class NamedTupleMember extends qb.Tobj implements qt.NamedTupleMember {
   name: qt.Identifier;
   questionToken?: qt.QuestionToken;
   type: qt.Typing;
-  docCache?: readonly qt.DocTag[];
+  cache?: readonly qt.DocTag[];
   constructor(d3: qt.Dot3Token | undefined, i: qt.Identifier, q: qt.QuestionToken | undefined, t: qt.Typing) {
     super(true);
     this.dot3Token = d3;
@@ -2859,7 +2852,7 @@ export class TypeAliasDeclaration extends qb.DeclarationStmt implements qt.TypeA
   name: qt.Identifier;
   typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   type: qt.Typing;
-  docCache?: readonly qt.DocTag[] | undefined;
+  cache?: readonly qt.DocTag[] | undefined;
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | qt.Identifier, ts: readonly qt.TypeParamDeclaration[] | undefined, t: qt.Typing) {
     super(true);
     this.decorators = Nodes.from(ds);

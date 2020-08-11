@@ -859,7 +859,7 @@ function create() {
         return false;
       };
       if (!canReuse()) return;
-      if ((n as DocContainer).docCache) (n as DocContainer).docCache = undefined;
+      if ((n as DocContainer).cache) (n as DocContainer).cache = undefined;
       return n;
     }
     private consumeNode(n: Node) {

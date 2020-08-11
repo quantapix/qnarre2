@@ -5235,7 +5235,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.ArrayLiteralExpression: {
           const arrayLiteral = <ArrayLiteralExpression>parent;
           const type = this.apparentTypeOfContextualType(arrayLiteral, contextFlags);
-          return this.contextualTypeForElemExpression(t, indexOfNode(arrayLiteral.elems, n));
+          return this.contextualTypeForElemExpression(t, n.indexIn(arrayLiteral.elems));
         }
         case Syntax.ConditionalExpression:
           return this.contextualTypeForConditionalOperand(n, contextFlags);
@@ -7036,7 +7036,7 @@ export function newGet(f: qt.Frame) {
       if (e.parent?.kind === Syntax.PropertyAssignment) {
         const n = cast(e.parent?.parent, isObjectLiteralExpression);
         const t = this.typeOfAssignmentPattern(n) || errorType;
-        const i = indexOfNode(n.properties, e.parent);
+        const i = e.parent.indexIn(n.properties);
         return qf.check.objectLiteralDestructuringPropertyAssignment(n, t, i);
       }
       const n = cast(e.parent, isArrayLiteralExpression);

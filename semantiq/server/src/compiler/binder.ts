@@ -1748,7 +1748,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     errorOrSuggestionOnRange(isError, node, node, message);
   }
   function errorOrSuggestionOnRange(isError: boolean, startNode: Node, endNode: Node, message: qd.Message): void {
-    addErrorOrSuggestionDiagnostic(isError, { pos: startNode.getTokenPos(file), end: endNode.end }, message);
+    addErrorOrSuggestionDiagnostic(isError, { pos: startNode.tokenPos(file), end: endNode.end }, message);
   }
   function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: qd.Message): void {
     const diag = qf.create.fileDiagnostic(file, range.pos, range.end - range.pos, message);

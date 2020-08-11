@@ -15,7 +15,7 @@ export function newCreate(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.create = new (class {
     nextAutoGenerateId = 0;
-    create<T extends Syntax>(k: T, pos: number, end: number, parent?: Nobj): NodeType<T> {
+    node<T extends Syntax>(k: T, pos: number, end: number, parent?: Nobj): NodeType<T> {
       const n =
         qy.is.node(k) || k === Syntax.Unknown
           ? new Nobj(k, pos, end)
@@ -33,7 +33,7 @@ export function newCreate(f: qt.Frame) {
       return (n as unknown) as NodeType<T>;
     }
     createSynthesized<T extends Syntax>(k: T): NodeType<T> {
-      const n = this.create<T>(k, -1, -1);
+      const n = this.node<T>(k, -1, -1);
       n.flags |= NodeFlags.Synthesized;
       return n;
     }
@@ -2484,6 +2484,7 @@ export function newHas(f: qt.Frame) {
 export interface Fhas extends ReturnType<typeof newHas> {}
 export function newGet(f: qt.Frame) {
   interface Frame extends qt.Frame {
+    create: Fcreate;
     each: Feach;
     has: Fhas;
     is: Fis;
@@ -2493,6 +2494,18 @@ export function newGet(f: qt.Frame) {
     nextNodeId = 1;
     static nextAutoGenerateId = 1;
     declaration = new (class extends Fget {
+      getName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
+        const n = this.nameOf(d);
+        if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
+          const c = qf.create.getMutableClone(n);
+          f |= d.emitFlags(n);
+          if (!sourceMaps) f |= EmitFlags.NoSourceMap;
+          if (!comments) f |= EmitFlags.NoComments;
+          if (f) setEmitFlags(c, f);
+          return c;
+        }
+        return this.generatedNameForNode(d);
+      }
       nPosToString(n: Node): string {
         const s = n.sourceFile;
         const loc = qy.get.lineAndCharOf(s, n.pos);
@@ -3634,7 +3647,7 @@ export function newGet(f: qt.Frame) {
       return this.combinedFlags(n as Node, getEffectiveModifierFlags);
     }
     nonDecoratorTokenPosOfNode(n: Node, s?: qy.SourceFileLike): number {
-      if (qf.is.missing(n) || !n.decorators) return n.getTokenPos(s);
+      if (qf.is.missing(n) || !n.decorators) return n.tokenPos(s);
       return qy.skipTrivia((s || n.sourceFile).text, n.decorators.end);
     }
     textOfPropertyName(p: qt.PropertyName | qt.NoSubstitutionLiteral): qu.__String {
@@ -3757,12 +3770,12 @@ export function newGet(f: qt.Frame) {
         return;
       }
       tagsWorker(n?: Node, noCache?: boolean): readonly qt.DocTag[] {
-        let tags = (n as qt.DocContainer).docCache;
+        let tags = (n as qt.DocContainer).cache;
         if (tags === undefined || noCache) {
           const comments = this.commentsAndTags(n, noCache);
           qu.assert(comments.length < 2 || comments[0] !== comments[1]);
           tags = qu.flatMap(comments, (j) => (j.kind === Syntax.Doc ? j.tags : j));
-          if (!noCache) (n as qt.DocContainer).docCache = tags;
+          if (!noCache) (n as qt.DocContainer).cache = tags;
         }
         return tags;
       }

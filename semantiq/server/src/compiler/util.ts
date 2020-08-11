@@ -946,7 +946,7 @@ export function reduceLeft<T>(ts: readonly T[] | undefined, f: (memo: T, t: T, i
       let pos = start === undefined || start < 0 ? 0 : start;
       const end = count === undefined || pos + count > size - 1 ? size - 1 : pos + count;
       let r: T;
-      if (args.length <= 2) {
+      if (arguments.length <= 2) {
         r = ts[pos];
         pos++;
       } else r = initial!;
