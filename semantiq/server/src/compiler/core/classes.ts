@@ -1,9 +1,10 @@
 import { Nodes } from './base';
 import * as qb from './base';
 import { qf } from './frame';
-import { DocTag, Modifier, NodeFlags } from '../type';
+import { DocTag, EmitFlags, Modifier, NodeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
+import { visitNode, VisitResult } from './visit';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 export namespace ArrayBindingElem {
@@ -1711,17 +1712,17 @@ JsxClosingFragment.prototype.kind = JsxClosingFragment.kind;
 export class JsxElem extends qb.PrimaryExpr implements qt.JsxElem {
   static readonly kind = Syntax.JsxElem;
   kind!: Syntax.JsxElem;
-  openingElem: qt.JsxOpeningElem;
+  opening: qt.JsxOpeningElem;
   children: qt.Nodes<qt.JsxChild>;
-  closingElem: qt.JsxClosingElem;
+  closing: qt.JsxClosingElem;
   constructor(o: qt.JsxOpeningElem, cs: readonly qt.JsxChild[], c: qt.JsxClosingElem) {
     super(true);
-    this.openingElem = o;
+    this.opening = o;
     this.children = new Nodes(cs);
-    this.closingElem = c;
+    this.closing = c;
   }
   update(o: qt.JsxOpeningElem, cs: readonly qt.JsxChild[], c: qt.JsxClosingElem) {
-    return this.openingElem !== o || this.children !== cs || this.closingElem !== c ? new JsxElem(o, cs, c).updateFrom(this) : this;
+    return this.opening !== o || this.children !== cs || this.closing !== c ? new JsxElem(o, cs, c).updateFrom(this) : this;
   }
 }
 JsxElem.prototype.kind = JsxElem.kind;
@@ -2410,7 +2411,7 @@ export class PropertyAccessExpression extends qb.MemberExpr implements qt.Proper
     super(true);
     this.expression = parenthesize.forAccess(e);
     this.name = asName(n);
-    this.setEmitFlags(qt.EmitFlags.NoIndentation);
+    this.setEmitFlags(EmitFlags.NoIndentation);
   }
   update(e: qt.Expression, n: qt.Identifier | qt.PrivateIdentifier): PropertyAccessExpression {
     if (qf.is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
@@ -3144,6 +3145,117 @@ export class YieldExpression extends qb.Expr implements qt.YieldExpression {
   }
 }
 YieldExpression.prototype.kind = YieldExpression.kind;
+export const stmt = new (class {
+  insertAllAfterPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined, isPrologue: (n: qt.Node) => boolean): T[] {
+    if (from?.length) {
+      let i = 0;
+      for (; i < to.length; ++i) {
+        if (!isPrologue(to[i] as qt.Node)) break;
+      }
+      to.splice(i, 0, ...from);
+    }
+    return to;
+  }
+  insertAfterPrologue<T extends qt.Statement>(to: T[], s: T | undefined, isPrologue: (n: qt.Node) => boolean): T[] {
+    if (s) {
+      let i = 0;
+      for (; i < to.length; ++i) {
+        if (!isPrologue(to[i] as qt.Node)) break;
+      }
+      to.splice(i, 0, s);
+    }
+    return to;
+  }
+  insertStatementsAfterStandardPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined): T[] {
+    return this.insertAllAfterPrologue(to, from, qf.is.prologueDirective);
+  }
+  insertStatementsAfterCustomPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined): T[] {
+    return this.insertAllAfterPrologue(to, from, qf.is.anyPrologueDirective);
+  }
+  insertStatementAfterStandardPrologue<T extends qt.Statement>(to: T[], s: T | undefined): T[] {
+    return this.insertAfterPrologue(to, s, qf.is.prologueDirective);
+  }
+  insertStatementAfterCustomPrologue<T extends qt.Statement>(to: T[], s: T | undefined): T[] {
+    return this.insertAfterPrologue(to, s, qf.is.anyPrologueDirective);
+  }
+  addStandardPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean) {
+    qu.assert(to.length === 0);
+    let useStrict = false;
+    let i = 0;
+    const l = from.length;
+    while (i < l) {
+      const s = from[i];
+      if (qf.is.prologueDirective(s)) {
+        if (qf.is.useStrictPrologue(s)) useStrict = true;
+        to.push(s);
+      } else break;
+      i++;
+    }
+    if (strict && !useStrict) to.push(startOnNewLine(new ExpressionStatement(asLiteral('use strict'))));
+    return i;
+  }
+  addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i: number, cb?: (n: qt.Node) => VisitResult, filter?: (n: qt.Node) => boolean): number;
+  addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: qt.Node) => VisitResult, filter?: (n: qt.Node) => boolean): number | undefined;
+  addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: qt.Node) => VisitResult, filter: (n: qt.Node) => boolean = () => true): number | undefined {
+    const l = from.length;
+    while (i !== undefined && i < l) {
+      const s = from[i];
+      if (qf.get.emitFlags(s) & EmitFlags.CustomPrologue && filter(s)) qu.append(to, cb ? visitNode(s, cb, qf.is.statement) : s);
+      else break;
+      i++;
+    }
+    return i;
+  }
+  addPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean, cb?: (n: qt.Node) => VisitResult): number {
+    const i = this.addStandardPrologue(to, from, strict);
+    return this.addCustomPrologue(to, from, i, cb);
+  }
+  findUseStrictPrologue(ss: readonly qt.Statement[]): qt.Statement | undefined {
+    for (const s of ss) {
+      if (qf.is.prologueDirective(s)) {
+        if (qf.is.useStrictPrologue(s)) return s;
+      } else break;
+    }
+    return;
+  }
+  startsWithUseStrict(ss: readonly qt.Statement[]) {
+    const firstStatement = qu.firstOrUndefined(ss);
+    return firstStatement !== undefined && qf.is.prologueDirective(firstStatement) && qf.is.useStrictPrologue(firstStatement);
+  }
+  createForOfBindingStatement(n: qt.ForIniter, e: qt.Expression): qt.Statement {
+    if (n.kind === Syntax.VariableDeclarationList) {
+      const d = qu.first(n.declarations) as VariableDeclaration;
+      const d2 = d.update(d.name, undefined, e);
+      return new VariableStatement(undefined, (n as VariableDeclarationList).update([d2])).setRange(n);
+    } else {
+      const e2 = qf.create.assignment(n, e).setRange(n);
+      return new ExpressionStatement(e2).setRange(n);
+    }
+  }
+  insertLeadingStatement(to: qt.Statement, from: qt.Statement) {
+    if (to.kind === Syntax.Block) return (to as Block).update(new Nodes([from, ...to.statements]).setRange(to.statements));
+    return new Block(new Nodes([to, from]), true);
+  }
+  restoreEnclosingLabel(n: qt.Statement, l?: qt.LabeledStatement, cb?: (n: qt.LabeledStatement) => void): qt.Statement {
+    if (!l) return n;
+    const r = updateLabel(l, l.label, l.statement.kind === Syntax.LabeledStatement ? restoreEnclosingLabel(n, l.statement) : n);
+    if (cb) cb(l);
+    return r;
+  }
+  canHaveExportModifier(n: qt.Statement) {
+    switch (n.kind) {
+      case Syntax.EnumDeclaration:
+      case Syntax.VariableStatement:
+      case Syntax.FunctionDeclaration:
+      case Syntax.ClassDeclaration:
+      case Syntax.ModuleDeclaration:
+        return true;
+      case Syntax.InterfaceDeclaration:
+        return !qf.is.externalModuleAugmentation(n) && !qf.is.globalScopeAugmentation(n);
+    }
+    return qf.is.typeDeclaration(n);
+  }
+})();
 export namespace parenthesize {
   interface BinaryPlusExpression extends BinaryExpression {
     cachedLiteralKind: Syntax;
@@ -3379,16 +3491,16 @@ export namespace emit {
   }
   export function removeAllComments<T extends qb.Nobj>(n: T): T {
     const emitNode = getOrCreateEmitNode(n);
-    emitNode.flags |= qt.EmitFlags.NoComments;
+    emitNode.flags |= EmitFlags.NoComments;
     emitNode.leadingComments = undefined;
     emitNode.trailingComments = undefined;
     return n;
   }
-  export function setEmitFlags<T extends qb.Nobj>(n: T, emitFlags: qt.EmitFlags) {
+  export function setEmitFlags<T extends qb.Nobj>(n: T, emitFlags: EmitFlags) {
     getOrCreateEmitNode(n).flags = emitFlags;
     return n;
   }
-  export function addEmitFlags<T extends qb.Nobj>(n: T, emitFlags: qt.EmitFlags) {
+  export function addEmitFlags<T extends qb.Nobj>(n: T, emitFlags: EmitFlags) {
     const emitNode = getOrCreateEmitNode(n);
     emitNode.flags = emitNode.flags | emitFlags;
     return n;
@@ -3465,7 +3577,7 @@ export namespace emit {
     return n;
   }
   export function ignoreSourceNewlines<T extends qb.Nobj>(n: T): T {
-    getOrCreateEmitNode(n).flags |= qt.EmitFlags.IgnoreSourceNewlines;
+    getOrCreateEmitNode(n).flags |= EmitFlags.IgnoreSourceNewlines;
     return n;
   }
   export function getConstantValue(n: PropertyAccessExpression | ElemAccessExpression): string | number | undefined {
@@ -3556,7 +3668,7 @@ export namespace fixme {
     return new (SourceMapSource || (SourceMapSource = qt.Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
-    return setEmitFlags(new Identifier(name), qt.EmitFlags.HelperName | qt.EmitFlags.AdviseOnEmitNode);
+    return setEmitFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
@@ -3616,7 +3728,7 @@ export namespace fixme {
       }
       if (namedBindings) {
         const externalHelpersImportDeclaration = new ImportDeclaration(undefined, undefined, new ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
-        addEmitFlags(externalHelpersImportDeclaration, qt.EmitFlags.NeverApplyImportHelper);
+        addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }
     }

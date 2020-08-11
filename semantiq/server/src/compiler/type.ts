@@ -1218,9 +1218,9 @@ export interface JsxClosingFragment extends Expr {
 }
 export interface JsxElem extends PrimaryExpr {
   kind: Syntax.JsxElem;
-  openingElem: JsxOpeningElem;
+  opening: JsxOpeningElem;
   children: Nodes<JsxChild>;
-  closingElem: JsxClosingElem;
+  closing: JsxClosingElem;
 }
 export interface JsxExpression extends Expr {
   kind: Syntax.JsxExpression;

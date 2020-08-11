@@ -5156,7 +5156,7 @@ export function newGet(f: qt.Frame) {
       return n === conditional.whenTrue || n === conditional.whenFalse ? this.contextualType(conditional, contextFlags) : undefined;
     }
     contextualTypeForChildJsxExpression(n: JsxElem, child: JsxChild) {
-      const attributesType = this.apparentTypeOfContextualType(n.openingElem.tagName);
+      const attributesType = this.apparentTypeOfContextualType(n.opening.tagName);
       const jsxChildrenPropertyName = this.jsxElemChildrenPropertyName(this.jsxNamespaceAt(n));
       if (!(attributesType && !qf.is.typeAny(attributesType) && jsxChildrenPropertyName && jsxChildrenPropertyName !== '')) return;
       const realChildren = this.semanticJsxChildren(n.children);

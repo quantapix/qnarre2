@@ -1942,10 +1942,10 @@ export function newCheck(f: qt.Frame) {
         return getJsxElemTypeAt(n) || anyType;
       }
       jsxElemDeferred(n: qc.JsxElem) {
-        this.jsxOpeningLikeElemOrOpeningFragment(n.openingElem);
-        if (isJsxIntrinsicIdentifier(n.closingElem.tagName)) getIntrinsicTagSymbol(n.closingElem);
+        this.jsxOpeningLikeElemOrOpeningFragment(n.opening);
+        if (isJsxIntrinsicIdentifier(n.closing.tagName)) getIntrinsicTagSymbol(n.closing);
         else {
-          this.expression(n.closingElem.tagName);
+          this.expression(n.closing.tagName);
         }
         this.jsxChildren(n);
       }

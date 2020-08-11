@@ -3380,9 +3380,9 @@ function create() {
       let r: JsxElem | JsxSelfClosingElem | JsxFragment;
       if (opening.kind === Syntax.JsxOpeningElem) {
         const n = create.node(Syntax.JsxElem, opening.pos);
-        n.openingElem = opening;
-        n.children = ctx.parseJsxChildren(n.openingElem);
-        n.closingElem = this.closingElem(inExpressionContext);
+        n.opening = opening;
+        n.children = ctx.parseJsxChildren(n.opening);
+        n.closing = this.closing(inExpressionContext);
         const tagNamesEq = (a: JsxTagNameExpression, b: JsxTagNameExpression): boolean => {
           if (a.kind !== b.kind) return false;
           if (a.kind === Syntax.Identifier) return a.escapedText === (<qc.Identifier>b).escapedText;
@@ -3392,8 +3392,8 @@ function create() {
             tagNamesEq(a.expression as JsxTagNameExpression, (b as PropertyAccessExpression).expression as JsxTagNameExpression)
           );
         };
-        if (!tagNamesEq(n.openingElem.tagName, n.closingElem.tagName)) {
-          parse.errorAtRange(n.closingElem, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, qf.get.textOfNodeFromSourceText(sourceText, n.openingElem.tagName));
+        if (!tagNamesEq(n.opening.tagName, n.closing.tagName)) {
+          parse.errorAtRange(n.closing, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, qf.get.textOfNodeFromSourceText(sourceText, n.opening.tagName));
         }
         r = finishNode(n);
       } else if (opening.kind === Syntax.JsxOpeningFragment) {
@@ -3536,7 +3536,7 @@ function create() {
       parse.expected(Syntax.CloseBraceToken);
       return finishNode(n);
     }
-    closingElem(inExpressionContext: boolean): JsxClosingElem {
+    closing(inExpressionContext: boolean): JsxClosingElem {
       const n = create.node(Syntax.JsxClosingElem);
       parse.expected(Syntax.LessThanSlashToken);
       n.tagName = this.elemName();

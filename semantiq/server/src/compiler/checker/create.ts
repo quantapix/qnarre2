@@ -482,7 +482,7 @@ export function newCreate(f: qt.Frame) {
         if (attributesTable.size > 0) spread = getSpreadType(spread, this.jsxAttributesType(), attributes.symbol, objectFlags, false);
       }
       const parent = openingLikeElem.parent.kind === Syntax.JsxElem ? (openingLikeElem.parent as JsxElem) : undefined;
-      if (parent && parent.openingElem === openingLikeElem && parent.children.length > 0) {
+      if (parent && parent.opening === openingLikeElem && parent.children.length > 0) {
         const childrenTypes: Type[] = check.jsxChildren(parent, checkMode);
         if (!hasSpreadAnyType && jsxChildrenPropertyName && jsxChildrenPropertyName !== '') {
           if (explicitlySpecifyChildrenAttribute) error(attributes, qd.msgs._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, qy.get.unescUnderscores(jsxChildrenPropertyName));

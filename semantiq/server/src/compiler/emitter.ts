@@ -2687,9 +2687,9 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     writePunctuation(')');
   }
   function emitJsxElem(node: JsxElem) {
-    emit(node.openingElem);
+    emit(node.opening);
     emitList(node, node.children, ListFormat.JsxElemOrFragmentChildren);
-    emit(node.closingElem);
+    emit(node.closing);
   }
   function emitJsxSelfClosingElem(node: JsxSelfClosingElem) {
     writePunctuation('<');

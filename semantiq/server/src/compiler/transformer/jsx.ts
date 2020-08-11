@@ -51,7 +51,7 @@ export function transformJsx(context: TrafoContext) {
     }
   }
   function visitJsxElem(node: JsxElem, isChild: boolean) {
-    return visitJsxOpeningLikeElem(node.openingElem, node.children, isChild, node);
+    return visitJsxOpeningLikeElem(node.opening, node.children, isChild, node);
   }
   function visitJsxSelfClosingElem(node: JsxSelfClosingElem, isChild: boolean) {
     return visitJsxOpeningLikeElem(node, node);
@@ -167,7 +167,7 @@ export function transformJsx(context: TrafoContext) {
     return decoded === text ? undefined : decoded;
   }
   function getTagName(node: JsxElem | JsxOpeningLikeElem): Expression {
-    if (node.kind === Syntax.JsxElem) return getTagName(node.openingElem);
+    if (node.kind === Syntax.JsxElem) return getTagName(node.opening);
     else {
       const name = node.tagName;
       if (qc.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));

@@ -776,7 +776,7 @@ export function newEach(f: qt.Frame) {
         case Syntax.CommaListExpression:
           return n.elems.visit(cb, cbs);
         case Syntax.JsxElem:
-          return n.openingElem.visit(cb) || n.children.visit(cb, cbs) || n.closingElem.visit(cb);
+          return n.opening.visit(cb) || n.children.visit(cb, cbs) || n.closing.visit(cb);
         case Syntax.JsxFragment:
           return n.openingFragment.visit(cb) || n.children.visit(cb, cbs) || n.closingFragment.visit(cb);
         case Syntax.JsxSelfClosingElem:

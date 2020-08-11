@@ -1925,7 +1925,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         } else if (!qf.is.typeRelatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
-            containingElem.openingElem.tagName,
+            containingElem.opening.tagName,
             qd.msgs.This_JSX_tag_s_0_prop_expects_a_single_child_of_type_1_but_multiple_children_were_provided,
             childrenPropName,
             typeToString(childrenTargetType)
@@ -1952,7 +1952,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         } else if (!qf.is.typeRelatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
-            containingElem.openingElem.tagName,
+            containingElem.opening.tagName,
             qd.msgs.This_JSX_tag_s_0_prop_expects_type_1_which_requires_multiple_children_but_only_a_single_child_was_provided,
             childrenPropName,
             typeToString(childrenTargetType)

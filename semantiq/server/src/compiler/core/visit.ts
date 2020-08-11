@@ -9,7 +9,7 @@ import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 type Tester = (n: Node) => boolean;
 export type Visitor = (n: Node) => VisitResult<Node>;
-export type VisitResult<T extends Node> = T | T[] | undefined;
+export type VisitResult<T extends Node = Node> = T | T[] | undefined;
 const isTypeNodeOrTypeParamDeclaration = qu.or(isTypeNode, isTypeParamDeclaration);
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
@@ -525,7 +525,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.ExternalModuleReference:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.JsxElem:
-      return n.update(visitNode(n.openingElem, cb, isJsxOpeningElem), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingElem, cb, isJsxClosingElem));
+      return n.update(visitNode(n.opening, cb, isJsxOpeningElem), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closing, cb, isJsxClosingElem));
     case Syntax.JsxSelfClosingElem:
       return n.update(visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArgs, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
     case Syntax.JsxOpeningElem:
@@ -899,9 +899,9 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNode(n.expression, cb, r);
       break;
     case Syntax.JsxElem:
-      r = reduceNode(n.openingElem, cb, r);
+      r = reduceNode(n.opening, cb, r);
       r = reduceLeft(n.children, cb, r);
-      r = reduceNode(n.closingElem, cb, r);
+      r = reduceNode(n.closing, cb, r);
       break;
     case Syntax.JsxFragment:
       r = reduceNode(n.openingFragment, cb, r);
