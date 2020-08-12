@@ -940,11 +940,19 @@ export interface ForStatement extends IterationStmt {
   incrementor?: Expression;
 }
 export interface Frame {
+  assert: unknown;
+  calc: unknown;
   create: unknown;
+  decl: unknown;
   each: unknown;
+  emit: unknown;
+  format: unknown;
   get: unknown;
   has: unknown;
   is: unknown;
+  nest: unknown;
+  skip: unknown;
+  stmt: unknown;
 }
 export interface FreshableIntrinsicType extends IntrinsicType {
   freshType: IntrinsicType;

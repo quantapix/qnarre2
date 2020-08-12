@@ -113,7 +113,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       }
       if (!unidirectional) this.recordMerged(t);
     } else if (t.flags & SymbolFlags.NamespaceModule) {
-      if (t !== globalThisSymbol) error(qf.get.declaration.nameOf(this.declarations[0]), qd.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
+      if (t !== globalThisSymbol) error(qf.decl.nameOf(this.declarations[0]), qd.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
     } else {
       const isEitherEnum = !!(t.flags & SymbolFlags.Enum || this.flags & SymbolFlags.Enum);
       const isEitherBlockScoped = !!(t.flags & SymbolFlags.BlockScopedVariable || this.flags & SymbolFlags.BlockScopedVariable);
@@ -1281,13 +1281,13 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         const canonicalFlags = getEffectiveDeclarationFlags(getCanonicalOverload(overloads, implementation), flagsToCheck);
         forEach(overloads, (o) => {
           const deviation = getEffectiveDeclarationFlags(o, flagsToCheck) ^ canonicalFlags;
-          if (deviation & ModifierFlags.Export) error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_exported_or_non_exported);
+          if (deviation & ModifierFlags.Export) error(qf.decl.nameOf(o), qd.Overload_signatures_must_all_be_exported_or_non_exported);
           else if (deviation & ModifierFlags.Ambient) {
-            error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_ambient_or_non_ambient);
+            error(qf.decl.nameOf(o), qd.Overload_signatures_must_all_be_ambient_or_non_ambient);
           } else if (deviation & (ModifierFlags.Private | ModifierFlags.Protected)) {
-            error(qf.get.declaration.nameOf(o) || o, qd.Overload_signatures_must_all_be_public_private_or_protected);
+            error(qf.decl.nameOf(o) || o, qd.Overload_signatures_must_all_be_public_private_or_protected);
           } else if (deviation & ModifierFlags.Abstract) {
-            error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_abstract_or_non_abstract);
+            error(qf.decl.nameOf(o), qd.Overload_signatures_must_all_be_abstract_or_non_abstract);
           }
         });
       }
@@ -1302,7 +1302,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         const canonicalHasQuestionToken = qf.has.questionToken(getCanonicalOverload(overloads, implementation));
         forEach(overloads, (o) => {
           const deviation = qf.has.questionToken(o) !== canonicalHasQuestionToken;
-          if (deviation) error(qf.get.declaration.nameOf(o), qd.Overload_signatures_must_all_be_optional_or_required);
+          if (deviation) error(qf.decl.nameOf(o), qd.Overload_signatures_must_all_be_optional_or_required);
         });
       }
     }
@@ -1394,7 +1394,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     if (duplicateFunctionDeclaration) {
       forEach(declarations, (declaration) => {
-        error(qf.get.declaration.nameOf(declaration), qd.Duplicate_function_implementation);
+        error(qf.decl.nameOf(declaration), qd.Duplicate_function_implementation);
       });
     }
     if (hasNonAmbientClass && !isConstructor && this.flags & SymbolFlags.Function) {
@@ -1656,8 +1656,8 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       return 'default';
     }
     if (this.declarations && this.declarations.length) {
-      let d = firstDefined(this.declarations, (d) => (qf.get.declaration.nameOf(d) ? d : undefined));
-      const name = d && qf.get.declaration.nameOf(d);
+      let d = firstDefined(this.declarations, (d) => (qf.decl.nameOf(d) ? d : undefined));
+      const name = d && qf.decl.nameOf(d);
       if (d && name) {
         if (d.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
         if (name.kind === Syntax.ComputedPropertyName && !(this.checkFlags() & qt.CheckFlags.Late)) {

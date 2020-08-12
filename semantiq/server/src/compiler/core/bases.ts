@@ -59,7 +59,7 @@ export class NodeMap<N extends Node, V> implements ReadonlyNodeMap<N, V> {
     this.map.forEach(({ n, v }) => cb(v, n));
   }
 }
-export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.Nodes<T> {
+export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
   trailingComma?: boolean;
@@ -188,7 +188,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
         if (t === Syntax.EndOfFileToken) break;
       }
     };
-    const createList = (ns: qt.Nodes) => {
+    const createList = (ns: Nodes) => {
       const r = qf.create.node(Syntax.SyntaxList, ns.pos, ns.end, this);
       r.children = [];
       let p = ns.pos;
@@ -219,7 +219,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
             p = n.end;
           }
         };
-        const all = (ns: qt.Nodes) => {
+        const all = (ns: Nodes) => {
           addSynthetics(cs, p, ns.pos);
           cs.push(createList(ns));
           p = ns.end;
@@ -774,8 +774,8 @@ export class Signature implements qt.Signature {
     }
     return this.docTags;
   }
-  restTypeOfSignature(s: qt.Signature): qt.Type {
-    return tryGetRestTypeOfSignature(signature) || anyType;
+  restTypeOfSignature(): qt.Type {
+    return tryGetRestTypeOfSignature(this) || anyType;
   }
   erased(): this {
     return this.typeParams ? this.erasedCache || (this.erasedCache = qf.create.erasedSignature(this)) : this;
@@ -860,14 +860,12 @@ export class Signature implements qt.Signature {
     }
     return this.resolvedReturn;
   }
-
   optionalCallSignature(f: qt.SignatureFlags): qt.Signature {
     if ((this.flags & qt.SignatureFlags.CallChainFlags) === f) return this;
     if (!this.optionalCallCache) this.optionalCallCache = {};
     const key = f === qt.SignatureFlags.IsInnerCallChain ? 'inner' : 'outer';
     return this.optionalCallCache[key] || (this.optionalCallCache[key] = qf.create.optionalCallSignature(this, f));
   }
-
   expandedParams(skipUnionExpanding?: boolean): readonly (readonly Symbol[])[] {
     if (this.hasRestParam()) {
       const restIndex = this.params.length - 1;
@@ -893,7 +891,6 @@ export class Signature implements qt.Signature {
       return concatenate(this.params.slice(0, restIndex), restParams);
     };
   }
-
   paramNameAtPosition(pos: number) {
     const l = s.params.length - (this.hasRestParam() ? 1 : 0);
     if (pos < l) return this.params[pos].escName;
@@ -1198,10 +1195,10 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
   }
   isEffectiveStrictModeSourceFile(node: SourceFile, compilerOpts: qt.CompilerOpts) {
     switch (node.scriptKind) {
-      case ScriptKind.JS:
-      case ScriptKind.TS:
-      case ScriptKind.JSX:
-      case ScriptKind.TSX:
+      case qt.ScriptKind.JS:
+      case qt.ScriptKind.TS:
+      case qt.ScriptKind.JSX:
+      case qt.ScriptKind.TSX:
         break;
       default:
         return false;
@@ -1302,7 +1299,7 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
     qf.each.child(visit);
     return r;
     function addDeclaration(declaration: qt.Declaration) {
-      const name = qf.get.declaration.name(declaration);
+      const name = qf.decl.name(declaration);
       if (name) r.add(name, declaration);
     }
     function getDeclarations(name: string) {
@@ -1324,7 +1321,7 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
         case Syntax.MethodDeclaration:
         case Syntax.MethodSignature:
           const functionDeclaration = n;
-          const declarationName = qf.get.declaration.name(functionDeclaration);
+          const declarationName = qf.decl.name(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
             const lastDeclaration = qu.lastOrUndefined(declarations);
@@ -1531,41 +1528,41 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     let texts: UnparsedSourceText[] | undefined;
     for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
       switch (section.kind) {
-        case BundleFileSectionKind.Prologue:
+        case qt.BundleFileSectionKind.Prologue:
           (prologues || (prologues = [])).push(createUnparsedNode(section, this) as UnparsedPrologue);
           break;
-        case BundleFileSectionKind.EmitHelpers:
+        case qt.BundleFileSectionKind.EmitHelpers:
           (helpers || (helpers = [])).push(getAllUnscopedEmitHelpers().get(section.data)!);
           break;
-        case BundleFileSectionKind.NoDefaultLib:
+        case qt.BundleFileSectionKind.NoDefaultLib:
           this.hasNoDefaultLib = true;
           break;
-        case BundleFileSectionKind.Reference:
+        case qt.BundleFileSectionKind.Reference:
           (referencedFiles || (referencedFiles = [])).push({ pos: -1, end: -1, fileName: section.data });
           break;
-        case BundleFileSectionKind.Type:
+        case qt.BundleFileSectionKind.Type:
           (typeReferenceDirectives || (typeReferenceDirectives = [])).push(section.data);
           break;
-        case BundleFileSectionKind.Lib:
+        case qt.BundleFileSectionKind.Lib:
           (libReferenceDirectives || (libReferenceDirectives = [])).push({ pos: -1, end: -1, fileName: section.data });
           break;
-        case BundleFileSectionKind.Prepend:
+        case qt.BundleFileSectionKind.Prepend:
           const prependNode = createUnparsedNode(section, this) as UnparsedPrepend;
           let prependTexts: UnparsedTextLike[] | undefined;
           for (const text of section.texts) {
-            if (!stripInternal || text.kind !== BundleFileSectionKind.Internal) {
+            if (!stripInternal || text.kind !== qt.BundleFileSectionKind.Internal) {
               (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, this) as UnparsedTextLike);
             }
           }
           prependNode.texts = prependTexts || empty;
           (texts || (texts = [])).push(prependNode);
           break;
-        case BundleFileSectionKind.Internal:
+        case qt.BundleFileSectionKind.Internal:
           if (stripInternal) {
             if (!texts) texts = [];
             break;
           }
-        case BundleFileSectionKind.Text:
+        case qt.BundleFileSectionKind.Text:
           (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
           break;
         default:
@@ -1577,7 +1574,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     this.referencedFiles = referencedFiles || empty;
     this.typeReferenceDirectives = typeReferenceDirectives;
     this.libReferenceDirectives = libReferenceDirectives || empty;
-    this.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
+    this.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
   parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: BundleFileInfo) {
     qu.assert(!!this.oldFileOfCurrentEmit);
@@ -1585,20 +1582,20 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     let syntheticReferences: UnparsedSyntheticReference[] | undefined;
     for (const section of bundleFileInfo.sections) {
       switch (section.kind) {
-        case BundleFileSectionKind.Internal:
-        case BundleFileSectionKind.Text:
+        case qt.BundleFileSectionKind.Internal:
+        case qt.BundleFileSectionKind.Text:
           (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
           break;
-        case BundleFileSectionKind.NoDefaultLib:
-        case BundleFileSectionKind.Reference:
-        case BundleFileSectionKind.Type:
-        case BundleFileSectionKind.Lib:
+        case qt.BundleFileSectionKind.NoDefaultLib:
+        case qt.BundleFileSectionKind.Reference:
+        case qt.BundleFileSectionKind.Type:
+        case qt.BundleFileSectionKind.Lib:
           (syntheticReferences || (syntheticReferences = [])).push(new qc.UnparsedSyntheticReference(section, this));
           break;
         // Ignore
-        case BundleFileSectionKind.Prologue:
-        case BundleFileSectionKind.EmitHelpers:
-        case BundleFileSectionKind.Prepend:
+        case qt.BundleFileSectionKind.Prologue:
+        case qt.BundleFileSectionKind.EmitHelpers:
+        case qt.BundleFileSectionKind.Prepend:
           break;
         default:
           qc.assert.never(section);

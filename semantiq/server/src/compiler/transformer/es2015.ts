@@ -362,7 +362,7 @@ export function transformES2015(context: TrafoContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
-    const variable = new qc.VariableDeclaration(qf.get.declaration.localName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
+    const variable = new qc.VariableDeclaration(qf.decl.localName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
     variable.setOriginal(node);
     const statements: qc.Statement[] = [];
     const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([variable]));
@@ -371,9 +371,7 @@ export function transformES2015(context: TrafoContext) {
     startOnNewLine(statement);
     statements.push(statement);
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
-      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default)
-        ? qf.create.exportDefault(qf.get.declaration.localName(node))
-        : qf.create.externalModuleExport(qf.get.declaration.localName(node));
+      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default) ? qf.create.exportDefault(qf.decl.localName(node)) : qf.create.externalModuleExport(qf.decl.localName(node));
       exportStatement.setOriginal(statement);
       statements.push(exportStatement);
     }
@@ -419,7 +417,7 @@ export function transformES2015(context: TrafoContext) {
     addConstructor(statements, node, extendsClauseElem);
     addClassMembers(statements, node);
     const closingBraceLocation = qf.create.tokenRange(qy.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
-    const localName = qf.get.declaration.internalName(node);
+    const localName = qf.decl.internalName(node);
     const outer = new qc.PartiallyEmittedExpression(localName);
     outer.end = closingBraceLocation.end;
     setEmitFlags(outer, EmitFlags.NoComments);
@@ -434,7 +432,7 @@ export function transformES2015(context: TrafoContext) {
   }
   function addExtendsHelperIfNeeded(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypings | undefined): void {
     if (extendsClauseElem) {
-      statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, qf.get.declaration.internalName(node))), extendsClauseElem));
+      statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, qf.decl.internalName(node))), extendsClauseElem));
     }
   }
   function addConstructor(statements: qc.Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElem: qc.ExpressionWithTypings | undefined): void {
@@ -447,7 +445,7 @@ export function transformES2015(context: TrafoContext) {
       undefined,
       undefined,
       undefined,
-      qf.get.declaration.internalName(node),
+      qf.decl.internalName(node),
       undefined,
       transformConstructorParams(constructor, hasSynthesizedSuper),
       undefined,
@@ -712,7 +710,7 @@ export function transformES2015(context: TrafoContext) {
           newTarget = new qc.ConditionalExpression(
             qf.create.logicalAnd(
               setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
-              new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.get.declaration.localName(node))
+              new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.decl.localName(node))
             ),
             new qc.PropertyAccessExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
             qc.VoidExpression.zero()
@@ -858,7 +856,7 @@ export function transformES2015(context: TrafoContext) {
     convertedLoopState = undefined;
     const params = visitParamList(node.params, visitor, context);
     const body = transformFunctionBody(node);
-    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.get.declaration.localName(node) : node.name;
+    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.decl.localName(node) : node.name;
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
     return node.update(undefined, params, undefined, body);
@@ -869,7 +867,7 @@ export function transformES2015(context: TrafoContext) {
     const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
     const params = visitParamList(node.params, visitor, context);
     const body = transformFunctionBody(node);
-    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.get.declaration.localName(node) : node.name;
+    const name = hierarchyFacts & HierarchyFacts.NewTarget ? qf.decl.localName(node) : node.name;
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
     return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.asteriskToken, name, undefined, params, undefined, body);
@@ -2117,7 +2115,7 @@ function substituteExpression(node: Node) {
 function substituteExpressionIdentifier(node: qc.Identifier): qc.Identifier {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !qf.is.internalName(node)) {
     const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
-    if (declaration && !(qf.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(qf.get.generatedNameForNode(qf.get.declaration.nameOf(declaration)), node);
+    if (declaration && !(qf.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(qf.get.generatedNameForNode(qf.decl.nameOf(declaration)), node);
   }
   return node;
 }
@@ -2137,7 +2135,7 @@ function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
   return node;
 }
 function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElem) {
-  return qf.has.syntacticModifier(member, ModifierFlags.Static) ? qf.get.declaration.internalName(node) : new qc.PropertyAccessExpression(qf.get.declaration.internalName(node), 'prototype');
+  return qf.has.syntacticModifier(member, ModifierFlags.Static) ? qf.decl.internalName(node) : new qc.PropertyAccessExpression(qf.decl.internalName(node), 'prototype');
 }
 function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
   if (!constructor || !hasExtendsClause) return false;

@@ -225,7 +225,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   }
   function getDeclarationName(node: Declaration): qu.__String | undefined {
     if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
-    const name = qf.get.declaration.nameOf(node);
+    const name = qf.decl.nameOf(node);
     if (name) {
       if (qf.is.ambientModule(node)) {
         const moduleName = qf.get.textOfIdentifierOrLiteral(name as Identifier | StringLiteral);
@@ -338,9 +338,9 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           ) {
             relatedInformation.push(createDiagnosticForNode(node, qd.Did_you_mean_0, `export type { ${qy.get.unescUnderscores(node.name.escapedText)} }`));
           }
-          const declarationName = qf.get.declaration.nameOf(node) || node;
+          const declarationName = qf.decl.nameOf(node) || node;
           forEach(symbol.declarations, (declaration, index) => {
-            const decl = qf.get.declaration.nameOf(declaration) || declaration;
+            const decl = qf.decl.nameOf(declaration) || declaration;
             const diag = createDiagnosticForNode(decl, message, messageNeedsName ? getDisplayName(declaration) : undefined);
             file.bindqd.push(multipleDefaultExports ? addRelatedInfo(diag, createDiagnosticForNode(declarationName, index === 0 ? qd.Another_export_default_is_here : qd.and_here)) : diag);
             if (multipleDefaultExports) {
@@ -1579,7 +1579,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       currentFlow = initFlowNode({ flags: FlowFlags.Start });
       parent = typeAlias;
       bind(typeAlias.typeExpression);
-      const declName = qf.get.declaration.nameOf(typeAlias);
+      const declName = qf.decl.nameOf(typeAlias);
       if ((qf.is.kind(qc.DocEnumTag, typeAlias) || !typeAlias.fullName) && declName && qf.is.propertyAccessEntityNameExpression(declName.parent)) {
         const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
         if (isTopLevel) {
@@ -2293,7 +2293,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     } else if (qf.is.kind(qc.CallExpression, declaration) && qf.is.bindableObjectDefinePropertyCall(declaration)) {
       if (
         some(declaration.args[2].properties, (p) => {
-          const id = qf.get.declaration.nameOf(p);
+          const id = qf.decl.nameOf(p);
           return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'set';
         })
       ) {
@@ -2302,7 +2302,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
       if (
         some(declaration.args[2].properties, (p) => {
-          const id = qf.get.declaration.nameOf(p);
+          const id = qf.decl.nameOf(p);
           return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'get';
         })
       ) {

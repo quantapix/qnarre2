@@ -561,7 +561,7 @@ export class QContext {
       const decl = first(propertySymbol.declarations);
       if (hasLateBindableName(decl)) {
         if (decl.kind === Syntax.BinaryExpression) {
-          const name = qf.get.declaration.nameOf(decl);
+          const name = qf.decl.nameOf(decl);
           if (name && name.kind === Syntax.ElemAccessExpression && qf.is.propertyAccessEntityNameExpression(name.argExpression)) {
             this.trackComputedName(name.argExpression, saveEnclosingDeclaration);
           }
@@ -772,7 +772,7 @@ export class QContext {
     return top;
   }
   isSingleQuotedStringNamed(d: Declaration) {
-    const name = qf.get.declaration.nameOf(d);
+    const name = qf.decl.nameOf(d);
     if (name && name.kind === Syntax.StringLiteral && (name.singleQuote || (!isSynthesized(name) && startsWith(qf.get.textOf(name, false), "'")))) return true;
     return false;
   }
@@ -1572,7 +1572,7 @@ export class QContext {
           const getNamesOfDeclaration = (s: Statement): Identifier[] => {
             const isIdentifierAndNotUndefined = (n?: Node): n is Identifier => n?.kind === Syntax.Identifier;
             if (s.kind === Syntax.VariableStatement) return filter(map(s.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
-            return filter([qf.get.declaration.nameOf(s as DeclarationStmt)], isIdentifierAndNotUndefined);
+            return filter([qf.decl.nameOf(s as DeclarationStmt)], isIdentifierAndNotUndefined);
           };
           ns.body.statements = new Nodes([
             ...ns.body.statements,

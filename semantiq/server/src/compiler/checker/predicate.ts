@@ -1973,7 +1973,7 @@ export function newHas(f: qt.Frame) {
       }
     }
     lateBindableName(n: qt.Declaration): n is LateBoundDecl | LateBoundBinaryExpressionDeclaration {
-      const name = qf.get.declaration.nameOf(n);
+      const name = qf.decl.nameOf(n);
       return !!name && this.lateBindableName(name);
     }
     nonBindableDynamicName(n: qt.Declaration) {

@@ -137,7 +137,7 @@ export function newCheck(f: qt.Frame) {
       if (declaration === undefined) return qu.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
       if (!(declaration.flags & NodeFlags.Ambient) && !qf.is.blockScopedNameDeclaredBeforeUse(declaration, n)) {
         let diagnosticMessage;
-        const declarationName = declarationNameToString(qf.get.declaration.nameOf(declaration));
+        const declarationName = declarationNameToString(qf.decl.nameOf(declaration));
         if (result.flags & qt.SymbolFlags.BlockScopedVariable) diagnosticMessage = error(n, qd.msgs.Block_scoped_variable_0_used_before_its_declaration, declarationName);
         else if (result.flags & qt.SymbolFlags.Class) {
           diagnosticMessage = error(n, qd.msgs.Class_0_used_before_its_declaration, declarationName);
@@ -1233,8 +1233,8 @@ export function newCheck(f: qt.Frame) {
           const privateIdentifierDescription = unmatchedProperty.valueDeclaration.name.escapedText;
           const symbolTableKey = source.symbol.nameForPrivateIdentifier(privateIdentifierDescription);
           if (symbolTableKey && qf.get.propertyOfType(source, symbolTableKey)) {
-            const sourceName = qf.get.declaration.name(source.symbol.valueDeclaration);
-            const targetName = qf.get.declaration.name(target.symbol.valueDeclaration);
+            const sourceName = qf.decl.name(source.symbol.valueDeclaration);
+            const targetName = qf.decl.name(target.symbol.valueDeclaration);
             reportError(
               qd.msgs.Property_0_in_type_1_refers_to_a_different_member_that_cannot_be_accessed_from_within_type_2,
               diagnosticName(privateIdentifierDescription),
@@ -1584,7 +1584,7 @@ export function newCheck(f: qt.Frame) {
         if (flowType === autoType || flowType === autoArrayType) {
           if (noImplicitAny) {
             error(
-              qf.get.declaration.nameOf(declaration),
+              qf.decl.nameOf(declaration),
               qd.msgs.Variable_0_implicitly_has_type_1_in_some_locations_where_its_type_cannot_be_determined,
               symbol.symbolToString(),
               typeToString(flowType)
@@ -3716,7 +3716,7 @@ export function newCheck(f: qt.Frame) {
               continue;
           }
           if (names.get(memberName)) {
-            error(qf.get.declaration.nameOf(member.symbol.valueDeclaration), qd.msgs.Duplicate_identifier_0, memberName);
+            error(qf.decl.nameOf(member.symbol.valueDeclaration), qd.msgs.Duplicate_identifier_0, memberName);
             error(member.name, qd.msgs.Duplicate_identifier_0, memberName);
           } else {
             names.set(memberName, true);
@@ -4028,7 +4028,7 @@ export function newCheck(f: qt.Frame) {
       if (commonDeclarationSpacesForExportsAndLocals || commonDeclarationSpacesForDefaultAndNonDefault) {
         for (const d of symbol.declarations) {
           const declarationSpaces = getDeclarationSpaces(d);
-          const name = qf.get.declaration.nameOf(d);
+          const name = qf.decl.nameOf(d);
           if (declarationSpaces & commonDeclarationSpacesForDefaultAndNonDefault)
             error(name, qd.msgs.Merged_declaration_0_cannot_include_a_default_export_declaration_Consider_adding_a_separate_export_default_0_declaration_instead, declarationNameToString(name));
           else if (declarationSpaces & commonDeclarationSpacesForExportsAndLocals) {
@@ -4395,7 +4395,7 @@ export function newCheck(f: qt.Frame) {
             addToGroup(unusedVariables, declaration.parent, declaration, qf.get.nodeId);
           } else {
             const param = local.valueDeclaration && tryGetRootParamDeclaration(local.valueDeclaration);
-            const name = local.valueDeclaration && qf.get.declaration.nameOf(local.valueDeclaration);
+            const name = local.valueDeclaration && qf.decl.nameOf(local.valueDeclaration);
             if (param && name) {
               if (!qf.is.paramPropertyDeclaration(param, param.parent) && !paramIsThqy.is.keyword(param) && !qf.is.identifierThatStartsWithUnderscore(name))
                 addDiagnostic(param, UnusedKind.Param, qf.create.diagnosticForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
@@ -4475,7 +4475,7 @@ export function newCheck(f: qt.Frame) {
       qc.findAncestor(n, (current) => {
         if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureThis) {
           const isDeclaration = n.kind !== Syntax.qc.Identifier;
-          if (isDeclaration) error(qf.get.declaration.nameOf(<Declaration>n), qd.msgs.Duplicate_identifier_this_Compiler_uses_variable_declaration_this_to_capture_this_reference);
+          if (isDeclaration) error(qf.decl.nameOf(<Declaration>n), qd.msgs.Duplicate_identifier_this_Compiler_uses_variable_declaration_this_to_capture_this_reference);
           else {
             error(n, qd.msgs.Expression_resolves_to_variable_declaration_this_that_compiler_uses_to_capture_this_reference);
           }
@@ -4489,7 +4489,7 @@ export function newCheck(f: qt.Frame) {
         if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureNewTarget) {
           const isDeclaration = n.kind !== Syntax.qc.Identifier;
           if (isDeclaration)
-            error(qf.get.declaration.nameOf(<Declaration>n), qd.msgs.Duplicate_identifier_newTarget_Compiler_uses_variable_declaration_newTarget_to_capture_new_target_meta_property_reference);
+            error(qf.decl.nameOf(<Declaration>n), qd.msgs.Duplicate_identifier_newTarget_Compiler_uses_variable_declaration_newTarget_to_capture_new_target_meta_property_reference);
           else {
             error(n, qd.msgs.Expression_resolves_to_variable_declaration_newTarget_that_compiler_uses_to_capture_new_target_meta_property_reference);
           }
@@ -4937,7 +4937,7 @@ export function newCheck(f: qt.Frame) {
       ): void {
         if (!indexType || s.isKnown()) return;
         const propDeclaration = s.valueDeclaration;
-        const name = propDeclaration && qf.get.declaration.nameOf(propDeclaration);
+        const name = propDeclaration && qf.decl.nameOf(propDeclaration);
         if (name && name.kind === Syntax.PrivateIdentifier) return;
         if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : NumericLiteral.name(s.escName))) return;
         let errorNode: Node | undefined;
@@ -5163,7 +5163,7 @@ export function newCheck(f: qt.Frame) {
               const errorMessage = overriddenInstanceProperty
                 ? qd.msgs._0_is_defined_as_an_accessor_in_class_1_but_is_overridden_here_in_2_as_an_instance_property
                 : qd.msgs._0_is_defined_as_a_property_in_class_1_but_is_overridden_here_in_2_as_an_accessor;
-              error(qf.get.declaration.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType), typeToString(type));
+              error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType), typeToString(type));
             } else if (compilerOpts.useDefineForClassFields) {
               const uninitialized = find(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as PropertyDeclaration).initer);
               if (
@@ -5184,7 +5184,7 @@ export function newCheck(f: qt.Frame) {
                 ) {
                   const errorMessage =
                     qd.msgs.Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration;
-                  error(qf.get.declaration.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType));
+                  error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType));
                 }
               }
             }
@@ -5200,7 +5200,7 @@ export function newCheck(f: qt.Frame) {
           } else {
             errorMessage = qd.msgs.Class_0_defines_instance_member_property_1_but_extended_class_2_defines_it_as_instance_member_function;
           }
-          error(qf.get.declaration.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, typeToString(baseType), base.symbolToString(), typeToString(type));
+          error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, typeToString(baseType), base.symbolToString(), typeToString(type));
         }
       }
     }
@@ -5308,7 +5308,7 @@ export function newCheck(f: qt.Frame) {
         if (enumSymbol.declarations.length > 1) {
           const enumIsConst = qf.is.enumConst(n);
           forEach(enumSymbol.declarations, (decl) => {
-            if (decl.kind === Syntax.EnumDeclaration && qf.is.enumConst(decl) !== enumIsConst) error(qf.get.declaration.nameOf(decl), qd.msgs.Enum_declarations_must_all_be_const_or_non_const);
+            if (decl.kind === Syntax.EnumDeclaration && qf.is.enumConst(decl) !== enumIsConst) error(qf.decl.nameOf(decl), qd.msgs.Enum_declarations_must_all_be_const_or_non_const);
           });
         }
         let seenEnumMissingInitialIniter = false;

@@ -297,7 +297,7 @@ export function transformClassFields(context: TrafoContext) {
     }
     const staticProperties = getProperties(node, true);
     if (some(staticProperties)) {
-      addPropertyStatements(statements, staticProperties, qf.get.declaration.internalName(node));
+      addPropertyStatements(statements, staticProperties, qf.decl.internalName(node));
     }
     return statements;
   }
@@ -315,7 +315,7 @@ export function transformClassFields(context: TrafoContext) {
           pendingStatements.push(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
         }
         if (pendingStatements && some(staticProperties)) {
-          addPropertyStatements(pendingStatements, staticProperties, qf.get.declaration.internalName(node));
+          addPropertyStatements(pendingStatements, staticProperties, qf.decl.internalName(node));
         }
         return classExpression;
       } else {
