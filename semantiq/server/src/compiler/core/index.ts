@@ -1,4 +1,4 @@
-import * as qb from './base';
+import * as qb from './bases';
 import { NodeType } from './classes';
 import * as qc from './classes';
 import * as qd from '../diagnostic';

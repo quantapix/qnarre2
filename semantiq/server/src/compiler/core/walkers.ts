@@ -1,5 +1,5 @@
-import { MutableNodes, Nodes } from './base';
-import * as qb from './base';
+import { MutableNodes, Nodes } from './bases';
+import * as qb from './bases';
 import * as qc from './classes';
 import { qf } from './frame';
 import { EmitFlags, Modifier, Node, NodeFlags, Token } from '../type';
@@ -1016,4 +1016,136 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
 export function liftToBlock(ns: readonly Node[]): Statement {
   qu.assert(qu.every(ns, isStatement), 'Cannot lift nodes to a Block.');
   return (qu.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
+}
+export function createGetSymbolWalker(
+  getRestTypeOfSignature: (sig: Signature) => Type,
+  getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
+  getReturnTypeOfSignature: (sig: Signature) => Type,
+  getBaseTypes: (t: Type) => Type[],
+  resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
+  getTypeOfSymbol: (sym: Symbol) => Type,
+  getResolvedSymbol: (node: Node) => Symbol,
+  getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
+  getConstraintOfTypeParam: (typeParam: TypeParam) => Type | undefined,
+  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
+  getTypeArgs: (t: TypeReference) => readonly Type[]
+) {
+  return getSymbolWalker;
+  function getSymbolWalker(accept: (symbol: Symbol) => boolean = () => true): SymbolWalker {
+    const visitedTypes: Type[] = [];
+    const visitedSymbols: Symbol[] = [];
+    return {
+      walkType: (t) => {
+        try {
+          visitType(t);
+          return { visitedTypes: getOwnValues(visitedTypes), visitedSymbols: getOwnValues(visitedSymbols) };
+        } finally {
+          clear(visitedTypes);
+          clear(visitedSymbols);
+        }
+      },
+      walkSymbol: (symbol) => {
+        try {
+          visitSymbol(symbol);
+          return { visitedTypes: getOwnValues(visitedTypes), visitedSymbols: getOwnValues(visitedSymbols) };
+        } finally {
+          clear(visitedTypes);
+          clear(visitedSymbols);
+        }
+      },
+    };
+    function visitType(t: Type | undefined) {
+      if (!t) return;
+      if (visitedTypes[t.id]) return;
+      visitedTypes[t.id] = t;
+      const shouldBail = visitSymbol(t.symbol);
+      if (shouldBail) return;
+      if (t.flags & TypeFlags.Object) {
+        const objectType = t as ObjectType;
+        const objectFlags = objectType.objectFlags;
+        if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as TypeReference);
+        if (objectFlags & ObjectFlags.Mapped) visitMappedType(t as MappedType);
+        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as InterfaceType);
+        if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
+      }
+      if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as TypeParam);
+      if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as UnionOrIntersectionType);
+      if (t.flags & TypeFlags.Index) visitIndexType(t as IndexType);
+      if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as IndexedAccessType);
+    }
+    function visitTypeReference(t: TypeReference) {
+      visitType(t.target);
+      qu.each(getTypeArgs(t), visitType);
+    }
+    function visitTypeParam(t: TypeParam) {
+      visitType(qf.get.constraintOfTypeParam(t));
+    }
+    function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
+      qu.each(t.types, visitType);
+    }
+    function visitIndexType(t: IndexType) {
+      visitType(t.type);
+    }
+    function visitIndexedAccessType(t: IndexedAccessType) {
+      visitType(t.objectType);
+      visitType(t.indexType);
+      visitType(t.constraint);
+    }
+    function visitMappedType(t: MappedType) {
+      visitType(t.typeParam);
+      visitType(t.constraintType);
+      visitType(t.templateType);
+      visitType(t.modifiersType);
+    }
+    function visitSignature(signature: Signature) {
+      const typePredicate = getTypePredicateOfSignature(signature);
+      if (typePredicate) visitType(typePredicate.type);
+      qu.each(signature.typeParams, visitType);
+      for (const param of signature.params) {
+        visitSymbol(param);
+      }
+      visitType(getRestTypeOfSignature(signature));
+      visitType(qf.get.returnTypeOfSignature(signature));
+    }
+    function visitInterfaceType(interfaceT: InterfaceType) {
+      visitObjectType(interfaceT);
+      qu.each(interfaceT.typeParams, visitType);
+      qu.each(getBaseTypes(interfaceT), visitType);
+      visitType(interfaceT.thisType);
+    }
+    function visitObjectType(t: ObjectType) {
+      const stringIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.String);
+      visitType(stringIndexType);
+      const numberIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.Number);
+      visitType(numberIndexType);
+      const resolved = resolveStructuredTypeMembers(t);
+      for (const signature of resolved.callSignatures) {
+        visitSignature(signature);
+      }
+      for (const signature of resolved.constructSignatures) {
+        visitSignature(signature);
+      }
+      for (const p of resolved.properties) {
+        visitSymbol(p);
+      }
+    }
+    function visitSymbol(s?: Symbol): boolean {
+      if (!s) return false;
+      const i = s.getId();
+      if (visitedSymbols[i]) return false;
+      visitedSymbols[i] = s;
+      if (!accept(s)) return true;
+      const t = qf.get.typeOfSymbol(s);
+      visitType(t);
+      if (s.exports) s.exports.forEach(visitSymbol);
+      qu.each(s.declarations, (d) => {
+        if ((d as any).type && (d as any).type.kind === Syntax.TypingQuery) {
+          const query = (d as any).type as TypingQuery;
+          const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));
+          visitSymbol(entity);
+        }
+      });
+      return false;
+    }
+  }
 }
