@@ -2348,6 +2348,7 @@ export interface Type {
   flags: qt.TypeFlags;
   id: number;
   immediateBaseConstraint?: Type;
+  objectFlags: qt.ObjectFlags;
   pattern?: DestructuringPattern;
   permissive?: Type;
   restrictive?: Type;

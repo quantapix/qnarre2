@@ -1,10 +1,11 @@
 import * as qb from './bases';
 import * as qc from './classes';
 import { qf } from './frame';
+import { Node, SymbolFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
-export { findAncestor, MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
+export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export * from './classes';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
 export namespace BindingOrAssignmentElem {
@@ -222,4 +223,43 @@ export namespace BindingOrAssignmentPattern {
     qf.assert.node(n, isExpression);
     return n;
   }
+}
+export function cloneMap(m: qb.SymbolTable): qb.SymbolTable;
+export function cloneMap<T>(m: qu.QReadonlyMap<T>): qu.QMap<T>;
+export function cloneMap<T>(m: qu.ReadonlyEscapedMap<T>): qu.EscapedMap<T>;
+export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | qb.SymbolTable): qu.QMap<T> | qu.EscapedMap<T> | qb.SymbolTable {
+  const c = new qu.QMap<T>();
+  qu.copyEntries(m as qu.QMap<T>, c);
+  return c;
+}
+export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
+  while (n) {
+    const r = cb(n);
+    if (r === 'quit') return;
+    if (r) return n;
+    n = n.parent;
+  }
+  return;
+}
+export function getExcluded(f: SymbolFlags): SymbolFlags {
+  let r: SymbolFlags = 0;
+  if (f & SymbolFlags.Alias) r |= SymbolFlags.AliasExcludes;
+  if (f & SymbolFlags.BlockScopedVariable) r |= SymbolFlags.BlockScopedVariableExcludes;
+  if (f & SymbolFlags.Class) r |= SymbolFlags.ClassExcludes;
+  if (f & SymbolFlags.ConstEnum) r |= SymbolFlags.ConstEnumExcludes;
+  if (f & SymbolFlags.EnumMember) r |= SymbolFlags.EnumMemberExcludes;
+  if (f & SymbolFlags.Function) r |= SymbolFlags.FunctionExcludes;
+  if (f & SymbolFlags.FunctionScopedVariable) r |= SymbolFlags.FunctionScopedVariableExcludes;
+  if (f & SymbolFlags.GetAccessor) r |= SymbolFlags.GetAccessorExcludes;
+  if (f & SymbolFlags.Interface) r |= SymbolFlags.InterfaceExcludes;
+  if (f & SymbolFlags.Method) r |= SymbolFlags.MethodExcludes;
+  if (f & SymbolFlags.Property) r |= SymbolFlags.PropertyExcludes;
+  if (f & SymbolFlags.RegularEnum) r |= SymbolFlags.RegularEnumExcludes;
+  if (f & SymbolFlags.SetAccessor) r |= SymbolFlags.SetAccessorExcludes;
+  if (f & SymbolFlags.TypeAlias) r |= SymbolFlags.TypeAliasExcludes;
+  if (f & SymbolFlags.TypeParam) r |= SymbolFlags.TypeParamExcludes;
+  if (f & SymbolFlags.ValueModule) r |= SymbolFlags.ValueModuleExcludes;
+  return r;
 }

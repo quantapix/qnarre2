@@ -654,33 +654,6 @@ export class Type implements qt.Type {
   get objectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
   }
-  isUnion(): this is qt.UnionType {
-    return !!(this.flags & TypeFlags.Union);
-  }
-  isIntersection(): this is qt.IntersectionType {
-    return !!(this.flags & TypeFlags.Intersection);
-  }
-  isUnionOrIntersection(): this is qt.UnionOrIntersectionType {
-    return !!(this.flags & TypeFlags.UnionOrIntersection);
-  }
-  isLiteral(): this is qt.LiteralType {
-    return !!(this.flags & TypeFlags.StringOrNumberLiteral);
-  }
-  isStringLiteral(): this is qt.StringLiteralType {
-    return !!(this.flags & TypeFlags.StringLiteral);
-  }
-  isNumberLiteral(): this is qt.NumberLiteralType {
-    return !!(this.flags & TypeFlags.NumberLiteral);
-  }
-  isTypeParam(): this is qt.TypeParam {
-    return !!(this.flags & TypeFlags.TypeParam);
-  }
-  isClassOrInterface(): this is qt.InterfaceType {
-    return !!(this.objectFlags & ObjectFlags.ClassOrInterface);
-  }
-  isClass(): this is qt.InterfaceType {
-    return !!(this.objectFlags & ObjectFlags.Class);
-  }
   isNullableType() {
     return this.checker.is.nullableType(this);
   }
@@ -712,7 +685,7 @@ export class Type implements qt.Type {
     return this.checker.get.indexTypeOfType(this, qt.IndexKind.Number);
   }
   baseTypes(): qt.BaseType[] | undefined {
-    return this.isClassOrInterface() ? this.checker.get.baseTypes(this) : undefined;
+    return qf.is.classOrInterface(this) ? this.checker.get.baseTypes(this) : undefined;
   }
   nonNullableType(): qt.Type {
     return this.checker.get.nonNullableType(this);
@@ -1605,34 +1578,6 @@ export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): nev
 export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
 }
-export function getExcludedSymbolFlags(f: SymbolFlags): SymbolFlags {
-  let r: SymbolFlags = 0;
-  if (f & SymbolFlags.Alias) r |= SymbolFlags.AliasExcludes;
-  if (f & SymbolFlags.BlockScopedVariable) r |= SymbolFlags.BlockScopedVariableExcludes;
-  if (f & SymbolFlags.Class) r |= SymbolFlags.ClassExcludes;
-  if (f & SymbolFlags.ConstEnum) r |= SymbolFlags.ConstEnumExcludes;
-  if (f & SymbolFlags.EnumMember) r |= SymbolFlags.EnumMemberExcludes;
-  if (f & SymbolFlags.Function) r |= SymbolFlags.FunctionExcludes;
-  if (f & SymbolFlags.FunctionScopedVariable) r |= SymbolFlags.FunctionScopedVariableExcludes;
-  if (f & SymbolFlags.GetAccessor) r |= SymbolFlags.GetAccessorExcludes;
-  if (f & SymbolFlags.Interface) r |= SymbolFlags.InterfaceExcludes;
-  if (f & SymbolFlags.Method) r |= SymbolFlags.MethodExcludes;
-  if (f & SymbolFlags.Property) r |= SymbolFlags.PropertyExcludes;
-  if (f & SymbolFlags.RegularEnum) r |= SymbolFlags.RegularEnumExcludes;
-  if (f & SymbolFlags.SetAccessor) r |= SymbolFlags.SetAccessorExcludes;
-  if (f & SymbolFlags.TypeAlias) r |= SymbolFlags.TypeAliasExcludes;
-  if (f & SymbolFlags.TypeParam) r |= SymbolFlags.TypeParamExcludes;
-  if (f & SymbolFlags.ValueModule) r |= SymbolFlags.ValueModuleExcludes;
-  return r;
-}
-export function cloneMap(m: SymbolTable): SymbolTable;
-export function cloneMap<T>(m: qu.QReadonlyMap<T>): qu.QMap<T>;
-export function cloneMap<T>(m: qu.ReadonlyEscapedMap<T>): qu.EscapedMap<T>;
-export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | SymbolTable): qu.QMap<T> | qu.EscapedMap<T> | SymbolTable {
-  const c = new qu.QMap<T>();
-  qu.copyEntries(m as qu.QMap<T>, c);
-  return c;
-}
 function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
   if (!ds) return qu.empty;
   const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
@@ -1659,22 +1604,6 @@ qu.addMixins(ClassLikeDecl, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTobj, [Tobj]);
 qu.addMixins(ObjectLiteralExpr, [Decl]);
 qu.addMixins(LiteralExpr, [LiteralLikeNode]);
-export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
-export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
-export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
-  while (n) {
-    const r = cb(n);
-    if (r === 'quit') return;
-    if (r) return n;
-    n = n.parent;
-  }
-  return;
-}
-export function tryGetClassImplementingOrExtendingExpressionWithTypings(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypings | undefined {
-  return n.kind === Syntax.ExpressionWithTypings && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)
-    ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
-    : undefined;
-}
 function walkUp(n: Node | undefined, k: Syntax) {
   while (n?.kind === k) {
     n = n.parent;

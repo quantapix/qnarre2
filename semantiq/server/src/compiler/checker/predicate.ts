@@ -416,7 +416,7 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    constructorType(t: qt.Type): boolean {
+    constructorType(t: qt.Type) {
       if (getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0) return true;
       if (t.flags & TypeFlags.TypeVariable) {
         const constraint = qf.get.baseConstraintOfType(t);

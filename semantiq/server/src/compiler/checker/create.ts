@@ -110,7 +110,7 @@ export function newCreate(f: qt.Frame) {
       let singleProp: Symbol | undefined;
       let propSet: qu.QMap<Symbol> | undefined;
       let indexTypes: Type[] | undefined;
-      const isUnion = containingType.flags & qt.TypeFlags.Union;
+      const isUnion = qf.is.union(containingType);
       let optionalFlag = isUnion ? qt.SymbolFlags.None : qt.SymbolFlags.Optional;
       let syntheticFlag = qt.CheckFlags.SyntheticMethod;
       let checkFlags = 0;

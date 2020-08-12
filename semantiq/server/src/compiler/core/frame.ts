@@ -1,19 +1,20 @@
-import { Nodes } from './bases';
 import * as qb from './bases';
 import { NodeType } from './classes';
 import * as qc from './classes';
 import * as qd from '../diagnostic';
 import * as qg from './groups';
-import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, TokenFlags } from '../type';
+import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, Nodes, ObjectFlags, TokenFlags, TypeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {
+    calc: qg.Fcalc;
     get: Fget;
     is: Fis;
-    nest: Fnest;
+    nest: qg.Fnest;
+    skip: qg.Fskip;
   }
   const qf = f as Frame;
   return (qf.create = new (class {
@@ -143,10 +144,10 @@ export function newCreate(f: qt.Frame) {
     immediateArrowFunction(ss: readonly qt.Statement[], p?: qt.ParamDeclaration, v?: qt.Expression) {
       return new qc.CallExpression(new qc.ArrowFunction(undefined, undefined, p ? [p] : [], undefined, undefined, new qc.Block(ss, true)), undefined, v ? [v] : []);
     }
-    callBinding(e: qc.Expression, recordTempVariable: (temp: qt.Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): qc.CallBinding {
-      const callee = qb.skip.outerExpressions(e, qc.OuterExpressionKinds.All);
-      let thisArg: qc.Expression;
-      let target: qc.LeftExpression;
+    callBinding(e: qt.Expression, recordTempVariable: (temp: qt.Identifier) => void, _?: qt.ScriptTarget, cacheIdentifiers = false): qc.CallBinding {
+      const callee = qf.skip.outerExpressions(e, qt.OuterExpressionKinds.All);
+      let thisArg: qt.Expression;
+      let target: qt.LeftExpression;
       if (qf.is.superProperty(callee)) {
         thisArg = new qc.ThisExpression();
         target = callee;
@@ -318,7 +319,7 @@ export function newCreate(f: qt.Frame) {
     tokenRange(pos: number, k: Syntax): qu.TextRange {
       return new qu.TextRange(pos, pos + qy.toString(k)!.length);
     }
-    createExpressionFromEntityName(n: qc.EntityName | qt.Expression): qt.Expression {
+    createExpressionFromEntityName(n: qt.EntityName | qt.Expression): qt.Expression {
       if (qf.is.kind(QualifiedName, n)) {
         const left = createExpressionFromEntityName(n.left);
         const right = getMutableClone(n.right);
@@ -366,20 +367,20 @@ export function newCreate(f: qt.Frame) {
             ]),
             firstAccessor
           );
-          return qc.compute.aggregate(expression);
+          return qf.calc.aggregate(expression);
         }
         return;
       }
       function createExpressionForPropertyAssignment(property: qt.PropertyAssignment, receiver: qt.Expression) {
-        return qc.compute.aggregate(setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
+        return qf.calc.aggregate(setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
       }
       function createExpressionForShorthandPropertyAssignment(property: qt.ShorthandPropertyAssignment, receiver: qt.Expression) {
-        return qc.compute.aggregate(
+        return qf.calc.aggregate(
           setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
         );
       }
       function createExpressionForMethodDeclaration(method: qt.MethodDeclaration, receiver: qt.Expression) {
-        return qc.compute.aggregate(
+        return qf.calc.aggregate(
           setOriginalNode(
             setRange(
               this.assignment(
@@ -914,9 +915,37 @@ export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     has: Fhas;
+    skip: qg.Fskip;
   }
   const qf = f as Frame;
   return (qf.is = new (class {
+    union(n: qt.Type): n is qt.UnionType {
+      return !!(n.flags & TypeFlags.Union);
+    }
+    intersection(n: qt.Type): n is qt.IntersectionType {
+      return !!(n.flags & TypeFlags.Intersection);
+    }
+    unionOrIntersection(n: qt.Type): n is qt.UnionOrIntersectionType {
+      return !!(n.flags & TypeFlags.UnionOrIntersection);
+    }
+    literal(n: qt.Type): n is qt.LiteralType {
+      return !!(n.flags & TypeFlags.StringOrNumberLiteral);
+    }
+    stringLiteral(n: qt.Type): n is qt.StringLiteralType {
+      return !!(n.flags & TypeFlags.StringLiteral);
+    }
+    numberLiteral(n: qt.Type): n is qt.NumberLiteralType {
+      return !!(n.flags & TypeFlags.NumberLiteral);
+    }
+    typeParam(n: qt.Type): n is qt.TypeParam {
+      return !!(n.flags & TypeFlags.TypeParam);
+    }
+    classOrInterface(n: qt.Type): n is qt.InterfaceType {
+      return !!(n.objectFlags & ObjectFlags.ClassOrInterface);
+    }
+    class(n: qt.Type): n is qt.InterfaceType {
+      return !!(n.objectFlags & ObjectFlags.Class);
+    }
     templateMiddleOrTailKind(n: Node): n is qt.TemplateMiddle | qt.TemplateTail {
       const k = n.kind;
       return k === Syntax.TemplateMiddle || k === Syntax.TemplateTail;
@@ -943,7 +972,7 @@ export function newIs(f: qt.Frame) {
       return p.kind === qt.TypePredicateKind.This;
     }
     toBeCapturedInTempVariable(e: qt.Expression, cache: boolean) {
-      const n = qb.skip.parentheses(e) as Node;
+      const n = qf.skip.parentheses(e) as Node;
       switch (n.kind) {
         case Syntax.Identifier:
           return cache;
@@ -1308,7 +1337,7 @@ export function newIs(f: qt.Frame) {
           if (p?.kind === Syntax.TypingQuery) return false;
           if (p?.kind === Syntax.ImportTyping) return !p.isTypeOf;
           if (p && Syntax.FirstTypeNode <= p.kind && p.kind <= Syntax.LastTypeNode) return true;
-          console.log(n);
+          //console.log(n);
           switch (p?.kind) {
             case Syntax.ExpressionWithTypings:
               return !this.expressionWithTypeArgsInClassExtendsClause(p);
@@ -1715,10 +1744,10 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     leftHandSideExpression(n: Node): n is qt.LeftExpression {
-      return qy.is.leftHandSideExpression(qb.skip.partiallyEmittedExpressions(n).kind);
+      return qy.is.leftHandSideExpression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     unaryExpression(n: Node): n is qt.UnaryExpression {
-      return qy.is.unaryExpression(qb.skip.partiallyEmittedExpressions(n).kind);
+      return qy.is.unaryExpression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     unaryExpressionWithWrite(n: Node): n is qt.PrefixUnaryExpression | qt.PostfixUnaryExpression {
       switch (n.kind) {
@@ -1732,7 +1761,7 @@ export function newIs(f: qt.Frame) {
       }
     }
     expression(n: Node): n is qt.Expression {
-      return qy.is.expression(qb.skip.partiallyEmittedExpressions(n).kind);
+      return qy.is.expression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     notEmittedOrPartiallyEmittedNode(n: Node): n is qt.NotEmittedStatement | qt.PartiallyEmittedExpression {
       const k = n.kind;
@@ -2396,6 +2425,7 @@ export function newGet(f: qt.Frame) {
     each: Feach;
     has: Fhas;
     is: Fis;
+    skip: qg.Fskip;
   }
   const qf = f as Frame;
   return (qf.get = new (class Fget {
@@ -2703,7 +2733,7 @@ export function newGet(f: qt.Frame) {
     }
     elemOrPropertyAccessArgExpressionOrName(n: qt.AccessExpression): qt.Identifier | qt.PrivateIdentifier | qt.StringLiteralLike | qt.NumericLiteral | qt.ElemAccessExpression | undefined {
       if (n.kind === Syntax.PropertyAccessExpression) return n.name;
-      const a = qb.skip.parentheses(n.argExpression) as Node;
+      const a = qf.skip.parentheses(n.argExpression) as Node;
       if (a.kind === Syntax.NumericLiteral || qf.is.stringLiteralLike(a)) return a;
       return n;
     }
@@ -2857,7 +2887,7 @@ export function newGet(f: qt.Frame) {
     }
     expandoIniter(n: Node, isPrototype: boolean): qt.Expression | undefined {
       if (n.kind === Syntax.CallExpression) {
-        const e = qb.skip.parentheses(n.expression);
+        const e = qf.skip.parentheses(n.expression);
         return e.kind === Syntax.FunctionExpression || e.kind === Syntax.ArrowFunction ? n : undefined;
       }
       if (n.kind === Syntax.FunctionExpression || n.kind === Syntax.ClassExpression || n.kind === Syntax.ArrowFunction) return n as qt.Expression;
@@ -3565,6 +3595,11 @@ function tryAddPropertyAssignment(ps: qu.Push<qt.PropertyAssignment>, p: string,
     return true;
   }
   return false;
+}
+export function tryGetClassImplementingOrExtendingExpressionWithTypings(n: Node): qt.ClassImplementingOrExtendingExpressionWithTypings | undefined {
+  return n.kind === Syntax.ExpressionWithTypings && n.parent?.kind === Syntax.HeritageClause && qf.is.classLike(n.parent.parent)
+    ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
+    : undefined;
 }
 function tryGetClassExtendingExpressionWithTypings(n: Node): qt.ClassLikeDeclaration | undefined {
   const c = tryGetClassImplementingOrExtendingExpressionWithTypings(n);

@@ -1198,25 +1198,25 @@ export function newGet(f: qt.Frame) {
       if (t.flags & qt.TypeFlags.Intersection) return this.intersectionType(sameMap((<UnionType>type).types, getLowerBoundOfKeyType));
       return neverType;
     }
-    typeOfMappedSymbol(symbol: MappedSymbol) {
-      if (!symbol.type) {
-        if (!pushTypeResolution(symbol, TypeSystemPropertyName.Type)) return errorType;
-        const templateType = this.templateTypeFromMappedType(<MappedType>symbol.mappedType.target || symbol.mappedType);
-        const propType = instantiateType(templateType, symbol.mapper);
+    typeOfMappedSymbol(s: MappedSymbol) {
+      if (!s.type) {
+        if (!pushTypeResolution(s, TypeSystemPropertyName.Type)) return errorType;
+        const templateType = this.templateTypeFromMappedType(<MappedType>s.mappedType.target || s.mappedType);
+        const propType = instantiateType(templateType, s.mapper);
         let type =
-          strictNullChecks && symbol.flags & SymbolFlags.Optional && !maybeTypeOfKind(propType, qt.TypeFlags.Undefined | qt.TypeFlags.Void)
+          strictNullChecks && s.flags & SymbolFlags.Optional && !maybeTypeOfKind(propType, qt.TypeFlags.Undefined | qt.TypeFlags.Void)
             ? this.optionalType(propType)
-            : symbol.checkFlags & qt.CheckFlags.StripOptional
+            : s.checkFlags & qt.CheckFlags.StripOptional
             ? this.typeWithFacts(propType, TypeFacts.NEUndefined)
             : propType;
         if (!popTypeResolution()) {
-          error(currentNode, qd.msgs.Type_of_property_0_circularly_references_itself_in_mapped_type_1, symbol.symbolToString(), typeToString(symbol.mappedType));
+          error(currentNode, qd.msgs.Type_of_property_0_circularly_references_itself_in_mapped_type_1, s.sToString(), typeToString(s.mappedType));
           type = errorType;
         }
-        symbol.type = type;
-        symbol.mapper = undefined!;
+        s.type = type;
+        s.mapper = undefined!;
       }
-      return symbol.type;
+      return s.type;
     }
     typeParamFromMappedType(t: MappedType) {
       return t.typeParam || (t.typeParam = this.declaredTypeOfTypeParam(this.symbolOfNode(t.declaration.typeParam)));
@@ -3685,8 +3685,8 @@ export function newGet(f: qt.Frame) {
     mapperFromContext<T extends InferenceContext | undefined>(context: T): TypeMapper | (T & undefined) {
       return context && context.mapper;
     }
-    typeOfReverseMappedSymbol(symbol: ReverseMappedSymbol) {
-      return inferReverseMappedType(symbol.propertyType, symbol.mappedType, symbol.constraintType);
+    typeOfReverseMappedSymbol(s: ReverseMappedSymbol) {
+      return inferReverseMappedType(s.propertyType, s.mappedType, s.constraintType);
     }
     *unmatchedProperties(source: qt.Type, target: qt.Type, requireOptionalProperties: boolean, matchDiscriminantProperties: boolean): IterableIterator<Symbol> {
       const properties = this.propertiesOfType(target);
