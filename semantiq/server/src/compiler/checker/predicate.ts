@@ -527,9 +527,7 @@ export function newIs(f: qt.Frame) {
       return this.discriminantWithNeverType(s) || this.conflictingPrivateProperty(s);
     }
     discriminantWithNeverType(s: Symbol) {
-      return (
-        !(s.flags & qt.SymbolFlags.Optional) && (s.checkFlags() & (CheckFlags.Discriminant | CheckFlags.HasNeverType)) === CheckFlags.Discriminant && !!(qf.get.typeOfSymbol(s).flags & TypeFlags.Never)
-      );
+      return !(s.flags & qt.SymbolFlags.Optional) && (s.checkFlags() & (CheckFlags.Discriminant | CheckFlags.HasNeverType)) === CheckFlags.Discriminant && !!(s.typeOfSymbol().flags & TypeFlags.Never);
     }
     conflictingPrivateProperty(s: Symbol) {
       return !s.valueDeclaration && !!(s.checkFlags() & CheckFlags.ContainsPrivate);
@@ -833,8 +831,8 @@ export function newIs(f: qt.Frame) {
         enumRelation.set(id, RelationComparisonResult.Failed | RelationComparisonResult.Reported);
         return false;
       }
-      const targetEnumType = qf.get.typeOfSymbol(t);
-      for (const property of qf.get.propertiesOfType(qf.get.typeOfSymbol(s))) {
+      const targetEnumType = t.typeOfSymbol();
+      for (const property of qf.get.propertiesOfType(s.typeOfSymbol())) {
         if (property.flags & qt.SymbolFlags.EnumMember) {
           const targetProperty = qf.get.propertyOfType(targetEnumType, property.escName);
           if (!targetProperty || !(targetProperty.flags & qt.SymbolFlags.EnumMember)) {
@@ -1047,7 +1045,7 @@ export function newIs(f: qt.Frame) {
       );
     }
     partiallyInferableType(t: qt.Type): boolean {
-      return !(getObjectFlags(t) & ObjectFlags.NonInferrableType) || (this.objectLiteralType(t) && qu.some(qf.get.propertiesOfType(t), (s) => this.partiallyInferableType(qf.get.typeOfSymbol(s))));
+      return !(getObjectFlags(t) & ObjectFlags.NonInferrableType) || (this.objectLiteralType(t) && qu.some(qf.get.propertiesOfType(t), (s) => this.partiallyInferableType(s.typeOfSymbol())));
     }
     fromInferenceBlockedSource(t: qt.Type) {
       return !!(t.symbol && qu.some(t.symbol.declarations, hasSkipDirectInferenceFlag));
@@ -1098,7 +1096,7 @@ export function newIs(f: qt.Frame) {
         if (s && s.checkFlags() & CheckFlags.SyntheticProperty) {
           if ((<TransientSymbol>s).isDiscriminantProperty === undefined) {
             (<TransientSymbol>s).isDiscriminantProperty =
-              ((<TransientSymbol>s).checkFlags & CheckFlags.Discriminant) === CheckFlags.Discriminant && !maybeTypeOfKind(qf.get.typeOfSymbol(s), TypeFlags.Instantiable);
+              ((<TransientSymbol>s).checkFlags & CheckFlags.Discriminant) === CheckFlags.Discriminant && !maybeTypeOfKind(s.typeOfSymbol(), TypeFlags.Instantiable);
           }
           return !!(<TransientSymbol>s).isDiscriminantProperty;
         }
@@ -1430,7 +1428,7 @@ export function newIs(f: qt.Frame) {
     }
     propertyDeclaredInAncestorClass(s: Symbol): boolean {
       if (!(s.parent!.flags & qt.SymbolFlags.Class)) return false;
-      let classType: qt.InterfaceType | undefined = qf.get.typeOfSymbol(s.parent!) as qt.InterfaceType;
+      let classType: qt.InterfaceType | undefined = s.parent!.typeOfSymbol() as qt.InterfaceType;
       while (true) {
         classType = classType.symbol && (getSuperClass(classType) as qt.InterfaceType | undefined);
         if (!classType) return false;
@@ -1596,7 +1594,7 @@ export function newIs(f: qt.Frame) {
       const valueType = qf.get.typeOfPropertyOfType(objectLitType, 'value' as qu.__String);
       if (valueType) {
         const writableProp = qf.get.propertyOfType(objectLitType, 'writable' as qu.__String);
-        const writableType = writableProp && qf.get.typeOfSymbol(writableProp);
+        const writableType = writableProp && writableProp.typeOfSymbol();
         if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
         if (writableProp && writableProp.valueDeclaration && writableProp.valueDeclaration.kind === Syntax.PropertyAssignment) {
           const initer = writableProp.valueDeclaration.initer;
@@ -1927,7 +1925,7 @@ export function newIs(f: qt.Frame) {
       return !!(t.flags & TypeFlags.Object) && getSignaturesOfType(t, qt.SignatureKind.Call).length > 0;
     }
     literalConstDeclaration(n: qt.VariableDeclaration | qt.PropertyDeclaration | PropertySignature | qt.ParamDeclaration): boolean {
-      if (this.declarationReadonly(n) || (n.kind === Syntax.VariableDeclaration && this.varConst(n))) return this.freshLiteralType(qf.get.typeOfSymbol(qf.get.symbolOfNode(n)));
+      if (this.declarationReadonly(n) || (n.kind === Syntax.VariableDeclaration && this.varConst(n))) return this.freshLiteralType(qf.get.symbolOfNode(n).typeOfSymbol());
       return false;
     }
     simpleLiteralEnumReference(e: qt.Expression) {
@@ -2092,7 +2090,7 @@ export function newHas(f: qt.Frame) {
     }
     effectiveRestParam(s: qt.Signature) {
       if (s.hasRestParam()) {
-        const restType = qf.get.typeOfSymbol(signature.params[signature.params.length - 1]);
+        const restType = s.params[s.params.length - 1].typeOfSymbol();
         return !this.tupleType(restType) || restType.target.hasRestElem;
       }
       return false;

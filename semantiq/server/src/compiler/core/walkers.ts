@@ -1135,7 +1135,7 @@ export function createGetSymbolWalker(
       if (visitedSymbols[i]) return false;
       visitedSymbols[i] = s;
       if (!accept(s)) return true;
-      const t = qf.get.typeOfSymbol(s);
+      const t = s.typeOfSymbol();
       visitType(t);
       if (s.exports) s.exports.forEach(visitSymbol);
       qu.each(s.declarations, (d) => {

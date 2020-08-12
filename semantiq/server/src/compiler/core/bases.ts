@@ -1,8 +1,8 @@
-import * as qc from './index';
+import * as qc from './classes';
 import * as qd from '../diagnostic';
 import { qf } from './frame';
 import { Node } from '../type';
-import { CheckFlags, ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../type';
+import { ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { SourceFileLike, Syntax } from '../syntax';
@@ -788,7 +788,7 @@ export class Signature implements qt.Signature {
     return this.hasRestParam() ? l - 1 : l;
   }
   thisTypeOfSignature(): qt.Type | undefined {
-    if (this.thisParam) return qf.get.typeOfSymbol(this.thisParam);
+    if (this.thisParam) return this.thisParam.typeOfSymbol();
     return;
   }
   typePredicateOfSignature(): qt.TypePredicate | undefined {
@@ -886,7 +886,7 @@ export class Signature implements qt.Signature {
     const l = s.params.length - (this.hasRestParam() ? 1 : 0);
     if (pos < l) return this.params[pos].escName;
     const rest = this.params[l] || unknownSymbol;
-    const t = qf.get.typeOfSymbol(rest);
+    const t = rest.typeOfSymbol();
     if (qf.is.tupleType(t)) {
       const ds = (<TupleType>(<TypeReference>t).target).labeledElemDeclarations;
       const i = pos - l;

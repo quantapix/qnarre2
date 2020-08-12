@@ -128,9 +128,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     isUnknownSymbol: (symbol) => symbol === unknownSymbol,
     getDiagnostics,
     getGlobalDiagnostics,
-    qf.get.typeOfSymbolAtLocation: (symbol, location) => {
+    typeOfSymbolAtLocation: (symbol, location) => {
       location = qf.get.parseTreeOf(location);
-      return location ? qf.get.typeOfSymbolAtLocation(symbol, location) : errorType;
+      return location ? typeOfSymbolAtLocation(symbol, location) : errorType;
     },
     getSymbolsOfParamPropertyDeclaration: (paramIn, paramName) => {
       const param = qf.get.parseTreeOf(paramIn, isParam);
@@ -899,7 +899,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (symbol) return symbol;
     const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
     if (exportEquals === moduleSymbol) return;
-    const type = qf.get.typeOfSymbol(exportEquals);
+    const type = exportEquals.typeOfSymbol();
     return type.flags & qt.TypeFlags.Primitive || getObjectFlags(type) & ObjectFlags.Class || isArrayOrTupleLikeType(type) ? undefined : qf.get.propertyOfType(type, memberName);
   }
   interface ExportCollisionTracker {
@@ -1239,7 +1239,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function combineUnionThisParam(left: Symbol | undefined, right: Symbol | undefined): Symbol | undefined {
     if (!left || !right) return left || right;
-    const thisType = qf.get.intersectionType([qf.get.typeOfSymbol(left), qf.get.typeOfSymbol(right)]);
+    const thisType = qf.get.intersectionType([left.typeOfSymbol(), right.typeOfSymbol()]);
     return createSymbolWithType(left, thisType);
   }
   function combineUnionParams(left: Signature, right: Signature) {
@@ -1393,7 +1393,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function tryGetRestTypeOfSignature(s: Signature): Type | undefined {
     if (s.hasRestParam()) {
-      const sigRestType = qf.get.typeOfSymbol(s.params[s.params.length - 1]);
+      const sigRestType = s.params[s.params.length - 1].typeOfSymbol();
       const restType = qf.is.tupleType(sigRestType) ? getRestTypeOfTupleType(sigRestType) : sigRestType;
       return restType && qf.get.indexTypeOfType(restType, IndexKind.Number);
     }
@@ -1661,7 +1661,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           const isSetonlyAccessor = prop.flags & qt.SymbolFlags.SetAccessor && !(prop.flags & qt.SymbolFlags.GetAccessor);
           const flags = qt.SymbolFlags.Property | qt.SymbolFlags.Optional;
           const result = new Symbol(flags, prop.escName, readonly ? qt.CheckFlags.Readonly : 0);
-          result.type = isSetonlyAccessor ? undefinedType : qf.get.typeOfSymbol(prop);
+          result.type = isSetonlyAccessor ? undefinedType : prop.typeOfSymbol();
           result.declarations = prop.declarations;
           result.nameType = s.getLinks(prop).nameType;
           result.syntheticOrigin = prop;
@@ -2250,7 +2250,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if ((sourceProp.flags & qt.SymbolFlags.Optional) !== (targetProp.flags & qt.SymbolFlags.Optional)) return Ternary.False;
     }
     if (isReadonlySymbol(sourceProp) !== isReadonlySymbol(targetProp)) return Ternary.False;
-    return compareTypes(qf.get.typeOfSymbol(sourceProp), qf.get.typeOfSymbol(targetProp));
+    return compareTypes(sourceProp.typeOfSymbol(), targetProp.typeOfSymbol());
   }
   function compareSignaturesIdentical(
     source: Signature,
@@ -2346,7 +2346,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function transformTypeOfMembers(type: Type, f: (propertyType: Type) => Type) {
     const members = new SymbolTable();
     for (const property of getPropertiesOfObjectType(type)) {
-      const original = qf.get.typeOfSymbol(property);
+      const original = property.typeOfSymbol();
       const updated = f(original);
       members.set(property.escName, updated === original ? property : createSymbolWithType(property, updated));
     }
@@ -2370,7 +2370,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       if (qf.is.objectLiteralType(type)) {
         for (const p of getPropertiesOfObjectType(type)) {
-          const t = qf.get.typeOfSymbol(p);
+          const t = p.typeOfSymbol();
           if (getObjectFlags(t) & ObjectFlags.ContainsWideningType) {
             if (!reportWideningErrorsInType(t)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.get.widenedType(t)));
             errorReported = true;
@@ -2947,7 +2947,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const properties = getPropertiesOfObjectType(target);
       for (const targetProp of properties) {
         const sourceProp = qf.get.propertyOfType(source, targetProp.escName);
-        if (sourceProp) inferFromTypes(qf.get.typeOfSymbol(sourceProp), qf.get.typeOfSymbol(targetProp));
+        if (sourceProp) inferFromTypes(sourceProp.typeOfSymbol(), targetProp.typeOfSymbol());
       }
     }
     function inferFromSignatures(source: Type, target: Type, kind: SignatureKind) {
@@ -3166,7 +3166,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     if (qf.is.classLike(container.parent)) {
       const symbol = qf.get.symbolOfNode(container.parent);
-      const type = qf.has.syntacticModifier(container, ModifierFlags.Static) ? this.qf.get.typeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
+      const type = qf.has.syntacticModifier(container, ModifierFlags.Static) ? this.typeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
       return qf.get.flow.typeOfReference(node, type);
     }
     if (isInJS) {
@@ -3176,11 +3176,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (container.kind === Syntax.SourceFile) {
       if (container.commonJsModuleIndicator) {
         const fileSymbol = qf.get.symbolOfNode(container);
-        return fileSymbol && qf.get.typeOfSymbol(fileSymbol);
+        return fileSymbol && fileSymbol.typeOfSymbol();
       } else if (container.externalModuleIndicator) {
         return undefinedType;
       } else if (includeGlobalThis) {
-        return qf.get.typeOfSymbol(globalThisSymbol);
+        return globalThisSymbol.typeOfSymbol();
       }
     }
   }
@@ -3269,7 +3269,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     diagnostics.add(resultDiagnostic);
   }
   function typeHasStaticProperty(propName: qu.__String, containingType: Type): boolean {
-    const prop = containingType.symbol && qf.get.propertyOfType(qf.get.typeOfSymbol(containingType.symbol), propName);
+    const prop = containingType.symbol && qf.get.propertyOfType(containingType.symbol.typeOfSymbol(), propName);
     return prop !== undefined && prop.valueDeclaration && qf.has.syntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
   }
   function markPropertyAsReferenced(prop: Symbol, nodeForCheckWriteOnly: Node | undefined, isThisAccess: boolean) {
@@ -3476,7 +3476,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (!apparentType.symbol) return;
     const importNode = s.getLinks(apparentType.symbol).originatingImport;
     if (importNode && !is.importCall(importNode)) {
-      const sigs = getSignaturesOfType(qf.get.typeOfSymbol(s.getLinks(apparentType.symbol).target!), kind);
+      const sigs = getSignaturesOfType(s.getLinks(apparentType.symbol).target!.typeOfSymbol(), kind);
       if (!sigs || !sigs.length) return;
       addRelatedInfo(
         diagnostic,
@@ -3508,7 +3508,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const paramCount = signature.params.length - (signature.hasRestParam() ? 1 : 0);
     if (pos < paramCount) return getTypeOfParam(signature.params[pos]);
     if (signature.hasRestParam()) {
-      const restType = qf.get.typeOfSymbol(signature.params[paramCount]);
+      const restType = signature.params[paramCount].typeOfSymbol();
       const index = pos - paramCount;
       if (!qf.is.tupleType(restType) || restType.target.hasRestElem || index < getTypeArgs(restType).length) return qf.get.indexedAccessType(restType, qf.get.literalType(index));
     }
@@ -3537,7 +3537,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const param = signature.thisParam;
       if (!param || (param.valueDeclaration && !(<ParamDeclaration>param.valueDeclaration).type)) {
         if (!param) signature.thisParam = createSymbolWithType(context.thisParam, undefined);
-        assignParamType(signature.thisParam!, qf.get.typeOfSymbol(context.thisParam));
+        assignParamType(signature.thisParam!, context.thisParam.typeOfSymbol());
       }
     }
     const len = signature.params.length - (signature.hasRestParam() ? 1 : 0);
@@ -3598,7 +3598,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
               typeToString(typeWithThis),
               typeToString(baseWithThis)
             );
-          if (!check.typeAssignableTo(qf.get.typeOfSymbol(prop), qf.get.typeOfSymbol(baseProp), member.name || member, undefined, rootChain)) issuedMemberError = true;
+          if (!check.typeAssignableTo(prop.typeOfSymbol(), baseProp.typeOfSymbol(), member.name || member, undefined, rootChain)) issuedMemberError = true;
         }
       }
     }
@@ -3638,7 +3638,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const contextualSignature = getContextualSignature(node);
       if (!(links.flags & NodeCheckFlags.ContextChecked)) {
         links.flags |= NodeCheckFlags.ContextChecked;
-        const signature = firstOrUndefined(getSignaturesOfType(qf.get.typeOfSymbol(qf.get.symbolOfNode(node)), SignatureKind.Call));
+        const signature = firstOrUndefined(getSignaturesOfType(qf.get.symbolOfNode(node).typeOfSymbol(), SignatureKind.Call));
         if (!signature) return;
         if (qf.is.contextSensitive(node)) {
           if (contextualSignature) {
@@ -4335,7 +4335,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (sourcePropertiesFiltered) {
           return discriminateTypeByDiscriminableItems(
             <UnionType>target,
-            map(sourcePropertiesFiltered, (p) => [() => qf.get.typeOfSymbol(p), p.escName] as [() => Type, qu.__String]),
+            map(sourcePropertiesFiltered, (p) => [() => p.typeOfSymbol(), p.escName] as [() => Type, qu.__String]),
             isRelatedTo,
             undefined,
             skipPartial

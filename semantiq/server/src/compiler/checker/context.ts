@@ -554,7 +554,7 @@ export class QContext {
   }
   addPropertyToElemList(propertySymbol: Symbol, typeElems: TypeElem[]) {
     const propertyIsReverseMapped = !!(propertySymbol.checkFlags() & CheckFlags.ReverseMapped);
-    const propertyType = propertyIsReverseMapped && this.flags & NodeBuilderFlags.InReverseMappedType ? anyType : qf.get.typeOfSymbol(propertySymbol);
+    const propertyType = propertyIsReverseMapped && this.flags & NodeBuilderFlags.InReverseMappedType ? anyType : propertySymbol.typeOfSymbol();
     const saveEnclosingDeclaration = this.enclosingDeclaration;
     this.enclosingDeclaration = undefined;
     if (this.tracker.trackSymbol && propertySymbol.checkFlags() & CheckFlags.Late) {
@@ -727,7 +727,7 @@ export class QContext {
     if (!paramDeclaration && !s.isTransient()) {
       paramDeclaration = s.declarationOfKind<DocParamTag>(Syntax.DocParamTag);
     }
-    let paramType = qf.get.typeOfSymbol(s);
+    let paramType = s.typeOfSymbol();
     if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = getOptionalType(paramType);
     const paramTypeNode = this.serializeTypeForDeclaration(paramType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
@@ -1045,7 +1045,7 @@ export class QContext {
     const classType = this.getDeclaredTypeOfClassOrInterface();
     const baseTypes = getBaseTypes(classType);
     const implementsTypes = getImplementsTypes(classType);
-    const staticType = this.qf.get.typeOfSymbol();
+    const staticType = this.typeOfSymbol();
     const isClass = !!staticType.symbol?.valueDeclaration && qf.is.classLike(staticType.symbol.valueDeclaration);
     const staticBaseType = isClass ? getBaseConstructorTypeOfClass(staticType as InterfaceType) : anyType;
     const heritageClauses = [
@@ -1418,7 +1418,7 @@ export class QContext {
           qf.get.propertyOfType(baseType, p.escName) &&
           isReadonlySymbol(qf.get.propertyOfType(baseType, p.escName)!) === isReadonlySymbol(p) &&
           (p.flags & SymbolFlags.Optional) === (qf.get.propertyOfType(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
-          qf.is.typeIdenticalTo(qf.get.typeOfSymbol(p), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
+          qf.is.typeIdenticalTo(p.typeOfSymbol(), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
       ) {
         return [];
       }
@@ -1441,7 +1441,7 @@ export class QContext {
                     undefined,
                     'arg',
                     undefined,
-                    isPrivate ? undefined : this.serializeTypeForDeclaration(qf.get.typeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled)
+                    isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled)
                   ),
                 ],
                 undefined
@@ -1459,7 +1459,7 @@ export class QContext {
                 qf.create.modifiersFromFlags(flag),
                 name,
                 [],
-                isPrivate ? undefined : this.serializeTypeForDeclaration(qf.get.typeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
+                isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
                 undefined
               ),
               find(p.declarations, isGetAccessor) || firstPropertyLikeDecl
@@ -1474,14 +1474,14 @@ export class QContext {
             qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
             name,
             p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
-            isPrivate ? undefined : this.serializeTypeForDeclaration(qf.get.typeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
+            isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
             undefined
           ),
           find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl
         );
       }
       if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
-        const type = qf.get.typeOfSymbol(p);
+        const type = p.typeOfSymbol();
         const signatures = getSignaturesOfType(type, SignatureKind.Call);
         if (flag & ModifierFlags.Private) {
           return setRange(

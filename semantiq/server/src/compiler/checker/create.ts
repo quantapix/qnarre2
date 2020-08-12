@@ -165,7 +165,7 @@ export function newCreate(f: qt.Frame) {
           hasNonUniformValueDeclaration = true;
         }
         declarations = addRange(declarations, prop.declarations);
-        const type = qf.get.typeOfSymbol(prop);
+        const type = prop.typeOfSymbol();
         if (!firstType) {
           firstType = type;
           nameType = s.getLinks(prop).nameType;
@@ -646,7 +646,7 @@ export function newCreate(f: qt.Frame) {
       const declaration = qf.get.parseTreeOf(declarationIn, isVariableLikeOrAccessor);
       if (!declaration) return new Token(Syntax.AnyKeyword) as KeywordTyping;
       const symbol = qf.get.symbolOfNode(declaration);
-      let type = symbol && !(symbol.flags & (SymbolFlags.TypeLiteral | qt.SymbolFlags.Signature)) ? qf.get.widenedLiteralType(this.qf.get.typeOfSymbol()) : errorType;
+      let type = symbol && !(symbol.flags & (SymbolFlags.TypeLiteral | qt.SymbolFlags.Signature)) ? qf.get.widenedLiteralType(this.typeOfSymbol()) : errorType;
       if (type.flags & qt.TypeFlags.UniqueESSymbol && type.symbol === symbol) flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
       if (addUndefined) type = getOptionalType(type);
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
@@ -664,7 +664,7 @@ export function newCreate(f: qt.Frame) {
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
     literalConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration, tracker: SymbolTracker) {
-      const type = qf.get.typeOfSymbol(qf.get.symbolOfNode(node));
+      const type = qf.get.symbolOfNode(node).typeOfSymbol();
       return literalTypeToNode(<FreshableType>type, node, tracker);
     }
     resolver(): EmitResolver {
@@ -1381,7 +1381,7 @@ export function newResolve(f: qt.Frame) {
     }
     exportByName(moduleSymbol: Symbol, name: qu.__String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
       const exportValue = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
-      if (exportValue) return qf.get.propertyOfType(qf.get.typeOfSymbol(exportValue), name);
+      if (exportValue) return qf.get.propertyOfType(exportValue.typeOfSymbol(), name);
       const exportSymbol = moduleSymbol.exports!.get(name);
       const resolved = exportSymbol.resolve.symbol(dontResolveAlias);
       markSymbolOfAliasDeclarationIfTypeOnly(sourceNode, exportSymbol, resolved, false);
@@ -1531,7 +1531,7 @@ export function newResolve(f: qt.Frame) {
         if (compilerOpts.esModuleInterop) {
           const referenceParent = referencingLocation.parent;
           if ((referenceParent.kind === Syntax.ImportDeclaration && qf.get.namespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
-            const type = this.qf.get.typeOfSymbol();
+            const type = this.typeOfSymbol();
             let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
             if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
             if (sigs && sigs.length) {
@@ -1754,8 +1754,7 @@ export function newResolve(f: qt.Frame) {
           }
         }
         const numberIndexInfo =
-          symbol.flags & qt.SymbolFlags.Enum &&
-          (getDeclaredTypeOfSymbol(symbol).flags & qt.TypeFlags.Enum || some(type.properties, (prop) => !!(qf.get.typeOfSymbol(prop).flags & qt.TypeFlags.NumberLike)))
+          symbol.flags & qt.SymbolFlags.Enum && (getDeclaredTypeOfSymbol(symbol).flags & qt.TypeFlags.Enum || some(type.properties, (prop) => !!(prop.typeOfSymbol().flags & qt.TypeFlags.NumberLike)))
             ? enumNumberIndexInfo
             : undefined;
         setStructuredTypeMembers(type, members, empty, empty, stringIndexInfo, numberIndexInfo);
@@ -1790,7 +1789,7 @@ export function newResolve(f: qt.Frame) {
         const inferredProp = new Symbol(SymbolFlags.Property | (prop.flags & optionalMask), prop.escName, f) as ReverseMappedSymbol;
         inferredProp.declarations = prop.declarations;
         inferredProp.nameType = s.getLinks(prop).nameType;
-        inferredProp.propertyType = qf.get.typeOfSymbol(prop);
+        inferredProp.propertyType = prop.typeOfSymbol();
         inferredProp.mappedType = type.mappedType;
         inferredProp.constraintType = type.constraintType;
         members.set(prop.escName, inferredProp);
@@ -1873,7 +1872,7 @@ export function newResolve(f: qt.Frame) {
       const moduleSym = this.externalModuleName(name, name);
       if (moduleSym) {
         const resolvedModuleSymbol = this.externalModuleSymbol(moduleSym);
-        if (resolvedModuleSymbol) return qf.get.typeOfSymbol(resolvedModuleSymbol);
+        if (resolvedModuleSymbol) return resolvedModuleSymbol.typeOfSymbol();
       }
       return anyType;
     }
@@ -1884,7 +1883,7 @@ export function newResolve(f: qt.Frame) {
     importSymbolType(node: ImportTyping, links: NodeLinks, symbol: Symbol, meaning: qt.SymbolFlags) {
       const resolvedSymbol = symbol.resolve.symbol();
       links.resolvedSymbol = resolvedSymbol;
-      if (meaning === qt.SymbolFlags.Value) return this.qf.get.typeOfSymbol();
+      if (meaning === qt.SymbolFlags.Value) return this.typeOfSymbol();
       return getTypeReferenceType(node, resolvedSymbol);
     }
     untypedCall(node: CallLikeExpression): Signature {
