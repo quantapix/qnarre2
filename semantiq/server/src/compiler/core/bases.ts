@@ -132,6 +132,11 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     }
     qu.fail();
   }
+  posToString(): string {
+    const s = this.sourceFile;
+    const loc = qy.get.lineAndCharOf(s, this.pos);
+    return `${s.fileName}(${loc.line + 1},${loc.char + 1})`;
+  }
   tokenPos(s?: SourceFileLike, doc?: boolean): number {
     const n = this as Node;
     if (qf.is.missing(n)) return this.pos;

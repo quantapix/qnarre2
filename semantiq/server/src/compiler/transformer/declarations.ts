@@ -594,7 +594,7 @@ export function transformDeclarations(context: TrafoContext) {
           const result = lateStatementReplacementMap.get(key);
           lateStatementReplacementMap.delete(key);
           if (result) {
-            if (isArray(result) ? some(result, qf.is.scopeMarkerNeeded) : qf.is.scopeMarkerNeeded(result)) needsScopeFixMarker = true;
+            if (isArray(result) ? some(result, qf.stmt.is.scopeMarkerNeeded) : qf.stmt.is.scopeMarkerNeeded(result)) needsScopeFixMarker = true;
             if (qc.is.kind(qc.SourceFile, statement.parent) && (isArray(result) ? some(result, isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
