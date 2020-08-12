@@ -3,8 +3,8 @@ import * as qb from './bases';
 import { NodeType } from './classes';
 import * as qc from './classes';
 import * as qd from '../diagnostic';
-import { Fnest, newNest } from './groups';
-import { EmitFlags, FunctionFlags, Modifier, ModifierFlags, Node, NodeFlags, TokenFlags } from '../type';
+import * as qg from './groups';
+import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, TokenFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
@@ -3477,12 +3477,15 @@ export function newGet(f: qt.Frame) {
 }
 export interface Fget extends ReturnType<typeof newGet> {}
 export interface Frame extends qt.Frame {
+  calc: qg.Fcalc;
   create: Fcreate;
+  decl: qg.Fdecl;
   each: Feach;
+  emit: qg.Femit;
   get: Fget;
   has: Fhas;
   is: Fis;
-  nest: Fnest;
+  nest: qg.Fnest;
 }
 export function newFrame() {
   const f = {} as Frame;
@@ -3491,7 +3494,10 @@ export function newFrame() {
   newGet(f);
   newHas(f);
   newIs(f);
-  newNest(f);
+  qg.newCalc(f);
+  qg.newDecl(f);
+  qg.newEmit(f);
+  qg.newNest(f);
   return f;
 }
 export const qf = newFrame();

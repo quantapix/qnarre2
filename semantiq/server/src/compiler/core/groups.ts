@@ -129,7 +129,7 @@ export function newDecl(f: qt.Frame) {
         return (qf.get.combinedFlagsOf(n) & NodeFlags.BlockScoped) !== 0 || this.catchClauseVariableDeclarationOrBindingElem(n);
       }
       declarationReadonly(n: qt.Declaration) {
-        return !!(qf.get.combinedModifierFlags(n) & ModifierFlags.Readonly && !qf.is.paramPropertyDeclaration(n, n.parent));
+        return !!(this.get.combinedModifierFlags(n) & ModifierFlags.Readonly && !qf.is.paramPropertyDeclaration(n, n.parent));
       }
       catchClauseVariableDeclarationOrBindingElem(n: qt.Declaration) {
         const r = qf.get.rootDeclaration(n);
@@ -169,7 +169,7 @@ export function newDecl(f: qt.Frame) {
         return !!(qf.get.combinedFlagsOf(n) & NodeFlags.Const);
       }
       enumConst(n: qt.EnumDeclaration) {
-        return !!(qf.get.combinedModifierFlags(n) & ModifierFlags.Const);
+        return !!(this.get.combinedModifierFlags(n) & ModifierFlags.Const);
       }
       restParam(n: qt.ParamDeclaration | qt.DocParamTag) {
         const t = n.kind === Syntax.DocParamTag ? n.typeExpression && n.typeExpression.type : n.type;
@@ -199,6 +199,12 @@ export function newDecl(f: qt.Frame) {
       has_restParam(n: qt.SignatureDeclaration | qt.DocSignature) {
         const l = qu.lastOrUndefined<qt.ParamDeclaration | qt.DocParamTag>(n.params);
         return !!l && this.restParam(l);
+      }
+    })();
+    get = new (class extends Fdecl {
+      //
+      combinedModifierFlags(n: qt.Declaration): ModifierFlags {
+        return qf.get.combinedFlags(n, getEffectiveModifierFlags);
       }
     })();
     getName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
@@ -482,9 +488,6 @@ export function newDecl(f: qt.Frame) {
     }
     effectiveConstraintOfTypeParam(n: qt.TypeParamDeclaration): qt.Typing | undefined {
       return n.constraint ? n.constraint : n.parent?.kind === Syntax.DocTemplateTag && n === n.parent.typeParams[0] ? n.parent.constraint : undefined;
-    }
-    combinedModifierFlags(n: qt.Declaration): ModifierFlags {
-      return qf.get.combinedFlags(n, getEffectiveModifierFlags);
     }
     //
     doc_typeParamDeclarations(n: qt.DeclarationWithTypeParams): readonly qt.TypeParamDeclaration[] {
@@ -1669,6 +1672,7 @@ export function newEmit(f: qt.Frame) {
     }
   })());
 }
+export interface Femit extends ReturnType<typeof newEmit> {}
 export namespace fixme {
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {

@@ -134,8 +134,8 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   }
   posToString(): string {
     const s = this.sourceFile;
-    const loc = qy.get.lineAndCharOf(s, this.pos);
-    return `${s.fileName}(${loc.line + 1},${loc.char + 1})`;
+    const r = qy.get.lineAndCharOf(s, this.pos);
+    return `${s.fileName}(${r.line + 1},${r.char + 1})`;
   }
   tokenPos(s?: SourceFileLike, doc?: boolean): number {
     const n = this as Node;
@@ -262,14 +262,14 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   updateFrom(n: Node): this {
     if (this === n) return this;
     const r = this.setOriginal(n).setRange(n);
-    compute.aggregate(r as Node);
+    qf.calc.aggregate(r as Node);
     return r;
   }
   setOriginal(n?: Node): this {
     this.original = n;
     if (n) {
       const e = n.emitNode;
-      if (e) this.emitNode = mergeEmitNode(e, this.emitNode);
+      if (e) this.emitNode = qf.emit.mergeEmitNode(e, this.emitNode);
     }
     return this;
   }
@@ -535,25 +535,11 @@ export abstract class Symbol implements qt.Symbol {
     const v = this.valueDeclaration;
     if (
       !v ||
-      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && qf.is.assignmentDeclaration(v) && !qf.is.assignmentDeclaration(d)) ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && qf.decl.is.assignmentDeclaration(v) && !qf.decl.is.assignmentDeclaration(d)) ||
       (v.kind !== d.kind && qf.is.effectiveModuleDeclaration(v))
     ) {
       this.valueDeclaration = d;
     }
-  }
-  declarationModifierFlags(): ModifierFlags {
-    if (this.valueDeclaration) {
-      const f = qf.get.combinedModifierFlags(this.valueDeclaration);
-      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
-    }
-    if (this.isTransient() && this.checkFlags() & CheckFlags.Synthetic) {
-      const f = this.checkFlags;
-      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
-      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
-      return a | s;
-    }
-    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
-    return 0;
   }
   classLikeDeclaration(): qt.ClassLikeDeclaration | undefined {
     const ds = this.declarations;
@@ -587,7 +573,7 @@ export abstract class Symbol implements qt.Symbol {
       case Syntax.GetAccessor:
         if (!this.getComment) {
           this.getComment = qu.empty;
-          this.getComment = getDocComment(qu.filter(this.declarations, qf.is.getAccessor), c);
+          this.getComment = getDocComment(qu.filter(this.declarations, isGetAccessor), c);
         }
         return this.getComment!;
       case Syntax.SetAccessor:
