@@ -6,7 +6,7 @@ import * as qt from './type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { Symbol } from './symbol';
+import { Symbol } from './bases';
 import { Fhas, Fis } from './predicate';
 import { Fcheck } from './check';
 export function newGet(f: qt.Frame) {

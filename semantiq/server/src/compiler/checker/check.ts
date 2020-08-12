@@ -6,7 +6,7 @@ import * as qt from './type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { Symbol } from './base';
+import { Symbol } from './bases';
 import { Fget } from './get';
 import { Fhas, Fis } from './predicate';
 export function newCheck(f: qt.Frame) {
@@ -1578,7 +1578,7 @@ export function newCheck(f: qt.Frame) {
           : type
         : type === autoType || type === autoArrayType
         ? undefinedType
-        : getOptionalType(type);
+        : qf.get.optionalType(type);
       const flowType = qf.get.flow.typeOfReference(n, type, initialType, flowContainer, !assumeInitialized);
       if (!isEvolvingArrayOperationTarget(n) && (type === autoType || type === autoArrayType)) {
         if (flowType === autoType || flowType === autoArrayType) {

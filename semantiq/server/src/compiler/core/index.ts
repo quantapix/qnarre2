@@ -1,17 +1,14 @@
 import * as qb from './bases';
-import { NodeType } from './classes';
 import * as qc from './classes';
-import * as qd from '../diagnostic';
 import { qf } from './frame';
-import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, Nodes, TokenFlags } from '../type';
 import * as qt from '../type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
-export { findAncestor, MutableNodes, Nodes, Symbol, SymbolTable } from './bases';
+export { findAncestor, MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export * from './classes';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
 export namespace BindingOrAssignmentElem {
-  export function getIniterOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.Expression | undefined {
+  export function getIniterOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.Expression | undefined {
     if (qf.is.declarationBindingElem(e)) {
       // `1` in `let { a = 1 } = ...`
       // `1` in `let { a: b = 1 } = ...`
@@ -39,10 +36,10 @@ export namespace BindingOrAssignmentElem {
       // `1` in `[[a] = 1] = ...`
       return e.right;
     }
-    if (qf.is.kind(qc.SpreadElem, e)) return getIniterOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
+    if (qf.is.kind(qc.SpreadElem, e)) return getIniterOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
     return;
   }
-  export function getTargetOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.BindingOrAssignmentElemTarget | undefined {
+  export function getTargetOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.BindingOrAssignmentElemTarget | undefined {
     if (qf.is.declarationBindingElem(e)) {
       // `a` in `let { a } = ...`
       // `a` in `let { a = 1 } = ...`
@@ -75,14 +72,14 @@ export namespace BindingOrAssignmentElem {
           // `b.c` in `({ a: b.c = 1 } = ...)`
           // `b[0]` in `({ a: b[0] } = ...)`
           // `b[0]` in `({ a: b[0] = 1 } = ...)`
-          return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.initer);
+          return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.initer);
         case Syntax.ShorthandPropertyAssignment:
           // `a` in `({ a } = ...)`
           // `a` in `({ a = 1 } = ...)`
           return e.name;
         case Syntax.SpreadAssignment:
           // `a` in `({ ...a } = ...)`
-          return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
+          return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
       }
       // no target
       return;
@@ -93,11 +90,11 @@ export namespace BindingOrAssignmentElem {
       // `[a]` in `[[a] = 1] = ...`
       // `a.b` in `[a.b = 1] = ...`
       // `a[0]` in `[a[0] = 1] = ...`
-      return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.left);
+      return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.left);
     }
     if (qf.is.kind(qc.SpreadElem, e)) {
       // `a` in `[...a] = ...`
-      return getTargetOfBindingOrAssignmentElem(<qc.BindingOrAssignmentElem>e.expression);
+      return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
     }
     // `a` in `[a] = ...`
     // `{a}` in `[{a}] = ...`
@@ -106,7 +103,7 @@ export namespace BindingOrAssignmentElem {
     // `a[0]` in `[a[0]] = ...`
     return e;
   }
-  export function getRestIndicatorOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): qc.BindingOrAssignmentElemRestIndicator | undefined {
+  export function getRestIndicatorOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.BindingOrAssignmentElemRestIndicator | undefined {
     switch (e.kind) {
       case Syntax.Param:
       case Syntax.BindingElem:
@@ -119,12 +116,12 @@ export namespace BindingOrAssignmentElem {
     }
     return;
   }
-  export function getPropertyNameOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
+  export function getPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(e);
     qu.assert(!!propertyName || qf.is.kind(qc.SpreadAssignment, e));
     return propertyName;
   }
-  export function tryGetPropertyNameOfBindingOrAssignmentElem(e: qc.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
+  export function tryGetPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
     switch (e.kind) {
       case Syntax.BindingElem:
         // `a` in `let { a: b } = ...`
@@ -133,7 +130,7 @@ export namespace BindingOrAssignmentElem {
         // `1` in `let { 1: b } = ...`
         if (e.propertyName) {
           const propertyName = e.propertyName;
-          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qc.failBadSyntax(propertyName);
+          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qb.failBadSyntax(propertyName);
           return qf.is.kind(qc.ComputedPropertyName, propertyName) && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
@@ -144,63 +141,63 @@ export namespace BindingOrAssignmentElem {
         // `1` in `({ 1: b } = ...)`
         if (e.name) {
           const propertyName = e.name;
-          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qc.failBadSyntax(propertyName);
+          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qb.failBadSyntax(propertyName);
           return qf.is.kind(qc.ComputedPropertyName, propertyName) && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
       case Syntax.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
-        if (e.name && qf.is.kind(qc.PrivateIdentifier, e.name)) return qc.failBadSyntax(e.name);
+        if (e.name && qf.is.kind(qc.PrivateIdentifier, e.name)) return qb.failBadSyntax(e.name);
         return e.name;
     }
     const target = getTargetOfBindingOrAssignmentElem(e);
     if (target && qf.is.propertyName(target)) return target;
     return;
   }
-  export function convertToArrayAssignmentElem(e: qc.BindingOrAssignmentElem) {
+  export function convertToArrayAssignmentElem(e: qt.BindingOrAssignmentElem) {
     if (qf.is.kind(qc.BindingElem, e)) {
       if (e.dot3Token) {
-        qc.assert.node(e.name, isIdentifier);
+        qf.assert.node(e.name, isIdentifier);
         return new qc.SpreadElem(e.name).setRange(e).setOriginal(e);
       }
       const e2 = convertToAssignmentElemTarget(e.name);
       return e.initer ? qf.create.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
     }
-    qc.assert.node(e, isExpression);
-    return <qc.Expression>e;
+    qf.assert.node(e, isExpression);
+    return <qt.Expression>e;
   }
-  export function convertToObjectAssignmentElem(e: qc.BindingOrAssignmentElem) {
+  export function convertToObjectAssignmentElem(e: qt.BindingOrAssignmentElem) {
     if (qf.is.kind(qc.BindingElem, e)) {
       if (e.dot3Token) {
-        qc.assert.node(e.name, isIdentifier);
+        qf.assert.node(e.name, isIdentifier);
         return new qc.SpreadAssignment(e.name).setRange(e).setOriginal(e);
       }
       if (e.propertyName) {
         const e2 = convertToAssignmentElemTarget(e.name);
         return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
-      qc.assert.node(e.name, isIdentifier);
+      qf.assert.node(e.name, isIdentifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);
     }
-    qc.assert.node(e, isObjectLiteralElemLike);
-    return <qc.ObjectLiteralElemLike>e;
+    qf.assert.node(e, isObjectLiteralElemLike);
+    return <qt.ObjectLiteralElemLike>e;
   }
 }
 export namespace BindingOrAssignmentPattern {
-  export function getElemsOfBindingOrAssignmentPattern(name: qc.BindingOrAssignmentPattern): readonly qc.BindingOrAssignmentElem[] {
+  export function getElemsOfBindingOrAssignmentPattern(name: qt.BindingOrAssignmentPattern): readonly qt.BindingOrAssignmentElem[] {
     switch (name.kind) {
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
         // `a` in `{a}`
         // `a` in `[a]`
-        return <readonly qc.BindingOrAssignmentElem[]>name.elems;
+        return <readonly qt.BindingOrAssignmentElem[]>name.elems;
       case Syntax.ObjectLiteralExpression:
         // `a` in `{a}`
-        return <readonly qc.BindingOrAssignmentElem[]>name.properties;
+        return <readonly qt.BindingOrAssignmentElem[]>name.properties;
     }
   }
-  export function convertToAssignmentPattern(n: qc.BindingOrAssignmentPattern): qc.AssignmentPattern {
+  export function convertToAssignmentPattern(n: qt.BindingOrAssignmentPattern): qt.AssignmentPattern {
     switch (n.kind) {
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
@@ -210,19 +207,19 @@ export namespace BindingOrAssignmentPattern {
         return convertToObjectAssignmentPattern(n);
     }
   }
-  export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
+  export function convertToObjectAssignmentPattern(n: qt.ObjectBindingOrAssignmentPattern) {
     if (qf.is.kind(qc.ObjectBindingPattern, n)) return new qc.ObjectLiteralExpression(qu.map(n.elems, convertToObjectAssignmentElem)).setOriginal(n).setRange(n);
-    qc.assert.node(n, isObjectLiteralExpression);
+    qf.assert.node(n, isObjectLiteralExpression);
     return n;
   }
-  export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
+  export function convertToArrayAssignmentPattern(n: qt.ArrayBindingOrAssignmentPattern) {
     if (qf.is.kind(qc.ArrayBindingPattern, n)) return new qc.ArrayLiteralExpression(qu.map(n.elems, convertToArrayAssignmentElem)).setOriginal(n).setRange(n);
-    qc.assert.node(n, isArrayLiteralExpression);
+    qf.assert.node(n, isArrayLiteralExpression);
     return n;
   }
-  export function convertToAssignmentElemTarget(n: qc.BindingOrAssignmentElemTarget): qc.Expression {
+  export function convertToAssignmentElemTarget(n: qt.BindingOrAssignmentElemTarget): qt.Expression {
     if (qf.is.kind(qc.BindingPattern, n)) return convertToAssignmentPattern(n);
-    qc.assert.node(n, isExpression);
+    qf.assert.node(n, isExpression);
     return n;
   }
 }

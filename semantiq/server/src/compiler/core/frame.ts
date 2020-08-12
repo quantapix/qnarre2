@@ -3477,6 +3477,7 @@ export function newGet(f: qt.Frame) {
 }
 export interface Fget extends ReturnType<typeof newGet> {}
 export interface Frame extends qt.Frame {
+  assert: qg.Fassert;
   calc: qg.Fcalc;
   create: Fcreate;
   decl: qg.Fdecl;
@@ -3494,6 +3495,7 @@ export function newFrame() {
   newGet(f);
   newHas(f);
   newIs(f);
+  qg.newAssert(f);
   qg.newCalc(f);
   qg.newDecl(f);
   qg.newEmit(f);

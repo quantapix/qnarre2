@@ -6,7 +6,7 @@ import * as qt from './type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { Symbol } from './symbol';
+import { Symbol } from './bases';
 import { Fget } from './get';
 import { Fhas, Fis } from './predicate';
 export function newCreate(f: qt.Frame) {
@@ -18,14 +18,14 @@ export function newCreate(f: qt.Frame) {
   const qf = f as Frame;
   interface Fcreate extends qc.Fcreate {}
   class Fcreate {
-    intrinsicType(kind: qt.TypeFlags, intrinsicName: string, objectFlags: ObjectFlags = 0): IntrinsicType {
-      const type = <IntrinsicType>this.type(kind);
-      type.intrinsicName = intrinsicName;
-      type.objectFlags = objectFlags;
-      return type;
+    intrinsicType(k: qt.TypeFlags, n: string, f: ObjectFlags = 0): qt.IntrinsicType {
+      const r = this.type(k);
+      r.intrinsicName = n;
+      r.objectFlags = f;
+      return r;
     }
-    booleanType(trueFalseTypes: readonly Type[]): IntrinsicType & UnionType {
-      const type = <IntrinsicType & UnionType>qf.get.unionType(trueFalseTypes);
+    booleanType(ts: readonly Type[]): qt.IntrinsicType & qt.UnionType {
+      const type = qf.get.unionType(ts);
       type.flags |= qt.TypeFlags.Boolean;
       type.intrinsicName = 'boolean';
       return type;
@@ -648,7 +648,7 @@ export function newCreate(f: qt.Frame) {
       const symbol = qf.get.symbolOfNode(declaration);
       let type = symbol && !(symbol.flags & (SymbolFlags.TypeLiteral | qt.SymbolFlags.Signature)) ? qf.get.widenedLiteralType(this.typeOfSymbol()) : errorType;
       if (type.flags & qt.TypeFlags.UniqueESSymbol && type.symbol === symbol) flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
-      if (addUndefined) type = getOptionalType(type);
+      if (addUndefined) type = qf.get.optionalType(type);
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
     }
     returnTypeOfSignatureDeclaration(signatureDeclarationIn: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
@@ -928,7 +928,7 @@ export function newInstantiate(f: qt.Frame) {
       const propType = this.type(getTemplateTypeFromMappedType(<MappedType>type.target || type), templateMapper);
       const modifiers = getMappedTypeModifiers(type);
       return strictNullChecks && modifiers & MappedTypeModifiers.IncludeOptional && !maybeTypeOfKind(propType, qt.TypeFlags.Undefined | qt.TypeFlags.Void)
-        ? getOptionalType(propType)
+        ? qf.get.optionalType(propType)
         : strictNullChecks && modifiers & MappedTypeModifiers.ExcludeOptional && isOptional
         ? getTypeWithFacts(propType, TypeFacts.NEUndefined)
         : propType;
@@ -1677,7 +1677,7 @@ export function newResolve(f: qt.Frame) {
       const paddedTypeArgs = typeArgs.length === typeParams.length ? typeArgs : concatenate(typeArgs, [type]);
       this.objectTypeMembers(type, source, typeParams, paddedTypeArgs);
     }
-    unionTypeMembers(type: UnionType) {
+    unionTypeMembers(type: qt.UnionType) {
       const callSignatures = getUnionSignatures(map(type.types, (t) => (t === globalFunctionType ? [unknownSignature] : getSignaturesOfType(t, SignatureKind.Call))));
       const constructSignatures = getUnionSignatures(map(type.types, (t) => getSignaturesOfType(t, SignatureKind.Construct)));
       const stringIndexInfo = getUnionIndexInfo(type.types, IndexKind.String);

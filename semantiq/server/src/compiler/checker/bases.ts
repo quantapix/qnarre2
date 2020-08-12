@@ -50,6 +50,8 @@ class SymbolTable extends qc.SymbolTable<Symbol> {
     return r;
   }
 }
+export class Type extends qc.Type {}
+export class Signature extends qc.Signature {}
 export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   static nextId = 1;
   static count = 0;
@@ -79,13 +81,13 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   typeOfSymbolWithDeferredType() {
     const ls = this.getLinks();
     if (!ls.type) {
-      Debug.assertIsDefined(ls.deferralParent);
-      Debug.assertIsDefined(ls.deferralConstituents);
-      ls.type = ls.deferralParent.flags & qt.TypeFlags.Union ? qf.get.unionType(ls.deferralConstituents) : qf.get.intersectionType(ls.deferralConstituents);
+      qu.assertIsDefined(ls.deferralParent);
+      qu.assertIsDefined(ls.deferralConstituents);
+      ls.type = ls.deferralParent!.flags & qt.TypeFlags.Union ? qf.get.unionType(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
     }
     return ls.type;
   }
-  typeOfSymbol(): Type {
+  typeOfSymbol(): qt.Type {
     const f = this.checkFlags;
     if (f & CheckFlags.DeferredType) return this.typeOfSymbolWithDeferredType();
     if (f & CheckFlags.Instantiated) return this.getTypeOfInstantiatedSymbol();
@@ -959,7 +961,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       const baseTypeVariable = getBaseTypeVariableOfClass(this);
       return baseTypeVariable ? qf.get.intersectionType([type, baseTypeVariable]) : type;
     }
-    return strictNullChecks && this.flags & SymbolFlags.Optional ? getOptionalType(type) : type;
+    return strictNullChecks && this.flags & SymbolFlags.Optional ? qf.get.optionalType(type) : type;
   }
   getTypeOfEnumMember(): Type {
     const ls = this.getLinks();
@@ -1260,7 +1262,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const t = this.typeOfSymbol();
     if (strictNullChecks) {
       const d = this.valueDeclaration;
-      if (d && qf.is.withIniter(d)) return getOptionalType(t);
+      if (d && qf.is.withIniter(d)) return qf.get.optionalType(t);
     }
     return t;
   }

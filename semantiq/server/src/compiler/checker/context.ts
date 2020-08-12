@@ -728,7 +728,7 @@ export class QContext {
       paramDeclaration = s.declarationOfKind<DocParamTag>(Syntax.DocParamTag);
     }
     let paramType = s.typeOfSymbol();
-    if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = getOptionalType(paramType);
+    if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = qf.get.optionalType(paramType);
     const paramTypeNode = this.serializeTypeForDeclaration(paramType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
       !(this.flags & NodeBuilderFlags.OmitParamModifiers) && preserveModifierFlags && paramDeclaration && paramDeclaration.modifiers ? paramDeclaration.modifiers.map(getSynthesizedClone) : undefined;

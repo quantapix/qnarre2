@@ -6,7 +6,7 @@ import * as qt from './type';
 import * as qu from '../util';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { Symbol } from './symbol';
+import { Symbol } from './bases';
 import { Fcheck } from './check';
 import { Fget } from './get';
 export function newIs(f: qt.Frame) {
@@ -1800,7 +1800,7 @@ export function newIs(f: qt.Frame) {
       reference.expression.parent = reference;
       reference.parent = constructor;
       reference.flowNode = constructor.returnFlowNode;
-      const flowType = qf.get.flow.typeOfReference(reference, propType, getOptionalType(propType));
+      const flowType = qf.get.flow.typeOfReference(reference, propType, qf.get.optionalType(propType));
       return !(getFalsyFlags(flowType) & TypeFlags.Undefined);
     }
     constantMemberAccess(n: qt.Expression): boolean {
