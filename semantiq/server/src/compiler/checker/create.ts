@@ -164,7 +164,7 @@ export function newCreate(f: qt.Frame) {
         else if (prop.valueDeclaration && prop.valueDeclaration !== firstValueDeclaration) {
           hasNonUniformValueDeclaration = true;
         }
-        declarations = addRange(declarations, prop.declarations);
+        declarations = qu.addRange(declarations, prop.declarations);
         const type = prop.typeOfSymbol();
         if (!firstType) {
           firstType = type;
@@ -176,7 +176,7 @@ export function newCreate(f: qt.Frame) {
         if (type.flags & qt.TypeFlags.Never) checkFlags |= qt.CheckFlags.HasNeverType;
         propTypes.push(type);
       }
-      addRange(propTypes, indexTypes);
+      qu.addRange(propTypes, indexTypes);
       const result = new Symbol(SymbolFlags.Property | optionalFlag, name, syntheticFlag | checkFlags);
       result.containingType = containingType;
       if (!hasNonUniformValueDeclaration && firstValueDeclaration) {
@@ -1763,7 +1763,7 @@ export function newResolve(f: qt.Frame) {
           const classType = this.getDeclaredTypeOfClassOrInterface();
           let constructSignatures = symbol.members ? getSignaturesOfSymbol(symbol.members.get(InternalSymbol.Constructor)) : empty;
           if (symbol.flags & qt.SymbolFlags.Function) {
-            constructSignatures = addRange(
+            constructSignatures = qu.addRange(
               constructSignatures.slice(),
               mapDefined(type.callSignatures, (sig) =>
                 qf.is.jsConstructor(sig.declaration)

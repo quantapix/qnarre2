@@ -13,6 +13,7 @@ export function newCreate(f: qt.Frame) {
     calc: qg.Fcalc;
     get: Fget;
     is: Fis;
+    emit: qg.Femit;
     nest: qg.Fnest;
     skip: qg.Fskip;
   }
@@ -105,7 +106,7 @@ export function newCreate(f: qt.Frame) {
       args.push(new qc.NullLiteral());
       if (cs.length > 1) {
         for (const c of cs) {
-          startOnNewLine(c);
+          qf.emit.setStartsOnNewLine(c);
           args.push(c);
         }
       } else args.push(cs[0]);
@@ -118,7 +119,7 @@ export function newCreate(f: qt.Frame) {
         if (!ps) args.push(new qc.NullLiteral());
         if (cs.length > 1) {
           for (const c of cs) {
-            startOnNewLine(c);
+            qf.emit.setStartsOnNewLine(c);
             args.push(c);
           }
         } else args.push(cs[0]);
@@ -416,7 +417,7 @@ export function newCreate(f: qt.Frame) {
           memberName.kind === Syntax.Identifier || memberName.kind === Syntax.PrivateIdentifier ? new qc.PropertyAccessExpression(target, memberName) : new qc.ElemAccessExpression(target, memberName),
           memberName
         );
-        getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
+        qf.emit.getOrCreate(expression).flags |= EmitFlags.NoNestedSourceMaps;
         return expression;
       }
     }
@@ -1111,10 +1112,10 @@ export function newIs(f: qt.Frame) {
       return (
         n.kind === Syntax.ParenthesizedExpression &&
         qu.isSynthesized(n) &&
-        qu.isSynthesized(getSourceMapRange(n)) &&
-        qu.isSynthesized(getCommentRange(n)) &&
-        !qu.some(getSyntheticLeadingComments(n)) &&
-        !qu.some(getSyntheticTrailingComments(n))
+        qu.isSynthesized(qf.emit.sourceMapRange(n)) &&
+        qu.isSynthesized(qf.emit.commentRange(n)) &&
+        !qu.some(qf.emit.syntheticLeadingComments(n)) &&
+        !qu.some(qf.emit.syntheticTrailingComments(n))
       );
     }
     computedNonLiteralName(n: qt.PropertyName) {
@@ -2567,7 +2568,7 @@ export function newGet(f: qt.Frame) {
       let f: EmitFlags = 0;
       if (!sourceMaps) f |= EmitFlags.NoSourceMap;
       if (!comments) f |= EmitFlags.NoComments;
-      if (f) setEmitFlags(n, f);
+      if (f) qf.emit.setFlags(n, f);
       return n;
     }
     nodeId(n: Node) {
@@ -3517,6 +3518,8 @@ export interface Frame extends qt.Frame {
   has: Fhas;
   is: Fis;
   nest: qg.Fnest;
+  skip: qg.Fskip;
+  stmt: qg.Fstmt;
 }
 export function newFrame() {
   const f = {} as Frame;
@@ -3530,6 +3533,8 @@ export function newFrame() {
   qg.newDecl(f);
   qg.newEmit(f);
   qg.newNest(f);
+  qg.newSkip(f);
+  qg.newStmt(f);
   return f;
 }
 export const qf = newFrame();

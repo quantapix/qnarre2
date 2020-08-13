@@ -117,6 +117,7 @@ export function newDecl(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: Fcalc;
     create: Fcreate;
+    emit: Femit;
     get: Fget;
     has: Fhas;
     is: Fis;
@@ -214,7 +215,7 @@ export function newDecl(f: qt.Frame) {
         f |= d.emitFlags(n);
         if (!sourceMaps) f |= EmitFlags.NoSourceMap;
         if (!comments) f |= EmitFlags.NoComments;
-        if (f) setEmitFlags(c, f);
+        if (f) qf.emit.setFlags(c, f);
         return c;
       }
       return this.generatedNameForNode(d);
@@ -316,7 +317,7 @@ export function newDecl(f: qt.Frame) {
       const e = new qc.FunctionExpression(n.modifiers, n.asteriskToken, n.name, n.typeParams, n.params, n.type, n.body);
       e.setOriginal(n);
       e.setRange(n);
-      if (getStartsOnNewLine(n)) setStartsOnNewLine(e, true);
+      if (qf.emit.startsOnNewLine(n)) qf.emit.setStartsOnNewLine(e, true);
       qf.calc.aggregate(e);
       return e;
     }
@@ -611,7 +612,7 @@ export function newCalc(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.calc = new (class {
     aggregate(n: Node): Node {
-      const aggregate = (n?: Node): TrafoFlags => {
+      const worker = (n?: Node): TrafoFlags => {
         if (!n) return TrafoFlags.None;
         if (n.trafoFlags & TrafoFlags.HasComputedFlags) return n.trafoFlags & ~qy.get.trafoFlagsSubtreeExclusions(n.kind);
         return this.trafoFlags(n, subtree(n));
@@ -621,7 +622,7 @@ export function newCalc(f: qt.Frame) {
         let sub = TrafoFlags.None;
         let f = TrafoFlags.None;
         for (const n of ns) {
-          sub |= aggregate(n);
+          sub |= worker(n);
           f |= n.trafoFlags & ~TrafoFlags.HasComputedFlags;
         }
         ns.trafoFlags = f | TrafoFlags.HasComputedFlags;
@@ -631,9 +632,9 @@ export function newCalc(f: qt.Frame) {
         if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TrafoFlags.None;
         return reduceEachChild(n, TrafoFlags.None, child, children);
       };
-      const child = (f: TrafoFlags, n: Node): TrafoFlags => f | aggregate(n);
+      const child = (f: TrafoFlags, n: Node): TrafoFlags => f | worker(n);
       const children = (f: TrafoFlags, ns: Nodes<Node>): TrafoFlags => f | nodes(ns);
-      aggregate(n);
+      worker(n);
       return n;
     }
     trafoFlags(n: Node, f: TrafoFlags): TrafoFlags {
@@ -1112,6 +1113,7 @@ export interface Fcalc extends ReturnType<typeof newCalc> {}
 export function newStmt(f: qt.Frame) {
   interface Frame extends qt.Frame {
     create: Fcreate;
+    emit: Femit;
     get: Fget;
     has: Fhas;
     is: Fis;
@@ -1139,21 +1141,21 @@ export function newStmt(f: qt.Frame) {
         return this.anyImportOrReExport(n as Node) || n.kind === Syntax.ExportAssignment || qf.has.syntacticModifier(n, ModifierFlags.Export);
       }
     })();
-    insertAllAfterPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined, isPrologue: (n: qt.Node) => boolean): T[] {
+    insertAllAfterPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined, isPrologue: (n: Node) => boolean): T[] {
       if (from?.length) {
         let i = 0;
         for (; i < to.length; ++i) {
-          if (!isPrologue(to[i] as qt.Node)) break;
+          if (!isPrologue(to[i] as Node)) break;
         }
         to.splice(i, 0, ...from);
       }
       return to;
     }
-    insertAfterPrologue<T extends qt.Statement>(to: T[], s: T | undefined, isPrologue: (n: qt.Node) => boolean): T[] {
+    insertAfterPrologue<T extends qt.Statement>(to: T[], s: T | undefined, isPrologue: (n: Node) => boolean): T[] {
       if (s) {
         let i = 0;
         for (; i < to.length; ++i) {
-          if (!isPrologue(to[i] as qt.Node)) break;
+          if (!isPrologue(to[i] as Node)) break;
         }
         to.splice(i, 0, s);
       }
@@ -1184,12 +1186,12 @@ export function newStmt(f: qt.Frame) {
         } else break;
         i++;
       }
-      if (strict && !useStrict) to.push(startOnNewLine(new ExpressionStatement(asLiteral('use strict'))));
+      if (strict && !useStrict) to.push(qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(asLiteral('use strict'))));
       return i;
     }
-    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i: number, cb?: (n: qt.Node) => VisitResult, filter?: (n: qt.Node) => boolean): number;
-    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: qt.Node) => VisitResult, filter?: (n: qt.Node) => boolean): number | undefined;
-    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: qt.Node) => VisitResult, filter: (n: qt.Node) => boolean = () => true): number | undefined {
+    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i: number, cb?: (n: Node) => VisitResult, filter?: (n: Node) => boolean): number;
+    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: Node) => VisitResult, filter?: (n: Node) => boolean): number | undefined;
+    addCustomPrologue(to: qt.Statement[], from: readonly qt.Statement[], i?: number, cb?: (n: Node) => VisitResult, filter: (n: Node) => boolean = () => true): number | undefined {
       const l = from.length;
       while (i !== undefined && i < l) {
         const s = from[i];
@@ -1199,7 +1201,7 @@ export function newStmt(f: qt.Frame) {
       }
       return i;
     }
-    addPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean, cb?: (n: qt.Node) => VisitResult): number {
+    addPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean, cb?: (n: Node) => VisitResult): number {
       const i = this.addStandardPrologue(to, from, strict);
       return this.addCustomPrologue(to, from, i, cb);
     }
@@ -1212,8 +1214,8 @@ export function newStmt(f: qt.Frame) {
       return;
     }
     startsWithUseStrict(ss: readonly qt.Statement[]) {
-      const firstStatement = qu.firstOrUndefined(ss);
-      return firstStatement !== undefined && qf.is.prologueDirective(firstStatement) && qf.is.useStrictPrologue(firstStatement);
+      const s = qu.firstOrUndefined(ss);
+      return s !== undefined && qf.is.prologueDirective(s) && qf.is.useStrictPrologue(s);
     }
     createForOfBindingStatement(n: qt.ForIniter, e: qt.Expression): qt.Statement {
       if (n.kind === Syntax.VariableDeclarationList) {
@@ -1257,14 +1259,14 @@ export function newNest(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  interface BinaryPlusExpression extends BinaryExpression {
+  interface BinaryPlusExpression extends qt.BinaryExpression {
     cachedLiteralKind: Syntax;
   }
   return (qf.nest = new (class {
     getLiteralKindOfBinaryPlusOperand(e: qt.Expression): Syntax {
-      e = qb.skip.partiallyEmittedExpressions(e);
+      e = qf.skip.partiallyEmittedExpressions(e);
       if (qy.is.literal(e.kind)) return e.kind;
-      const n = e as qt.Node;
+      const n = e as Node;
       if (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.PlusToken) {
         const p = e as BinaryPlusExpression;
         if (p.cachedLiteralKind) return p.cachedLiteralKind;
@@ -1276,7 +1278,7 @@ export function newNest(f: qt.Frame) {
       return Syntax.Unknown;
     }
     binaryOperand(binaryOperator: Syntax, operand: qt.Expression, isLeft: boolean, leftOperand?: qt.Expression) {
-      const skipped = qb.skip.partiallyEmittedExpressions(operand);
+      const skipped = qf.skip.partiallyEmittedExpressions(operand);
       if (skipped.kind === Syntax.ParenthesizedExpression) return operand;
       function operatorHasAssociativeProperty(binaryOperator: Syntax) {
         // The following operators are associative in JavaScript:
@@ -1292,7 +1294,7 @@ export function newNest(f: qt.Frame) {
       function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: qt.Expression, isLeft: boolean, leftOperand: qt.Expression | undefined) {
         const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
         const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
-        const emittedOperand = qb.skip.partiallyEmittedExpressions(operand);
+        const emittedOperand = qf.skip.partiallyEmittedExpressions(operand);
         if (!isLeft && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) return true;
         const operandPrecedence = qf.get.expressionPrecedence(emittedOperand);
         switch (qu.compareNumbers(operandPrecedence, binaryOperatorPrecedence)) {
@@ -1347,32 +1349,32 @@ export function newNest(f: qt.Frame) {
             }
         }
       }
-      return binaryOperandNeedsParentheses(binaryOperator, operand, isLeft, leftOperand) ? new ParenthesizedExpression(operand) : operand;
+      return binaryOperandNeedsParentheses(binaryOperator, operand, isLeft, leftOperand) ? new qc.ParenthesizedExpression(operand) : operand;
     }
     forConditionalHead(c: qt.Expression) {
       const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
-      const emittedCondition = qb.skip.partiallyEmittedExpressions(c);
+      const emittedCondition = qf.skip.partiallyEmittedExpressions(c);
       const conditionPrecedence = qf.get.expressionPrecedence(emittedCondition);
-      if (qu.compareNumbers(conditionPrecedence, conditionalPrecedence) !== qu.Comparison.GreaterThan) return new ParenthesizedExpression(c);
+      if (qu.compareNumbers(conditionPrecedence, conditionalPrecedence) !== qu.Comparison.GreaterThan) return new qc.ParenthesizedExpression(c);
       return c;
     }
     subexpressionOfConditionalExpression(e: qt.Expression): qt.Expression {
-      const e2 = qb.skip.partiallyEmittedExpressions(e);
-      return qf.is.commaSequence(e2) ? new ParenthesizedExpression(e) : e;
+      const e2 = qf.skip.partiallyEmittedExpressions(e);
+      return qf.is.commaSequence(e2) ? new qc.ParenthesizedExpression(e) : e;
     }
     forAccess(e: qt.Expression): qt.LeftExpression {
-      const e2 = qb.skip.partiallyEmittedExpressions(e);
-      const n = e2 as qt.Node;
+      const e2 = qf.skip.partiallyEmittedExpressions(e);
+      const n = e2 as Node;
       if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.args)) return e as qt.LeftExpression;
-      return new ParenthesizedExpression(e).setRange(e);
+      return new qc.ParenthesizedExpression(e).setRange(e);
     }
     postfixOperand(e: qt.Expression): qt.LeftExpression {
-      return qf.is.leftHandSideExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
+      return qf.is.leftHandSideExpression(e) ? e : new qc.ParenthesizedExpression(e).setRange(e);
     }
     prefixOperand(e: qt.Expression): qt.UnaryExpression {
-      return qf.is.unaryExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
+      return qf.is.unaryExpression(e) ? e : new qc.ParenthesizedExpression(e).setRange(e);
     }
-    listElems(es: qt.Nodes<qt.Expression>) {
+    listElems(es: Nodes<qt.Expression>) {
       let r: qt.Expression[] | undefined;
       for (let i = 0; i < es.length; i++) {
         const e = this.expressionForList(es[i]);
@@ -1384,25 +1386,25 @@ export function newNest(f: qt.Frame) {
       return r ? new Nodes(r, es.trailingComma).setRange(es) : es;
     }
     expressionForList(e: qt.Expression) {
-      const e2 = qb.skip.partiallyEmittedExpressions(e);
+      const e2 = qf.skip.partiallyEmittedExpressions(e);
       const expressionPrecedence = qf.get.expressionPrecedence(e2);
       const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
-      return expressionPrecedence > commaPrecedence ? e : new ParenthesizedExpression(e).setRange(e);
+      return expressionPrecedence > commaPrecedence ? e : new qc.ParenthesizedExpression(e).setRange(e);
     }
     expressionForExpressionStatement(e: qt.Expression) {
-      const e2 = qb.skip.partiallyEmittedExpressions(e);
-      const n = e2 as qt.Node;
+      const e2 = qf.skip.partiallyEmittedExpressions(e);
+      const n = e2 as Node;
       if (n.kind === Syntax.CallExpression) {
         const callee = n.expression;
-        const k = qb.skip.partiallyEmittedExpressions(callee).kind;
+        const k = qf.skip.partiallyEmittedExpressions(callee).kind;
         if (k === Syntax.FunctionExpression || k === Syntax.ArrowFunction) {
           const c = getMutableClone(e2);
-          c.expression = new ParenthesizedExpression(callee).setRange(callee);
+          c.expression = new qc.ParenthesizedExpression(callee).setRange(callee);
           return recreateOuterExpressions(e, c, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
         }
       }
       const k = qf.get.leftmostExpression(e2, false).kind;
-      if (k === Syntax.ObjectLiteralExpression || k === Syntax.FunctionExpression) return new ParenthesizedExpression(e).setRange(e);
+      if (k === Syntax.ObjectLiteralExpression || k === Syntax.FunctionExpression) return new qc.ParenthesizedExpression(e).setRange(e);
       return e;
     }
     conditionalTypeMember(n: qt.Typing) {
@@ -1434,7 +1436,7 @@ export function newNest(f: qt.Frame) {
       if (qu.some(ns)) {
         const ps = [] as qt.Typing[];
         for (let i = 0; i < ns.length; ++i) {
-          const p = ns[i] as qt.Node;
+          const p = ns[i] as Node;
           ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new ParenthesizedTyping(p) : (p as qt.Typing));
         }
         return new Nodes(ps);
@@ -1442,7 +1444,7 @@ export function newNest(f: qt.Frame) {
       return;
     }
     defaultExpression(e: qt.Expression) {
-      const check = qb.skip.partiallyEmittedExpressions(e);
+      const check = qf.skip.partiallyEmittedExpressions(e);
       let needsParens = qf.is.commaSequence(check);
       if (!needsParens) {
         switch (qf.get.leftmostExpression(check, false).kind) {
@@ -1451,20 +1453,20 @@ export function newNest(f: qt.Frame) {
             needsParens = true;
         }
       }
-      return needsParens ? new ParenthesizedExpression(e) : e;
+      return needsParens ? new qc.ParenthesizedExpression(e) : e;
     }
     forNew(e: qt.Expression): qt.LeftExpression {
-      const n = qf.get.leftmostExpression(e, true) as qt.Node;
+      const n = qf.get.leftmostExpression(e, true) as Node;
       switch (n.kind) {
         case Syntax.CallExpression:
-          return new ParenthesizedExpression(e);
+          return new qc.ParenthesizedExpression(e);
         case Syntax.NewExpression:
-          return !n.args ? new ParenthesizedExpression(e) : (e as qt.LeftExpression);
+          return !n.args ? new qc.ParenthesizedExpression(e) : (e as qt.LeftExpression);
       }
       return forAccess(e);
     }
     conciseBody(b: qt.ConciseBody): qt.ConciseBody {
-      if (b.kind !== Syntax.Block && (qf.is.commaSequence(b) || qf.get.leftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new ParenthesizedExpression(b).setRange(b);
+      if (b.kind !== Syntax.Block && (qf.is.commaSequence(b) || qf.get.leftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new qc.ParenthesizedExpression(b).setRange(b);
       return b;
     }
   })());
@@ -1477,198 +1479,187 @@ export function newEmit(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.emit = new (class {
-    disposeEmitNodes(sourceFile: qt.SourceFile) {
-      sourceFile = qf.get.parseTreeOf(sourceFile).sourceFile;
-      const emitNode = sourceFile && sourceFile.emitNode;
-      const annotatedNodes = emitNode && emitNode.annotatedNodes;
-      if (annotatedNodes) {
-        for (const n of annotatedNodes) {
+    disposeEmits(s: qt.SourceFile) {
+      s = qf.get.parseTreeOf(s).sourceFile;
+      const ns = s?.emitNode?.annotatedNodes;
+      if (ns) {
+        for (const n of ns) {
           n.emitNode = undefined;
         }
       }
     }
-    getOrCreateEmitNode(n: qt.Node): qt.EmitNode {
+    getOrCreate(n: Node): qt.EmitNode {
       if (!n.emitNode) {
         if (qf.is.parseTreeNode(n)) {
           if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qt.EmitNode);
-          const sourceFile = qf.get.parseTreeOf(n.sourceFile).sourceFile;
-          getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
+          const s = qf.get.parseTreeOf(n.sourceFile).sourceFile;
+          this.getOrCreate(s).annotatedNodes!.push(n);
         }
         n.emitNode = {} as qt.EmitNode;
       }
       return n.emitNode;
     }
-    removeAllComments<T extends qb.Nobj>(n: T): T {
-      const emitNode = getOrCreateEmitNode(n);
-      emitNode.flags |= EmitFlags.NoComments;
-      emitNode.leadingComments = undefined;
-      emitNode.trailingComments = undefined;
+    removeAllComments<T extends Node>(n: T): T {
+      const e = this.getOrCreate(n);
+      e.flags |= EmitFlags.NoComments;
+      e.leadingComments = undefined;
+      e.trailingComments = undefined;
       return n;
     }
-    setEmitFlags<T extends qb.Nobj>(n: T, emitFlags: EmitFlags) {
-      getOrCreateEmitNode(n).flags = emitFlags;
+    setFlags<T extends Node>(n: T, f: EmitFlags) {
+      this.getOrCreate(n).flags = f;
       return n;
     }
-    addEmitFlags<T extends qb.Nobj>(n: T, emitFlags: EmitFlags) {
-      const emitNode = getOrCreateEmitNode(n);
-      emitNode.flags = emitNode.flags | emitFlags;
+    addFlags<T extends Node>(n: T, f: EmitFlags) {
+      const e = this.getOrCreate(n);
+      e.flags = e.flags | f;
       return n;
     }
-    getSourceMapRange(n: qt.Node): qt.SourceMapRange {
-      const emitNode = n.emitNode;
-      return (emitNode && emitNode.sourceMapRange) || n;
+    sourceMapRange(n: Node): qt.SourceMapRange {
+      return n.emitNode?.sourceMapRange || n;
     }
-    setSourceMapRange<T extends qb.Nobj>(n: T, range: qt.SourceMapRange | undefined) {
-      getOrCreateEmitNode(n).sourceMapRange = range;
+    setSourceMapRange<T extends Node>(n: T, r?: qt.SourceMapRange) {
+      this.getOrCreate(n).sourceMapRange = r;
       return n;
     }
-    getTokenSourceMapRange(n: qt.Node, token: Syntax): qt.SourceMapRange | undefined {
-      const emitNode = n.emitNode;
-      const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
-      return tokenSourceMapRanges && tokenSourceMapRanges[token];
+    tokenSourceMapRange(n: Node, t: Syntax): qt.SourceMapRange | undefined {
+      const rs = n.emitNode?.tokenSourceMapRanges;
+      return rs?.[t];
     }
-    setTokenSourceMapRange<T extends qb.Nobj>(n: T, token: Syntax, range: qt.SourceMapRange | undefined) {
-      const emitNode = getOrCreateEmitNode(n);
-      const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
-      tokenSourceMapRanges[token] = range;
+    setTokenSourceMapRange<T extends Node>(n: T, t: Syntax, r?: qt.SourceMapRange) {
+      const e = this.getOrCreate(n);
+      const rs = e.tokenSourceMapRanges || (e.tokenSourceMapRanges = []);
+      rs[t] = r;
       return n;
     }
-    getStartsOnNewLine(n: qt.Node) {
-      const emitNode = n.emitNode;
-      return emitNode && emitNode.startsOnNewLine;
+    startsOnNewLine(n: Node) {
+      return n.emitNode?.startsOnNewLine;
     }
-    setStartsOnNewLine<T extends qb.Nobj>(n: T, newLine: boolean) {
-      getOrCreateEmitNode(n).startsOnNewLine = newLine;
+    setStartsOnNewLine<T extends Node>(n: T, newLine = true) {
+      this.getOrCreate(n).startsOnNewLine = newLine;
       return n;
     }
-    getCommentRange(n: qt.Node) {
-      const emitNode = n.emitNode;
-      return (emitNode && emitNode.commentRange) || n;
+    commentRange(n: Node) {
+      return n.emitNode?.commentRange || n;
     }
-    setCommentRange<T extends qb.Nobj>(n: T, range: qu.TextRange) {
-      getOrCreateEmitNode(n).commentRange = range;
+    setCommentRange<T extends Node>(n: T, r?: qu.TextRange) {
+      this.getOrCreate(n).commentRange = r;
       return n;
     }
-    getSyntheticLeadingComments(n: qt.Node): qt.SynthesizedComment[] | undefined {
-      const emitNode = n.emitNode;
-      return emitNode && emitNode.leadingComments;
+    syntheticLeadingComments(n: Node): qt.SynthesizedComment[] | undefined {
+      return n.emitNode?.leadingComments;
     }
-    setSyntheticLeadingComments<T extends qb.Nobj>(n: T, comments: qt.SynthesizedComment[] | undefined) {
-      getOrCreateEmitNode(n).leadingComments = comments;
+    setSyntheticLeadingComments<T extends Node>(n: T, cs?: qt.SynthesizedComment[]) {
+      this.getOrCreate(n).leadingComments = cs;
       return n;
     }
-    addSyntheticLeadingComment<T extends qb.Nobj>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-      return setSyntheticLeadingComments(
+    addSyntheticLeadingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+      return this.setSyntheticLeadingComments(
         n,
-        qu.append<qt.SynthesizedComment>(getSyntheticLeadingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        qu.append<qt.SynthesizedComment>(this.syntheticLeadingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
       );
     }
-    getSyntheticTrailingComments(n: qt.Node): qt.SynthesizedComment[] | undefined {
-      const emitNode = n.emitNode;
-      return emitNode && emitNode.trailingComments;
+    syntheticTrailingComments(n: Node): qt.SynthesizedComment[] | undefined {
+      return n.emitNode?.trailingComments;
     }
-    setSyntheticTrailingComments<T extends qb.Nobj>(n: T, comments: qt.SynthesizedComment[] | undefined) {
-      getOrCreateEmitNode(n).trailingComments = comments;
+    setSyntheticTrailingComments<T extends Node>(n: T, cs?: qt.SynthesizedComment[]) {
+      this.getOrCreate(n).trailingComments = cs;
       return n;
     }
-    addSyntheticTrailingComment<T extends qb.Nobj>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-      return setSyntheticTrailingComments(
+    addSyntheticTrailingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+      return this.setSyntheticTrailingComments(
         n,
-        qu.append<qt.SynthesizedComment>(getSyntheticTrailingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        qu.append<qt.SynthesizedComment>(this.syntheticTrailingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
       );
     }
-    moveSyntheticComments<T extends qb.Nobj>(n: T, original: qt.Node): T {
-      setSyntheticLeadingComments(n, getSyntheticLeadingComments(original));
-      setSyntheticTrailingComments(n, getSyntheticTrailingComments(original));
-      const emit = getOrCreateEmitNode(original);
-      emit.leadingComments = undefined;
-      emit.trailingComments = undefined;
+    moveSyntheticComments<T extends Node>(to: T, from: Node): T {
+      this.setSyntheticLeadingComments(to, this.syntheticLeadingComments(from));
+      this.setSyntheticTrailingComments(to, this.syntheticTrailingComments(from));
+      const e = this.getOrCreate(from);
+      e.leadingComments = undefined;
+      e.trailingComments = undefined;
+      return to;
+    }
+    ignoreSourceNewlines<T extends Node>(n: T): T {
+      this.getOrCreate(n).flags |= EmitFlags.IgnoreSourceNewlines;
       return n;
     }
-    ignoreSourceNewlines<T extends qb.Nobj>(n: T): T {
-      getOrCreateEmitNode(n).flags |= EmitFlags.IgnoreSourceNewlines;
+    constantValue(n: qt.PropertyAccessExpression | qt.ElemAccessExpression): string | number | undefined {
+      return n.emitNode?.constantValue;
+    }
+    setConstantValue(n: qt.PropertyAccessExpression | qt.ElemAccessExpression, v: string | number): qt.PropertyAccessExpression | qt.ElemAccessExpression {
+      const e = this.getOrCreate(n);
+      e.constantValue = v;
       return n;
     }
-    getConstantValue(n: PropertyAccessExpression | ElemAccessExpression): string | number | undefined {
-      const emitNode = n.emitNode;
-      return emitNode && emitNode.constantValue;
-    }
-    setConstantValue(n: PropertyAccessExpression | ElemAccessExpression, value: string | number): PropertyAccessExpression | ElemAccessExpression {
-      const emitNode = getOrCreateEmitNode(n);
-      emitNode.constantValue = value;
+    addHelper<T extends Node>(n: T, h: qt.EmitHelper): T {
+      const e = this.getOrCreate(n);
+      e.helpers = qu.append(e.helpers, h);
       return n;
     }
-    addEmitHelper<T extends qb.Nobj>(n: T, helper: qt.EmitHelper): T {
-      const emitNode = getOrCreateEmitNode(n);
-      emitNode.helpers = qu.append(emitNode.helpers, helper);
-      return n;
-    }
-    addEmitHelpers<T extends qb.Nobj>(n: T, helpers: qt.EmitHelper[] | undefined): T {
-      if (qu.some(helpers)) {
-        const emitNode = getOrCreateEmitNode(n);
-        for (const helper of helpers) {
-          emitNode.helpers = qu.appendIfUnique(emitNode.helpers, helper);
+    addHelpers<T extends Node>(n: T, hs?: qt.EmitHelper[]): T {
+      if (qu.some(hs)) {
+        const e = this.getOrCreate(n);
+        for (const h of hs) {
+          e.helpers = qu.appendIfUnique(e.helpers, h);
         }
       }
       return n;
     }
-    removeEmitHelper(n: qt.Node, helper: qt.EmitHelper): boolean {
-      const emitNode = n.emitNode;
-      if (emitNode) {
-        const helpers = emitNode.helpers;
-        if (helpers) return orderedRemoveItem(helpers, helper);
+    removeHelper(n: Node, h: qt.EmitHelper): boolean {
+      const e = n.emitNode;
+      if (e) {
+        const hs = e.helpers;
+        if (hs) return qu.orderedRemoveItem(hs, h);
       }
       return false;
     }
-    getEmitHelpers(n: qt.Node): qt.EmitHelper[] | undefined {
-      const emitNode = n.emitNode;
-      return emitNode && emitNode.helpers;
+    helpers(n: Node): qt.EmitHelper[] | undefined {
+      return n.emitNode?.helpers;
     }
-    moveEmitHelpers(source: qt.Node, target: qt.Node, predicate: (helper: qt.EmitHelper) => boolean) {
-      const sourceEmitNode = source.emitNode;
-      const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
-      if (!qu.some(sourceEmitHelpers)) return;
-      const targetEmitNode = getOrCreateEmitNode(target);
-      let helpersRemoved = 0;
-      for (let i = 0; i < sourceEmitHelpers.length; i++) {
-        const helper = sourceEmitHelpers[i];
-        if (predicate(helper)) {
-          helpersRemoved++;
-          targetEmitNode.helpers = qu.appendIfUnique(targetEmitNode.helpers, helper);
-        } else if (helpersRemoved > 0) sourceEmitHelpers[i - helpersRemoved] = helper;
+    moveHelpers(from: Node, to: Node, cb: (h: qt.EmitHelper) => boolean) {
+      const hs = from.emitNode?.helpers;
+      if (!qu.some(hs)) return;
+      const t = this.getOrCreate(to);
+      let c = 0;
+      for (let i = 0; i < hs.length; i++) {
+        const h = hs[i];
+        if (cb(h)) {
+          c++;
+          t.helpers = qu.appendIfUnique(t.helpers, h);
+        } else if (c > 0) hs[i - c] = h;
       }
-      if (helpersRemoved > 0) sourceEmitHelpers.length -= helpersRemoved;
+      if (c > 0) hs.length -= c;
     }
-    compareEmitHelpers(x: qt.EmitHelper, y: qt.EmitHelper) {
+    compareHelpers(x: qt.EmitHelper, y: qt.EmitHelper) {
       if (x === y) return qu.Comparison.EqualTo;
       if (x.priority === y.priority) return qu.Comparison.EqualTo;
       if (x.priority === undefined) return qu.Comparison.GreaterThan;
       if (y.priority === undefined) return qu.Comparison.LessThan;
       return qu.compareNumbers(x.priority, y.priority);
     }
-    mergeEmitNode(sourceEmitNode: qt.EmitNode, destEmitNode: qt.EmitNode | undefined) {
-      const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
-      if (!destEmitNode) destEmitNode = {} as qt.EmitNode;
-      if (leadingComments) destEmitNode.leadingComments = addRange(leadingComments.slice(), destEmitNode.leadingComments);
-      if (trailingComments) destEmitNode.trailingComments = addRange(trailingComments.slice(), destEmitNode.trailingComments);
-      if (flags) destEmitNode.flags = flags;
-      if (commentRange) destEmitNode.commentRange = commentRange;
-      if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
-      if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = qu.TextRange.merge(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
-      if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
-      if (helpers) destEmitNode.helpers = addRange(destEmitNode.helpers, helpers);
-      if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
-      return destEmitNode;
+    merge(from: qt.EmitNode, to?: qt.EmitNode) {
+      const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = from;
+      if (!to) to = {} as qt.EmitNode;
+      if (leadingComments) to.leadingComments = qu.addRange(leadingComments.slice(), to.leadingComments);
+      if (trailingComments) to.trailingComments = qu.addRange(trailingComments.slice(), to.trailingComments);
+      if (flags) to.flags = flags;
+      if (commentRange) to.commentRange = commentRange;
+      if (sourceMapRange) to.sourceMapRange = sourceMapRange;
+      if (tokenSourceMapRanges) to.tokenSourceMapRanges = qu.TextRange.merge(tokenSourceMapRanges, to.tokenSourceMapRanges!);
+      if (constantValue !== undefined) to.constantValue = constantValue;
+      if (helpers) to.helpers = qu.addRange(to.helpers, helpers);
+      if (startsOnNewLine !== undefined) to.startsOnNewLine = startsOnNewLine;
+      return to;
     }
-    getExternalHelpersModuleName(n: qt.SourceFile) {
-      const parseNode = qf.get.originalOf(n, isSourceFile);
-      const emitNode = parseNode && parseNode.emitNode;
-      return emitNode && emitNode.externalHelpersModuleName;
+    externalHelpersModuleName(s: qt.SourceFile) {
+      const n = qf.get.originalOf(s, qf.is.sourceFile);
+      return n?.emitNode?.externalHelpersModuleName;
     }
-    hasRecordedExternalHelpers(sourceFile: qt.SourceFile) {
-      const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
-      const emitNode = parseNode && parseNode.emitNode;
-      return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
+    hasRecordedExternalHelpers(s: qt.SourceFile) {
+      const n = qf.get.originalOf(s, isSourceFile);
+      const e = n?.emitNode;
+      return !!e && (!!e.externalHelpersModuleName || !!e.externalHelpers);
     }
   })());
 }
@@ -1676,26 +1667,16 @@ export interface Femit extends ReturnType<typeof newEmit> {}
 export namespace fixme {
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-    return new (SourceMapSource || (SourceMapSource = qt.Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
+    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
-    return setEmitFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+    return qf.emit.setFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
   }
   export function convertToFunctionBody(node: qt.ConciseBody, multiLine?: boolean): qt.Block {
     return node.kind === Syntax.Block ? node : new Block([new ReturnStatement(node).setRange(node)], multiLine).setRange(node);
-  }
-  export function ensureUseStrict(statements: qt.Nodes<qt.Statement>): qt.Nodes<qt.Statement> {
-    const foundUseStrict = findUseStrictPrologue(statements);
-    if (!foundUseStrict) {
-      return new Nodes<qt.Statement>([startOnNewLine(new ExpressionStatement(asLiteral('use strict'))), ...statements]).setRange(statements);
-    }
-    return statements;
-  }
-  export function startOnNewLine<T extends qb.Nobj>(node: T): T {
-    return setStartsOnNewLine(node, true);
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
     sourceFile: SourceFile,
@@ -1708,7 +1689,7 @@ export namespace fixme {
       let namedBindings: qt.NamedImportBindings | undefined;
       const moduleKind = getEmitModuleKind(compilerOpts);
       if (moduleKind >= qt.ModuleKind.ES2015 && moduleKind <= qt.ModuleKind.ESNext) {
-        const helpers = getEmitHelpers(sourceFile);
+        const helpers = qf.emit.helpers(sourceFile);
         if (helpers) {
           const helperNames: string[] = [];
           for (const helper of helpers) {
@@ -1727,7 +1708,7 @@ export namespace fixme {
               )
             );
             const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
-            const emitNode = getOrCreateEmitNode(parseNode);
+            const emitNode = this.getOrCreate(parseNode);
             emitNode.externalHelpers = true;
           }
         }
@@ -1739,7 +1720,7 @@ export namespace fixme {
       }
       if (namedBindings) {
         const externalHelpersImportDeclaration = new ImportDeclaration(undefined, undefined, new ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
-        addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
+        qf.emit.addFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }
     }
@@ -1747,12 +1728,12 @@ export namespace fixme {
   }
   export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOpts: qt.CompilerOpts, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
     if (compilerOpts.importHelpers && node.isEffectiveExternalModule(compilerOpts)) {
-      const externalHelpersModuleName = getExternalHelpersModuleName(node);
+      const externalHelpersModuleName = qf.emit.externalHelpersModuleName(node);
       if (externalHelpersModuleName) return externalHelpersModuleName;
       const moduleKind = getEmitModuleKind(compilerOpts);
       let create = (hasExportStarsToExportValues || (compilerOpts.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== qt.ModuleKind.System && moduleKind < qt.ModuleKind.ES2015;
       if (!create) {
-        const helpers = getEmitHelpers(node);
+        const helpers = qf.emit.helpers(node);
         if (helpers) {
           for (const helper of helpers) {
             if (!helper.scoped) {
@@ -1764,7 +1745,7 @@ export namespace fixme {
       }
       if (create) {
         const parseNode = qf.get.originalOf(node, isSourceFile);
-        const emitNode = getOrCreateEmitNode(parseNode);
+        const emitNode = this.getOrCreate(parseNode);
         return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
       }
     }

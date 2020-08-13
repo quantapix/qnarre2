@@ -887,7 +887,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
 
   merge(t: Symbol, unidirectional = false): this {
-    if (!(t.flags & qc.getExcluded(this.flags)) || (this.flags | t.flags) & SymbolFlags.Assignment) {
+    if (!(t.flags & qf.get.excluded(this.flags)) || (this.flags | t.flags) & SymbolFlags.Assignment) {
       if (this === t) return this;
       if (!(t.flags & SymbolFlags.Transient)) {
         const r = t.resolveSymbol();
@@ -897,7 +897,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       if (this.flags & SymbolFlags.ValueModule && t.flags & SymbolFlags.ValueModule && t.constEnumOnlyModule && !this.constEnumOnlyModule) t.constEnumOnlyModule = false;
       t.flags |= this.flags;
       if (this.valueDeclaration) t.setValueDeclaration(this.valueDeclaration);
-      addRange(t.declarations, this.declarations);
+      qu.addRange(t.declarations, this.declarations);
       if (this.members) {
         if (!t.members) t.members = new SymbolTable();
         t.members.merge(this.members, unidirectional);
@@ -1280,7 +1280,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const oldFlags = context.flags;
     context.flags |= qt.NodeBuilderFlags.InTypeAlias;
     addResult(
-      setSyntheticLeadingComments(
+      qf.emit.setSyntheticLeadingComments(
         new qc.TypeAliasDeclaration(undefined, undefined, this.getInternalSymbol(symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
         !commentText
           ? []

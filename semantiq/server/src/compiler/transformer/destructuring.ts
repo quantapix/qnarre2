@@ -154,7 +154,7 @@ export function flattenDestructuringBinding(
       context.hoistVariableDeclaration(temp);
       const pendingDeclaration = last(pendingDeclarations);
       pendingDeclaration.pendingExpressions = append(pendingDeclaration.pendingExpressions, qf.create.assignment(temp, pendingDeclaration.value));
-      addRange(pendingDeclaration.pendingExpressions, pendingExpressions);
+      qu.addRange(pendingDeclaration.pendingExpressions, pendingExpressions);
       pendingDeclaration.value = temp;
     }
   }

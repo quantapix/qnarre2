@@ -39,6 +39,26 @@ export function newGet(f: qt.Frame) {
     get instantiationCount() {
       return qf.totalInstantiationCount;
     }
+    excluded(f: SymbolFlags): SymbolFlags {
+      let r: SymbolFlags = 0;
+      if (f & SymbolFlags.Alias) r |= SymbolFlags.AliasExcludes;
+      if (f & SymbolFlags.BlockScopedVariable) r |= SymbolFlags.BlockScopedVariableExcludes;
+      if (f & SymbolFlags.Class) r |= SymbolFlags.ClassExcludes;
+      if (f & SymbolFlags.ConstEnum) r |= SymbolFlags.ConstEnumExcludes;
+      if (f & SymbolFlags.EnumMember) r |= SymbolFlags.EnumMemberExcludes;
+      if (f & SymbolFlags.Function) r |= SymbolFlags.FunctionExcludes;
+      if (f & SymbolFlags.FunctionScopedVariable) r |= SymbolFlags.FunctionScopedVariableExcludes;
+      if (f & SymbolFlags.GetAccessor) r |= SymbolFlags.GetAccessorExcludes;
+      if (f & SymbolFlags.Interface) r |= SymbolFlags.InterfaceExcludes;
+      if (f & SymbolFlags.Method) r |= SymbolFlags.MethodExcludes;
+      if (f & SymbolFlags.Property) r |= SymbolFlags.PropertyExcludes;
+      if (f & SymbolFlags.RegularEnum) r |= SymbolFlags.RegularEnumExcludes;
+      if (f & SymbolFlags.SetAccessor) r |= SymbolFlags.SetAccessorExcludes;
+      if (f & SymbolFlags.TypeAlias) r |= SymbolFlags.TypeAliasExcludes;
+      if (f & SymbolFlags.TypeParam) r |= SymbolFlags.TypeParamExcludes;
+      if (f & SymbolFlags.ValueModule) r |= SymbolFlags.ValueModuleExcludes;
+      return r;
+    }
     mergedSymbol(s: Symbol): Symbol | undefined {
       let r: Symbol;
       return s.mergeId && (r = qf.mergedSymbols[s.mergeId]) ? r : s;
@@ -344,7 +364,7 @@ export function newGet(f: qt.Frame) {
     exportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[] {
       const exports = this.exportsOfModuleAsArray(moduleSymbol);
       const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
-      if (exportEquals !== moduleSymbol) addRange(exports, this.propertiesOfType(this.typeOfSymbol(exportEquals)));
+      if (exportEquals !== moduleSymbol) qu.addRange(exports, this.propertiesOfType(this.typeOfSymbol(exportEquals)));
       return exports;
     }
     symbolOfNode(n: qt.Declaration): Symbol;
@@ -3200,7 +3220,7 @@ export function newGet(f: qt.Frame) {
         let outerTypeParams = this.outerTypeParams(declaration, true);
         if (qf.is.jsConstructor(declaration)) {
           const templateTagParams = this.typeParamsFromDeclaration(declaration as qt.DeclarationWithTypeParams);
-          outerTypeParams = addRange(outerTypeParams, templateTagParams);
+          outerTypeParams = qu.addRange(outerTypeParams, templateTagParams);
         }
         typeParams = outerTypeParams || qu.empty;
         typeParams =

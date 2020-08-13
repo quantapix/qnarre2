@@ -502,7 +502,7 @@ export function transformDeclarations(context: TrafoContext) {
   }
   function preserveDoc<T extends Node>(updated: T, original: Node): T {
     if (qc.is.withDocNodes(updated) && qc.is.withDocNodes(original)) updated.doc = original.doc;
-    return setCommentRange(updated, getCommentRange(original));
+    return qf.emit.setCommentRange(updated, qf.emit.commentRange(original));
   }
   function rewriteModuleSpecifier<T extends Node>(
     parent: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping,
@@ -747,7 +747,7 @@ export function transformDeclarations(context: TrafoContext) {
       }
     }
     if (qc.is.kind(qc.TupleTyping, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
-      setEmitFlags(input, EmitFlags.SingleLine);
+      qf.emit.setFlags(input, EmitFlags.SingleLine);
     return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
       if (returnValue && canProduceDiagnostic && qf.has.dynamicName(input as Declaration)) checkName(input as DeclarationDiagnosticProducing);

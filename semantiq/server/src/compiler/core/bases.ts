@@ -269,7 +269,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     this.original = n;
     if (n) {
       const e = n.emitNode;
-      if (e) this.emitNode = qf.emit.mergeEmitNode(e, this.emitNode);
+      if (e) this.emitNode = qf.emit.qf.emit.merge(e, this.emitNode);
     }
     return this;
   }
@@ -1492,6 +1492,25 @@ qu.addMixins(ClassLikeDecl, [DocContainer]);
 qu.addMixins(FunctionOrConstructorTobj, [Tobj]);
 qu.addMixins(ObjectLiteralExpr, [Decl]);
 qu.addMixins(LiteralExpr, [LiteralLikeNode]);
+export function cloneMap(m: SymbolTable): SymbolTable;
+export function cloneMap<T>(m: qu.QReadonlyMap<T>): qu.QMap<T>;
+export function cloneMap<T>(m: qu.ReadonlyEscapedMap<T>): qu.EscapedMap<T>;
+export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | SymbolTable): qu.QMap<T> | qu.EscapedMap<T> | SymbolTable {
+  const c = new qu.QMap<T>();
+  qu.copyEntries(m as qu.QMap<T>, c);
+  return c;
+}
+export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
+  while (n) {
+    const r = cb(n);
+    if (r === 'quit') return;
+    if (r) return n;
+    n = n.parent;
+  }
+  return;
+}
 function walkUp(n: Node | undefined, k: Syntax) {
   while (n?.kind === k) {
     n = n.parent;

@@ -1450,7 +1450,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     }
     const bundledHelpers = createMap<boolean>();
     for (const sourceFile of bundle.sourceFiles) {
-      const shouldSkip = getExternalHelpersModuleName(sourceFile) !== undefined;
+      const shouldSkip = qf.emit.externalHelpersModuleName(sourceFile) !== undefined;
       const helpers = getSortedEmitHelpers(sourceFile);
       if (!helpers) continue;
       for (const helper of helpers) {
@@ -1473,7 +1473,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     for (let i = 0; i < numNodes; i++) {
       const currentNode = bundle ? (i < numPrepends ? bundle.prepends[i] : bundle.sourceFiles[i - numPrepends]) : node;
       const sourceFile = qc.is.kind(qc.SourceFile, currentNode) ? currentNode : qc.is.kind(qc.UnparsedSource, currentNode) ? undefined : currentSourceFile!;
-      const shouldSkip = printerOpts.noEmitHelpers || (!!sourceFile && hasRecordedExternalHelpers(sourceFile));
+      const shouldSkip = printerOpts.noEmitHelpers || (!!sourceFile && qf.emit.hasRecordedExternalHelpers(sourceFile));
       const shouldBundle = (qc.is.kind(qc.SourceFile, currentNode) || qc.is.kind(qc.UnparsedSource, currentNode)) && !isOwnFileEmit;
       const helpers = qc.is.kind(qc.UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
       if (helpers) {
@@ -1503,8 +1503,8 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     return helpersEmitted;
   }
   function getSortedEmitHelpers(node: Node) {
-    const helpers = getEmitHelpers(node);
-    return helpers && stableSort(helpers, compareEmitHelpers);
+    const helpers = qf.emit.helpers(node);
+    return helpers && stableSort(helpers, qf.emit.compareHelpers);
   }
   function emitNumericOrBigIntLiteral(node: NumericLiteral | BigIntLiteral) {
     emitLiteral(node, false);
@@ -1946,7 +1946,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
       const text = getLiteralTextOfNode(<LiteralExpression>expression, false);
       return !expression.numericLiteralFlags && !qu.stringContains(text, Token.toString(Syntax.DotToken)!);
     } else if (qc.is.accessExpression(expression)) {
-      const constantValue = getConstantValue(expression);
+      const constantValue = qf.emit.constantValue(expression);
       return typeof constantValue === 'number' && isFinite(constantValue) && Math.floor(constantValue) === constantValue;
     }
     return;
@@ -2801,7 +2801,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     writeSpace();
     const initer = node.initer;
     if (emitTrailingCommentsOfPosition && (qc.get.emitFlags(initer) & EmitFlags.NoLeadingComments) === 0) {
-      const commentRange = getCommentRange(initer);
+      const commentRange = qf.emit.commentRange(initer);
       emitTrailingCommentsOfPosition(commentRange.pos);
     }
     emitExpression(initer);
@@ -3322,7 +3322,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
         previousSourceFileTextKind = recordBundleFileInternalSectionStart(child);
         if (shouldEmitInterveningComments) {
           if (emitTrailingCommentsOfPosition) {
-            const commentRange = getCommentRange(child);
+            const commentRange = qf.emit.commentRange(child);
             emitTrailingCommentsOfPosition(commentRange.pos);
           }
         } else {
@@ -3487,7 +3487,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
       } else if (synthesizedNodeStartsOnNewLine(previousNode, format) || synthesizedNodeStartsOnNewLine(nextNode, format)) {
         return 1;
       }
-    } else if (getStartsOnNewLine(nextNode)) {
+    } else if (qf.emit.startsOnNewLine(nextNode)) {
       return 1;
     }
     return format & ListFormat.MultiLine ? 1 : 0;
@@ -3527,7 +3527,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
   }
   function synthesizedNodeStartsOnNewLine(node: Node, format: ListFormat) {
     if (isSynthesized(node)) {
-      const startsOnNewLine = getStartsOnNewLine(node);
+      const startsOnNewLine = qf.emit.startsOnNewLine(node);
       if (startsOnNewLine === undefined) return (format & ListFormat.PreferNewLine) !== 0;
       return startsOnNewLine;
     }
@@ -3538,7 +3538,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     parent = skipSynthesizedParentheses(parent);
     node1 = skipSynthesizedParentheses(node1);
     node2 = skipSynthesizedParentheses(node2);
-    if (getStartsOnNewLine(node2)) return 1;
+    if (qf.emit.startsOnNewLine(node2)) return 1;
     if (!isSynthesized(parent) && !isSynthesized(node1) && !isSynthesized(node2)) {
       if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesBetween(node1, node2, currentSourceFile!, includeComments));
       return endOnSameLineAsStart(node1, node2, currentSourceFile!) ? 0 : 1;
@@ -3873,7 +3873,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     enterComment();
     hasWrittenComment = false;
     const emitFlags = qc.get.emitFlags(node);
-    const { pos, end } = getCommentRange(node);
+    const { pos, end } = qf.emit.commentRange(node);
     const isEmittedNode = node.kind !== Syntax.NotEmittedStatement;
     const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0 || node.kind === Syntax.JsxText;
     const skipTrailingComments = end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0 || node.kind === Syntax.JsxText;
@@ -3894,7 +3894,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
         }
       }
     }
-    forEach(getSyntheticLeadingComments(node), emitLeadingSynthesizedComment);
+    forEach(qf.emit.syntheticLeadingComments(node), emitLeadingSynthesizedComment);
     exitComment();
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.Comments, hint, node);
     if (emitFlags & EmitFlags.NoNestedComments) {
@@ -3905,7 +3905,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
       pipelinePhase(hint, node);
     }
     enterComment();
-    forEach(getSyntheticTrailingComments(node), emitTrailingSynthesizedComment);
+    forEach(qf.emit.syntheticTrailingComments(node), emitTrailingSynthesizedComment);
     if ((pos > 0 || end > 0) && pos !== end) {
       containerPos = savedContainerPos;
       containerEnd = savedContainerEnd;
@@ -4112,7 +4112,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
       }
       pipelinePhase(hint, node);
     } else {
-      const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
+      const { pos, end, source = sourceMapSource } = qf.emit.sourceMapRange(node);
       const emitFlags = qc.get.emitFlags(node);
       if (node.kind !== Syntax.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
         emitSourcePos(source, skipSourceTrivia(source, pos));

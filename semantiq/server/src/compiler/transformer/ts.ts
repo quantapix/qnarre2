@@ -68,7 +68,7 @@ export function transformTypeScript(context: TrafoContext) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = saveStateAndInvoke(node, visitSourceFile);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     currentSourceFile = undefined!;
     return visited;
   }
@@ -353,19 +353,19 @@ export function transformTypeScript(context: TrafoContext) {
       const localName = qf.decl.internalName(node);
       const outer = new qc.PartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
-      setEmitFlags(outer, EmitFlags.NoComments);
+      qf.emit.setFlags(outer, EmitFlags.NoComments);
       const statement = new qc.ReturnStatement(outer);
       statement.pos = closingBraceLocation.pos;
-      setEmitFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
+      qf.emit.setFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
       insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
       const iife = qf.create.immediateArrowFunction(statements);
-      setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
+      qf.emit.setFlags(iife, EmitFlags.TypeScriptClassWrapper);
       const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.decl.localName(node, false, false), undefined, iife)]));
       varStatement.setOriginal(node);
-      setCommentRange(varStatement, node);
-      setSourceMapRange(varStatement, node.movePastDecorators());
-      startOnNewLine(varStatement);
+      qf.emit.setCommentRange(varStatement, node);
+      qf.emit.setSourceMapRange(varStatement, node.movePastDecorators());
+      qf.emit.setStartsOnNewLine(varStatement);
       statements = [varStatement];
     }
     if (facts & ClassFacts.IsExportOfNamespace) {
@@ -379,7 +379,7 @@ export function transformTypeScript(context: TrafoContext) {
     }
     if (statements.length > 1) {
       statements.push(new EndOfDeclarationMarker(node));
-      setEmitFlags(classStatement, qc.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
+      qf.emit.setFlags(classStatement, qc.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
     }
     return singleOrMany(statements);
   }
@@ -393,7 +393,7 @@ export function transformTypeScript(context: TrafoContext) {
     qc.compute.aggregate(classDeclaration);
     setRange(classDeclaration, node);
     classDeclaration.setOriginal(node);
-    setEmitFlags(classDeclaration, emitFlags);
+    qf.emit.setFlags(classDeclaration, emitFlags);
     return classDeclaration;
   }
   function createClassDeclarationHeadWithDecorators(node: ClassDeclaration, name: Identifier | undefined) {
@@ -412,7 +412,7 @@ export function transformTypeScript(context: TrafoContext) {
     );
     statement.setOriginal(node);
     setRange(statement, location);
-    setCommentRange(statement, node);
+    qf.emit.setCommentRange(statement, node);
     return statement;
   }
   function visitClassExpression(node: ClassExpression): Expression {
@@ -434,7 +434,7 @@ export function transformTypeScript(context: TrafoContext) {
         }
       }
     }
-    addRange(members, Nodes.visit(node.members, classElemVisitor, isClassElem));
+    qu.addRange(members, Nodes.visit(node.members, classElemVisitor, isClassElem));
     return setRange(new Nodes(members), node.members);
   }
   function getDecoratedClassElems(node: ClassExpression | ClassDeclaration, isStatic: boolean): readonly ClassElem[] {
@@ -535,13 +535,13 @@ export function transformTypeScript(context: TrafoContext) {
       return;
     }
     const decoratorExpressions: Expression[] = [];
-    addRange(decoratorExpressions, map(allDecorators.decorators, transformDecorator));
-    addRange(decoratorExpressions, flatMap(allDecorators.params, transformDecoratorsOfParam));
+    qu.addRange(decoratorExpressions, map(allDecorators.decorators, transformDecorator));
+    qu.addRange(decoratorExpressions, flatMap(allDecorators.params, transformDecoratorsOfParam));
     addTypeMetadata(node, container, decoratorExpressions);
     return decoratorExpressions;
   }
   function addClassElemDecorationStatements(statements: Statement[], node: ClassDeclaration, isStatic: boolean) {
-    addRange(statements, map(generateClassElemDecorationExpressions(node, isStatic), expressionToStatement));
+    qu.addRange(statements, map(generateClassElemDecorationExpressions(node, isStatic), expressionToStatement));
   }
   function generateClassElemDecorationExpressions(node: ClassExpression | ClassDeclaration, isStatic: boolean) {
     const members = getDecoratedClassElems(node, isStatic);
@@ -568,7 +568,7 @@ export function transformTypeScript(context: TrafoContext) {
     const memberName = getExpressionForPropertyName(member, true);
     const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qc.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
     const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, member.movePastDecorators());
-    setEmitFlags(helper, EmitFlags.NoComments);
+    qf.emit.setFlags(helper, EmitFlags.NoComments);
     return helper;
   }
   function addConstructorDecorationStatement(statements: Statement[], node: ClassDeclaration) {
@@ -587,8 +587,8 @@ export function transformTypeScript(context: TrafoContext) {
     const localName = qf.decl.localName(node, false, true);
     const decorate = createDecorateHelper(context, decoratorExpressions, localName);
     const expression = qf.create.assignment(localName, classAlias ? qf.create.assignment(classAlias, decorate) : decorate);
-    setEmitFlags(expression, EmitFlags.NoComments);
-    setSourceMapRange(expression, node.movePastDecorators());
+    qf.emit.setFlags(expression, EmitFlags.NoComments);
+    qf.emit.setSourceMapRange(expression, node.movePastDecorators());
     return expression;
   }
   function transformDecorator(decorator: Decorator) {
@@ -600,7 +600,7 @@ export function transformTypeScript(context: TrafoContext) {
       expressions = [];
       for (const decorator of decorators) {
         const helper = createParamHelper(context, transformDecorator(decorator), paramOffset, decorator.expression);
-        setEmitFlags(helper, EmitFlags.NoComments);
+        qf.emit.setFlags(helper, EmitFlags.NoComments);
         expressions.push(helper);
       }
     }
@@ -934,8 +934,8 @@ export function transformTypeScript(context: TrafoContext) {
     }
     const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElem(node), undefined, undefined, visitNode(node.initer, visitor));
     if (updated !== node) {
-      setCommentRange(updated, node);
-      setSourceMapRange(updated, node.movePastDecorators());
+      qf.emit.setCommentRange(updated, node);
+      qf.emit.setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -952,8 +952,8 @@ export function transformTypeScript(context: TrafoContext) {
     let indexOfFirstStatement = 0;
     resumeLexicalEnvironment();
     indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
-    addRange(statements, map(paramsWithPropertyAssignments, transformParamWithPropertyAssignment));
-    addRange(statements, Nodes.visit(body.statements, visitor, isStatement, indexOfFirstStatement));
+    qu.addRange(statements, map(paramsWithPropertyAssignments, transformParamWithPropertyAssignment));
+    qu.addRange(statements, Nodes.visit(body.statements, visitor, qf.is.statement, indexOfFirstStatement));
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
     const block = new Block(setRange(new Nodes(statements), body.statements), true);
     setRange(block, body);
@@ -966,11 +966,11 @@ export function transformTypeScript(context: TrafoContext) {
       return;
     }
     const propertyName = getMutableClone(name);
-    setEmitFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoSourceMap);
+    qf.emit.setFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoSourceMap);
     const localName = getMutableClone(name);
-    setEmitFlags(localName, EmitFlags.NoComments);
-    return startOnNewLine(
-      removeAllComments(
+    qf.emit.setFlags(localName, EmitFlags.NoComments);
+    return qf.emit.setStartsOnNewLine(
+      qf.emit.removeAllComments(
         setRange(new qc.ExpressionStatement(qf.create.assignment(setRange(new qc.PropertyAccessExpression(new qc.ThisExpression(), propertyName), node.name), localName)), node),
         moveRangePos(node.setOriginal(-1))
       )
@@ -992,8 +992,8 @@ export function transformTypeScript(context: TrafoContext) {
       visitFunctionBody(node.body, visitor, context)
     );
     if (updated !== node) {
-      setCommentRange(updated, node);
-      setSourceMapRange(updated, node.movePastDecorators());
+      qf.emit.setCommentRange(updated, node);
+      qf.emit.setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1013,8 +1013,8 @@ export function transformTypeScript(context: TrafoContext) {
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
     if (updated !== node) {
-      setCommentRange(updated, node);
-      setSourceMapRange(updated, node.movePastDecorators());
+      qf.emit.setCommentRange(updated, node);
+      qf.emit.setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1030,8 +1030,8 @@ export function transformTypeScript(context: TrafoContext) {
       visitFunctionBody(node.body, visitor, context) || new Block([])
     );
     if (updated !== node) {
-      setCommentRange(updated, node);
-      setSourceMapRange(updated, node.movePastDecorators());
+      qf.emit.setCommentRange(updated, node);
+      qf.emit.setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1083,10 +1083,10 @@ export function transformTypeScript(context: TrafoContext) {
 
     const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     if (updated !== node) {
-      setCommentRange(updated, node);
+      qf.emit.setCommentRange(updated, node);
       setRange(updated, node.movePastModifiers());
-      setSourceMapRange(updated, node.movePastModifiers());
-      setEmitFlags(updated.name, EmitFlags.NoTrailingSourceMap);
+      qf.emit.setSourceMapRange(updated, node.movePastModifiers());
+      qf.emit.setFlags(updated.name, EmitFlags.NoTrailingSourceMap);
     }
     return updated;
   }
@@ -1171,11 +1171,11 @@ export function transformTypeScript(context: TrafoContext) {
     );
     enumStatement.setOriginal(node);
     if (varAdded) {
-      setSyntheticLeadingComments(enumStatement, undefined);
-      setSyntheticTrailingComments(enumStatement, undefined);
+      qf.emit.setSyntheticLeadingComments(enumStatement, undefined);
+      qf.emit.setSyntheticTrailingComments(enumStatement, undefined);
     }
     setRange(enumStatement, node);
-    addEmitFlags(enumStatement, emitFlags);
+    qf.emit.addFlags(enumStatement, emitFlags);
     statements.push(enumStatement);
     statements.push(new EndOfDeclarationMarker(node));
     return statements;
@@ -1187,7 +1187,7 @@ export function transformTypeScript(context: TrafoContext) {
     startLexicalEnvironment();
     const members = map(node.members, transformEnumMember);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
-    addRange(statements, members);
+    qu.addRange(statements, members);
     currentNamespaceContainerName = savedCurrentNamespaceLocalName;
     return new Block(setRange(new Nodes(statements), true));
   }
@@ -1247,17 +1247,17 @@ export function transformTypeScript(context: TrafoContext) {
     recordEmittedDeclarationInScope(node);
     if (isFirstEmittedDeclarationInScope(node)) {
       if (node.kind === Syntax.EnumDeclaration) {
-        setSourceMapRange(statement.declarationList, node);
+        qf.emit.setSourceMapRange(statement.declarationList, node);
       } else {
-        setSourceMapRange(statement, node);
+        qf.emit.setSourceMapRange(statement, node);
       }
-      setCommentRange(statement, node);
-      addEmitFlags(statement, EmitFlags.NoTrailingComments | EmitFlags.HasEndOfDeclarationMarker);
+      qf.emit.setCommentRange(statement, node);
+      qf.emit.addFlags(statement, EmitFlags.NoTrailingComments | EmitFlags.HasEndOfDeclarationMarker);
       statements.push(statement);
       return true;
     } else {
       const mergeMarker = new qc.MergeDeclarationMarker(statement);
-      setEmitFlags(mergeMarker, EmitFlags.NoComments | EmitFlags.HasEndOfDeclarationMarker);
+      qf.emit.setFlags(mergeMarker, EmitFlags.NoComments | EmitFlags.HasEndOfDeclarationMarker);
       statements.push(mergeMarker);
       return false;
     }
@@ -1301,11 +1301,11 @@ export function transformTypeScript(context: TrafoContext) {
     );
     moduleStatement.setOriginal(node);
     if (varAdded) {
-      setSyntheticLeadingComments(moduleStatement, undefined);
-      setSyntheticTrailingComments(moduleStatement, undefined);
+      qf.emit.setSyntheticLeadingComments(moduleStatement, undefined);
+      qf.emit.setSyntheticTrailingComments(moduleStatement, undefined);
     }
     setRange(moduleStatement, node);
-    addEmitFlags(moduleStatement, emitFlags);
+    qf.emit.addFlags(moduleStatement, emitFlags);
     statements.push(moduleStatement);
     statements.push(new EndOfDeclarationMarker(node));
     return statements;
@@ -1323,14 +1323,14 @@ export function transformTypeScript(context: TrafoContext) {
     let blockLocation: TextRange | undefined;
     if (node.body) {
       if (node.body.kind === Syntax.ModuleBlock) {
-        saveStateAndInvoke(node.body, (body) => addRange(statements, Nodes.visit((<ModuleBlock>body).statements, namespaceElemVisitor, isStatement)));
+        saveStateAndInvoke(node.body, (body) => qu.addRange(statements, Nodes.visit((<ModuleBlock>body).statements, namespaceElemVisitor, qf.is.statement)));
         statementsLocation = node.body.statements;
         blockLocation = node.body;
       } else {
         const result = visitModuleDeclaration(<ModuleDeclaration>node.body);
         if (result) {
           if (isArray(result)) {
-            addRange(statements, result);
+            qu.addRange(statements, result);
           } else {
             statements.push(result);
           }
@@ -1346,7 +1346,7 @@ export function transformTypeScript(context: TrafoContext) {
     const block = new Block(setRange(new Nodes(statements), true));
     setRange(block, blockLocation);
     if (!node.body || node.body.kind !== Syntax.ModuleBlock) {
-      setEmitFlags(block, qc.get.emitFlags(block) | EmitFlags.NoComments);
+      qf.emit.setFlags(block, qc.get.emitFlags(block) | EmitFlags.NoComments);
     }
     return block;
   }
@@ -1425,7 +1425,7 @@ export function transformTypeScript(context: TrafoContext) {
       return;
     }
     const moduleReference = createExpressionFromEntityName(<EntityName>node.moduleReference);
-    setEmitFlags(moduleReference, EmitFlags.NoComments | EmitFlags.NoNestedComments);
+    qf.emit.setFlags(moduleReference, EmitFlags.NoComments | EmitFlags.NoNestedComments);
     if (isNamedExternalModuleExport(node) || !isExportOfNamespace(node)) {
       return setOriginalNode(
         setRange(
@@ -1457,9 +1457,9 @@ export function transformTypeScript(context: TrafoContext) {
   }
   function addExportMemberAssignment(statements: Statement[], node: ClassDeclaration | FunctionDeclaration) {
     const expression = qf.create.assignment(qf.decl.externalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true), qf.decl.localName(node));
-    setSourceMapRange(expression, createRange(node.name ? node.name.pos : node.pos, node.end));
+    qf.emit.setSourceMapRange(expression, createRange(node.name ? node.name.pos : node.pos, node.end));
     const statement = new qc.ExpressionStatement(expression);
-    setSourceMapRange(statement, createRange(-1, node.end));
+    qf.emit.setSourceMapRange(statement, createRange(-1, node.end));
     statements.push(statement);
   }
   function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
@@ -1473,7 +1473,7 @@ export function transformTypeScript(context: TrafoContext) {
   }
   function getNamespaceParamName(node: ModuleDeclaration | EnumDeclaration) {
     const name = qf.get.generatedNameForNode(node);
-    setSourceMapRange(name, node.name);
+    qf.emit.setSourceMapRange(name, node.name);
     return name;
   }
   function getNamespaceContainerName(node: ModuleDeclaration | EnumDeclaration) {
@@ -1579,8 +1579,8 @@ export function transformTypeScript(context: TrafoContext) {
           const classAlias = classAliases[declaration.id!];
           if (classAlias) {
             const clone = getSynthesizedClone(classAlias);
-            setSourceMapRange(clone, node);
-            setCommentRange(clone, node);
+            qf.emit.setSourceMapRange(clone, node);
+            qf.emit.setCommentRange(clone, node);
             return clone;
           }
         }
@@ -1609,12 +1609,12 @@ export function transformTypeScript(context: TrafoContext) {
   function substituteConstantValue(node: PropertyAccessExpression | ElemAccessExpression): LeftExpression {
     const constantValue = tryGetConstEnumValue(node);
     if (constantValue !== undefined) {
-      setConstantValue(node, constantValue);
+      qf.emit.setConstantValue(node, constantValue);
       const substitute = qc.asLiteral(constantValue);
       if (!compilerOpts.removeComments) {
         const originalNode = qc.get.originalOf(node, isAccessExpression);
         const propertyName = qc.is.kind(qc.PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qc.get.textOf(originalNode.argExpression);
-        addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
+        qf.emit.addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
       }
       return substitute;
     }

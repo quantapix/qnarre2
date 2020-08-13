@@ -6153,7 +6153,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       forUseStrictSimpleParamList(n: qc.FunctionLikeDeclaration): boolean {
-        const useStrictDirective = n.body && n.body.kind === Syntax.Block && findUseStrictPrologue(n.body.statements);
+        const useStrictDirective = n.body && n.body.kind === Syntax.Block && qf.stmt.findUseStrictPrologue(n.body.statements);
         if (useStrictDirective) {
           const nonSimpleParams = getNonSimpleParams(n.params);
           if (length(nonSimpleParams)) {

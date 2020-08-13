@@ -238,7 +238,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: ConstructorDeclar
     const superIndex = findIndex(statements, (s) => qc.is.kind(qc.ExpressionStatement, s) && qc.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {
-        result.push(visitNode(statements[i], visitor, isStatement));
+        result.push(visitNode(statements[i], visitor, qf.is.statement));
       }
       return superIndex + 1;
     }

@@ -370,7 +370,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         cancellationToken = ct;
         check.sourceFile(file);
         assert(!!(qf.get.nodeLinks(file).flags & NodeCheckFlags.TypeChecked));
-        diagnostics = addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
+        diagnostics = qu.addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
         check.unusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
           if (!qf.has.parseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
             (diagnostics || (diagnostics = [])).push({ ...diag, category: qd.msgs.Category.Suggestion });
@@ -1000,7 +1000,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         let lateSymbol = lateSymbols.get(memberName);
         if (!lateSymbol) lateSymbols.set(memberName, (lateSymbol = new Symbol(SymbolFlags.None, memberName, qt.CheckFlags.Late)));
         const earlySymbol = earlySymbols && earlySymbols.get(memberName);
-        if (lateSymbol.flags & qc.getExcluded(symbolFlags) || earlySymbol) {
+        if (lateSymbol.flags & qf.get.excluded(symbolFlags) || earlySymbol) {
           const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
           const name = (!(type.flags & qt.TypeFlags.UniqueESSymbol) && qy.get.unescUnderscores(memberName)) || declarationNameToString(declName);
           forEach(declarations, (declaration) => error(qf.decl.nameOf(declaration) || declaration, qd.msgs.Property_0_was_also_declared_here, name));

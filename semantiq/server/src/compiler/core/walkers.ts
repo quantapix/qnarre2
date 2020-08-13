@@ -15,56 +15,56 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, li
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: Tester, lift?: (ns: Nodes<Node>) => T): T | undefined {
   if (!n || !cb) return n;
-  n.qc.compute.aggregate();
-  const r = cb(n as Node);
-  if (!r) return;
-  if (r === n) return n;
+  qf.calc.aggregate(n);
+  const y = cb(n as Node);
+  if (!y) return;
+  if (y === n) return n;
   let n2: Node | undefined;
-  if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
-  else n2 = r;
-  qb.assert.node(n2, test);
-  n2?.qc.compute.aggregate();
+  if (qu.isArray(y)) n2 = (lift || extractSingleNode)(y);
+  else n2 = y;
+  qf.assert.node(n2, test);
+  qf.calc.aggregate(n2!);
   return n2 as T;
 }
 export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
 export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
 export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
   if (!ns || !cb) return ns;
-  let updated: MutableNodes<T> | undefined;
+  let r: MutableNodes<T> | undefined;
   const length = ns.length;
   if (start === undefined || start < 0) start = 0;
   if (count === undefined || count > length - start) count = length - start;
-  if (start > 0 || count < length) updated = new Nodes<T>([], ns.trailingComma && start + count === length);
+  if (start > 0 || count < length) r = new Nodes<T>([], ns.trailingComma && start + count === length);
   for (let i = 0; i < count; i++) {
     const n: T = ns[i + start];
-    qc.compute.aggregate(n);
-    const r = n ? cb(n) : undefined;
-    if (updated !== undefined || r === undefined || r !== n) {
-      if (updated === undefined) {
-        updated = new Nodes(ns.slice(0, i), ns.trailingComma);
-        setRange(updated, ns);
-      }
-      if (r) {
-        if (qu.isArray(r)) {
-          for (const n2 of r) {
-            qb.assert.node(n2, test);
-            qc.compute.aggregate(n2);
-            updated.push(n2 as T);
+    qf.calc.aggregate(n);
+    const y = n ? cb(n) : undefined;
+    if (r !== undefined || y === undefined || y !== n) {
+      if (r === undefined) r = new Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
+      if (y) {
+        if (qu.isArray(y)) {
+          for (const n2 of y) {
+            qf.assert.node(n2, test);
+            qf.calc.aggregate(n2);
+            r.push(n2 as T);
           }
         } else {
-          qb.assert.node(r, test);
-          qc.compute.aggregate(r);
-          updated.push(r as T);
+          qf.assert.node(y, test);
+          qf.calc.aggregate(y);
+          r.push(y as T);
         }
       }
     }
   }
-  return updated || ns;
+  return r || ns;
 }
-export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: qt.TrafoContext, start?: number, strict?: boolean) {
+export function visitLexicalEnvironment(ss: Nodes<qt.Statement>, cb: Visitor, c: qt.TrafoContext, start?: number, strict?: boolean) {
   c.startLexicalEnvironment();
-  ss = visitNodes(ss, cb, isStatement, start);
-  if (strict) ss = ensureUseStrict(ss);
+  ss = visitNodes(ss, cb, qf.is.statement, start);
+  if (strict) {
+    const foundUseStrict = qf.stmt.findUseStrictPrologue(ss);
+    if (!foundUseStrict) ss = new Nodes<qt.Statement>([qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))), ...ss]).setRange(ss);
+  }
   return mergeLexicalEnvironment(ss, c.endLexicalEnvironment());
 }
 export function visitParamList<T extends Node>(ns: Nodes<T>, cb: Visitor, c: qt.TrafoContext, v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>): Nodes<T>;
@@ -75,16 +75,16 @@ export function visitParamList<T extends Node>(
   v?: (ns?: Nodes<T>, cb?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
 ): Nodes<T> | undefined;
 export function visitParamList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: qt.TrafoContext, v = visitNodes) {
-  let updated: Nodes<ParamDeclaration> | undefined;
+  let r: Nodes<qt.ParamDeclaration> | undefined;
   c.startLexicalEnvironment();
   if (ns) {
     c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParams, true);
-    updated = v(ns, cb, qf.is.paramDeclaration);
-    if (c.getLexicalEnvironmentFlags() & qt.LexicalEnvironmentFlags.VariablesHoistedInParams) updated = addValueAssignments(updated!, c);
+    r = v(ns, cb, qf.is.paramDeclaration);
+    if (c.getLexicalEnvironmentFlags() & qt.LexicalEnvironmentFlags.VariablesHoistedInParams) r = addValueAssignments(r!, c);
     c.setLexicalEnvironmentFlags(qt.LexicalEnvironmentFlags.InParams, false);
   }
   c.suspendLexicalEnvironment();
-  return updated;
+  return r;
 }
 function addValueAssignments(ps: Nodes<qc.ParamDeclaration>, c: qt.TrafoContext) {
   let r: qc.ParamDeclaration[] | undefined;
@@ -123,13 +123,13 @@ function addForIniter(p: qc.ParamDeclaration, name: Identifier, init: Expression
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
-      setEmitFlags(
+      qf.emit.setFlags(
         setRange(
           new qc.Block([
             new qc.ExpressionStatement(
-              setEmitFlags(
+              qf.emit.setFlags(
                 setRange(
-                  qf.create.assignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)),
+                  qf.create.assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)),
                   p
                 ),
                 EmitFlags.NoComments
@@ -400,27 +400,32 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.TemplateSpan:
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.literal, cb, TemplateMiddle.kindOrTemplateTail));
     case Syntax.Block:
-      return n.update(nodesVisitor(n.statements, cb, isStatement));
+      return n.update(nodesVisitor(n.statements, cb, qf.is.statement));
     case Syntax.VariableStatement:
       return n.update(nodesVisitor(n.modifiers, cb, isModifier), visitNode(n.declarationList, cb, isVariableDeclarationList));
     case Syntax.ExpressionStatement:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.IfStatement:
-      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.thenStatement, cb, isStatement, liftToBlock), visitNode(n.elseStatement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.thenStatement, cb, qf.is.statement, liftToBlock), visitNode(n.elseStatement, cb, qf.is.statement, liftToBlock));
     case Syntax.DoStatement:
-      return n.update(visitNode(n.statement, cb, isStatement, liftToBlock), visitNode(n.expression, cb, isExpression));
+      return n.update(visitNode(n.statement, cb, qf.is.statement, liftToBlock), visitNode(n.expression, cb, isExpression));
     case Syntax.WhileStatement:
-      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, qf.is.statement, liftToBlock));
     case Syntax.ForStatement:
-      return n.update(visitNode(n.initer, cb, isForIniter), visitNode(n.condition, cb, isExpression), visitNode(n.incrementor, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(
+        visitNode(n.initer, cb, isForIniter),
+        visitNode(n.condition, cb, isExpression),
+        visitNode(n.incrementor, cb, isExpression),
+        visitNode(n.statement, cb, qf.is.statement, liftToBlock)
+      );
     case Syntax.ForInStatement:
-      return n.update(visitNode(n.initer, cb, isForIniter), visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.initer, cb, isForIniter), visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, qf.is.statement, liftToBlock));
     case Syntax.ForOfStatement:
       return n.update(
         visitNode(n.awaitModifier, tokenVisitor, isToken),
         visitNode(n.initer, cb, isForIniter),
         visitNode(n.expression, cb, isExpression),
-        visitNode(n.statement, cb, isStatement, liftToBlock)
+        visitNode(n.statement, cb, qf.is.statement, liftToBlock)
       );
     case Syntax.ContinueStatement:
       return n.update(visitNode(n.label, cb, isIdentifier));
@@ -429,11 +434,11 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.ReturnStatement:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.WithStatement:
-      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, qf.is.statement, liftToBlock));
     case Syntax.SwitchStatement:
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.caseBlock, cb, isCaseBlock));
     case Syntax.LabeledStatement:
-      return n.update(visitNode(n.label, cb, isIdentifier), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.label, cb, isIdentifier), visitNode(n.statement, cb, qf.is.statement, liftToBlock));
     case Syntax.ThrowStatement:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.TryStatement:
@@ -484,7 +489,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.ModuleDeclaration:
       return n.update(nodesVisitor(n.decorators, cb, isDecorator), nodesVisitor(n.modifiers, cb, isModifier), visitNode(n.name, cb, isIdentifier), visitNode(n.body, cb, isModuleBody));
     case Syntax.ModuleBlock:
-      return n.update(nodesVisitor(n.statements, cb, isStatement));
+      return n.update(nodesVisitor(n.statements, cb, qf.is.statement));
     case Syntax.CaseBlock:
       return n.update(nodesVisitor(n.clauses, cb, isCaseOrDefaultClause));
     case Syntax.NamespaceExportDeclaration:
@@ -543,9 +548,9 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.JsxExpression:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.CaseClause:
-      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.statements, cb, isStatement));
+      return n.update(visitNode(n.expression, cb, isExpression), nodesVisitor(n.statements, cb, qf.is.statement));
     case Syntax.DefaultClause:
-      return n.update(nodesVisitor(n.statements, cb, isStatement));
+      return n.update(nodesVisitor(n.statements, cb, qf.is.statement));
     case Syntax.HeritageClause:
       return n.update(nodesVisitor(n.types, cb, isExpressionWithTypings));
     case Syntax.CatchClause:
@@ -1014,7 +1019,7 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   return ss;
 }
 export function liftToBlock(ns: readonly Node[]): Statement {
-  qu.assert(qu.every(ns, isStatement), 'Cannot lift nodes to a Block.');
+  qu.assert(qu.every(ns, qf.is.statement), 'Cannot lift nodes to a Block.');
   return (qu.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
 }
 export function createGetSymbolWalker(

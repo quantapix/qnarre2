@@ -693,19 +693,19 @@ export function emitFilesAndReportErrors(
   const isListFilesOnly = !!program.getCompilerOpts().listFilesOnly;
   const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
   const configFileParsingDiagnosticsLength = allqd.length;
-  addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
+  qu.addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
   if (allqd.length === configFileParsingDiagnosticsLength) {
-    addRange(allDiagnostics, program.getOptsDiagnostics(cancellationToken));
+    qu.addRange(allDiagnostics, program.getOptsDiagnostics(cancellationToken));
     if (!isListFilesOnly) {
-      addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
+      qu.addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
       if (allqd.length === configFileParsingDiagnosticsLength) {
-        addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancellationToken));
+        qu.addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancellationToken));
       }
     }
   }
   const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
   const { emittedFiles, diagnostics: emitDiagnostics } = emitResult;
-  addRange(allDiagnostics, emitDiagnostics);
+  qu.addRange(allDiagnostics, emitDiagnostics);
   const diagnostics = sortAndDeduplicateDiagnostics(allDiagnostics);
   diagnostics.forEach(reportDiagnostic);
   if (writeFileName) {

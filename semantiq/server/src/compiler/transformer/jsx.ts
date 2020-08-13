@@ -13,7 +13,7 @@ export function transformJsx(context: TrafoContext) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = visitEachChild(node, visitor, context);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
@@ -89,7 +89,7 @@ export function transformJsx(context: TrafoContext) {
       location
     );
     if (isChild) {
-      startOnNewLine(elem);
+      qf.emit.setStartsOnNewLine(elem);
     }
     return elem;
   }
@@ -102,7 +102,7 @@ export function transformJsx(context: TrafoContext) {
       location
     );
     if (isChild) {
-      startOnNewLine(elem);
+      qf.emit.setStartsOnNewLine(elem);
     }
     return elem;
   }

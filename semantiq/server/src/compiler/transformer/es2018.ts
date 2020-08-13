@@ -61,7 +61,7 @@ export function transformES2018(context: TrafoContext) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = visitSourceFile(node);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     currentSourceFile = undefined!;
     taggedTemplateStringDeclarations = undefined!;
     return visited;
@@ -192,7 +192,7 @@ export function transformES2018(context: TrafoContext) {
     if (enclosingFunctionFlags & FunctionFlags.Async) {
       const statement = unwrapInnermostStatementOfLabel(node);
       if (statement.kind === Syntax.ForOfStatement && (<ForOfStatement>statement).awaitModifier) return visitForOfStatement(<ForOfStatement>statement, node);
-      return restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node);
+      return restoreEnclosingLabel(visitNode(statement, visitor, qf.is.statement, liftToBlock), node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -305,7 +305,7 @@ export function transformES2018(context: TrafoContext) {
       visitNode(node.initer, visitorNoDestructuringValue, isForIniter),
       visitNode(node.condition, visitor, isExpression),
       visitNode(node.incrementor, visitor, isExpression),
-      visitNode(node.statement, visitor, isStatement)
+      visitNode(node.statement, visitor, qf.is.statement)
     );
   }
   function visitVoidExpression(node: VoidExpression) {
@@ -330,7 +330,7 @@ export function transformES2018(context: TrafoContext) {
       const temp = createTempVariable(undefined);
       const statements: Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
       if (qc.is.kind(qc.Block, node.statement)) {
-        addRange(statements, node.statement.statements);
+        qu.addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
         statementsLocation = node.statement.statements;
       } else if (node.statement) {
@@ -352,16 +352,16 @@ export function transformES2018(context: TrafoContext) {
     const binding = createForOfBindingStatement(node.initer, boundValue);
     let bodyLocation: TextRange | undefined;
     let statementsLocation: TextRange | undefined;
-    const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
-    const statement = visitNode(node.statement, visitor, isStatement);
+    const statements: Statement[] = [visitNode(binding, visitor, qf.is.statement)];
+    const statement = visitNode(node.statement, visitor, qf.is.statement);
     if (qc.is.kind(qc.Block, statement)) {
-      addRange(statements, statement.statements);
+      qu.addRange(statements, statement.statements);
       bodyLocation = statement;
       statementsLocation = statement.statements;
     } else {
       statements.push(statement);
     }
-    return setEmitFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+    return qf.emit.setFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
   }
   function createDownlevelAwait(expression: Expression) {
     return enclosingFunctionFlags & FunctionFlags.Generator ? new qc.YieldExpression(undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
@@ -381,10 +381,10 @@ export function transformES2018(context: TrafoContext) {
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
     const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
-    const forStatement = setEmitFlags(
+    const forStatement = qf.emit.setFlags(
       setRange(
         new qc.ForStatement(
-          setEmitFlags(
+          qf.emit.setFlags(
             setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
           ),
@@ -400,7 +400,7 @@ export function transformES2018(context: TrafoContext) {
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
-        setEmitFlags(
+        qf.emit.setFlags(
           new Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
           EmitFlags.SingleLine
         )
@@ -408,7 +408,7 @@ export function transformES2018(context: TrafoContext) {
       new Block([
         new qc.TryStatement(
           new Block([
-            setEmitFlags(
+            qf.emit.setFlags(
               new qc.IfStatement(
                 qf.create.logicalAnd(qf.create.logicalAnd(result, qf.create.logicalNot(getDone)), qf.create.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
                 new qc.ExpressionStatement(createDownlevelAwait(callReturn))
@@ -417,8 +417,8 @@ export function transformES2018(context: TrafoContext) {
             ),
           ]),
           undefined,
-          setEmitFlags(
-            new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
+          qf.emit.setFlags(
+            new Block([qf.emit.setFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
             EmitFlags.SingleLine
           )
         ),
@@ -542,9 +542,9 @@ export function transformES2018(context: TrafoContext) {
     const block = node.body!.update(statements);
     if (emitSuperHelpers && hasSuperElemAccess) {
       if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        addEmitHelper(block, advancedAsyncSuperHelper);
+        qf.emit.addHelper(block, advancedAsyncSuperHelper);
       } else if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuper) {
-        addEmitHelper(block, asyncSuperHelper);
+        qf.emit.addHelper(block, asyncSuperHelper);
       }
     }
     capturedSuperProperties = savedCapturedSuperProperties;
@@ -561,12 +561,12 @@ export function transformES2018(context: TrafoContext) {
     if (qc.is.kind(qc.Block, body)) {
       statementOffset = addPrologue(statements, body.statements, false, visitor);
     }
-    addRange(statements, appendObjectRestAssignmentsIfNeeded(undefined, node));
+    qu.addRange(statements, appendObjectRestAssignmentsIfNeeded(undefined, node));
     const leadingStatements = endLexicalEnvironment();
     if (statementOffset > 0 || some(statements) || some(leadingStatements)) {
       const block = convertToFunctionBody(body, true);
       insertStatementsAfterStandardPrologue(statements, leadingStatements);
-      addRange(statements, block.statements.slice(statementOffset));
+      qu.addRange(statements, block.statements.slice(statementOffset));
       return block.update(setRange(new Nodes(statements), block.statements));
     }
     return body;
@@ -578,7 +578,7 @@ export function transformES2018(context: TrafoContext) {
         const declarations = flattenDestructuringBinding(param, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
           const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(declarations));
-          setEmitFlags(statement, EmitFlags.CustomPrologue);
+          qf.emit.setFlags(statement, EmitFlags.CustomPrologue);
           statements = append(statements, statement);
         }
       }

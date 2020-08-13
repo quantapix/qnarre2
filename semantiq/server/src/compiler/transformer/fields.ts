@@ -35,7 +35,7 @@ export function transformClassFields(context: TrafoContext) {
     const opts = context.getCompilerOpts();
     if (node.isDeclarationFile || (opts.useDefineForClassFields && opts.target === ScriptTarget.ESNext)) return node;
     const visited = visitEachChild(node, visitor, context);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
@@ -196,7 +196,7 @@ export function transformClassFields(context: TrafoContext) {
         visitNode(node.initer, visitor, isForIniter),
         visitNode(node.condition, visitor, isExpression),
         visitPostfixUnaryExpression(node.incrementor, true),
-        visitNode(node.statement, visitor, isStatement)
+        visitNode(node.statement, visitor, qf.is.statement)
       );
     }
     return visitEachChild(node, visitor, context);
@@ -328,11 +328,11 @@ export function transformClassFields(context: TrafoContext) {
           alias.autoGenerateFlags &= ~GeneratedIdentifierFlags.ReservedInNestedScopes;
           classAliases[getOriginalNodeId(node)] = alias;
         }
-        setEmitFlags(classExpression, EmitFlags.Indented | qc.get.emitFlags(classExpression));
-        expressions.push(startOnNewLine(qf.create.assignment(temp, classExpression)));
-        addRange(expressions, map(pendingExpressions, startOnNewLine));
-        addRange(expressions, generateInitializedPropertyExpressions(staticProperties, temp));
-        expressions.push(startOnNewLine(temp));
+        qf.emit.setFlags(classExpression, EmitFlags.Indented | qc.get.emitFlags(classExpression));
+        expressions.push(qf.emit.setStartsOnNewLine(qf.create.assignment(temp, classExpression)));
+        qu.addRange(expressions, map(pendingExpressions, qf.emit.setStartsOnNewLine));
+        qu.addRange(expressions, generateInitializedPropertyExpressions(staticProperties, temp));
+        expressions.push(qf.emit.setStartsOnNewLine(temp));
         return inlineExpressions(expressions);
       }
     }
@@ -347,7 +347,7 @@ export function transformClassFields(context: TrafoContext) {
     const ms: ClassElem[] = [];
     const constructor = transformConstructor(n, isDerivedClass);
     if (constructor) ms.push(constructor);
-    addRange(ms, Nodes.visit(n.members, classElemVisitor, isClassElem));
+    qu.addRange(ms, Nodes.visit(n.members, classElemVisitor, isClassElem));
     return setRange(new Nodes(ms), n.members);
   }
   function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElem): member is PropertyDeclaration {
@@ -364,7 +364,7 @@ export function transformClassFields(context: TrafoContext) {
     if (!body) {
       return;
     }
-    return startOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, params ?? [], body), constructor || node).setOriginal(constructor));
+    return qf.emit.setStartsOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, params ?? [], body), constructor || node).setOriginal(constructor));
   }
   function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
     const useDefineForClassFields = context.getCompilerOpts().useDefineForClassFields;
@@ -389,14 +389,14 @@ export function transformClassFields(context: TrafoContext) {
       }
       if (afterParamProperties > indexOfFirstStatement) {
         if (!useDefineForClassFields) {
-          addRange(statements, Nodes.visit(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParamProperties - indexOfFirstStatement));
+          qu.addRange(statements, Nodes.visit(constructor.body.statements, visitor, qf.is.statement, indexOfFirstStatement, afterParamProperties - indexOfFirstStatement));
         }
         indexOfFirstStatement = afterParamProperties;
       }
     }
     addPropertyStatements(statements, properties, new qc.ThisExpression());
     if (constructor) {
-      addRange(statements, Nodes.visit(constructor.body!.statements, visitor, isStatement, indexOfFirstStatement));
+      qu.addRange(statements, Nodes.visit(constructor.body!.statements, visitor, qf.is.statement, indexOfFirstStatement));
     }
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
     return setRange(new Block(setRange(new Nodes(statements), constructor ? constructor.body!.statements : node.members), true), constructor ? constructor.body : undefined);
@@ -406,8 +406,8 @@ export function transformClassFields(context: TrafoContext) {
       const expression = transformProperty(property, receiver);
       if (!expression) continue;
       const statement = new qc.ExpressionStatement(expression);
-      setSourceMapRange(statement, property.movePastModifiers());
-      setCommentRange(statement, property);
+      qf.emit.setSourceMapRange(statement, property.movePastModifiers());
+      qf.emit.setCommentRange(statement, property);
       statement.setOriginal(property);
       statements.push(statement);
     }
@@ -417,9 +417,9 @@ export function transformClassFields(context: TrafoContext) {
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
       if (!expression) continue;
-      startOnNewLine(expression);
-      setSourceMapRange(expression, property.movePastModifiers());
-      setCommentRange(expression, property);
+      qf.emit.setStartsOnNewLine(expression);
+      qf.emit.setSourceMapRange(expression, property.movePastModifiers());
+      qf.emit.setCommentRange(expression, property);
       expression.setOriginal(property);
       expressions.push(expression);
     }
@@ -498,8 +498,8 @@ export function transformClassFields(context: TrafoContext) {
           const classAlias = classAliases[declaration.id!];
           if (classAlias) {
             const clone = getSynthesizedClone(classAlias);
-            setSourceMapRange(clone, node);
-            setCommentRange(clone, node);
+            qf.emit.setSourceMapRange(clone, node);
+            qf.emit.setCommentRange(clone, node);
             return clone;
           }
         }

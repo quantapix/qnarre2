@@ -80,7 +80,7 @@ export class QContext {
     if (type.flags & TypeFlags.EnumLike) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
     if (type.flags & TypeFlags.StringLiteral) {
       this.approximateLength += (<StringLiteralType>type).value.length + 2;
-      return new qc.LiteralTyping(setEmitFlags(qc.asLiteral((<StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
+      return new qc.LiteralTyping(qf.emit.setFlags(qc.asLiteral((<StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
     }
     if (type.flags & TypeFlags.NumberLiteral) {
       const value = (<NumberLiteralType>type).value;
@@ -398,7 +398,7 @@ export class QContext {
         if (LHS.kind === Syntax.IndexedAccessTyping) return new qc.IndexedAccessTyping(LHS, new qc.LiteralTyping(qc.asLiteral(symbolName)));
         return new qc.IndexedAccessTyping(new qc.TypingReference(LHS, typeParamNodes as readonly Typing[]), new qc.LiteralTyping(qc.asLiteral(symbolName)));
       }
-      const identifier = setEmitFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
+      const identifier = qf.emit.setFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
       identifier.symbol = symbol;
       if (index > stopper) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
@@ -487,7 +487,7 @@ export class QContext {
       if (index === 0) {
         this.flags ^= NodeBuilderFlags.InInitialEntityName;
       }
-      const identifier = setEmitFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
+      const identifier = qf.emit.setFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
       identifier.symbol = symbol;
       return index > 0 ? new qc.QualifiedName(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
     }
@@ -509,7 +509,7 @@ export class QContext {
       if (qy.is.singleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) return qc.asLiteral(this.getSpecifierForModuleSymbol(symbol));
       const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && qy.is.identifierStart(symbolName.charCodeAt(1)) : qy.is.identifierStart(firstChar);
       if (index === 0 || canUsePropertyAccess) {
-        const identifier = setEmitFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
+        const identifier = qf.emit.setFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
         identifier.symbol = symbol;
         return index > 0 ? new qc.PropertyAccessExpression(createExpressionFromSymbolChain(chain, index - 1), identifier) : identifier;
       } else {
@@ -525,7 +525,7 @@ export class QContext {
           expression = qc.asLiteral(+symbolName);
         }
         if (!expression) {
-          expression = setEmitFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
+          expression = qf.emit.setFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
           expression.symbol = symbol;
         }
         return new qs.ElemAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
@@ -605,7 +605,7 @@ export class QContext {
         const d = find(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)! as DocPropertyTag;
         const commentText = d.comment;
         if (commentText) {
-          setSyntheticLeadingComments(node, [
+          qf.emit.setSyntheticLeadingComments(node, [
             {
               kind: Syntax.MultiLineCommentTrivia,
               text: '*\n * ' + commentText.replace(/\n/g, '\n * ') + '\n ',
@@ -616,7 +616,7 @@ export class QContext {
           ]);
         }
       } else if (propertySymbol.valueDeclaration) {
-        setCommentRange(node, propertySymbol.valueDeclaration);
+        qf.emit.setCommentRange(node, propertySymbol.valueDeclaration);
       }
       return node;
     }
@@ -694,7 +694,7 @@ export class QContext {
       const assertsModifier = typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Token(Syntax.AssertsKeyword) : undefined;
       const paramName =
         typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier
-          ? setEmitFlags(new Identifier(typePredicate.paramName), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(new Identifier(typePredicate.paramName), EmitFlags.NoAsciiEscaping)
           : new qc.ThisTyping();
       const typeNode = typePredicate.type && this.typeToTypeNodeHelper(typePredicate.type);
       returnTypeNode = new qc.TypingPredicate(assertsModifier, paramName, typeNode);
@@ -742,16 +742,16 @@ export class QContext {
         const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
         const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<BindingElem>clone).initer = undefined;
-        return setEmitFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
+        return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
       return <BindingName>elideIniterAndSetEmitFlags(node as Node);
     };
     const name = paramDeclaration
       ? paramDeclaration.name
         ? paramDeclaration.name.kind === Syntax.Identifier
-          ? setEmitFlags(getSynthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(getSynthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
           : paramDeclaration.name.kind === Syntax.QualifiedName
-          ? setEmitFlags(getSynthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(getSynthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
           : cloneBindingName(paramDeclaration.name)
         : s.name
       : s.name;
@@ -960,12 +960,12 @@ export class QContext {
         if (node.kind === Syntax.Identifier) {
           const name = sym.flags & SymbolFlags.TypeParam ? this.typeParamToName(getDeclaredTypeOfSymbol(sym)) : getMutableClone(node);
           name.symbol = sym;
-          return setEmitFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
+          return qf.emit.setFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
         }
       }
     }
     if (file && node.kind === Syntax.TupleTyping && qy.get.lineAndCharOf(file, node.pos).line === qy.get.lineAndCharOf(file, node.end).line) {
-      setEmitFlags(node, EmitFlags.SingleLine);
+      qf.emit.setFlags(node, EmitFlags.SingleLine);
     }
     return visitEachChild(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
   }
@@ -1158,14 +1158,14 @@ export class QContext {
         const templateTypeNode = this.typeToTypeNodeHelper(getTemplateTypeFromMappedType(type));
         const mappedTypeNode = new qc.MappedTyping(readonlyToken, typeParamNode, questionToken, templateTypeNode);
         this.approximateLength += 10;
-        return setEmitFlags(mappedTypeNode, EmitFlags.SingleLine);
+        return qf.emit.setFlags(mappedTypeNode, EmitFlags.SingleLine);
       };
       if (qf.is.genericMappedType(type)) return createMappedTypingFromType(type);
       const resolved = resolveStructuredTypeMembers(type);
       if (!resolved.properties.length && !resolved.stringIndexInfo && !resolved.numberIndexInfo) {
         if (!resolved.callSignatures.length && !resolved.constructSignatures.length) {
           this.approximateLength += 2;
-          return setEmitFlags(new qc.TypingLiteral(undefined), EmitFlags.SingleLine);
+          return qf.emit.setFlags(new qc.TypingLiteral(undefined), EmitFlags.SingleLine);
         }
         if (resolved.callSignatures.length === 1 && !resolved.constructSignatures.length) {
           const signature = resolved.callSignatures[0];
@@ -1230,7 +1230,7 @@ export class QContext {
       this.flags = savedFlags;
       const typeLiteralNode = new qc.TypingLiteral(members);
       this.approximateLength += 2;
-      return setEmitFlags(typeLiteralNode, this.flags & NodeBuilderFlags.MultilineObjectLiterals ? 0 : EmitFlags.SingleLine);
+      return qf.emit.setFlags(typeLiteralNode, this.flags & NodeBuilderFlags.MultilineObjectLiterals ? 0 : EmitFlags.SingleLine);
     };
     if (symbol) {
       if (qf.is.jsConstructor(symbol.valueDeclaration)) {
@@ -1298,12 +1298,12 @@ export class QContext {
               tupleConstituentNodes[i] = hasRestElem && i === arity - 1 ? new qc.RestTyping(new ArrayTyping(tupleConstituentNodes[i])) : new qc.OptionalTyping(tupleConstituentNodes[i]);
             }
           }
-          const tupleTypeNode = setEmitFlags(new qc.TupleTyping(tupleConstituentNodes), EmitFlags.SingleLine);
+          const tupleTypeNode = qf.emit.setFlags(new qc.TupleTyping(tupleConstituentNodes), EmitFlags.SingleLine);
           return (<TupleType>type.target).readonly ? new qc.TypingOperator(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
         }
       }
       if (this.encounteredError || this.flags & NodeBuilderFlags.AllowEmptyTuple) {
-        const tupleTypeNode = setEmitFlags(new qc.TupleTyping([]), EmitFlags.SingleLine);
+        const tupleTypeNode = qf.emit.setFlags(new qc.TupleTyping([]), EmitFlags.SingleLine);
         return (<TupleType>type.target).readonly ? new qc.TypingOperator(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
       }
       this.encounteredError = true;

@@ -2410,11 +2410,11 @@ export class PropertyAccessExpression extends qb.MemberExpr implements qt.Proper
     super(true);
     this.expression = qf.nest.forAccess(e);
     this.name = asName(n);
-    this.setEmitFlags(EmitFlags.NoIndentation);
+    this.qf.emit.setFlags(EmitFlags.NoIndentation);
   }
   update(e: qt.Expression, n: qt.Identifier | qt.PrivateIdentifier): PropertyAccessExpression {
     if (qf.is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
-    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).setEmitFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
+    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).qf.emit.setFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -2429,7 +2429,7 @@ export class PropertyAccessChain extends PropertyAccessExpression implements qt.
   }
   update(e: qt.Expression, n: qt.Identifier, q?: qt.QuestionDotToken) {
     qu.assert(!!(this.flags & NodeFlags.OptionalChain));
-    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).qf.emit.setFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
 }

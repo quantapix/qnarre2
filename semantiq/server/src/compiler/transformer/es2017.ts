@@ -35,7 +35,7 @@ export function transformES2017(context: TrafoContext) {
     setContextFlag(ContextFlags.NonTopLevel, false);
     setContextFlag(ContextFlags.HasLexicalThis, !node.isEffectiveStrictMode(compilerOpts));
     const visited = visitEachChild(node, visitor, context);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function setContextFlag(flag: ContextFlags, val: boolean) {
@@ -162,7 +162,7 @@ export function transformES2017(context: TrafoContext) {
       node,
       isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.expression, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
+      visitNode(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
     );
   }
   function visitForOfStatementInAsyncBody(node: ForOfStatement) {
@@ -171,7 +171,7 @@ export function transformES2017(context: TrafoContext) {
       visitNode(node.awaitModifier, visitor, isToken),
       isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.expression, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
+      visitNode(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
     );
   }
   function visitForStatementInAsyncBody(node: ForStatement) {
@@ -181,7 +181,7 @@ export function transformES2017(context: TrafoContext) {
       isVariableDeclarationListWithCollidingName(initer) ? visitVariableDeclarationListWithCollidingNames(initer, false) : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.condition, visitor, isExpression),
       visitNode(node.incrementor, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
+      visitNode(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
     );
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
@@ -272,7 +272,7 @@ export function transformES2017(context: TrafoContext) {
     }
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    const converted = setSourceMapRange(qf.create.assignment(convertToAssignmentElemTarget(node.name), node.initer!), node);
+    const converted = qf.emit.setSourceMapRange(qf.create.assignment(convertToAssignmentElemTarget(node.name), node.initer!), node);
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParamName({ name }: VariableDeclaration | BindingElem): boolean {
@@ -325,9 +325,9 @@ export function transformES2017(context: TrafoContext) {
       setRange(block, node.body);
       if (emitSuperHelpers && hasSuperElemAccess) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-          addEmitHelper(block, advancedAsyncSuperHelper);
+          qf.emit.addHelper(block, advancedAsyncSuperHelper);
         } else if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuper) {
-          addEmitHelper(block, asyncSuperHelper);
+          qf.emit.addHelper(block, asyncSuperHelper);
         }
       }
       result = block;
@@ -349,7 +349,7 @@ export function transformES2017(context: TrafoContext) {
     return result;
   }
   function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-    if (qc.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
+    if (qc.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, qf.is.statement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: Typing | undefined) {
@@ -450,7 +450,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
           [],
           undefined,
           undefined,
-          setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
+          qf.emit.setFlags(new qc.PropertyAccessExpression(qf.emit.setFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
         )
       )
     );
@@ -464,7 +464,10 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
             [new qc.ParamDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
-            qf.create.assignment(setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
+            qf.create.assignment(
+              qf.emit.setFlags(new qc.PropertyAccessExpression(qf.emit.setFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution),
+              new Identifier('v')
+            )
           )
         )
       );

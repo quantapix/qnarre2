@@ -249,13 +249,13 @@ export function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile,
 export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
 export function getPreEmitDiagnostics(program: Program | BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
   let diagnostics: Diagnostic[] | undefined;
-  diagnostics = addRange(diagnostics, program.getConfigFileParsingDiagnostics());
-  diagnostics = addRange(diagnostics, program.getOptsDiagnostics(cancellationToken));
-  diagnostics = addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancellationToken));
-  diagnostics = addRange(diagnostics, program.getGlobalDiagnostics(cancellationToken));
-  diagnostics = addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancellationToken));
+  diagnostics = qu.addRange(diagnostics, program.getConfigFileParsingDiagnostics());
+  diagnostics = qu.addRange(diagnostics, program.getOptsDiagnostics(cancellationToken));
+  diagnostics = qu.addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancellationToken));
+  diagnostics = qu.addRange(diagnostics, program.getGlobalDiagnostics(cancellationToken));
+  diagnostics = qu.addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancellationToken));
   if (getEmitDeclarations(program.getCompilerOpts())) {
-    diagnostics = addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
+    diagnostics = qu.addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
   }
   return sortAndDeduplicateDiagnostics(diagnostics || emptyArray);
 }
@@ -1497,7 +1497,7 @@ export function createProgram(
     if (opts.importHelpers && (opts.isolatedModules || isExternalModuleFile) && !file.isDeclarationFile) {
       const externalHelpersModuleReference = qc.asLiteral(externalHelpersModuleNameText);
       const importDecl = new qc.ImportDeclaration(undefined, undefined, externalHelpersModuleReference);
-      addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
+      qf.emit.addFlags(importDecl, EmitFlags.NeverApplyImportHelper);
       externalHelpersModuleReference.parent = importDecl;
       importDecl.parent = file;
       imports = [externalHelpersModuleReference];

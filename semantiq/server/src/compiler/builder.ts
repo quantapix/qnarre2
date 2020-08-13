@@ -790,9 +790,9 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         let affectedEmitResult: AffectedFileResult<EmitResult>;
         while ((affectedEmitResult = emitNextAffectedFile(writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers))) {
           emitSkipped = emitSkipped || affectedEmitResult.result.emitSkipped;
-          diagnostics = addRange(diagnostics, affectedEmitResult.result.diagnostics);
-          emittedFiles = addRange(emittedFiles, affectedEmitResult.result.emittedFiles);
-          sourceMaps = addRange(sourceMaps, affectedEmitResult.result.sourceMaps);
+          diagnostics = qu.addRange(diagnostics, affectedEmitResult.result.diagnostics);
+          emittedFiles = qu.addRange(emittedFiles, affectedEmitResult.result.emittedFiles);
+          sourceMaps = qu.addRange(sourceMaps, affectedEmitResult.result.sourceMaps);
         }
         return {
           emitSkipped,
@@ -833,7 +833,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
     while (getSemanticDiagnosticsOfNextAffectedFile(cancellationToken)) {}
     let diagnostics: Diagnostic[] | undefined;
     for (const sourceFile of Debug.checkDefined(state.program).getSourceFiles()) {
-      diagnostics = addRange(diagnostics, getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken));
+      diagnostics = qu.addRange(diagnostics, getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken));
     }
     return diagnostics || emptyArray;
   }

@@ -173,7 +173,7 @@ export function transformNodes<T extends Node>(
     },
   };
   for (const node of nodes) {
-    disposeEmitNodes(qc.get.parseTreeOf(node).sourceFile);
+    qf.emit.disposeEmits(qf.get.parseTreeOf(node).sourceFile);
   }
   performance.mark('beforeTransform');
   const transformersWithContext = transformers.map((t) => t(context));
@@ -204,7 +204,7 @@ export function transformNodes<T extends Node>(
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
   }
   function isSubstitutionEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qc.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
+    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qf.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
   function substituteNode(hint: EmitHint, node: Node) {
     qu.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
@@ -215,7 +215,7 @@ export function transformNodes<T extends Node>(
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
   }
   function isEmitNotificationEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qc.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qf.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
   function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
     qu.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
@@ -227,7 +227,7 @@ export function transformNodes<T extends Node>(
   function hoistVariableDeclaration(name: Identifier): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    const decl = setEmitFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
+    const decl = qf.emit.setFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
     if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParams) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParams;
@@ -235,14 +235,14 @@ export function transformNodes<T extends Node>(
   function hoistFunctionDeclaration(func: FunctionDeclaration): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    setEmitFlags(func, EmitFlags.CustomPrologue);
+    qf.emit.setFlags(func, EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentFunctionDeclarations) lexicalEnvironmentFunctionDeclarations = [func];
     else lexicalEnvironmentFunctionDeclarations.push(func);
   }
   function addInitializationStatement(node: Statement): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    setEmitFlags(node, EmitFlags.CustomPrologue);
+    qf.emit.setFlags(node, EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentStatements) lexicalEnvironmentStatements = [node];
     else lexicalEnvironmentStatements.push(node);
   }
@@ -281,7 +281,7 @@ export function transformNodes<T extends Node>(
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
       if (lexicalEnvironmentVariableDeclarations) {
         const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(lexicalEnvironmentVariableDeclarations));
-        setEmitFlags(statement, EmitFlags.CustomPrologue);
+        qf.emit.setFlags(statement, EmitFlags.CustomPrologue);
         if (!statements) statements = [statement];
         else statements.push(statement);
       }
@@ -330,7 +330,7 @@ export function transformNodes<T extends Node>(
   function dispose() {
     if (state < TransformationState.Disposed) {
       for (const node of nodes) {
-        disposeEmitNodes(qc.get.parseTreeOf(node).sourceFile);
+        qf.emit.disposeEmits(qf.get.parseTreeOf(node).sourceFile);
       }
       lexicalEnvironmentVariableDeclarations = undefined!;
       lexicalEnvironmentVariableDeclarationsStack = undefined!;

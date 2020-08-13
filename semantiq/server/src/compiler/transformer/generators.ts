@@ -277,7 +277,7 @@ export function transformGenerators(context: TrafoContext) {
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile || (node.trafoFlags & TrafoFlags.ContainsGenerator) === 0) return node;
     const visited = visitEachChild(node, visitor, context);
-    addEmitHelpers(visited, context.readEmitHelpers());
+    qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
@@ -483,7 +483,7 @@ export function transformGenerators(context: TrafoContext) {
       if (variables.length === 0) {
         return;
       }
-      return setSourceMapRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
+      return qf.emit.setSourceMapRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
   }
   function visitBinaryExpression(node: BinaryExpression): Expression {
@@ -757,7 +757,7 @@ export function transformGenerators(context: TrafoContext) {
     const temp = declareLocal();
     emitAssignment(temp, new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElemLike, 0, numInitialProperties), multiLine));
     const expressions = reduceLeft(properties, reduceProperty, <Expression[]>[], numInitialProperties);
-    expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);
+    expressions.push(multiLine ? qf.emit.setStartsOnNewLine(getMutableClone(temp)) : temp);
     return inlineExpressions(expressions);
     function reduceProperty(expressions: Expression[], property: ObjectLiteralElemLike) {
       if (containsYield(property) && expressions.length > 0) {
@@ -768,7 +768,7 @@ export function transformGenerators(context: TrafoContext) {
       const visited = visitNode(expression, visitor, isExpression);
       if (visited) {
         if (multiLine) {
-          startOnNewLine(visited);
+          qf.emit.setStartsOnNewLine(visited);
         }
         expressions.push(visited);
       }
@@ -884,23 +884,23 @@ export function transformGenerators(context: TrafoContext) {
       case Syntax.TryStatement:
         return transformAndEmitTryStatement(<TryStatement>node);
       default:
-        return emitStatement(visitNode(node, visitor, isStatement));
+        return emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function transformAndEmitBlock(node: Block): void {
     if (containsYield(node)) {
       transformAndEmitStatements(node.statements);
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function transformAndEmitExpressionStatement(node: ExpressionStatement) {
-    emitStatement(visitNode(node, visitor, isStatement));
+    emitStatement(visitNode(node, visitor, qf.is.statement));
   }
   function transformAndEmitVariableDeclarationList(node: VariableDeclarationList): VariableDeclarationList | undefined {
     for (const variable of node.declarations) {
       const name = getSynthesizedClone(<Identifier>variable.name);
-      setCommentRange(name, variable.name);
+      qf.emit.setCommentRange(name, variable.name);
       hoistVariableDeclaration(name);
     }
     const variables = qf.get.initializedVariables(node);
@@ -924,7 +924,7 @@ export function transformGenerators(context: TrafoContext) {
     return;
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    return setSourceMapRange(qf.create.assignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
+    return qf.emit.setSourceMapRange(qf.create.assignment(qf.emit.setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
   }
   function transformAndEmitIfStatement(node: IfStatement) {
     if (containsYield(node)) {
@@ -953,10 +953,10 @@ export function transformGenerators(context: TrafoContext) {
         }
         markLabel(endLabel);
       } else {
-        emitStatement(visitNode(node, visitor, isStatement));
+        emitStatement(visitNode(node, visitor, qf.is.statement));
       }
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function transformAndEmitDoStatement(node: DoStatement) {
@@ -984,7 +984,7 @@ export function transformGenerators(context: TrafoContext) {
       emitBreakWhenTrue(loopLabel, visitNode(node.expression, visitor, isExpression));
       endLoopBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitDoStatement(node: DoStatement) {
@@ -1019,7 +1019,7 @@ export function transformGenerators(context: TrafoContext) {
       emitBreak(loopLabel);
       endLoopBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitWhileStatement(node: WhileStatement) {
@@ -1073,7 +1073,7 @@ export function transformGenerators(context: TrafoContext) {
       emitBreak(conditionLabel);
       endLoopBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitForStatement(node: ForStatement) {
@@ -1091,7 +1091,7 @@ export function transformGenerators(context: TrafoContext) {
         variables.length > 0 ? inlineExpressions(map(variables, transformInitializedVariable)) : undefined,
         visitNode(node.condition, visitor, isExpression),
         visitNode(node.incrementor, visitor, isExpression),
-        visitNode(node.statement, visitor, isStatement, liftToBlock)
+        visitNode(node.statement, visitor, qf.is.statement, liftToBlock)
       );
     } else {
       node = visitEachChild(node, visitor, context);
@@ -1160,7 +1160,7 @@ export function transformGenerators(context: TrafoContext) {
       emitBreak(conditionLabel);
       endLoopBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitForInStatement(node: ForInStatement) {
@@ -1184,7 +1184,7 @@ export function transformGenerators(context: TrafoContext) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      node = node.update(<Identifier>initer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
+      node = node.update(<Identifier>initer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, qf.is.statement, liftToBlock));
     } else {
       node = visitEachChild(node, visitor, context);
     }
@@ -1246,7 +1246,7 @@ export function transformGenerators(context: TrafoContext) {
       transformAndEmitEmbeddedStatement(node.statement);
       endWithBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function transformAndEmitSwitchStatement(node: SwitchStatement) {
@@ -1335,7 +1335,7 @@ export function transformGenerators(context: TrafoContext) {
       }
       endSwitchBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitSwitchStatement(node: SwitchStatement) {
@@ -1364,7 +1364,7 @@ export function transformGenerators(context: TrafoContext) {
       transformAndEmitEmbeddedStatement(node.statement);
       endLabeledBlock();
     } else {
-      emitStatement(visitNode(node, visitor, isStatement));
+      emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
   function visitLabeledStatement(node: LabeledStatement) {
@@ -1454,8 +1454,8 @@ export function transformGenerators(context: TrafoContext) {
           const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
           if (name) {
             const clone = getMutableClone(name);
-            setSourceMapRange(clone, node);
-            setCommentRange(clone, node);
+            qf.emit.setSourceMapRange(clone, node);
+            qf.emit.setCommentRange(clone, node);
             return clone;
           }
         }
@@ -1745,7 +1745,7 @@ export function transformGenerators(context: TrafoContext) {
   }
   function createInstruction(instruction: Instruction): NumericLiteral {
     const literal = qc.asLiteral(instruction);
-    addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
+    qf.emit.addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
     return literal;
   }
   function createInlineBreak(label: Label, location?: TextRange): ReturnStatement {
@@ -1824,7 +1824,7 @@ export function transformGenerators(context: TrafoContext) {
     const buildResult = buildStatements();
     return createGeneratorHelper(
       context,
-      setEmitFlags(
+      qf.emit.setFlags(
         new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
         EmitFlags.ReuseTempVariableScope
       )
@@ -1842,7 +1842,7 @@ export function transformGenerators(context: TrafoContext) {
     if (clauses) {
       const labelExpression = new qc.PropertyAccessExpression(state, 'label');
       const switchStatement = new qc.SwitchStatement(labelExpression, new qc.CaseBlock(clauses));
-      return [startOnNewLine(switchStatement)];
+      return [qf.emit.setStartsOnNewLine(switchStatement)];
     }
     if (statements) return statements;
     return [];
@@ -2045,7 +2045,7 @@ export function transformGenerators(context: TrafoContext) {
     lastOperationWasAbrupt = true;
     lastOperationWasCompletion = true;
     writeStatement(
-      setEmitFlags(
+      qf.emit.setFlags(
         setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
@@ -2054,15 +2054,15 @@ export function transformGenerators(context: TrafoContext) {
   function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     writeStatement(
-      setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+      qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
     );
   }
   function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
     writeStatement(
-      setEmitFlags(
+      qf.emit.setFlags(
         new qc.IfStatement(
           condition,
-          setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2070,10 +2070,10 @@ export function transformGenerators(context: TrafoContext) {
   }
   function writeBreakWhenFalse(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
     writeStatement(
-      setEmitFlags(
+      qf.emit.setFlags(
         new qc.IfStatement(
           qf.create.logicalNot(condition),
-          setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2082,7 +2082,7 @@ export function transformGenerators(context: TrafoContext) {
   function writeYield(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     writeStatement(
-      setEmitFlags(
+      qf.emit.setFlags(
         setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
@@ -2090,7 +2090,9 @@ export function transformGenerators(context: TrafoContext) {
   }
   function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(
+      qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps)
+    );
   }
   function writeEndfinally(): void {
     lastOperationWasAbrupt = true;
