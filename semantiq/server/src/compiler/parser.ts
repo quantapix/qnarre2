@@ -1,10 +1,10 @@
-import { qf, Nobj, Nodes, Token } from './core';
-import * as qc from './core';
-import * as qd from './diagnostic';
-import { Modifier, Node, NodeFlags, TokenFlags } from './type';
-import * as qt from './type';
-import * as qu from './util';
 import { DocSyntax, JsxTokenSyntax, LanguageVariant, Syntax } from './syntax';
+import { Modifier, Node, NodeFlags, TokenFlags } from './types';
+import { qf, Nodes } from './core';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
@@ -1440,7 +1440,7 @@ function create() {
       n.modifiers = this.modifiers();
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       n.name = this.identifierOrPattern(qd.msgs.Private_identifiers_cannot_be_used_as_params);
-      if (qc.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
+      if (qf.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       n.type = paramType();
       n.initer = this.initer();

@@ -1,11 +1,11 @@
-import { Node, Nodes } from '../core';
-import * as qc from '../core';
-import { qf } from '../core';
-import { EmitFlags, Modifier, ModifierFlags, TrafoFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
-import * as qy from '../syntax';
+import { EmitFlags, Node, Modifier, ModifierFlags, TrafoFlags } from '../types';
+import { qf, Nodes } from '../core';
 import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 const enum ES2015SubstitutionFlags {
   CapturedThis = 1 << 0,
   BlockScopedBindings = 1 << 1,
@@ -482,7 +482,7 @@ export function transformES2015(context: TrafoContext) {
     extendsClauseElem: qc.ExpressionWithTypings | undefined,
     hasSynthesizedSuper: boolean
   ) {
-    const isDerivedClass = !!extendsClauseElem && qc.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword;
+    const isDerivedClass = !!extendsClauseElem && qf.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword;
     if (!constructor) return createDefaultConstructorBody(node, isDerivedClass);
     const prologue: qc.Statement[] = [];
     const statements: qc.Statement[] = [];
@@ -1160,7 +1160,7 @@ export function transformES2015(context: TrafoContext) {
     } else {
       const assignment = qf.create.assignment(initer, boundValue);
       if (qf.is.destructuringAssignment(assignment)) {
-        qc.compute.aggregate(assignment);
+        qf.calc.aggregate(assignment);
         statements.push(new qc.ExpressionStatement(visitBinaryExpression(assignment, false)));
       } else {
         assignment.end = initer.end;
@@ -1376,12 +1376,12 @@ function convertIterationStmtBodyIfNecessary(
       loop = convert(node, outermostLabeledStatement, bodyFunction.part, ancestorFacts);
     } else {
       const clone = convertIterationStmtCore(node, initerFunction, new Block(bodyFunction.part, true));
-      qc.compute.aggregate(clone);
+      qf.calc.aggregate(clone);
       loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
     }
   } else {
     const clone = convertIterationStmtCore(node, initerFunction, visitNode(node.statement, visitor, qf.is.statement, liftToBlock));
-    qc.compute.aggregate(clone);
+    qf.calc.aggregate(clone);
     loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
   }
   statements.push(loop);
@@ -1835,12 +1835,12 @@ function visitArrayLiteralExpression(node: ArrayLiteralExpression): qc.Expressio
 }
 function visitCallExpression(node: CallExpression) {
   if (qf.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) return visitTypeScriptClassWrapper(node);
-  const expression = qc.skip.outerExpressions(node.expression);
+  const expression = qf.skip.outerExpressions(node.expression);
   if (expression.kind === Syntax.SuperKeyword || qf.is.superProperty(expression) || some(node.args, isSpreadElem)) return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
   return node.update(visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
-  const body = cast(cast(qc.skip.outerExpressions(node.expression), isArrowFunction).body, isBlock);
+  const body = cast(cast(qf.skip.outerExpressions(node.expression), isArrowFunction).body, isBlock);
   const isVariableStatementWithIniter = (stmt: qc.Statement) => stmt.kind === Syntax.VariableStatement && !!first(stmt.declarationList.declarations).initer;
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
@@ -1850,10 +1850,10 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
   const remainingStatements = filter(bodyStatements, (stmt) => !isVariableStatementWithIniter(stmt));
   const varStatement = cast(first(classStatements), isVariableStatement);
   const variable = varStatement.declarationList.declarations[0];
-  const initer = qc.skip.outerExpressions(variable.initer!);
+  const initer = qf.skip.outerExpressions(variable.initer!);
   const aliasAssignment = qu.tryCast(initer, isAssignmentExpression);
-  const call = cast(aliasAssignment ? qc.skip.outerExpressions(aliasAssignment.right) : initer, isCallExpression);
-  const func = cast(qc.skip.outerExpressions(call.expression), isFunctionExpression);
+  const call = cast(aliasAssignment ? qf.skip.outerExpressions(aliasAssignment.right) : initer, isCallExpression);
+  const func = cast(qf.skip.outerExpressions(call.expression), isFunctionExpression);
   const funcStatements = func.body.statements;
   let classBodyStart = 0;
   let classBodyEnd = -1;
@@ -1892,7 +1892,7 @@ function visitImmediateSuperCallInBody(node: CallExpression) {
   return visitCallExpressionWithPotentialCapturedThisAssignment(node, false);
 }
 function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | BinaryExpression {
-  if (node.trafoFlags & TrafoFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qf.is.superProperty(qc.skip.outerExpressions(node.expression))) {
+  if (node.trafoFlags & TrafoFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qf.is.superProperty(qf.skip.outerExpressions(node.expression))) {
     const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration);
     if (node.expression.kind === Syntax.SuperKeyword) {
       qf.emit.setFlags(thisArg, EmitFlags.NoSubstitution);

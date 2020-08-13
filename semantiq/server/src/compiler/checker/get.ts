@@ -1,14 +1,14 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import * as qg from '../debug';
-import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
-import { Symbol } from './bases';
-import { Fhas, Fis } from './predicate';
+import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
 import { Fcheck } from './check';
+import { Fhas, Fis } from './groups';
+import { Symbol } from './bases';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qg from '../debug';
+import * as qt from './types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export function newGet(f: qt.Frame) {
   interface Frame extends qt.Frame {
     host: qt.TypeCheckerHost;
@@ -4161,8 +4161,8 @@ export function newGet(f: qt.Frame) {
     }
     typePredicateArg(predicate: TypePredicate, callExpression: qt.CallExpression) {
       if (predicate.kind === TypePredicateKind.Identifier || predicate.kind === TypePredicateKind.AssertsIdentifier) return callExpression.args[predicate.paramIndex];
-      const invokedExpression = qc.skip.parentheses(callExpression.expression);
-      return qf.is.accessExpression(invokedExpression) ? qc.skip.parentheses(invokedExpression.expression) : undefined;
+      const invokedExpression = qf.skip.parentheses(callExpression.expression);
+      return qf.is.accessExpression(invokedExpression) ? qf.skip.parentheses(invokedExpression.expression) : undefined;
     }
     flow = new (class {
       typeOfReference(reference: Node, declaredType: qt.Type, initialType = declaredType, flowContainer?: Node, couldBeUninitialized?: boolean) {
@@ -4302,7 +4302,7 @@ export function newGet(f: qt.Frame) {
         return;
       }
       narrowTypeByAssertion(t: qt.Type, expr: qt.Expression): qt.Type {
-        const n = qc.skip.parentheses(expr);
+        const n = qf.skip.parentheses(expr);
         if (n.kind === Syntax.FalseKeyword) return unreachableNeverType;
         if (n.kind === Syntax.BinaryExpression) {
           if (n.operatorToken.kind === Syntax.Ampersand2Token) return narrowTypeByAssertion(narrowTypeByAssertion(t, n.left), n.right);
@@ -5799,7 +5799,7 @@ export function newGet(f: qt.Frame) {
     }
     thisArgOfCall(n: CallLikeExpression): LeftExpression | undefined {
       if (n.kind === Syntax.CallExpression) {
-        const callee = qc.skip.outerExpressions(n.expression);
+        const callee = qf.skip.outerExpressions(n.expression);
         if (qf.is.accessExpression(callee)) return callee.expression;
       }
     }
@@ -6265,7 +6265,7 @@ export function newGet(f: qt.Frame) {
       return type;
     }
     quickTypeOfExpression(n: qt.Expression) {
-      const expr = qc.skip.parentheses(n);
+      const expr = qf.skip.parentheses(n);
       if (expr.kind === Syntax.CallExpression && expr.expression.kind !== Syntax.SuperKeyword && !qf.is.requireCall(expr, true) && !qf.is.symbolOrSymbolForCall(expr)) {
         const type = qf.is.callChain(expr) ? this.returnTypeOfSingleNonGenericSignatureOfCallChain(expr) : this.returnTypeOfSingleNonGenericCallSignature(qf.check.nonNullExpression(expr.expression));
         if (t) return type;

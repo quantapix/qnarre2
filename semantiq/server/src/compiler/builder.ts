@@ -1,9 +1,10 @@
-import * as qc from './core';
-import * as qd from './diagnostic';
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export type AffectedFileResult<T> = { result: T; affected: SourceFile | Program } | undefined;
 export interface BuilderProgramHost {
@@ -1026,7 +1027,7 @@ export namespace BuilderState {
     if (sourceFile.moduleAugmentations.length) {
       const checker = program.getTypeChecker();
       for (const moduleName of sourceFile.moduleAugmentations) {
-        if (!qc.is.kind(qc.StringLiteral, moduleName)) continue;
+        if (!qf.is.kind(qc.StringLiteral, moduleName)) continue;
         const symbol = checker.getSymbolAtLocation(moduleName);
         if (!symbol) continue;
         addReferenceFromAmbientModule(symbol);
@@ -1235,7 +1236,7 @@ export namespace BuilderState {
   }
   function containsOnlyAmbientModules(sourceFile: SourceFile) {
     for (const statement of sourceFile.statements) {
-      if (!qc.is.moduleWithStringLiteralName(statement)) return false;
+      if (!qf.is.moduleWithStringLiteralName(statement)) return false;
     }
     return true;
   }
@@ -1243,7 +1244,7 @@ export namespace BuilderState {
     return some(sourceFile.moduleAugmentations, (augmentation) => qf.is.globalScopeAugmentation(augmentation.parent as ModuleDeclaration));
   }
   function isFileAffectingGlobalScope(sourceFile: SourceFile) {
-    return containsGlobalScopeAugmentation(sourceFile) || (!qc.is.externalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
+    return containsGlobalScopeAugmentation(sourceFile) || (!qf.is.externalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
   }
   export function getAllFilesExcludingDefaultLibraryFile(state: BuilderState, programOfThisState: Program, firstSourceFile: SourceFile | undefined): readonly SourceFile[] {
     if (state.allFilesExcludingDefaultLibraryFile) return state.allFilesExcludingDefaultLibraryFile;

@@ -1,9 +1,10 @@
-import * as qd from './diagnostic';
-import * as qg from './debug';
-import { TokenFlags } from './type';
-import * as qt from './type';
-import * as qu from './util';
 import { Codes, DocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+import { qf } from './core';
+import { TokenFlags } from './types';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export interface Scanner {
   setLanguageVariant(l: LanguageVariant): void;

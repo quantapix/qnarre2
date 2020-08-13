@@ -1,14 +1,14 @@
-import { Nodes } from '../core';
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import { CheckFlags, FlowFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
-import { Symbol } from './bases';
+import { CheckFlags, FlowFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
 import { Fcheck } from './check';
 import { Fget } from './get';
+import { Nodes } from '../core';
+import { Symbol } from './bases';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from './types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     check: Fcheck;
@@ -394,11 +394,11 @@ export function newIs(f: qt.Frame) {
       return t && (t.flags & TypeFlags.Any) !== 0;
     }
     nullOrUndefined(n: qt.Expression) {
-      const e = qc.skip.parentheses(n);
+      const e = qf.skip.parentheses(n);
       return e.kind === Syntax.NullKeyword || (e.kind === Syntax.Identifier && getResolvedSymbol(e) === undefinedSymbol);
     }
     emptyArrayLiteral(n: qt.Expression) {
-      const e = qc.skip.parentheses(n);
+      const e = qf.skip.parentheses(n);
       return e.kind === Syntax.ArrayLiteralExpression && e.elems.length === 0;
     }
     declarationInConstructor(e: qt.Expression) {
@@ -1174,7 +1174,7 @@ export function newIs(f: qt.Frame) {
       return result;
     }
     falseExpression(e: qt.Expression): boolean {
-      const n = qc.skip.parentheses(e);
+      const n = qf.skip.parentheses(e);
       return (
         n.kind === Syntax.FalseKeyword ||
         (n.kind === Syntax.BinaryExpression &&
@@ -1462,7 +1462,7 @@ export function newIs(f: qt.Frame) {
       return this.inJSFile(n) && (t.flags & TypeFlags.Union) !== 0 && t.types.some((elemType) => this.validPropertyAccessWithType(n, isSuper, propertyName, elemType));
     }
     forInVariableForNumericPropertyNames(exp: qt.Expression) {
-      const e = qc.skip.parentheses(exp);
+      const e = qf.skip.parentheses(exp);
       if (e.kind === Syntax.Identifier) {
         const s = getResolvedSymbol(e);
         if (s.flags & qt.SymbolFlags.Variable) {
@@ -1625,7 +1625,7 @@ export function newIs(f: qt.Frame) {
         return true;
       }
       if (this.accessExpression(e)) {
-        const n = qc.skip.parentheses(e.expression);
+        const n = qf.skip.parentheses(e.expression);
         if (n.kind === Syntax.Identifier) {
           const s = qf.get.nodeLinks(n).resolvedSymbol!;
           if (s.flags & qt.SymbolFlags.Alias) {
@@ -1660,7 +1660,7 @@ export function newIs(f: qt.Frame) {
       return !!(getObjectFlags(t) & ObjectFlags.Anonymous) && !!t.symbol && isConstEnumSymbol(t.symbol);
     }
     sideEffectFree(n: Node): boolean {
-      n = qc.skip.parentheses(n);
+      n = qf.skip.parentheses(n);
       switch (n.kind) {
         case Syntax.ArrayLiteralExpression:
         case Syntax.ArrowFunction:
@@ -1710,7 +1710,7 @@ export function newIs(f: qt.Frame) {
       return (t.flags & TypeFlags.Nullable) !== 0 || isTypeComparableTo(s, t);
     }
     nodekind(TypeAssertion, n: qt.Expression) {
-      n = qc.skip.parentheses(n);
+      n = qf.skip.parentheses(n);
       return n.kind === Syntax.TypeAssertionExpression || n.kind === Syntax.AsExpression;
     }
     literalOfContextualType(t: qt.Type, c?: qt.Type): boolean {

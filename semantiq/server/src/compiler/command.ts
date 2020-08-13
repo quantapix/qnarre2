@@ -1,9 +1,10 @@
-import * as qc from './core';
-import * as qd from './diagnostic';
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export const compileOnSaveCommandLineOption: qt.CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
 const libEntries: [string, string][] = [
@@ -1487,7 +1488,7 @@ export function convertToObjectWorker(
       if (!isDoubleQuotedString(elem.name)) {
         errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, qd.String_literal_with_double_quotes_expected));
       }
-      const textOfKey = qf.is.computedNonLiteralName(elem.name) ? undefined : qc.get.textOfPropertyName(elem.name);
+      const textOfKey = qf.is.computedNonLiteralName(elem.name) ? undefined : qf.get.textOfPropertyName(elem.name);
       const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
       const option = keyText && knownOpts ? knownOpts.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
@@ -1586,7 +1587,7 @@ export function convertToObjectWorker(
     }
   }
   function isDoubleQuotedString(node: Node): boolean {
-    return qc.is.kind(qc.StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
+    return qf.is.kind(qc.StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
   }
 }
 function getCompilerOptionValueTypeString(option: qt.CommandLineOption) {

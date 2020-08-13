@@ -1,7 +1,10 @@
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 const enum RelativePreference {
   Relative,
@@ -209,7 +212,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
   const decl = find(
     moduleSymbol.declarations,
-    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(d.name)))
+    (d) => qf.is.nonGlobalAmbientModule(d) && (!qf.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(d.name)))
   ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) return decl.name.text;
 }

@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qd from '../diags';
 import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 type SuperContainer = ClassDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration;
 const enum ES2017SubstitutionFlags {
   AsyncMethodsWithSuper = 1 << 0,
@@ -79,7 +80,7 @@ export function transformES2017(context: TrafoContext) {
       case Syntax.ArrowFunction:
         return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
       case Syntax.PropertyAccessExpression:
-        if (capturedSuperProperties && qc.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+        if (capturedSuperProperties && qf.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
@@ -99,7 +100,7 @@ export function transformES2017(context: TrafoContext) {
     }
   }
   function asyncBodyVisitor(node: Node): VisitResult<Node> {
-    if (qc.is.nodeWithPossibleHoistedDeclaration(node)) {
+    if (qf.is.nodeWithPossibleHoistedDeclaration(node)) {
       switch (node.kind) {
         case Syntax.VariableStatement:
           return visitVariableStatementInAsyncBody(node);
@@ -130,7 +131,7 @@ export function transformES2017(context: TrafoContext) {
     return visitor(node);
   }
   function visitCatchClauseInAsyncBody(node: CatchClause) {
-    const catchClauseNames = qb.createEscapedMap<true>();
+    const catchClauseNames = qc.createEscapedMap<true>();
     recordDeclarationName(node.variableDeclaration!, catchClauseNames);
     let catchClauseUnshadowedNames: EscapedMap<true> | undefined;
     catchClauseNames.forEach((_, escName) => {
@@ -235,18 +236,18 @@ export function transformES2017(context: TrafoContext) {
     );
   }
   function recordDeclarationName({ name }: ParamDeclaration | VariableDeclaration | BindingElem, names: EscapedMap<true>) {
-    if (qc.is.kind(qc.Identifier, name)) {
+    if (qf.is.kind(qc.Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
       for (const elem of name.elems) {
-        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+        if (!qf.is.kind(qc.OmittedExpression, elem)) {
           recordDeclarationName(elem, names);
         }
       }
     }
   }
   function isVariableDeclarationListWithCollidingName(node: ForIniter): node is VariableDeclarationList {
-    return !!node && qc.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParamName);
+    return !!node && qf.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParamName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
@@ -261,11 +262,11 @@ export function transformES2017(context: TrafoContext) {
     forEach(node.declarations, hoistVariable);
   }
   function hoistVariable({ name }: VariableDeclaration | BindingElem) {
-    if (qc.is.kind(qc.Identifier, name)) {
+    if (qf.is.kind(qc.Identifier, name)) {
       hoistVariableDeclaration(name);
     } else {
       for (const elem of name.elems) {
-        if (!qc.is.kind(qc.OmittedExpression, elem)) {
+        if (!qf.is.kind(qc.OmittedExpression, elem)) {
           hoistVariable(elem);
         }
       }
@@ -276,10 +277,10 @@ export function transformES2017(context: TrafoContext) {
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParamName({ name }: VariableDeclaration | BindingElem): boolean {
-    if (qc.is.kind(qc.Identifier, name)) return enclosingFunctionParamNames.has(name.escapedText);
+    if (qf.is.kind(qc.Identifier, name)) return enclosingFunctionParamNames.has(name.escapedText);
     else {
       for (const elem of name.elems) {
-        if (!qc.is.kind(qc.OmittedExpression, elem) && collidesWithParamName(elem)) return true;
+        if (!qf.is.kind(qc.OmittedExpression, elem) && collidesWithParamName(elem)) return true;
       }
     }
     return false;
@@ -288,20 +289,20 @@ export function transformES2017(context: TrafoContext) {
   function transformAsyncFunctionBody(node: ArrowFunction): ConciseBody;
   function transformAsyncFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
     resumeLexicalEnvironment();
-    const original = qc.get.originalOf(node, isFunctionLike);
+    const original = qf.get.originalOf(node, isFunctionLike);
     const nodeType = original.type;
     const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
     const hasLexicalArgs = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArgs) !== 0;
     const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
-    enclosingFunctionParamNames = qb.createEscapedMap<true>();
+    enclosingFunctionParamNames = qc.createEscapedMap<true>();
     for (const param of node.params) {
       recordDeclarationName(param, enclosingFunctionParamNames);
     }
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElemAccess = hasSuperElemAccess;
     if (!isArrowFunction) {
-      capturedSuperProperties = qb.createEscapedMap<true>();
+      capturedSuperProperties = qc.createEscapedMap<true>();
       hasSuperElemAccess = false;
     }
     let result: ConciseBody;
@@ -315,7 +316,7 @@ export function transformES2017(context: TrafoContext) {
       const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();
-        if (qb.hasEntries(capturedSuperProperties)) {
+        if (qc.hasEntries(capturedSuperProperties)) {
           const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
           substitutedSuperAccessors[qf.get.nodeId(variableStatement)] = true;
           insertStatementsAfterStandardPrologue(statements, [variableStatement]);
@@ -349,12 +350,12 @@ export function transformES2017(context: TrafoContext) {
     return result;
   }
   function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-    if (qc.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, qf.is.statement, start));
+    if (qf.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, qf.is.statement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: Typing | undefined) {
     const typeName = type && qf.get.entityNameFromTypeNode(type);
-    if (typeName && qc.is.entityName(typeName)) {
+    if (typeName && qf.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
       if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) return typeName;
     }
@@ -419,9 +420,9 @@ export function transformES2017(context: TrafoContext) {
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
-    if (qc.is.superProperty(expression)) {
-      const argExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
-      return new qs.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
+    if (qf.is.superProperty(expression)) {
+      const argExpression = qf.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
     }
     return node;
   }
@@ -431,8 +432,8 @@ export function transformES2017(context: TrafoContext) {
   }
   function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
-    return new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
+      return new qc.PropertyAccessExpression(new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
+    return new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
   }
 }
 export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: EscapedMap<true>) {
@@ -477,7 +478,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
   return new qc.VariableStatement(
     undefined,
     new qc.VariableDeclarationList(
-      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'create'), true))],
+      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qc.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'create'), true))],
       NodeFlags.Const
     )
   );
@@ -500,12 +501,12 @@ export const awaiterHelper: UnscopedEmitHelper = {
 };
 function createAwaiterHelper(context: TrafoContext, hasLexicalThis: boolean, hasLexicalArgs: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
   context.requestEmitHelper(awaiterHelper);
-  const generatorFunc = new qs.FunctionExpression([], undefined, body);
+  const generatorFunc = new qc.FunctionExpression([], undefined, body);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
-  return new qs.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
-    hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(),
-    hasLexicalArgs ? new Identifier('args') : qs.VoidExpression.zero(),
-    promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qs.VoidExpression.zero(),
+  return new qc.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
+    hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(),
+    hasLexicalArgs ? new Identifier('args') : qc.VoidExpression.zero(),
+    promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qc.VoidExpression.zero(),
     generatorFunc,
   ]);
 }

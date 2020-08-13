@@ -1,7 +1,9 @@
-import * as qu from './util';
-import { Node } from './type';
-import * as qt from './type';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export interface ReadBuildProgramHost {
   useCaseSensitiveFileNames(): boolean;
@@ -68,7 +70,7 @@ export interface ProgramHost<T extends BuilderProgram> {
   useCaseSensitiveFileNames(): boolean;
   getNewLine(): string;
   getCurrentDirectory(): string;
-  qc.get.defaultLibFileName(opts: CompilerOpts): string;
+  qf.get.defaultLibFileName(opts: CompilerOpts): string;
   getDefaultLibLocation?(): string;
   createHash?(data: string): string;
   fileExists(path: string): boolean;
@@ -797,7 +799,7 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
       return text !== undefined ? qp_createSource(fileName, text, languageVersion) : undefined;
     },
     getDefaultLibLocation: maybeBind(host, host.getDefaultLibLocation),
-    getDefaultLibFileName: (opts) => host.qc.get.defaultLibFileName(opts),
+    getDefaultLibFileName: (opts) => host.qf.get.defaultLibFileName(opts),
     writeFile,
     getCurrentDirectory: memoize(() => host.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
@@ -851,7 +853,7 @@ export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiag
     getNewLine: () => system.newLine,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     getDefaultLibLocation,
-    getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(opts)),
+    getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qf.get.defaultLibFileName(opts)),
     fileExists: (path) => system.fileExists(path),
     readFile: (path, encoding) => system.readFile(path, encoding),
     directoryExists: (path) => system.directoryExists(path),

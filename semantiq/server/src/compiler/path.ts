@@ -1,8 +1,10 @@
-import * as qd from './diagnostic';
-import { Extension, Path, ScriptKind } from './type';
-import * as qt from './type';
-import * as qu from './util';
 import { dirSeparator } from './syntax';
+import { Extension, Path, ScriptKind } from './types';
+import { qf } from './core';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 const backslashRegExp = /\\/g;
 export function isUrl(p: string) {
@@ -25,7 +27,7 @@ export function pathIsRelative(path: string): boolean {
   return /^\.\.?($|[\\/])/.test(path);
 }
 export function hasExtension(fileName: string): boolean {
-  return qu.qu.stringContains(getBaseFileName(fileName), '.');
+  return qu.stringContains(getBaseFileName(fileName), '.');
 }
 export function fileExtensionIs(path: string, extension: string): boolean {
   return path.length > extension.length && qu.endsWith(path, extension);

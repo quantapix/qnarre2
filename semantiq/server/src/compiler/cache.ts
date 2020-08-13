@@ -1,7 +1,10 @@
-import * as qu from './util';
-import { Node } from './type';
-import * as qt from './type';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export interface ResolutionCache {
   startRecordingFilesWithChangedResolutions(): void;

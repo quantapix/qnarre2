@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qd from '../diags';
 import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 export enum ProcessLevel {
   LiftRestriction,
   All,
@@ -22,8 +23,8 @@ export function processTaggedTemplateExpression(
   const cookedStrings: Expression[] = [];
   const rawStrings: Expression[] = [];
   const template = node.template;
-  if (level === ProcessLevel.LiftRestriction && !qc.has.invalidEscape(template)) return visitEachChild(node, visitor, context);
-  if (qc.is.kind(qc.NoSubstitutionLiteral, template)) {
+  if (level === ProcessLevel.LiftRestriction && !qf.has.invalidEscape(template)) return visitEachChild(node, visitor, context);
+  if (qf.is.kind(qc.NoSubstitutionLiteral, template)) {
     cookedStrings.push(createTemplateCooked(template));
     rawStrings.push(getRawLiteral(template, currentSourceFile));
   } else {
@@ -36,17 +37,17 @@ export function processTaggedTemplateExpression(
     }
   }
   const helperCall = createTemplateObjectHelper(context, new ArrayLiteralExpression(cookedStrings), new ArrayLiteralExpression(rawStrings));
-  if (qc.is.externalModule(currentSourceFile)) {
+  if (qf.is.externalModule(currentSourceFile)) {
     const tempVar = createUniqueName('templateObject');
     recordTaggedTemplateString(tempVar);
     templateArgs[0] = qf.create.logicalOr(tempVar, qf.create.assignment(tempVar, helperCall));
   } else {
     templateArgs[0] = helperCall;
   }
-  return new qs.CallExpression(tag, undefined, templateArgs);
+  return new qc.CallExpression(tag, undefined, templateArgs);
 }
 function createTemplateCooked(template: TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral) {
-  return template.templateFlags ? qs.VoidExpression.zero() : qc.asLiteral(template.text);
+  return template.templateFlags ? qc.VoidExpression.zero() : qc.asLiteral(template.text);
 }
 function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceFile) {
   let text = node.rawText;
@@ -60,7 +61,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
 }
 function createTemplateObjectHelper(context: TrafoContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
   context.requestEmitHelper(templateObjectHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__makeTemplateObject'), undefined, [cooked, raw]);
+  return new qc.CallExpression(getUnscopedHelperName('__makeTemplateObject'), undefined, [cooked, raw]);
 }
 export const templateObjectHelper: UnscopedEmitHelper = {
   name: 'typescript:makeTemplateObject',

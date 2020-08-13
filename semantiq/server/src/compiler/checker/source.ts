@@ -1,8 +1,11 @@
-import { QContext } from './context';
-import { NodeFlags, TrafoFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
+import { NodeFlags, TrafoFlags } from './types';
+import { QContext } from './context';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qg from '../debug';
+import * as qt from './types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
 export interface SourceMapGeneratorOpts {
   extendedDiagnostics?: boolean;

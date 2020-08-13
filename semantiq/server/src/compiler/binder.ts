@@ -1,10 +1,10 @@
-import * as qc from './core';
-import * as qd from './diagnostic';
+import { ModifierFlags, Node, SymbolFlags } from './types';
 import { qf } from './core';
-import { ModifierFlags, Node, SymbolFlags } from './type';
-import * as qt from './type';
-import * as qu from './util';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export const enum ModuleInstanceState {
   NonInstantiated = 0,
@@ -471,7 +471,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       const savedSubtreeTrafoFlags = subtreeTrafoFlags;
       subtreeTrafoFlags = 0;
       bindChildrenWorker(node);
-      subtreeTrafoFlags = savedSubtreeTrafoFlags | qc.compute.trafoFlags(node, subtreeTrafoFlags);
+      subtreeTrafoFlags = savedSubtreeTrafoFlags | qf.calc.trafoFlags(node, subtreeTrafoFlags);
     }
   }
   function bindEachFunctionsFirst(nodes: Nodes<Node> | undefined): void {
@@ -1192,7 +1192,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           skipTransformFlagAggregation = false;
           subtreeTrafoFlags |= node.trafoFlags & ~qy.get.trafoFlagsSubtreeExclusions(node.kind);
         } else if (workStacks.subtreeFlags[stackIndex] !== undefined) {
-          subtreeTrafoFlags = workStacks.subtreeFlags[stackIndex]! | qc.compute.trafoFlags(node, subtreeTrafoFlags);
+          subtreeTrafoFlags = workStacks.subtreeFlags[stackIndex]! | qf.calc.trafoFlags(node, subtreeTrafoFlags);
         }
         inStrictMode = workStacks.inStrictMode[stackIndex]!;
         parent = workStacks.parent[stackIndex]!;
@@ -1325,7 +1325,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
-      const expr = qc.skip.parentheses(node.expression);
+      const expr = qf.skip.parentheses(node.expression);
       if (expr.kind === Syntax.FunctionExpression || expr.kind === Syntax.ArrowFunction) {
         bindEach(node.typeArgs);
         bindEach(node.args);
@@ -1776,7 +1776,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
       parent = saveParent;
     } else if (!skipTransformFlagAggregation && (node.trafoFlags & TrafoFlags.HasComputedFlags) === 0) {
-      subtreeTrafoFlags |= qc.compute.trafoFlags(node, 0);
+      subtreeTrafoFlags |= qf.calc.trafoFlags(node, 0);
       const saveParent = parent;
       if (node.kind === Syntax.EndOfFileToken) parent = node;
       bindDoc(node);

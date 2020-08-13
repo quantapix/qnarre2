@@ -1,11 +1,11 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import { CheckFlags, InternalSymbol, ModifierFlags, Node, NodeFlags, SymbolFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
+import { CheckFlags, InternalSymbol, ModifierFlags, Node, NodeFlags, SymbolFlags } from '../types';
 import { qf } from './frame';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 class SymbolTable extends qc.SymbolTable<Symbol> {
   addInheritedMembers(ss: Symbol[]) {
     for (const s of ss) {
@@ -1375,7 +1375,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     addResult(
       new qc.EnumDeclaration(
         undefined,
-        qc.create.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
+        qf.create.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
         this.getInternalSymbol(symbolName),
         map(
           qu.filter(qf.get.propertiesOfType(this.typeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
@@ -1620,7 +1620,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
           type = this.getTypeOfEnumMember();
         } else if (qf.is.accessor(d)) {
           type = resolveTypeOfAccessors(this);
-        } else return qu.fail('Unhandled declaration kind! ' + qc.format.syntax(d.kind) + ' for ' + qc.format.symbol(this));
+        } else return qu.fail('Unhandled declaration kind! ' + qf.format.syntax(d.kind) + ' for ' + qf.format.symbol(this));
         if (!popTypeResolution()) {
           if (this.flags & SymbolFlags.ValueModule && !(this.flags & SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
           return reportCircularityError(this);
@@ -2453,7 +2453,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return n !== undefined ? n : this.name;
   }
   isNamespaceMember() {
-    return !(this.flags & SymbolFlags.Prototype || this.escName === 'prototype' || (this.valueDeclaration?.parent && qc.is.classLike(this.valueDeclaration.parent)));
+    return !(this.flags & SymbolFlags.Prototype || this.escName === 'prototype' || (this.valueDeclaration?.parent && qf.is.classLike(this.valueDeclaration.parent)));
   }
 }
 const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);

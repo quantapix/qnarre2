@@ -1,8 +1,10 @@
+import { ModifierFlags, Node } from './types';
+import { qf } from './core';
+import { Syntax } from './syntax';
 import * as qc from './core';
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
-import { ModifierFlags, Syntax } from './syntax';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
   return forEachAncestorDirectory(searchPath, (ancestor) => {
@@ -129,7 +131,7 @@ export function createCompilerHostWorker(opts: CompilerOpts, setParentNodes?: bo
   const compilerHost: CompilerHost = {
     getSourceFile,
     getDefaultLibLocation,
-    getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(opts)),
+    getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qf.get.defaultLibFileName(opts)),
     writeFile,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
@@ -535,7 +537,7 @@ export function createProgram(
   const host = createProgramOpts.host || createCompilerHost(opts);
   const configParsingHost = parseConfigHostFromCompilerHostLike(host);
   let skipDefaultLib = opts.noLib;
-  const getDefaultLibraryFileName = memoize(() => host.qc.get.defaultLibFileName(opts));
+  const getDefaultLibraryFileName = memoize(() => host.qf.get.defaultLibFileName(opts));
   const defaultLibraryPath = host.getDefaultLibLocation ? host.getDefaultLibLocation() : getDirectoryPath(getDefaultLibraryFileName());
   const programDiagnostics = createDiagnosticCollection();
   const currentDirectory = host.getCurrentDirectory();
@@ -1490,7 +1492,7 @@ export function createProgram(
       return;
     }
     const isJavaScriptFile = file.isJS();
-    const isExternalModuleFile = qc.is.externalModule(file);
+    const isExternalModuleFile = qf.is.externalModule(file);
     let imports: StringLiteralLike[] | undefined;
     let moduleAugmentations: (StringLiteral | Identifier)[] | undefined;
     let ambientModules: string[] | undefined;
@@ -1513,13 +1515,13 @@ export function createProgram(
     file.ambientModuleNames = ambientModules || emptyArray;
     return;
     function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
-      if (qc.is.anyImportOrReExport(node)) {
+      if (qf.is.anyImportOrReExport(node)) {
         const moduleNameExpr = qf.get.externalModuleName(node);
-        if (moduleNameExpr && qc.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
+        if (moduleNameExpr && qf.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
           imports = append(imports, moduleNameExpr);
         }
-      } else if (qc.is.kind(qc.ModuleDeclaration, node)) {
-        if (qc.is.ambientModule(node) && (inAmbientModule || qc.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+      } else if (qf.is.kind(qc.ModuleDeclaration, node)) {
+        if (qf.is.ambientModule(node) && (inAmbientModule || qf.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = qf.get.textOfIdentifierOrLiteral(node.name);
           if (isExternalModuleFile || (inAmbientModule && !isExternalModuleNameRelative(nameText))) {
             (moduleAugmentations || (moduleAugmentations = [])).push(node.name);
@@ -1543,9 +1545,9 @@ export function createProgram(
         const node = getNodeAtPosition(file, r.lastIndex);
         if (qf.is.requireCall(node, true)) {
           imports = append(imports, node.args[0]);
-        } else if (qc.is.importCall(node) && node.args.length === 1 && qf.is.stringLiteralLike(node.args[0])) {
+        } else if (qf.is.importCall(node) && node.args.length === 1 && qf.is.stringLiteralLike(node.args[0])) {
           imports = append(imports, node.args[0] as StringLiteralLike);
-        } else if (qc.is.literalImportTyping(node)) {
+        } else if (qf.is.literalImportTyping(node)) {
           imports = append(imports, node.arg.literal);
         }
       }
@@ -1556,7 +1558,7 @@ export function createProgram(
         if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
       };
       while (true) {
-        const child = (isJavaScriptFile && qc.is.withDocNodes(current) && forEach(current.doc, getContainingChild)) || qf.each.child(current, getContainingChild);
+        const child = (isJavaScriptFile && qf.is.withDocNodes(current) && forEach(current.doc, getContainingChild)) || qf.each.child(current, getContainingChild);
         if (!child) return current;
         current = child;
       }
@@ -2018,7 +2020,7 @@ export function createProgram(
           i < file.imports.length &&
           !elideImport &&
           !(isJsFile && !opts.allowJs) &&
-          (qc.is.inJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.Doc));
+          (qf.is.inJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.Doc));
         if (elideImport) {
           modulesWithElidedImports.set(file.path, true);
         } else if (shouldAddFile) {
@@ -2226,9 +2228,9 @@ export function createProgram(
     }
     const languageVersion = opts.target || ScriptTarget.ES2020;
     const outFile = opts.outFile || opts.out;
-    const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qc.is.externalModule(f) && !f.isDeclarationFile);
+    const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qf.is.externalModule(f) && !f.isDeclarationFile);
     if (opts.isolatedModules) {
-      const firstNonExternalModuleSourceFile = find(files, (f) => !qc.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = find(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.create.fileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
@@ -2381,7 +2383,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qc.is.kind(qc.ObjectLiteralExpression, pathProp.initer)) {
+      if (qf.is.kind(qc.ObjectLiteralExpression, pathProp.initer)) {
         for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
           if (isArrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
@@ -2399,7 +2401,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qc.is.kind(qc.ObjectLiteralExpression, pathProp.initer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initer, onKey, key, undefined, message, arg0)) {
+      if (qf.is.kind(qc.ObjectLiteralExpression, pathProp.initer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initer, onKey, key, undefined, message, arg0)) {
         needCompilerDiagnostic = false;
       }
     }
@@ -2445,7 +2447,7 @@ export function createProgram(
       const jsonObjectLiteral = qf.get.tsConfigObjectLiteralExpression(opts.configFile);
       if (jsonObjectLiteral) {
         for (const prop of qf.get.propertyAssignment(jsonObjectLiteral, 'compilerOpts')) {
-          if (qc.is.kind(qc.ObjectLiteralExpression, prop.initer)) {
+          if (qf.is.kind(qc.ObjectLiteralExpression, prop.initer)) {
             _compilerOptsObjectLiteralSyntax = prop.initer;
             break;
           }

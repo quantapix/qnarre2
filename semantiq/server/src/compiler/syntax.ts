@@ -1,6 +1,6 @@
-import * as qd from './diagnostic';
-import { Associativity, Modifier, ModifierFlags, TrafoFlags } from './type';
-import * as qu from './util';
+import { Associativity, Modifier, ModifierFlags, TrafoFlags } from './types';
+import * as qd from './diags';
+import * as qu from './utils';
 export const enum Codes {
   nullCharacter = 0,
   maxAsciiCharacter = 0x7f,

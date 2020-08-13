@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qd from '../diags';
 import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 export function transformES2016(context: TrafoContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
@@ -36,16 +37,16 @@ export function transformES2016(context: TrafoContext) {
     let value: Expression;
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);
-    if (qc.is.kind(qc.ElemAccessExpression, left)) {
+    if (qf.is.kind(qc.ElemAccessExpression, left)) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argExpressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = new qs.ElemAccessExpression(
+      target = new qc.ElemAccessExpression(
         qf.create.assignment(expressionTemp, left.expression).setRange(left.expression),
         qf.create.assignment(argExpressionTemp, left.argExpression).setRange(left.argExpression)
       ).setRange(left);
-      value = new qs.ElemAccessExpression(expressionTemp, argExpressionTemp).setRange(left);
-    } else if (qc.is.kind(qc.PropertyAccessExpression, left)) {
+      value = new qc.ElemAccessExpression(expressionTemp, argExpressionTemp).setRange(left);
+    } else if (qf.is.kind(qc.PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       target = new qc.PropertyAccessExpression(qf.create.assignment(expressionTemp, left.expression).setRange(left.expression), left.name).setRange(left);

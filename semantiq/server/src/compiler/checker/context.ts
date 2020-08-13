@@ -1,10 +1,10 @@
-import * as qc from '../core';
-import { ModifierFlags, Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
+import { ModifierFlags, Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../types';
 import { qf } from './index';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgCount(existing: Typing, type: Type) {
   return !(getObjectFlags(type) & ObjectFlags.Reference) || !existing.kind === Syntax.TypingReference || length(existing.typeArgs) >= getMinTypeArgCount((type as TypeReference).target.typeParams);
 }
@@ -85,7 +85,7 @@ export class QContext {
     if (type.flags & TypeFlags.NumberLiteral) {
       const value = (<NumberLiteralType>type).value;
       this.approximateLength += ('' + value).length;
-      return new qc.LiteralTyping(value < 0 ? new qs.PrefixUnaryExpression(Syntax.MinusToken, qc.asLiteral(-value)) : qc.asLiteral(value));
+      return new qc.LiteralTyping(value < 0 ? new qc.PrefixUnaryExpression(Syntax.MinusToken, qc.asLiteral(-value)) : qc.asLiteral(value));
     }
     if (type.flags & TypeFlags.BigIntLiteral) {
       this.approximateLength += pseudoBigIntToString((<BigIntLiteralType>type).value).length + 1;
@@ -528,7 +528,7 @@ export class QContext {
           expression = qf.emit.setFlags(new Identifier(symbolName, typeParamNodes), EmitFlags.NoAsciiEscaping);
           expression.symbol = symbol;
         }
-        return new qs.ElemAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
+        return new qc.ElemAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
       }
     }
   }

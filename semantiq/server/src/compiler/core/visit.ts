@@ -1,11 +1,11 @@
+import { EmitFlags, Modifier, Node, NodeFlags, Token } from '../types';
 import { MutableNodes, Nodes } from './bases';
+import { qf } from './frame';
+import { Syntax } from '../syntax';
 import * as qb from './bases';
 import * as qc from './classes';
-import { qf } from './frame';
-import { EmitFlags, Modifier, Node, NodeFlags, Token } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
 type Tester = (n: Node) => boolean;
 export type Visitor = (n: Node) => VisitResult<Node>;
@@ -128,7 +128,7 @@ function addForIniter(p: qc.ParamDeclaration, name: Identifier, init: Expression
           new qc.ExpressionStatement(
             qf.emit.setFlags(
               qf.create
-                .assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments))
+                .assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
                 .setRange(p),
               EmitFlags.NoComments
             )

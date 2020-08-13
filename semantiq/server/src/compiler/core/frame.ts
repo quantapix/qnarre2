@@ -1,12 +1,12 @@
-import * as qb from './bases';
-import { NodeType } from './classes';
-import * as qc from './classes';
-import * as qd from '../diagnostic';
-import * as qg from './groups';
 import { EmitFlags, Modifier, ModifierFlags, Node, NodeFlags, Nodes, ObjectFlags, TokenFlags, TypeFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
+import { NodeType } from './classes';
 import { Syntax } from '../syntax';
+import * as qb from './bases';
+import * as qc from './classes';
+import * as qd from '../diags';
+import * as qg from './groups';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {

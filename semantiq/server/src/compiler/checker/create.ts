@@ -1,14 +1,14 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import * as qg from '../debug';
-import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
-import { Symbol } from './bases';
+import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
 import { Fget } from './get';
-import { Fhas, Fis } from './predicate';
+import { Fhas, Fis } from './groups';
+import { Symbol } from './bases';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qg from '../debug';
+import * as qt from './types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;

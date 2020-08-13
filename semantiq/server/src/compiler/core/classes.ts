@@ -1,10 +1,10 @@
+import { DocTag, EmitFlags, Modifier, NodeFlags } from '../types';
 import { Nodes } from './bases';
-import * as qb from './bases';
 import { qf } from './frame';
-import { DocTag, EmitFlags, Modifier, NodeFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
 import { Syntax } from '../syntax';
+import * as qb from './bases';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
 export namespace ArrayBindingElem {
   export const also = [Syntax.BindingElem, Syntax.OmittedExpression];

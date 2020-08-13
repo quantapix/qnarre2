@@ -1,6 +1,6 @@
 // generated from './diagnosticInformationMap.generated.ts' by 'src/compiler'
-import { SourceFile } from './type';
-import * as qu from './util';
+import { SourceFile } from './types';
+import * as qu from './utils';
 export enum Category {
   Warning,
   Error,
@@ -49,14 +49,12 @@ export function setLocalizedMessages(ms: typeof localizedMessages) {
 export function getLocaleSpecificMessage(m: Message) {
   return (localizedMessages && localizedMessages[m.key]) || m.text;
 }
-export function formatMessage(_: any, m: Message, ...args: (string | number | undefined)[]): string;
-export function formatMessage(_: any, m: Message): string {
+export function formatMessage(_: any, m: Message, ...args: (string | number)[]): string {
   let t = getLocaleSpecificMessage(m);
   if (args.length > 2) t = qu.formatStringFromArgs(t, args, 2);
   return t;
 }
-export function createCompilerDiagnostic(m: Message, ...args: (string | number | undefined)[]): Diagnostic;
-export function createCompilerDiagnostic(m: Message): Diagnostic {
+export function createCompilerDiagnostic(m: Message, ...args: (string | number)[]): Diagnostic {
   let t = getLocaleSpecificMessage(m);
   if (args.length > 1) t = qu.formatStringFromArgs(t, args, 1);
   return { file: undefined, start: undefined, length: undefined, text: t, cat: m.cat, code: m.code, reportsUnnecessary: m.reportsUnnecessary };
@@ -64,8 +62,7 @@ export function createCompilerDiagnostic(m: Message): Diagnostic {
 export function createCompilerDiagnosticFromMessageChain(c: MessageChain): Diagnostic {
   return { file: undefined, start: undefined, length: undefined, code: c.code, cat: c.cat, text: c.next ? c : c.text };
 }
-export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message, ...args: (string | number | undefined)[]): MessageChain;
-export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message): MessageChain {
+export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message, ...args: (string | number)[]): MessageChain {
   let t = getLocaleSpecificMessage(m);
   if (args.length > 2) t = qu.formatStringFromArgs(t, args, 2);
   return { text: t, cat: m.cat, code: m.code, next: c === undefined || Array.isArray(c) ? c : [c] };

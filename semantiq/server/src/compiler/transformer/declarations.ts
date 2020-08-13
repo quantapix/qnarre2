@@ -1,11 +1,11 @@
-import * as qb from '../base';
-import { qf, Node, Nodes } from '../core';
-import * as qc from '../core';
-import * as qt from '../type';
-import { Modifier, ModifierFlags, NodeBuilderFlags } from '../type';
-import * as qu from '../util';
-import * as qy from '../syntax';
+import { Node, Modifier, ModifierFlags, NodeBuilderFlags } from '../types';
+import { qf, Nodes } from '../core';
 import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
   if (file && qf.is.jsonSourceFile(file)) return [];
   const compilerOpts = host.getCompilerOpts();
@@ -218,7 +218,7 @@ export function transformDeclarations(context: TrafoContext) {
               [
                 new qc.ModuleDeclaration(
                   [],
-                  [qc.create.modifier(Syntax.DeclareKeyword)],
+                  [qf.create.modifier(Syntax.DeclareKeyword)],
                   qc.asLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
                   new qc.ModuleBlock(new Nodes(transformAndReplaceLatePaintedStatements(statements)).setRange(sourceFile.statements))
                 ),
@@ -403,7 +403,7 @@ export function transformDeclarations(context: TrafoContext) {
     | PropertyDeclaration
     | PropertySignature;
   function ensureType(node: HasInferredType, type: Typing | undefined, ignorePrivate?: boolean): Typing | undefined {
-    if (!ignorePrivate && qc.has.effectiveModifier(node, ModifierFlags.Private)) return;
+    if (!ignorePrivate && qf.has.effectiveModifier(node, ModifierFlags.Private)) return;
     if (shouldPrintWithIniter(node)) return;
     const shouldUseResolverType = node.kind === Syntax.Param && (resolver.isRequiredInitializedParam(node) || resolver.isOptionalUninitializedParamProperty(node));
     if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
@@ -457,7 +457,7 @@ export function transformDeclarations(context: TrafoContext) {
     return resolver.qf.is.declarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParamDeclaration>, modifierMask?: ModifierFlags) {
-    if (qc.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
+    if (qf.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
     const newParams = map(params, (p) => ensureParam(p, modifierMask));
     if (!newParams) return undefined!;
     return new Nodes(newParams, params.trailingComma);
@@ -483,7 +483,7 @@ export function transformDeclarations(context: TrafoContext) {
     return new Nodes(newParams || emptyArray) as Nodes<ParamDeclaration>;
   }
   function ensureTypeParams(node: Node, params: Nodes<TypeParamDeclaration> | undefined) {
-    return qc.has.effectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
+    return qf.has.effectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
   }
   function isEnclosingDeclaration(node: Node) {
     return (
@@ -621,7 +621,7 @@ export function transformDeclarations(context: TrafoContext) {
     const oldWithinObjectLiteralType = suppressNewDiagnosticContexts;
     let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypingLiteral || input.kind === Syntax.MappedTyping) && input.parent.kind !== Syntax.TypeAliasDeclaration;
     if (qf.is.kind(qc.MethodDeclaration, input) || qf.is.kind(qc.MethodSignature, input)) {
-      if (qc.has.effectiveModifier(input, ModifierFlags.Private)) {
+      if (qf.has.effectiveModifier(input, ModifierFlags.Private)) {
         if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return;
         return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, undefined, undefined, undefined));
       }
@@ -669,7 +669,7 @@ export function transformDeclarations(context: TrafoContext) {
               undefined,
               ensureModifiers(input),
               input.name,
-              updateAccessorParamsList(input, qc.has.effectiveModifier(input, ModifierFlags.Private)),
+              updateAccessorParamsList(input, qf.has.effectiveModifier(input, ModifierFlags.Private)),
               ensureType(input, accessorType),
               undefined
             )
@@ -677,7 +677,7 @@ export function transformDeclarations(context: TrafoContext) {
         }
         case Syntax.SetAccessor: {
           if (qf.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
-          return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, qc.has.effectiveModifier(input, ModifierFlags.Private)), undefined));
+          return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, qf.has.effectiveModifier(input, ModifierFlags.Private)), undefined));
         }
         case Syntax.PropertyDeclaration:
           if (qf.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
@@ -748,7 +748,7 @@ export function transformDeclarations(context: TrafoContext) {
     }
   }
   function isPrivateMethodTypeParam(node: TypeParamDeclaration) {
-    return node.parent.kind === Syntax.MethodDeclaration && qc.has.effectiveModifier(node.parent, ModifierFlags.Private);
+    return node.parent.kind === Syntax.MethodDeclaration && qf.has.effectiveModifier(node.parent, ModifierFlags.Private);
   }
   function visitDeclarationStmts(input: Node): VisitResult<Node> {
     if (!isPreservedDeclarationStmt(input)) return;
@@ -770,7 +770,7 @@ export function transformDeclarations(context: TrafoContext) {
             errorNode: input,
           });
           const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = new qc.VariableStatement(needsDeclare ? [qc.create.modifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = new qc.VariableStatement(needsDeclare ? [qf.create.modifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           return [statement, input.update(input.decorators, input.modifiers, newId)];
         }
       }
@@ -780,9 +780,9 @@ export function transformDeclarations(context: TrafoContext) {
     return input;
   }
   function stripExportModifiers(statement: Statement): Statement {
-    if (qf.is.kind(qc.ImportEqualsDeclaration, statement) || qc.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
+    if (qf.is.kind(qc.ImportEqualsDeclaration, statement) || qf.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
     const clone = getMutableClone(statement);
-    const modifiers = qc.create.modifiersFromFlags(qf.get.effectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
+    const modifiers = qf.create.modifiersFromFlags(qf.get.effectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
     return clone;
   }
@@ -859,8 +859,8 @@ export function transformDeclarations(context: TrafoContext) {
             return new qc.VariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
           });
           const namespaceDecl = new qc.ModuleDeclaration(undefined, ensureModifiers(input), input.name!, new qc.ModuleBlock(declarations), NodeFlags.Namespace);
-          if (!qc.has.effectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
-          const modifiers = qc.create.modifiersFromFlags((qf.get.effectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
+          if (!qf.has.effectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
+          const modifiers = qf.create.modifiersFromFlags((qf.get.effectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParams, clean.params, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
           const exportDefaultDeclaration = new qc.ExportAssignment(undefined, false, namespaceDecl.name);
@@ -913,7 +913,7 @@ export function transformDeclarations(context: TrafoContext) {
           const oldDiag = getSymbolAccessibilityDiagnostic;
           paramProperties = compact(
             flatMap(ctor.params, (param) => {
-              if (!qc.has.syntacticModifier(param, ModifierFlags.ParamPropertyModifier) || shouldStripInternal(param)) return;
+              if (!qf.has.syntacticModifier(param, ModifierFlags.ParamPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
               if (param.name.kind === Syntax.Identifier)
                 return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoIniter(param)), param);
@@ -946,7 +946,7 @@ export function transformDeclarations(context: TrafoContext) {
             typeName: input.name,
           });
           const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = new qc.VariableStatement(needsDeclare ? [qc.create.modifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = new qc.VariableStatement(needsDeclare ? [qf.create.modifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           const heritageClauses = new Nodes(
             map(input.heritageClauses, (clause) => {
               if (clause.token === Syntax.ExtendsKeyword) {
@@ -1044,7 +1044,7 @@ export function transformDeclarations(context: TrafoContext) {
     const currentFlags = qf.get.effectiveModifierFlags(node);
     const newFlags = ensureModifierFlags(node);
     if (currentFlags === newFlags) return node.modifiers;
-    return qc.create.modifiersFromFlags(newFlags);
+    return qf.create.modifiersFromFlags(newFlags);
   }
   function ensureModifierFlags(node: Node): ModifierFlags {
     let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async);
@@ -1094,7 +1094,7 @@ function isAlwaysType(node: Node) {
   return false;
 }
 function maskModifiers(node: Node, modifierMask?: ModifierFlags, modifierAdditions?: ModifierFlags): Modifier[] {
-  return qc.create.modifiersFromFlags(maskModifierFlags(node, modifierMask, modifierAdditions));
+  return qf.create.modifiersFromFlags(maskModifierFlags(node, modifierMask, modifierAdditions));
 }
 function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public, modifierAdditions: ModifierFlags = ModifierFlags.None): ModifierFlags {
   let flags = (qf.get.effectiveModifierFlags(node) & modifierMask) | modifierAdditions;
@@ -1110,7 +1110,7 @@ function canHaveLiteralIniter(node: Node): boolean {
   switch (node.kind) {
     case Syntax.PropertyDeclaration:
     case Syntax.PropertySignature:
-      return !qc.has.effectiveModifier(node, ModifierFlags.Private);
+      return !qf.has.effectiveModifier(node, ModifierFlags.Private);
     case Syntax.Param:
     case Syntax.VariableDeclaration:
       return true;

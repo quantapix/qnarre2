@@ -1,10 +1,11 @@
-import { Node, Nodes, Modifier, ModifierFlags } from '../core';
-import * as qc from '../core';
-import { qf } from '../core';
-import * as qt from '../type';
-import * as qu from '../util';
-import * as qy from '../syntax';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
 import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 const enum ESNextSubstitutionFlags {
   AsyncMethodsWithSuper = 1 << 0,
 }
@@ -144,7 +145,7 @@ export function transformES2018(context: TrafoContext) {
       case Syntax.TaggedTemplateExpression:
         return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
       case Syntax.PropertyAccessExpression:
-        if (capturedSuperProperties && qc.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+        if (capturedSuperProperties && qf.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
@@ -176,13 +177,13 @@ export function transformES2018(context: TrafoContext) {
           node
         );
       }
-      return new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())).setRange(node).setOriginal(node);
+      return new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qc.VoidExpression.zero())).setRange(node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }
   function visitReturnStatement(node: ReturnStatement) {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
-      return node.update(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero()));
+      return node.update(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qc.VoidExpression.zero()));
     return visitEachChild(node, visitor, context);
   }
   function visitLabeledStatement(node: LabeledStatement) {
@@ -252,14 +253,14 @@ export function transformES2018(context: TrafoContext) {
     return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
   }
   function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
-    if (qc.is.destructuringAssignment(node) && node.left.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
+    if (qf.is.destructuringAssignment(node) && node.left.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
     if (node.operatorToken.kind === Syntax.CommaToken)
       return node.update(visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
   function visitCatchClause(node: CatchClause) {
-    if (node.variableDeclaration && qc.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
+    if (node.variableDeclaration && qf.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       const name = qf.get.generatedNameForNode(node.variableDeclaration.name);
       const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, undefined, name);
       const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -272,7 +273,7 @@ export function transformES2018(context: TrafoContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitVariableStatement(node: VariableStatement): VisitResult<VariableStatement> {
-    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
+    if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       const savedExportedVariableStatement = exportedVariableStatement;
       exportedVariableStatement = true;
       const visited = visitEachChild(node, visitor, context);
@@ -292,7 +293,7 @@ export function transformES2018(context: TrafoContext) {
     return visitVariableDeclarationWorker(node, false);
   }
   function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
-    if (qc.is.kind(qc.BindingPattern, node.name) && node.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
+    if (qf.is.kind(qc.BindingPattern, node.name) && node.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
     return visitEachChild(node, visitor, context);
   }
@@ -320,13 +321,13 @@ export function transformES2018(context: TrafoContext) {
     return result;
   }
   function transformForOfStatementWithObjectRest(node: ForOfStatement) {
-    const initerWithoutParens = qc.skip.parentheses(node.initer) as ForIniter;
-    if (qc.is.kind(qc.VariableDeclarationList, initerWithoutParens) || qc.is.kind(qc.AssignmentPattern, initerWithoutParens)) {
+    const initerWithoutParens = qf.skip.parentheses(node.initer) as ForIniter;
+    if (qf.is.kind(qc.VariableDeclarationList, initerWithoutParens) || qf.is.kind(qc.AssignmentPattern, initerWithoutParens)) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
       const temp = createTempVariable(undefined);
       const statements: Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
-      if (qc.is.kind(qc.Block, node.statement)) {
+      if (qf.is.kind(qc.Block, node.statement)) {
         qu.addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
         statementsLocation = node.statement.statements;
@@ -351,7 +352,7 @@ export function transformES2018(context: TrafoContext) {
     let statementsLocation: TextRange | undefined;
     const statements: Statement[] = [visitNode(binding, visitor, qf.is.statement)];
     const statement = visitNode(node.statement, visitor, qf.is.statement);
-    if (qc.is.kind(qc.Block, statement)) {
+    if (qf.is.kind(qc.Block, statement)) {
       qu.addRange(statements, statement.statements);
       bodyLocation = statement;
       statementsLocation = statement.statements;
@@ -365,19 +366,19 @@ export function transformES2018(context: TrafoContext) {
   }
   function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = visitNode(node.expression, visitor, isExpression);
-    const iterator = qc.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
-    const result = qc.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
+    const iterator = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+    const result = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
     const errorRecord = createUniqueName('e');
     const catchVariable = qf.get.generatedNameForNode(errorRecord);
     const returnMethod = createTempVariable(undefined);
     const callValues = createAsyncValuesHelper(context, expression, node.expression);
-    const callNext = new qs.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
+    const callNext = new qc.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
     const getDone = new qc.PropertyAccessExpression(result, 'done');
     const getValue = new qc.PropertyAccessExpression(result, 'value');
     const callReturn = createFunctionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
-    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
+    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qc.VoidExpression.zero()), callValues]) : callValues;
     const forStatement = qf.emit.setFlags(
       setRange(
         new qc.ForStatement(
@@ -515,7 +516,7 @@ export function transformES2018(context: TrafoContext) {
     const returnStatement = new qc.ReturnStatement(
       createAsyncGeneratorHelper(
         context,
-        new qs.FunctionExpression(
+        new qc.FunctionExpression(
           undefined,
           new Token(Syntax.AsteriskToken),
           node.name && qf.get.generatedNameForNode(node.name),
@@ -555,7 +556,7 @@ export function transformES2018(context: TrafoContext) {
     let statementOffset = 0;
     const statements: Statement[] = [];
     const body = visitNode(node.body, visitor, isConciseBody);
-    if (qc.is.kind(qc.Block, body)) {
+    if (qf.is.kind(qc.Block, body)) {
       statementOffset = addPrologue(statements, body.statements, false, visitor);
     }
     qu.addRange(statements, appendObjectRestAssignmentsIfNeeded(undefined, node));
@@ -641,9 +642,9 @@ export function transformES2018(context: TrafoContext) {
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
-    if (qc.is.superProperty(expression)) {
-      const argExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
-      return new qs.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
+    if (qf.is.superProperty(expression)) {
+      const argExpression = qf.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
     }
     return node;
   }
@@ -653,8 +654,8 @@ export function transformES2018(context: TrafoContext) {
   }
   function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), 'value'), location);
-    return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), location);
+      return setRange(new qc.PropertyAccessExpression(new qc.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), 'value'), location);
+    return setRange(new qc.CallExpression(new Identifier('_superIndex'), undefined, [argExpression]), location);
   }
 }
 export const assignHelper: UnscopedEmitHelper = {
@@ -676,9 +677,9 @@ export const assignHelper: UnscopedEmitHelper = {
             };`,
 };
 export function createAssignHelper(context: TrafoContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
+  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qc.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
+  return new qc.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }
 export const awaitHelper: UnscopedEmitHelper = {
   name: 'typescript:await',
@@ -689,7 +690,7 @@ export const awaitHelper: UnscopedEmitHelper = {
 };
 function createAwaitHelper(context: TrafoContext, expression: Expression) {
   context.requestEmitHelper(awaitHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__await'), undefined, [expression]);
+  return new qc.CallExpression(getUnscopedHelperName('__await'), undefined, [expression]);
 }
 export const asyncGeneratorHelper: UnscopedEmitHelper = {
   name: 'typescript:asyncGenerator',
@@ -712,7 +713,7 @@ export const asyncGeneratorHelper: UnscopedEmitHelper = {
 function createAsyncGeneratorHelper(context: TrafoContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
   context.requestEmitHelper(asyncGeneratorHelper);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
-  return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(), new Identifier('args'), generatorFunc]);
+  return new qc.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(), new Identifier('args'), generatorFunc]);
 }
 export const asyncDelegator: UnscopedEmitHelper = {
   name: 'typescript:asyncDelegator',
@@ -728,7 +729,7 @@ export const asyncDelegator: UnscopedEmitHelper = {
 };
 function createAsyncDelegatorHelper(context: TrafoContext, expression: Expression, location?: TextRange) {
   context.requestEmitHelper(asyncDelegator);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncDelegator'), undefined, [expression]), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__asyncDelegator'), undefined, [expression]), location);
 }
 export const asyncValues: UnscopedEmitHelper = {
   name: 'typescript:asyncValues',
@@ -745,5 +746,5 @@ export const asyncValues: UnscopedEmitHelper = {
 };
 function createAsyncValuesHelper(context: TrafoContext, expression: Expression, location?: TextRange) {
   context.requestEmitHelper(asyncValues);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncValues'), undefined, [expression]), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__asyncValues'), undefined, [expression]), location);
 }

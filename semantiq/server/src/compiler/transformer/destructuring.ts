@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { qf, Node, Nodes } from '../core';
-import * as qt from '../type';
-import * as qu from '../util';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 interface FlattenContext {
   context: qt.TrafoContext;
   level: FlattenLevel;

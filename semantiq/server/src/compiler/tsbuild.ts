@@ -1,8 +1,11 @@
-import * as qb from './base';
-import * as qt from './types';
 import { Node } from './types';
-import * as syntax from './syntax';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
+import * as qy from './syntax';
 const minimumDate = new Date(-8640000000000000);
 const maximumDate = new Date(8640000000000000);
 export interface BuildOpts {

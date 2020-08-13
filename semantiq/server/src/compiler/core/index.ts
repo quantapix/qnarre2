@@ -1,10 +1,10 @@
+import { Node, SymbolFlags } from '../types';
+import { qf } from './frame';
+import { Syntax } from '../syntax';
 import * as qb from './bases';
 import * as qc from './classes';
-import { qf } from './frame';
-import { Node, SymbolFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
+import * as qt from '../types';
+import * as qu from '../utils';
 export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export { cloneMap, findAncestor } from './bases';
 export * from './classes';

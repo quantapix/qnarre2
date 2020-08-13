@@ -1,12 +1,12 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import { ObjectFlags, SymbolFlags, TypeFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
-import { newGet, Fget } from './get';
-import { newHas, Fhas, newIs, Fis } from './predicate';
-import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
 import { newCheck, Fcheck } from './check';
+import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
+import { newGet, Fget } from './get';
+import { newHas, Fhas, newIs, Fis } from './groups';
+import { ObjectFlags, SymbolFlags, TypeFlags } from './types';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from './types';
+import * as qu from '../utils';
 export interface Frame extends qc.Frame, qt.TypeChecker {
   check: Fcheck;
   create: Fcreate;

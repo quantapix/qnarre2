@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qd from '../diags';
 import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 export function transformES2020(context: TrafoContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
@@ -36,8 +37,8 @@ export function transformES2020(context: TrafoContext) {
   function flattenChain(chain: OptionalChain) {
     qc.assert.notNode(chain, isNonNullChain);
     const links: OptionalChain[] = [chain];
-    while (!chain.questionDotToken && !qc.is.kind(qc.TaggedTemplateExpression, chain)) {
-      chain = cast(qc.skip.partiallyEmittedExpressions(chain.expression), isOptionalChain);
+    while (!chain.questionDotToken && !qf.is.kind(qc.TaggedTemplateExpression, chain)) {
+      chain = cast(qf.skip.partiallyEmittedExpressions(chain.expression), isOptionalChain);
       qc.assert.notNode(chain, isNonNullChain);
       links.unshift(chain);
     }
@@ -45,15 +46,15 @@ export function transformES2020(context: TrafoContext) {
   }
   function visitNonOptionalParenthesizedExpression(node: ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): Expression {
     const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
-    if (qc.is.kind(qc.SyntheticReferenceExpression, expression)) {
+    if (qf.is.kind(qc.SyntheticReferenceExpression, expression)) {
       // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
       // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
-      return new qs.SyntheticReferenceExpression(node.update(expression.expression), expression.thisArg);
+      return new qc.SyntheticReferenceExpression(node.update(expression.expression), expression.thisArg);
     }
     return node.update(expression);
   }
   function visitNonOptionalPropertyOrElemAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
-    if (qc.is.optionalChain(node)) {
+    if (qf.is.optionalChain(node)) {
       // If `node` is an optional chain, then it is the outermost chain of an optional expression.
       return visitOptionalExpression(node, captureThisArg, isDelete);
     }
@@ -73,10 +74,10 @@ export function transformES2020(context: TrafoContext) {
       node.kind === Syntax.PropertyAccessExpression
         ? node.update(expression, visitNode(node.name, visitor, isIdentifier))
         : node.update(expression, visitNode(node.argExpression, visitor, isExpression));
-    return thisArg ? new qs.SyntheticReferenceExpression(expression, thisArg) : expression;
+    return thisArg ? new qc.SyntheticReferenceExpression(expression, thisArg) : expression;
   }
   function visitNonOptionalCallExpression(node: CallExpression, captureThisArg: boolean): Expression {
-    if (qc.is.optionalChain(node)) return visitOptionalExpression(node, captureThisArg, false);
+    if (qf.is.optionalChain(node)) return visitOptionalExpression(node, captureThisArg, false);
     return visitEachChild(node, visitor, context);
   }
   function visitNonOptionalExpression(node: Expression, captureThisArg: boolean, isDelete: boolean): Expression {
@@ -94,9 +95,9 @@ export function transformES2020(context: TrafoContext) {
   }
   function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
     const { expression, chain } = flattenChain(node);
-    const left = visitNonOptionalExpression(expression, qc.is.callChain(chain[0]), false);
-    const leftThisArg = qc.is.kind(qc.SyntheticReferenceExpression, left) ? left.thisArg : undefined;
-    let leftExpression = qc.is.kind(qc.SyntheticReferenceExpression, left) ? left.expression : left;
+    const left = visitNonOptionalExpression(expression, qf.is.callChain(chain[0]), false);
+    const leftThisArg = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.thisArg : undefined;
+    let leftExpression = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.expression : left;
     let capturedLeft: Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
@@ -122,13 +123,13 @@ export function transformES2020(context: TrafoContext) {
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
               ? new qc.PropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier))
-              : new qs.ElemAccessExpression(rightExpression, visitNode(segment.argExpression, visitor, isExpression));
+              : new qc.ElemAccessExpression(rightExpression, visitNode(segment.argExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {
             rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg, Nodes.visit(segment.args, visitor, isExpression));
           } else {
-            rightExpression = new qs.CallExpression(rightExpression, undefined, Nodes.visit(segment.args, visitor, isExpression));
+            rightExpression = new qc.CallExpression(rightExpression, undefined, Nodes.visit(segment.args, visitor, isExpression));
           }
           break;
       }
@@ -136,14 +137,14 @@ export function transformES2020(context: TrafoContext) {
     }
     const target = isDelete
       ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), new qc.BooleanLiteral(true), new DeleteExpression(rightExpression))
-      : new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), qs.VoidExpression.zero(), rightExpression);
-    return thisArg ? new qs.SyntheticReferenceExpression(target, thisArg) : target;
+      : new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), qc.VoidExpression.zero(), rightExpression);
+    return thisArg ? new qc.SyntheticReferenceExpression(target, thisArg) : target;
   }
   function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
     return new BinaryExpression(
       new BinaryExpression(left, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), new qc.NullLiteral()),
       new Token(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
-      new BinaryExpression(right, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), qs.VoidExpression.zero())
+      new BinaryExpression(right, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), qc.VoidExpression.zero())
     );
   }
   function transformNullishCoalescingExpression(node: BinaryExpression) {
@@ -157,9 +158,9 @@ export function transformES2020(context: TrafoContext) {
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }
   function shouldCaptureInTempVariable(expression: Expression): boolean {
-    return !qc.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
+    return !qf.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: DeleteExpression) {
-    return qc.is.optionalChain(qc.skip.parentheses(n.expression)) ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n) : n.update(visitNode(n.expression, visitor, isExpression));
+    return qf.is.optionalChain(qf.skip.parentheses(n.expression)) ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n) : n.update(visitNode(n.expression, visitor, isExpression));
   }
 }

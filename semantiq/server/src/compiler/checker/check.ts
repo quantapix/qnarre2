@@ -1,14 +1,14 @@
 import * as qc from '../core';
-import * as qd from '../diagnostic';
+import * as qd from '../diags';
 import * as qg from '../debug';
-import { ExpandingFlags, ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
+import { ExpandingFlags, ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
+import * as qt from './types';
+import * as qu from '../utils';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './bases';
 import { Fget } from './get';
-import { Fhas, Fis } from './predicate';
+import { Fhas, Fis } from './groups';
 export function newCheck(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -2640,7 +2640,7 @@ export function newCheck(f: qt.Frame) {
       return true;
     }
     referenceExpression(expr: Expression, invalidReferenceMessage: qd.Message, invalidOptionalChainMessage: qd.Message): boolean {
-      const n = qc.skip.outerExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
+      const n = qf.skip.outerExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
       if (n.kind !== Syntax.qc.Identifier && !qf.is.accessExpression(n)) {
         error(expr, invalidReferenceMessage);
         return false;
@@ -2653,7 +2653,7 @@ export function newCheck(f: qt.Frame) {
     }
     deleteExpression(n: qc.DeleteExpression): qt.Type {
       this.expression(n.expression);
-      const expr = qc.skip.parentheses(n.expression);
+      const expr = qf.skip.parentheses(n.expression);
       if (!qf.is.accessExpression(expr)) {
         error(expr, qd.msgs.The_operand_of_a_delete_operator_must_be_a_property_reference);
         return booleanType;
@@ -6322,7 +6322,7 @@ export function newCheck(f: qt.Frame) {
         for (const prop of n.properties) {
           if (prop.kind === Syntax.SpreadAssignment) {
             if (inDestructuring) {
-              const expression = qc.skip.parentheses(prop.expression);
+              const expression = qf.skip.parentheses(prop.expression);
               if (isArrayLiteralExpression(expression) || expression.kind === Syntax.ObjectLiteralExpression)
                 return grammarErrorOnNode(prop.expression, qd.msgs.A_rest_elem_cannot_contain_a_binding_pattern);
             }

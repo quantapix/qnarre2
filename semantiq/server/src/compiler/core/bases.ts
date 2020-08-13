@@ -1,11 +1,11 @@
-import * as qc from './classes';
-import * as qd from '../diagnostic';
-import { qf } from './frame';
-import { Node } from '../type';
 import { ModifierFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
+import { Node } from '../types';
+import { qf } from './frame';
 import { SourceFileLike, Syntax } from '../syntax';
+import * as qc from './classes';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
 export interface ReadonlyNodeSet<T extends Node> {
   has(n: T): boolean;

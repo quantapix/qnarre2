@@ -1,8 +1,11 @@
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { qf, Node, Nodes } from '../core';
-import * as qt from '../type';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 export function transformES5(context: TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
   let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
@@ -37,18 +40,18 @@ export function transformES5(context: TrafoContext) {
   function onSubstituteNode(hint: EmitHint, node: Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
-    if (qc.is.kind(qc.PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
-    if (qc.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
+    if (qf.is.kind(qc.PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
+    if (qf.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
-    if (qc.is.kind(qc.PrivateIdentifier, node.name)) return node;
+    if (qf.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
-    if (literalName) return new qs.ElemAccessExpression(node.expression, literalName).setRange(node);
+    if (literalName) return new qc.ElemAccessExpression(node.expression, literalName).setRange(node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
-    const literalName = qc.is.kind(qc.Identifier, node.name) && trySubstituteReservedName(node.name);
+    const literalName = qf.is.kind(qc.Identifier, node.name) && trySubstituteReservedName(node.name);
     if (literalName) return node.update(literalName, node.initer);
     return node;
   }

@@ -1,10 +1,11 @@
-import * as qb from '../base';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
+import { Syntax } from '../syntax';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qd from '../diags';
 import * as qt from '../types';
+import * as qu from '../utils';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
 export function transformJsx(context: TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
   let currentSourceFile: SourceFile;
@@ -71,7 +72,7 @@ export function transformJsx(context: TrafoContext) {
           isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElem))
         )
       );
-      if (qc.is.kind(qc.JsxSpreadAttribute, attrs[0])) {
+      if (qf.is.kind(qc.JsxSpreadAttribute, attrs[0])) {
         segments.unshift(new qc.ObjectLiteralExpression());
       }
       objectProperties = singleOrUndefined(segments);
@@ -79,7 +80,7 @@ export function transformJsx(context: TrafoContext) {
         objectProperties = createAssignHelper(context, segments);
       }
     }
-    const elem = qs.JsxElem.qf.create.expression(
+    const elem = qc.JsxElem.qf.create.expression(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOpts.reactNamespace!,
       tagName,
@@ -170,7 +171,7 @@ export function transformJsx(context: TrafoContext) {
     if (node.kind === Syntax.JsxElem) return getTagName(node.opening);
     else {
       const name = node.tagName;
-      if (qc.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
+      if (qf.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
       return createExpressionFromEntityName(name);
     }
   }

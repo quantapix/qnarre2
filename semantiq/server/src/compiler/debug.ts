@@ -1,5 +1,11 @@
-import { FlowNode, Node } from './type';
-import * as qu from './util';
+import { FlowNode, Node } from './types';
+import { qf } from './core';
+import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
+import * as qy from './syntax';
 export let isDebugging = false;
 let isDebugInfoEnabled = false;
 interface ExtendedDebugModule {
@@ -43,19 +49,19 @@ export function enableDebugInfo() {
   Object.defineProperties(Node.Symbol.prototype, {
     __debugFlags: {
       get(this: Symbol) {
-        return qc.format.symbolFlags(this.flags);
+        return qf.format.symbolFlags(this.flags);
       },
     },
   });
   Object.defineProperties(Node.Type.prototype, {
     __debugFlags: {
       get(this: Type) {
-        return qc.format.typeFlags(this.flags);
+        return qf.format.typeFlags(this.flags);
       },
     },
     __debugObjectFlags: {
       get(this: Type) {
-        return this.flags & TypeFlags.Object ? qc.format.objectFlags((<ObjectType>this).objectFlags) : '';
+        return this.flags & TypeFlags.Object ? qf.format.objectFlags((<ObjectType>this).objectFlags) : '';
       },
     },
     __debugTypeToString: {
@@ -70,38 +76,38 @@ export function enableDebugInfo() {
       Object.defineProperties(ctor.prototype, {
         __debugKind: {
           get(this: Node) {
-            return qc.format.syntax(this.kind);
+            return qf.format.syntax(this.kind);
           },
         },
         __debugNodeFlags: {
           get(this: Node) {
-            return qc.format.nodeFlags(this.flags);
+            return qf.format.nodeFlags(this.flags);
           },
         },
         __debugModifierFlags: {
           get(this: Node) {
-            return qc.format.modifierFlags(qc.get.effectiveModifierFlagsNoCache(this));
+            return qf.format.modifierFlags(qf.get.effectiveModifierFlagsNoCache(this));
           },
         },
         __debugTrafoFlags: {
           get(this: Node) {
-            return qc.format.trafoFlags(this.trafoFlags);
+            return qf.format.trafoFlags(this.trafoFlags);
           },
         },
         __debugIsParseTreeNode: {
           get(this: Node) {
-            return qc.is.parseTreeNode(this);
+            return qf.is.parseTreeNode(this);
           },
         },
         __debugEmitFlags: {
           get(this: Node) {
-            return qc.format.emitFlags(qc.get.emitFlags(this));
+            return qf.format.emitFlags(qf.get.emitFlags(this));
           },
         },
         __debugGetText: {
           value(this: Node, includeTrivia?: boolean) {
             if (isSynthesized(this)) return '';
-            const parseNode = qc.get.parseTreeOf(this);
+            const parseNode = qf.get.parseTreeOf(this);
             const sourceFile = parseNode && parseNode.sourceFile;
             return sourceFile ? qf.get.sourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';
           },

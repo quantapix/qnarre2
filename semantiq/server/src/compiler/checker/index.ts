@@ -1,15 +1,14 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import { ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags } from './type';
-import * as qt from './type';
-import * as qu from '../util';
-import { Syntax } from '../syntax';
-import * as qy from '../syntax';
-import { newGet, Fget } from './get';
-import { newHas, Fhas, newIs, Fis } from './predicate';
-import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
+import { ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags } from './types';
 import { newCheck, Fcheck } from './check';
-
+import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
+import { newGet, Fget } from './get';
+import { newHas, Fhas, newIs, Fis } from './groups';
+import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from './types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export class TypeChecker implements Frame {
   host: qt.TypeCheckerHost;
   typeCount: number;
@@ -24,7 +23,6 @@ export class TypeChecker implements Frame {
   resolve: Fresolve;
 
 }
-
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
 let nextMergeId = 1;

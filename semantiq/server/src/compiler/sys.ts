@@ -1,9 +1,10 @@
-import * as qc from './core';
-import * as qd from './diagnostic';
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
+import { Node } from './types';
+import { qf } from './core';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
 import * as qy from './syntax';
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
 declare function clearTimeout(handle: any): void;

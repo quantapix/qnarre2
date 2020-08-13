@@ -1,7 +1,7 @@
-import * as qd from './diagnostic';
-import * as qt from './const';
-import * as qu from './util';
 import { SourceFileLike, Syntax } from './syntax';
+import * as qd from './diags';
+import * as qt from './const';
+import * as qu from './utils';
 import * as qy from './syntax';
 export * from './const';
 export interface AllAccessorDeclarations {

@@ -1,9 +1,11 @@
+import { Node } from './types';
 import { qf } from './core';
-import * as qc from './core';
-import { Node } from './type';
-import * as qt from './type';
-import * as qu from './util';
 import { Syntax } from './syntax';
+import * as qc from './core';
+import * as qd from './diags';
+import * as qt from './types';
+import * as qu from './utils';
+import * as qy from './syntax';
 export const nullTrafoContext: qt.TrafoContext = {
   enableEmitNotification: qu.noop,
   enableSubstitution: qu.noop,
@@ -89,7 +91,7 @@ function getDeclarationTransformers(customTransformers?: CustomTransformers) {
   return transformers;
 }
 function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
-  return (node) => (qc.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
+  return (node) => (qf.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
 function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
   transformer: TransformerFactory<T> | CustomTransformerFactory,
@@ -200,7 +202,7 @@ export function transformNodes<T extends Node>(
     diagnostics,
   };
   function transformRoot(node: T) {
-    return node && (!qc.is.kind(qc.SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
+    return node && (!qf.is.kind(qc.SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
   }
   function enableSubstitution(kind: Syntax) {
     qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');

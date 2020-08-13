@@ -1,11 +1,11 @@
-import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import { qf } from '../core';
-import { Modifier } from '../type';
-import * as qu from '../util';
-import * as qt from '../type';
-import * as qy from '../syntax';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
 import { Syntax } from '../syntax';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 // Transforms generator functions into a compatible ES5 representation with similar runtime
 // semantics. This is accomplished by first transforming the body of each generator
 // function into an intermediate representation that is the compiled into a JavaScript
@@ -284,7 +284,7 @@ export function transformGenerators(context: TrafoContext) {
     const trafoFlags = node.trafoFlags;
     if (inStatementContainingYield) return visitJavaScriptInStatementContainingYield(node);
     if (inGeneratorFunctionBody) return visitJavaScriptInGeneratorFunctionBody(node);
-    if (qc.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
+    if (qf.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
     if (trafoFlags & TrafoFlags.ContainsGenerator) return visitEachChild(node, visitor, context);
     return node;
   }
@@ -475,7 +475,7 @@ export function transformGenerators(context: TrafoContext) {
       return;
     } else {
       // Do not hoist custom prologues.
-      if (qc.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
+      if (qf.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
       for (const variable of node.declarationList.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -626,7 +626,7 @@ export function transformGenerators(context: TrafoContext) {
     visit(node.right);
     return inlineExpressions(pendingExpressions);
     function visit(node: Expression) {
-      if (qc.is.kind(qc.BinaryExpression, node) && node.operatorToken.kind === Syntax.CommaToken) {
+      if (qf.is.kind(qc.BinaryExpression, node) && node.operatorToken.kind === Syntax.CommaToken) {
         visit(node.left);
         visit(node.right);
       } else {
@@ -681,7 +681,7 @@ export function transformGenerators(context: TrafoContext) {
     const resumeLabel = defineLabel();
     const expression = visitNode(node.expression, visitor, isExpression);
     if (node.asteriskToken) {
-      const iterator = (qc.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, node) : expression;
+      const iterator = (qf.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, node) : expression;
       emitYieldStar(iterator, node);
     } else {
       emitYield(expression, node);
@@ -794,7 +794,7 @@ export function transformGenerators(context: TrafoContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitCallExpression(node: CallExpression) {
-    if (!qc.is.importCall(node) && forEach(node.args, containsYield)) {
+    if (!qf.is.importCall(node) && forEach(node.args, containsYield)) {
       // [source]
       //      a.b(1, yield, 2);
       //
@@ -837,7 +837,7 @@ export function transformGenerators(context: TrafoContext) {
     }
   }
   function transformAndEmitEmbeddedStatement(node: Statement) {
-    if (qc.is.kind(qc.Block, node)) {
+    if (qf.is.kind(qc.Block, node)) {
       transformAndEmitStatements(node.statements);
     } else {
       transformAndEmitStatement(node);
@@ -1055,7 +1055,7 @@ export function transformGenerators(context: TrafoContext) {
       const endLabel = beginLoopBlock(incrementLabel);
       if (node.initer) {
         const initer = node.initer;
-        if (qc.is.kind(qc.VariableDeclarationList, initer)) {
+        if (qf.is.kind(qc.VariableDeclarationList, initer)) {
           transformAndEmitVariableDeclarationList(initer);
         } else {
           emitStatement(setRange(new qc.ExpressionStatement(visitNode(initer, visitor, isExpression)), initer));
@@ -1081,7 +1081,7 @@ export function transformGenerators(context: TrafoContext) {
       beginScriptLoopBlock();
     }
     const initer = node.initer;
-    if (initer && qc.is.kind(qc.VariableDeclarationList, initer)) {
+    if (initer && qf.is.kind(qc.VariableDeclarationList, initer)) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -1144,14 +1144,14 @@ export function transformGenerators(context: TrafoContext) {
       markLabel(conditionLabel);
       emitBreakWhenFalse(endLabel, qf.create.lessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: Expression;
-      if (qc.is.kind(qc.VariableDeclarationList, initer)) {
+      if (qf.is.kind(qc.VariableDeclarationList, initer)) {
         for (const variable of initer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
         variable = <Identifier>getSynthesizedClone(initer.declarations[0].name);
       } else {
         variable = visitNode(initer, visitor, isExpression);
-        assert(qc.is.leftHandSideExpression(variable));
+        assert(qf.is.leftHandSideExpression(variable));
       }
       emitAssignment(variable, new qc.ElemAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
@@ -1180,7 +1180,7 @@ export function transformGenerators(context: TrafoContext) {
       beginScriptLoopBlock();
     }
     const initer = node.initer;
-    if (qc.is.kind(qc.VariableDeclarationList, initer)) {
+    if (qf.is.kind(qc.VariableDeclarationList, initer)) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -1442,13 +1442,13 @@ export function transformGenerators(context: TrafoContext) {
     return node;
   }
   function substituteExpression(node: Expression): Expression {
-    if (qc.is.kind(qc.Identifier, node)) return substituteExpressionIdentifier(node);
+    if (qf.is.kind(qc.Identifier, node)) return substituteExpressionIdentifier(node);
     return node;
   }
   function substituteExpressionIdentifier(node: Identifier) {
-    if (!qc.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
-      const original = qc.get.originalOf(node);
-      if (qc.is.kind(qc.Identifier, original) && original.parent) {
+    if (!qf.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
+      const original = qf.get.originalOf(node);
+      if (qf.is.kind(qc.Identifier, original) && original.parent) {
         const declaration = resolver.getReferencedValueDeclaration(original);
         if (declaration) {
           const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
@@ -1464,7 +1464,7 @@ export function transformGenerators(context: TrafoContext) {
     return node;
   }
   function cacheExpression(node: Expression): Identifier {
-    if (qc.is.generatedIdentifier(node) || qc.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
+    if (qf.is.generatedIdentifier(node) || qf.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
     const temp = createTempVariable(hoistVariableDeclaration);
     emitAssignment(temp, node, node);
     return temp;
@@ -1551,7 +1551,7 @@ export function transformGenerators(context: TrafoContext) {
     assert(peekBlockKind() === CodeBlockKind.Exception);
     // generated identifiers should already be unique within a file
     let name: Identifier;
-    if (qc.is.generatedIdentifier(variable.name)) {
+    if (qf.is.generatedIdentifier(variable.name)) {
       name = variable.name;
       hoistVariableDeclaration(variable.name);
     } else {

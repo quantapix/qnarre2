@@ -1,10 +1,11 @@
-import * as qc from '../core';
-import * as qd from '../diagnostic';
-import { ModifierFlags, Node } from '../type';
-import * as qt from '../type';
-import * as qu from '../util';
+import { Node, Modifier, ModifierFlags } from '../types';
+import { qf, Nodes } from '../core';
 import { Syntax } from '../syntax';
-import { qf } from '../core';
+import * as qc from '../core';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+import * as qy from '../syntax';
 export type GetSymbolAccessibilityDiagnostic = (r: qt.SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined;
 export interface SymbolAccessibilityDiagnostic {
   errorNode: Node;

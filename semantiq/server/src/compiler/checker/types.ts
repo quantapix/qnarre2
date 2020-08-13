@@ -1,7 +1,7 @@
-import * as qd from '../diagnostic';
-import * as qt from '../type';
-import * as qu from '../util';
-export * from '../type';
+import * as qd from '../diags';
+import * as qt from '../types';
+import * as qu from '../utils';
+export * from '../types';
 export interface Frame extends qt.Frame {
   check: unknown;
   instantiate: unknown;
