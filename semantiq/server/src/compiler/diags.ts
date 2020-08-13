@@ -1,5 +1,5 @@
 // generated from './diagnosticInformationMap.generated.ts' by 'src/compiler'
-import { SourceFile } from './types';
+import { qt.SourceFile } from './types';
 import * as qu from './utils';
 export enum Category {
   Warning,
@@ -19,7 +19,7 @@ export interface MessageChain {
 export interface DiagnosticRelatedInformation {
   cat: Category;
   code: number;
-  file?: SourceFile;
+  file?: qt.SourceFile;
   length?: number;
   start?: number;
   text: string | MessageChain;
@@ -30,7 +30,7 @@ export interface Diagnostic extends DiagnosticRelatedInformation {
   relatedInformation?: DiagnosticRelatedInformation[];
 }
 export interface DiagnosticWithLocation extends Diagnostic {
-  file: SourceFile;
+  file: qt.SourceFile;
   start: number;
   length: number;
 }
@@ -40,7 +40,7 @@ export interface DiagnosticCollection {
   getGlobalDiagnostics(): Diagnostic[];
   getDiagnostics(): Diagnostic[];
   getDiagnostics(fileName: string): DiagnosticWithLocation[];
-  reattachFileDiagnostics(newFile: SourceFile): void;
+  reattachFileDiagnostics(newFile: qt.SourceFile): void;
 }
 export let localizedMessages: qu.MapLike<string> | undefined;
 export function setLocalizedMessages(ms: typeof localizedMessages) {
@@ -149,7 +149,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     getDiagnostics,
     reattachFileDiagnostics,
   };
-  function reattachFileDiagnostics(s: SourceFile) {
+  function reattachFileDiagnostics(s: qt.SourceFile) {
     qu.each(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
   }
   function lookup(d: Diagnostic): Diagnostic | undefined {

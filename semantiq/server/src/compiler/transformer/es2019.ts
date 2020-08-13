@@ -6,9 +6,9 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformES2019(context: TrafoContext) {
+export function transformES2019(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     return visitEachChild(node, visitor, context);
   }
@@ -16,12 +16,12 @@ export function transformES2019(context: TrafoContext) {
     if ((node.trafoFlags & TrafoFlags.ContainsES2019) === 0) return node;
     switch (node.kind) {
       case Syntax.CatchClause:
-        return visitCatchClause(node as CatchClause);
+        return visitCatchClause(node as qt.CatchClause);
       default:
         return visitEachChild(node, visitor, context);
     }
   }
-  function visitCatchClause(node: CatchClause): CatchClause {
+  function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
     if (!node.variableDeclaration) return node.update(new qc.VariableDeclaration(createTempVariable(undefined)), visitNode(node.block, visitor, isBlock));
     return visitEachChild(node, visitor, context);
   }

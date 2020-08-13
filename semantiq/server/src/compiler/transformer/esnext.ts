@@ -6,9 +6,9 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformESNext(context: TrafoContext) {
+export function transformESNext(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     return visitEachChild(node, visitor, context);
   }

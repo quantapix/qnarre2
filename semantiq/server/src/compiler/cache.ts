@@ -9,9 +9,9 @@ import * as qy from './syntax';
 export interface ResolutionCache {
   startRecordingFilesWithChangedResolutions(): void;
   finishRecordingFilesWithChangedResolutions(): Path[] | undefined;
-  resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[];
+  resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: qt.ResolvedProjectReference): (ResolvedModuleFull | undefined)[];
   getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): CachedResolvedModuleWithFailedLookupLocations | undefined;
-  resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[];
+  resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: qt.ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[];
   invalidateResolutionOfFile(filePath: Path): void;
   removeResolutionsOfFile(filePath: Path): void;
   removeResolutionsFromProjectReferenceRedirects(filePath: Path): void;
@@ -32,12 +32,12 @@ interface ResolutionWithFailedLookupLocations {
 interface ResolutionWithResolvedFileName {
   resolvedFileName: string | undefined;
 }
-interface CachedResolvedModuleWithFailedLookupLocations extends ResolvedModuleWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
-interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
-export interface ResolutionCacheHost extends ModuleResolutionHost {
+interface CachedResolvedModuleWithFailedLookupLocations extends qt.ResolvedModuleWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
+interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends qt.ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
+export interface ResolutionCacheHost extends qt.ModuleResolutionHost {
   toPath(fileName: string): Path;
   getCanonicalFileName: GetCanonicalFileName;
-  getCompilationSettings(): CompilerOpts;
+  getCompilationSettings(): qt.CompilerOpts;
   watchDirectoryOfFailedLookupLocation(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
   onInvalidatedResolution(): void;
   watchTypeRootsDirectory(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
@@ -47,9 +47,9 @@ export interface ResolutionCacheHost extends ModuleResolutionHost {
   getGlobalCache?(): string | undefined;
   globalCacheResolutionModuleName?(externalModuleName: string): string;
   writeLog(s: string): void;
-  getCurrentProgram(): Program | undefined;
+  getCurrentProgram(): qt.Program | undefined;
   fileIsOpen(filePath: Path): boolean;
-  getCompilerHost?(): CompilerHost | undefined;
+  getCompilerHost?(): qt.CompilerHost | undefined;
 }
 interface DirectoryWatchesOfFailedLookup {
   watcher: FileWatcher;
@@ -190,9 +190,9 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function resolveModuleName(
     moduleName: string,
     containingFile: string,
-    compilerOpts: CompilerOpts,
-    host: ModuleResolutionHost,
-    redirectedReference?: ResolvedProjectReference
+    compilerOpts: qt.CompilerOpts,
+    host: qt.ModuleResolutionHost,
+    redirectedReference?: qt.ResolvedProjectReference
   ): CachedResolvedModuleWithFailedLookupLocations {
     const primaryResult = qnr.resolveModuleName(moduleName, containingFile, compilerOpts, host, moduleResolutionCache, redirectedReference);
     if (!resolutionHost.getGlobalCache) return primaryResult;
@@ -216,10 +216,10 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   interface ResolveNamesWithLocalCacheInput<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName> {
     names: readonly string[];
     containingFile: string;
-    redirectedReference: ResolvedProjectReference | undefined;
+    redirectedReference: qt.ResolvedProjectReference | undefined;
     cache: Map<Map<T>>;
     perDirectoryCacheWithRedirects: CacheWithRedirects<Map<T>>;
-    loader: (name: string, containingFile: string, opts: CompilerOpts, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
+    loader: (name: string, containingFile: string, opts: qt.CompilerOpts, host: qt.ModuleResolutionHost, redirectedReference?: qt.ResolvedProjectReference) => T;
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>;
     shouldRetryResolution: (t: T) => boolean;
     reusedNames?: readonly string[];
@@ -300,8 +300,8 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       return oldResult.resolvedFileName === newResult.resolvedFileName;
     }
   }
-  function resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[] {
-    return resolveNamesWithLocalCache<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolvedTypeReferenceDirective>({
+  function resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: qt.ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[] {
+    return resolveNamesWithLocalCache<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations, qt.ResolvedTypeReferenceDirective>({
       names: typeDirectiveNames,
       containingFile,
       redirectedReference,
@@ -312,8 +312,8 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       shouldRetryResolution: (resolution) => resolution.resolvedTypeReferenceDirective === undefined,
     });
   }
-  function resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[] {
-    return resolveNamesWithLocalCache<CachedResolvedModuleWithFailedLookupLocations, ResolvedModuleFull>({
+  function resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: qt.ResolvedProjectReference): (ResolvedModuleFull | undefined)[] {
+    return resolveNamesWithLocalCache<CachedResolvedModuleWithFailedLookupLocations, qt.ResolvedModuleFull>({
       names: moduleNames,
       containingFile,
       redirectedReference,

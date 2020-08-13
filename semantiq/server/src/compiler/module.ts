@@ -20,7 +20,7 @@ interface Preferences {
   readonly relativePreference: RelativePreference;
   readonly ending: Ending;
 }
-function getPreferences({ importModuleSpecifierPreference, importModuleSpecifierEnding }: UserPreferences, compilerOpts: CompilerOpts, importingSourceFile: SourceFile): Preferences {
+function getPreferences({ importModuleSpecifierPreference, importModuleSpecifierEnding }: qt.UserPreferences, compilerOpts: qt.CompilerOpts, importingSourceFile: qt.SourceFile): Preferences {
   return {
     relativePreference:
       importModuleSpecifierPreference === 'relative' ? RelativePreference.Relative : importModuleSpecifierPreference === 'non-relative' ? RelativePreference.NonRelative : RelativePreference.Auto,
@@ -39,7 +39,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
     }
   }
 }
-function getPreferencesForUpdate(compilerOpts: CompilerOpts, oldImportSpecifier: string): Preferences {
+function getPreferencesForUpdate(compilerOpts: qt.CompilerOpts, oldImportSpecifier: string): Preferences {
   return {
     relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
     ending: hasJSFileExtension(oldImportSpecifier)
@@ -50,10 +50,10 @@ function getPreferencesForUpdate(compilerOpts: CompilerOpts, oldImportSpecifier:
   };
 }
 export function updateModuleSpecifier(
-  compilerOpts: CompilerOpts,
+  compilerOpts: qt.CompilerOpts,
   importingSourceFileName: Path,
   toFileName: string,
-  host: ModuleSpecifierResolutionHost,
+  host: qt.ModuleSpecifierResolutionHost,
   oldImportSpecifier: string
 ): string | undefined {
   const res = getModuleSpecifierWorker(compilerOpts, importingSourceFileName, toFileName, host, getPreferencesForUpdate(compilerOpts, oldImportSpecifier));
@@ -61,31 +61,31 @@ export function updateModuleSpecifier(
   return res;
 }
 export function getModuleSpecifier(
-  compilerOpts: CompilerOpts,
-  importingSourceFile: SourceFile,
+  compilerOpts: qt.CompilerOpts,
+  importingSourceFile: qt.SourceFile,
   importingSourceFileName: Path,
   toFileName: string,
-  host: ModuleSpecifierResolutionHost,
-  preferences: UserPreferences = {}
+  host: qt.ModuleSpecifierResolutionHost,
+  preferences: qt.UserPreferences = {}
 ): string {
   return getModuleSpecifierWorker(compilerOpts, importingSourceFileName, toFileName, host, getPreferences(preferences, compilerOpts, importingSourceFile));
 }
-export function getNodeModulesPackageName(compilerOpts: CompilerOpts, importingSourceFileName: Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
+export function getNodeModulesPackageName(compilerOpts: qt.CompilerOpts, importingSourceFileName: Path, nodeModulesFileName: string, host: qt.ModuleSpecifierResolutionHost): string | undefined {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts, true));
 }
-function getModuleSpecifierWorker(compilerOpts: CompilerOpts, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
+function getModuleSpecifierWorker(compilerOpts: qt.CompilerOpts, importingSourceFileName: Path, toFileName: string, host: qt.ModuleSpecifierResolutionHost, preferences: Preferences): string {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts)) || getLocalModuleSpecifier(toFileName, info, compilerOpts, preferences);
 }
 export function getModuleSpecifiers(
-  moduleSymbol: Symbol,
-  compilerOpts: CompilerOpts,
-  importingSourceFile: SourceFile,
-  host: ModuleSpecifierResolutionHost,
-  userPreferences: UserPreferences
+  moduleSymbol: qt.Symbol,
+  compilerOpts: qt.CompilerOpts,
+  importingSourceFile: qt.SourceFile,
+  host: qt.ModuleSpecifierResolutionHost,
+  userPreferences: qt.UserPreferences
 ): readonly string[] {
   const ambient = tryGetModuleNameFromAmbientModule(moduleSymbol);
   if (ambient) return [ambient];
@@ -100,12 +100,12 @@ interface Info {
   readonly getCanonicalFileName: GetCanonicalFileName;
   readonly sourceDirectory: Path;
 }
-function getInfo(importingSourceFileName: Path, host: ModuleSpecifierResolutionHost): Info {
+function getInfo(importingSourceFileName: Path, host: qt.ModuleSpecifierResolutionHost): Info {
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
   const sourceDirectory = getDirectoryPath(importingSourceFileName);
   return { getCanonicalFileName, sourceDirectory };
 }
-function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, compilerOpts: CompilerOpts, { ending, relativePreference }: Preferences): string {
+function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, compilerOpts: qt.CompilerOpts, { ending, relativePreference }: Preferences): string {
   const { baseUrl, paths, rootDirs } = compilerOpts;
   const relativePath =
     (rootDirs && tryGetModuleNameFromRootDirs(rootDirs, moduleFileName, sourceDirectory, getCanonicalFileName, ending, compilerOpts)) ||
@@ -127,7 +127,7 @@ export function countPathComponents(path: string): number {
   }
   return count;
 }
-function usesJsExtensionOnImports({ imports }: SourceFile): boolean {
+function usesJsExtensionOnImports({ imports }: qt.SourceFile): boolean {
   return firstDefined(imports, ({ text }) => (pathIsRelative(text) ? hasJSFileExtension(text) : undefined)) || false;
 }
 function numberOfDirectorySeparators(str: string) {
@@ -140,7 +140,7 @@ function comparePathsByNumberOfDirectorySeparators(a: string, b: string) {
 export function forEachFileNameOfModule<T>(
   importingFileName: string,
   importedFileName: string,
-  host: ModuleSpecifierResolutionHost,
+  host: qt.ModuleSpecifierResolutionHost,
   preferSymlinks: boolean,
   cb: (fileName: string) => T | undefined
 ): T | undefined {
@@ -171,7 +171,7 @@ export function forEachFileNameOfModule<T>(
   });
   return result || (preferSymlinks ? forEach(targets, cb) : undefined);
 }
-function getAllModulePaths(importingFileName: string, importedFileName: string, host: ModuleSpecifierResolutionHost): readonly string[] {
+function getAllModulePaths(importingFileName: string, importedFileName: string, host: qt.ModuleSpecifierResolutionHost): readonly string[] {
   const cwd = host.getCurrentDirectory();
   const getCanonicalFileName = hostGetCanonicalFileName(host);
   const allFileNames = createMap<string>();
@@ -209,11 +209,11 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
   }
   return sortedPaths;
 }
-function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
+function tryGetModuleNameFromAmbientModule(moduleSymbol: qt.Symbol): string | undefined {
   const decl = find(
     moduleSymbol.declarations,
     (d) => qf.is.nonGlobalAmbientModule(d) && (!qf.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(d.name)))
-  ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
+  ) as (ModuleDeclaration & { name: qt.StringLiteral }) | undefined;
   if (decl) return decl.name.text;
 }
 function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeToBaseUrl: string, paths: MapLike<readonly string[]>): string | undefined {
@@ -243,7 +243,7 @@ function tryGetModuleNameFromRootDirs(
   sourceDirectory: string,
   getCanonicalFileName: (file: string) => string,
   ending: Ending,
-  compilerOpts: CompilerOpts
+  compilerOpts: qt.CompilerOpts
 ): string | undefined {
   const normalizedTargetPath = getPathRelativeToRootDirs(moduleFileName, rootDirs, getCanonicalFileName);
   if (normalizedTargetPath === undefined) {
@@ -257,8 +257,8 @@ function tryGetModuleNameFromRootDirs(
 function tryGetModuleNameAsNodeModule(
   moduleFileName: string,
   { getCanonicalFileName, sourceDirectory }: Info,
-  host: ModuleSpecifierResolutionHost,
-  opts: CompilerOpts,
+  host: qt.ModuleSpecifierResolutionHost,
+  opts: qt.CompilerOpts,
   packageNameOnly?: boolean
 ): string | undefined {
   if (!host.fileExists || !host.readFile) {
@@ -327,7 +327,7 @@ function tryGetModuleNameAsNodeModule(
     return fullModulePathWithoutExtension;
   }
 }
-function tryGetAnyFileFromPath(host: ModuleSpecifierResolutionHost, path: string) {
+function tryGetAnyFileFromPath(host: qt.ModuleSpecifierResolutionHost, path: string) {
   if (!host.fileExists) return;
   const extensions = getSupportedExtensions({ allowJs: true }, [
     { extension: 'node', isMixedContent: false },
@@ -396,7 +396,7 @@ function getPathRelativeToRootDirs(path: string, rootDirs: readonly string[], ge
     return isPathRelativeToParent(relativePath) ? undefined : relativePath;
   });
 }
-function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, opts: CompilerOpts): string {
+function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, opts: qt.CompilerOpts): string {
   if (fileExtensionIs(fileName, Extension.Json)) return fileName;
   const noExtension = removeFileExtension(fileName);
   switch (ending) {
@@ -410,7 +410,7 @@ function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, opts: 
       return qc.assert.never(ending);
   }
 }
-function getJSExtensionForFile(fileName: string, opts: CompilerOpts): Extension {
+function getJSExtensionForFile(fileName: string, opts: qt.CompilerOpts): Extension {
   const ext = qy.get.extensionFromPath(fileName);
   switch (ext) {
     case Extension.Ts:
@@ -435,15 +435,15 @@ function getRelativePathIfInDirectory(path: string, directoryPath: string, getCa
 function isPathRelativeToParent(path: string): boolean {
   return startsWith(path, '..');
 }
-export function trace(host: ModuleResolutionHost, message: qd.Message, ...args: any[]): void;
-export function trace(host: ModuleResolutionHost): void {
+export function trace(host: qt.ModuleResolutionHost, message: qd.Message, ...args: any[]): void;
+export function trace(host: qt.ModuleResolutionHost): void {
   host.trace!(formatMessage.apply(undefined, args));
 }
-export function isTraceEnabled(compilerOpts: CompilerOpts, host: ModuleResolutionHost): boolean {
+export function isTraceEnabled(compilerOpts: qt.CompilerOpts, host: qt.ModuleResolutionHost): boolean {
   return !!compilerOpts.traceResolution && host.trace !== undefined;
 }
 function withPackageId(packageInfo: PackageJsonInfo | undefined, r: PathAndExtension | undefined): Resolved | undefined {
-  let packageId: PackageId | undefined;
+  let packageId: qt.PackageId | undefined;
   if (r && packageInfo) {
     const packageJsonContent = packageInfo.packageJsonContent as PackageJson;
     if (typeof packageJsonContent.name === 'string' && typeof packageJsonContent.version === 'string') {
@@ -468,7 +468,7 @@ function removeIgnoredPackageId(r: Resolved | undefined): PathAndExtension | und
 interface Resolved {
   path: string;
   extension: Extension;
-  packageId: PackageId | undefined;
+  packageId: qt.PackageId | undefined;
   originalPath?: string | true;
 }
 interface PathAndExtension {
@@ -484,7 +484,7 @@ enum Extensions {
 }
 interface PathAndPackageId {
   readonly fileName: string;
-  readonly packageId: PackageId | undefined;
+  readonly packageId: qt.PackageId | undefined;
 }
 function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageId | undefined {
   if (!resolved) {
@@ -497,8 +497,8 @@ function createResolvedModuleWithFailedLookupLocations(
   resolved: Resolved | undefined,
   isExternalLibraryImport: boolean | undefined,
   failedLookupLocations: string[],
-  resultFromCache: ResolvedModuleWithFailedLookupLocations | undefined
-): ResolvedModuleWithFailedLookupLocations {
+  resultFromCache: qt.ResolvedModuleWithFailedLookupLocations | undefined
+): qt.ResolvedModuleWithFailedLookupLocations {
   if (resultFromCache) {
     resultFromCache.failedLookupLocations.push(...failedLookupLocations);
     return resultFromCache;
@@ -515,11 +515,11 @@ function createResolvedModuleWithFailedLookupLocations(
   };
 }
 interface ModuleResolutionState {
-  host: ModuleResolutionHost;
-  compilerOpts: CompilerOpts;
+  host: qt.ModuleResolutionHost;
+  compilerOpts: qt.CompilerOpts;
   traceEnabled: boolean;
   failedLookupLocations: Push<string>;
-  resultFromCache?: ResolvedModuleWithFailedLookupLocations;
+  resultFromCache?: qt.ResolvedModuleWithFailedLookupLocations;
 }
 interface PackageJsonPathFields {
   typings?: string;
@@ -641,7 +641,7 @@ export function getPackageJsonTypesVersionsPaths(typesVersions: MapLike<MapLike<
     if (keyRange.test(typeScriptVersion)) return { version: key, paths: typesVersions[key] };
   }
 }
-export function getEffectiveTypeRoots(opts: CompilerOpts, host: GetEffectiveTypeRootsHost): string[] | undefined {
+export function getEffectiveTypeRoots(opts: qt.CompilerOpts, host: qt.GetEffectiveTypeRootsHost): string[] | undefined {
   if (opts.typeRoots) return opts.typeRoots;
   let currentDirectory: string | undefined;
   if (opts.configFilePath) {
@@ -667,10 +667,10 @@ const nodeModulesAtTypes = combinePaths('node_modules', '@types');
 export function resolveTypeReferenceDirective(
   typeReferenceDirectiveName: string,
   containingFile: string | undefined,
-  opts: CompilerOpts,
-  host: ModuleResolutionHost,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
+  opts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
+  redirectedReference?: qt.ResolvedProjectReference
+): qt.ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(opts, host);
   if (redirectedReference) {
     opts = redirectedReference.commandLine.opts;
@@ -702,7 +702,7 @@ export function resolveTypeReferenceDirective(
     resolved = secondaryLookup();
     primary = false;
   }
-  let resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective | undefined;
+  let resolvedTypeReferenceDirective: qt.ResolvedTypeReferenceDirective | undefined;
   if (resolved) {
     const { fileName, packageId } = resolved;
     const resolvedFileName = opts.preserveSymlinks ? fileName : realPath(fileName, host, traceEnabled);
@@ -784,7 +784,7 @@ function readJson(path: string, host: { readFile(fileName: string): string | und
   }
 }
 
-export function getAutomaticTypeDirectiveNames(opts: CompilerOpts, host: ModuleResolutionHost): string[] {
+export function getAutomaticTypeDirectiveNames(opts: qt.CompilerOpts, host: qt.ModuleResolutionHost): string[] {
   if (opts.types) return opts.types;
   const result: string[] = [];
   if (host.directoryExists && host.getDirectories) {
@@ -810,29 +810,29 @@ export function getAutomaticTypeDirectiveNames(opts: CompilerOpts, host: ModuleR
   return result;
 }
 export interface ModuleResolutionCache extends NonRelativeModuleNameResolutionCache {
-  getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: ResolvedProjectReference): Map<ResolvedModuleWithFailedLookupLocations>;
-  directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>;
+  getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: qt.ResolvedProjectReference): Map<qt.ResolvedModuleWithFailedLookupLocations>;
+  directoryToModuleNameMap: CacheWithRedirects<Map<qt.ResolvedModuleWithFailedLookupLocations>>;
 }
 export interface NonRelativeModuleNameResolutionCache {
-  getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: ResolvedProjectReference): PerModuleNameCache;
+  getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: qt.ResolvedProjectReference): PerModuleNameCache;
   moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>;
 }
 export interface PerModuleNameCache {
-  get(directory: string): ResolvedModuleWithFailedLookupLocations | undefined;
-  set(directory: string, result: ResolvedModuleWithFailedLookupLocations): void;
+  get(directory: string): qt.ResolvedModuleWithFailedLookupLocations | undefined;
+  set(directory: string, result: qt.ResolvedModuleWithFailedLookupLocations): void;
 }
-export function createModuleResolutionCache(currentDirectory: string, getCanonicalFileName: (s: string) => string, opts?: CompilerOpts): ModuleResolutionCache {
+export function createModuleResolutionCache(currentDirectory: string, getCanonicalFileName: (s: string) => string, opts?: qt.CompilerOpts): ModuleResolutionCache {
   return createModuleResolutionCacheWithMaps(createCacheWithRedirects(opts), createCacheWithRedirects(opts), currentDirectory, getCanonicalFileName);
 }
 export interface CacheWithRedirects<T> {
   ownMap: Map<T>;
   redirectsMap: Map<Map<T>>;
-  getOrCreateMapOfCacheRedirects(redirectedReference: ResolvedProjectReference | undefined): Map<T>;
+  getOrCreateMapOfCacheRedirects(redirectedReference: qt.ResolvedProjectReference | undefined): Map<T>;
   clear(): void;
-  setOwnOpts(newOpts: CompilerOpts): void;
+  setOwnOpts(newOpts: qt.CompilerOpts): void;
   setOwnMap(newOwnMap: Map<T>): void;
 }
-export function createCacheWithRedirects<T>(opts?: CompilerOpts): CacheWithRedirects<T> {
+export function createCacheWithRedirects<T>(opts?: qt.CompilerOpts): CacheWithRedirects<T> {
   let ownMap: Map<T> = createMap();
   const redirectsMap: Map<Map<T>> = createMap();
   return {
@@ -843,13 +843,13 @@ export function createCacheWithRedirects<T>(opts?: CompilerOpts): CacheWithRedir
     setOwnOpts,
     setOwnMap,
   };
-  function setOwnOpts(newOpts: CompilerOpts) {
+  function setOwnOpts(newOpts: qt.CompilerOpts) {
     opts = newOpts;
   }
   function setOwnMap(newOwnMap: Map<T>) {
     ownMap = newOwnMap;
   }
-  function getOrCreateMapOfCacheRedirects(redirectedReference: ResolvedProjectReference | undefined) {
+  function getOrCreateMapOfCacheRedirects(redirectedReference: qt.ResolvedProjectReference | undefined) {
     if (!redirectedReference) return ownMap;
     const path = redirectedReference.sourceFile.path;
     let redirects = redirectsMap.get(path);
@@ -865,21 +865,21 @@ export function createCacheWithRedirects<T>(opts?: CompilerOpts): CacheWithRedir
   }
 }
 export function createModuleResolutionCacheWithMaps(
-  directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>,
+  directoryToModuleNameMap: CacheWithRedirects<Map<qt.ResolvedModuleWithFailedLookupLocations>>,
   moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>,
   currentDirectory: string,
   getCanonicalFileName: GetCanonicalFileName
 ): ModuleResolutionCache {
   return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName, directoryToModuleNameMap, moduleNameToDirectoryMap };
-  function getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: ResolvedProjectReference) {
+  function getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: qt.ResolvedProjectReference) {
     const path = toPath(directoryName, currentDirectory, getCanonicalFileName);
-    return getOrCreateCache<Map<ResolvedModuleWithFailedLookupLocations>>(directoryToModuleNameMap, redirectedReference, path, createMap);
+    return getOrCreateCache<Map<qt.ResolvedModuleWithFailedLookupLocations>>(directoryToModuleNameMap, redirectedReference, path, createMap);
   }
-  function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: ResolvedProjectReference): PerModuleNameCache {
+  function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: qt.ResolvedProjectReference): PerModuleNameCache {
     assert(!isExternalModuleNameRelative(nonRelativeModuleName));
     return getOrCreateCache(moduleNameToDirectoryMap, redirectedReference, nonRelativeModuleName, createPerModuleNameCache);
   }
-  function getOrCreateCache<T>(cacheWithRedirects: CacheWithRedirects<T>, redirectedReference: ResolvedProjectReference | undefined, key: string, create: () => T): T {
+  function getOrCreateCache<T>(cacheWithRedirects: CacheWithRedirects<T>, redirectedReference: qt.ResolvedProjectReference | undefined, key: string, create: () => T): T {
     const cache = cacheWithRedirects.getOrCreateMapOfCacheRedirects(redirectedReference);
     let result = cache.get(key);
     if (!result) {
@@ -889,12 +889,12 @@ export function createModuleResolutionCacheWithMaps(
     return result;
   }
   function createPerModuleNameCache(): PerModuleNameCache {
-    const directoryPathMap = createMap<ResolvedModuleWithFailedLookupLocations>();
+    const directoryPathMap = createMap<qt.ResolvedModuleWithFailedLookupLocations>();
     return { get, set };
-    function get(directory: string): ResolvedModuleWithFailedLookupLocations | undefined {
+    function get(directory: string): qt.ResolvedModuleWithFailedLookupLocations | undefined {
       return directoryPathMap.get(toPath(directory, currentDirectory, getCanonicalFileName));
     }
-    function set(directory: string, result: ResolvedModuleWithFailedLookupLocations): void {
+    function set(directory: string, result: qt.ResolvedModuleWithFailedLookupLocations): void {
       const path = toPath(directory, currentDirectory, getCanonicalFileName);
       if (directoryPathMap.has(path)) {
         return;
@@ -932,7 +932,7 @@ export function createModuleResolutionCacheWithMaps(
     }
   }
 }
-export function resolveModuleNameFromCache(moduleName: string, containingFile: string, cache: ModuleResolutionCache): ResolvedModuleWithFailedLookupLocations | undefined {
+export function resolveModuleNameFromCache(moduleName: string, containingFile: string, cache: ModuleResolutionCache): qt.ResolvedModuleWithFailedLookupLocations | undefined {
   const containingDirectory = getDirectoryPath(containingFile);
   const perFolderCache = cache && cache.getOrCreateCacheForDirectory(containingDirectory);
   return perFolderCache && perFolderCache.get(moduleName);
@@ -940,11 +940,11 @@ export function resolveModuleNameFromCache(moduleName: string, containingFile: s
 export function resolveModuleName(
   moduleName: string,
   containingFile: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations {
+  redirectedReference?: qt.ResolvedProjectReference
+): qt.ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOpts, host);
   if (redirectedReference) {
     compilerOpts = redirectedReference.commandLine.opts;
@@ -1099,14 +1099,14 @@ function tryLoadModuleUsingBaseUrl(extensions: Extensions, moduleName: string, l
   }
   return loader(extensions, candidate, !directoryProbablyExists(getDirectoryPath(candidate), state.host), state);
 }
-export function resolveJSModule(moduleName: string, initialDir: string, host: ModuleResolutionHost): string {
+export function resolveJSModule(moduleName: string, initialDir: string, host: qt.ModuleResolutionHost): string {
   const { resolvedModule, failedLookupLocations } = tryResolveJSModuleWorker(moduleName, initialDir, host);
   if (!resolvedModule) {
     throw new Error(`Could not resolve JS module '${moduleName}' starting at '${initialDir}'. Looked in: ${failedLookupLocations.join(', ')}`);
   }
   return resolvedModule.resolvedFileName;
 }
-export function tryResolveJSModule(moduleName: string, initialDir: string, host: ModuleResolutionHost): string | undefined {
+export function tryResolveJSModule(moduleName: string, initialDir: string, host: qt.ModuleResolutionHost): string | undefined {
   const { resolvedModule } = tryResolveJSModuleWorker(moduleName, initialDir, host);
   return resolvedModule && resolvedModule.resolvedFileName;
 }
@@ -1114,35 +1114,35 @@ const jsOnlyExtensions = [Extensions.JavaScript];
 const tsExtensions = [Extensions.TypeScript, Extensions.JavaScript];
 const tsPlusJsonExtensions = [...tsExtensions, Extensions.Json];
 const tsconfigExtensions = [Extensions.TSConfig];
-function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
+function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: qt.ModuleResolutionHost): qt.ResolvedModuleWithFailedLookupLocations {
   return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: ModuleResolutionKind.NodeJs, allowJs: true }, host, undefined, jsOnlyExtensions, undefined);
 }
 export function nodeModuleNameResolver(
   moduleName: string,
   containingFile: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations;
+  redirectedReference?: qt.ResolvedProjectReference
+): qt.ResolvedModuleWithFailedLookupLocations;
 export function nodeModuleNameResolver(
   moduleName: string,
   containingFile: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference,
+  redirectedReference?: qt.ResolvedProjectReference,
   lookupConfig?: boolean
-): ResolvedModuleWithFailedLookupLocations;
+): qt.ResolvedModuleWithFailedLookupLocations;
 export function nodeModuleNameResolver(
   moduleName: string,
   containingFile: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference,
+  redirectedReference?: qt.ResolvedProjectReference,
   lookupConfig?: boolean
-): ResolvedModuleWithFailedLookupLocations {
+): qt.ResolvedModuleWithFailedLookupLocations {
   return nodeModuleNameResolverWorker(
     moduleName,
     getDirectoryPath(containingFile),
@@ -1156,12 +1156,12 @@ export function nodeModuleNameResolver(
 function nodeModuleNameResolverWorker(
   moduleName: string,
   containingDirectory: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache: ModuleResolutionCache | undefined,
   extensions: Extensions[],
-  redirectedReference: ResolvedProjectReference | undefined
-): ResolvedModuleWithFailedLookupLocations {
+  redirectedReference: qt.ResolvedProjectReference | undefined
+): qt.ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOpts, host);
   const failedLookupLocations: string[] = [];
   const state: ModuleResolutionState = { compilerOpts, host, traceEnabled, failedLookupLocations };
@@ -1191,7 +1191,7 @@ function nodeModuleNameResolverWorker(
     }
   }
 }
-function realPath(path: string, host: ModuleResolutionHost, traceEnabled: boolean): string {
+function realPath(path: string, host: qt.ModuleResolutionHost, traceEnabled: boolean): string {
   if (!host.realpath) return path;
   const real = normalizePath(host.realpath(path));
   if (traceEnabled) {
@@ -1425,7 +1425,7 @@ function loadModuleFromNearestNodeModulesDirectory(
   directory: string,
   state: ModuleResolutionState,
   cache: NonRelativeModuleNameResolutionCache | undefined,
-  redirectedReference: ResolvedProjectReference | undefined
+  redirectedReference: qt.ResolvedProjectReference | undefined
 ): SearchResult<Resolved> {
   return loadModuleFromNearestNodeModulesDirectoryWorker(extensions, moduleName, directory, state, false, cache, redirectedReference);
 }
@@ -1439,7 +1439,7 @@ function loadModuleFromNearestNodeModulesDirectoryWorker(
   state: ModuleResolutionState,
   typesScopeOnly: boolean,
   cache: NonRelativeModuleNameResolutionCache | undefined,
-  redirectedReference: ResolvedProjectReference | undefined
+  redirectedReference: qt.ResolvedProjectReference | undefined
 ): SearchResult<Resolved> {
   const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
   return forEachAncestorDirectory(normalizeSlashes(directory), (ancestorDirectory) => {
@@ -1584,11 +1584,11 @@ function tryFindNonRelativeModuleNameInCache(cache: PerModuleNameCache | undefin
 export function classicNameResolver(
   moduleName: string,
   containingFile: string,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   cache?: NonRelativeModuleNameResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations {
+  redirectedReference?: qt.ResolvedProjectReference
+): qt.ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOpts, host);
   const failedLookupLocations: string[] = [];
   const state: ModuleResolutionState = { compilerOpts, host, traceEnabled, failedLookupLocations };
@@ -1617,10 +1617,10 @@ export function classicNameResolver(
 export function loadModuleFromGlobalCache(
   moduleName: string,
   projectName: string | undefined,
-  compilerOpts: CompilerOpts,
-  host: ModuleResolutionHost,
+  compilerOpts: qt.CompilerOpts,
+  host: qt.ModuleResolutionHost,
   globalCache: string
-): ResolvedModuleWithFailedLookupLocations {
+): qt.ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOpts, host);
   if (traceEnabled) {
     trace(host, qd.Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2, projectName, moduleName, globalCache);
@@ -1634,21 +1634,21 @@ type SearchResult<T> = { value: T | undefined } | undefined;
 function toSearchResult<T>(value: T | undefined): SearchResult<T> {
   return value !== undefined ? { value } : undefined;
 }
-export function importFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport {
+export function importFromModuleSpecifier(node: StringLiteralLike): qt.AnyValidImportOrReExport {
   return tryGetImportFromModuleSpecifier(node) || qu.failBadSyntax(node.parent);
 }
-export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport | undefined {
+export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): qt.AnyValidImportOrReExport | undefined {
   switch (node.parent.kind) {
     case Syntax.ImportDeclaration:
     case Syntax.ExportDeclaration:
-      return node.parent as AnyValidImportOrReExport;
+      return node.parent as qt.AnyValidImportOrReExport;
     case Syntax.ExternalModuleReference:
-      return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
+      return (node.parent as qt.ExternalModuleReference).parent as qt.AnyValidImportOrReExport;
     case Syntax.CallExpression:
       return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
     case Syntax.LiteralTyping:
       assert(node.kind === Syntax.StringLiteral);
-      return qu.tryCast(node.parent.parent, ImportTyping.kind) as ValidImportTyping | undefined;
+      return qu.tryCast(node.parent.parent, qt.ImportTyping.kind) as qt.ValidImportTyping | undefined;
     default:
       return;
   }

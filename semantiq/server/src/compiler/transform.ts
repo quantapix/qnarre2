@@ -39,7 +39,7 @@ export interface TransformationResult<T extends Node> {
 }
 export type Transformer<T extends Node> = (node: T) => T;
 export type TransformerFactory<T extends Node> = (c: qt.TrafoContext) => Transformer<T>;
-function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
+function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<qt.SourceFile | qt.Bundle> {
   switch (moduleKind) {
     case qt.ModuleKind.ESNext:
     case qt.ModuleKind.ES2020:
@@ -61,19 +61,19 @@ const enum SyntaxKindFeatureFlags {
   Substitution = 1 << 0,
   EmitNotifications = 1 << 1,
 }
-export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
-export function getTransformers(compilerOpts: CompilerOpts, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
+export const noTransformers: qt.EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
+export function getTransformers(compilerOpts: qt.CompilerOpts, customTransformers?: qt.CustomTransformers, emitOnlyDtsFiles?: boolean): qt.EmitTransformers {
   return {
     scriptTransformers: getScriptTransformers(compilerOpts, customTransformers, emitOnlyDtsFiles),
     declarationTransformers: getDeclarationTransformers(customTransformers),
   };
 }
-function getScriptTransformers(compilerOpts: CompilerOpts, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
+function getScriptTransformers(compilerOpts: qt.CompilerOpts, customTransformers?: qt.CustomTransformers, emitOnlyDtsFiles?: boolean) {
   if (emitOnlyDtsFiles) return emptyArray;
   const jsx = compilerOpts.jsx;
   const languageVersion = getEmitScriptTarget(compilerOpts);
   const moduleKind = getEmitModuleKind(compilerOpts);
-  const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
+  const transformers: TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.before, wrapScriptTransformerFactory));
   transformers.push(transformTypeScript);
   transformers.push(transformClassFields);
@@ -84,28 +84,28 @@ function getScriptTransformers(compilerOpts: CompilerOpts, customTransformers?: 
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.after, wrapScriptTransformerFactory));
   return transformers;
 }
-function getDeclarationTransformers(customTransformers?: CustomTransformers) {
-  const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
+function getDeclarationTransformers(customTransformers?: qt.CustomTransformers) {
+  const transformers: TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
   transformers.push(transformDeclarations);
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
   return transformers;
 }
-function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
+function wrapCustomTransformer(transformer: qt.CustomTransformer): Transformer<qt.Bundle | qt.SourceFile> {
   return (node) => (qf.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
-function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
+function wrapCustomTransformerFactory<T extends qt.SourceFile | qt.Bundle>(
   transformer: TransformerFactory<T> | CustomTransformerFactory,
-  handleDefault: (node: Transformer<T>) => Transformer<Bundle | SourceFile>
-): TransformerFactory<Bundle | SourceFile> {
+  handleDefault: (node: Transformer<T>) => Transformer<qt.Bundle | qt.SourceFile>
+): TransformerFactory<qt.Bundle | qt.SourceFile> {
   return (context) => {
     const customTransformer = transformer(context);
     return typeof customTransformer === 'function' ? handleDefault(customTransformer) : wrapCustomTransformer(customTransformer);
   };
 }
-function wrapScriptTransformerFactory(transformer: TransformerFactory<SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
+function wrapScriptTransformerFactory(transformer: TransformerFactory<qt.SourceFile> | CustomTransformerFactory): TransformerFactory<qt.Bundle | qt.SourceFile> {
   return wrapCustomTransformerFactory(transformer, chainBundle);
 }
-function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
+function wrapDeclarationTransformerFactory(transformer: TransformerFactory<qt.Bundle | qt.SourceFile> | CustomTransformerFactory): TransformerFactory<qt.Bundle | qt.SourceFile> {
   return wrapCustomTransformerFactory(transformer, identity);
 }
 export function noEmitSubstitution(_hint: qt.EmitHint, node: Node) {
@@ -115,19 +115,19 @@ export function noEmitNotification(hint: qt.EmitHint, node: Node, callback: (hin
   callback(hint, node);
 }
 export function transformNodes<T extends Node>(
-  resolver: EmitResolver | undefined,
-  host: EmitHost | undefined,
-  opts: CompilerOpts,
+  resolver: qt.EmitResolver | undefined,
+  host: qt.EmitHost | undefined,
+  opts: qt.CompilerOpts,
   nodes: readonly T[],
   transformers: readonly TransformerFactory<T>[],
   allowDtsFiles: boolean
 ): TransformationResult<T> {
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(Syntax.Count);
-  let lexicalEnvironmentVariableDeclarations: VariableDeclaration[];
+  let lexicalEnvironmentVariableDeclarations: qt.VariableDeclaration[];
   let lexicalEnvironmentFunctionDeclarations: qt.FunctionDeclaration[];
   let lexicalEnvironmentStatements: qt.Statement[];
   let lexicalEnvironmentFlags = qt.LexicalEnvironmentFlags.None;
-  let lexicalEnvironmentVariableDeclarationsStack: VariableDeclaration[][] = [];
+  let lexicalEnvironmentVariableDeclarationsStack: qt.VariableDeclaration[][] = [];
   let lexicalEnvironmentFunctionDeclarationsStack: qt.FunctionDeclaration[][] = [];
   let lexicalEnvironmentStatementsStack: qt.Statement[][] = [];
   let lexicalEnvironmentFlagsStack: qt.LexicalEnvironmentFlags[] = [];
@@ -354,7 +354,7 @@ export const valuesHelper: qt.UnscopedEmitHelper = {
   scoped: false,
   text: `
             var __values = (this && this.__values) || function(o) {
-                var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+                var s = typeof qt.Symbol === "function" && qt.Symbol.iterator, m = s && o[s], i = 0;
                 if (m) return m.call(o);
                 if (o && typeof o.length === "number") return {
                     next: function () {
@@ -375,7 +375,7 @@ export const readHelper: qt.UnscopedEmitHelper = {
   scoped: false,
   text: `
             var __read = (this && this.__read) || function (o, n) {
-                var m = typeof Symbol === "function" && o[Symbol.iterator];
+                var m = typeof qt.Symbol === "function" && o[Symbol.iterator];
                 if (!m) return o;
                 var i = m.call(o), r, ar = [], e;
                 try {

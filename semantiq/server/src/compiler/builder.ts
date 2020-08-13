@@ -6,7 +6,7 @@ import * as qd from './diags';
 import * as qt from './types';
 import * as qu from './utils';
 import * as qy from './syntax';
-export type AffectedFileResult<T> = { result: T; affected: SourceFile | Program } | undefined;
+export type AffectedFileResult<T> = { result: T; affected: qt.SourceFile | qt.Program } | undefined;
 export interface BuilderProgramHost {
   useCaseSensitiveFileNames(): boolean;
   createHash?: (data: string) => string;
@@ -16,50 +16,55 @@ export interface BuilderProgram {
   getState(): ReusableBuilderProgramState;
   backupState(): void;
   restoreState(): void;
-  getProgram(): Program;
-  getProgramOrUndefined(): Program | undefined;
+  getProgram(): qt.Program;
+  getProgramOrUndefined(): qt.Program | undefined;
   releaseProgram(): void;
-  getCompilerOpts(): CompilerOpts;
-  getSourceFile(fileName: string): SourceFile | undefined;
-  getSourceFiles(): readonly SourceFile[];
-  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
+  getCompilerOpts(): qt.CompilerOpts;
+  getSourceFile(fileName: string): qt.SourceFile | undefined;
+  getSourceFiles(): readonly qt.SourceFile[];
+  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
-  getAllDependencies(sourceFile: SourceFile): readonly string[];
-  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
+  getAllDependencies(sourceFile: qt.SourceFile): readonly string[];
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
   getCurrentDirectory(): string;
   close(): void;
 }
 export interface SemanticDiagnosticsBuilderProgram extends BuilderProgram {
-  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
+  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
 }
 export interface EmitAndSemanticDiagnosticsBuilderProgram extends SemanticDiagnosticsBuilderProgram {
-  emitNextAffectedFile(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): AffectedFileResult<EmitResult>;
+  emitNextAffectedFile(
+    writeFile?: WriteFileCallback,
+    cancellationToken?: qt.CancellationToken,
+    emitOnlyDtsFiles?: boolean,
+    customTransformers?: qt.CustomTransformers
+  ): AffectedFileResult<qt.EmitResult>;
 }
 export function createSemanticDiagnosticsBuilderProgram(
-  newProgram: Program,
+  newProgram: qt.Program,
   host: BuilderProgramHost,
   oldProgram?: SemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[]
 ): SemanticDiagnosticsBuilderProgram;
 export function createSemanticDiagnosticsBuilderProgram(
   rootNames: readonly string[] | undefined,
-  opts: CompilerOpts | undefined,
-  host?: CompilerHost,
+  opts: qt.CompilerOpts | undefined,
+  host?: qt.CompilerHost,
   oldProgram?: SemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ): SemanticDiagnosticsBuilderProgram;
 export function createSemanticDiagnosticsBuilderProgram(
-  newProgramOrRootNames: Program | readonly string[] | undefined,
-  hostOrOpts: BuilderProgramHost | CompilerOpts | undefined,
-  oldProgramOrHost?: CompilerHost | SemanticDiagnosticsBuilderProgram,
+  newProgramOrRootNames: qt.Program | readonly string[] | undefined,
+  hostOrOpts: BuilderProgramHost | qt.CompilerOpts | undefined,
+  oldProgramOrHost?: qt.CompilerHost | SemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | SemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ) {
   return createBuilderProgram(
     BuilderProgramKind.SemanticDiagnosticsBuilderProgram,
@@ -67,48 +72,48 @@ export function createSemanticDiagnosticsBuilderProgram(
   );
 }
 export function createEmitAndSemanticDiagnosticsBuilderProgram(
-  newProgram: Program,
+  newProgram: qt.Program,
   host: BuilderProgramHost,
   oldProgram?: EmitAndSemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[]
 ): EmitAndSemanticDiagnosticsBuilderProgram;
 export function createEmitAndSemanticDiagnosticsBuilderProgram(
   rootNames: readonly string[] | undefined,
-  opts: CompilerOpts | undefined,
-  host?: CompilerHost,
+  opts: qt.CompilerOpts | undefined,
+  host?: qt.CompilerHost,
   oldProgram?: EmitAndSemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ): EmitAndSemanticDiagnosticsBuilderProgram;
 export function createEmitAndSemanticDiagnosticsBuilderProgram(
-  newProgramOrRootNames: Program | readonly string[] | undefined,
-  hostOrOpts: BuilderProgramHost | CompilerOpts | undefined,
-  oldProgramOrHost?: CompilerHost | EmitAndSemanticDiagnosticsBuilderProgram,
+  newProgramOrRootNames: qt.Program | readonly string[] | undefined,
+  hostOrOpts: BuilderProgramHost | qt.CompilerOpts | undefined,
+  oldProgramOrHost?: qt.CompilerHost | EmitAndSemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | EmitAndSemanticDiagnosticsBuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ) {
   return createBuilderProgram(
     BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram,
     getBuilderCreationParams(newProgramOrRootNames, hostOrOpts, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
   );
 }
-export function createAbstractBuilder(newProgram: Program, host: BuilderProgramHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): BuilderProgram;
+export function createAbstractBuilder(newProgram: qt.Program, host: BuilderProgramHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): BuilderProgram;
 export function createAbstractBuilder(
   rootNames: readonly string[] | undefined,
-  opts: CompilerOpts | undefined,
-  host?: CompilerHost,
+  opts: qt.CompilerOpts | undefined,
+  host?: qt.CompilerHost,
   oldProgram?: BuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ): BuilderProgram;
 export function createAbstractBuilder(
-  newProgramOrRootNames: Program | readonly string[] | undefined,
-  hostOrOpts: BuilderProgramHost | CompilerOpts | undefined,
-  oldProgramOrHost?: CompilerHost | BuilderProgram,
+  newProgramOrRootNames: qt.Program | readonly string[] | undefined,
+  hostOrOpts: BuilderProgramHost | qt.CompilerOpts | undefined,
+  oldProgramOrHost?: qt.CompilerHost | BuilderProgram,
   configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | BuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ): BuilderProgram {
   const { newProgram, configFileParsingDiagnostics: newConfigFileParsingDiagnostics } = getBuilderCreationParams(
     newProgramOrRootNames,
@@ -137,13 +142,13 @@ export type ReusableMessageChain = qd.MessageChain;
 export interface ReusableBuilderProgramState extends ReusableBuilderState {
   semanticDiagnosticsPerFile?: ReadonlyMap<readonly ReusableDiagnostic[] | readonly Diagnostic[]> | undefined;
   changedFilesSet?: ReadonlyMap<true>;
-  affectedFiles?: readonly SourceFile[] | undefined;
+  affectedFiles?: readonly qt.SourceFile[] | undefined;
   currentChangedFilePath?: Path | undefined;
   currentAffectedFilesSignatures?: QReadonlyMap<string> | undefined;
   currentAffectedFilesExportedModulesMap?: Readonly<BuilderState.ComputingExportedModulesMap> | undefined;
   semanticDiagnosticsFromOldState?: Map<true>;
-  program?: Program | undefined;
-  compilerOpts: CompilerOpts;
+  program?: qt.Program | undefined;
+  compilerOpts: qt.CompilerOpts;
   affectedFilesPendingEmit?: readonly Path[] | undefined;
   affectedFilesPendingEmitKind?: ReadonlyMap<BuilderFileEmit> | undefined;
   affectedFilesPendingEmitIndex?: number | undefined;
@@ -156,7 +161,7 @@ export const enum BuilderFileEmit {
 export interface BuilderProgramState extends BuilderState {
   semanticDiagnosticsPerFile: Map<readonly Diagnostic[]> | undefined;
   changedFilesSet: Map<true>;
-  affectedFiles: readonly SourceFile[] | undefined;
+  affectedFiles: readonly qt.SourceFile[] | undefined;
   affectedFilesIndex: number | undefined;
   currentChangedFilePath: Path | undefined;
   currentAffectedFilesSignatures: Map<string> | undefined;
@@ -164,8 +169,8 @@ export interface BuilderProgramState extends BuilderState {
   seenAffectedFiles: Map<true> | undefined;
   cleanedDiagnosticsOfLibFiles?: boolean;
   semanticDiagnosticsFromOldState?: Map<true>;
-  program: Program | undefined;
-  compilerOpts: CompilerOpts;
+  program: qt.Program | undefined;
+  compilerOpts: qt.CompilerOpts;
   affectedFilesPendingEmit: Path[] | undefined;
   affectedFilesPendingEmitKind: Map<BuilderFileEmit> | undefined;
   affectedFilesPendingEmitIndex: number | undefined;
@@ -176,7 +181,7 @@ export interface BuilderProgramState extends BuilderState {
 function hasSameKeys<T, U>(map1: ReadonlyMap<T> | undefined, map2: ReadonlyMap<U> | undefined): boolean {
   return (map1 as ReadonlyMap<T | U>) === map2 || (map1 !== undefined && map2 !== undefined && map1.size === map2.size && !qu.forEachKey(map1, (key) => !map2.has(key)));
 }
-function createBuilderProgramState(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderProgramState>): BuilderProgramState {
+function createBuilderProgramState(newProgram: qt.Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderProgramState>): BuilderProgramState {
   const state = BuilderState.create(newProgram, getCanonicalFileName, oldState) as BuilderProgramState;
   state.program = newProgram;
   const compilerOpts = newProgram.getCompilerOpts();
@@ -254,7 +259,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: Ge
   state.emittedBuildInfo = !state.changedFilesSet.size && !state.affectedFilesPendingEmit;
   return state;
 }
-function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: GetCanonicalFileName): readonly Diagnostic[] {
+function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: qt.Program, getCanonicalFileName: GetCanonicalFileName): readonly Diagnostic[] {
   if (!diagnostics.length) return emptyArray;
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOpts())!, newProgram.getCurrentDirectory()));
   return diagnostics.map((diagnostic) => {
@@ -269,7 +274,7 @@ function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newPro
     return qnr.toPath(path, buildInfoDirectory, getCanonicalFileName);
   }
 }
-function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: Program, toPath: (path: string) => Path): DiagnosticRelatedInformation {
+function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: qt.Program, toPath: (path: string) => Path): DiagnosticRelatedInformation {
   const { file } = diagnostic;
   return {
     ...diagnostic,
@@ -301,10 +306,10 @@ function cloneBuilderProgramState(state: Readonly<BuilderProgramState>): Builder
   newState.programEmitComplete = state.programEmitComplete;
   return newState;
 }
-function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: SourceFile | undefined) {
+function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: qt.SourceFile | undefined) {
   assert(!sourceFile || !state.affectedFiles || state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile || !state.semanticDiagnosticsPerFile!.has(sourceFile.resolvedPath));
 }
-function getNextAffectedFile(state: BuilderProgramState, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash): SourceFile | Program | undefined {
+function getNextAffectedFile(state: BuilderProgramState, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash): qt.SourceFile | qt.Program | undefined {
   while (true) {
     const { affectedFiles } = state;
     if (affectedFiles) {
@@ -375,7 +380,7 @@ function getNextAffectedFilePendingEmit(state: BuilderProgramState) {
   }
   return;
 }
-function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, affectedFile.resolvedPath);
   if (state.allFilesExcludingDefaultLibraryFile === state.affectedFiles) {
     if (!state.cleanedDiagnosticsOfLibFiles) {
@@ -390,7 +395,7 @@ function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFi
     forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) => handleDtsMayChangeOf(state, path, cancellationToken, computeHash));
   }
 }
-function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, path);
   if (!state.changedFilesSet.has(path)) {
     const program = Debug.checkDefined(state.program);
@@ -423,7 +428,7 @@ function isChangedSignagure(state: BuilderProgramState, path: Path) {
   const oldSignagure = Debug.checkDefined(state.fileInfos.get(path)).signature;
   return newSignature !== oldSignagure;
 }
-function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
+function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
   if (!state.exportedModulesMap || !state.changedFilesSet.has(affectedFile.resolvedPath)) {
     return;
   }
@@ -497,16 +502,16 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
     (referencesInFile, referencingFilePath) => referencesInFile.has(filePath) && !seenFileAndExportsOfFile.has(referencingFilePath) && fn(state, referencingFilePath as Path)
   );
 }
-function doneWithAffectedFile(state: BuilderProgramState, affected: SourceFile | Program, emitKind?: BuilderFileEmit, isPendingEmit?: boolean, isBuildInfoEmit?: boolean) {
+function doneWithAffectedFile(state: BuilderProgramState, affected: qt.SourceFile | qt.Program, emitKind?: BuilderFileEmit, isPendingEmit?: boolean, isBuildInfoEmit?: boolean) {
   if (isBuildInfoEmit) {
     state.emittedBuildInfo = true;
   } else if (affected === state.program) {
     state.changedFilesSet.clear();
     state.programEmitComplete = true;
   } else {
-    state.seenAffectedFiles!.set((affected as SourceFile).resolvedPath, true);
+    state.seenAffectedFiles!.set((affected as qt.SourceFile).resolvedPath, true);
     if (emitKind !== undefined) {
-      (state.seenEmittedFiles || (state.seenEmittedFiles = new QMap())).set((affected as SourceFile).resolvedPath, emitKind);
+      (state.seenEmittedFiles || (state.seenEmittedFiles = new QMap())).set((affected as qt.SourceFile).resolvedPath, emitKind);
     }
     if (isPendingEmit) {
       state.affectedFilesPendingEmitIndex!++;
@@ -515,25 +520,25 @@ function doneWithAffectedFile(state: BuilderProgramState, affected: SourceFile |
     }
   }
 }
-function toAffectedFileResult<T>(state: BuilderProgramState, result: T, affected: SourceFile | Program): AffectedFileResult<T> {
+function toAffectedFileResult<T>(state: BuilderProgramState, result: T, affected: qt.SourceFile | qt.Program): AffectedFileResult<T> {
   doneWithAffectedFile(state, affected);
   return { result, affected };
 }
 function toAffectedFileEmitResult(
   state: BuilderProgramState,
-  result: EmitResult,
-  affected: SourceFile | Program,
+  result: qt.EmitResult,
+  affected: qt.SourceFile | qt.Program,
   emitKind: BuilderFileEmit,
   isPendingEmit?: boolean,
   isBuildInfoEmit?: boolean
-): AffectedFileResult<EmitResult> {
+): AffectedFileResult<qt.EmitResult> {
   doneWithAffectedFile(state, affected, emitKind, isPendingEmit, isBuildInfoEmit);
   return { result, affected };
 }
-function getSemanticDiagnosticsOfFile(state: BuilderProgramState, sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+function getSemanticDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
   return concatenate(getBinderAndCheckerDiagnosticsOfFile(state, sourceFile, cancellationToken), Debug.checkDefined(state.program).getProgramDiagnostics(sourceFile));
 }
-function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
   const path = sourceFile.resolvedPath;
   if (state.semanticDiagnosticsPerFile) {
     const cachedDiagnostics = state.semanticDiagnosticsPerFile.get(path);
@@ -546,14 +551,14 @@ function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, source
   return diagnostics;
 }
 export type ProgramBuildInfoDiagnostic = string | [string, readonly ReusableDiagnostic[]];
-export interface ProgramBuildInfo {
+export interface qt.ProgramBuildInfo {
   fileInfos: MapLike<BuilderState.FileInfo>;
-  opts: CompilerOpts;
+  opts: qt.CompilerOpts;
   referencedMap?: MapLike<string[]>;
   exportedModulesMap?: MapLike<string[]>;
   semanticDiagnosticsPerFile?: ProgramBuildInfoDiagnostic[];
 }
-function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: GetCanonicalFileName): ProgramBuildInfo | undefined {
+function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: GetCanonicalFileName): qt.ProgramBuildInfo | undefined {
   if (state.compilerOpts.outFile || state.compilerOpts.out) return;
   const currentDirectory = Debug.checkDefined(state.program).getCurrentDirectory();
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOpts)!, currentDirectory));
@@ -562,7 +567,7 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
     const signature = state.currentAffectedFilesSignatures && state.currentAffectedFilesSignatures.get(key);
     fileInfos[relativeToBuildInfo(key)] = signature === undefined ? value : { version: value.version, signature, affectsGlobalScope: value.affectsGlobalScope };
   });
-  const result: ProgramBuildInfo = {
+  const result: qt.ProgramBuildInfo = {
     fileInfos,
     opts: convertToReusableCompilerOpts(state.compilerOpts, relativeToBuildInfoEnsuringAbsolutePath),
   };
@@ -602,8 +607,8 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
     return ensurePathIsNonModuleName(getRelativePathFromDirectory(buildInfoDirectory, path, getCanonicalFileName));
   }
 }
-function convertToReusableCompilerOpts(opts: CompilerOpts, relativeToBuildInfo: (path: string) => string) {
-  const result: CompilerOpts = {};
+function convertToReusableCompilerOpts(opts: qt.CompilerOpts, relativeToBuildInfo: (path: string) => string) {
+  const result: qt.CompilerOpts = {};
   const { optsNameMap } = getOptsNameMap();
   for (const name in opts) {
     if (hasProperty(opts, name)) {
@@ -653,25 +658,25 @@ export enum BuilderProgramKind {
   EmitAndSemanticDiagnosticsBuilderProgram,
 }
 export interface BuilderCreationParams {
-  newProgram: Program;
+  newProgram: qt.Program;
   host: BuilderProgramHost;
   oldProgram: BuilderProgram | undefined;
   configFileParsingDiagnostics: readonly Diagnostic[];
 }
 export function getBuilderCreationParams(
-  newProgramOrRootNames: Program | readonly string[] | undefined,
-  hostOrOpts: BuilderProgramHost | CompilerOpts | undefined,
-  oldProgramOrHost?: BuilderProgram | CompilerHost,
+  newProgramOrRootNames: qt.Program | readonly string[] | undefined,
+  hostOrOpts: BuilderProgramHost | qt.CompilerOpts | undefined,
+  oldProgramOrHost?: BuilderProgram | qt.CompilerHost,
   configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | BuilderProgram,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[]
+  projectReferences?: readonly qt.ProjectReference[]
 ): BuilderCreationParams {
   let host: BuilderProgramHost;
-  let newProgram: Program;
+  let newProgram: qt.Program;
   let oldProgram: BuilderProgram;
   if (newProgramOrRootNames === undefined) {
     assert(hostOrOpts === undefined);
-    host = oldProgramOrHost as CompilerHost;
+    host = oldProgramOrHost as qt.CompilerHost;
     oldProgram = configFileParsingDiagnosticsOrOldProgram as BuilderProgram;
     assert(!!oldProgram);
     newProgram = oldProgram.getProgram();
@@ -679,13 +684,13 @@ export function getBuilderCreationParams(
     oldProgram = configFileParsingDiagnosticsOrOldProgram as BuilderProgram;
     newProgram = createProgram({
       rootNames: newProgramOrRootNames,
-      opts: hostOrOpts as CompilerOpts,
-      host: oldProgramOrHost as CompilerHost,
+      opts: hostOrOpts as qt.CompilerOpts,
+      host: oldProgramOrHost as qt.CompilerHost,
       oldProgram: oldProgram && oldProgram.getProgramOrUndefined(),
       configFileParsingDiagnostics,
       projectReferences,
     });
-    host = oldProgramOrHost as CompilerHost;
+    host = oldProgramOrHost as qt.CompilerHost;
   } else {
     newProgram = newProgramOrRootNames;
     host = hostOrOpts as BuilderProgramHost;
@@ -739,10 +744,10 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   return builderProgram;
   function emitNextAffectedFile(
     writeFile?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
+    cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
-    customTransformers?: CustomTransformers
-  ): AffectedFileResult<EmitResult> {
+    customTransformers?: qt.CustomTransformers
+  ): AffectedFileResult<qt.EmitResult> {
     let affected = getNextAffectedFile(state, cancellationToken, computeHash);
     let emitKind = BuilderFileEmit.Full;
     let isPendingEmitFile = false;
@@ -767,7 +772,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
     return toAffectedFileEmitResult(
       state,
       Debug.checkDefined(state.program).emit(
-        affected === state.program ? undefined : (affected as SourceFile),
+        affected === state.program ? undefined : (affected as qt.SourceFile),
         writeFile || maybeBind(host, host.writeFile),
         cancellationToken,
         emitOnlyDtsFiles || emitKind === BuilderFileEmit.DtsOnly,
@@ -778,17 +783,23 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
       isPendingEmitFile
     );
   }
-  function emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult {
+  function emit(
+    targetSourceFile?: qt.SourceFile,
+    writeFile?: WriteFileCallback,
+    cancellationToken?: qt.CancellationToken,
+    emitOnlyDtsFiles?: boolean,
+    customTransformers?: qt.CustomTransformers
+  ): qt.EmitResult {
     if (kind === BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram) {
       assertSourceFileOkWithoutNextAffectedCall(state, targetSourceFile);
       const result = handleNoEmitOpts(builderProgram, targetSourceFile, cancellationToken);
       if (result) return result;
       if (!targetSourceFile) {
-        let sourceMaps: SourceMapEmitResult[] = [];
+        let sourceMaps: qt.SourceMapEmitResult[] = [];
         let emitSkipped = false;
         let diagnostics: Diagnostic[] | undefined;
         let emittedFiles: string[] = [];
-        let affectedEmitResult: AffectedFileResult<EmitResult>;
+        let affectedEmitResult: AffectedFileResult<qt.EmitResult>;
         while ((affectedEmitResult = emitNextAffectedFile(writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers))) {
           emitSkipped = emitSkipped || affectedEmitResult.result.emitSkipped;
           diagnostics = qu.addRange(diagnostics, affectedEmitResult.result.diagnostics);
@@ -805,7 +816,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
     }
     return Debug.checkDefined(state.program).emit(targetSourceFile, writeFile || maybeBind(host, host.writeFile), cancellationToken, emitOnlyDtsFiles, customTransformers);
   }
-  function getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]> {
+  function getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]> {
     while (true) {
       const affected = getNextAffectedFile(state, cancellationToken, computeHash);
       if (!affected) {
@@ -814,16 +825,16 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         return toAffectedFileResult(state, state.program.getSemanticDiagnostics(undefined, cancellationToken), affected);
       }
       if (kind === BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram) {
-        addToAffectedFilesPendingEmit(state, (affected as SourceFile).resolvedPath, BuilderFileEmit.Full);
+        addToAffectedFilesPendingEmit(state, (affected as qt.SourceFile).resolvedPath, BuilderFileEmit.Full);
       }
-      if (ignoreSourceFile && ignoreSourceFile(affected as SourceFile)) {
+      if (ignoreSourceFile && ignoreSourceFile(affected as qt.SourceFile)) {
         doneWithAffectedFile(state, affected);
         continue;
       }
-      return toAffectedFileResult(state, getSemanticDiagnosticsOfFile(state, affected as SourceFile, cancellationToken), affected);
+      return toAffectedFileResult(state, getSemanticDiagnosticsOfFile(state, affected as qt.SourceFile, cancellationToken), affected);
     }
   }
-  function getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
     assertSourceFileOkWithoutNextAffectedCall(state, sourceFile);
     const compilerOpts = Debug.checkDefined(state.program).getCompilerOpts();
     if (compilerOpts.outFile || compilerOpts.out) {
@@ -859,7 +870,7 @@ function getMapOfReferencedSet(mapLike: MapLike<readonly string[]> | undefined, 
   }
   return map;
 }
-export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
+export function createBuildProgramUsingProgramBuildInfo(program: qt.ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
   const fileInfos = new QMap<BuilderState.FileInfo>();
@@ -912,7 +923,7 @@ export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInf
     return getNormalizedAbsolutePath(path, buildInfoDirectory);
   }
 }
-export function createRedirectedBuilderProgram(state: { program: Program | undefined; compilerOpts: CompilerOpts }, configFileParsingDiagnostics: readonly Diagnostic[]): BuilderProgram {
+export function createRedirectedBuilderProgram(state: { program: qt.Program | undefined; compilerOpts: qt.CompilerOpts }, configFileParsingDiagnostics: readonly Diagnostic[]): BuilderProgram {
   return {
     getState: notImplemented,
     backupState: noop,
@@ -950,11 +961,11 @@ export interface OutputFile {
   text: string;
 }
 export function getFileEmitOutput(
-  program: Program,
-  sourceFile: SourceFile,
+  program: qt.Program,
+  sourceFile: qt.SourceFile,
   emitOnlyDtsFiles: boolean,
-  cancellationToken?: CancellationToken,
-  customTransformers?: CustomTransformers,
+  cancellationToken?: qt.CancellationToken,
+  customTransformers?: qt.CustomTransformers,
   forceDtsEmit?: boolean
 ): EmitOutput {
   const outputFiles: OutputFile[] = [];
@@ -974,7 +985,7 @@ export interface BuilderState {
   readonly referencedMap: QReadonlyMap<BuilderState.ReferencedSet> | undefined;
   readonly exportedModulesMap: QMap<BuilderState.ReferencedSet> | undefined;
   hasCalledUpdateShapeSignature: QMap<true>;
-  allFilesExcludingDefaultLibraryFile?: readonly SourceFile[];
+  allFilesExcludingDefaultLibraryFile?: readonly qt.SourceFile[];
   allFileNames?: readonly string[];
 }
 export namespace BuilderState {
@@ -986,24 +997,24 @@ export namespace BuilderState {
   export type ReferencedSet = QReadonlyMap<true>;
   export type ComputeHash = (data: string) => string;
   export type ComputingExportedModulesMap = QMap<ReferencedSet | false>;
-  function getReferencedFileFromImportedModuleSymbol(symbol: Symbol) {
+  function getReferencedFileFromImportedModuleSymbol(symbol: qt.Symbol) {
     if (symbol.declarations && symbol.declarations[0]) {
       const declarationSourceFile = symbol.declarations[0].sourceFile;
       return declarationSourceFile && declarationSourceFile.resolvedPath;
     }
     return;
   }
-  function getReferencedFileFromImportLiteral(checker: TypeChecker, importName: StringLiteralLike) {
+  function getReferencedFileFromImportLiteral(checker: qt.TypeChecker, importName: StringLiteralLike) {
     const symbol = checker.getSymbolAtLocation(importName);
     return symbol && getReferencedFileFromImportedModuleSymbol(symbol);
   }
-  function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: GetCanonicalFileName): Path {
+  function getReferencedFileFromFileName(program: qt.Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: GetCanonicalFileName): Path {
     return toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
   }
-  function getReferencedFiles(program: Program, sourceFile: SourceFile, getCanonicalFileName: GetCanonicalFileName): QMap<true> | undefined {
+  function getReferencedFiles(program: qt.Program, sourceFile: qt.SourceFile, getCanonicalFileName: GetCanonicalFileName): QMap<true> | undefined {
     let referencedFiles: QMap<true> | undefined;
     if (sourceFile.imports && sourceFile.imports.length > 0) {
-      const checker: TypeChecker = program.getTypeChecker();
+      const checker: qt.TypeChecker = program.getTypeChecker();
       for (const importName of sourceFile.imports) {
         const declarationSourceFilePath = getReferencedFileFromImportLiteral(checker, importName);
         if (declarationSourceFilePath) addReferencedFile(declarationSourceFilePath);
@@ -1037,7 +1048,7 @@ export namespace BuilderState {
       if (ambientModule.declarations.length > 1) addReferenceFromAmbientModule(ambientModule);
     }
     return referencedFiles;
-    function addReferenceFromAmbientModule(symbol: Symbol) {
+    function addReferenceFromAmbientModule(symbol: qt.Symbol) {
       for (const declaration of symbol.declarations) {
         const declarationSourceFile = declaration.sourceFile;
         if (declarationSourceFile && declarationSourceFile !== sourceFile) addReferencedFile(declarationSourceFile.resolvedPath);
@@ -1051,7 +1062,7 @@ export namespace BuilderState {
   export function canReuseOldState(newReferencedMap: QReadonlyMap<ReferencedSet> | undefined, oldState: Readonly<ReusableBuilderState> | undefined) {
     return oldState && !oldState.referencedMap === !newReferencedMap;
   }
-  export function create(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
+  export function create(newProgram: qt.Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
     const fileInfos = new QMap<FileInfo>();
     const referencedMap = newProgram.getCompilerOpts().module !== ModuleKind.None ? new QMap<ReferencedSet>() : undefined;
     const exportedModulesMap = referencedMap ? new QMap<ReferencedSet>() : undefined;
@@ -1099,13 +1110,13 @@ export namespace BuilderState {
   }
   export function getFilesAffectedBy(
     state: BuilderState,
-    programOfThisState: Program,
+    programOfThisState: qt.Program,
     path: Path,
-    cancellationToken: CancellationToken | undefined,
+    cancellationToken: qt.CancellationToken | undefined,
     computeHash: ComputeHash,
     cacheToUpdateSignature?: QMap<string>,
     exportedModulesMapCache?: ComputingExportedModulesMap
-  ): readonly SourceFile[] {
+  ): readonly qt.SourceFile[] {
     const signatureCache = cacheToUpdateSignature || new QMap();
     const sourceFile = programOfThisState.getSourceFileByPath(path);
     if (!sourceFile) return empty;
@@ -1131,10 +1142,10 @@ export namespace BuilderState {
   }
   export function updateShapeSignature(
     state: Readonly<BuilderState>,
-    programOfThisState: Program,
-    sourceFile: SourceFile,
+    programOfThisState: qt.Program,
+    sourceFile: qt.SourceFile,
     cacheToUpdateSignature: QMap<string>,
-    cancellationToken: CancellationToken | undefined,
+    cancellationToken: qt.CancellationToken | undefined,
     computeHash: ComputeHash,
     exportedModulesMapCache?: ComputingExportedModulesMap
   ) {
@@ -1174,7 +1185,7 @@ export namespace BuilderState {
     cacheToUpdateSignature.set(sourceFile.resolvedPath, latestSignature);
     return !prevSignature || latestSignature !== prevSignature;
   }
-  function updateExportedModules(sourceFile: SourceFile, exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined, exportedModulesMapCache: ComputingExportedModulesMap) {
+  function updateExportedModules(sourceFile: qt.SourceFile, exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined, exportedModulesMapCache: ComputingExportedModulesMap) {
     if (!exportedModulesFromDeclarationEmit) {
       exportedModulesMapCache.set(sourceFile.resolvedPath, false);
       return;
@@ -1198,7 +1209,7 @@ export namespace BuilderState {
       });
     }
   }
-  export function getAllDependencies(state: BuilderState, programOfThisState: Program, sourceFile: SourceFile): readonly string[] {
+  export function getAllDependencies(state: BuilderState, programOfThisState: qt.Program, sourceFile: qt.SourceFile): readonly string[] {
     const compilerOpts = programOfThisState.getCompilerOpts();
     if (compilerOpts.outFile || compilerOpts.out) return getAllFileNames(state, programOfThisState);
     if (!state.referencedMap || isFileAffectingGlobalScope(sourceFile)) return getAllFileNames(state, programOfThisState);
@@ -1224,7 +1235,7 @@ export namespace BuilderState {
       })
     );
   }
-  function getAllFileNames(state: BuilderState, programOfThisState: Program): readonly string[] {
+  function getAllFileNames(state: BuilderState, programOfThisState: qt.Program): readonly string[] {
     if (!state.allFileNames) {
       const sourceFiles = programOfThisState.getSourceFiles();
       state.allFileNames = sourceFiles === empty ? empty : sourceFiles.map((file) => file.fileName);
@@ -1234,49 +1245,49 @@ export namespace BuilderState {
   export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: Path) {
     return arrayFrom(mapDefinedIterator(state.referencedMap!.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
   }
-  function containsOnlyAmbientModules(sourceFile: SourceFile) {
+  function containsOnlyAmbientModules(sourceFile: qt.SourceFile) {
     for (const statement of sourceFile.statements) {
       if (!qf.is.moduleWithStringLiteralName(statement)) return false;
     }
     return true;
   }
-  function containsGlobalScopeAugmentation(sourceFile: SourceFile) {
-    return some(sourceFile.moduleAugmentations, (augmentation) => qf.is.globalScopeAugmentation(augmentation.parent as ModuleDeclaration));
+  function containsGlobalScopeAugmentation(sourceFile: qt.SourceFile) {
+    return some(sourceFile.moduleAugmentations, (augmentation) => qf.is.globalScopeAugmentation(augmentation.parent as qt.ModuleDeclaration));
   }
-  function isFileAffectingGlobalScope(sourceFile: SourceFile) {
+  function isFileAffectingGlobalScope(sourceFile: qt.SourceFile) {
     return containsGlobalScopeAugmentation(sourceFile) || (!qf.is.externalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
   }
-  export function getAllFilesExcludingDefaultLibraryFile(state: BuilderState, programOfThisState: Program, firstSourceFile: SourceFile | undefined): readonly SourceFile[] {
+  export function getAllFilesExcludingDefaultLibraryFile(state: BuilderState, programOfThisState: qt.Program, firstSourceFile: qt.SourceFile | undefined): readonly qt.SourceFile[] {
     if (state.allFilesExcludingDefaultLibraryFile) return state.allFilesExcludingDefaultLibraryFile;
-    let result: SourceFile[] | undefined;
+    let result: qt.SourceFile[] | undefined;
     if (firstSourceFile) addSourceFile(firstSourceFile);
     for (const sourceFile of programOfThisState.getSourceFiles()) {
       if (sourceFile !== firstSourceFile) addSourceFile(sourceFile);
     }
     state.allFilesExcludingDefaultLibraryFile = result || empty;
     return state.allFilesExcludingDefaultLibraryFile;
-    function addSourceFile(sourceFile: SourceFile) {
+    function addSourceFile(sourceFile: qt.SourceFile) {
       if (!programOfThisState.isSourceFileDefaultLibrary(sourceFile)) (result || (result = [])).push(sourceFile);
     }
   }
-  function getFilesAffectedByUpdatedShapeWhenNonModuleEmit(state: BuilderState, programOfThisState: Program, sourceFileWithUpdatedShape: SourceFile) {
+  function getFilesAffectedByUpdatedShapeWhenNonModuleEmit(state: BuilderState, programOfThisState: qt.Program, sourceFileWithUpdatedShape: qt.SourceFile) {
     const compilerOpts = programOfThisState.getCompilerOpts();
     if (compilerOpts && (compilerOpts.out || compilerOpts.outFile)) return [sourceFileWithUpdatedShape];
     return getAllFilesExcludingDefaultLibraryFile(state, programOfThisState, sourceFileWithUpdatedShape);
   }
   function getFilesAffectedByUpdatedShapeWhenModuleEmit(
     state: BuilderState,
-    programOfThisState: Program,
-    sourceFileWithUpdatedShape: SourceFile,
+    programOfThisState: qt.Program,
+    sourceFileWithUpdatedShape: qt.SourceFile,
     cacheToUpdateSignature: QMap<string>,
-    cancellationToken: CancellationToken | undefined,
+    cancellationToken: qt.CancellationToken | undefined,
     computeHash: ComputeHash | undefined,
     exportedModulesMapCache: ComputingExportedModulesMap | undefined
   ) {
     if (isFileAffectingGlobalScope(sourceFileWithUpdatedShape)) return getAllFilesExcludingDefaultLibraryFile(state, programOfThisState, sourceFileWithUpdatedShape);
     const compilerOpts = programOfThisState.getCompilerOpts();
     if (compilerOpts && (compilerOpts.isolatedModules || compilerOpts.out || compilerOpts.outFile)) return [sourceFileWithUpdatedShape];
-    const seenFileNamesMap = new QMap<SourceFile>();
+    const seenFileNamesMap = new QMap<qt.SourceFile>();
     seenFileNamesMap.set(sourceFileWithUpdatedShape.resolvedPath, sourceFileWithUpdatedShape);
     const queue = getReferencedByPaths(state, sourceFileWithUpdatedShape.resolvedPath);
     while (queue.length > 0) {

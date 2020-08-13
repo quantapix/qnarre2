@@ -6,11 +6,11 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformJsx(context: TrafoContext) {
+export function transformJsx(context: qt.TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
-  let currentSourceFile: SourceFile;
+  let currentSourceFile: qt.SourceFile;
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = visitEachChild(node, visitor, context);
@@ -24,13 +24,13 @@ export function transformJsx(context: TrafoContext) {
   function visitorWorker(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.JsxElem:
-        return visitJsxElem(<JsxElem>node, false);
+        return visitJsxElem(<qt.JsxElem>node, false);
       case Syntax.JsxSelfClosingElem:
-        return visitJsxSelfClosingElem(<JsxSelfClosingElem>node, false);
+        return visitJsxSelfClosingElem(<qt.JsxSelfClosingElem>node, false);
       case Syntax.JsxFragment:
-        return visitJsxFragment(<JsxFragment>node, false);
+        return visitJsxFragment(<qt.JsxFragment>node, false);
       case Syntax.JsxExpression:
-        return visitJsxExpression(<JsxExpression>node);
+        return visitJsxExpression(<qt.JsxExpression>node);
       default:
         return visitEachChild(node, visitor, context);
     }
@@ -51,13 +51,13 @@ export function transformJsx(context: TrafoContext) {
         return Debug.failBadSyntax(node);
     }
   }
-  function visitJsxElem(node: JsxElem, isChild: boolean) {
+  function visitJsxElem(node: qt.JsxElem, isChild: boolean) {
     return visitJsxOpeningLikeElem(node.opening, node.children, isChild, node);
   }
-  function visitJsxSelfClosingElem(node: JsxSelfClosingElem, isChild: boolean) {
+  function visitJsxSelfClosingElem(node: qt.JsxSelfClosingElem, isChild: boolean) {
     return visitJsxOpeningLikeElem(node, node);
   }
-  function visitJsxFragment(node: JsxFragment, isChild: boolean) {
+  function visitJsxFragment(node: qt.JsxFragment, isChild: boolean) {
     return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, node);
   }
   function visitJsxOpeningLikeElem(node: JsxOpeningLikeElem, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
@@ -67,7 +67,7 @@ export function transformJsx(context: TrafoContext) {
     if (attrs.length === 0) {
       objectProperties = new qc.NullLiteral();
     } else {
-      const segments = flatten<Expression | ObjectLiteralExpression>(
+      const segments = flatten<Expression | qt.ObjectLiteralExpression>(
         spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
           isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElem))
         )
@@ -94,7 +94,7 @@ export function transformJsx(context: TrafoContext) {
     }
     return elem;
   }
-  function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
+  function visitJsxOpeningFragment(node: qt.JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
     const elem = qf.create.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOpts.reactNamespace!,
@@ -107,15 +107,15 @@ export function transformJsx(context: TrafoContext) {
     }
     return elem;
   }
-  function transformJsxSpreadAttributeToExpression(node: JsxSpreadAttribute) {
+  function transformJsxSpreadAttributeToExpression(node: qt.JsxSpreadAttribute) {
     return visitNode(node.expression, visitor, isExpression);
   }
-  function transformJsxAttributeToObjectLiteralElem(node: JsxAttribute) {
+  function transformJsxAttributeToObjectLiteralElem(node: qt.JsxAttribute) {
     const name = getAttributeName(node);
     const expression = transformJsxAttributeIniter(node.initer);
     return new qc.PropertyAssignment(name, expression);
   }
-  function transformJsxAttributeIniter(node: StringLiteral | JsxExpression | undefined): Expression {
+  function transformJsxAttributeIniter(node: qt.StringLiteral | qt.JsxExpression | undefined): Expression {
     if (node === undefined) return new qc.BooleanLiteral(true);
     else if (node.kind === Syntax.StringLiteral) {
       const literal = qc.asLiteral(tryDecodeEntities(node.text) || node.text);
@@ -127,7 +127,7 @@ export function transformJsx(context: TrafoContext) {
     }
     return Debug.failBadSyntax(node);
   }
-  function visitJsxText(node: JsxText): StringLiteral | undefined {
+  function visitJsxText(node: qt.JsxText): qt.StringLiteral | undefined {
     const fixed = fixupWhitespaceAndDecodeEntities(node.text);
     return fixed === undefined ? undefined : qc.asLiteral(fixed);
   }
@@ -167,7 +167,7 @@ export function transformJsx(context: TrafoContext) {
     const decoded = decodeEntities(text);
     return decoded === text ? undefined : decoded;
   }
-  function getTagName(node: JsxElem | JsxOpeningLikeElem): Expression {
+  function getTagName(node: qt.JsxElem | JsxOpeningLikeElem): Expression {
     if (node.kind === Syntax.JsxElem) return getTagName(node.opening);
     else {
       const name = node.tagName;
@@ -175,13 +175,13 @@ export function transformJsx(context: TrafoContext) {
       return createExpressionFromEntityName(name);
     }
   }
-  function getAttributeName(node: JsxAttribute): StringLiteral | Identifier {
+  function getAttributeName(node: qt.JsxAttribute): qt.StringLiteral | qt.Identifier {
     const name = node.name;
     const text = idText(name);
     if (/^[A-Za-z_]\w*$/.test(text)) return name;
     return qc.asLiteral(text);
   }
-  function visitJsxExpression(node: JsxExpression) {
+  function visitJsxExpression(node: qt.JsxExpression) {
     return visitNode(node.expression, visitor, isExpression);
   }
 }

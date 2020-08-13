@@ -14,11 +14,11 @@ export const enum ModuleInstanceState {
 interface ActiveLabel {
   next: ActiveLabel | undefined;
   name: qu.__String;
-  breakTarget: FlowLabel;
-  continueTarget: FlowLabel | undefined;
+  breakTarget: qt.FlowLabel;
+  continueTarget: qt.FlowLabel | undefined;
   referenced: boolean;
 }
-export function getModuleInstanceState(node: ModuleDeclaration, visited?: qu.QMap<ModuleInstanceState | undefined>): ModuleInstanceState {
+export function getModuleInstanceState(node: qt.ModuleDeclaration, visited?: qu.QMap<ModuleInstanceState | undefined>): ModuleInstanceState {
   if (node.body && !node.body.parent) {
     setParentPointers(node, node.body);
   }
@@ -38,14 +38,14 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
     case Syntax.TypeAliasDeclaration:
       return ModuleInstanceState.NonInstantiated;
     case Syntax.EnumDeclaration:
-      if (qf.is.enumConst(node as EnumDeclaration)) return ModuleInstanceState.ConstEnumOnly;
+      if (qf.is.enumConst(node as qt.EnumDeclaration)) return ModuleInstanceState.ConstEnumOnly;
       break;
     case Syntax.ImportDeclaration:
     case Syntax.ImportEqualsDeclaration:
       if (!qf.has.syntacticModifier(node, ModifierFlags.Export)) return ModuleInstanceState.NonInstantiated;
       break;
     case Syntax.ExportDeclaration:
-      const exportDeclaration = node as ExportDeclaration;
+      const exportDeclaration = node as qt.ExportDeclaration;
       if (!exportDeclaration.moduleSpecifier && exportDeclaration.exportClause && exportDeclaration.exportClause.kind === Syntax.NamedExports) {
         let state = ModuleInstanceState.NonInstantiated;
         for (const spec of exportDeclaration.exportClause.elems) {
@@ -78,13 +78,13 @@ function getModuleInstanceStateWorker(node: Node, visited: qu.QMap<ModuleInstanc
       return state;
     }
     case Syntax.ModuleDeclaration:
-      return getModuleInstanceState(node as ModuleDeclaration, visited);
+      return getModuleInstanceState(node as qt.ModuleDeclaration, visited);
     case Syntax.Identifier:
-      if ((<Identifier>node).isInDocNamespace) return ModuleInstanceState.NonInstantiated;
+      if ((<qt.Identifier>node).isInDocNamespace) return ModuleInstanceState.NonInstantiated;
   }
   return ModuleInstanceState.Instantiated;
 }
-function getModuleInstanceStateForAliasTarget(spec: ExportSpecifier, visited: qu.QMap<ModuleInstanceState | undefined>) {
+function getModuleInstanceStateForAliasTarget(spec: qt.ExportSpecifier, visited: qu.QMap<ModuleInstanceState | undefined>) {
   const name = spec.propertyName || spec.name;
   let p: Node | undefined = spec.parent;
   while (p) {
@@ -125,7 +125,7 @@ function initFlowNode<T extends FlowNode>(node: T) {
   return node;
 }
 const binder = createBinder();
-export function bindSourceFile(file: SourceFile, opts: CompilerOpts) {
+export function bindSourceFile(file: qt.SourceFile, opts: qt.CompilerOpts) {
   performance.mark('beforeBind');
   perfLogger.logStartBindFile('' + file.fileName);
   binder(file, opts);
@@ -133,31 +133,31 @@ export function bindSourceFile(file: SourceFile, opts: CompilerOpts) {
   performance.mark('afterBind');
   performance.measure('Bind', 'beforeBind', 'afterBind');
 }
-function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
-  let file: SourceFile;
-  let opts: CompilerOpts;
+function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
+  let file: qt.SourceFile;
+  let opts: qt.CompilerOpts;
   let languageVersion: ScriptTarget;
   let parent: Node;
   let container: Node;
   let thisParentContainer: Node;
   let blockScopeContainer: Node;
   let lastContainer: Node;
-  let delayedTypeAliases: (DocTypedefTag | DocCallbackTag | DocEnumTag)[];
+  let delayedTypeAliases: (DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag)[];
   let seenThisKeyword: boolean;
   let currentFlow: FlowNode;
-  let currentBreakTarget: FlowLabel | undefined;
-  let currentContinueTarget: FlowLabel | undefined;
-  let currentReturnTarget: FlowLabel | undefined;
-  let currentTrueTarget: FlowLabel | undefined;
-  let currentFalseTarget: FlowLabel | undefined;
-  let currentExceptionTarget: FlowLabel | undefined;
+  let currentBreakTarget: qt.FlowLabel | undefined;
+  let currentContinueTarget: qt.FlowLabel | undefined;
+  let currentReturnTarget: qt.FlowLabel | undefined;
+  let currentTrueTarget: qt.FlowLabel | undefined;
+  let currentFalseTarget: qt.FlowLabel | undefined;
+  let currentExceptionTarget: qt.FlowLabel | undefined;
   let preSwitchCaseFlow: FlowNode | undefined;
   let activeLabelList: ActiveLabel | undefined;
   let hasExplicitReturn: boolean;
   let emitFlags: NodeFlags;
   let inStrictMode: boolean;
   let symbolCount = 0;
-  let Symbol: new (flags: SymbolFlags, name: qu.__String) => Symbol;
+  let qt.Symbol: new (flags: SymbolFlags, name: qu.__String) => qt.Symbol;
   let classifiableNames: EscapedMap<true>;
   const unreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
@@ -166,7 +166,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
     return qf.create.diagnosticForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
   }
-  function bindSourceFile(f: SourceFile, opts: CompilerOpts) {
+  function bindSourceFile(f: qt.SourceFile, opts: qt.CompilerOpts) {
     file = f;
     opts = opts;
     languageVersion = getEmitScriptTarget(opts);
@@ -174,7 +174,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     classifiableNames = qu.createEscapedMap<true>();
     symbolCount = 0;
     skipTransformFlagAggregation = file.isDeclarationFile;
-    Symbol = Node.Symbol;
+    qt.Symbol = Node.Symbol;
     Debug.attachFlowNodeDebugInfo(unreachableFlow);
     Debug.attachFlowNodeDebugInfo(reportedUnreachableFlow);
     if (!file.locals) {
@@ -206,37 +206,37 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     subtreeTrafoFlags = TrafoFlags.None;
   }
   return bindSourceFile;
-  function bindInStrictMode(file: SourceFile, opts: CompilerOpts): boolean {
+  function bindInStrictMode(file: qt.SourceFile, opts: qt.CompilerOpts): boolean {
     if (getStrictOptionValue(opts, 'alwaysStrict') && !file.isDeclarationFile) return true;
     else return !!file.externalModuleIndicator;
   }
-  function newSymbol(flags: SymbolFlags, name: qu.__String): Symbol {
+  function newSymbol(flags: SymbolFlags, name: qu.__String): qt.Symbol {
     symbolCount++;
-    return new Symbol(flags, name);
+    return new qt.Symbol(flags, name);
   }
-  function addDeclarationToSymbol(s: Symbol, node: qt.Declaration, f: SymbolFlags) {
+  function addDeclarationToSymbol(s: qt.Symbol, node: qt.Declaration, f: SymbolFlags) {
     s.flags |= f;
     node.symbol = s;
     s.declarations = appendIfUnique(s.declarations, node);
-    if (f & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !s.exports) s.exports = new SymbolTable();
-    if (f & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !s.members) s.members = new SymbolTable();
+    if (f & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !s.exports) s.exports = new qt.SymbolTable();
+    if (f & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !s.members) s.members = new qt.SymbolTable();
     if (s.constEnumOnlyModule && s.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.RegularEnum)) s.constEnumOnlyModule = false;
     if (f & SymbolFlags.Value) s.setValueDeclaration(node);
   }
   function getDeclarationName(node: Declaration): qu.__String | undefined {
-    if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
+    if (node.kind === Syntax.ExportAssignment) return (<qt.ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
     const name = qf.decl.nameOf(node);
     if (name) {
       if (qf.is.ambientModule(node)) {
-        const moduleName = qf.get.textOfIdentifierOrLiteral(name as Identifier | StringLiteral);
-        return (qf.is.globalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qu.__String;
+        const moduleName = qf.get.textOfIdentifierOrLiteral(name as qt.Identifier | qt.StringLiteral);
+        return (qf.is.globalScopeAugmentation(<qt.ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qu.__String;
       }
       if (name.kind === Syntax.ComputedPropertyName) {
         const nameExpression = name.expression;
         if (qf.is.stringOrNumericLiteralLike(nameExpression)) return qy.get.escUnderscores(nameExpression.text);
         if (qf.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as qu.__String;
         qu.assert(qf.is.wellKnownSymbolSyntactically(nameExpression));
-        return qu.getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
+        return qu.getPropertyNameForKnownSymbolName(idText((<qt.PropertyAccessExpression>nameExpression).name));
       }
       if (qf.is.wellKnownSymbolSyntactically(name)) return qu.getPropertyNameForKnownSymbolName(idText(name.name));
       if (name.kind === Syntax.PrivateIdentifier) {
@@ -266,7 +266,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.SourceFile:
         return InternalSymbol.ExportEquals;
       case Syntax.BinaryExpression:
-        if (qf.get.assignmentDeclarationKind(node as BinaryExpression) === qt.AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
+        if (qf.get.assignmentDeclarationKind(node as qt.BinaryExpression) === qt.AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
       case Syntax.DocFunctionTyping:
@@ -275,21 +275,21 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         qu.assert(
           node.parent.kind === Syntax.DocFunctionTyping,
           'Impossible param parent kind',
-          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected DocFunctionTyping`
+          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected qt.DocFunctionTyping`
         );
-        const functionType = <DocFunctionTyping>node.parent;
-        const index = functionType.params.indexOf(node as ParamDeclaration);
+        const functionType = <qt.DocFunctionTyping>node.parent;
+        const index = functionType.params.indexOf(node as qt.ParamDeclaration);
         return ('arg' + index) as qu.__String;
     }
   }
   function getDisplayName(node: Declaration): string {
     return qf.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
   }
-  function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, replaceable?: boolean): Symbol {
+  function declareSymbol(symbolTable: qt.SymbolTable, parent: qt.Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, replaceable?: boolean): qt.Symbol {
     qu.assert(!qf.has.dynamicName(node));
     const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (node.kind === Syntax.ExportSpecifier && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
-    let symbol: Symbol | undefined;
+    let symbol: qt.Symbol | undefined;
     if (name === undefined) {
       symbol = newSymbol(SymbolFlags.None, InternalSymbol.Missing);
     } else {
@@ -322,7 +322,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
               messageNeedsName = false;
               multipleDefaultExports = true;
             } else {
-              if (symbol.declarations && symbol.declarations.length && node.kind === Syntax.ExportAssignment && !(<ExportAssignment>node).isExportEquals) {
+              if (symbol.declarations && symbol.declarations.length && node.kind === Syntax.ExportAssignment && !(<qt.ExportAssignment>node).isExportEquals) {
                 message = qd.A_module_cannot_have_multiple_default_exports;
                 messageNeedsName = false;
                 multipleDefaultExports = true;
@@ -359,7 +359,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     } else symbol.parent = parent;
     return symbol;
   }
-  function declareModuleMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): Symbol {
+  function declareModuleMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): qt.Symbol {
     const hasExportModifier = qf.get.combinedModifierFlags(node) & ModifierFlags.Export;
     if (symbolFlags & SymbolFlags.Alias) {
       if (node.kind === Syntax.ExportSpecifier || (node.kind === Syntax.ImportEqualsDeclaration && hasExportModifier))
@@ -389,7 +389,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
       container = blockScopeContainer = node;
       if (containerFlags & ContainerFlags.HasLocals) {
-        container.locals = new SymbolTable();
+        container.locals = new qt.SymbolTable();
       }
       addToContainerChain(container);
     } else if (containerFlags & ContainerFlags.IsBlockScopedContainer) {
@@ -412,7 +412,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       if (!isIIFE) {
         currentFlow = initFlowNode({ flags: FlowFlags.Start });
         if (containerFlags & (ContainerFlags.IsFunctionExpression | ContainerFlags.IsObjectLiteralOrClassExpressionMethod)) {
-          currentFlow.node = <FunctionExpression | ArrowFunction | MethodDeclaration>node;
+          currentFlow.node = <qt.FunctionExpression | qt.ArrowFunction | qt.MethodDeclaration>node;
         }
       }
       currentReturnTarget =
@@ -510,88 +510,88 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     switch (node.kind) {
       case Syntax.WhileStatement:
-        bindWhileStatement(<WhileStatement>node);
+        bindWhileStatement(<qt.WhileStatement>node);
         break;
       case Syntax.DoStatement:
-        bindDoStatement(<DoStatement>node);
+        bindDoStatement(<qt.DoStatement>node);
         break;
       case Syntax.ForStatement:
-        bindForStatement(<ForStatement>node);
+        bindForStatement(<qt.ForStatement>node);
         break;
       case Syntax.ForInStatement:
       case Syntax.ForOfStatement:
         bindForInOrForOfStatement(<ForInOrOfStatement>node);
         break;
       case Syntax.IfStatement:
-        bindIfStatement(<IfStatement>node);
+        bindIfStatement(<qt.IfStatement>node);
         break;
       case Syntax.ReturnStatement:
       case Syntax.ThrowStatement:
-        bindReturnOrThrow(<ReturnStatement | ThrowStatement>node);
+        bindReturnOrThrow(<qt.ReturnStatement | qt.ThrowStatement>node);
         break;
       case Syntax.BreakStatement:
       case Syntax.ContinueStatement:
         bindBreakOrContinueStatement(<BreakOrContinueStatement>node);
         break;
       case Syntax.TryStatement:
-        bindTryStatement(<TryStatement>node);
+        bindTryStatement(<qt.TryStatement>node);
         break;
       case Syntax.SwitchStatement:
-        bindSwitchStatement(<SwitchStatement>node);
+        bindSwitchStatement(<qt.SwitchStatement>node);
         break;
       case Syntax.CaseBlock:
-        bindCaseBlock(<CaseBlock>node);
+        bindCaseBlock(<qt.CaseBlock>node);
         break;
       case Syntax.CaseClause:
-        bindCaseClause(<CaseClause>node);
+        bindCaseClause(<qt.CaseClause>node);
         break;
       case Syntax.ExpressionStatement:
-        bindExpressionStatement(<ExpressionStatement>node);
+        bindExpressionStatement(<qt.ExpressionStatement>node);
         break;
       case Syntax.LabeledStatement:
-        bindLabeledStatement(<LabeledStatement>node);
+        bindLabeledStatement(<qt.LabeledStatement>node);
         break;
       case Syntax.PrefixUnaryExpression:
-        bindPrefixUnaryExpressionFlow(<PrefixUnaryExpression>node);
+        bindPrefixUnaryExpressionFlow(<qt.PrefixUnaryExpression>node);
         break;
       case Syntax.PostfixUnaryExpression:
-        bindPostfixUnaryExpressionFlow(<PostfixUnaryExpression>node);
+        bindPostfixUnaryExpressionFlow(<qt.PostfixUnaryExpression>node);
         break;
       case Syntax.BinaryExpression:
-        bindBinaryExpressionFlow(<BinaryExpression>node);
+        bindBinaryExpressionFlow(<qt.BinaryExpression>node);
         break;
       case Syntax.DeleteExpression:
-        bindDeleteExpressionFlow(<DeleteExpression>node);
+        bindDeleteExpressionFlow(<qt.DeleteExpression>node);
         break;
       case Syntax.ConditionalExpression:
-        bindConditionalExpressionFlow(<ConditionalExpression>node);
+        bindConditionalExpressionFlow(<qt.ConditionalExpression>node);
         break;
       case Syntax.VariableDeclaration:
-        bindVariableDeclarationFlow(<VariableDeclaration>node);
+        bindVariableDeclarationFlow(<qt.VariableDeclaration>node);
         break;
       case Syntax.PropertyAccessExpression:
       case Syntax.ElemAccessExpression:
-        bindAccessExpressionFlow(<AccessExpression>node);
+        bindAccessExpressionFlow(<qt.AccessExpression>node);
         break;
       case Syntax.CallExpression:
-        bindCallExpressionFlow(<CallExpression>node);
+        bindCallExpressionFlow(<qt.CallExpression>node);
         break;
       case Syntax.NonNullExpression:
-        bindNonNullExpressionFlow(<NonNullExpression>node);
+        bindNonNullExpressionFlow(<qt.NonNullExpression>node);
         break;
       case Syntax.DocTypedefTag:
       case Syntax.DocCallbackTag:
       case Syntax.DocEnumTag:
-        bindDocTypeAlias(node as DocTypedefTag | DocCallbackTag | DocEnumTag);
+        bindDocTypeAlias(node as qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag);
         break;
       case Syntax.SourceFile: {
-        bindEachFunctionsFirst((node as SourceFile).statements);
-        bind((node as SourceFile).endOfFileToken);
+        bindEachFunctionsFirst((node as qt.SourceFile).statements);
+        bind((node as qt.SourceFile).endOfFileToken);
         break;
       }
       case Syntax.Block:
       case Syntax.ModuleBlock:
-        bindEachFunctionsFirst((node as Block).statements);
+        bindEachFunctionsFirst((node as qt.Block).statements);
         break;
       default:
         bindEachChild(node);
@@ -607,15 +607,15 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.ElemAccessExpression:
         return containsNarrowableReference(expr);
       case Syntax.CallExpression:
-        return hasNarrowableArg(<CallExpression>expr);
+        return hasNarrowableArg(<qt.CallExpression>expr);
       case Syntax.ParenthesizedExpression:
-        return isNarrowingExpression((<ParenthesizedExpression>expr).expression);
+        return isNarrowingExpression((<qt.ParenthesizedExpression>expr).expression);
       case Syntax.BinaryExpression:
-        return isNarrowingBinaryExpression(<BinaryExpression>expr);
+        return isNarrowingBinaryExpression(<qt.BinaryExpression>expr);
       case Syntax.PrefixUnaryExpression:
-        return (<PrefixUnaryExpression>expr).operator === Syntax.ExclamationToken && isNarrowingExpression((<PrefixUnaryExpression>expr).operand);
+        return (<qt.PrefixUnaryExpression>expr).operator === Syntax.ExclamationToken && isNarrowingExpression((<qt.PrefixUnaryExpression>expr).operand);
       case Syntax.TypeOfExpression:
-        return isNarrowingExpression((<TypeOfExpression>expr).expression);
+        return isNarrowingExpression((<qt.TypeOfExpression>expr).expression);
     }
     return false;
   }
@@ -631,13 +631,13 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function containsNarrowableReference(expr: Expression): boolean {
     return isNarrowableReference(expr) || (qf.is.optionalChain(expr) && containsNarrowableReference(expr.expression));
   }
-  function hasNarrowableArg(expr: CallExpression) {
+  function hasNarrowableArg(expr: qt.CallExpression) {
     if (expr.args) {
       for (const arg of expr.args) {
         if (containsNarrowableReference(arg)) return true;
       }
     }
-    if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) return true;
+    if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<qt.PropertyAccessExpression>expr.expression).expression)) return true;
     return false;
   }
   function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
@@ -646,7 +646,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function isNarrowableInOperands(left: Expression, right: Expression) {
     return qf.is.stringLiteralLike(left) && isNarrowingExpression(right);
   }
-  function isNarrowingBinaryExpression(expr: BinaryExpression) {
+  function isNarrowingBinaryExpression(expr: qt.BinaryExpression) {
     switch (expr.operatorToken.kind) {
       case Syntax.EqualsToken:
         return containsNarrowableReference(expr.left);
@@ -667,30 +667,30 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function isNarrowableOperand(expr: Expression): boolean {
     switch (expr.kind) {
       case Syntax.ParenthesizedExpression:
-        return isNarrowableOperand((<ParenthesizedExpression>expr).expression);
+        return isNarrowableOperand((<qt.ParenthesizedExpression>expr).expression);
       case Syntax.BinaryExpression:
-        switch ((<BinaryExpression>expr).operatorToken.kind) {
+        switch ((<qt.BinaryExpression>expr).operatorToken.kind) {
           case Syntax.EqualsToken:
-            return isNarrowableOperand((<BinaryExpression>expr).left);
+            return isNarrowableOperand((<qt.BinaryExpression>expr).left);
           case Syntax.CommaToken:
-            return isNarrowableOperand((<BinaryExpression>expr).right);
+            return isNarrowableOperand((<qt.BinaryExpression>expr).right);
         }
     }
     return containsNarrowableReference(expr);
   }
-  function createBranchLabel(): FlowLabel {
+  function createBranchLabel(): qt.FlowLabel {
     return initFlowNode({ flags: FlowFlags.BranchLabel, antecedents: undefined });
   }
-  function createLoopLabel(): FlowLabel {
+  function createLoopLabel(): qt.FlowLabel {
     return initFlowNode({ flags: FlowFlags.LoopLabel, antecedents: undefined });
   }
-  function createReduceLabel(target: FlowLabel, antecedents: FlowNode[], antecedent: FlowNode): FlowReduceLabel {
+  function createReduceLabel(target: qt.FlowLabel, antecedents: FlowNode[], antecedent: FlowNode): qt.FlowReduceLabel {
     return initFlowNode({ flags: FlowFlags.ReduceLabel, target, antecedents, antecedent });
   }
   function setFlowNodeReferenced(flow: FlowNode) {
     flow.flags |= flow.flags & FlowFlags.Referenced ? FlowFlags.Shared : FlowFlags.Referenced;
   }
-  function addAntecedent(label: FlowLabel, antecedent: FlowNode): void {
+  function addAntecedent(label: qt.FlowLabel, antecedent: FlowNode): void {
     if (!(antecedent.flags & FlowFlags.Unreachable) && !contains(label.antecedents, antecedent)) {
       (label.antecedents || (label.antecedents = [])).push(antecedent);
       setFlowNodeReferenced(antecedent);
@@ -710,11 +710,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags, antecedent, node: expression });
   }
-  function createFlowSwitchClause(antecedent: FlowNode, switchStatement: SwitchStatement, clauseStart: number, clauseEnd: number): FlowNode {
+  function createFlowSwitchClause(antecedent: FlowNode, switchStatement: qt.SwitchStatement, clauseStart: number, clauseEnd: number): FlowNode {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags: FlowFlags.SwitchClause, antecedent, switchStatement, clauseStart, clauseEnd });
   }
-  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | VariableDeclaration | ArrayBindingElem): FlowNode {
+  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | qt.VariableDeclaration | qt.ArrayBindingElem): FlowNode {
     setFlowNodeReferenced(antecedent);
     const result = initFlowNode({ flags, antecedent, node });
     if (currentExceptionTarget) {
@@ -722,11 +722,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return result;
   }
-  function createFlowCall(antecedent: FlowNode, node: CallExpression): FlowNode {
+  function createFlowCall(antecedent: FlowNode, node: qt.CallExpression): FlowNode {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags: FlowFlags.Call, antecedent, node });
   }
-  function finishFlowLabel(flow: FlowLabel): FlowNode {
+  function finishFlowLabel(flow: qt.FlowLabel): FlowNode {
     const antecedents = flow.antecedents;
     if (!antecedents) return unreachableFlow;
     if (antecedents.length === 1) return antecedents[0];
@@ -738,25 +738,25 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.IfStatement:
       case Syntax.WhileStatement:
       case Syntax.DoStatement:
-        return (<IfStatement | WhileStatement | DoStatement>parent).expression === node;
+        return (<qt.IfStatement | qt.WhileStatement | qt.DoStatement>parent).expression === node;
       case Syntax.ForStatement:
       case Syntax.ConditionalExpression:
-        return (<ForStatement | ConditionalExpression>parent).condition === node;
+        return (<qt.ForStatement | qt.ConditionalExpression>parent).condition === node;
     }
     return false;
   }
   function isLogicalExpression(node: Node) {
     while (true) {
       if (node.kind === Syntax.ParenthesizedExpression) {
-        node = (<ParenthesizedExpression>node).expression;
-      } else if (node.kind === Syntax.PrefixUnaryExpression && (<PrefixUnaryExpression>node).operator === Syntax.ExclamationToken) {
-        node = (<PrefixUnaryExpression>node).operand;
+        node = (<qt.ParenthesizedExpression>node).expression;
+      } else if (node.kind === Syntax.PrefixUnaryExpression && (<qt.PrefixUnaryExpression>node).operator === Syntax.ExclamationToken) {
+        node = (<qt.PrefixUnaryExpression>node).operand;
       } else {
         return (
           node.kind === Syntax.BinaryExpression &&
-          ((<BinaryExpression>node).operatorToken.kind === Syntax.Ampersand2Token ||
-            (<BinaryExpression>node).operatorToken.kind === Syntax.Bar2Token ||
-            (<BinaryExpression>node).operatorToken.kind === Syntax.Question2Token)
+          ((<qt.BinaryExpression>node).operatorToken.kind === Syntax.Ampersand2Token ||
+            (<qt.BinaryExpression>node).operatorToken.kind === Syntax.Bar2Token ||
+            (<qt.BinaryExpression>node).operatorToken.kind === Syntax.Question2Token)
         );
       }
     }
@@ -767,7 +767,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(qf.is.optionalChain(node.parent) && node.parent.expression === node);
   }
-  function doWithConditionalBranches<T>(action: (value: T) => void, value: T, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function doWithConditionalBranches<T>(action: (value: T) => void, value: T, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     const savedTrueTarget = currentTrueTarget;
     const savedFalseTarget = currentFalseTarget;
     currentTrueTarget = trueTarget;
@@ -776,14 +776,14 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     currentTrueTarget = savedTrueTarget;
     currentFalseTarget = savedFalseTarget;
   }
-  function bindCondition(node: Expression | undefined, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindCondition(node: Expression | undefined, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     doWithConditionalBranches(bind, node, trueTarget, falseTarget);
     if (!node || (!isLogicalExpression(node) && !(qf.is.optionalChain(node) && qf.is.outermostOptionalChain(node)))) {
       addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
       addAntecedent(falseTarget, createFlowCondition(FlowFlags.FalseCondition, currentFlow, node));
     }
   }
-  function bindIterativeStatement(node: Statement, breakTarget: FlowLabel, continueTarget: FlowLabel): void {
+  function bindIterativeStatement(node: Statement, breakTarget: qt.FlowLabel, continueTarget: qt.FlowLabel): void {
     const saveBreakTarget = currentBreakTarget;
     const saveContinueTarget = currentContinueTarget;
     currentBreakTarget = breakTarget;
@@ -792,7 +792,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     currentBreakTarget = saveBreakTarget;
     currentContinueTarget = saveContinueTarget;
   }
-  function setContinueTarget(node: Node, target: FlowLabel) {
+  function setContinueTarget(node: Node, target: qt.FlowLabel) {
     let label = activeLabelList;
     while (label && node.parent.kind === Syntax.LabeledStatement) {
       label.continueTarget = target;
@@ -801,7 +801,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return target;
   }
-  function bindWhileStatement(node: WhileStatement): void {
+  function bindWhileStatement(node: qt.WhileStatement): void {
     const preWhileLabel = setContinueTarget(node, createLoopLabel());
     const preBodyLabel = createBranchLabel();
     const postWhileLabel = createBranchLabel();
@@ -813,7 +813,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     addAntecedent(preWhileLabel, currentFlow);
     currentFlow = finishFlowLabel(postWhileLabel);
   }
-  function bindDoStatement(node: DoStatement): void {
+  function bindDoStatement(node: qt.DoStatement): void {
     const preDoLabel = createLoopLabel();
     const preConditionLabel = setContinueTarget(node, createBranchLabel());
     const postDoLabel = createBranchLabel();
@@ -825,7 +825,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     bindCondition(node.expression, preDoLabel, postDoLabel);
     currentFlow = finishFlowLabel(postDoLabel);
   }
-  function bindForStatement(node: ForStatement): void {
+  function bindForStatement(node: qt.ForStatement): void {
     const preLoopLabel = setContinueTarget(node, createLoopLabel());
     const preBodyLabel = createBranchLabel();
     const postLoopLabel = createBranchLabel();
@@ -857,7 +857,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     addAntecedent(preLoopLabel, currentFlow);
     currentFlow = finishFlowLabel(postLoopLabel);
   }
-  function bindIfStatement(node: IfStatement): void {
+  function bindIfStatement(node: qt.IfStatement): void {
     const thenLabel = createBranchLabel();
     const elseLabel = createBranchLabel();
     const postIfLabel = createBranchLabel();
@@ -870,7 +870,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     addAntecedent(postIfLabel, currentFlow);
     currentFlow = finishFlowLabel(postIfLabel);
   }
-  function bindReturnOrThrow(node: ReturnStatement | ThrowStatement): void {
+  function bindReturnOrThrow(node: qt.ReturnStatement | qt.ThrowStatement): void {
     bind(node.expression);
     if (node.kind === Syntax.ReturnStatement) {
       hasExplicitReturn = true;
@@ -886,7 +886,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return;
   }
-  function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: FlowLabel | undefined, continueTarget: FlowLabel | undefined) {
+  function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: qt.FlowLabel | undefined, continueTarget: qt.FlowLabel | undefined) {
     const flowLabel = node.kind === Syntax.BreakStatement ? breakTarget : continueTarget;
     if (flowLabel) {
       addAntecedent(flowLabel, currentFlow);
@@ -905,7 +905,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       bindBreakOrContinueFlow(node, currentBreakTarget, currentContinueTarget);
     }
   }
-  function bindTryStatement(node: TryStatement): void {
+  function bindTryStatement(node: qt.TryStatement): void {
     const saveReturnTarget = currentReturnTarget;
     const saveExceptionTarget = currentExceptionTarget;
     const normalExitLabel = createBranchLabel();
@@ -945,7 +945,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       currentFlow = finishFlowLabel(normalExitLabel);
     }
   }
-  function bindSwitchStatement(node: SwitchStatement): void {
+  function bindSwitchStatement(node: qt.SwitchStatement): void {
     const postSwitchLabel = createBranchLabel();
     bind(node.expression);
     const saveBreakTarget = currentBreakTarget;
@@ -963,7 +963,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     preSwitchCaseFlow = savePreSwitchCaseFlow;
     currentFlow = finishFlowLabel(postSwitchLabel);
   }
-  function bindCaseBlock(node: CaseBlock): void {
+  function bindCaseBlock(node: qt.CaseBlock): void {
     const savedSubtreeTrafoFlags = subtreeTrafoFlags;
     subtreeTrafoFlags = 0;
     const clauses = node.clauses;
@@ -989,23 +989,23 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     clauses.trafoFlags = subtreeTrafoFlags | TrafoFlags.HasComputedFlags;
     subtreeTrafoFlags |= savedSubtreeTrafoFlags;
   }
-  function bindCaseClause(node: CaseClause): void {
+  function bindCaseClause(node: qt.CaseClause): void {
     const saveCurrentFlow = currentFlow;
     currentFlow = preSwitchCaseFlow!;
     bind(node.expression);
     currentFlow = saveCurrentFlow;
     bindEach(node.statements);
   }
-  function bindExpressionStatement(node: ExpressionStatement): void {
+  function bindExpressionStatement(node: qt.ExpressionStatement): void {
     bind(node.expression);
     if (node.expression.kind === Syntax.CallExpression) {
-      const call = <CallExpression>node.expression;
+      const call = <qt.CallExpression>node.expression;
       if (qf.is.dottedName(call.expression) && call.expression.kind !== Syntax.SuperKeyword) {
         currentFlow = createFlowCall(currentFlow, call);
       }
     }
   }
-  function bindLabeledStatement(node: LabeledStatement): void {
+  function bindLabeledStatement(node: qt.LabeledStatement): void {
     const postStatementLabel = createBranchLabel();
     activeLabelList = {
       next: activeLabelList,
@@ -1024,8 +1024,8 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     currentFlow = finishFlowLabel(postStatementLabel);
   }
   function bindDestructuringTargetFlow(node: Expression) {
-    if (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.EqualsToken) {
-      bindAssignmentTargetFlow((<BinaryExpression>node).left);
+    if (node.kind === Syntax.BinaryExpression && (<qt.BinaryExpression>node).operatorToken.kind === Syntax.EqualsToken) {
+      bindAssignmentTargetFlow((<qt.BinaryExpression>node).left);
     } else {
       bindAssignmentTargetFlow(node);
     }
@@ -1034,15 +1034,15 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (isNarrowableReference(node)) {
       currentFlow = createFlowMutation(FlowFlags.Assignment, currentFlow, node);
     } else if (node.kind === Syntax.ArrayLiteralExpression) {
-      for (const e of (<ArrayLiteralExpression>node).elems) {
+      for (const e of (<qt.ArrayLiteralExpression>node).elems) {
         if (e.kind === Syntax.SpreadElem) {
-          bindAssignmentTargetFlow((<SpreadElem>e).expression);
+          bindAssignmentTargetFlow((<qt.SpreadElem>e).expression);
         } else {
           bindDestructuringTargetFlow(e);
         }
       }
     } else if (node.kind === Syntax.ObjectLiteralExpression) {
-      for (const p of (<ObjectLiteralExpression>node).properties) {
+      for (const p of (<qt.ObjectLiteralExpression>node).properties) {
         if (p.kind === Syntax.PropertyAssignment) {
           bindDestructuringTargetFlow(p.initer);
         } else if (p.kind === Syntax.ShorthandPropertyAssignment) {
@@ -1053,7 +1053,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindLogicalExpression(node: BinaryExpression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindLogicalExpression(node: qt.BinaryExpression, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     const preRightLabel = createBranchLabel();
     if (node.operatorToken.kind === Syntax.Ampersand2Token) {
       bindCondition(node.left, preRightLabel, falseTarget);
@@ -1064,7 +1064,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     bind(node.operatorToken);
     bindCondition(node.right, trueTarget, falseTarget);
   }
-  function bindPrefixUnaryExpressionFlow(node: PrefixUnaryExpression) {
+  function bindPrefixUnaryExpressionFlow(node: qt.PrefixUnaryExpression) {
     if (node.operator === Syntax.ExclamationToken) {
       const saveTrueTarget = currentTrueTarget;
       currentTrueTarget = currentFalseTarget;
@@ -1079,7 +1079,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindPostfixUnaryExpressionFlow(node: PostfixUnaryExpression) {
+  function bindPostfixUnaryExpressionFlow(node: qt.PostfixUnaryExpression) {
     bindEachChild(node);
     if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
       bindAssignmentTargetFlow(node.operand);
@@ -1092,9 +1092,9 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     BindRight,
     FinishBind,
   }
-  function bindBinaryExpressionFlow(node: BinaryExpression) {
+  function bindBinaryExpressionFlow(node: qt.BinaryExpression) {
     const workStacks: {
-      expr: BinaryExpression[];
+      expr: qt.BinaryExpression[];
       state: BindBinaryExpressionFlowState[];
       inStrictMode: (boolean | undefined)[];
       parent: (Node | undefined)[];
@@ -1161,7 +1161,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           if (qy.is.assignmentOperator(operator) && !qf.is.assignmentTarget(node)) {
             bindAssignmentTargetFlow(node.left);
             if (operator === Syntax.EqualsToken && node.left.kind === Syntax.ElemAccessExpression) {
-              const elemAccess = <ElemAccessExpression>node.left;
+              const elemAccess = <qt.ElemAccessExpression>node.left;
               if (isNarrowableOperand(elemAccess.expression)) {
                 currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
               }
@@ -1212,13 +1212,13 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindDeleteExpressionFlow(node: DeleteExpression) {
+  function bindDeleteExpressionFlow(node: qt.DeleteExpression) {
     bindEachChild(node);
     if (node.expression.kind === Syntax.PropertyAccessExpression) {
       bindAssignmentTargetFlow(node.expression);
     }
   }
-  function bindConditionalExpressionFlow(node: ConditionalExpression) {
+  function bindConditionalExpressionFlow(node: qt.ConditionalExpression) {
     const trueLabel = createBranchLabel();
     const falseLabel = createBranchLabel();
     const postExpressionLabel = createBranchLabel();
@@ -1233,7 +1233,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     addAntecedent(postExpressionLabel, currentFlow);
     currentFlow = finishFlowLabel(postExpressionLabel);
   }
-  function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElem) {
+  function bindInitializedVariableFlow(node: qt.VariableDeclaration | qt.ArrayBindingElem) {
     const name = node.kind !== Syntax.OmittedExpression ? node.name : undefined;
     if (name.kind === Syntax.BindingPattern) {
       for (const child of name.elems) {
@@ -1243,26 +1243,26 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       currentFlow = createFlowMutation(FlowFlags.Assignment, currentFlow, node);
     }
   }
-  function bindVariableDeclarationFlow(node: VariableDeclaration) {
+  function bindVariableDeclarationFlow(node: qt.VariableDeclaration) {
     bindEachChild(node);
     if (node.initer || qf.check.forInOrOfStatement(node.parent.parent)) {
       bindInitializedVariableFlow(node);
     }
   }
-  function bindDocTypeAlias(node: DocTypedefTag | DocCallbackTag | DocEnumTag) {
+  function bindDocTypeAlias(node: qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag) {
     node.tagName.parent = node;
     if (node.kind !== Syntax.DocEnumTag && node.fullName) {
       setParentPointers(node, node.fullName);
     }
   }
-  function bindDocClassTag(node: DocClassTag) {
+  function bindDocClassTag(node: qt.DocClassTag) {
     bindEachChild(node);
     const host = qf.get.hostSignatureFromDoc(node);
     if (host && host.kind !== Syntax.MethodDeclaration) {
       addDeclarationToSymbol(host.symbol, host, SymbolFlags.Class);
     }
   }
-  function bindOptionalExpression(node: Expression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindOptionalExpression(node: Expression, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     doWithConditionalBranches(bind, node, trueTarget, falseTarget);
     if (!qf.is.optionalChain(node) || qf.is.outermostOptionalChain(node)) {
       addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
@@ -1286,7 +1286,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         break;
     }
   }
-  function bindOptionalChain(node: OptionalChain, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindOptionalChain(node: OptionalChain, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     const preChainLabel = qf.is.optionalChainRoot(node) ? createBranchLabel() : undefined;
     bindOptionalExpression(node.expression, preChainLabel || trueTarget, falseTarget);
     if (preChainLabel) {
@@ -1307,21 +1307,21 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       bindOptionalChain(node, currentTrueTarget!, currentFalseTarget!);
     }
   }
-  function bindNonNullExpressionFlow(node: NonNullExpression | NonNullChain) {
+  function bindNonNullExpressionFlow(node: qt.NonNullExpression | qt.NonNullChain) {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
       bindEachChild(node);
     }
   }
-  function bindAccessExpressionFlow(node: AccessExpression | PropertyAccessChain | ElemAccessChain) {
+  function bindAccessExpressionFlow(node: qt.AccessExpression | qt.PropertyAccessChain | qt.ElemAccessChain) {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
       bindEachChild(node);
     }
   }
-  function bindCallExpressionFlow(node: CallExpression | CallChain) {
+  function bindCallExpressionFlow(node: qt.CallExpression | qt.CallChain) {
     if (qf.is.optionalChain(node)) {
       bindOptionalChainFlow(node);
     } else {
@@ -1338,7 +1338,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
     if (node.expression.kind === Syntax.PropertyAccessExpression) {
-      const propertyAccess = <PropertyAccessExpression>node.expression;
+      const propertyAccess = <qt.PropertyAccessExpression>node.expression;
       if (propertyAccess.name.kind === Syntax.Identifier && isNarrowableOperand(propertyAccess.expression) && qf.is.pushOrUnshiftIdentifier(propertyAccess.name)) {
         currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
       }
@@ -1384,7 +1384,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.ModuleBlock:
         return ContainerFlags.IsControlFlowContainer;
       case Syntax.PropertyDeclaration:
-        return (<PropertyDeclaration>node).initer ? ContainerFlags.IsControlFlowContainer : 0;
+        return (<qt.PropertyDeclaration>node).initer ? ContainerFlags.IsControlFlowContainer : 0;
       case Syntax.CatchClause:
       case Syntax.ForStatement:
       case Syntax.ForInStatement:
@@ -1402,7 +1402,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     lastContainer = next;
   }
-  function declareSymbolAndAddToSymbolTable(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): Symbol | undefined {
+  function declareSymbolAndAddToSymbolTable(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): qt.Symbol | undefined {
     switch (container.kind) {
       case Syntax.ModuleDeclaration:
         return declareModuleMember(node, symbolFlags, symbolExcludes);
@@ -1449,18 +1449,18 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function declareSourceFileMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
     return qf.is.externalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, undefined, node, symbolFlags, symbolExcludes);
   }
-  function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
+  function hasExportDeclarations(node: qt.ModuleDeclaration | qt.SourceFile): boolean {
     const body = node.kind === Syntax.SourceFile ? node : qu.tryCast(node.body, isModuleBlock);
     return !!body && body.statements.some((s) => s.kind === Syntax.ExportDeclaration || s.kind === Syntax.ExportAssignment);
   }
-  function setExportContextFlag(node: ModuleDeclaration | SourceFile) {
+  function setExportContextFlag(node: qt.ModuleDeclaration | qt.SourceFile) {
     if (node.flags & NodeFlags.Ambient && !hasExportDeclarations(node)) {
       node.flags |= NodeFlags.ExportContext;
     } else {
       node.flags &= ~NodeFlags.ExportContext;
     }
   }
-  function bindModuleDeclaration(node: ModuleDeclaration) {
+  function bindModuleDeclaration(node: qt.ModuleDeclaration) {
     setExportContextFlag(node);
     if (qf.is.ambientModule(node)) {
       if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
@@ -1479,7 +1479,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           }
         }
         const symbol = declareSymbolAndAddToSymbolTable(node, SymbolFlags.ValueModule, SymbolFlags.ValueModuleExcludes)!;
-        file.patternAmbientModules = append<PatternAmbientModule>(file.patternAmbientModules, pattern && { pattern, symbol });
+        file.patternAmbientModules = append<qt.PatternAmbientModule>(file.patternAmbientModules, pattern && { pattern, symbol });
       }
     } else {
       const state = declareModuleSymbol(node);
@@ -1490,21 +1490,21 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function declareModuleSymbol(node: ModuleDeclaration): ModuleInstanceState {
+  function declareModuleSymbol(node: qt.ModuleDeclaration): ModuleInstanceState {
     const state = getModuleInstanceState(node);
     const instantiated = state !== ModuleInstanceState.NonInstantiated;
     declareSymbolAndAddToSymbolTable(node, instantiated ? SymbolFlags.ValueModule : SymbolFlags.NamespaceModule, instantiated ? SymbolFlags.ValueModuleExcludes : SymbolFlags.NamespaceModuleExcludes);
     return state;
   }
-  function bindFunctionOrConstructorType(node: SignatureDeclaration | DocSignature): void {
+  function bindFunctionOrConstructorType(node: SignatureDeclaration | qt.DocSignature): void {
     const symbol = newSymbol(SymbolFlags.Signature, getDeclarationName(node)!);
     addDeclarationToSymbol(symbol, node, SymbolFlags.Signature);
     const typeLiteralSymbol = newSymbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
     addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
-    typeLiteralSymbol.members = new SymbolTable();
+    typeLiteralSymbol.members = new qt.SymbolTable();
     typeLiteralSymbol.members.set(symbol.escName, symbol);
   }
-  function bindObjectLiteralExpression(node: ObjectLiteralExpression) {
+  function bindObjectLiteralExpression(node: qt.ObjectLiteralExpression) {
     const enum ElemKind {
       Property = 1,
       Accessor = 2,
@@ -1531,10 +1531,10 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbol.Object);
   }
-  function bindJsxAttributes(node: JsxAttributes) {
+  function bindJsxAttributes(node: qt.JsxAttributes) {
     return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbol.JSXAttributes);
   }
-  function bindJsxAttribute(node: JsxAttribute, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
+  function bindJsxAttribute(node: qt.JsxAttribute, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
     return declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
   function bindAnonymousDeclaration(node: Declaration, symbolFlags: SymbolFlags, name: qu.__String) {
@@ -1551,13 +1551,13 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         declareModuleMember(node, symbolFlags, symbolExcludes);
         break;
       case Syntax.SourceFile:
-        if (qf.is.externalOrCommonJsModule(<SourceFile>container)) {
+        if (qf.is.externalOrCommonJsModule(<qt.SourceFile>container)) {
           declareModuleMember(node, symbolFlags, symbolExcludes);
           break;
         }
       default:
         if (!blockScopeContainer.locals) {
-          blockScopeContainer.locals = new SymbolTable();
+          blockScopeContainer.locals = new qt.SymbolTable();
           addToContainerChain(blockScopeContainer);
         }
         declareSymbol(blockScopeContainer.locals, undefined, node, symbolFlags, symbolExcludes);
@@ -1604,7 +1604,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
               container = declName.parent.expression;
               break;
             case qt.AssignmentDeclarationKind.PrototypeProperty:
-              container = (declName.parent.expression as PropertyAccessExpression).name;
+              container = (declName.parent.expression as qt.PropertyAccessExpression).name;
               break;
             case qt.AssignmentDeclarationKind.Property:
               container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression)
@@ -1634,7 +1634,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     parent = saveParent;
     currentFlow = saveCurrentFlow;
   }
-  function checkStrictModeIdentifier(node: Identifier) {
+  function checkStrictModeIdentifier(node: qt.Identifier) {
     if (
       inStrictMode &&
       node.originalKeywordKind! >= Syntax.FirstFutureReservedWord &&
@@ -1653,24 +1653,24 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (file.externalModuleIndicator) return qd.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Modules_are_automatically_in_strict_mode;
     return qd.Identifier_expected_0_is_a_reserved_word_in_strict_mode;
   }
-  function checkPrivateIdentifier(node: PrivateIdentifier) {
+  function checkPrivateIdentifier(node: qt.PrivateIdentifier) {
     if (node.escapedText === '#constructor') {
       if (!file.parseqd.length) {
         file.bindqd.push(createDiagnosticForNode(node, qd.constructor_is_a_reserved_word, declarationNameToString(node)));
       }
     }
   }
-  function checkStrictModeBinaryExpression(node: BinaryExpression) {
+  function checkStrictModeBinaryExpression(node: qt.BinaryExpression) {
     if (inStrictMode && qf.is.leftHandSideExpression(node.left) && qy.is.assignmentOperator(node.operatorToken.kind)) {
-      checkStrictModeEvalOrArgs(node, <Identifier>node.left);
+      checkStrictModeEvalOrArgs(node, <qt.Identifier>node.left);
     }
   }
-  function checkStrictModeCatchClause(node: CatchClause) {
+  function checkStrictModeCatchClause(node: qt.CatchClause) {
     if (inStrictMode && node.variableDeclaration) {
       checkStrictModeEvalOrArgs(node, node.variableDeclaration.name);
     }
   }
-  function checkStrictModeDeleteExpression(node: DeleteExpression) {
+  function checkStrictModeDeleteExpression(node: qt.DeleteExpression) {
     if (inStrictMode && node.expression.kind === Syntax.Identifier) {
       const span = qf.get.errorSpanForNode(file, node.expression);
       file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
@@ -1681,7 +1681,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   }
   function checkStrictModeEvalOrArgs(contextNode: Node, name: Node | undefined) {
     if (name && name.kind === Syntax.Identifier) {
-      const identifier = <Identifier>name;
+      const identifier = <qt.Identifier>name;
       if (isEvalOrArgsIdentifier(identifier)) {
         const span = qf.get.errorSpanForNode(file, name);
         file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgsMessage(contextNode), idText(identifier)));
@@ -1703,7 +1703,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (file.externalModuleIndicator) return qd.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Modules_are_automatically_in_strict_mode;
     return qd.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5;
   }
-  function checkStrictModeFunctionDeclaration(node: FunctionDeclaration) {
+  function checkStrictModeFunctionDeclaration(node: qt.FunctionDeclaration) {
     if (languageVersion < ScriptTarget.ES2015) {
       if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !qf.is.functionLike(blockScopeContainer)) {
         const errorSpan = qf.get.errorSpanForNode(file, node);
@@ -1711,29 +1711,29 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function checkStrictModeNumericLiteral(node: NumericLiteral) {
+  function checkStrictModeNumericLiteral(node: qt.NumericLiteral) {
     if (inStrictMode && node.numericLiteralFlags & TokenFlags.Octal) {
       file.bindqd.push(createDiagnosticForNode(node, qd.Octal_literals_are_not_allowed_in_strict_mode));
     }
   }
-  function checkStrictModePostfixUnaryExpression(node: PostfixUnaryExpression) {
+  function checkStrictModePostfixUnaryExpression(node: qt.PostfixUnaryExpression) {
     if (inStrictMode) {
-      checkStrictModeEvalOrArgs(node, <Identifier>node.operand);
+      checkStrictModeEvalOrArgs(node, <qt.Identifier>node.operand);
     }
   }
-  function checkStrictModePrefixUnaryExpression(node: PrefixUnaryExpression) {
+  function checkStrictModePrefixUnaryExpression(node: qt.PrefixUnaryExpression) {
     if (inStrictMode) {
       if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
-        checkStrictModeEvalOrArgs(node, <Identifier>node.operand);
+        checkStrictModeEvalOrArgs(node, <qt.Identifier>node.operand);
       }
     }
   }
-  function checkStrictModeWithStatement(node: WithStatement) {
+  function checkStrictModeWithStatement(node: qt.WithStatement) {
     if (inStrictMode) {
       errorOnFirstToken(node, qd.with_statements_are_not_allowed_in_strict_mode);
     }
   }
-  function checkStrictModeLabeledStatement(node: LabeledStatement) {
+  function checkStrictModeLabeledStatement(node: qt.LabeledStatement) {
     if (inStrictMode && opts.target! >= ScriptTarget.ES2015) {
       if (qf.is.declarationStatement(node.statement) || node.statement.kind === Syntax.VariableStatement) {
         errorOnFirstToken(node.label, qd.A_label_is_not_allowed_here);
@@ -1803,21 +1803,21 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         if (!qf.is.prologueDirective(statement)) {
           return;
         }
-        if (qf.is.useStrictPrologueDirective(<ExpressionStatement>statement)) {
+        if (qf.is.useStrictPrologueDirective(<qt.ExpressionStatement>statement)) {
           inStrictMode = true;
           return;
         }
       }
     }
   }
-  function isUseStrictPrologueDirective(node: ExpressionStatement): boolean {
+  function isUseStrictPrologueDirective(node: qt.ExpressionStatement): boolean {
     const nodeText = qf.get.sourceTextOfNodeFromSourceFile(file, node.expression);
     return nodeText === '"use strict"' || nodeText === "'use strict'";
   }
   function bindWorker(node: Node) {
     switch (node.kind) {
       case Syntax.Identifier:
-        if ((<Identifier>node).isInDocNamespace) {
+        if ((<qt.Identifier>node).isInDocNamespace) {
           let parentNode = node.parent;
           while (parentNode && !qf.is.doc.typeAlias(parentNode)) {
             parentNode = parentNode.parent;
@@ -1829,15 +1829,15 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         if (currentFlow && (qf.is.expression(node) || parent.kind === Syntax.ShorthandPropertyAssignment)) {
           node.flowNode = currentFlow;
         }
-        return checkStrictModeIdentifier(<Identifier>node);
+        return checkStrictModeIdentifier(<qt.Identifier>node);
       case Syntax.SuperKeyword:
         node.flowNode = currentFlow;
         break;
       case Syntax.PrivateIdentifier:
-        return checkPrivateIdentifier(node as PrivateIdentifier);
+        return checkPrivateIdentifier(node as qt.PrivateIdentifier);
       case Syntax.PropertyAccessExpression:
       case Syntax.ElemAccessExpression:
-        const expr = node as PropertyAccessExpression | ElemAccessExpression;
+        const expr = node as qt.PropertyAccessExpression | qt.ElemAccessExpression;
         if (currentFlow && isNarrowableReference(expr)) {
           expr.flowNode = currentFlow;
         }
@@ -1849,63 +1849,63 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         }
         break;
       case Syntax.BinaryExpression:
-        const specialKind = qf.get.assignmentDeclarationKind(node as BinaryExpression);
+        const specialKind = qf.get.assignmentDeclarationKind(node as qt.BinaryExpression);
         switch (specialKind) {
           case qt.AssignmentDeclarationKind.ExportsProperty:
-            bindExportsPropertyAssignment(node as BindableStaticPropertyAssignmentExpression);
+            bindExportsPropertyAssignment(node as qt.BindableStaticPropertyAssignmentExpression);
             break;
           case qt.AssignmentDeclarationKind.ModuleExports:
-            bindModuleExportsAssignment(node as BindablePropertyAssignmentExpression);
+            bindModuleExportsAssignment(node as qt.BindablePropertyAssignmentExpression);
             break;
           case qt.AssignmentDeclarationKind.PrototypeProperty:
-            bindPrototypePropertyAssignment((node as BindableStaticPropertyAssignmentExpression).left, node);
+            bindPrototypePropertyAssignment((node as qt.BindableStaticPropertyAssignmentExpression).left, node);
             break;
           case qt.AssignmentDeclarationKind.Prototype:
-            bindPrototypeAssignment(node as BindableStaticPropertyAssignmentExpression);
+            bindPrototypeAssignment(node as qt.BindableStaticPropertyAssignmentExpression);
             break;
           case qt.AssignmentDeclarationKind.ThisProperty:
-            bindThisNode(PropertyAssignment, node as BindablePropertyAssignmentExpression);
+            bindThisNode(PropertyAssignment, node as qt.BindablePropertyAssignmentExpression);
             break;
           case qt.AssignmentDeclarationKind.Property:
-            bindSpecialPropertyAssignment(node as BindablePropertyAssignmentExpression);
+            bindSpecialPropertyAssignment(node as qt.BindablePropertyAssignmentExpression);
             break;
           case qt.AssignmentDeclarationKind.None:
             break;
           default:
             fail('Unknown binary expression special property assignment kind');
         }
-        return checkStrictModeBinaryExpression(<BinaryExpression>node);
+        return checkStrictModeBinaryExpression(<qt.BinaryExpression>node);
       case Syntax.CatchClause:
-        return checkStrictModeCatchClause(<CatchClause>node);
+        return checkStrictModeCatchClause(<qt.CatchClause>node);
       case Syntax.DeleteExpression:
-        return checkStrictModeDeleteExpression(<DeleteExpression>node);
+        return checkStrictModeDeleteExpression(<qt.DeleteExpression>node);
       case Syntax.NumericLiteral:
-        return checkStrictModeNumericLiteral(<NumericLiteral>node);
+        return checkStrictModeNumericLiteral(<qt.NumericLiteral>node);
       case Syntax.PostfixUnaryExpression:
-        return checkStrictModePostfixUnaryExpression(<PostfixUnaryExpression>node);
+        return checkStrictModePostfixUnaryExpression(<qt.PostfixUnaryExpression>node);
       case Syntax.PrefixUnaryExpression:
-        return checkStrictModePrefixUnaryExpression(<PrefixUnaryExpression>node);
+        return checkStrictModePrefixUnaryExpression(<qt.PrefixUnaryExpression>node);
       case Syntax.WithStatement:
-        return checkStrictModeWithStatement(<WithStatement>node);
+        return checkStrictModeWithStatement(<qt.WithStatement>node);
       case Syntax.LabeledStatement:
-        return checkStrictModeLabeledStatement(<LabeledStatement>node);
+        return checkStrictModeLabeledStatement(<qt.LabeledStatement>node);
       case Syntax.ThisTyping:
         seenThisKeyword = true;
         return;
       case Syntax.TypingPredicate:
         break;
       case Syntax.TypeParam:
-        return bindTypeParam(node as TypeParamDeclaration);
+        return bindTypeParam(node as qt.TypeParamDeclaration);
       case Syntax.Param:
-        return bindParam(<ParamDeclaration>node);
+        return bindParam(<qt.ParamDeclaration>node);
       case Syntax.VariableDeclaration:
-        return bindVariableDeclarationOrBindingElem(<VariableDeclaration>node);
+        return bindVariableDeclarationOrBindingElem(<qt.VariableDeclaration>node);
       case Syntax.BindingElem:
         node.flowNode = currentFlow;
-        return bindVariableDeclarationOrBindingElem(<BindingElem>node);
+        return bindVariableDeclarationOrBindingElem(<qt.BindingElem>node);
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
-        return bindPropertyWorker(node as PropertyDeclaration | PropertySignature);
+        return bindPropertyWorker(node as qt.PropertyDeclaration | qt.PropertySignature);
       case Syntax.PropertyAssignment:
       case Syntax.ShorthandPropertyAssignment:
         return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
@@ -1919,11 +1919,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.MethodSignature:
         return bindPropertyOrMethodOrAccessor(
           <Declaration>node,
-          SymbolFlags.Method | ((<MethodDeclaration>node).questionToken ? SymbolFlags.Optional : SymbolFlags.None),
+          SymbolFlags.Method | ((<qt.MethodDeclaration>node).questionToken ? SymbolFlags.Optional : SymbolFlags.None),
           qf.is.objectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes
         );
       case Syntax.FunctionDeclaration:
-        return bindFunctionDeclaration(<FunctionDeclaration>node);
+        return bindFunctionDeclaration(<qt.FunctionDeclaration>node);
       case Syntax.Constructor:
         return declareSymbolAndAddToSymbolTable(<Declaration>node, SymbolFlags.Constructor, SymbolFlags.None);
       case Syntax.GetAccessor:
@@ -1934,34 +1934,34 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.DocFunctionTyping:
       case Syntax.DocSignature:
       case Syntax.ConstructorTyping:
-        return bindFunctionOrConstructorType(<SignatureDeclaration | DocSignature>node);
+        return bindFunctionOrConstructorType(<SignatureDeclaration | qt.DocSignature>node);
       case Syntax.TypingLiteral:
       case Syntax.DocTypingLiteral:
       case Syntax.MappedTyping:
-        return bindAnonymousTypeWorker(node as TypingLiteral | MappedTyping | DocTypingLiteral);
+        return bindAnonymousTypeWorker(node as qt.TypingLiteral | qt.MappedTyping | qt.DocTypingLiteral);
       case Syntax.DocClassTag:
-        return bindDocClassTag(node as DocClassTag);
+        return bindDocClassTag(node as qt.DocClassTag);
       case Syntax.ObjectLiteralExpression:
-        return bindObjectLiteralExpression(<ObjectLiteralExpression>node);
+        return bindObjectLiteralExpression(<qt.ObjectLiteralExpression>node);
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
-        return bindFunctionExpression(<FunctionExpression>node);
+        return bindFunctionExpression(<qt.FunctionExpression>node);
       case Syntax.CallExpression:
-        const assignmentKind = qf.get.assignmentDeclarationKind(node as CallExpression);
+        const assignmentKind = qf.get.assignmentDeclarationKind(node as qt.CallExpression);
         switch (assignmentKind) {
           case qt.AssignmentDeclarationKind.ObjectDefinePropertyValue:
-            return bindObjectDefinePropertyAssignment(node as BindableObjectDefinePropertyCall);
+            return bindObjectDefinePropertyAssignment(node as qt.BindableObjectDefinePropertyCall);
           case qt.AssignmentDeclarationKind.ObjectDefinePropertyExports:
-            return bindObjectDefinePropertyExport(node as BindableObjectDefinePropertyCall);
+            return bindObjectDefinePropertyExport(node as qt.BindableObjectDefinePropertyCall);
           case qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
-            return bindObjectDefinePrototypeProperty(node as BindableObjectDefinePropertyCall);
+            return bindObjectDefinePrototypeProperty(node as qt.BindableObjectDefinePropertyCall);
           case qt.AssignmentDeclarationKind.None:
             break;
           default:
             return fail('Unknown call expression assignment declaration kind');
         }
         if (qf.is.inJSFile(node)) {
-          bindCallExpression(<CallExpression>node);
+          bindCallExpression(<qt.CallExpression>node);
         }
         break;
       case Syntax.ClassExpression:
@@ -1973,55 +1973,55 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.TypeAliasDeclaration:
         return bindBlockScopedDeclaration(<Declaration>node, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
       case Syntax.EnumDeclaration:
-        return bindEnumDeclaration(<EnumDeclaration>node);
+        return bindEnumDeclaration(<qt.EnumDeclaration>node);
       case Syntax.ModuleDeclaration:
-        return bindModuleDeclaration(<ModuleDeclaration>node);
+        return bindModuleDeclaration(<qt.ModuleDeclaration>node);
       case Syntax.JsxAttributes:
-        return bindJsxAttributes(<JsxAttributes>node);
+        return bindJsxAttributes(<qt.JsxAttributes>node);
       case Syntax.JsxAttribute:
-        return bindJsxAttribute(<JsxAttribute>node, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
+        return bindJsxAttribute(<qt.JsxAttribute>node, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
       case Syntax.ImportEqualsDeclaration:
       case Syntax.NamespaceImport:
       case Syntax.ImportSpecifier:
       case Syntax.ExportSpecifier:
         return declareSymbolAndAddToSymbolTable(<Declaration>node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
       case Syntax.NamespaceExportDeclaration:
-        return bindNamespaceExportDeclaration(<NamespaceExportDeclaration>node);
+        return bindNamespaceExportDeclaration(<qt.NamespaceExportDeclaration>node);
       case Syntax.ImportClause:
-        return bindImportClause(<ImportClause>node);
+        return bindImportClause(<qt.ImportClause>node);
       case Syntax.ExportDeclaration:
-        return bindExportDeclaration(<ExportDeclaration>node);
+        return bindExportDeclaration(<qt.ExportDeclaration>node);
       case Syntax.ExportAssignment:
-        return bindExportAssignment(<ExportAssignment>node);
+        return bindExportAssignment(<qt.ExportAssignment>node);
       case Syntax.SourceFile:
-        updateStrictModeStatementList((<SourceFile>node).statements);
+        updateStrictModeStatementList((<qt.SourceFile>node).statements);
         return bindSourceFileIfExternalModule();
       case Syntax.Block:
         if (!qf.is.functionLike(node.parent)) {
           return;
         }
       case Syntax.ModuleBlock:
-        return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
+        return updateStrictModeStatementList((<qt.Block | qt.ModuleBlock>node).statements);
       case Syntax.DocParamTag:
-        if (node.parent.kind === Syntax.DocSignature) return bindParam(node as DocParamTag);
+        if (node.parent.kind === Syntax.DocSignature) return bindParam(node as qt.DocParamTag);
         if (node.parent.kind !== Syntax.DocTypingLiteral) {
           break;
         }
       case Syntax.DocPropertyTag:
-        const propTag = node as DocPropertyLikeTag;
+        const propTag = node as qt.DocPropertyLikeTag;
         const flags =
           propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.DocOptionalTyping) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
         return declareSymbolAndAddToSymbolTable(propTag, flags, SymbolFlags.PropertyExcludes);
       case Syntax.DocTypedefTag:
       case Syntax.DocCallbackTag:
       case Syntax.DocEnumTag:
-        return (delayedTypeAliases || (delayedTypeAliases = [])).push(node as DocTypedefTag | DocCallbackTag | DocEnumTag);
+        return (delayedTypeAliases || (delayedTypeAliases = [])).push(node as qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag);
     }
   }
-  function bindPropertyWorker(node: PropertyDeclaration | PropertySignature) {
+  function bindPropertyWorker(node: qt.PropertyDeclaration | qt.PropertySignature) {
     return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Property | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), SymbolFlags.PropertyExcludes);
   }
-  function bindAnonymousTypeWorker(node: TypingLiteral | MappedTyping | DocTypingLiteral) {
+  function bindAnonymousTypeWorker(node: qt.TypingLiteral | qt.MappedTyping | qt.DocTypingLiteral) {
     return bindAnonymousDeclaration(<Declaration>node, SymbolFlags.TypeLiteral, InternalSymbol.Type);
   }
   function bindSourceFileIfExternalModule() {
@@ -2038,7 +2038,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function bindSourceFileAsExternalModule() {
     bindAnonymousDeclaration(file, SymbolFlags.ValueModule, `"${removeFileExtension(file.fileName)}"` as qu.__String);
   }
-  function bindExportAssignment(node: ExportAssignment) {
+  function bindExportAssignment(node: qt.ExportAssignment) {
     if (!container.symbol || !container.symbol.exports) {
       bindAnonymousDeclaration(node, SymbolFlags.Alias, getDeclarationName(node)!);
     } else {
@@ -2049,7 +2049,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindNamespaceExportDeclaration(node: NamespaceExportDeclaration) {
+  function bindNamespaceExportDeclaration(node: qt.NamespaceExportDeclaration) {
     if (node.modifiers && node.modifiers.length) {
       file.bindqd.push(createDiagnosticForNode(node, qd.Modifiers_cannot_appear_here));
     }
@@ -2064,11 +2064,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (diag) {
       file.bindqd.push(createDiagnosticForNode(node, diag));
     } else {
-      file.symbol.globalExports = file.symbol.globalExports || new SymbolTable();
+      file.symbol.globalExports = file.symbol.globalExports || new qt.SymbolTable();
       declareSymbol(file.symbol.globalExports, file.symbol, node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
     }
   }
-  function bindExportDeclaration(node: ExportDeclaration) {
+  function bindExportDeclaration(node: qt.ExportDeclaration) {
     if (!container.symbol || !container.symbol.exports) {
       bindAnonymousDeclaration(node, SymbolFlags.ExportStar, getDeclarationName(node)!);
     } else if (!node.exportClause) {
@@ -2078,7 +2078,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       declareSymbol(container.symbol.exports, container.symbol, node.exportClause, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
     }
   }
-  function bindImportClause(node: ImportClause) {
+  function bindImportClause(node: qt.ImportClause) {
     if (node.name) {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
     }
@@ -2091,7 +2091,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return true;
   }
-  function bindObjectDefinePropertyExport(node: BindableObjectDefinePropertyCall) {
+  function bindObjectDefinePropertyExport(node: qt.BindableObjectDefinePropertyCall) {
     if (!setCommonJsModuleIndicator(node)) {
       return;
     }
@@ -2106,7 +2106,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       declareSymbol(symbol.exports!, symbol, node, flags, SymbolFlags.None);
     }
   }
-  function bindExportsPropertyAssignment(node: BindableStaticPropertyAssignmentExpression) {
+  function bindExportsPropertyAssignment(node: qt.BindableStaticPropertyAssignmentExpression) {
     if (!setCommonJsModuleIndicator(node)) {
       return;
     }
@@ -2121,7 +2121,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       declareSymbol(symbol.exports!, symbol, node.left, flags, SymbolFlags.None);
     }
   }
-  function bindModuleExportsAssignment(node: BindablePropertyAssignmentExpression) {
+  function bindModuleExportsAssignment(node: qt.BindablePropertyAssignmentExpression) {
     if (!setCommonJsModuleIndicator(node)) {
       return;
     }
@@ -2133,7 +2133,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     const symbol = declareSymbol(file.symbol.exports!, file.symbol, node, flags | SymbolFlags.Assignment, SymbolFlags.None);
     symbol.setValueDeclaration(node);
   }
-  function bindThisNode(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElemAccessExpression) {
+  function bindThisNode(PropertyAssignment, node: qt.BindablePropertyAssignmentExpression | qt.PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     qu.assert(qf.is.inJSFile(node));
     const hasPrivateIdentifier =
       (BinaryExpression.kind === Syntax.node && node.left.kind === Syntax.PropertyAccessExpression && node.left.name.kind === Syntax.PrivateIdentifier) ||
@@ -2145,7 +2145,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     switch (thisContainer.kind) {
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionExpression:
-        let constructorSymbol: Symbol | undefined = thisContainer.symbol;
+        let constructorSymbol: qt.Symbol | undefined = thisContainer.symbol;
         if (thisContainer.parent?.kind === Syntax.BinaryExpression && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
           const l = thisContainer.parent.left;
           if (qf.is.bindableStaticAccessExpression(l) && qf.is.prototypeAccess(l.expression)) {
@@ -2153,7 +2153,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           }
         }
         if (constructorSymbol && constructorSymbol.valueDeclaration) {
-          constructorSymbol.members = constructorSymbol.members || new SymbolTable();
+          constructorSymbol.members = constructorSymbol.members || new qt.SymbolTable();
           if (qf.has.dynamicName(node)) {
             bindDynamicallyNamedThisNode(PropertyAssignment, node, constructorSymbol);
           } else {
@@ -2178,7 +2178,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.SourceFile:
         if (qf.has.dynamicName(node)) {
           break;
-        } else if ((thisContainer as SourceFile).commonJsModuleIndicator) {
+        } else if ((thisContainer as qt.SourceFile).commonJsModuleIndicator) {
           declareSymbol(thisContainer.symbol.exports!, thisContainer.symbol, node, SymbolFlags.Property | SymbolFlags.ExportValue, SymbolFlags.None);
         } else {
           declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.FunctionScopedVariableExcludes);
@@ -2188,17 +2188,17 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         Debug.failBadSyntax(thisContainer);
     }
   }
-  function bindDynamicallyNamedThisNode(PropertyAssignment, node: BinaryExpression | DynamicNamedDecl, symbol: Symbol) {
+  function bindDynamicallyNamedThisNode(PropertyAssignment, node: qt.BinaryExpression | qt.DynamicNamedDecl, symbol: qt.Symbol) {
     bindAnonymousDeclaration(node, SymbolFlags.Property, InternalSymbol.Computed);
     addLateBoundAssignmentDeclarationToSymbol(node, symbol);
   }
-  function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDecl, symbol: Symbol | undefined) {
+  function addLateBoundAssignmentDeclarationToSymbol(node: qt.BinaryExpression | qt.DynamicNamedDecl, symbol: qt.Symbol | undefined) {
     if (symbol) {
       const members = symbol.assignmentDeclarations || (symbol.assignmentDeclarations = createMap());
       members.set('' + qf.get.nodeId(node), node);
     }
   }
-  function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElemAccessExpression) {
+  function bindSpecialPropertyDeclaration(node: qt.PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     if (node.expression.kind === Syntax.ThisKeyword) {
       bindThisNode(PropertyAssignment, node);
     } else if (qf.is.bindableStaticAccessExpression(node) && node.parent.parent.kind === Syntax.SourceFile) {
@@ -2209,40 +2209,40 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindPrototypeAssignment(node: BindableStaticPropertyAssignmentExpression) {
+  function bindPrototypeAssignment(node: qt.BindableStaticPropertyAssignmentExpression) {
     node.left.parent = node;
     node.right.parent = node;
     bindPropertyAssignment(node.left.expression, node.left, true);
   }
-  function bindObjectDefinePrototypeProperty(node: BindableObjectDefinePropertyCall) {
-    const namespaceSymbol = lookupSymbolForPropertyAccess((node.args[0] as PropertyAccessExpression).expression as EntityNameExpression);
+  function bindObjectDefinePrototypeProperty(node: qt.BindableObjectDefinePropertyCall) {
+    const namespaceSymbol = lookupSymbolForPropertyAccess((node.args[0] as qt.PropertyAccessExpression).expression as EntityNameExpression);
     if (namespaceSymbol && namespaceSymbol.valueDeclaration) {
       addDeclarationToSymbol(namespaceSymbol, namespaceSymbol.valueDeclaration, SymbolFlags.Class);
     }
     bindPotentiallyNewExpandoMemberToNamespace(node, namespaceSymbol, true);
   }
-  function bindPrototypePropertyAssignment(lhs: BindableStaticAccessExpression, parent: Node) {
-    const classPrototype = lhs.expression as BindableStaticAccessExpression;
+  function bindPrototypePropertyAssignment(lhs: qt.BindableStaticAccessExpression, parent: Node) {
+    const classPrototype = lhs.expression as qt.BindableStaticAccessExpression;
     const constructorFunction = classPrototype.expression;
     lhs.parent = parent;
     constructorFunction.parent = classPrototype;
     classPrototype.parent = lhs;
     bindPropertyAssignment(constructorFunction, lhs, true);
   }
-  function bindObjectDefinePropertyAssignment(node: BindableObjectDefinePropertyCall) {
+  function bindObjectDefinePropertyAssignment(node: qt.BindableObjectDefinePropertyCall) {
     let namespaceSymbol = lookupSymbolForPropertyAccess(node.args[0]);
     const isToplevel = node.parent.parent.kind === Syntax.SourceFile;
     namespaceSymbol = bindPotentiallyMissingNamespaces(namespaceSymbol, node.args[0], isToplevel, false);
     bindPotentiallyNewExpandoMemberToNamespace(node, namespaceSymbol, false);
   }
-  function bindSpecialPropertyAssignment(node: BindablePropertyAssignmentExpression) {
+  function bindSpecialPropertyAssignment(node: qt.BindablePropertyAssignmentExpression) {
     const parentSymbol = lookupSymbolForPropertyAccess(node.left.expression, container) || lookupSymbolForPropertyAccess(node.left.expression, blockScopeContainer);
     if (!qf.is.inJSFile(node) && !parentSymbol.isFunction()) return;
 
     node.left.parent = node;
     node.right.parent = node;
     if (node.left.expression.kind === Syntax.Identifier && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
-      bindExportsPropertyAssignment(node as BindableStaticPropertyAssignmentExpression);
+      bindExportsPropertyAssignment(node as qt.BindableStaticPropertyAssignmentExpression);
     } else if (qf.has.dynamicName(node)) {
       bindAnonymousDeclaration(node, SymbolFlags.Property | SymbolFlags.Assignment, InternalSymbol.Computed);
       const sym = bindPotentiallyMissingNamespaces(parentSymbol, node.left.expression, isTopLevelNamespaceAssignment(node.left), false);
@@ -2251,14 +2251,14 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       bindStaticPropertyAssignment(cast(node.left, isBindableStaticNameExpression));
     }
   }
-  function bindStaticPropertyAssignment(node: BindableStaticNameExpression) {
+  function bindStaticPropertyAssignment(node: qt.BindableStaticNameExpression) {
     qu.assert(!node.kind === Syntax.Identifier);
     node.expression.parent = node;
     bindPropertyAssignment(node.expression, node, false);
   }
   function bindPotentiallyMissingNamespaces(
-    namespaceSymbol: Symbol | undefined,
-    entityName: BindableStaticNameExpression,
+    namespaceSymbol: qt.Symbol | undefined,
+    entityName: qt.BindableStaticNameExpression,
     isToplevel: boolean,
     isPrototypeProperty: boolean,
     containerIsClass: boolean
@@ -2271,7 +2271,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           addDeclarationToSymbol(symbol, id, flags);
           return symbol;
         } else {
-          const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = new SymbolTable());
+          const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = new qt.SymbolTable());
           return declareSymbol(table, parent, id, flags, excludeFlags);
         }
       });
@@ -2281,11 +2281,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return namespaceSymbol;
   }
-  function bindPotentiallyNewExpandoMemberToNamespace(declaration: BindableStaticAccessExpression | CallExpression, namespaceSymbol: Symbol | undefined, isPrototypeProperty: boolean) {
+  function bindPotentiallyNewExpandoMemberToNamespace(declaration: qt.BindableStaticAccessExpression | qt.CallExpression, namespaceSymbol: qt.Symbol | undefined, isPrototypeProperty: boolean) {
     if (!namespaceSymbol || !isExpandoSymbol(namespaceSymbol)) {
       return;
     }
-    const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = new SymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = new SymbolTable());
+    const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = new qt.SymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = new qt.SymbolTable());
     let includes = SymbolFlags.None;
     let excludes = SymbolFlags.None;
     if (qf.is.functionLikeDeclaration(qf.get.assignedExpandoIniter(declaration)!)) {
@@ -2317,18 +2317,18 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     declareSymbol(symbolTable, namespaceSymbol, declaration, includes | SymbolFlags.Assignment, excludes & ~SymbolFlags.Assignment);
   }
-  function isTopLevelNamespaceAssignment(propertyAccess: BindableAccessExpression) {
+  function isTopLevelNamespaceAssignment(propertyAccess: qt.BindableAccessExpression) {
     return propertyAccess.parent.kind === Syntax.BinaryExpression
       ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === Syntax.SourceFile
       : propertyAccess.parent.parent.kind === Syntax.SourceFile;
   }
-  function bindPropertyAssignment(name: BindableStaticNameExpression, propertyAccess: BindableStaticAccessExpression, isPrototypeProperty: boolean, containerIsClass: boolean) {
+  function bindPropertyAssignment(name: qt.BindableStaticNameExpression, propertyAccess: qt.BindableStaticAccessExpression, isPrototypeProperty: boolean, containerIsClass: boolean) {
     let namespaceSymbol = lookupSymbolForPropertyAccess(name, container) || lookupSymbolForPropertyAccess(name, blockScopeContainer);
     const isToplevel = isTopLevelNamespaceAssignment(propertyAccess);
     namespaceSymbol = bindPotentiallyMissingNamespaces(namespaceSymbol, propertyAccess.expression, isToplevel, isPrototypeProperty, containerIsClass);
     bindPotentiallyNewExpandoMemberToNamespace(propertyAccess, namespaceSymbol, isPrototypeProperty);
   }
-  function isExpandoSymbol(symbol: Symbol): boolean {
+  function isExpandoSymbol(symbol: qt.Symbol): boolean {
     if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) return true;
     const node = symbol.valueDeclaration;
     if (node && node.kind === Syntax.CallExpression) return !!qf.get.assignedExpandoIniter(node);
@@ -2357,7 +2357,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return expr.parent;
   }
-  function lookupSymbolForPropertyAccess(node: BindableStaticNameExpression, lookupContainer: Node = container): Symbol | undefined {
+  function lookupSymbolForPropertyAccess(node: qt.BindableStaticNameExpression, lookupContainer: Node = container): qt.Symbol | undefined {
     if (node.kind === Syntax.Identifier) return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
     else {
       const symbol = lookupSymbolForPropertyAccess(node.expression);
@@ -2365,22 +2365,22 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
   }
   function forEachIdentifierInEntityName(
-    e: BindableStaticNameExpression,
-    parent: Symbol | undefined,
-    action: (e: Declaration, symbol: Symbol | undefined, parent: Symbol | undefined) => Symbol | undefined
-  ): Symbol | undefined {
+    e: qt.BindableStaticNameExpression,
+    parent: qt.Symbol | undefined,
+    action: (e: Declaration, symbol: qt.Symbol | undefined, parent: qt.Symbol | undefined) => qt.Symbol | undefined
+  ): qt.Symbol | undefined {
     if (isExportsOrModuleExportsOrAlias(file, e)) return file.symbol;
     if (e.kind === Syntax.Identifier) return action(e, lookupSymbolForPropertyAccess(e), parent);
     else {
       const s = forEachIdentifierInEntityName(e.expression, parent, action);
       const name = qf.get.nameOrArg(e);
       if (name.kind === Syntax.PrivateIdentifier) {
-        fail('unexpected PrivateIdentifier');
+        fail('unexpected qt.PrivateIdentifier');
       }
       return action(name, s && s.exports && s.exports.get(qf.get.elemOrPropertyAccessName(e)), s);
     }
   }
-  function bindCallExpression(node: CallExpression) {
+  function bindCallExpression(node: qt.CallExpression) {
     if (!file.commonJsModuleIndicator && qf.is.requireCall(node, false)) {
       setCommonJsModuleIndicator(node);
     }
@@ -2407,12 +2407,12 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     symbol.exports!.set(prototypeSymbol.escName, prototypeSymbol);
     prototypeSymbol.parent = symbol;
   }
-  function bindEnumDeclaration(node: EnumDeclaration) {
+  function bindEnumDeclaration(node: qt.EnumDeclaration) {
     return qf.is.enumConst(node)
       ? bindBlockScopedDeclaration(node, SymbolFlags.ConstEnum, SymbolFlags.ConstEnumExcludes)
       : bindBlockScopedDeclaration(node, SymbolFlags.RegularEnum, SymbolFlags.RegularEnumExcludes);
   }
-  function bindVariableDeclarationOrBindingElem(node: VariableDeclaration | BindingElem) {
+  function bindVariableDeclarationOrBindingElem(node: qt.VariableDeclaration | qt.BindingElem) {
     if (inStrictMode) {
       checkStrictModeEvalOrArgs(node, node.name);
     }
@@ -2426,7 +2426,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       }
     }
   }
-  function bindParam(node: ParamDeclaration | DocParamTag) {
+  function bindParam(node: qt.ParamDeclaration | qt.DocParamTag) {
     if (node.kind === Syntax.DocParamTag && container.kind !== Syntax.DocSignature) {
       return;
     }
@@ -2434,7 +2434,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       checkStrictModeEvalOrArgs(node, node.name);
     }
     if (node.name.kind === Syntax.BindingPattern) {
-      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParamDeclaration).parent.params.indexOf(node as ParamDeclaration)) as qu.__String);
+      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as qt.ParamDeclaration).parent.params.indexOf(node as qt.ParamDeclaration)) as qu.__String);
     } else {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParamExcludes);
     }
@@ -2449,7 +2449,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       );
     }
   }
-  function bindFunctionDeclaration(node: FunctionDeclaration) {
+  function bindFunctionDeclaration(node: qt.FunctionDeclaration) {
     if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
       if (qf.is.asyncFunction(node)) {
         emitFlags |= NodeFlags.HasAsyncFunctions;
@@ -2463,7 +2463,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.Function, SymbolFlags.FunctionExcludes);
     }
   }
-  function bindFunctionExpression(node: FunctionExpression) {
+  function bindFunctionExpression(node: qt.FunctionExpression) {
     if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
       if (qf.is.asyncFunction(node)) {
         emitFlags |= NodeFlags.HasAsyncFunctions;
@@ -2485,16 +2485,16 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     return qf.has.dynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbol.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
-  function getInferTypeContainer(node: Node): ConditionalTyping | undefined {
+  function getInferTypeContainer(node: Node): qt.ConditionalTyping | undefined {
     const extendsType = qc.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalTyping && n.parent.extendsType === n);
-    return extendsType && (extendsType.parent as ConditionalTyping);
+    return extendsType && (extendsType.parent as qt.ConditionalTyping);
   }
-  function bindTypeParam(node: TypeParamDeclaration) {
+  function bindTypeParam(node: qt.TypeParamDeclaration) {
     if (node.parent.kind === Syntax.DocTemplateTag) {
-      const container = find((node.parent.parent as Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
+      const container = find((node.parent.parent as qt.Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
-          container.locals = new SymbolTable();
+          container.locals = new qt.SymbolTable();
         }
         declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
       } else {
@@ -2504,7 +2504,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       const container = getInferTypeContainer(node.parent);
       if (container) {
         if (!container.locals) {
-          container.locals = new SymbolTable();
+          container.locals = new qt.SymbolTable();
         }
         declareSymbol(container.locals, undefined, node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
       } else {
@@ -2514,7 +2514,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParam, SymbolFlags.TypeParamExcludes);
     }
   }
-  function shouldReportErrorOnModuleDeclaration(node: ModuleDeclaration): boolean {
+  function shouldReportErrorOnModuleDeclaration(node: qt.ModuleDeclaration): boolean {
     const instanceState = getModuleInstanceState(node);
     return instanceState === ModuleInstanceState.Instantiated || (instanceState === ModuleInstanceState.ConstEnumOnly && !!opts.preserveConstEnums);
   }
@@ -2524,7 +2524,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       const reportError =
         (qf.is.statementButNotDeclaration(node) && node.kind !== Syntax.EmptyStatement) ||
         node.kind === Syntax.ClassDeclaration ||
-        (node.kind === Syntax.ModuleDeclaration && shouldReportErrorOnModuleDeclaration(<ModuleDeclaration>node));
+        (node.kind === Syntax.ModuleDeclaration && shouldReportErrorOnModuleDeclaration(<qt.ModuleDeclaration>node));
       if (reportError) {
         currentFlow = reportedUnreachableFlow;
         if (!opts.allowUnreachableCode) {
@@ -2562,14 +2562,14 @@ function isPurelyTypeDeclaration(s: Statement): boolean {
     case Syntax.TypeAliasDeclaration:
       return true;
     case Syntax.ModuleDeclaration:
-      return getModuleInstanceState(s as ModuleDeclaration) !== ModuleInstanceState.Instantiated;
+      return getModuleInstanceState(s as qt.ModuleDeclaration) !== ModuleInstanceState.Instantiated;
     case Syntax.EnumDeclaration:
       return qf.has.syntacticModifier(s, ModifierFlags.Const);
     default:
       return false;
   }
 }
-export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Expression): boolean {
+export function isExportsOrModuleExportsOrAlias(sourceFile: qt.SourceFile, node: Expression): boolean {
   let i = 0;
   const q = [node];
   while (q.length && i < 100) {
@@ -2590,7 +2590,7 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
   }
   return false;
 }
-function lookupSymbolForNameWorker(container: Node, name: qu.__String): Symbol | undefined {
+function lookupSymbolForNameWorker(container: Node, name: qu.__String): qt.Symbol | undefined {
   const local = container.locals && container.locals.get(name);
   if (local) return local.exportSymbol || local;
   if (container.kind === Syntax.SourceFile && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);
@@ -2600,7 +2600,7 @@ function setParentPointers(parent: Node, child: Node): void {
   child.parent = parent;
   qf.each.child(child, (grandchild) => setParentPointers(child, grandchild));
 }
-function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElemAccessExpression): expr is PropertyAccessExpression | LiteralLikeElemAccessExpression {
+function isSpecialPropertyDeclaration(expr: qt.PropertyAccessExpression | qt.ElemAccessExpression): expr is qt.PropertyAccessExpression | LiteralLikeElemAccessExpression {
   return (
     qf.is.inJSFile(expr) &&
     expr.parent &&

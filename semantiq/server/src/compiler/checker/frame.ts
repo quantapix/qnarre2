@@ -43,10 +43,10 @@ export const nullWideningType = strictNullChecks ? nullType : qf.create.intrinsi
 export const stringType = qf.create.intrinsicType(TypeFlags.String, 'string');
 export const numberType = qf.create.intrinsicType(TypeFlags.Number, 'number');
 export const bigintType = qf.create.intrinsicType(TypeFlags.BigInt, 'bigint');
-export const falseType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'false') as FreshableIntrinsicType;
-export const regularFalseType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'false') as FreshableIntrinsicType;
-export const trueType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'true') as FreshableIntrinsicType;
-export const regularTrueType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'true') as FreshableIntrinsicType;
+export const falseType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'false') as qt.FreshableIntrinsicType;
+export const regularFalseType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'false') as qt.FreshableIntrinsicType;
+export const trueType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'true') as qt.FreshableIntrinsicType;
+export const regularTrueType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'true') as qt.FreshableIntrinsicType;
 trueType.regularType = regularTrueType;
 trueType.freshType = trueType;
 regularTrueType.regularType = regularTrueType;
@@ -70,16 +70,16 @@ export const nonPrimitiveType = qf.create.intrinsicType(TypeFlags.NonPrimitive, 
 export const stringNumberSymbolType = qf.get.unionType([stringType, numberType, esSymbolType]);
 export const keyofConstraintType = keyofStringsOnly ? stringType : stringNumberSymbolType;
 export const numberOrBigIntType = qf.get.unionType([numberType, bigintType]);
-export const restrictiveMapper: TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? getRestrictiveTypeParam(<TypeParam>t) : t));
+export const restrictiveMapper: TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? getRestrictiveTypeParam(<qt.TypeParam>t) : t));
 export const permissiveMapper: TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? wildcardType : t));
 export const emptyObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 export const emptyJsxObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 emptyJsxObjectType.objectFlags |= ObjectFlags.JsxAttributes;
-export const emptyTypeLiteralSymbol = new Symbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
-emptyTypeLiteralSymbol.members = new SymbolTable();
+export const emptyTypeLiteralSymbol = new qt.Symbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
+emptyTypeLiteralSymbol.members = new qt.SymbolTable();
 export const emptyTypeLiteralType = qf.create.anonymousType(emptyTypeLiteralSymbol, emptySymbols, qu.empty, qu.empty, undefined, undefined);
-export const emptyGenericType = <GenericType>(<ObjectType>qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined));
-emptyGenericType.instantiations = new qu.QMap<TypeReference>();
+export const emptyGenericType = <qt.GenericType>(<qt.ObjectType>qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined));
+emptyGenericType.instantiations = new qu.QMap<qt.TypeReference>();
 export const anyFunctionType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 anyFunctionType.objectFlags |= ObjectFlags.NonInferrableType;
 export const noConstraintType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
@@ -95,15 +95,15 @@ export const unknownSignature = qf.create.signature(undefined, undefined, undefi
 export const resolvingSignature = qf.create.signature(undefined, undefined, undefined, qu.empty, anyType, undefined, 0, SignatureFlags.None);
 export const silentNeverSignature = qf.create.signature(undefined, undefined, undefined, qu.empty, silentNeverType, undefined, 0, SignatureFlags.None);
 export const enumNumberIndexInfo = qf.create.indexInfo(stringType, true);
-export const iterationTypesCache = new qu.QMap<IterationTypes>();
-export const noIterationTypes: IterationTypes = {
-  get yieldType(): Type {
+export const iterationTypesCache = new qu.QMap<qt.IterationTypes>();
+export const noIterationTypes: qt.IterationTypes = {
+  get yieldType(): qt.Type {
     return qu.fail('Not supported');
   },
-  get returnType(): Type {
+  get returnType(): qt.Type {
     return qu.fail('Not supported');
   },
-  get nextType(): Type {
+  get nextType(): qt.Type {
     return qu.fail('Not supported');
   },
 };

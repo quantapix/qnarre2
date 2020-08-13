@@ -81,11 +81,11 @@ export interface SolutionBuilderHostBase<T extends BuilderProgram> extends Progr
   getModifiedTime(fileName: string): Date | undefined;
   setModifiedTime(fileName: string, date: Date): void;
   deleteFile(fileName: string): void;
-  getParsedCommandLine?(fileName: string): ParsedCommandLine | undefined;
+  getParsedCommandLine?(fileName: string): qt.ParsedCommandLine | undefined;
   reportDiagnostic: DiagnosticReporter;
   reportSolutionBuilderStatus: DiagnosticReporter;
   afterProgramEmitAndDiagnostics?(program: T): void;
-  afterEmitBundle?(config: ParsedCommandLine): void;
+  afterEmitBundle?(config: qt.ParsedCommandLine): void;
   now?(): Date;
 }
 export interface SolutionBuilderHost<T extends BuilderProgram> extends SolutionBuilderHostBase<T> {
@@ -105,16 +105,16 @@ export function getBuildOrderFromAnyBuildOrder(anyBuildOrder: AnyBuildOrder): Bu
   return isCircularBuildOrder(anyBuildOrder) ? anyBuildOrder.buildOrder : anyBuildOrder;
 }
 export interface SolutionBuilder<T extends BuilderProgram> {
-  build(project?: string, cancellationToken?: CancellationToken): ExitStatus;
+  build(project?: string, cancellationToken?: qt.CancellationToken): ExitStatus;
   clean(project?: string): ExitStatus;
-  buildReferences(project: string, cancellationToken?: CancellationToken): ExitStatus;
+  buildReferences(project: string, cancellationToken?: qt.CancellationToken): ExitStatus;
   cleanReferences(project?: string): ExitStatus;
-  getNextInvalidatedProject(cancellationToken?: CancellationToken): InvalidatedProject<T> | undefined;
+  getNextInvalidatedProject(cancellationToken?: qt.CancellationToken): InvalidatedProject<T> | undefined;
   getBuildOrder(): AnyBuildOrder;
   getUpToDateStatusOfProject(project: string): UpToDateStatus;
   invalidateProject(configFilePath: ResolvedConfigFilePath, reloadLevel?: ConfigFileProgramReloadLevel): void;
   buildNextInvalidatedProject(): void;
-  getAllParsedConfigs(): readonly ParsedCommandLine[];
+  getAllParsedConfigs(): readonly qt.ParsedCommandLine[];
   close(): void;
 }
 export function createBuilderStatusReporter(system: System, pretty?: boolean): DiagnosticReporter {
@@ -162,8 +162,8 @@ export function createSolutionBuilderWithWatchHost<T extends BuilderProgram = Em
   copyProperties(host, watchHost);
   return host;
 }
-function getCompilerOptsOfBuildOpts(buildOpts: BuildOpts): CompilerOpts {
-  const result = {} as CompilerOpts;
+function getCompilerOptsOfBuildOpts(buildOpts: BuildOpts): qt.CompilerOpts {
+  const result = {} as qt.CompilerOpts;
   commonOptsWithBuild.forEach((option) => {
     if (hasProperty(buildOpts, option.name)) result[option.name] = buildOpts[option.name];
   });
@@ -176,19 +176,19 @@ export function createSolutionBuilderWithWatch<T extends BuilderProgram>(
   host: SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
   defaultOpts: BuildOpts,
-  baseWatchOpts?: WatchOpts
+  baseWatchOpts?: qt.WatchOpts
 ): SolutionBuilder<T> {
   return createSolutionBuilderWorker(true, host, rootNames, defaultOpts, baseWatchOpts);
 }
-type ConfigFileCacheEntry = ParsedCommandLine | Diagnostic;
+type ConfigFileCacheEntry = qt.ParsedCommandLine | Diagnostic;
 interface SolutionBuilderStateCache {
-  originalReadFile: CompilerHost['readFile'];
-  originalFileExists: CompilerHost['fileExists'];
-  originalDirectoryExists: CompilerHost['directoryExists'];
-  originalCreateDirectory: CompilerHost['createDirectory'];
-  originalWriteFile: CompilerHost['writeFile'] | undefined;
-  originalReadFileWithCache: CompilerHost['readFile'];
-  originalGetSourceFile: CompilerHost['getSourceFile'];
+  originalReadFile: qt.CompilerHost['readFile'];
+  originalFileExists: qt.CompilerHost['fileExists'];
+  originalDirectoryExists: qt.CompilerHost['directoryExists'];
+  originalCreateDirectory: qt.CompilerHost['createDirectory'];
+  originalWriteFile: qt.CompilerHost['writeFile'] | undefined;
+  originalReadFileWithCache: qt.CompilerHost['readFile'];
+  originalGetSourceFile: qt.CompilerHost['getSourceFile'];
 }
 interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly host: SolutionBuilderHost<T>;
@@ -198,9 +198,9 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly parseConfigFileHost: ParseConfigFileHost;
   readonly writeFileName: ((s: string) => void) | undefined;
   readonly opts: BuildOpts;
-  readonly baseCompilerOpts: CompilerOpts;
+  readonly baseCompilerOpts: qt.CompilerOpts;
   readonly rootNames: readonly string[];
-  readonly baseWatchOpts: WatchOpts | undefined;
+  readonly baseWatchOpts: qt.WatchOpts | undefined;
   readonly resolvedConfigFilePaths: Map<ResolvedConfigFilePath>;
   readonly configFileCache: ConfigFileMap<ConfigFileCacheEntry>;
   readonly projectStatus: ConfigFileMap<UpToDateStatus>;
@@ -210,11 +210,11 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly diagnostics: ConfigFileMap<readonly Diagnostic[]>;
   readonly projectPendingBuild: ConfigFileMap<ConfigFileProgramReloadLevel>;
   readonly projectErrorsReported: ConfigFileMap<true>;
-  readonly compilerHost: CompilerHost;
+  readonly compilerHost: qt.CompilerHost;
   readonly moduleResolutionCache: ModuleResolutionCache | undefined;
   buildOrder: AnyBuildOrder | undefined;
   readFileWithCache: (f: string) => string | undefined;
-  projectCompilerOpts: CompilerOpts;
+  projectCompilerOpts: qt.CompilerOpts;
   cache: SolutionBuilderStateCache | undefined;
   allProjectBuildPending: boolean;
   needsSummary: boolean;
@@ -236,7 +236,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
   hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
   opts: BuildOpts,
-  baseWatchOpts: WatchOpts | undefined
+  baseWatchOpts: qt.WatchOpts | undefined
 ): SolutionBuilderState<T> {
   const host = hostOrHostWithWatch as SolutionBuilderHost<T>;
   const hostWithWatch = hostOrHostWithWatch as SolutionBuilderWithWatchHost<T>;
@@ -250,10 +250,10 @@ function createSolutionBuilderState<T extends BuilderProgram>(
   compilerHost.resolveTypeReferenceDirectives = maybeBind(host, host.resolveTypeReferenceDirectives);
   const moduleResolutionCache = !compilerHost.resolveModuleNames ? createModuleResolutionCache(currentDirectory, getCanonicalFileName) : undefined;
   if (!compilerHost.resolveModuleNames) {
-    const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
+    const loader = (moduleName: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveModuleName(moduleName, containingFile, state.projectCompilerOpts, compilerHost, moduleResolutionCache, redirectedReference).resolvedModule!;
     compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
-      loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
   const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<ResolvedConfigFileName>(hostWithWatch, opts);
   const state: SolutionBuilderState<T> = {
@@ -310,16 +310,16 @@ function toResolvedConfigFilePath(state: SolutionBuilderState, fileName: Resolve
   resolvedConfigFilePaths.set(fileName, resolvedPath);
   return resolvedPath;
 }
-function isParsedCommandLine(entry: ConfigFileCacheEntry): entry is ParsedCommandLine {
-  return !!(entry as ParsedCommandLine).opts;
+function isParsedCommandLine(entry: ConfigFileCacheEntry): entry is qt.ParsedCommandLine {
+  return !!(entry as qt.ParsedCommandLine).opts;
 }
-function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): ParsedCommandLine | undefined {
+function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): qt.ParsedCommandLine | undefined {
   const { configFileCache } = state;
   const value = configFileCache.get(configFilePath);
   if (value) return isParsedCommandLine(value) ? value : undefined;
   let diagnostic: Diagnostic | undefined;
   const { parseConfigFileHost, baseCompilerOpts, baseWatchOpts, extendedConfigCache, host } = state;
-  let parsed: ParsedCommandLine | undefined;
+  let parsed: qt.ParsedCommandLine | undefined;
   if (host.getParsedCommandLine) {
     parsed = host.getParsedCommandLine(configFileName);
     if (!parsed) diagnostic = createCompilerDiagnostic(qd.File_0_not_found, configFileName);
@@ -466,7 +466,7 @@ function addProjToQueue({ projectPendingBuild }: SolutionBuilderState, proj: Res
     projectPendingBuild.set(proj, reloadLevel);
   }
 }
-function setupInitialBuild(state: SolutionBuilderState, cancellationToken: CancellationToken | undefined) {
+function setupInitialBuild(state: SolutionBuilderState, cancellationToken: qt.CancellationToken | undefined) {
   if (!state.allProjectBuildPending) return;
   state.allProjectBuildPending = false;
   if (state.opts.watch) {
@@ -489,8 +489,8 @@ export interface InvalidatedProjectBase {
   readonly project: ResolvedConfigFileName;
   readonly projectPath: ResolvedConfigFilePath;
   readonly buildOrder: readonly ResolvedConfigFileName[];
-  done(cancellationToken?: CancellationToken, writeFile?: WriteFileCallback, customTransformers?: CustomTransformers): ExitStatus;
-  getCompilerOpts(): CompilerOpts;
+  done(cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers): ExitStatus;
+  getCompilerOpts(): qt.CompilerOpts;
   getCurrentDirectory(): string;
 }
 export interface UpdateOutputFileStampsProject extends InvalidatedProjectBase {
@@ -500,27 +500,27 @@ export interface UpdateOutputFileStampsProject extends InvalidatedProjectBase {
 export interface BuildInvalidedProject<T extends BuilderProgram> extends InvalidatedProjectBase {
   readonly kind: InvalidatedProjectKind.Build;
   getBuilderProgram(): T | undefined;
-  getProgram(): Program | undefined;
-  getSourceFile(fileName: string): SourceFile | undefined;
-  getSourceFiles(): readonly SourceFile[];
-  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
+  getProgram(): qt.Program | undefined;
+  getSourceFile(fileName: string): qt.SourceFile | undefined;
+  getSourceFiles(): readonly qt.SourceFile[];
+  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getAllDependencies(sourceFile: SourceFile): readonly string[];
-  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getAllDependencies(sourceFile: qt.SourceFile): readonly string[];
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
   emit(
-    targetSourceFile?: SourceFile,
+    targetSourceFile?: qt.SourceFile,
     writeFile?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
+    cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
-    customTransformers?: CustomTransformers
-  ): EmitResult | undefined;
+    customTransformers?: qt.CustomTransformers
+  ): qt.EmitResult | undefined;
 }
 export interface UpdateBundleProject<T extends BuilderProgram> extends InvalidatedProjectBase {
   readonly kind: InvalidatedProjectKind.UpdateBundle;
-  emit(writeFile?: WriteFileCallback, customTransformers?: CustomTransformers): EmitResult | BuildInvalidedProject<T> | undefined;
+  emit(writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined;
 }
 export type InvalidatedProject<T extends BuilderProgram> = UpdateOutputFileStampsProject | BuildInvalidedProject<T> | UpdateBundleProject<T>;
 function doneInvalidatedProject(state: SolutionBuilderState, projectPath: ResolvedConfigFilePath) {
@@ -532,7 +532,7 @@ function createUpdateOutputFileStampsProject(
   state: SolutionBuilderState,
   project: ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
-  config: ParsedCommandLine,
+  config: qt.ParsedCommandLine,
   buildOrder: readonly ResolvedConfigFileName[]
 ): UpdateOutputFileStampsProject {
   let updateOutputFileStampsPending = true;
@@ -561,7 +561,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
   project: ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
   projectIndex: number,
-  config: ParsedCommandLine,
+  config: qt.ParsedCommandLine,
   buildOrder: readonly ResolvedConfigFileName[]
 ): BuildInvalidedProject<T> | UpdateBundleProject<T> {
   enum Step {
@@ -617,13 +617,13 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         buildOrder,
         getCompilerOpts: () => config.opts,
         getCurrentDirectory: () => state.currentDirectory,
-        emit: (writeFile: WriteFileCallback | undefined, customTransformers: CustomTransformers | undefined) => {
+        emit: (writeFile: WriteFileCallback | undefined, customTransformers: qt.CustomTransformers | undefined) => {
           if (step !== Step.EmitBundle) return invalidatedProjectOfBundle;
           return emitBundle(writeFile, customTransformers);
         },
         done,
       };
-  function done(cancellationToken?: CancellationToken, writeFile?: WriteFileCallback, customTransformers?: CustomTransformers) {
+  function done(cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers) {
     executeSteps(Step.Done, cancellationToken, writeFile, customTransformers);
     return doneInvalidatedProject(state, projectPath);
   }
@@ -663,7 +663,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       step++;
     }
   }
-  function getSyntaxDiagnostics(cancellationToken?: CancellationToken) {
+  function getSyntaxDiagnostics(cancellationToken?: qt.CancellationToken) {
     Debug.assertIsDefined(program);
     handleDiagnostics(
       [
@@ -676,10 +676,10 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       'Syntactic'
     );
   }
-  function getSemanticDiagnostics(cancellationToken?: CancellationToken) {
+  function getSemanticDiagnostics(cancellationToken?: qt.CancellationToken) {
     handleDiagnostics(Debug.checkDefined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
   }
-  function emit(writeFileCallback?: WriteFileCallback, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers): EmitResult {
+  function emit(writeFileCallback?: WriteFileCallback, cancellationToken?: qt.CancellationToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
     Debug.assertIsDefined(program);
     assert(step === Step.Emit);
     program.backupState();
@@ -768,7 +768,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     buildResult = resultFlags;
     return emitDiagnostics;
   }
-  function emitBundle(writeFileCallback?: WriteFileCallback, customTransformers?: CustomTransformers): EmitResult | BuildInvalidedProject<T> | undefined {
+  function emitBundle(writeFileCallback?: WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined {
     assert(kind === InvalidatedProjectKind.UpdateBundle);
     if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_update_output_of_project_0, project);
@@ -805,7 +805,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     const emitDiagnostics = finishEmit(emitterDiagnostics, emittedOutputs, minimumDate, false, outputFiles[0].name, BuildResultFlags.DeclarationOutputUnchanged);
     return { emitSkipped: false, diagnostics: emitDiagnostics };
   }
-  function executeSteps(till: Step, cancellationToken?: CancellationToken, writeFile?: WriteFileCallback, customTransformers?: CustomTransformers) {
+  function executeSteps(till: Step, cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers) {
     while (step <= till && step < Step.Done) {
       const currentStep = step;
       switch (step) {
@@ -840,7 +840,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     }
   }
 }
-function needsBuild({ opts }: SolutionBuilderState, status: UpToDateStatus, config: ParsedCommandLine) {
+function needsBuild({ opts }: SolutionBuilderState, status: UpToDateStatus, config: qt.ParsedCommandLine) {
   if (status.type !== UpToDateStatusType.OutOfDateWithPrepend || opts.force) return true;
   return config.fileNames.length === 0 || !!getConfigFileParsingDiagnostics(config).length || !isIncrementalCompilation(config.opts);
 }
@@ -920,18 +920,18 @@ function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuil
   }
   return;
 }
-function listEmittedFile({ writeFileName }: SolutionBuilderState, proj: ParsedCommandLine, file: string) {
+function listEmittedFile({ writeFileName }: SolutionBuilderState, proj: qt.ParsedCommandLine, file: string) {
   if (writeFileName && proj.opts.listEmittedFiles) {
     writeFileName(`TSFILE: ${file}`);
   }
 }
-function getOldProgram<T extends BuilderProgram>({ opts, builderPrograms, compilerHost }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
+function getOldProgram<T extends BuilderProgram>({ opts, builderPrograms, compilerHost }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (opts.force) return;
   const value = builderPrograms.get(proj);
   if (value) return value;
   return (readBuilderProgram(parsed.opts, compilerHost) as any) as T;
 }
-function afterProgramDone<T extends BuilderProgram>({ host, watch, builderPrograms }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, program: T | undefined, config: ParsedCommandLine) {
+function afterProgramDone<T extends BuilderProgram>({ host, watch, builderPrograms }: SolutionBuilderState<T>, proj: ResolvedConfigFilePath, program: T | undefined, config: qt.ParsedCommandLine) {
   if (program) {
     if (host.afterProgramEmitAndDiagnostics) {
       host.afterProgramEmitAndDiagnostics(program);
@@ -948,7 +948,7 @@ function buildErrors<T extends BuilderProgram>(
   state: SolutionBuilderState<T>,
   resolvedPath: ResolvedConfigFilePath,
   program: T | undefined,
-  config: ParsedCommandLine,
+  config: qt.ParsedCommandLine,
   diagnostics: readonly Diagnostic[],
   errorFlags: BuildResultFlags,
   errorType: string
@@ -960,7 +960,7 @@ function buildErrors<T extends BuilderProgram>(
   state.projectCompilerOpts = state.baseCompilerOpts;
   return errorFlags;
 }
-function updateModuleResolutionCache(state: SolutionBuilderState, proj: ResolvedConfigFileName, config: ParsedCommandLine) {
+function updateModuleResolutionCache(state: SolutionBuilderState, proj: ResolvedConfigFileName, config: qt.ParsedCommandLine) {
   if (!state.moduleResolutionCache) return;
   const { moduleResolutionCache } = state;
   const projPath = toPath(state, proj);
@@ -970,7 +970,7 @@ function updateModuleResolutionCache(state: SolutionBuilderState, proj: Resolved
     moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.set(projPath, moduleResolutionCache.moduleNameToDirectoryMap.ownMap);
   } else {
     assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
-    const ref: ResolvedProjectReference = {
+    const ref: qt.ResolvedProjectReference = {
       sourceFile: config.opts.configFile!,
       commandLine: config,
     };
@@ -990,7 +990,7 @@ function checkConfigFileUpToDateStatus(state: SolutionBuilderState, configFile: 
     };
   }
 }
-function getUpToDateStatusWorker(state: SolutionBuilderState, project: ParsedCommandLine, resolvedPath: ResolvedConfigFilePath): UpToDateStatus {
+function getUpToDateStatusWorker(state: SolutionBuilderState, project: qt.ParsedCommandLine, resolvedPath: ResolvedConfigFilePath): UpToDateStatus {
   let newestInputFileName: string = undefined!;
   let newestInputFileTime = minimumDate;
   const { host } = state;
@@ -1138,7 +1138,7 @@ function getUpToDateStatusWorker(state: SolutionBuilderState, project: ParsedCom
     oldestOutputFileName,
   };
 }
-function getUpToDateStatus(state: SolutionBuilderState, project: ParsedCommandLine | undefined, resolvedPath: ResolvedConfigFilePath): UpToDateStatus {
+function getUpToDateStatus(state: SolutionBuilderState, project: qt.ParsedCommandLine | undefined, resolvedPath: ResolvedConfigFilePath): UpToDateStatus {
   if (project === undefined) return { type: UpToDateStatusType.Unbuildable, reason: 'File deleted mid-build' };
   const prior = state.projectStatus.get(resolvedPath);
   if (prior !== undefined) return prior;
@@ -1146,7 +1146,7 @@ function getUpToDateStatus(state: SolutionBuilderState, project: ParsedCommandLi
   state.projectStatus.set(resolvedPath, actual);
   return actual;
 }
-function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: qd.Message, skipOutputs?: FileMap<string>) {
+function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: qt.ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: qd.Message, skipOutputs?: FileMap<string>) {
   const { host } = state;
   const outputs = getAllProjectOutputs(proj, !host.useCaseSensitiveFileNames());
   if (!skipOutputs || outputs.length !== skipOutputs.size) {
@@ -1168,7 +1168,7 @@ function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedC
   }
   return priorNewestUpdateTime;
 }
-function updateOutputTimestamps(state: SolutionBuilderState, proj: ParsedCommandLine, resolvedPath: ResolvedConfigFilePath) {
+function updateOutputTimestamps(state: SolutionBuilderState, proj: qt.ParsedCommandLine, resolvedPath: ResolvedConfigFilePath) {
   if (state.opts.dry) return reportStatus(state, qd.A_non_dry_build_would_update_timestamps_for_output_of_project_0, proj.opts.configFilePath!);
   const priorNewestUpdateTime = updateOutputTimestampsWorker(state, proj, minimumDate, qd.Updating_output_timestamps_of_project_0);
   state.projectStatus.set(resolvedPath, {
@@ -1182,7 +1182,7 @@ function queueReferencingProjects(
   project: ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
   projectIndex: number,
-  config: ParsedCommandLine,
+  config: qt.ParsedCommandLine,
   buildOrder: readonly ResolvedConfigFileName[],
   buildResult: BuildResultFlags
 ) {
@@ -1235,7 +1235,7 @@ function queueReferencingProjects(
     }
   }
 }
-function build(state: SolutionBuilderState, project?: string, cancellationToken?: CancellationToken, onlyReferences?: boolean): ExitStatus {
+function build(state: SolutionBuilderState, project?: string, cancellationToken?: qt.CancellationToken, onlyReferences?: boolean): ExitStatus {
   const buildOrder = getBuildOrderFor(state, project, onlyReferences);
   if (!buildOrder) return ExitStatus.InvalidProject_OutputsSkipped;
   setupInitialBuild(state, cancellationToken);
@@ -1341,7 +1341,7 @@ function buildNextInvalidatedProject(state: SolutionBuilderState) {
   disableCache(state);
   reportErrorSummary(state, buildOrder);
 }
-function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine | undefined) {
+function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine | undefined) {
   if (!state.watch || state.allWatchedConfigFiles.has(resolvedPath)) return;
   state.allWatchedConfigFiles.set(
     resolvedPath,
@@ -1361,7 +1361,7 @@ function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFi
 function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
   return comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
 }
-function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
+function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: qt.ParsedCommandLine) {
   if (configFile.opts.noEmit) return false;
   if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) return false;
   const out = configFile.opts.outFile || configFile.opts.out;
@@ -1370,7 +1370,7 @@ function isOutputFile(state: SolutionBuilderState, fileName: string, configFile:
   if (configFile.opts.outDir && containsPath(configFile.opts.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   return !forEach(configFile.fileNames, (inputFile) => isSameFile(state, fileName, inputFile));
 }
-function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
+function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (!state.watch) return;
   updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), createMap(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
     state.watchDirectory(
@@ -1395,7 +1395,7 @@ function watchWildCardDirectories(state: SolutionBuilderState, resolved: Resolve
     )
   );
 }
-function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
+function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (!state.watch) return;
   mutateMap(
     getOrCreateValueMapFromConfigFileMap(state.allWatchedInputFiles, resolvedPath),
@@ -1440,14 +1440,14 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(
   host: SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
   defaultOpts: BuildOpts,
-  baseWatchOpts?: WatchOpts
+  baseWatchOpts?: qt.WatchOpts
 ): SolutionBuilder<T>;
 function createSolutionBuilderWorker<T extends BuilderProgram>(
   watch: boolean,
   hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>,
   rootNames: readonly string[],
   opts: BuildOpts,
-  baseWatchOpts?: WatchOpts
+  baseWatchOpts?: qt.WatchOpts
 ): SolutionBuilder<T> {
   const state = createSolutionBuilderState(watch, hostOrHostWithWatch, rootNames, opts, baseWatchOpts);
   return {

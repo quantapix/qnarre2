@@ -5,11 +5,11 @@ import * as qb from './bases';
 import * as qc from './classes';
 import * as qt from '../types';
 import * as qu from '../utils';
-export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
+export { MutableNodes, Nodes, qt.Signature, qt.Symbol, qt.SymbolTable, qt.Type } from './bases';
 export { cloneMap, findAncestor } from './bases';
 export * from './classes';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
-export namespace BindingOrAssignmentElem {
+export namespace qt.BindingOrAssignmentElem {
   export function getIniterOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.Expression | undefined {
     if (qf.is.declarationBindingElem(e)) {
       // `1` in `let { a = 1 } = ...`

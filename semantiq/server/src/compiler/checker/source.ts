@@ -10,7 +10,7 @@ import * as qy from '../syntax';
 export interface SourceMapGeneratorOpts {
   extendedDiagnostics?: boolean;
 }
-export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOpts: SourceMapGeneratorOpts): SourceMapGenerator {
+export function createSourceMapGenerator(host: qt.EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOpts: SourceMapGeneratorOpts): qt.SourceMapGenerator {
   const { enter, exit } = generatorOpts.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
   const rawSources: string[] = [];
   const sources: string[] = [];
@@ -120,7 +120,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     }
     exit();
   }
-  function appendSourceMap(generatedLine: number, generatedCharacter: number, map: RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar) {
+  function appendSourceMap(generatedLine: number, generatedCharacter: number, map: qt.RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar) {
     qu.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
     qu.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
     enter();
@@ -213,7 +213,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     hasLast = true;
     exit();
   }
-  function toJSON(): RawSourceMap {
+  function toJSON(): qt.RawSourceMap {
     commitPendingMapping();
     return {
       version: 3,
@@ -251,7 +251,7 @@ export function tryGetSourceMappingURL(lineInfo: LineInfo) {
 function isStringOrNull(x: any) {
   return typeof x === 'string' || x === null;
 }
-export function isRawSourceMap(x: any): x is RawSourceMap {
+export function isRawSourceMap(x: any): x is qt.RawSourceMap {
   return (
     x !== null &&
     typeof x === 'object' &&
@@ -494,7 +494,7 @@ function getSourcePositionOfMapping(value: SourceMappedPosition) {
 function getGeneratedPositionOfMapping(value: MappedPosition) {
   return value.generatedPosition;
 }
-export function createDocumentPositionMapper(host: DocumentPositionMapperHost, map: RawSourceMap, mapPath: string): DocumentPositionMapper {
+export function createDocumentPositionMapper(host: qt.DocumentPositionMapperHost, map: qt.RawSourceMap, mapPath: string): qt.DocumentPositionMapper {
   const mapDirectory = getDirectoryPath(mapPath);
   const sourceRoot = map.sourceRoot ? getNormalizedAbsolutePath(map.sourceRoot, mapDirectory) : mapDirectory;
   const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
@@ -563,7 +563,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     }
     return generatedMappings;
   }
-  function getGeneratedPosition(loc: DocumentPosition): DocumentPosition {
+  function getGeneratedPosition(loc: qt.DocumentPosition): qt.DocumentPosition {
     const sourceIndex = sourceToSourceIndexMap.get(host.getCanonicalFileName(loc.fileName));
     if (sourceIndex === undefined) return loc;
     const sourceMappings = getSourceMappings(sourceIndex);
@@ -576,7 +576,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     if (mapping === undefined || mapping.sourceIndex !== sourceIndex) return loc;
     return { fileName: generatedAbsoluteFilePath, pos: mapping.generatedPosition };
   }
-  function getSourcePosition(loc: DocumentPosition): DocumentPosition {
+  function getSourcePosition(loc: qt.DocumentPosition): qt.DocumentPosition {
     const generatedMappings = getGeneratedMappings();
     if (!some(generatedMappings)) return loc;
     let targetIndex = binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, compareNumbers);
@@ -588,7 +588,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     return { fileName: sourceFileAbsolutePaths[mapping.sourceIndex], pos: mapping.sourcePosition };
   }
 }
-export const identitySourceMapConsumer: DocumentPositionMapper = {
+export const identitySourceMapConsumer: qt.DocumentPositionMapper = {
   getSourcePosition: identity,
   getGeneratedPosition: identity,
 };

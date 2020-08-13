@@ -6,7 +6,7 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformES5(context: TrafoContext) {
+export function transformES5(context: qt.TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
   let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
   let noSubstitution: boolean[];
@@ -23,7 +23,7 @@ export function transformES5(context: TrafoContext) {
   context.enableSubstitution(Syntax.PropertyAccessExpression);
   context.enableSubstitution(Syntax.PropertyAssignment);
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     return node;
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
@@ -31,7 +31,7 @@ export function transformES5(context: TrafoContext) {
       case Syntax.JsxOpeningElem:
       case Syntax.JsxClosingElem:
       case Syntax.JsxSelfClosingElem:
-        const tagName = (<JsxOpeningElem | JsxClosingElem | JsxSelfClosingElem>node).tagName;
+        const tagName = (<qt.JsxOpeningElem | qt.JsxClosingElem | qt.JsxSelfClosingElem>node).tagName;
         noSubstitution[getOriginalNodeId(tagName)] = true;
         break;
     }
@@ -44,19 +44,19 @@ export function transformES5(context: TrafoContext) {
     if (qf.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
-  function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
+  function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression): Expression {
     if (qf.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
     if (literalName) return new qc.ElemAccessExpression(node.expression, literalName).setRange(node);
     return node;
   }
-  function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
+  function substitutePropertyAssignment(node: qt.PropertyAssignment): qt.PropertyAssignment {
     const literalName = qf.is.kind(qc.Identifier, node.name) && trySubstituteReservedName(node.name);
     if (literalName) return node.update(literalName, node.initer);
     return node;
   }
-  function trySubstituteReservedName(name: Identifier) {
-    const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
+  function trySubstituteReservedName(name: qt.Identifier) {
+    const token = name.originalKeywordKind || (isSynthesized(name) ? qt.Token.fromString(idText(name)) : undefined);
     if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return qc.asLiteral(name).setRange(name);
     return;
   }

@@ -1408,7 +1408,7 @@ export function newNest(f: qt.Frame) {
       return e;
     }
     conditionalTypeMember(n: qt.Typing) {
-      return n.kind === Syntax.ConditionalTyping ? new ParenthesizedTyping(n) : n;
+      return n.kind === Syntax.ConditionalTyping ? new qt.ParenthesizedTyping(n) : n;
     }
     elemTypeMember(n: qt.Typing) {
       switch (n.kind) {
@@ -1416,7 +1416,7 @@ export function newNest(f: qt.Frame) {
         case Syntax.IntersectionTyping:
         case Syntax.FunctionTyping:
         case Syntax.ConstructorTyping:
-          return new ParenthesizedTyping(n);
+          return new qt.ParenthesizedTyping(n);
       }
       return conditionalTypeMember(n);
     }
@@ -1425,7 +1425,7 @@ export function newNest(f: qt.Frame) {
         case Syntax.TypingQuery:
         case Syntax.TypingOperator:
         case Syntax.InferTyping:
-          return new ParenthesizedTyping(n);
+          return new qt.ParenthesizedTyping(n);
       }
       return elemTypeMember(n);
     }
@@ -1437,7 +1437,7 @@ export function newNest(f: qt.Frame) {
         const ps = [] as qt.Typing[];
         for (let i = 0; i < ns.length; ++i) {
           const p = ns[i] as Node;
-          ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new ParenthesizedTyping(p) : (p as qt.Typing));
+          ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new qt.ParenthesizedTyping(p) : (p as qt.Typing));
         }
         return new Nodes(ps);
       }
@@ -1665,21 +1665,21 @@ export function newEmit(f: qt.Frame) {
 }
 export interface Femit extends ReturnType<typeof newEmit> {}
 export namespace fixme {
-  let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
-  export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
+  let qt.SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => qt.SourceMapSource;
+  export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): qt.SourceMapSource {
     return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
-    return qf.emit.setFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+    return qf.emit.setFlags(new qt.Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
-    return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
+    return expressions.length > 10 ? new qt.CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
   }
   export function convertToFunctionBody(node: qt.ConciseBody, multiLine?: boolean): qt.Block {
-    return node.kind === Syntax.Block ? node : new Block([new ReturnStatement(node).setRange(node)], multiLine).setRange(node);
+    return node.kind === Syntax.Block ? node : new qt.Block([new qt.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
-    sourceFile: SourceFile,
+    sourceFile: qt.SourceFile,
     compilerOpts: qt.CompilerOpts,
     hasExportStarsToExportValues?: boolean,
     hasImportStar?: boolean,
@@ -1694,7 +1694,7 @@ export namespace fixme {
           const helperNames: string[] = [];
           for (const helper of helpers) {
             if (!helper.scoped) {
-              const importName = (helper as UnscopedEmitHelper).importName;
+              const importName = (helper as qt.UnscopedEmitHelper).importName;
               if (importName) {
                 qu.pushIfUnique(helperNames, importName);
               }
@@ -1702,9 +1702,9 @@ export namespace fixme {
           }
           if (qu.some(helperNames)) {
             helperNames.sort(compareCaseSensitive);
-            namedBindings = new NamedImports(
+            namedBindings = new qt.NamedImports(
               qu.map(helperNames, (name) =>
-                sourceFile.isFileLevelUniqueName(name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qb.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
+                sourceFile.isFileLevelUniqueName(name) ? new qt.ImportSpecifier(undefined, new qt.Identifier(name)) : new qb.ImportSpecifier(new qt.Identifier(name), getUnscopedHelperName(name))
               )
             );
             const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
@@ -1715,18 +1715,18 @@ export namespace fixme {
       } else {
         const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOpts, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
         if (externalHelpersModuleName) {
-          namedBindings = new NamespaceImport(externalHelpersModuleName);
+          namedBindings = new qt.NamespaceImport(externalHelpersModuleName);
         }
       }
       if (namedBindings) {
-        const externalHelpersImportDeclaration = new ImportDeclaration(undefined, undefined, new ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
+        const externalHelpersImportDeclaration = new qt.ImportDeclaration(undefined, undefined, new qt.ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
         qf.emit.addFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }
     }
     return;
   }
-  export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOpts: qt.CompilerOpts, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
+  export function getOrCreateExternalHelpersModuleNameIfNeeded(node: qt.SourceFile, compilerOpts: qt.CompilerOpts, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
     if (compilerOpts.importHelpers && node.isEffectiveExternalModule(compilerOpts)) {
       const externalHelpersModuleName = qf.emit.externalHelpersModuleName(node);
       if (externalHelpersModuleName) return externalHelpersModuleName;
@@ -1752,20 +1752,20 @@ export namespace fixme {
     return;
   }
   export function getExternalModuleNameLiteral(
-    importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
-    sourceFile: SourceFile,
+    importNode: qt.ImportDeclaration | qt.ExportDeclaration | qt.ImportEqualsDeclaration,
+    sourceFile: qt.SourceFile,
     host: qt.EmitHost,
     resolver: qt.EmitResolver,
     compilerOpts: qt.CompilerOpts
   ) {
     const moduleName = qf.get.externalModuleName(importNode)!;
     if (moduleName.kind === Syntax.StringLiteral) {
-      function tryRenameExternalModule(moduleName: qt.LiteralExpression, sourceFile: SourceFile) {
+      function tryRenameExternalModule(moduleName: qt.LiteralExpression, sourceFile: qt.SourceFile) {
         const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
         return rename && asLiteral(rename);
       }
       function tryGetModuleNameFromDeclaration(
-        declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration,
+        declaration: qt.ImportEqualsDeclaration | qt.ImportDeclaration | qt.ExportDeclaration,
         host: qt.EmitHost,
         resolver: qt.EmitResolver,
         compilerOpts: qt.CompilerOpts
@@ -1773,12 +1773,12 @@ export namespace fixme {
         return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOpts);
       }
       return (
-        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
+        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<qt.StringLiteral>moduleName)
       );
     }
     return;
   }
-  export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: qt.EmitHost, opts: qt.CompilerOpts): StringLiteral | undefined {
+  export function tryGetModuleNameFromFile(file: qt.SourceFile | undefined, host: qt.EmitHost, opts: qt.CompilerOpts): qt.StringLiteral | undefined {
     if (!file) {
       return;
     }

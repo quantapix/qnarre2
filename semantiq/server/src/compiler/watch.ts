@@ -10,7 +10,7 @@ export interface ReadBuildProgramHost {
   getCurrentDirectory(): string;
   readFile(fileName: string): string | undefined;
 }
-export function readBuilderProgram(compilerOpts: CompilerOpts, host: ReadBuildProgramHost) {
+export function readBuilderProgram(compilerOpts: qt.CompilerOpts, host: ReadBuildProgramHost) {
   if (compilerOpts.out || compilerOpts.outFile) return;
   const buildInfoPath = getTsBuildInfoEmitOutputFilePath(compilerOpts);
   if (!buildInfoPath) return;
@@ -21,7 +21,7 @@ export function readBuilderProgram(compilerOpts: CompilerOpts, host: ReadBuildPr
   if (!buildInfo.program) return;
   return createBuildProgramUsingProgramBuildInfo(buildInfo.program, buildInfoPath, host);
 }
-export function createIncrementalCompilerHost(opts: CompilerOpts, system = sys): CompilerHost {
+export function createIncrementalCompilerHost(opts: qt.CompilerOpts, system = sys): qt.CompilerHost {
   const host = createCompilerHostWorker(opts, undefined, system);
   host.createHash = maybeBind(system, system.createHash);
   setGetSourceFileAsHashVersioned(host, system);
@@ -30,10 +30,10 @@ export function createIncrementalCompilerHost(opts: CompilerOpts, system = sys):
 }
 export interface IncrementalProgramOpts<T extends BuilderProgram> {
   rootNames: readonly string[];
-  opts: CompilerOpts;
+  opts: qt.CompilerOpts;
   configFileParsingDiagnostics?: readonly Diagnostic[];
-  projectReferences?: readonly ProjectReference[];
-  host?: CompilerHost;
+  projectReferences?: readonly qt.ProjectReference[];
+  host?: qt.CompilerHost;
   createProgram?: CreateProgram<T>;
 }
 export function createIncrementalProgram<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
@@ -49,19 +49,19 @@ export function createIncrementalProgram<T extends BuilderProgram = EmitAndSeman
   const oldProgram = (readBuilderProgram(opts, host) as any) as T;
   return createProgram(rootNames, opts, host, oldProgram, configFileParsingDiagnostics, projectReferences);
 }
-export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, opts: CompilerOpts, errorCount?: number) => void;
+export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, opts: qt.CompilerOpts, errorCount?: number) => void;
 export type CreateProgram<T extends BuilderProgram> = (
   rootNames: readonly string[] | undefined,
-  opts: CompilerOpts | undefined,
-  host?: CompilerHost,
+  opts: qt.CompilerOpts | undefined,
+  host?: qt.CompilerHost,
   oldProgram?: T,
   configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[] | undefined
+  projectReferences?: readonly qt.ProjectReference[] | undefined
 ) => T;
 export interface WatchHost {
-  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, opts: CompilerOpts, errorCount?: number): void;
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: CompilerOpts): FileWatcher;
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: CompilerOpts): FileWatcher;
+  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, opts: qt.CompilerOpts, errorCount?: number): void;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: qt.CompilerOpts): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: qt.CompilerOpts): FileWatcher;
   setTimeout?(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
   clearTimeout?(timeoutId: any): void;
 }
@@ -70,7 +70,7 @@ export interface ProgramHost<T extends BuilderProgram> {
   useCaseSensitiveFileNames(): boolean;
   getNewLine(): string;
   getCurrentDirectory(): string;
-  qf.get.defaultLibFileName(opts: CompilerOpts): string;
+  qf.get.defaultLibFileName(opts: qt.CompilerOpts): string;
   getDefaultLibLocation?(): string;
   createHash?(data: string): string;
   fileExists(path: string): boolean;
@@ -85,14 +85,14 @@ export interface ProgramHost<T extends BuilderProgram> {
     moduleNames: string[],
     containingFile: string,
     reusedNames: string[] | undefined,
-    redirectedReference: ResolvedProjectReference | undefined,
-    opts: CompilerOpts
+    redirectedReference: qt.ResolvedProjectReference | undefined,
+    opts: qt.CompilerOpts
   ): (ResolvedModule | undefined)[];
   resolveTypeReferenceDirectives?(
     typeReferenceDirectiveNames: string[],
     containingFile: string,
-    redirectedReference: ResolvedProjectReference | undefined,
-    opts: CompilerOpts
+    redirectedReference: qt.ResolvedProjectReference | undefined,
+    opts: qt.CompilerOpts
   ): (ResolvedTypeReferenceDirective | undefined)[];
 }
 export interface ProgramHost<T extends BuilderProgram> {
@@ -105,19 +105,19 @@ export interface WatchCompilerHost<T extends BuilderProgram> extends ProgramHost
 }
 export interface WatchCompilerHostOfFilesAndCompilerOpts<T extends BuilderProgram> extends WatchCompilerHost<T> {
   rootFiles: string[];
-  opts: CompilerOpts;
-  watchOpts?: WatchOpts;
-  projectReferences?: readonly ProjectReference[];
+  opts: qt.CompilerOpts;
+  watchOpts?: qt.WatchOpts;
+  projectReferences?: readonly qt.ProjectReference[];
 }
 export interface WatchCompilerHostOfConfigFile<T extends BuilderProgram> extends WatchCompilerHost<T>, ConfigFileDiagnosticsReporter {
   configFileName: string;
-  optsToExtend?: CompilerOpts;
-  watchOptsToExtend?: WatchOpts;
-  extraFileExtensions?: readonly FileExtensionInfo[];
+  optsToExtend?: qt.CompilerOpts;
+  watchOptsToExtend?: qt.WatchOpts;
+  extraFileExtensions?: readonly qt.FileExtensionInfo[];
   readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
 }
 export interface WatchCompilerHostOfConfigFile<T extends BuilderProgram> extends WatchCompilerHost<T> {
-  configFileParsingResult?: ParsedCommandLine;
+  configFileParsingResult?: qt.ParsedCommandLine;
 }
 export interface Watch<T> {
   getProgram(): T;
@@ -130,40 +130,40 @@ export interface WatchOfFilesAndCompilerOpts<T> extends Watch<T> {
 }
 export function createWatchCompilerHost<T extends BuilderProgram>(
   configFileName: string,
-  optsToExtend: CompilerOpts | undefined,
+  optsToExtend: qt.CompilerOpts | undefined,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  watchOptsToExtend?: WatchOpts,
-  extraFileExtensions?: readonly FileExtensionInfo[]
+  watchOptsToExtend?: qt.WatchOpts,
+  extraFileExtensions?: readonly qt.FileExtensionInfo[]
 ): WatchCompilerHostOfConfigFile<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFiles: string[],
-  opts: CompilerOpts,
+  opts: qt.CompilerOpts,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  projectReferences?: readonly ProjectReference[],
-  watchOpts?: WatchOpts
+  projectReferences?: readonly qt.ProjectReference[],
+  watchOpts?: qt.WatchOpts
 ): WatchCompilerHostOfFilesAndCompilerOpts<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFilesOrConfigFileName: string | string[],
-  opts: CompilerOpts | undefined,
+  opts: qt.CompilerOpts | undefined,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  projectReferencesOrWatchOptsToExtend?: readonly ProjectReference[] | WatchOpts,
-  watchOptsOrExtraFileExtensions?: WatchOpts | readonly FileExtensionInfo[]
+  projectReferencesOrWatchOptsToExtend?: readonly qt.ProjectReference[] | qt.WatchOpts,
+  watchOptsOrExtraFileExtensions?: qt.WatchOpts | readonly qt.FileExtensionInfo[]
 ): WatchCompilerHostOfFilesAndCompilerOpts<T> | WatchCompilerHostOfConfigFile<T> {
   if (isArray(rootFilesOrConfigFileName)) {
     return createWatchCompilerHostOfFilesAndCompilerOpts({
       rootFiles: rootFilesOrConfigFileName,
       opts: opts!,
-      watchOpts: watchOptsOrExtraFileExtensions as WatchOpts,
-      projectReferences: projectReferencesOrWatchOptsToExtend as readonly ProjectReference[],
+      watchOpts: watchOptsOrExtraFileExtensions as qt.WatchOpts,
+      projectReferences: projectReferencesOrWatchOptsToExtend as readonly qt.ProjectReference[],
       system,
       createProgram,
       reportDiagnostic,
@@ -173,8 +173,8 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
     return createWatchCompilerHostOfConfigFile({
       configFileName: rootFilesOrConfigFileName,
       optsToExtend: opts,
-      watchOptsToExtend: projectReferencesOrWatchOptsToExtend as WatchOpts,
-      extraFileExtensions: watchOptsOrExtraFileExtensions as readonly FileExtensionInfo[],
+      watchOptsToExtend: projectReferencesOrWatchOptsToExtend as qt.WatchOpts,
+      extraFileExtensions: watchOptsOrExtraFileExtensions as readonly qt.FileExtensionInfo[],
       system,
       createProgram,
       reportDiagnostic,
@@ -201,7 +201,7 @@ export function createWatchProgram<T extends BuilderProgram>(
 ): WatchOfFilesAndCompilerOpts<T> | WatchOfConfigFile<T> {
   interface FilePresentOnHost {
     version: string;
-    sourceFile: SourceFile;
+    sourceFile: qt.SourceFile;
     fileWatcher: FileWatcher;
   }
   type FileMissingOnHost = false;
@@ -224,7 +224,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   const currentDirectory = host.getCurrentDirectory();
   const { configFileName, optsToExtend: optsToExtendForConfigFile = {}, watchOptsToExtend, extraFileExtensions, createProgram } = host;
   let { rootFiles: rootFileNames, opts: compilerOpts, watchOpts, projectReferences } = host;
-  let configFileSpecs: ConfigFileSpecs;
+  let configFileSpecs: qt.ConfigFileSpecs;
   let configFileParsingDiagnostics: Diagnostic[] | undefined;
   let canConfigFileJsonReportNoInputFiles = false;
   let hasChangedConfigFileParsingErrors = false;
@@ -250,7 +250,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   if (configFileName) {
     configFileWatcher = watchFile(host, configFileName, scheduleProgramReload, PollingInterval.High, watchOpts, WatchType.ConfigFile);
   }
-  const compilerHost = createCompilerHostFromProgramHost(host, () => compilerOpts, directoryStructureHost) as CompilerHost & ResolutionCacheHost;
+  const compilerHost = createCompilerHostFromProgramHost(host, () => compilerOpts, directoryStructureHost) as qt.CompilerHost & ResolutionCacheHost;
   setGetSourceFileAsHashVersioned(compilerHost, host);
   const getNewSourceFile = compilerHost.getSourceFile;
   compilerHost.getSourceFile = (fileName, ...args) => getVersionedSourceFileByPath(fileName, toPath(fileName), ...args);
@@ -384,7 +384,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     if (isFileMissingOnHost(sourceFilesCache.get(path))) return false;
     return directoryStructureHost.fileExists(fileName);
   }
-  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
+  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): qt.SourceFile | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     if (isFileMissingOnHost(hostSourceFile)) {
       return;
@@ -430,7 +430,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     const hostSourceFile = sourceFilesCache.get(path);
     return !hostSourceFile || !hostSourceFile.version ? undefined : hostSourceFile.version;
   }
-  function onReleaseOldSourceFile(oldSourceFile: SourceFile, _oldOpts: CompilerOpts, hasSourceFileByPath: boolean) {
+  function onReleaseOldSourceFile(oldSourceFile: qt.SourceFile, _oldOpts: qt.CompilerOpts, hasSourceFileByPath: boolean) {
     const hostSourceFileInfo = sourceFilesCache.get(oldSourceFile.resolvedPath);
     if (hostSourceFileInfo !== undefined) {
       if (isFileMissingOnHost(hostSourceFileInfo)) {
@@ -512,7 +512,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   function parseConfigFile() {
     setConfigFileParsingResult(getParsedCommandLineOfConfigFile(configFileName, optsToExtendForConfigFile, parseConfigFileHost, undefined, watchOptsToExtend, extraFileExtensions)!);
   }
-  function setConfigFileParsingResult(configFileParseResult: ParsedCommandLine) {
+  function setConfigFileParsingResult(configFileParseResult: qt.ParsedCommandLine) {
     rootFileNames = configFileParseResult.fileNames;
     compilerOpts = configFileParseResult.opts;
     watchOpts = configFileParseResult.watchOpts;
@@ -607,7 +607,7 @@ export function createDiagnosticReporter(system: System, pretty?: boolean): Diag
     diagnostics[0] = undefined!;
   };
 }
-function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, opts: CompilerOpts): boolean {
+function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, opts: qt.CompilerOpts): boolean {
   if (system.clearScreen && !opts.preserveWatchOutput && !opts.extendedDiagnostics && !opts.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
     system.clearScreen();
     return true;
@@ -641,8 +641,8 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
 }
 export function parseConfigFileWithSystem(
   configFileName: string,
-  optsToExtend: CompilerOpts,
-  watchOptsToExtend: WatchOpts | undefined,
+  optsToExtend: qt.CompilerOpts,
+  watchOptsToExtend: qt.WatchOpts | undefined,
   system: System,
   reportDiagnostic: DiagnosticReporter
 ) {
@@ -665,15 +665,15 @@ export function getErrorSummaryText(errorCount: number, newLine: string) {
 }
 export interface ProgramToEmitFilesAndReportErrors {
   getCurrentDirectory(): string;
-  getCompilerOpts(): CompilerOpts;
-  getSourceFiles(): readonly SourceFile[];
-  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
+  getCompilerOpts(): qt.CompilerOpts;
+  getSourceFiles(): readonly qt.SourceFile[];
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
 }
 export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileName: (s: string) => void) {
   if (program.getCompilerOpts().listFiles || program.getCompilerOpts().listFilesOnly) {
@@ -688,9 +688,9 @@ export function emitFilesAndReportErrors(
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
   writeFile?: WriteFileCallback,
-  cancellationToken?: CancellationToken,
+  cancellationToken?: qt.CancellationToken,
   emitOnlyDtsFiles?: boolean,
-  customTransformers?: CustomTransformers
+  customTransformers?: qt.CustomTransformers
 ) {
   const isListFilesOnly = !!program.getCompilerOpts().listFilesOnly;
   const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
@@ -732,9 +732,9 @@ export function emitFilesAndReportErrorsAndGetExitStatus(
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
   writeFile?: WriteFileCallback,
-  cancellationToken?: CancellationToken,
+  cancellationToken?: qt.CancellationToken,
   emitOnlyDtsFiles?: boolean,
-  customTransformers?: CustomTransformers
+  customTransformers?: qt.CustomTransformers
 ) {
   const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
   if (emitResult.emitSkipped && diagnostics.length > 0) return ExitStatus.DiagnosticsPresent_OutputsSkipped;
@@ -755,7 +755,7 @@ export function createWatchHost(system = sys, reportWatchStatus?: WatchStatusRep
 export type WatchType = WatchTypeRegistry[keyof WatchTypeRegistry];
 export const WatchType: WatchTypeRegistry = {
   ConfigFile: 'Config file',
-  SourceFile: 'Source file',
+  qt.SourceFile: 'Source file',
   MissingFile: 'Missing file',
   WildcardDirectory: 'Wild card directory',
   FailedLookupLocations: 'Failed Lookup Locations',
@@ -763,7 +763,7 @@ export const WatchType: WatchTypeRegistry = {
 };
 export interface WatchTypeRegistry {
   ConfigFile: 'Config file';
-  SourceFile: 'Source file';
+  qt.SourceFile: 'Source file';
   MissingFile: 'Missing file';
   WildcardDirectory: 'Wild card directory';
   FailedLookupLocations: 'Failed Lookup Locations';
@@ -779,7 +779,7 @@ export function createWatchFactory<Y = undefined>(host: { trace?(s: string): voi
   result.writeLog = writeLog;
   return result;
 }
-export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOpts: () => CompilerOpts, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
+export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOpts: () => qt.CompilerOpts, directoryStructureHost: DirectoryStructureHost = host): qt.CompilerHost {
   const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
   const hostGetNewLine = memoize(() => host.getNewLine());
   return {
@@ -835,7 +835,7 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
     }
   }
 }
-export function setGetSourceFileAsHashVersioned(compilerHost: CompilerHost, host: { createHash?(data: string): string }) {
+export function setGetSourceFileAsHashVersioned(compilerHost: qt.CompilerHost, host: { createHash?(data: string): string }) {
   const originalGetSourceFile = compilerHost.getSourceFile;
   const computeHash = host.createHash || generateDjb2Hash;
   compilerHost.getSourceFile = (...args) => {
@@ -898,9 +898,9 @@ export interface CreateWatchCompilerHostInput<T extends BuilderProgram> {
 }
 export interface CreateWatchCompilerHostOfConfigFileInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   configFileName: string;
-  optsToExtend?: CompilerOpts;
-  watchOptsToExtend?: WatchOpts;
-  extraFileExtensions?: readonly FileExtensionInfo[];
+  optsToExtend?: qt.CompilerOpts;
+  watchOptsToExtend?: qt.WatchOpts;
+  extraFileExtensions?: readonly qt.FileExtensionInfo[];
 }
 export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
   configFileName,
@@ -923,9 +923,9 @@ export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = E
 }
 export interface CreateWatchCompilerHostOfFilesAndCompilerOptsInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   rootFiles: string[];
-  opts: CompilerOpts;
-  watchOpts: WatchOpts | undefined;
-  projectReferences?: readonly ProjectReference[];
+  opts: qt.CompilerOpts;
+  watchOpts: qt.WatchOpts | undefined;
+  projectReferences?: readonly qt.ProjectReference[];
 }
 export function createWatchCompilerHostOfFilesAndCompilerOpts<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
   rootFiles,
@@ -946,10 +946,10 @@ export function createWatchCompilerHostOfFilesAndCompilerOpts<T extends BuilderP
 }
 export interface IncrementalCompilationOpts {
   rootNames: readonly string[];
-  opts: CompilerOpts;
+  opts: qt.CompilerOpts;
   configFileParsingDiagnostics?: readonly Diagnostic[];
-  projectReferences?: readonly ProjectReference[];
-  host?: CompilerHost;
+  projectReferences?: readonly qt.ProjectReference[];
+  host?: qt.CompilerHost;
   reportDiagnostic?: DiagnosticReporter;
   reportErrorSummary?: ReportEmitErrorSummary;
   afterProgramEmitAndDiagnostics?(program: EmitAndSemanticDiagnosticsBuilderProgram): void;
@@ -1154,7 +1154,7 @@ export enum ConfigFileProgramReloadLevel {
   Partial,
   Full,
 }
-export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
+export function updateMissingFilePathsWatch(program: qt.Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
   const missingFilePaths = program.getMissingFilePaths();
   const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
   mutateMap(missingFileWatches, newMissingFilePathMap, {
@@ -1190,7 +1190,7 @@ export function updateWatchingWildcardDirectories(
     existingWatchedForWildcards.set(directory, createWildcardDirectoryWatcher(directory, flags));
   }
 }
-export function isEmittedFileOfProgram(program: Program | undefined, file: string) {
+export function isEmittedFileOfProgram(program: qt.Program | undefined, file: string) {
   if (!program) return false;
   return program.isEmittedFile(file);
 }
@@ -1200,17 +1200,17 @@ export enum WatchLogLevel {
   Verbose,
 }
 export interface WatchFileHost {
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: WatchOpts): FileWatcher;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, opts?: qt.WatchOpts): FileWatcher;
 }
 export interface WatchDirectoryHost {
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: WatchOpts): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, opts?: qt.WatchOpts): FileWatcher;
 }
 export type WatchFile<X, Y> = (
   host: WatchFileHost,
   file: string,
   callback: FileWatcherCallback,
   pollingInterval: PollingInterval,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
@@ -1220,7 +1220,7 @@ export type WatchFilePath<X, Y> = (
   file: string,
   callback: FilePathWatcherCallback,
   pollingInterval: PollingInterval,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   path: Path,
   detailInfo1: X,
   detailInfo2?: Y
@@ -1230,7 +1230,7 @@ export type WatchDirectory<X, Y> = (
   directory: string,
   callback: DirectoryWatcherCallback,
   flags: WatchDirectoryFlags,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
@@ -1246,8 +1246,8 @@ function getWatchFactoryWith<X, Y = undefined>(
   watchLogLevel: WatchLogLevel,
   log: (s: string) => void,
   getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined,
-  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, opts: WatchOpts | undefined) => FileWatcher,
-  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: WatchOpts | undefined) => FileWatcher
+  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, opts: qt.WatchOpts | undefined) => FileWatcher,
+  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: qt.WatchOpts | undefined) => FileWatcher
 ): WatchFactory<X, Y> {
   const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
   const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
@@ -1264,13 +1264,13 @@ function getWatchFactoryWith<X, Y = undefined>(
       createDirectoryWatcher(host, directory, callback, flags, opts, undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
   };
 }
-function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, opts: WatchOpts | undefined): FileWatcher {
+function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, opts: qt.WatchOpts | undefined): FileWatcher {
   return host.watchFile(file, callback, pollingInterval, opts);
 }
-function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, opts: WatchOpts | undefined, path: Path): FileWatcher {
+function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, opts: qt.WatchOpts | undefined, path: Path): FileWatcher {
   return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, opts);
 }
-function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: WatchOpts | undefined): FileWatcher {
+function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: qt.WatchOpts | undefined): FileWatcher {
   return host.watchDirectory(directory, callback, (flags & WatchDirectoryFlags.Recursive) !== 0, opts);
 }
 type WatchCallback<T, U> = (fileName: string, cbOptional?: T, passThrough?: U) => void;
@@ -1279,7 +1279,7 @@ type AddWatch<H, T, U, V> = (
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   passThrough?: V,
   detailInfo1?: undefined,
   detailInfo2?: undefined
@@ -1290,7 +1290,7 @@ type CreateFileWatcher<H, T, U, V, X, Y> = (
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1314,7 +1314,7 @@ function createFileWatcherWithLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1337,7 +1337,7 @@ function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1368,7 +1368,7 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
   file: string,
   cb: WatchCallback<U, V>,
   flags: T,
-  opts: WatchOpts | undefined,
+  opts: qt.WatchOpts | undefined,
   passThrough: V | undefined,
   detailInfo1: X | undefined,
   detailInfo2: Y | undefined,
@@ -1399,13 +1399,13 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
     opts
   );
 }
-export function getFallbackOpts(opts: WatchOpts | undefined): WatchOpts {
+export function getFallbackOpts(opts: qt.WatchOpts | undefined): qt.WatchOpts {
   const fallbackPolling = opts?.fallbackPolling;
   return {
     watchFile: fallbackPolling !== undefined ? ((fallbackPolling as unknown) as WatchFileKind) : WatchFileKind.PriorityPollingInterval,
   };
 }
-function getWatchInfo<T, X, Y>(file: string, flags: T, opts: WatchOpts | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
+function getWatchInfo<T, X, Y>(file: string, flags: T, opts: qt.WatchOpts | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
   return `WatchInfo: ${file} ${flags} ${JSON.stringify(opts)} ${
     getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`
   }`;

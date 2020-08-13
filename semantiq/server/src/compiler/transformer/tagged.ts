@@ -11,11 +11,11 @@ export enum ProcessLevel {
   All,
 }
 export function processTaggedTemplateExpression(
-  context: TrafoContext,
-  node: TaggedTemplateExpression,
+  context: qt.TrafoContext,
+  node: qt.TaggedTemplateExpression,
   visitor: Visitor,
-  currentSourceFile: SourceFile,
-  recordTaggedTemplateString: (temp: Identifier) => void,
+  currentSourceFile: qt.SourceFile,
+  recordTaggedTemplateString: (temp: qt.Identifier) => void,
   level: ProcessLevel
 ) {
   const tag = visitNode(node.tag, visitor, isExpression);
@@ -36,7 +36,7 @@ export function processTaggedTemplateExpression(
       templateArgs.push(visitNode(templateSpan.expression, visitor, isExpression));
     }
   }
-  const helperCall = createTemplateObjectHelper(context, new ArrayLiteralExpression(cookedStrings), new ArrayLiteralExpression(rawStrings));
+  const helperCall = createTemplateObjectHelper(context, new qt.ArrayLiteralExpression(cookedStrings), new qt.ArrayLiteralExpression(rawStrings));
   if (qf.is.externalModule(currentSourceFile)) {
     const tempVar = createUniqueName('templateObject');
     recordTaggedTemplateString(tempVar);
@@ -46,10 +46,10 @@ export function processTaggedTemplateExpression(
   }
   return new qc.CallExpression(tag, undefined, templateArgs);
 }
-function createTemplateCooked(template: TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral) {
+function createTemplateCooked(template: qt.TemplateHead | qt.TemplateMiddle | qt.TemplateTail | qt.NoSubstitutionLiteral) {
   return template.templateFlags ? qc.VoidExpression.zero() : qc.asLiteral(template.text);
 }
-function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceFile) {
+function getRawLiteral(node: qt.TemplateLiteralLikeNode, currentSourceFile: qt.SourceFile) {
   let text = node.rawText;
   if (text === undefined) {
     text = qf.get.sourceTextOfNodeFromSourceFile(currentSourceFile, node);
@@ -59,11 +59,11 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
   text = text.replace(/\r\n?/g, '\n');
   return qc.asLiteral(text).setRange(node);
 }
-function createTemplateObjectHelper(context: TrafoContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
+function createTemplateObjectHelper(context: qt.TrafoContext, cooked: qt.ArrayLiteralExpression, raw: qt.ArrayLiteralExpression) {
   context.requestEmitHelper(templateObjectHelper);
   return new qc.CallExpression(getUnscopedHelperName('__makeTemplateObject'), undefined, [cooked, raw]);
 }
-export const templateObjectHelper: UnscopedEmitHelper = {
+export const templateObjectHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:makeTemplateObject',
   importName: '__makeTemplateObject',
   scoped: false,

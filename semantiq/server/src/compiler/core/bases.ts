@@ -288,7 +288,7 @@ SyntaxList.prototype.kind = SyntaxList.kind;
 export abstract class Tobj extends Nobj implements qt.Tobj {
   _typingBrand: any;
 }
-export abstract class WithArgsTobj extends Tobj implements qt.WithArgsTobj {
+export abstract class qt.WithArgsTobj extends Tobj implements qt.WithArgsTobj {
   typeArgs?: qt.Nodes<qt.Typing>;
 }
 export abstract class Decl extends Nobj implements qt.Decl {
@@ -301,7 +301,7 @@ export abstract class DeclarationStmt extends NamedDecl implements qt.Declaratio
   name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
   _statementBrand: any;
 }
-export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
+export abstract class qt.ClassElem extends NamedDecl implements qt.ClassElem {
   name?: qt.PropertyName;
   _classElemBrand: any;
 }
@@ -331,7 +331,7 @@ export abstract class ObjectLiteralElem extends NamedDecl implements qt.ObjectLi
 export abstract class PropertyLikeDecl extends NamedDecl implements qt.PropertyLikeDecl {
   name!: qt.PropertyName;
 }
-export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
+export abstract class qt.TypeElem extends NamedDecl implements qt.TypeElem {
   name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
   _typeElemBrand: any;
@@ -352,7 +352,7 @@ export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDec
   }
 
   /*
-  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParamDeclaration> | undefined, ps: Nodes<ParamDeclaration>, t?: qc.Typing): T {
+  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<qt.TypeParamDeclaration> | undefined, ps: Nodes<qt.ParamDeclaration>, t?: qc.Typing): T {
     return this.typeParams !== ts || this.params !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
   }
   */
@@ -412,7 +412,7 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
 export abstract class Stmt extends Nobj implements qt.Stmt {
   _statementBrand: any;
 }
-export abstract class IterationStmt extends Stmt implements qt.IterationStmt {
+export abstract class qt.IterationStmt extends Stmt implements qt.IterationStmt {
   statement!: qt.Statement;
 }
 export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
@@ -443,7 +443,7 @@ export abstract class LiteralExpr extends PrimaryExpr implements qt.LiteralExpr 
 export abstract class DocTobj extends Tobj implements qt.DocTobj {
   _docTypeBrand: any;
 }
-export abstract class DocTag extends Nobj implements qt.DocTag {
+export abstract class qt.DocTag extends Nobj implements qt.DocTag {
   parent?: qt.Doc | qt.DocTypingLiteral;
   tagName: qt.Identifier;
   comment?: string;
@@ -455,7 +455,7 @@ export abstract class DocTag extends Nobj implements qt.DocTag {
 }
 export abstract class DocContainer implements qt.DocContainer {
   doc?: qt.Doc[];
-  cache?: readonly DocTag[];
+  cache?: readonly qt.DocTag[];
   append(d: qt.Doc) {
     this.doc = qu.append(this.doc, d);
     return this;
@@ -586,7 +586,7 @@ export abstract class Symbol implements qt.Symbol {
     return this.comment(c);
   }
   docTags(): qt.DocTagInfo[] {
-    if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
+    if (!this.tags) this.tags = qt.Doc.getDocTagsFromDeclarations(this.declarations);
     return this.tags!;
   }
   abstract merge(t: Symbol, unidir?: boolean): this;
@@ -734,7 +734,7 @@ export class Signature implements qt.Signature {
   }
   getDocTags(): qt.DocTagInfo[] | undefined {
     if (this.docTags === undefined) {
-      this.docTags = this.declaration ? Doc.getDocTagsFromDeclarations([this.declaration]) : [];
+      this.docTags = this.declaration ? qt.Doc.getDocTagsFromDeclarations([this.declaration]) : [];
     }
     return this.docTags;
   }
@@ -834,7 +834,7 @@ export class Signature implements qt.Signature {
     if (this.hasRestParam()) {
       const restIndex = this.params.length - 1;
       const restType = this.typeOfSymbol(this.params[restIndex]);
-      const expandSignatureParamsWithTupleMembers = (restType: TupleTypeReference, restIndex: number) => {
+      const expandSignatureParamsWithTupleMembers = (restType: qt.TupleTypeReference, restIndex: number) => {
         const elemTypes = this.typeArgs(restType);
         const minLength = restType.target.minLength;
         const tupleRestIndex = restType.target.hasRestElem ? elemTypes.length - 1 : -1;
@@ -850,8 +850,8 @@ export class Signature implements qt.Signature {
         return concatenate(this.params.slice(0, restIndex), restParams);
       };
       if (qf.is.tupleType(restType)) return [expandSignatureParamsWithTupleMembers(restType, restIndex)];
-      else if (!skipUnionExpanding && restType.flags & qt.TypeFlags.Union && qu.every((restType as UnionType).types, qf.is.tupleType))
-        return qu.map((restType as UnionType).types, (t) => expandSignatureParamsWithTupleMembers(t as TupleTypeReference, restIndex));
+      else if (!skipUnionExpanding && restType.flags & qt.TypeFlags.Union && qu.every((restType as qt.UnionType).types, qf.is.tupleType))
+        return qu.map((restType as qt.UnionType).types, (t) => expandSignatureParamsWithTupleMembers(t as qt.TupleTypeReference, restIndex));
     }
     return [this.params];
   }
@@ -861,7 +861,7 @@ export class Signature implements qt.Signature {
     const rest = this.params[l] || unknownSymbol;
     const t = rest.typeOfSymbol();
     if (qf.is.tupleType(t)) {
-      const ds = (<TupleType>(<TypeReference>t).target).labeledElemDeclarations;
+      const ds = (<qt.TupleType>(<qt.TypeReference>t).target).labeledElemDeclarations;
       const i = pos - l;
       return (ds && this.tupleElemLabel(ds[i])) || ((rest.escName + '_' + i) as qu.__String);
     }
@@ -876,7 +876,7 @@ export class Signature implements qt.Signature {
     const rest = this.params[l] || unknownSymbol;
     const t = this.typeOfSymbol(restParam);
     if (qf.is.tupleType(t)) {
-      const ds = (<TupleType>(<TypeReference>t).target).labeledElemDeclarations;
+      const ds = (<qt.TupleType>(<qt.TypeReference>t).target).labeledElemDeclarations;
       const i = pos - l;
       return ds && ds[index];
     }
@@ -959,7 +959,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
   commentDirectives?: qt.CommentDirective[];
   commonJsModuleIndicator?: Node;
   docDiagnostics?: qd.DiagnosticWithLocation[];
-  endOfFileToken!: Token<Syntax.EndOfFileToken>;
+  endOfFileToken!: qt.Token<Syntax.EndOfFileToken>;
   errorExpectations?: qu.TextRange[];
   exportedModulesFromDeclarationEmit?: qt.ExportedModulesFromDeclarationEmit;
   externalModuleIndicator?: Node;
@@ -1026,7 +1026,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
       return qu.filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     }
   }
-  sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
+  sourceFileMayBeEmitted(sourceFile: SourceFile, host: qt.SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
     const opts = host.getCompilerOpts();
     return (
       !(opts.noEmitForJsFiles && sourceFile.isJS()) &&
@@ -1263,30 +1263,30 @@ export class SourceFile extends Decl implements qt.SourceFile {
     return node;
   }
 }
-export class SourceMapSource implements qt.SourceMapSource {
+export class qt.SourceMapSource implements qt.SourceMapSource {
   lineMap!: number[];
   constructor(public fileName: string, public text: string, public skipTrivia = (pos: number) => pos) {}
   lineAndCharOf(pos: number): qy.LineAndChar {
     return lineAndCharOf(this, pos);
   }
 }
-let allUnscopedEmitHelpers: qu.QReadonlyMap<UnscopedEmitHelper> | undefined;
+let allUnscopedEmitHelpers: qu.QReadonlyMap<qt.UnscopedEmitHelper> | undefined;
 export class UnparsedSource extends Nobj implements qt.UnparsedSource {
   static readonly kind = Syntax.UnparsedSource;
   fileName: string;
   text: string;
-  prologues: readonly UnparsedPrologue[];
-  helpers: readonly UnscopedEmitHelper[] | undefined;
+  prologues: readonly qt.UnparsedPrologue[];
+  helpers: readonly qt.UnscopedEmitHelper[] | undefined;
   referencedFiles: readonly qt.FileReference[];
   typeReferenceDirectives: readonly string[] | undefined;
   libReferenceDirectives: readonly qt.FileReference[];
   hasNoDefaultLib?: boolean;
   sourceMapPath?: string;
   sourceMapText?: string;
-  syntheticReferences?: readonly UnparsedSyntheticReference[];
+  syntheticReferences?: readonly qt.UnparsedSyntheticReference[];
   texts: readonly UnparsedSourceText[];
   oldFileOfCurrentEmit?: boolean;
-  parsedSourceMap?: RawSourceMap | false | undefined;
+  parsedSourceMap?: qt.RawSourceMap | false | undefined;
   lineAndCharOf(pos: number): LineAndChar;
   createUnparsedSource() {
     super();
@@ -1296,12 +1296,12 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     this.lineAndCharOf = (pos) => qy.get.lineAndCharOf(this, pos);
   }
   createUnparsedSourceFile(text: string): UnparsedSource;
-  createUnparsedSourceFile(inputFile: InputFiles, type: 'js' | 'dts', stripInternal?: boolean): UnparsedSource;
+  createUnparsedSourceFile(inputFile: qt.InputFiles, type: 'js' | 'dts', stripInternal?: boolean): UnparsedSource;
   createUnparsedSourceFile(text: string, mapPath: string | undefined, map: string | undefined): UnparsedSource;
-  createUnparsedSourceFile(textOrInputFiles: string | InputFiles, mapPathOrType?: string, mapTextOrStripInternal?: string | boolean): UnparsedSource {
+  createUnparsedSourceFile(textOrInputFiles: string | qt.InputFiles, mapPathOrType?: string, mapTextOrStripInternal?: string | boolean): UnparsedSource {
     const r = createUnparsedSource();
     let stripInternal: boolean | undefined;
-    let bundleFileInfo: BundleFileInfo | undefined;
+    let bundleFileInfo: qt.BundleFileInfo | undefined;
     if (!isString(textOrInputFiles)) {
       qu.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
       r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
@@ -1371,9 +1371,9 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
       ))
     );
   }
-  parseUnparsedSourceFile(this: UnparsedSource, bundleFileInfo: BundleFileInfo | undefined, stripInternal: boolean | undefined) {
-    let prologues: UnparsedPrologue[] | undefined;
-    let helpers: UnscopedEmitHelper[] | undefined;
+  parseUnparsedSourceFile(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo | undefined, stripInternal: boolean | undefined) {
+    let prologues: qt.UnparsedPrologue[] | undefined;
+    let helpers: qt.UnscopedEmitHelper[] | undefined;
     let referencedFiles: qc.FileReference[] | undefined;
     let typeReferenceDirectives: string[] | undefined;
     let libReferenceDirectives: qc.FileReference[] | undefined;
@@ -1381,7 +1381,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Prologue:
-          (prologues || (prologues = [])).push(createUnparsedNode(section, this) as UnparsedPrologue);
+          (prologues || (prologues = [])).push(createUnparsedNode(section, this) as qt.UnparsedPrologue);
           break;
         case qt.BundleFileSectionKind.EmitHelpers:
           (helpers || (helpers = [])).push(getAllUnscopedEmitHelpers().get(section.data)!);
@@ -1399,11 +1399,11 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
           (libReferenceDirectives || (libReferenceDirectives = [])).push({ pos: -1, end: -1, fileName: section.data });
           break;
         case qt.BundleFileSectionKind.Prepend:
-          const prependNode = createUnparsedNode(section, this) as UnparsedPrepend;
-          let prependTexts: UnparsedTextLike[] | undefined;
+          const prependNode = createUnparsedNode(section, this) as qt.UnparsedPrepend;
+          let prependTexts: qt.UnparsedTextLike[] | undefined;
           for (const text of section.texts) {
             if (!stripInternal || text.kind !== qt.BundleFileSectionKind.Internal) {
-              (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, this) as UnparsedTextLike);
+              (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, this) as qt.UnparsedTextLike);
             }
           }
           prependNode.texts = prependTexts || empty;
@@ -1415,7 +1415,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
             break;
           }
         case qt.BundleFileSectionKind.Text:
-          (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
+          (texts || (texts = [])).push(createUnparsedNode(section, this) as qt.UnparsedTextLike);
           break;
         default:
           qc.assert.never(section);
@@ -1426,17 +1426,17 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     this.referencedFiles = referencedFiles || empty;
     this.typeReferenceDirectives = typeReferenceDirectives;
     this.libReferenceDirectives = libReferenceDirectives || empty;
-    this.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
+    this.texts = texts || [<qt.UnparsedTextLike>createUnparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
-  parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: BundleFileInfo) {
+  parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo) {
     qu.assert(!!this.oldFileOfCurrentEmit);
-    let texts: UnparsedTextLike[] | undefined;
-    let syntheticReferences: UnparsedSyntheticReference[] | undefined;
+    let texts: qt.UnparsedTextLike[] | undefined;
+    let syntheticReferences: qt.UnparsedSyntheticReference[] | undefined;
     for (const section of bundleFileInfo.sections) {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Internal:
         case qt.BundleFileSectionKind.Text:
-          (texts || (texts = [])).push(createUnparsedNode(section, this) as UnparsedTextLike);
+          (texts || (texts = [])).push(createUnparsedNode(section, this) as qt.UnparsedTextLike);
           break;
         case qt.BundleFileSectionKind.NoDefaultLib:
         case qt.BundleFileSectionKind.Reference:
@@ -1476,7 +1476,7 @@ function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.S
       return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
     });
   };
-  let cs = Doc.getDocCommentsFromDeclarations(ds);
+  let cs = qt.Doc.getDocCommentsFromDeclarations(ds);
   if (cs.length === 0 || ds.some(qf.has.docInheritDocTag)) {
     forEachUnique(ds, (d) => {
       const inheritedDocs = findInherited(d, d.symbol.name);

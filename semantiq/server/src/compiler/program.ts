@@ -47,13 +47,13 @@ interface OutputFingerprint {
   byteOrderMark: boolean;
   mtime: Date;
 }
-export function createCompilerHost(opts: CompilerOpts, setParentNodes?: boolean): CompilerHost {
+export function createCompilerHost(opts: qt.CompilerOpts, setParentNodes?: boolean): qt.CompilerHost {
   return createCompilerHostWorker(opts, setParentNodes);
 }
-export function createCompilerHostWorker(opts: CompilerOpts, setParentNodes?: boolean, system = sys): CompilerHost {
+export function createCompilerHostWorker(opts: qt.CompilerOpts, setParentNodes?: boolean, system = sys): qt.CompilerHost {
   const existingDirectories = createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
-  function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
+  function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): qt.SourceFile | undefined {
     let text: string | undefined;
     try {
       performance.mark('beforeIORead');
@@ -97,7 +97,7 @@ export function createCompilerHostWorker(opts: CompilerOpts, setParentNodes?: bo
   }
   let outputFingerprints: Map<OutputFingerprint>;
   function writeFileWorker(fileName: string, data: string, writeByteOrderMark: boolean) {
-    function isWatchSet(opts: CompilerOpts) {
+    function isWatchSet(opts: qt.CompilerOpts) {
       return opts.watch && opts.hasOwnProperty('watch');
     }
     if (!isWatchSet(opts) || !system.createHash || !system.getModifiedTime) {
@@ -128,7 +128,7 @@ export function createCompilerHostWorker(opts: CompilerOpts, setParentNodes?: bo
   }
   const newLine = getNewLineCharacter(opts, () => system.newLine);
   const realpath = system.realpath && ((path: string) => system.realpath!(path));
-  const compilerHost: CompilerHost = {
+  const compilerHost: qt.CompilerHost = {
     getSourceFile,
     getDefaultLibLocation,
     getDefaultLibFileName: (opts) => combinePaths(getDefaultLibLocation(), qf.get.defaultLibFileName(opts)),
@@ -157,7 +157,7 @@ interface CompilerHostLikeForCache {
   createDirectory?(directory: string): void;
   writeFile?: WriteFileCallback;
 }
-export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: CompilerHost['getSourceFile']) {
+export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: qt.CompilerHost['getSourceFile']) {
   const originalReadFile = host.readFile;
   const originalFileExists = host.fileExists;
   const originalDirectoryExists = host.directoryExists;
@@ -166,7 +166,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
   const readFileCache = createMap<string | false>();
   const fileExistsCache = createMap<boolean>();
   const directoryExistsCache = createMap<boolean>();
-  const sourceFileCache = createMap<SourceFile>();
+  const sourceFileCache = createMap<qt.SourceFile>();
   const readFileWithCache = (fileName: string): string | undefined => {
     const key = toPath(fileName);
     const value = readFileCache.get(key);
@@ -185,7 +185,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) return originalReadFile.call(host, fileName);
     return setReadFileCache(key, fileName);
   };
-  const getSourceFileWithCache: CompilerHost['getSourceFile'] | undefined = getSourceFile
+  const getSourceFileWithCache: qt.CompilerHost['getSourceFile'] | undefined = getSourceFile
     ? (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
         const key = toPath(fileName);
         const value = sourceFileCache.get(key);
@@ -247,9 +247,9 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     readFileWithCache,
   };
 }
-export function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-export function getPreEmitDiagnostics(program: Program | BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+export function getPreEmitDiagnostics(program: qt.Program, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: qt.Program | BuilderProgram, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
   let diagnostics: Diagnostic[] | undefined;
   diagnostics = qu.addRange(diagnostics, program.getConfigFileParsingDiagnostics());
   diagnostics = qu.addRange(diagnostics, program.getOptsDiagnostics(cancellationToken));
@@ -311,7 +311,7 @@ function getCategoryFormat(category: qd.Category): ForegroundColorEscapeSequence
 export function formatColorAndReset(text: string, formatStyle: string) {
   return formatStyle + text + resetEscapeSequence;
 }
-function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
+function formatCodeSpan(file: qt.SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
   const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start);
   const { line: lastLine, character: lastLineChar } = qy.get.lineAndCharOf(file, start + length);
   const lastLineInFile = qy.get.lineAndCharOf(file, file.text.length).line;
@@ -349,7 +349,7 @@ function formatCodeSpan(file: SourceFile, start: number, length: number, indent:
   }
   return context;
 }
-export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
+export function formatLocation(file: qt.SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
   const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start);
   const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
   let output = '';
@@ -413,8 +413,8 @@ export function flattenqd.MessageText(diag: string | qd.MessageChain | undefined
 export function loadWithLocalCache<T>(
   names: string[],
   containingFile: string,
-  redirectedReference: ResolvedProjectReference | undefined,
-  loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T
+  redirectedReference: qt.ResolvedProjectReference | undefined,
+  loader: (name: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) => T
 ): T[] {
   if (names.length === 0) return [];
   const resolutions: T[] = [];
@@ -435,24 +435,24 @@ interface DiagnosticCache<T extends Diagnostic> {
   perFile?: Map<readonly T[]>;
   allDiagnostics?: readonly T[];
 }
-interface RefFile extends TextRange {
+interface qt.RefFile extends TextRange {
   kind: RefFileKind;
   index: number;
-  file: SourceFile;
+  file: qt.SourceFile;
 }
 export function isProgramUptoDate(
-  program: Program | undefined,
+  program: qt.Program | undefined,
   rootFileNames: string[],
-  newOpts: CompilerOpts,
+  newOpts: qt.CompilerOpts,
   getSourceVersion: (path: Path, fileName: string) => string | undefined,
   fileExists: (fileName: string) => boolean,
   hasInvalidatedResolution: HasInvalidatedResolution,
   hasChangedAutomaticTypeDirectiveNames: boolean,
-  projectReferences: readonly ProjectReference[] | undefined
+  projectReferences: readonly qt.ProjectReference[] | undefined
 ): boolean {
   if (!program || hasChangedAutomaticTypeDirectiveNames) return false;
   if (!arrayIsEqualTo(program.getRootFileNames(), rootFileNames)) return false;
-  let seenResolvedRefs: ResolvedProjectReference[] | undefined;
+  let seenResolvedRefs: qt.ResolvedProjectReference[] | undefined;
   if (!arrayIsEqualTo(program.getProjectReferences(), projectReferences, projectReferenceUptoDate)) return false;
   if (program.getSourceFiles().some(sourceFileNotUptoDate)) return false;
   if (program.getMissingFilePaths().some(fileExists)) return false;
@@ -460,17 +460,17 @@ export function isProgramUptoDate(
   if (!compareDataObjects(currentOpts, newOpts)) return false;
   if (currentOpts.configFile && newOpts.configFile) return currentOpts.configFile.text === newOpts.configFile.text;
   return true;
-  function sourceFileNotUptoDate(sourceFile: SourceFile) {
+  function sourceFileNotUptoDate(sourceFile: qt.SourceFile) {
     return !sourceFileVersionUptoDate(sourceFile) || hasInvalidatedResolution(sourceFile.path);
   }
-  function sourceFileVersionUptoDate(sourceFile: SourceFile) {
+  function sourceFileVersionUptoDate(sourceFile: qt.SourceFile) {
     return sourceFile.version === getSourceVersion(sourceFile.resolvedPath, sourceFile.fileName);
   }
-  function projectReferenceUptoDate(oldRef: ProjectReference, newRef: ProjectReference, index: number) {
+  function projectReferenceUptoDate(oldRef: qt.ProjectReference, newRef: qt.ProjectReference, index: number) {
     if (!projectReferenceIsEqualTo(oldRef, newRef)) return false;
     return resolvedProjectReferenceUptoDate(program!.getResolvedProjectReferences()![index], oldRef);
   }
-  function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: ProjectReference): boolean {
+  function resolvedProjectReferenceUptoDate(oldResolvedRef: qt.ResolvedProjectReference | undefined, oldRef: qt.ProjectReference): boolean {
     if (oldResolvedRef) {
       if (contains(seenResolvedRefs, oldResolvedRef)) return true;
       if (!sourceFileVersionUptoDate(oldResolvedRef.sourceFile)) return false;
@@ -480,21 +480,21 @@ export function isProgramUptoDate(
     return !fileExists(resolveProjectReferencePath(oldRef));
   }
 }
-export function getConfigFileParsingDiagnostics(configFileParseResult: ParsedCommandLine): readonly Diagnostic[] {
+export function getConfigFileParsingDiagnostics(configFileParseResult: qt.ParsedCommandLine): readonly Diagnostic[] {
   return configFileParseResult.opts.configFile ? [...configFileParseResult.opts.configFile.parseDiagnostics, ...configFileParseResult.errors] : configFileParseResult.errors;
 }
-function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOpts: CompilerOpts): boolean {
+function shouldProgramCreateNewSourceFiles(program: qt.Program | undefined, newOpts: qt.CompilerOpts): boolean {
   if (!program) return false;
   const oldOpts = program.getCompilerOpts();
   return !!sourceFileAffectingCompilerOpts.some((option) => !isJsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
 }
 function createCreateProgramOpts(
   rootNames: readonly string[],
-  opts: CompilerOpts,
-  host?: CompilerHost,
-  oldProgram?: Program,
+  opts: qt.CompilerOpts,
+  host?: qt.CompilerHost,
+  oldProgram?: qt.Program,
   configFileParsingDiagnostics?: readonly Diagnostic[]
-): CreateProgramOpts {
+): qt.CreateProgramOpts {
   return {
     rootNames,
     opts,
@@ -503,31 +503,31 @@ function createCreateProgramOpts(
     configFileParsingDiagnostics,
   };
 }
-export function createProgram(createProgramOpts: CreateProgramOpts): Program;
-export function createProgram(rootNames: readonly string[], opts: CompilerOpts, host?: CompilerHost, oldProgram?: Program, configFileParsingDiagnostics?: readonly Diagnostic[]): Program;
+export function createProgram(createProgramOpts: qt.CreateProgramOpts): qt.Program;
+export function createProgram(rootNames: readonly string[], opts: qt.CompilerOpts, host?: qt.CompilerHost, oldProgram?: qt.Program, configFileParsingDiagnostics?: readonly Diagnostic[]): qt.Program;
 export function createProgram(
-  rootNamesOrOpts: readonly string[] | CreateProgramOpts,
-  _opts?: CompilerOpts,
-  _host?: CompilerHost,
-  _oldProgram?: Program,
+  rootNamesOrOpts: readonly string[] | qt.CreateProgramOpts,
+  _opts?: qt.CompilerOpts,
+  _host?: qt.CompilerHost,
+  _oldProgram?: qt.Program,
   _configFileParsingDiagnostics?: readonly Diagnostic[]
-): Program {
+): qt.Program {
   const createProgramOpts = isArray(rootNamesOrOpts) ? createCreateProgramOpts(rootNamesOrOpts, _opts!, _host, _oldProgram, _configFileParsingDiagnostics) : rootNamesOrOpts;
   const { rootNames, opts, configFileParsingDiagnostics, projectReferences } = createProgramOpts;
   let { oldProgram } = createProgramOpts;
-  let processingDefaultLibFiles: SourceFile[] | undefined;
-  let processingOtherFiles: SourceFile[] | undefined;
-  let files: SourceFile[];
+  let processingDefaultLibFiles: qt.SourceFile[] | undefined;
+  let processingOtherFiles: qt.SourceFile[] | undefined;
+  let files: qt.SourceFile[];
   let symlinks: QReadonlyMap<string> | undefined;
   let commonSourceDirectory: string;
-  let diagnosticsProducingTypeChecker: TypeChecker;
-  let noDiagnosticsTypeChecker: TypeChecker;
+  let diagnosticsProducingTypeChecker: qt.TypeChecker;
+  let noDiagnosticsTypeChecker: qt.TypeChecker;
   let classifiableNames: EscapedMap<true>;
   const ambientModuleNameToUnmodifiedFileName = createMap<string>();
   let refFileMap: MultiMap<ts.RefFile> | undefined;
   const cachedBindAndCheckDiagnosticsForFile: DiagnosticCache<Diagnostic> = {};
   const cachedDeclarationDiagnosticsForFile: DiagnosticCache<DiagnosticWithLocation> = {};
-  let resolvedTypeReferenceDirectives = createMap<ResolvedTypeReferenceDirective | undefined>();
+  let resolvedTypeReferenceDirectives = createMap<qt.ResolvedTypeReferenceDirective | undefined>();
   let fileProcessingDiagnostics = createDiagnosticCollection();
   const maxNodeModuleJsDepth = typeof opts.maxNodeModuleJsDepth === 'number' ? opts.maxNodeModuleJsDepth : 0;
   let currentNodeModulesDepth = 0;
@@ -544,47 +544,47 @@ export function createProgram(
   const supportedExtensions = getSupportedExtensions(opts);
   const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts, supportedExtensions);
   const hasEmitBlockingDiagnostics = createMap<boolean>();
-  let _compilerOptsObjectLiteralSyntax: ObjectLiteralExpression | null | undefined;
+  let _compilerOptsObjectLiteralSyntax: qt.ObjectLiteralExpression | null | undefined;
   let moduleResolutionCache: ModuleResolutionCache | undefined;
-  let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference) => ResolvedModuleFull[];
+  let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: qt.ResolvedProjectReference) => qt.ResolvedModuleFull[];
   const hasInvalidatedResolution = host.hasInvalidatedResolution || (() => false);
   if (host.resolveModuleNames) {
     actualResolveModuleNamesWorker = (moduleNames, containingFile, reusedNames, redirectedReference) =>
       host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, opts).map((resolved) => {
-        if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) return resolved as ResolvedModuleFull;
-        const withExtension = clone(resolved) as ResolvedModuleFull;
+        if (!resolved || (resolved as qt.ResolvedModuleFull).extension !== undefined) return resolved as qt.ResolvedModuleFull;
+        const withExtension = clone(resolved) as qt.ResolvedModuleFull;
         withExtension.extension = qy.get.extensionFromPath(resolved.resolvedFileName);
         return withExtension;
       });
   } else {
     moduleResolutionCache = createModuleResolutionCache(currentDirectory, (x) => host.getCanonicalFileName(x), opts);
-    const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
+    const loader = (moduleName: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveModuleName(moduleName, containingFile, opts, host, moduleResolutionCache, redirectedReference).resolvedModule!;
     actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
-      loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
   let actualResolveTypeReferenceDirectiveNamesWorker: (
     typeDirectiveNames: string[],
     containingFile: string,
-    redirectedReference?: ResolvedProjectReference
+    redirectedReference?: qt.ResolvedProjectReference
   ) => (ResolvedTypeReferenceDirective | undefined)[];
   if (host.resolveTypeReferenceDirectives) {
     actualResolveTypeReferenceDirectiveNamesWorker = (typeDirectiveNames, containingFile, redirectedReference) =>
       host.resolveTypeReferenceDirectives!(Debug.checkEachDefined(typeDirectiveNames), containingFile, redirectedReference, opts);
   } else {
-    const loader = (typesRef: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
+    const loader = (typesRef: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveTypeReferenceDirective(typesRef, containingFile, opts, host, redirectedReference).resolvedTypeReferenceDirective!;
     actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) =>
-      loadWithLocalCache<ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
   }
-  const packageIdToSourceFile = createMap<SourceFile>();
+  const packageIdToSourceFile = createMap<qt.SourceFile>();
   let sourceFileToPackageName = createMap<string>();
   let redirectTargetsMap = new MultiMap<string>();
-  const filesByName = createMap<SourceFile | false | undefined>();
+  const filesByName = createMap<qt.SourceFile | false | undefined>();
   let missingFilePaths: readonly Path[] | undefined;
-  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createMap<SourceFile>() : undefined;
+  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createMap<qt.SourceFile>() : undefined;
   let resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined;
-  let projectReferenceRedirects: Map<ResolvedProjectReference | false> | undefined;
+  let projectReferenceRedirects: Map<qt.ResolvedProjectReference | false> | undefined;
   let mapFromFileToProjectReferenceRedirects: Map<Path> | undefined;
   let mapFromToProjectReferenceRedirectSource: Map<SourceOfProjectReferenceRedirect> | undefined;
   const useSourceOfProjectReferenceRedirect = !!host.useSourceOfProjectReferenceRedirect?.() && !opts.disableSourceOfProjectReferenceRedirect;
@@ -671,7 +671,7 @@ export function createProgram(
     });
   }
   oldProgram = undefined;
-  const program: Program = {
+  const program: qt.Program = {
     getRootFileNames: () => rootNames,
     getSourceFile,
     getSourceFileByPath,
@@ -729,24 +729,24 @@ export function createProgram(
   performance.mark('afterProgram');
   performance.measure('Program', 'beforeProgram', 'afterProgram');
   return program;
-  function resolveModuleNamesWorker(moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference) {
+  function resolveModuleNamesWorker(moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: qt.ResolvedProjectReference) {
     performance.mark('beforeResolveModule');
     const result = actualResolveModuleNamesWorker(moduleNames, containingFile, reusedNames, redirectedReference);
     performance.mark('afterResolveModule');
     performance.measure('ResolveModule', 'beforeResolveModule', 'afterResolveModule');
     return result;
   }
-  function resolveTypeReferenceDirectiveNamesWorker(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference) {
+  function resolveTypeReferenceDirectiveNamesWorker(typeDirectiveNames: string[], containingFile: string, redirectedReference?: qt.ResolvedProjectReference) {
     performance.mark('beforeResolveTypeReference');
     const result = actualResolveTypeReferenceDirectiveNamesWorker(typeDirectiveNames, containingFile, redirectedReference);
     performance.mark('afterResolveTypeReference');
     performance.measure('ResolveTypeReference', 'beforeResolveTypeReference', 'afterResolveTypeReference');
     return result;
   }
-  function compareDefaultLibFiles(a: SourceFile, b: SourceFile) {
+  function compareDefaultLibFiles(a: qt.SourceFile, b: qt.SourceFile) {
     return compareNumbers(getDefaultLibFilePriority(a), getDefaultLibFilePriority(b));
   }
-  function getDefaultLibFilePriority(a: SourceFile) {
+  function getDefaultLibFilePriority(a: qt.SourceFile) {
     if (containsPath(defaultLibraryPath, a.fileName, false)) {
       const basename = getBaseFileName(a.fileName);
       if (basename === 'lib.d.ts' || basename === 'lib.es6.d.ts') return 0;
@@ -756,7 +756,7 @@ export function createProgram(
     }
     return libs.length + 2;
   }
-  function getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): ResolvedModuleWithFailedLookupLocations | undefined {
+  function getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): qt.ResolvedModuleWithFailedLookupLocations | undefined {
     return moduleResolutionCache && resolveModuleNameFromCache(moduleName, containingFile, moduleResolutionCache);
   }
   function toPath(fileName: string): Path {
@@ -789,12 +789,12 @@ export function createProgram(
     }
     return classifiableNames;
   }
-  function resolveModuleNamesReusingOldState(moduleNames: string[], containingFile: string, file: SourceFile) {
+  function resolveModuleNamesReusingOldState(moduleNames: string[], containingFile: string, file: qt.SourceFile) {
     if (structuralIsReused === StructureIsReused.Not && !file.ambientModuleNames.length)
       return resolveModuleNamesWorker(moduleNames, containingFile, undefined, getResolvedProjectReferenceToRedirect(file.originalFileName));
     const oldSourceFile = oldProgram && oldProgram.getSourceFile(containingFile);
     if (oldSourceFile !== file && file.resolvedModules) {
-      const result: ResolvedModuleFull[] = [];
+      const result: qt.ResolvedModuleFull[] = [];
       for (const moduleName of moduleNames) {
         const resolvedModule = file.resolvedModules.get(moduleName)!;
         result.push(resolvedModule);
@@ -802,9 +802,9 @@ export function createProgram(
       return result;
     }
     let unknownModuleNames: string[] | undefined;
-    let result: ResolvedModuleFull[] | undefined;
+    let result: qt.ResolvedModuleFull[] | undefined;
     let reusedNames: string[] | undefined;
-    const predictedToResolveToAmbientModuleMarker: ResolvedModuleFull = <any>{};
+    const predictedToResolveToAmbientModuleMarker: qt.ResolvedModuleFull = <any>{};
     for (let i = 0; i < moduleNames.length; i++) {
       const moduleName = moduleNames[i];
       if (file === oldSourceFile && !hasInvalidatedResolution(oldSourceFile.path)) {
@@ -894,8 +894,8 @@ export function createProgram(
     if (projectReferences) {
       resolvedProjectReferences = projectReferences.map(parseProjectReferenceConfigFile);
     }
-    const newSourceFiles: SourceFile[] = [];
-    const modifiedSourceFiles: { oldFile: SourceFile; newFile: SourceFile }[] = [];
+    const newSourceFiles: qt.SourceFile[] = [];
+    const modifiedSourceFiles: { oldFile: qt.SourceFile; newFile: qt.SourceFile }[] = [];
     oldProgram.structureIsReused = StructureIsReused.Completely;
     if (oldProgram.getMissingFilePaths().some((missingFilePath) => host.fileExists(missingFilePath))) return (oldProgram.structureIsReused = StructureIsReused.Not);
     const oldSourceFiles = oldProgram.getSourceFiles();
@@ -1024,7 +1024,7 @@ export function createProgram(
     redirectTargetsMap = oldProgram.redirectTargetsMap;
     return (oldProgram.structureIsReused = StructureIsReused.Completely);
   }
-  function getEmitHost(writeFileCallback?: WriteFileCallback): EmitHost {
+  function getEmitHost(writeFileCallback?: WriteFileCallback): qt.EmitHost {
     return {
       getPrependNodes,
       getCanonicalFileName,
@@ -1056,7 +1056,7 @@ export function createProgram(
       redirectTargetsMap,
     };
   }
-  function emitBuildInfo(writeFileCallback?: WriteFileCallback): EmitResult {
+  function emitBuildInfo(writeFileCallback?: WriteFileCallback): qt.EmitResult {
     assert(!opts.out && !opts.outFile);
     performance.mark('beforeEmit');
     const emitResult = emitFiles(notImplementedResolver, getEmitHost(writeFileCallback), undefined, noTransformers, false, true);
@@ -1081,10 +1081,10 @@ export function createProgram(
       }
     );
   }
-  function isSourceFileFromExternalLibrary(file: SourceFile): boolean {
+  function isSourceFileFromExternalLibrary(file: qt.SourceFile): boolean {
     return !!sourceFilesFoundSearchingNodeModules.get(file.path);
   }
-  function isSourceFileDefaultLibrary(file: SourceFile): boolean {
+  function isSourceFileDefaultLibrary(file: qt.SourceFile): boolean {
     if (file.hasNoDefaultLib) return true;
     if (!opts.noLib) return false;
     const equalityComparer = host.useCaseSensitiveFileNames() ? equateStringsCaseSensitive : equateStringsCaseInsensitive;
@@ -1101,27 +1101,27 @@ export function createProgram(
     return noDiagnosticsTypeChecker || (noDiagnosticsTypeChecker = qc_create(program, false));
   }
   function emit(
-    sourceFile?: SourceFile,
+    sourceFile?: qt.SourceFile,
     writeFileCallback?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
+    cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
-    transformers?: CustomTransformers,
+    transformers?: qt.CustomTransformers,
     forceDtsEmit?: boolean
-  ): EmitResult {
+  ): qt.EmitResult {
     return runWithCancellationToken(() => emitWorker(program, sourceFile, writeFileCallback, cancellationToken, emitOnlyDtsFiles, transformers, forceDtsEmit));
   }
   function isEmitBlocked(emitFileName: string): boolean {
     return hasEmitBlockingqd.has(toPath(emitFileName));
   }
   function emitWorker(
-    program: Program,
-    sourceFile: SourceFile | undefined,
+    program: qt.Program,
+    sourceFile: qt.SourceFile | undefined,
     writeFileCallback: WriteFileCallback | undefined,
-    cancellationToken: CancellationToken | undefined,
+    cancellationToken: qt.CancellationToken | undefined,
     emitOnlyDtsFiles?: boolean,
-    customTransformers?: CustomTransformers,
+    customTransformers?: qt.CustomTransformers,
     forceDtsEmit?: boolean
-  ): EmitResult {
+  ): qt.EmitResult {
     if (!forceDtsEmit) {
       const result = handleNoEmitOpts(program, sourceFile, cancellationToken);
       if (result) return result;
@@ -1133,16 +1133,16 @@ export function createProgram(
     performance.measure('Emit', 'beforeEmit', 'afterEmit');
     return emitResult;
   }
-  function getSourceFile(fileName: string): SourceFile | undefined {
+  function getSourceFile(fileName: string): qt.SourceFile | undefined {
     return getSourceFileByPath(toPath(fileName));
   }
-  function getSourceFileByPath(path: Path): SourceFile | undefined {
+  function getSourceFileByPath(path: Path): qt.SourceFile | undefined {
     return filesByName.get(path) || undefined;
   }
   function getDiagnosticsHelper<T extends Diagnostic>(
-    sourceFile: SourceFile | undefined,
-    getDiagnostics: (sourceFile: SourceFile, cancellationToken: CancellationToken | undefined) => readonly T[],
-    cancellationToken: CancellationToken | undefined
+    sourceFile: qt.SourceFile | undefined,
+    getDiagnostics: (sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined) => readonly T[],
+    cancellationToken: qt.CancellationToken | undefined
   ): readonly T[] {
     if (sourceFile) return getDiagnostics(sourceFile, cancellationToken);
     return sortAndDeduplicateDiagnostics(
@@ -1154,32 +1154,32 @@ export function createProgram(
       })
     );
   }
-  function getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[] {
     return getDiagnosticsHelper(sourceFile, getSyntacticDiagnosticsForFile, cancellationToken);
   }
-  function getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
     return getDiagnosticsHelper(sourceFile, getSemanticDiagnosticsForFile, cancellationToken);
   }
-  function getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+  function getBindAndCheckDiagnostics(sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
     return getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken);
   }
-  function getProgramDiagnostics(sourceFile: SourceFile): readonly Diagnostic[] {
+  function getProgramDiagnostics(sourceFile: qt.SourceFile): readonly Diagnostic[] {
     if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
     const fileProcessingDiagnosticsInFile = fileProcessingqd.getDiagnostics(sourceFile.fileName);
     const programDiagnosticsInFile = programqd.getDiagnostics(sourceFile.fileName);
     return getMergedProgramDiagnostics(sourceFile, fileProcessingDiagnosticsInFile, programDiagnosticsInFile);
   }
-  function getMergedProgramDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
+  function getMergedProgramDiagnostics(sourceFile: qt.SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
     const flatDiagnostics = flatten(allDiagnostics);
     if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     return getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics).diagnostics;
   }
-  function getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[] {
     const opts = program.getCompilerOpts();
     if (!sourceFile || opts.out || opts.outFile) return getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
     return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancellationToken);
   }
-  function getSyntacticDiagnosticsForFile(sourceFile: SourceFile): readonly DiagnosticWithLocation[] {
+  function getSyntacticDiagnosticsForFile(sourceFile: qt.SourceFile): readonly DiagnosticWithLocation[] {
     if (sourceFile.isJS()) {
       if (!sourceFile.additionalSyntacticDiagnostics) {
         sourceFile.additionalSyntacticDiagnostics = getJSSyntacticDiagnosticsForFile(sourceFile);
@@ -1192,20 +1192,20 @@ export function createProgram(
     try {
       return func();
     } catch (e) {
-      if (e instanceof OperationCanceledException) {
+      if (e instanceof qt.OperationCanceledException) {
         noDiagnosticsTypeChecker = undefined!;
         diagnosticsProducingTypeChecker = undefined!;
       }
       throw e;
     }
   }
-  function getSemanticDiagnosticsForFile(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
+  function getSemanticDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
     return concatenate(getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken), getProgramDiagnostics(sourceFile));
   }
-  function getBindAndCheckDiagnosticsForFile(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
+  function getBindAndCheckDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
     return getAndCacheDiagnostics(sourceFile, cancellationToken, cachedBindAndCheckDiagnosticsForFile, getBindAndCheckDiagnosticsForFileNoCache);
   }
-  function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
+  function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
     return runWithCancellationToken(() => {
       if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
       const typeChecker = getDiagnosticsProducingTypeChecker();
@@ -1224,7 +1224,7 @@ export function createProgram(
       return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.docDiagnostics : undefined);
     });
   }
-  function getMergedBindAndCheckDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
+  function getMergedBindAndCheckDiagnostics(sourceFile: qt.SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
     const flatDiagnostics = flatten(allDiagnostics);
     if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     const { diagnostics, directives } = getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics);
@@ -1233,17 +1233,17 @@ export function createProgram(
     }
     return diagnostics;
   }
-  function getDiagnosticsWithPrecedingDirectives(sourceFile: SourceFile, commentDirectives: CommentDirective[], flatDiagnostics: Diagnostic[]) {
+  function getDiagnosticsWithPrecedingDirectives(sourceFile: qt.SourceFile, commentDirectives: qt.CommentDirective[], flatDiagnostics: Diagnostic[]) {
     const directives = qf.create.commentDirectivesMap(sourceFile, commentDirectives);
     const diagnostics = flatqd.filter((diagnostic) => markPrecedingCommentDirectiveLine(diagnostic, directives) === -1);
     return { diagnostics, directives };
   }
-  function getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getSuggestionDiagnostics(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken): readonly DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
       return getDiagnosticsProducingTypeChecker().getSuggestionDiagnostics(sourceFile, cancellationToken);
     });
   }
-  function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: CommentDirectivesMap) {
+  function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: qt.CommentDirectivesMap) {
     const { file, start } = diagnostic;
     if (!file) return -1;
     const s = qy.get.lineStarts(file);
@@ -1256,7 +1256,7 @@ export function createProgram(
     }
     return -1;
   }
-  function getJSSyntacticDiagnosticsForFile(sourceFile: SourceFile): DiagnosticWithLocation[] {
+  function getJSSyntacticDiagnosticsForFile(sourceFile: qt.SourceFile): DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
       const diagnostics: DiagnosticWithLocation[] = [];
       walk(sourceFile, sourceFile);
@@ -1267,7 +1267,7 @@ export function createProgram(
           case Syntax.Param:
           case Syntax.PropertyDeclaration:
           case Syntax.MethodDeclaration:
-            if ((<ParamDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
+            if ((<qt.ParamDeclaration | qt.PropertyDeclaration | qt.MethodDeclaration>parent).questionToken === node) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
               return 'skip';
             }
@@ -1279,20 +1279,20 @@ export function createProgram(
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
           case Syntax.VariableDeclaration:
-            if ((<FunctionLikeDeclaration | VariableDeclaration | ParamDeclaration | PropertyDeclaration>parent).type === node) {
+            if ((<FunctionLikeDeclaration | qt.VariableDeclaration | qt.ParamDeclaration | qt.PropertyDeclaration>parent).type === node) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
         }
         switch (node.kind) {
           case Syntax.ImportClause:
-            if ((node as ImportClause).isTypeOnly) {
+            if ((node as qt.ImportClause).isTypeOnly) {
               diagnostics.push(qf.create.diagnosticForNode(node.parent, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
               return 'skip';
             }
             break;
           case Syntax.ExportDeclaration:
-            if ((node as ExportDeclaration).isTypeOnly) {
+            if ((node as qt.ExportDeclaration).isTypeOnly) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
               return 'skip';
             }
@@ -1301,25 +1301,25 @@ export function createProgram(
             diagnostics.push(qf.create.diagnosticForNode(node, qd.import_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.ExportAssignment:
-            if ((<ExportAssignment>node).isExportEquals) {
+            if ((<qt.ExportAssignment>node).isExportEquals) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.export_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.HeritageClause:
-            const heritageClause = <HeritageClause>node;
+            const heritageClause = <qt.HeritageClause>node;
             if (heritageClause.token === Syntax.ImplementsKeyword) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.implements_clauses_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.InterfaceDeclaration:
-            const interfaceKeyword = Token.toString(Syntax.InterfaceKeyword);
+            const interfaceKeyword = qt.Token.toString(Syntax.InterfaceKeyword);
             Debug.assertIsDefined(interfaceKeyword);
             diagnostics.push(qf.create.diagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
           case Syntax.ModuleDeclaration:
-            const moduleKeyword = node.flags & NodeFlags.Namespace ? Token.toString(Syntax.NamespaceKeyword) : Token.toString(Syntax.ModuleKeyword);
+            const moduleKeyword = node.flags & NodeFlags.Namespace ? qt.Token.toString(Syntax.NamespaceKeyword) : qt.Token.toString(Syntax.ModuleKeyword);
             Debug.assertIsDefined(moduleKeyword);
             diagnostics.push(qf.create.diagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
@@ -1334,7 +1334,7 @@ export function createProgram(
             diagnostics.push(qf.create.diagnosticForNode(node, qd.Non_null_assertions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.AsExpression:
-            diagnostics.push(qf.create.diagnosticForNode((node as AsExpression).type, qd.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(qf.create.diagnosticForNode((node as qt.AsExpression).type, qd.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.TypeAssertionExpression:
             fail();
@@ -1370,17 +1370,17 @@ export function createProgram(
             }
             break;
           case Syntax.PropertyDeclaration:
-            if (nodes === (<PropertyDeclaration>parent).modifiers) {
+            if (nodes === (<qt.PropertyDeclaration>parent).modifiers) {
               for (const modifier of <Nodes<Modifier>>nodes) {
                 if (modifier.kind !== Syntax.StaticKeyword) {
-                  diagnostics.push(qf.create.diagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
+                  diagnostics.push(qf.create.diagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
                 }
               }
               return 'skip';
             }
             break;
           case Syntax.Param:
-            if (nodes === (<ParamDeclaration>parent).modifiers) {
+            if (nodes === (<qt.ParamDeclaration>parent).modifiers) {
               diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Param_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1391,7 +1391,7 @@ export function createProgram(
           case Syntax.JsxSelfClosingElem:
           case Syntax.JsxOpeningElem:
           case Syntax.TaggedTemplateExpression:
-            if (nodes === (<WithArgsTobj>parent).typeArgs) {
+            if (nodes === (<qt.WithArgsTobj>parent).typeArgs) {
               diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_args_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1411,7 +1411,7 @@ export function createProgram(
             case Syntax.ReadonlyKeyword:
             case Syntax.DeclareKeyword:
             case Syntax.AbstractKeyword:
-              diagnostics.push(qf.create.diagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
+              diagnostics.push(qf.create.diagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
               break;
             case Syntax.StaticKeyword:
             case Syntax.ExportKeyword:
@@ -1428,20 +1428,20 @@ export function createProgram(
       }
     });
   }
-  function getDeclarationDiagnosticsWorker(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsWorker(sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): readonly DiagnosticWithLocation[] {
     return getAndCacheDiagnostics(sourceFile, cancellationToken, cachedDeclarationDiagnosticsForFile, getDeclarationDiagnosticsForFileNoCache);
   }
-  function getDeclarationDiagnosticsForFileNoCache(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsForFileNoCache(sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): readonly DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
       const resolver = getDiagnosticsProducingTypeChecker().getEmitResolver(sourceFile, cancellationToken);
       return qnr.getDeclarationDiagnostics(getEmitHost(noop), resolver, sourceFile) || emptyArray;
     });
   }
-  function getAndCacheDiagnostics<T extends SourceFile | undefined, U extends Diagnostic>(
+  function getAndCacheDiagnostics<T extends qt.SourceFile | undefined, U extends Diagnostic>(
     sourceFile: T,
-    cancellationToken: CancellationToken | undefined,
+    cancellationToken: qt.CancellationToken | undefined,
     cache: DiagnosticCache<U>,
-    getDiagnostics: (sourceFile: T, cancellationToken: CancellationToken | undefined) => readonly U[]
+    getDiagnostics: (sourceFile: T, cancellationToken: qt.CancellationToken | undefined) => readonly U[]
   ): readonly U[] {
     const cachedResult = sourceFile ? cache.perFile && cache.perFile.get(sourceFile.path) : cache.allDiagnostics;
     if (cachedResult) return cachedResult;
@@ -1456,7 +1456,7 @@ export function createProgram(
     }
     return result;
   }
-  function getDeclarationDiagnosticsForFile(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken): readonly DiagnosticWithLocation[] {
     return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
   }
   function getOptsDiagnostics(): SortedReadonlyArray<Diagnostic> {
@@ -1481,20 +1481,20 @@ export function createProgram(
   function processRootFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean) {
     processSourceFile(normalizePath(fileName), isDefaultLib, ignoreNoDefaultLib, undefined);
   }
-  function fileReferenceIsEqualTo(a: FileReference, b: FileReference): boolean {
+  function fileReferenceIsEqualTo(a: qt.FileReference, b: qt.FileReference): boolean {
     return a.fileName === b.fileName;
   }
-  function moduleNameIsEqualTo(a: StringLiteralLike | Identifier, b: StringLiteralLike | Identifier): boolean {
+  function moduleNameIsEqualTo(a: StringLiteralLike | qt.Identifier, b: StringLiteralLike | qt.Identifier): boolean {
     return a.kind === Syntax.Identifier ? b.kind === Syntax.Identifier && a.escapedText === b.escapedText : b.kind === Syntax.StringLiteral && a.text === b.text;
   }
-  function collectExternalModuleReferences(file: SourceFile): void {
+  function collectExternalModuleReferences(file: qt.SourceFile): void {
     if (file.imports) {
       return;
     }
     const isJavaScriptFile = file.isJS();
     const isExternalModuleFile = qf.is.externalModule(file);
     let imports: StringLiteralLike[] | undefined;
-    let moduleAugmentations: (StringLiteral | Identifier)[] | undefined;
+    let moduleAugmentations: (StringLiteral | qt.Identifier)[] | undefined;
     let ambientModules: string[] | undefined;
     if (opts.importHelpers && (opts.isolatedModules || isExternalModuleFile) && !file.isDeclarationFile) {
       const externalHelpersModuleReference = qc.asLiteral(externalHelpersModuleNameText);
@@ -1529,7 +1529,7 @@ export function createProgram(
             if (file.isDeclarationFile) {
               (ambientModules || (ambientModules = [])).push(nameText);
             }
-            const body = <ModuleBlock>(<ModuleDeclaration>node).body;
+            const body = <qt.ModuleBlock>(<qt.ModuleDeclaration>node).body;
             if (body) {
               for (const statement of body.statements) {
                 collectModuleReferences(statement, true);
@@ -1539,7 +1539,7 @@ export function createProgram(
         }
       }
     }
-    function collectDynamicImportOrRequireCalls(file: SourceFile) {
+    function collectDynamicImportOrRequireCalls(file: qt.SourceFile) {
       const r = /import|require/g;
       while (r.exec(file.text) !== null) {
         const node = getNodeAtPosition(file, r.lastIndex);
@@ -1552,7 +1552,7 @@ export function createProgram(
         }
       }
     }
-    function getNodeAtPosition(sourceFile: SourceFile, position: number): Node {
+    function getNodeAtPosition(sourceFile: qt.SourceFile, position: number): Node {
       let current: Node = sourceFile;
       const getContainingChild = (child: Node) => {
         if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
@@ -1564,20 +1564,20 @@ export function createProgram(
       }
     }
   }
-  function getLibFileFromReference(ref: FileReference) {
+  function getLibFileFromReference(ref: qt.FileReference) {
     const libName = toFileNameLowerCase(ref.fileName);
     const libFileName = libMap.get(libName);
     if (libFileName) return getSourceFile(combinePaths(defaultLibraryPath, libFileName));
   }
-  function getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined {
+  function getSourceFileFromReference(referencingFile: qt.SourceFile | qt.UnparsedSource, ref: qt.FileReference): qt.SourceFile | undefined {
     return getSourceFileFromReferenceWorker(resolveTripleslashReference(ref.fileName, referencingFile.fileName), (fileName) => filesByName.get(toPath(fileName)) || undefined);
   }
   function getSourceFileFromReferenceWorker(
     fileName: string,
-    getSourceFile: (fileName: string) => SourceFile | undefined,
+    getSourceFile: (fileName: string) => qt.SourceFile | undefined,
     fail?: (diagnostic: qd.Message, ...arg: string[]) => void,
-    refFile?: SourceFile
-  ): SourceFile | undefined {
+    refFile?: qt.SourceFile
+  ): qt.SourceFile | undefined {
     if (hasExtension(fileName)) {
       const canonicalFileName = host.getCanonicalFileName(fileName);
       if (!opts.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => fileExtensionIs(canonicalFileName, extension))) {
@@ -1616,7 +1616,7 @@ export function createProgram(
       return sourceFileWithAddedExtension;
     }
   }
-  function processSourceFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, packageId: PackageId | undefined, refFile?: RefFile): void {
+  function processSourceFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, packageId: qt.PackageId | undefined, refFile?: qt.RefFile): void {
     getSourceFileFromReferenceWorker(
       fileName,
       (fileName) => findSourceFile(fileName, toPath(fileName), isDefaultLib, ignoreNoDefaultLib, refFile, packageId),
@@ -1624,7 +1624,7 @@ export function createProgram(
       refFile && refFile.file
     );
   }
-  function reportFileNamesDifferOnlyInCasingError(fileName: string, existingFile: SourceFile, refFile: RefFile | undefined): void {
+  function reportFileNamesDifferOnlyInCasingError(fileName: string, existingFile: qt.SourceFile, refFile: qt.RefFile | undefined): void {
     const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
     const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
     fileProcessingqd.add(
@@ -1633,8 +1633,8 @@ export function createProgram(
         : createRefFileDiagnostic(refFile, qd.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
     );
   }
-  function createRedirectSourceFile(redirectTarget: SourceFile, unredirected: SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): SourceFile {
-    const redirect: SourceFile = Object.create(redirectTarget);
+  function createRedirectSourceFile(redirectTarget: qt.SourceFile, unredirected: qt.SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): qt.SourceFile {
+    const redirect: qt.SourceFile = Object.create(redirectTarget);
     redirect.fileName = fileName;
     redirect.path = path;
     redirect.resolvedPath = resolvedPath;
@@ -1643,25 +1643,25 @@ export function createProgram(
     sourceFilesFoundSearchingNodeModules.set(path, currentNodeModulesDepth > 0);
     Object.defineProperties(redirect, {
       id: {
-        get(this: SourceFile) {
+        get(this: qt.SourceFile) {
           return this.redirectInfo!.redirectTarget.id;
         },
-        set(this: SourceFile, value: SourceFile['id']) {
+        set(this: qt.SourceFile, value: qt.SourceFile['id']) {
           this.redirectInfo!.redirectTarget.id = value;
         },
       },
       symbol: {
-        get(this: SourceFile) {
+        get(this: qt.SourceFile) {
           return this.redirectInfo!.redirectTarget.symbol;
         },
-        set(this: SourceFile, value: SourceFile['symbol']) {
+        set(this: qt.SourceFile, value: qt.SourceFile['symbol']) {
           this.redirectInfo!.redirectTarget.symbol = value;
         },
       },
     });
     return redirect;
   }
-  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: PackageId | undefined): SourceFile | undefined {
+  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: qt.RefFile | undefined, packageId: qt.PackageId | undefined): qt.SourceFile | undefined {
     if (useSourceOfProjectReferenceRedirect) {
       let source = getSourceOfProjectReferenceRedirect(fileName);
       if (!source && host.realpath && opts.preserveSymlinks && isDeclarationFileName(fileName) && qu.stringContains(fileName, nodeModulesPathPart)) {
@@ -1776,7 +1776,7 @@ export function createProgram(
     }
     return file;
   }
-  function addFileToRefFileMap(referencedFileName: string, file: SourceFile | undefined, refFile: RefFile | undefined) {
+  function addFileToRefFileMap(referencedFileName: string, file: qt.SourceFile | undefined, refFile: qt.RefFile | undefined) {
     if (refFile && file) {
       (refFileMap || (refFileMap = new MultiMap())).add(file.path, {
         referencedFileName,
@@ -1786,7 +1786,7 @@ export function createProgram(
       });
     }
   }
-  function addFileToFilesByName(file: SourceFile | undefined, path: Path, redirectedPath: Path | undefined) {
+  function addFileToFilesByName(file: qt.SourceFile | undefined, path: Path, redirectedPath: Path | undefined) {
     if (redirectedPath) {
       filesByName.set(redirectedPath, file);
       filesByName.set(path, file || false);
@@ -1804,7 +1804,7 @@ export function createProgram(
     }
     return getResolvedProjectReferenceToRedirect(fileName);
   }
-  function getProjectReferenceOutputName(referencedProject: ResolvedProjectReference, fileName: string) {
+  function getProjectReferenceOutputName(referencedProject: qt.ResolvedProjectReference, fileName: string) {
     const out = referencedProject.commandLine.opts.outFile || referencedProject.commandLine.opts.out;
     return out ? changeExtension(out, Extension.Dts) : getOutputDeclarationFileName(fileName, referencedProject.commandLine, !host.useCaseSensitiveFileNames());
   }
@@ -1820,7 +1820,7 @@ export function createProgram(
     const referencedProjectPath = mapFromFileToProjectReferenceRedirects.get(toPath(fileName));
     return referencedProjectPath && getResolvedProjectReferenceByPath(referencedProjectPath);
   }
-  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined {
+  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined {
     return forEachProjectReference(projectReferences, resolvedProjectReferences, (resolvedRef, index, parent) => {
       const ref = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
       const resolvedRefPath = toPath(resolveProjectReferencePath(ref));
@@ -1854,19 +1854,19 @@ export function createProgram(
     return useSourceOfProjectReferenceRedirect && !!getResolvedProjectReferenceToRedirect(fileName);
   }
   function forEachProjectReference<T>(
-    projectReferences: readonly ProjectReference[] | undefined,
+    projectReferences: readonly qt.ProjectReference[] | undefined,
     resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined,
-    cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined,
-    cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined
+    cbResolvedRef: (resolvedRef: qt.ResolvedProjectReference | undefined, index: number, parent: qt.ResolvedProjectReference | undefined) => T | undefined,
+    cbRef?: (projectReferences: readonly qt.ProjectReference[] | undefined, parent: qt.ResolvedProjectReference | undefined) => T | undefined
   ): T | undefined {
-    let seenResolvedRefs: ResolvedProjectReference[] | undefined;
+    let seenResolvedRefs: qt.ResolvedProjectReference[] | undefined;
     return worker(projectReferences, resolvedProjectReferences, undefined, cbResolvedRef, cbRef);
     function worker(
-      projectReferences: readonly ProjectReference[] | undefined,
+      projectReferences: readonly qt.ProjectReference[] | undefined,
       resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined,
-      parent: ResolvedProjectReference | undefined,
-      cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined,
-      cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined
+      parent: qt.ResolvedProjectReference | undefined,
+      cbResolvedRef: (resolvedRef: qt.ResolvedProjectReference | undefined, index: number, parent: qt.ResolvedProjectReference | undefined) => T | undefined,
+      cbRef?: (projectReferences: readonly qt.ProjectReference[] | undefined, parent: qt.ResolvedProjectReference | undefined) => T | undefined
     ): T | undefined {
       if (cbRef) {
         const result = cbRef(projectReferences, parent);
@@ -1884,13 +1884,13 @@ export function createProgram(
       });
     }
   }
-  function getResolvedProjectReferenceByPath(projectReferencePath: Path): ResolvedProjectReference | undefined {
+  function getResolvedProjectReferenceByPath(projectReferencePath: Path): qt.ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
       return;
     }
     return projectReferenceRedirects.get(projectReferencePath) || undefined;
   }
-  function processReferencedFiles(file: SourceFile, isDefaultLib: boolean) {
+  function processReferencedFiles(file: qt.SourceFile, isDefaultLib: boolean) {
     forEach(file.referencedFiles, (ref, index) => {
       const referencedFileName = resolveTripleslashReference(ref.fileName, file.originalFileName);
       processSourceFile(referencedFileName, isDefaultLib, undefined, {
@@ -1902,7 +1902,7 @@ export function createProgram(
       });
     });
   }
-  function processTypeReferenceDirectives(file: SourceFile) {
+  function processTypeReferenceDirectives(file: qt.SourceFile) {
     const typeDirectives = map(file.typeReferenceDirectives, (ref) => toFileNameLowerCase(ref.fileName));
     if (!typeDirectives) {
       return;
@@ -1922,7 +1922,7 @@ export function createProgram(
       });
     }
   }
-  function processTypeReferenceDirective(typeReferenceDirective: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective, refFile?: RefFile): void {
+  function processTypeReferenceDirective(typeReferenceDirective: string, resolvedTypeReferenceDirective?: qt.ResolvedTypeReferenceDirective, refFile?: qt.RefFile): void {
     const previousResolution = resolvedTypeReferenceDirectives.get(typeReferenceDirective);
     if (previousResolution && previousResolution.primary) {
       return;
@@ -1972,7 +1972,7 @@ export function createProgram(
       resolvedTypeReferenceDirectives.set(typeReferenceDirective, resolvedTypeReferenceDirective);
     }
   }
-  function processLibReferenceDirectives(file: SourceFile) {
+  function processLibReferenceDirectives(file: qt.SourceFile) {
     forEach(file.libReferenceDirectives, (libReference) => {
       const libName = toFileNameLowerCase(libReference.fileName);
       const libFileName = libMap.get(libName);
@@ -1986,14 +1986,14 @@ export function createProgram(
       }
     });
   }
-  function createRefFileDiagnostic(refFile: RefFile | undefined, message: qd.Message, ...args: any[]): Diagnostic {
+  function createRefFileDiagnostic(refFile: qt.RefFile | undefined, message: qd.Message, ...args: any[]): Diagnostic {
     if (!refFile) return createCompilerDiagnostic(message, ...args);
     return qf.create.fileDiagnostic(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
   }
   function getCanonicalFileName(fileName: string): string {
     return host.getCanonicalFileName(fileName);
   }
-  function processImportedModules(file: SourceFile) {
+  function processImportedModules(file: qt.SourceFile) {
     collectExternalModuleReferences(file);
     if (file.imports.length || file.moduleAugmentations.length) {
       const moduleNames = getModuleNames(file);
@@ -2049,11 +2049,11 @@ export function createProgram(
       file.resolvedModules = undefined;
     }
   }
-  function computeCommonSourceDirectory(sourceFiles: SourceFile[]): string {
+  function computeCommonSourceDirectory(sourceFiles: qt.SourceFile[]): string {
     const fileNames = mapDefined(sourceFiles, (file) => (file.isDeclarationFile ? undefined : file.fileName));
     return computeCommonSourceDirectoryOfFilenames(fileNames, currentDirectory, getCanonicalFileName);
   }
-  function checkSourceFilesBelongToPath(sourceFiles: readonly SourceFile[], rootDirectory: string): boolean {
+  function checkSourceFilesBelongToPath(sourceFiles: readonly qt.SourceFile[], rootDirectory: string): boolean {
     let allFilesBelongToPath = true;
     const absoluteRootDirectoryPath = host.getCanonicalFileName(getNormalizedAbsolutePath(rootDirectory, currentDirectory));
     let rootPaths: Map<true> | undefined;
@@ -2069,16 +2069,16 @@ export function createProgram(
     }
     return allFilesBelongToPath;
   }
-  function parseProjectReferenceConfigFile(ref: ProjectReference): ResolvedProjectReference | undefined {
+  function parseProjectReferenceConfigFile(ref: qt.ProjectReference): qt.ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
-      projectReferenceRedirects = createMap<ResolvedProjectReference | false>();
+      projectReferenceRedirects = createMap<qt.ResolvedProjectReference | false>();
     }
     const refPath = resolveProjectReferencePath(ref);
     const sourceFilePath = toPath(refPath);
     const fromCache = projectReferenceRedirects.get(sourceFilePath);
     if (fromCache !== undefined) return fromCache || undefined;
-    let commandLine: ParsedCommandLine | undefined;
-    let sourceFile: JsonSourceFile | undefined;
+    let commandLine: qt.ParsedCommandLine | undefined;
+    let sourceFile: qt.JsonSourceFile | undefined;
     if (host.getParsedCommandLine) {
       commandLine = host.getParsedCommandLine(refPath);
       if (!commandLine) {
@@ -2091,7 +2091,7 @@ export function createProgram(
       addFileToFilesByName(sourceFile, sourceFilePath, undefined);
     } else {
       const basePath = getNormalizedAbsolutePath(getDirectoryPath(refPath), host.getCurrentDirectory());
-      sourceFile = host.getSourceFile(refPath, ScriptTarget.JSON) as JsonSourceFile | undefined;
+      sourceFile = host.getSourceFile(refPath, ScriptTarget.JSON) as qt.JsonSourceFile | undefined;
       addFileToFilesByName(sourceFile, sourceFilePath, undefined);
       if (sourceFile === undefined) {
         projectReferenceRedirects.set(sourceFilePath, false);
@@ -2103,7 +2103,7 @@ export function createProgram(
     sourceFile.path = sourceFilePath;
     sourceFile.resolvedPath = sourceFilePath;
     sourceFile.originalFileName = refPath;
-    const resolvedRef: ResolvedProjectReference = { commandLine, sourceFile };
+    const resolvedRef: qt.ResolvedProjectReference = { commandLine, sourceFile };
     projectReferenceRedirects.set(sourceFilePath, resolvedRef);
     if (commandLine.projectReferences) {
       resolvedRef.references = commandLine.projectReferences.map(parseProjectReferenceConfigFile);
@@ -2342,7 +2342,7 @@ export function createProgram(
     }
     return qf.create.fileDiagnostic(refFile, pos, end - pos, message, ...args);
   }
-  function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: qd.Message, ...args: (string | number | undefined)[]) {
+  function addProgramDiagnosticAtRefPath(file: qt.SourceFile, rootPaths: Map<true>, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elemAt(refPaths, 0);
     programqd.add(refPathToReportErrorOn ? qf.create.fileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
@@ -2351,7 +2351,7 @@ export function createProgram(
     const buildInfoPath = !opts.noEmit && !opts.suppressOutputPathCheck ? getTsBuildInfoEmitOutputFilePath(opts) : undefined;
     forEachProjectReference(projectReferences, resolvedProjectReferences, (resolvedRef, index, parent) => {
       const ref = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
-      const parentFile = parent && (parent.sourceFile as JsonSourceFile);
+      const parentFile = parent && (parent.sourceFile as qt.JsonSourceFile);
       if (!resolvedRef) {
         createDiagnosticForReference(parentFile, index, qd.File_0_not_found, ref.path);
         return;
@@ -2414,8 +2414,8 @@ export function createProgram(
     if (compilerOptsObjectLiteralSyntax) return qf.get.propertyAssignment(compilerOptsObjectLiteralSyntax, name);
     return;
   }
-  function getOptionPathsSyntax(): PropertyAssignment[] {
-    return (getOptsSyntaxByName('paths') as PropertyAssignment[]) || emptyArray;
+  function getOptionPathsSyntax(): qt.PropertyAssignment[] {
+    return (getOptsSyntaxByName('paths') as qt.PropertyAssignment[]) || emptyArray;
   }
   function createDiagnosticForOptionName(message: qd.Message, option1: string, option2?: string, option3?: string) {
     createDiagnosticForOption(true, option1, option2, message, option1, option2, option3);
@@ -2423,7 +2423,7 @@ export function createProgram(
   function createOptionValueDiagnostic(option1: string, message: qd.Message, arg0: string) {
     createDiagnosticForOption(undefined, message, arg0);
   }
-  function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: qd.Message, arg0?: string | number, arg1?: string | number) {
+  function createDiagnosticForReference(sourceFile: qt.JsonSourceFile | undefined, index: number, message: qd.Message, arg0?: string | number, arg1?: string | number) {
     const referencesSyntax = firstDefined(qf.get.tsConfigPropArray(sourceFile || opts.configFile, 'references'), (property) =>
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
@@ -2457,7 +2457,7 @@ export function createProgram(
     return _compilerOptsObjectLiteralSyntax;
   }
   function createOptionDiagnosticInObjectLiteralSyntax(
-    objectLiteral: ObjectLiteralExpression,
+    objectLiteral: qt.ObjectLiteralExpression,
     onKey: boolean,
     key1: string,
     key2: string | undefined,
@@ -2503,12 +2503,12 @@ interface SymlinkedDirectory {
   realPath: Path;
 }
 interface HostForUseSourceOfProjectReferenceRedirect {
-  compilerHost: CompilerHost;
+  compilerHost: qt.CompilerHost;
   useSourceOfProjectReferenceRedirect: boolean;
   toPath(fileName: string): Path;
   getResolvedProjectReferences(): readonly (ResolvedProjectReference | undefined)[] | undefined;
   getSourceOfProjectReferenceRedirect(fileName: string): SourceOfProjectReferenceRedirect | undefined;
-  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
+  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
 }
 function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSourceOfProjectReferenceRedirect) {
   let mapOfDeclarationDirectories: Map<true> | undefined;
@@ -2615,7 +2615,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     );
   }
 }
-export function handleNoEmitOpts(program: ProgramToEmitFilesAndReportErrors, sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): EmitResult | undefined {
+export function handleNoEmitOpts(program: ProgramToEmitFilesAndReportErrors, sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): qt.EmitResult | undefined {
   const opts = program.getCompilerOpts();
   if (opts.noEmit) return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
   if (!opts.noEmitOnError) return;
@@ -2657,12 +2657,12 @@ export interface ResolveProjectReferencePathHost {
   fileExists(fileName: string): boolean;
 }
 export function createPrependNodes(
-  projectReferences: readonly ProjectReference[] | undefined,
-  getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined,
+  projectReferences: readonly qt.ProjectReference[] | undefined,
+  getCommandLine: (ref: qt.ProjectReference, index: number) => qt.ParsedCommandLine | undefined,
   readFile: (path: string) => string | undefined
 ) {
   if (!projectReferences) return emptyArray;
-  let nodes: InputFiles[] | undefined;
+  let nodes: qt.InputFiles[] | undefined;
   for (let i = 0; i < projectReferences.length; i++) {
     const ref = projectReferences[i];
     const resolvedRefOpts = getCommandLine(ref, i);
@@ -2676,13 +2676,13 @@ export function createPrependNodes(
   }
   return nodes || emptyArray;
 }
-export function resolveProjectReferencePath(ref: ProjectReference): ResolvedConfigFileName;
-export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: ProjectReference): ResolvedConfigFileName;
-export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | ProjectReference, ref?: ProjectReference): ResolvedConfigFileName {
-  const passedInRef = ref ? ref : (hostOrRef as ProjectReference);
+export function resolveProjectReferencePath(ref: qt.ProjectReference): ResolvedConfigFileName;
+export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: qt.ProjectReference): ResolvedConfigFileName;
+export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | qt.ProjectReference, ref?: qt.ProjectReference): ResolvedConfigFileName {
+  const passedInRef = ref ? ref : (hostOrRef as qt.ProjectReference);
   return resolveConfigFileProjectName(passedInRef.path);
 }
-export function getResolutionDiagnostic(opts: CompilerOpts, { extension }: ResolvedModuleFull): qd.Message | undefined {
+export function getResolutionDiagnostic(opts: qt.CompilerOpts, { extension }: qt.ResolvedModuleFull): qd.Message | undefined {
   switch (extension) {
     case Extension.Ts:
     case Extension.Dts:
@@ -2706,7 +2706,7 @@ export function getResolutionDiagnostic(opts: CompilerOpts, { extension }: Resol
     return opts.resolveJsonModule ? undefined : qd.Module_0_was_resolved_to_1_but_resolveJsonModule_is_not_used;
   }
 }
-function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {
+function getModuleNames({ imports, moduleAugmentations }: qt.SourceFile): string[] {
   const res = imports.map((i) => i.text);
   for (const aug of moduleAugmentations) {
     if (aug.kind === Syntax.StringLiteral) {
@@ -2715,11 +2715,11 @@ function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] 
   }
   return res;
 }
-export function projectReferenceIsEqualTo(oldRef: ProjectReference, newRef: ProjectReference) {
+export function projectReferenceIsEqualTo(oldRef: qt.ProjectReference, newRef: qt.ProjectReference) {
   return oldRef.path === newRef.path && !oldRef.prepend === !newRef.prepend && !oldRef.circular === !newRef.circular;
 }
-export function moduleResolutionIsEqualTo(oldResolution: ResolvedModuleFull, newResolution: ResolvedModuleFull): boolean {
-  function packageIdIsEqual(a: PackageId | undefined, b: PackageId | undefined): boolean {
+export function moduleResolutionIsEqualTo(oldResolution: qt.ResolvedModuleFull, newResolution: qt.ResolvedModuleFull): boolean {
+  function packageIdIsEqual(a: qt.PackageId | undefined, b: qt.PackageId | undefined): boolean {
     return a === b || (!!a && !!b && a.name === b.name && a.subModuleName === b.subModuleName && a.version === b.version);
   }
   return (
@@ -2730,10 +2730,10 @@ export function moduleResolutionIsEqualTo(oldResolution: ResolvedModuleFull, new
     packageIdIsEqual(oldResolution.packageId, newResolution.packageId)
   );
 }
-export function packageIdToString({ name, subModuleName, version }: PackageId): string {
+export function packageIdToString({ name, subModuleName, version }: qt.PackageId): string {
   const fullName = subModuleName ? `${name}/${subModuleName}` : name;
   return `${fullName}@${version}`;
 }
-export function typeDirectiveIsEqualTo(oldResolution: ResolvedTypeReferenceDirective, newResolution: ResolvedTypeReferenceDirective): boolean {
+export function typeDirectiveIsEqualTo(oldResolution: qt.ResolvedTypeReferenceDirective, newResolution: qt.ResolvedTypeReferenceDirective): boolean {
   return oldResolution.resolvedFileName === newResolution.resolvedFileName && oldResolution.primary === newResolution.primary;
 }

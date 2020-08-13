@@ -6,13 +6,13 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformModule(context: TrafoContext) {
+export function transformModule(context: qt.TrafoContext) {
   interface AsynchronousDependencies {
     aliasedModuleNames: Expression[];
     unaliasedModuleNames: Expression[];
-    importAliasNames: ParamDeclaration[];
+    importAliasNames: qt.ParamDeclaration[];
   }
-  function getTransformModuleDelegate(moduleKind: ModuleKind): (node: SourceFile) => SourceFile {
+  function getTransformModuleDelegate(moduleKind: ModuleKind): (node: qt.SourceFile) => qt.SourceFile {
     switch (moduleKind) {
       case ModuleKind.AMD:
         return transformAMDModule;
@@ -40,12 +40,12 @@ export function transformModule(context: TrafoContext) {
   context.enableEmitNotification(Syntax.SourceFile);
   const moduleInfoMap: ExternalModuleInfo[] = [];
   const deferredExports: (Statement[] | undefined)[] = [];
-  let currentSourceFile: SourceFile;
+  let currentSourceFile: qt.SourceFile;
   let currentModuleInfo: ExternalModuleInfo;
   let noSubstitution: boolean[];
   let needUMDDynamicImportHelper: boolean;
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (
       node.isDeclarationFile ||
       !(
@@ -70,7 +70,7 @@ export function transformModule(context: TrafoContext) {
     if (!currentModuleInfo.exportEquals && qf.is.externalModule(currentSourceFile)) return true;
     return false;
   }
-  function transformCommonJSModule(node: SourceFile) {
+  function transformCommonJSModule(node: qt.SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
     const ensureUseStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') || (!compilerOpts.noImplicitUseStrict && qf.is.externalModule(currentSourceFile));
@@ -84,7 +84,7 @@ export function transformModule(context: TrafoContext) {
         new qc.ExpressionStatement(
           reduceLeft(
             currentModuleInfo.exportedNames,
-            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new Identifier('exports'), new Identifier(idText(nextId))), prev),
+            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new qt.Identifier('exports'), new qt.Identifier(idText(nextId))), prev),
             qc.VoidExpression.zero() as Expression
           )
         )
@@ -98,8 +98,8 @@ export function transformModule(context: TrafoContext) {
     qf.emit.addHelpers(updated, context.readEmitHelpers());
     return updated;
   }
-  function transformAMDModule(node: SourceFile) {
-    const define = new Identifier('define');
+  function transformAMDModule(node: qt.SourceFile) {
+    const define = new qt.Identifier('define');
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
     const jsonSourceFile = qf.is.jsonSourceFile(node) && node;
     const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, true);
@@ -109,7 +109,7 @@ export function transformModule(context: TrafoContext) {
         new qc.ExpressionStatement(
           new qc.CallExpression(define, undefined, [
             ...(moduleName ? [moduleName] : []),
-            new ArrayLiteralExpression(jsonSourceFile ? emptyArray : [qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
+            new qt.ArrayLiteralExpression(jsonSourceFile ? emptyArray : [qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
             jsonSourceFile
               ? jsonSourceFile.statements.length
                 ? jsonSourceFile.statements[0].expression
@@ -130,7 +130,7 @@ export function transformModule(context: TrafoContext) {
     qf.emit.addHelpers(updated, context.readEmitHelpers());
     return updated;
   }
-  function transformUMDModule(node: SourceFile) {
+  function transformUMDModule(node: qt.SourceFile) {
     const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, false);
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
     const umdHeader = new qc.FunctionExpression(
@@ -140,30 +140,30 @@ export function transformModule(context: TrafoContext) {
       undefined,
       [new qc.ParamDeclaration(undefined, undefined, 'factory')],
       undefined,
-      new Block(
+      new qt.Block(
         [
           new qc.IfStatement(
-            qf.create.logicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(new qc.PropertyAccessExpression(new Identifier('module'), 'exports'), 'object')),
-            new Block([
+            qf.create.logicalAnd(createTypeCheck(new qt.Identifier('module'), 'object'), createTypeCheck(new qc.PropertyAccessExpression(new qt.Identifier('module'), 'exports'), 'object')),
+            new qt.Block([
               new qc.VariableStatement(undefined, [
-                new qc.VariableDeclaration('v', undefined, new qc.CallExpression(new Identifier('factory'), undefined, [new Identifier('require'), new Identifier('exports')])),
+                new qc.VariableDeclaration('v', undefined, new qc.CallExpression(new qt.Identifier('factory'), undefined, [new qt.Identifier('require'), new qt.Identifier('exports')])),
               ]),
               qf.emit.setFlags(
                 new qc.IfStatement(
-                  qf.create.strictInequality(new Identifier('v'), new Identifier('undefined')),
-                  new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new Identifier('module'), 'exports'), new Identifier('v')))
+                  qf.create.strictInequality(new qt.Identifier('v'), new qt.Identifier('undefined')),
+                  new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new qt.Identifier('module'), 'exports'), new qt.Identifier('v')))
                 ),
                 EmitFlags.SingleLine
               ),
             ]),
             new qc.IfStatement(
-              qf.create.logicalAnd(createTypeCheck(new Identifier('define'), 'function'), new qc.PropertyAccessExpression(new Identifier('define'), 'amd')),
-              new Block([
+              qf.create.logicalAnd(createTypeCheck(new qt.Identifier('define'), 'function'), new qc.PropertyAccessExpression(new qt.Identifier('define'), 'amd')),
+              new qt.Block([
                 new qc.ExpressionStatement(
-                  new qc.CallExpression(new Identifier('define'), undefined, [
+                  new qc.CallExpression(new qt.Identifier('define'), undefined, [
                     ...(moduleName ? [moduleName] : []),
-                    new ArrayLiteralExpression([qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
-                    new Identifier('factory'),
+                    new qt.ArrayLiteralExpression([qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
+                    new qt.Identifier('factory'),
                   ])
                 ),
               ])
@@ -194,10 +194,10 @@ export function transformModule(context: TrafoContext) {
     qf.emit.addHelpers(updated, context.readEmitHelpers());
     return updated;
   }
-  function collectAsynchronousDependencies(node: SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
+  function collectAsynchronousDependencies(node: qt.SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
     const aliasedModuleNames: Expression[] = [];
     const unaliasedModuleNames: Expression[] = [];
-    const importAliasNames: ParamDeclaration[] = [];
+    const importAliasNames: qt.ParamDeclaration[] = [];
     for (const amdDependency of node.amdDependencies) {
       if (amdDependency.name) {
         aliasedModuleNames.push(qc.asLiteral(amdDependency.path));
@@ -221,7 +221,7 @@ export function transformModule(context: TrafoContext) {
     }
     return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
   }
-  function getAMDImportExpressionForImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration) {
+  function getAMDImportExpressionForImport(node: qt.ImportDeclaration | qt.ExportDeclaration | qt.ImportEqualsDeclaration) {
     if (qf.is.kind(qc.ImportEqualsDeclaration, node) || qf.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOpts)) {
       return;
     }
@@ -232,7 +232,7 @@ export function transformModule(context: TrafoContext) {
     }
     return new qc.ExpressionStatement(qf.create.assignment(name, expr));
   }
-  function transformAsynchronousModuleBody(node: SourceFile) {
+  function transformAsynchronousModuleBody(node: qt.SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
     const statementOffset = addPrologue(statements, node.statements, !compilerOpts.noImplicitUseStrict, sourceElemVisitor);
@@ -245,7 +245,7 @@ export function transformModule(context: TrafoContext) {
         new qc.ExpressionStatement(
           reduceLeft(
             currentModuleInfo.exportedNames,
-            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new Identifier('exports'), new Identifier(idText(nextId))), prev),
+            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new qt.Identifier('exports'), new qt.Identifier(idText(nextId))), prev),
             qc.VoidExpression.zero() as Expression
           )
         )
@@ -258,7 +258,7 @@ export function transformModule(context: TrafoContext) {
     qu.addRange(statements, Nodes.visit(node.statements, sourceElemVisitor, qf.is.statement, statementOffset));
     addExportEqualsIfNeeded(statements, true);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
-    const body = new Block(statements, true);
+    const body = new qt.Block(statements, true);
     if (needUMDDynamicImportHelper) {
       qf.emit.addHelper(body, dynamicImportUMDHelper);
     }
@@ -274,7 +274,7 @@ export function transformModule(context: TrafoContext) {
           qf.emit.setFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
           statements.push(statement);
         } else {
-          const statement = new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new Identifier('module'), 'exports'), expressionResult));
+          const statement = new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new qt.Identifier('module'), 'exports'), expressionResult));
           statement.setRange(currentModuleInfo.exportEquals);
           qf.emit.setFlags(statement, EmitFlags.NoComments);
           statements.push(statement);
@@ -285,23 +285,23 @@ export function transformModule(context: TrafoContext) {
   function sourceElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.ImportDeclaration:
-        return visitImportDeclaration(<ImportDeclaration>node);
+        return visitImportDeclaration(<qt.ImportDeclaration>node);
       case Syntax.ImportEqualsDeclaration:
-        return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
+        return visitImportEqualsDeclaration(<qt.ImportEqualsDeclaration>node);
       case Syntax.ExportDeclaration:
-        return visitExportDeclaration(<ExportDeclaration>node);
+        return visitExportDeclaration(<qt.ExportDeclaration>node);
       case Syntax.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(<qt.ExportAssignment>node);
       case Syntax.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(<qt.VariableStatement>node);
       case Syntax.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(<qt.FunctionDeclaration>node);
       case Syntax.ClassDeclaration:
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(<qt.ClassDeclaration>node);
       case Syntax.MergeDeclarationMarker:
-        return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
+        return visitMergeDeclarationMarker(<qt.MergeDeclarationMarker>node);
       case Syntax.EndOfDeclarationMarker:
-        return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
+        return visitEndOfDeclarationMarker(<qt.EndOfDeclarationMarker>node);
       default:
         return visitEachChild(node, moduleExpressionElemVisitor, context);
     }
@@ -348,7 +348,7 @@ export function transformModule(context: TrafoContext) {
     if (destructuringNeedsFlattening(node.left)) return flattenDestructuringAssignment(node, moduleExpressionElemVisitor, context, FlattenLevel.All, false, createAllExportExpressions);
     return visitEachChild(node, moduleExpressionElemVisitor, context);
   }
-  function visitImportCallExpression(node: ImportCall): Expression {
+  function visitImportCallExpression(node: qt.ImportCall): Expression {
     const arg = visitNode(firstOrUndefined(node.args), moduleExpressionElemVisitor);
     const containsLexicalThis = !!(node.trafoFlags & TrafoFlags.ContainsLexicalThis);
     switch (compilerOpts.module) {
@@ -365,12 +365,16 @@ export function transformModule(context: TrafoContext) {
     needUMDDynamicImportHelper = true;
     if (isSimpleCopiableExpression(arg)) {
       const argClone = qf.is.generatedIdentifier(arg) ? arg : qf.is.kind(qc.StringLiteral, arg) ? qc.asLiteral(arg) : qf.emit.setFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
-      return new qc.ConditionalExpression(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(arg, containsLexicalThis), createImportCallExpressionAMD(argClone, containsLexicalThis));
+      return new qc.ConditionalExpression(
+        new qt.Identifier('__syncRequire'),
+        createImportCallExpressionCommonJS(arg, containsLexicalThis),
+        createImportCallExpressionAMD(argClone, containsLexicalThis)
+      );
     } else {
       const temp = createTempVariable(hoistVariableDeclaration);
       return qf.create.comma(
         qf.create.assignment(temp, arg),
-        new qc.ConditionalExpression(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(temp, containsLexicalThis), createImportCallExpressionAMD(temp, containsLexicalThis))
+        new qc.ConditionalExpression(new qt.Identifier('__syncRequire'), createImportCallExpressionCommonJS(temp, containsLexicalThis), createImportCallExpressionAMD(temp, containsLexicalThis))
       );
     }
   }
@@ -378,44 +382,44 @@ export function transformModule(context: TrafoContext) {
     const resolve = createUniqueName('resolve');
     const reject = createUniqueName('reject');
     const params = [new qc.ParamDeclaration(resolve), new qc.ParamDeclaration(reject)];
-    const body = new Block([
-      new qc.ExpressionStatement(new qc.CallExpression(new Identifier('require'), undefined, [new ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
+    const body = new qt.Block([
+      new qc.ExpressionStatement(new qc.CallExpression(new qt.Identifier('require'), undefined, [new qt.ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
     ]);
-    let func: FunctionExpression | ArrowFunction;
+    let func: qt.FunctionExpression | qt.ArrowFunction;
     if (languageVersion >= ScriptTarget.ES2015) {
-      func = new ArrowFunction(undefined, body);
+      func = new qt.ArrowFunction(undefined, body);
     } else {
       func = new qc.FunctionExpression(undefined, params, undefined, body);
       if (containsLexicalThis) {
         qf.emit.setFlags(func, EmitFlags.CapturesThis);
       }
     }
-    const promise = new qc.NewExpression(new Identifier('Promise'), undefined, [func]);
+    const promise = new qc.NewExpression(new qt.Identifier('Promise'), undefined, [func]);
     if (compilerOpts.esModuleInterop) {
       context.requestEmitHelper(importStarHelper);
-      return new qc.CallExpression(new qc.PropertyAccessExpression(promise, new Identifier('then')), undefined, [getUnscopedHelperName('__importStar')]);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(promise, new qt.Identifier('then')), undefined, [getUnscopedHelperName('__importStar')]);
     }
     return promise;
   }
   function createImportCallExpressionCommonJS(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
-    const promiseResolveCall = new qc.CallExpression(new qc.PropertyAccessExpression(new Identifier('Promise'), 'resolve'), []);
-    let requireCall = new qc.CallExpression(new Identifier('require'), undefined, arg ? [arg] : []);
+    const promiseResolveCall = new qc.CallExpression(new qc.PropertyAccessExpression(new qt.Identifier('Promise'), 'resolve'), []);
+    let requireCall = new qc.CallExpression(new qt.Identifier('require'), undefined, arg ? [arg] : []);
     if (compilerOpts.esModuleInterop) {
       context.requestEmitHelper(importStarHelper);
       requireCall = new qc.CallExpression(getUnscopedHelperName('__importStar'), undefined, [requireCall]);
     }
-    let func: FunctionExpression | ArrowFunction;
+    let func: qt.FunctionExpression | qt.ArrowFunction;
     if (languageVersion >= ScriptTarget.ES2015) {
-      func = new ArrowFunction(undefined, requireCall);
+      func = new qt.ArrowFunction(undefined, requireCall);
     } else {
-      func = new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([new qc.ReturnStatement(requireCall)]));
+      func = new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new qt.Block([new qc.ReturnStatement(requireCall)]));
       if (containsLexicalThis) {
         qf.emit.setFlags(func, EmitFlags.CapturesThis);
       }
     }
     return new qc.CallExpression(new qc.PropertyAccessExpression(promiseResolveCall, 'then'), undefined, [func]);
   }
-  function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
+  function getHelperExpressionForExport(node: qt.ExportDeclaration, innerExpr: Expression) {
     if (!compilerOpts.esModuleInterop || qf.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
     if (getExportNeedsImportStarHelper(node)) {
       context.requestEmitHelper(importStarHelper);
@@ -423,7 +427,7 @@ export function transformModule(context: TrafoContext) {
     }
     return innerExpr;
   }
-  function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
+  function getHelperExpressionForImport(node: qt.ImportDeclaration, innerExpr: Expression) {
     if (!compilerOpts.esModuleInterop || qf.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) return innerExpr;
     if (getImportNeedsImportStarHelper(node)) {
       context.requestEmitHelper(importStarHelper);
@@ -435,13 +439,13 @@ export function transformModule(context: TrafoContext) {
     }
     return innerExpr;
   }
-  function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
+  function visitImportDeclaration(node: qt.ImportDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     const namespaceDeclaration = qf.get.namespaceDeclarationNode(node);
     if (moduleKind !== ModuleKind.AMD) {
       if (!node.importClause) return setRange(new qc.ExpressionStatement(createRequireCall(node)), node).setOriginal(node);
       else {
-        const variables: VariableDeclaration[] = [];
+        const variables: qt.VariableDeclaration[] = [];
         if (namespaceDeclaration && !qf.is.defaultImport(node)) {
           variables.push(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
         } else {
@@ -478,15 +482,15 @@ export function transformModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
+  function createRequireCall(importNode: qt.ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration) {
     const moduleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOpts);
     const args: Expression[] = [];
     if (moduleName) {
       args.push(moduleName);
     }
-    return new qc.CallExpression(new Identifier('require'), undefined, args);
+    return new qc.CallExpression(new qt.Identifier('require'), undefined, args);
   }
-  function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
+  function visitImportEqualsDeclaration(node: qt.ImportEqualsDeclaration): VisitResult<Statement> {
     assert(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
@@ -520,7 +524,7 @@ export function transformModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitExportDeclaration(node: ExportDeclaration): VisitResult<Statement> {
+  function visitExportDeclaration(node: qt.ExportDeclaration): VisitResult<Statement> {
     if (!node.moduleSpecifier) {
       return;
     }
@@ -555,7 +559,7 @@ export function transformModule(context: TrafoContext) {
           new qc.ExpressionStatement(
             createExportExpression(
               getSynthesizedClone(node.exportClause.name),
-              moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : new Identifier(idText(node.exportClause.name))
+              moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : new qt.Identifier(idText(node.exportClause.name))
             )
           ).setRange(node),
           node
@@ -565,7 +569,7 @@ export function transformModule(context: TrafoContext) {
     }
     return setRange(new qc.ExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)), node).setOriginal(node);
   }
-  function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<Statement> {
     if (node.isExportEquals) {
       return;
     }
@@ -573,13 +577,13 @@ export function transformModule(context: TrafoContext) {
     const original = node.original;
     if (original && hasAssociatedEndOfDeclarationMarker(original)) {
       const id = getOriginalNodeId(node);
-      deferredExports[id] = appendExportStatement(deferredExports[id], new Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), node, true);
+      deferredExports[id] = appendExportStatement(deferredExports[id], new qt.Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), node, true);
     } else {
-      statements = appendExportStatement(statements, new Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), true);
+      statements = appendExportStatement(statements, new qt.Identifier('default'), visitNode(node.expression, moduleExpressionElemVisitor), true);
     }
     return singleOrMany(statements);
   }
-  function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
+  function visitFunctionDeclaration(node: qt.FunctionDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       statements = append(
@@ -609,7 +613,7 @@ export function transformModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
+  function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       statements = append(
@@ -637,9 +641,9 @@ export function transformModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
+  function visitVariableStatement(node: qt.VariableStatement): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    let variables: VariableDeclaration[] | undefined;
+    let variables: qt.VariableDeclaration[] | undefined;
     let expressions: Expression[] | undefined;
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       let modifiers: Nodes<Modifier> | undefined;
@@ -670,7 +674,7 @@ export function transformModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function createAllExportExpressions(name: Identifier, value: Expression, location?: TextRange) {
+  function createAllExportExpressions(name: qt.Identifier, value: Expression, location?: TextRange) {
     const exportedNames = getExports(name);
     if (exportedNames) {
       let expression: Expression = qf.is.exportName(name) ? value : qf.create.assignment(name, value);
@@ -682,26 +686,26 @@ export function transformModule(context: TrafoContext) {
     }
     return qf.create.assignment(name, value);
   }
-  function transformInitializedVariable(node: VariableDeclaration): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration): Expression {
     if (qf.is.kind(qc.BindingPattern, node.name)) return flattenDestructuringAssignment(visitNode(node, moduleExpressionElemVisitor), false, createAllExportExpressions);
     else {
       return qf.create.assignment(
-        setRange(new qc.PropertyAccessExpression(new Identifier('exports'), node.name), node.name),
+        setRange(new qc.PropertyAccessExpression(new qt.Identifier('exports'), node.name), node.name),
         node.initer ? visitNode(node.initer, moduleExpressionElemVisitor) : qc.VoidExpression.zero()
       );
     }
   }
-  function visitMergeDeclarationMarker(node: MergeDeclarationMarker): VisitResult<Statement> {
+  function visitMergeDeclarationMarker(node: qt.MergeDeclarationMarker): VisitResult<Statement> {
     if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === Syntax.VariableStatement) {
       const id = getOriginalNodeId(node);
-      deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <VariableStatement>node.original);
+      deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <qt.VariableStatement>node.original);
     }
     return node;
   }
   function hasAssociatedEndOfDeclarationMarker(node: Node) {
     return (qf.get.emitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
-  function visitEndOfDeclarationMarker(node: EndOfDeclarationMarker): VisitResult<Statement> {
+  function visitEndOfDeclarationMarker(node: qt.EndOfDeclarationMarker): VisitResult<Statement> {
     const id = getOriginalNodeId(node);
     const statements = deferredExports[id];
     if (statements) {
@@ -710,7 +714,7 @@ export function transformModule(context: TrafoContext) {
     }
     return node;
   }
-  function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: ImportDeclaration): Statement[] | undefined {
+  function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: qt.ImportDeclaration): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     const importClause = decl.importClause;
     if (!importClause) return statements;
@@ -732,18 +736,18 @@ export function transformModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: ImportEqualsDeclaration): Statement[] | undefined {
+  function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: qt.ImportEqualsDeclaration): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     return appendExportsOfDeclaration(statements, decl);
   }
-  function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement): Statement[] | undefined {
+  function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: qt.VariableStatement): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     for (const decl of node.declarationList.declarations) {
       statements = appendExportsOfBindingElem(statements, decl);
     }
     return statements;
   }
-  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElem): Statement[] | undefined {
+  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElem): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     if (qf.is.kind(qc.BindingPattern, decl.name)) {
       for (const elem of decl.name.elems) {
@@ -756,10 +760,10 @@ export function transformModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
+  function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: qt.ClassDeclaration | qt.FunctionDeclaration): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
     if (qf.has.syntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = qf.has.syntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : qf.decl.name(decl);
+      const exportName = qf.has.syntacticModifier(decl, ModifierFlags.Default) ? new qt.Identifier('default') : qf.decl.name(decl);
       statements = appendExportStatement(statements, exportName, qf.decl.localName(decl), decl);
     }
     if (decl.name) {
@@ -779,7 +783,7 @@ export function transformModule(context: TrafoContext) {
   }
   function appendExportStatement(
     statements: Statement[] | undefined,
-    exportName: Identifier,
+    exportName: qt.Identifier,
     expression: Expression,
     location?: TextRange,
     allowComments?: boolean,
@@ -791,11 +795,11 @@ export function transformModule(context: TrafoContext) {
   function createUnderscoreUnderscoreESModule() {
     let statement: Statement;
     if (languageVersion === ScriptTarget.ES3) {
-      statement = new qc.ExpressionStatement(createExportExpression(new Identifier('__esModule'), qc.asLiteral(true)));
+      statement = new qc.ExpressionStatement(createExportExpression(new qt.Identifier('__esModule'), qc.asLiteral(true)));
     } else {
       statement = new qc.ExpressionStatement(
-        new qc.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
-          new Identifier('exports'),
+        new qc.CallExpression(new qc.PropertyAccessExpression(new qt.Identifier('Object'), 'defineProperty'), undefined, [
+          new qt.Identifier('exports'),
           qc.asLiteral('__esModule'),
           new qc.ObjectLiteralExpression([new qc.PropertyAssignment('value', qc.asLiteral(true))]),
         ])
@@ -804,7 +808,7 @@ export function transformModule(context: TrafoContext) {
     qf.emit.setFlags(statement, EmitFlags.CustomPrologue);
     return statement;
   }
-  function createExportStatement(name: Identifier, value: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean) {
+  function createExportStatement(name: qt.Identifier, value: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean) {
     const statement = setRange(new qc.ExpressionStatement(createExportExpression(name, value, undefined, liveBinding)), location);
     qf.emit.setStartsOnNewLine(statement);
     if (!allowComments) {
@@ -812,18 +816,18 @@ export function transformModule(context: TrafoContext) {
     }
     return statement;
   }
-  function createExportExpression(name: Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
+  function createExportExpression(name: qt.Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
     return setRange(
       liveBinding && languageVersion !== ScriptTarget.ES3
-        ? new qc.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
-            new Identifier('exports'),
+        ? new qc.CallExpression(new qc.PropertyAccessExpression(new qt.Identifier('Object'), 'defineProperty'), undefined, [
+            new qt.Identifier('exports'),
             qc.asLiteral(name),
             new qc.ObjectLiteralExpression([
               new qc.PropertyAssignment('enumerable', qc.asLiteral(true)),
-              new qc.PropertyAssignment('get', new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([new qc.ReturnStatement(value)]))),
+              new qc.PropertyAssignment('get', new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new qt.Block([new qc.ReturnStatement(value)]))),
             ]),
           ])
-        : qf.create.assignment(new qc.PropertyAccessExpression(new Identifier('exports'), getSynthesizedClone(name)), value),
+        : qf.create.assignment(new qc.PropertyAccessExpression(new qt.Identifier('exports'), getSynthesizedClone(name)), value),
       location
     );
   }
@@ -837,7 +841,7 @@ export function transformModule(context: TrafoContext) {
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     if (node.kind === Syntax.SourceFile) {
-      currentSourceFile = <SourceFile>node;
+      currentSourceFile = <qt.SourceFile>node;
       currentModuleInfo = moduleInfoMap[getOriginalNodeId(currentSourceFile)];
       noSubstitution = [];
       previousOnEmitNode(hint, node, emitCallback);
@@ -855,7 +859,7 @@ export function transformModule(context: TrafoContext) {
     else if (qf.is.kind(qc.ShorthandPropertyAssignment, node)) return substituteShorthandPropertyAssignment(node);
     return node;
   }
-  function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElemLike {
+  function substituteShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment): ObjectLiteralElemLike {
     const name = node.name;
     const exportedOrImportedName = substituteExpressionIdentifier(name);
     if (exportedOrImportedName !== name) {
@@ -870,16 +874,16 @@ export function transformModule(context: TrafoContext) {
   function substituteExpression(node: Expression) {
     switch (node.kind) {
       case Syntax.Identifier:
-        return substituteExpressionIdentifier(<Identifier>node);
+        return substituteExpressionIdentifier(<qt.Identifier>node);
       case Syntax.BinaryExpression:
-        return substituteBinaryExpression(<BinaryExpression>node);
+        return substituteBinaryExpression(<qt.BinaryExpression>node);
       case Syntax.PostfixUnaryExpression:
       case Syntax.PrefixUnaryExpression:
-        return substituteUnaryExpression(<PrefixUnaryExpression | PostfixUnaryExpression>node);
+        return substituteUnaryExpression(<qt.PrefixUnaryExpression | qt.PostfixUnaryExpression>node);
     }
     return node;
   }
-  function substituteExpressionIdentifier(node: Identifier): Expression {
+  function substituteExpressionIdentifier(node: qt.Identifier): Expression {
     if (qf.get.emitFlags(node) & EmitFlags.HelperName) {
       const externalHelpersModuleName = qf.emit.externalHelpersModuleName(currentSourceFile);
       if (externalHelpersModuleName) return new qc.PropertyAccessExpression(externalHelpersModuleName, node);
@@ -887,10 +891,10 @@ export function transformModule(context: TrafoContext) {
     }
     if (!qf.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const exportContainer = resolver.getReferencedExportContainer(node, qf.is.exportName(node));
-      if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new Identifier('exports'), getSynthesizedClone(node)), node);
+      if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new qt.Identifier('exports'), getSynthesizedClone(node)), node);
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
-        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new Identifier('default')), node);
+        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qt.Identifier('default')), node);
         else if (qf.is.kind(qc.ImportSpecifier, importDeclaration)) {
           const name = importDeclaration.propertyName || importDeclaration.name;
           return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(name)), node);
@@ -899,7 +903,7 @@ export function transformModule(context: TrafoContext) {
     }
     return node;
   }
-  function substituteBinaryExpression(node: BinaryExpression): Expression {
+  function substituteBinaryExpression(node: qt.BinaryExpression): Expression {
     if (
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
       qf.is.kind(qc.Identifier, node.left) &&
@@ -919,7 +923,7 @@ export function transformModule(context: TrafoContext) {
     }
     return node;
   }
-  function substituteUnaryExpression(node: PrefixUnaryExpression | PostfixUnaryExpression): Expression {
+  function substituteUnaryExpression(node: qt.PrefixUnaryExpression | qt.PostfixUnaryExpression): Expression {
     if (
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
       qf.is.kind(qc.Identifier, node.operand) &&
@@ -931,7 +935,7 @@ export function transformModule(context: TrafoContext) {
       if (exportedNames) {
         let expression: Expression =
           node.kind === Syntax.PostfixUnaryExpression
-            ? setRange(new BinaryExpression(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), qc.asLiteral(1)), node)
+            ? setRange(new qt.BinaryExpression(node.operand, new qt.Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), qc.asLiteral(1)), node)
             : node;
         for (const exportName of exportedNames) {
           noSubstitution[qf.get.nodeId(expression)] = true;
@@ -942,14 +946,14 @@ export function transformModule(context: TrafoContext) {
     }
     return node;
   }
-  function getExports(name: Identifier): Identifier[] | undefined {
+  function getExports(name: qt.Identifier): qt.Identifier[] | undefined {
     if (!qf.is.generatedIdentifier(name)) {
       const valueDeclaration = resolver.getReferencedImportDeclaration(name) || resolver.getReferencedValueDeclaration(name);
       if (valueDeclaration) return currentModuleInfo && currentModuleInfo.exportedBindings[getOriginalNodeId(valueDeclaration)];
     }
   }
 }
-export const createBindingHelper: UnscopedEmitHelper = {
+export const createBindingHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:commonjscreatebinding',
   importName: '__createBinding',
   scoped: false,
@@ -963,11 +967,11 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     o[k2] = m[k];
 }));`,
 };
-function createCreateBindingHelper(context: TrafoContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
+function createCreateBindingHelper(context: qt.TrafoContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
   context.requestEmitHelper(createBindingHelper);
-  return new qc.CallExpression(getUnscopedHelperName('__createBinding'), undefined, [new Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
+  return new qc.CallExpression(getUnscopedHelperName('__createBinding'), undefined, [new qt.Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
 }
-export const setModuleDefaultHelper: UnscopedEmitHelper = {
+export const setModuleDefaultHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:commonjscreatevalue',
   importName: '__setModuleDefault',
   scoped: false,
@@ -979,7 +983,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
     o["default"] = v;
 });`,
 };
-const exportStarHelper: UnscopedEmitHelper = {
+const exportStarHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:export-star',
   importName: '__exportStar',
   scoped: false,
@@ -990,17 +994,17 @@ const exportStarHelper: UnscopedEmitHelper = {
                 for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
             };`,
 };
-function createExportStarHelper(context: TrafoContext, module: Expression) {
+function createExportStarHelper(context: qt.TrafoContext, module: Expression) {
   context.requestEmitHelper(exportStarHelper);
-  return new qc.CallExpression(getUnscopedHelperName('__exportStar'), undefined, [module, new Identifier('exports')]);
+  return new qc.CallExpression(getUnscopedHelperName('__exportStar'), undefined, [module, new qt.Identifier('exports')]);
 }
-const dynamicImportUMDHelper: EmitHelper = {
+const dynamicImportUMDHelper: qt.EmitHelper = {
   name: 'typescript:dynamicimport-sync-require',
   scoped: true,
   text: `
             var __syncRequire = typeof module === "object" && typeof module.exports === "object";`,
 };
-export const importStarHelper: UnscopedEmitHelper = {
+export const importStarHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:commonjsimportstar',
   importName: '__importStar',
   scoped: false,
@@ -1015,7 +1019,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };`,
 };
-export const importDefaultHelper: UnscopedEmitHelper = {
+export const importDefaultHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:commonjsimportdefault',
   importName: '__importDefault',
   scoped: false,
@@ -1024,7 +1028,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };`,
 };
-export function transformECMAScriptModule(context: TrafoContext) {
+export function transformECMAScriptModule(context: qt.TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
   const previousOnEmitNode = context.onEmitNode;
   const previousOnSubstituteNode = context.onSubstituteNode;
@@ -1032,9 +1036,9 @@ export function transformECMAScriptModule(context: TrafoContext) {
   context.onSubstituteNode = onSubstituteNode;
   context.enableEmitNotification(Syntax.SourceFile);
   context.enableSubstitution(Syntax.Identifier);
-  let helperNameSubstitutions: Map<Identifier> | undefined;
+  let helperNameSubstitutions: Map<qt.Identifier> | undefined;
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     if (qf.is.externalModule(node) || compilerOpts.isolatedModules) {
       const result = updateExternalModule(node);
@@ -1043,7 +1047,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
     }
     return node;
   }
-  function updateExternalModule(node: SourceFile) {
+  function updateExternalModule(node: qt.SourceFile) {
     const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(node, compilerOpts);
     if (externalHelpersImportDeclaration) {
       const statements: Statement[] = [];
@@ -1059,17 +1063,17 @@ export function transformECMAScriptModule(context: TrafoContext) {
       case Syntax.ImportEqualsDeclaration:
         return;
       case Syntax.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(<qt.ExportAssignment>node);
       case Syntax.ExportDeclaration:
-        const exportDecl = node as ExportDeclaration;
+        const exportDecl = node as qt.ExportDeclaration;
         return visitExportDeclaration(exportDecl);
     }
     return node;
   }
-  function visitExportAssignment(node: ExportAssignment): VisitResult<ExportAssignment> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<qt.ExportAssignment> {
     return node.isExportEquals ? undefined : node;
   }
-  function visitExportDeclaration(node: ExportDeclaration) {
+  function visitExportDeclaration(node: qt.ExportDeclaration) {
     if (compilerOpts.module !== undefined && compilerOpts.module > ModuleKind.ES2015) return node;
     if (!node.exportClause || !qf.is.kind(qc.NamespaceExport, node.exportClause) || !node.moduleSpecifier) return node;
     const oldIdentifier = node.exportClause.name;
@@ -1083,7 +1087,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     if (qf.is.kind(qc.SourceFile, node)) {
       if ((qf.is.externalModule(node) || compilerOpts.isolatedModules) && compilerOpts.importHelpers) {
-        helperNameSubstitutions = createMap<Identifier>();
+        helperNameSubstitutions = createMap<qt.Identifier>();
       }
       previousOnEmitNode(hint, node, emitCallback);
       helperNameSubstitutions = undefined;
@@ -1096,7 +1100,7 @@ export function transformECMAScriptModule(context: TrafoContext) {
     if (helperNameSubstitutions && qf.is.kind(qc.Identifier, node) && qf.get.emitFlags(node) & EmitFlags.HelperName) return substituteHelperName(node);
     return node;
   }
-  function substituteHelperName(node: Identifier): Expression {
+  function substituteHelperName(node: qt.Identifier): Expression {
     const name = idText(node);
     let substitution = helperNameSubstitutions!.get(name);
     if (!substitution) {
@@ -1105,10 +1109,10 @@ export function transformECMAScriptModule(context: TrafoContext) {
     return substitution;
   }
 }
-export function transformSystemModule(context: TrafoContext) {
+export function transformSystemModule(context: qt.TrafoContext) {
   interface DependencyGroup {
-    name: StringLiteral;
-    externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];
+    name: qt.StringLiteral;
+    externalImports: (ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration)[];
   }
   const { startLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
   const compilerOpts = context.getCompilerOpts();
@@ -1127,18 +1131,18 @@ export function transformSystemModule(context: TrafoContext) {
   context.enableEmitNotification(Syntax.SourceFile);
   const moduleInfoMap: ExternalModuleInfo[] = [];
   const deferredExports: (Statement[] | undefined)[] = [];
-  const exportFunctionsMap: Identifier[] = [];
+  const exportFunctionsMap: qt.Identifier[] = [];
   const noSubstitutionMap: boolean[][] = [];
-  const contextObjectMap: Identifier[] = [];
-  let currentSourceFile: SourceFile;
+  const contextObjectMap: qt.Identifier[] = [];
+  let currentSourceFile: qt.SourceFile;
   let moduleInfo: ExternalModuleInfo;
-  let exportFunction: Identifier;
-  let contextObject: Identifier;
+  let exportFunction: qt.Identifier;
+  let contextObject: qt.Identifier;
   let hoistedStatements: Statement[] | undefined;
   let enclosingBlockScopedContainer: Node;
   let noSubstitution: boolean[] | undefined;
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile || !(node.isEffectiveExternalModule(compilerOpts) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
     const id = getOriginalNodeId(node);
     currentSourceFile = node;
@@ -1151,14 +1155,14 @@ export function transformSystemModule(context: TrafoContext) {
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
     const moduleBodyFunction = new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOpts);
-    const dependencies = new ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
+    const dependencies = new qt.ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
     const updated = qf.emit.setFlags(
       qp_updateSourceNode(
         node,
         new Nodes([
           new qc.ExpressionStatement(
             new qc.CallExpression(
-              new qc.PropertyAccessExpression(new Identifier('System'), 'register'),
+              new qc.PropertyAccessExpression(new qt.Identifier('System'), 'register'),
               undefined,
               moduleName ? [moduleName, dependencies, moduleBodyFunction] : [dependencies, moduleBodyFunction]
             )
@@ -1182,7 +1186,7 @@ export function transformSystemModule(context: TrafoContext) {
     enclosingBlockScopedContainer = undefined!;
     return qf.calc.aggregate(updated);
   }
-  function collectDependencyGroups(externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[]) {
+  function collectDependencyGroups(externalImports: (ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration)[]) {
     const groupIndices = createMap<number>();
     const dependencyGroups: DependencyGroup[] = [];
     for (const externalImport of externalImports) {
@@ -1203,7 +1207,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return dependencyGroups;
   }
-  function createSystemModuleBody(node: SourceFile, dependencyGroups: DependencyGroup[]) {
+  function createSystemModuleBody(node: qt.SourceFile, dependencyGroups: DependencyGroup[]) {
     const statements: Statement[] = [];
     startLexicalEnvironment();
     const ensureUseStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') || (!compilerOpts.noImplicitUseStrict && qf.is.externalModule(currentSourceFile));
@@ -1222,11 +1226,11 @@ export function transformSystemModule(context: TrafoContext) {
     const modifiers = node.trafoFlags & TrafoFlags.ContainsAwait ? qf.create.modifiersFromFlags(ModifierFlags.Async) : undefined;
     const moduleObject = new qc.ObjectLiteralExpression([
       new qc.PropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
-      new qc.PropertyAssignment('execute', new qc.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new Block(executeStatements, true))),
+      new qc.PropertyAssignment('execute', new qc.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new qt.Block(executeStatements, true))),
     ]);
     moduleObject.multiLine = true;
     statements.push(new qc.ReturnStatement(moduleObject));
-    return new Block(statements, true);
+    return new qt.Block(statements, true);
   }
   function addExportStarIfNeeded(statements: Statement[]) {
     if (!moduleInfo.hasExportStarsToExportValues) {
@@ -1278,11 +1282,11 @@ export function transformSystemModule(context: TrafoContext) {
     statements.push(exportStarFunction);
     return exportStarFunction.name;
   }
-  function createExportStarFunction(localNames: Identifier | undefined) {
+  function createExportStarFunction(localNames: qt.Identifier | undefined) {
     const exportStarFunction = createUniqueName('exportStar');
-    const m = new Identifier('m');
-    const n = new Identifier('n');
-    const exports = new Identifier('exports');
+    const m = new qt.Identifier('m');
+    const n = new qt.Identifier('n');
+    const exports = new qt.Identifier('exports');
     let condition: Expression = qf.create.strictInequality(n, qc.asLiteral('default'));
     if (localNames) {
       condition = qf.create.logicalAnd(condition, qf.create.logicalNot(new qc.CallExpression(new qc.PropertyAccessExpression(localNames, 'hasOwnProperty'), undefined, [n])));
@@ -1295,13 +1299,13 @@ export function transformSystemModule(context: TrafoContext) {
       undefined,
       [new qc.ParamDeclaration(undefined, undefined, m)],
       undefined,
-      new Block(
+      new qt.Block(
         [
           new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, new qc.ObjectLiteralExpression([]))])),
           new qc.ForInStatement(
             new qc.VariableDeclarationList([new qc.VariableDeclaration(n, undefined)]),
             m,
-            new Block([
+            new qt.Block([
               qf.emit.setFlags(
                 new qc.IfStatement(condition, new qc.ExpressionStatement(qf.create.assignment(new qc.ElemAccessExpression(exports, n), new qc.ElemAccessExpression(m, n)))),
                 EmitFlags.SingleLine
@@ -1314,7 +1318,7 @@ export function transformSystemModule(context: TrafoContext) {
       )
     );
   }
-  function createSettersArray(exportStarFunction: Identifier, dependencyGroups: DependencyGroup[]) {
+  function createSettersArray(exportStarFunction: qt.Identifier, dependencyGroups: DependencyGroup[]) {
     const setters: Expression[] = [];
     for (const group of dependencyGroups) {
       const localName = forEach(group.externalImports, (i) => qf.decl.localNameForExternalImport(i, currentSourceFile));
@@ -1335,7 +1339,7 @@ export function transformSystemModule(context: TrafoContext) {
             assert(importVariableName !== undefined);
             if (entry.exportClause) {
               if (qf.is.kind(qc.NamedExports, entry.exportClause)) {
-                const properties: PropertyAssignment[] = [];
+                const properties: qt.PropertyAssignment[] = [];
                 for (const e of entry.exportClause.elems) {
                   properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qc.ElemAccessExpression(paramName, qc.asLiteral(idText(e.propertyName || e.name)))));
                 }
@@ -1349,25 +1353,25 @@ export function transformSystemModule(context: TrafoContext) {
             break;
         }
       }
-      setters.push(new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, paramName)], undefined, new Block(statements, true)));
+      setters.push(new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, paramName)], undefined, new qt.Block(statements, true)));
     }
-    return new ArrayLiteralExpression(setters, true);
+    return new qt.ArrayLiteralExpression(setters, true);
   }
   function sourceElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.ImportDeclaration:
-        return visitImportDeclaration(<ImportDeclaration>node);
+        return visitImportDeclaration(<qt.ImportDeclaration>node);
       case Syntax.ImportEqualsDeclaration:
-        return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
+        return visitImportEqualsDeclaration(<qt.ImportEqualsDeclaration>node);
       case Syntax.ExportDeclaration:
-        return visitExportDeclaration(<ExportDeclaration>node);
+        return visitExportDeclaration(<qt.ExportDeclaration>node);
       case Syntax.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(<qt.ExportAssignment>node);
       default:
         return nestedElemVisitor(node);
     }
   }
-  function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
+  function visitImportDeclaration(node: qt.ImportDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     if (node.importClause) {
       hoistVariableDeclaration(qf.decl.localNameForExternalImport(node, currentSourceFile)!);
@@ -1380,11 +1384,11 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitExportDeclaration(node: ExportDeclaration): VisitResult<Statement> {
+  function visitExportDeclaration(node: qt.ExportDeclaration): VisitResult<Statement> {
     Debug.assertIsDefined(node);
     return;
   }
-  function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
+  function visitImportEqualsDeclaration(node: qt.ImportEqualsDeclaration): VisitResult<Statement> {
     assert(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: Statement[] | undefined;
     hoistVariableDeclaration(qf.decl.localNameForExternalImport(node, currentSourceFile)!);
@@ -1396,7 +1400,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<Statement> {
     if (node.isExportEquals) {
       return;
     }
@@ -1404,11 +1408,11 @@ export function transformSystemModule(context: TrafoContext) {
     const original = node.original;
     if (original && hasAssociatedEndOfDeclarationMarker(original)) {
       const id = getOriginalNodeId(node);
-      deferredExports[id] = appendExportStatement(deferredExports[id], new Identifier('default'), expression, true);
+      deferredExports[id] = appendExportStatement(deferredExports[id], new qt.Identifier('default'), expression, true);
     }
-    return createExportStatement(new Identifier('default'), expression, true);
+    return createExportStatement(new qt.Identifier('default'), expression, true);
   }
-  function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
+  function visitFunctionDeclaration(node: qt.FunctionDeclaration): VisitResult<Statement> {
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       hoistedStatements = append(
         hoistedStatements,
@@ -1434,7 +1438,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return;
   }
-  function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
+  function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
     const name = qf.decl.localName(node);
     hoistVariableDeclaration(name);
@@ -1461,7 +1465,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
+  function visitVariableStatement(node: qt.VariableStatement): VisitResult<Statement> {
     if (!shouldHoistVariableDeclarationList(node.declarationList)) return visitNode(node, destructuringAndImportCallVisitor, qf.is.statement);
     let expressions: Expression[] | undefined;
     const isExportedDeclaration = qf.has.syntacticModifier(node, ModifierFlags.Export);
@@ -1485,7 +1489,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return singleOrMany(statements);
   }
-  function hoistBindingElem(node: VariableDeclaration | BindingElem): void {
+  function hoistBindingElem(node: qt.VariableDeclaration | qt.BindingElem): void {
     if (qf.is.kind(qc.BindingPattern, node.name)) {
       for (const elem of node.name.elems) {
         if (!qf.is.kind(qc.OmittedExpression, elem)) {
@@ -1496,10 +1500,10 @@ export function transformSystemModule(context: TrafoContext) {
       hoistVariableDeclaration(getSynthesizedClone(node.name));
     }
   }
-  function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
+  function shouldHoistVariableDeclarationList(node: qt.VariableDeclarationList) {
     return (qf.get.emitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === Syntax.SourceFile || (qf.get.originalOf(node).flags & NodeFlags.BlockScoped) === 0);
   }
-  function transformInitializedVariable(node: VariableDeclaration, isExportedDeclaration: boolean): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration, isExportedDeclaration: boolean): Expression {
     const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
     return qf.is.kind(qc.BindingPattern, node.name)
       ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, false, qf.create.assignment)
@@ -1507,30 +1511,30 @@ export function transformSystemModule(context: TrafoContext) {
       ? qf.create.assignment(node.name, visitNode(node.initer, destructuringAndImportCallVisitor, isExpression))
       : node.name;
   }
-  function createExportedVariableAssignment(name: Identifier, value: Expression, location?: TextRange) {
+  function createExportedVariableAssignment(name: qt.Identifier, value: Expression, location?: TextRange) {
     return createVariableAssignment(name, value, location, true);
   }
-  function createNonExportedVariableAssignment(name: Identifier, value: Expression, location?: TextRange) {
+  function createNonExportedVariableAssignment(name: qt.Identifier, value: Expression, location?: TextRange) {
     return createVariableAssignment(name, value, location, false);
   }
-  function createVariableAssignment(name: Identifier, value: Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
+  function createVariableAssignment(name: qt.Identifier, value: Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
     hoistVariableDeclaration(getSynthesizedClone(name));
     return isExportedDeclaration
       ? createExportExpression(name, preventSubstitution(setRange(qf.create.assignment(name, value), location)))
       : preventSubstitution(setRange(qf.create.assignment(name, value), location));
   }
-  function visitMergeDeclarationMarker(node: MergeDeclarationMarker): VisitResult<Statement> {
+  function visitMergeDeclarationMarker(node: qt.MergeDeclarationMarker): VisitResult<Statement> {
     if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === Syntax.VariableStatement) {
       const id = getOriginalNodeId(node);
       const isExportedDeclaration = qf.has.syntacticModifier(node.original!, ModifierFlags.Export);
-      deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <VariableStatement>node.original, isExportedDeclaration);
+      deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <qt.VariableStatement>node.original, isExportedDeclaration);
     }
     return node;
   }
   function hasAssociatedEndOfDeclarationMarker(node: Node) {
     return (qf.get.emitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
-  function visitEndOfDeclarationMarker(node: EndOfDeclarationMarker): VisitResult<Statement> {
+  function visitEndOfDeclarationMarker(node: qt.EndOfDeclarationMarker): VisitResult<Statement> {
     const id = getOriginalNodeId(node);
     const statements = deferredExports[id];
     if (statements) {
@@ -1542,7 +1546,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return node;
   }
-  function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: ImportDeclaration) {
+  function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: qt.ImportDeclaration) {
     if (moduleInfo.exportEquals) return statements;
     const importClause = decl.importClause;
     if (!importClause) return statements;
@@ -1564,11 +1568,11 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: ImportEqualsDeclaration): Statement[] | undefined {
+  function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: qt.ImportEqualsDeclaration): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     return appendExportsOfDeclaration(statements, decl);
   }
-  function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement, exportSelf: boolean): Statement[] | undefined {
+  function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: qt.VariableStatement, exportSelf: boolean): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     for (const decl of node.declarationList.declarations) {
       if (decl.initer || exportSelf) {
@@ -1577,7 +1581,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElem, exportSelf: boolean): Statement[] | undefined {
+  function appendExportsOfBindingElem(statements: Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElem, exportSelf: boolean): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     if (qf.is.kind(qc.BindingPattern, decl.name)) {
       for (const elem of decl.name.elems) {
@@ -1595,7 +1599,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
+  function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: qt.ClassDeclaration | qt.FunctionDeclaration): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     let excludeName: string | undefined;
     if (qf.has.syntacticModifier(decl, ModifierFlags.Export)) {
@@ -1621,11 +1625,11 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return statements;
   }
-  function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier | StringLiteral, expression: Expression, allowComments?: boolean): Statement[] | undefined {
+  function appendExportStatement(statements: Statement[] | undefined, exportName: qt.Identifier | qt.StringLiteral, expression: Expression, allowComments?: boolean): Statement[] | undefined {
     statements = append(statements, createExportStatement(exportName, expression, allowComments));
     return statements;
   }
-  function createExportStatement(name: Identifier | StringLiteral, value: Expression, allowComments?: boolean) {
+  function createExportStatement(name: qt.Identifier | qt.StringLiteral, value: Expression, allowComments?: boolean) {
     const statement = new qc.ExpressionStatement(createExportExpression(name, value));
     qf.emit.setStartsOnNewLine(statement);
     if (!allowComments) {
@@ -1633,7 +1637,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return statement;
   }
-  function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
+  function createExportExpression(name: qt.Identifier | qt.StringLiteral, value: Expression) {
     const exportName = qf.is.kind(qc.Identifier, name) ? qc.asLiteral(name) : name;
     qf.emit.setFlags(value, qf.get.emitFlags(value) | EmitFlags.NoComments);
     return qf.emit.setCommentRange(new qc.CallExpression(exportFunction, undefined, [exportName, value]), value);
@@ -1641,48 +1645,48 @@ export function transformSystemModule(context: TrafoContext) {
   function nestedElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(<qt.VariableStatement>node);
       case Syntax.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(<qt.FunctionDeclaration>node);
       case Syntax.ClassDeclaration:
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(<qt.ClassDeclaration>node);
       case Syntax.ForStatement:
-        return visitForStatement(<ForStatement>node);
+        return visitForStatement(<qt.ForStatement>node);
       case Syntax.ForInStatement:
-        return visitForInStatement(<ForInStatement>node);
+        return visitForInStatement(<qt.ForInStatement>node);
       case Syntax.ForOfStatement:
-        return visitForOfStatement(<ForOfStatement>node);
+        return visitForOfStatement(<qt.ForOfStatement>node);
       case Syntax.DoStatement:
-        return visitDoStatement(<DoStatement>node);
+        return visitDoStatement(<qt.DoStatement>node);
       case Syntax.WhileStatement:
-        return visitWhileStatement(<WhileStatement>node);
+        return visitWhileStatement(<qt.WhileStatement>node);
       case Syntax.LabeledStatement:
-        return visitLabeledStatement(<LabeledStatement>node);
+        return visitLabeledStatement(<qt.LabeledStatement>node);
       case Syntax.WithStatement:
-        return visitWithStatement(<WithStatement>node);
+        return visitWithStatement(<qt.WithStatement>node);
       case Syntax.SwitchStatement:
-        return visitSwitchStatement(<SwitchStatement>node);
+        return visitSwitchStatement(<qt.SwitchStatement>node);
       case Syntax.CaseBlock:
-        return visitCaseBlock(<CaseBlock>node);
+        return visitCaseBlock(<qt.CaseBlock>node);
       case Syntax.CaseClause:
-        return visitCaseClause(<CaseClause>node);
+        return visitCaseClause(<qt.CaseClause>node);
       case Syntax.DefaultClause:
-        return visitDefaultClause(<DefaultClause>node);
+        return visitDefaultClause(<qt.DefaultClause>node);
       case Syntax.TryStatement:
-        return visitTryStatement(<TryStatement>node);
+        return visitTryStatement(<qt.TryStatement>node);
       case Syntax.CatchClause:
-        return visitCatchClause(<CatchClause>node);
+        return visitCatchClause(<qt.CatchClause>node);
       case Syntax.Block:
-        return visitBlock(<Block>node);
+        return visitBlock(<qt.Block>node);
       case Syntax.MergeDeclarationMarker:
-        return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
+        return visitMergeDeclarationMarker(<qt.MergeDeclarationMarker>node);
       case Syntax.EndOfDeclarationMarker:
-        return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
+        return visitEndOfDeclarationMarker(<qt.EndOfDeclarationMarker>node);
       default:
         return destructuringAndImportCallVisitor(node);
     }
   }
-  function visitForStatement(node: ForStatement): VisitResult<Statement> {
+  function visitForStatement(node: qt.ForStatement): VisitResult<Statement> {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = updateFor(
@@ -1695,7 +1699,7 @@ export function transformSystemModule(context: TrafoContext) {
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
-  function visitForInStatement(node: ForInStatement): VisitResult<Statement> {
+  function visitForInStatement(node: qt.ForInStatement): VisitResult<Statement> {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = updateForIn(
@@ -1707,7 +1711,7 @@ export function transformSystemModule(context: TrafoContext) {
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
-  function visitForOfStatement(node: ForOfStatement): VisitResult<Statement> {
+  function visitForOfStatement(node: qt.ForOfStatement): VisitResult<Statement> {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = updateForOf(
@@ -1720,7 +1724,7 @@ export function transformSystemModule(context: TrafoContext) {
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
-  function shouldHoistForIniter(node: ForIniter): node is VariableDeclarationList {
+  function shouldHoistForIniter(node: ForIniter): node is qt.VariableDeclarationList {
     return qf.is.kind(qc.VariableDeclarationList, node) && shouldHoistVariableDeclarationList(node);
   }
   function visitForIniter(node: ForIniter): ForIniter {
@@ -1736,45 +1740,45 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return visitEachChild(node, nestedElemVisitor, context);
   }
-  function visitDoStatement(node: DoStatement): VisitResult<Statement> {
+  function visitDoStatement(node: qt.DoStatement): VisitResult<Statement> {
     return node.update(visitNode(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression));
   }
-  function visitWhileStatement(node: WhileStatement): VisitResult<Statement> {
+  function visitWhileStatement(node: qt.WhileStatement): VisitResult<Statement> {
     return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
   }
-  function visitLabeledStatement(node: LabeledStatement): VisitResult<Statement> {
+  function visitLabeledStatement(node: qt.LabeledStatement): VisitResult<Statement> {
     return node.update(node.label, visitNode(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
   }
-  function visitWithStatement(node: WithStatement): VisitResult<Statement> {
+  function visitWithStatement(node: qt.WithStatement): VisitResult<Statement> {
     return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
   }
-  function visitSwitchStatement(node: SwitchStatement): VisitResult<Statement> {
+  function visitSwitchStatement(node: qt.SwitchStatement): VisitResult<Statement> {
     return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.caseBlock, nestedElemVisitor, isCaseBlock));
   }
-  function visitCaseBlock(node: CaseBlock): CaseBlock {
+  function visitCaseBlock(node: qt.CaseBlock): qt.CaseBlock {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = node.update(Nodes.visit(node.clauses, nestedElemVisitor, isCaseOrDefaultClause));
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
-  function visitCaseClause(node: CaseClause): VisitResult<CaseOrDefaultClause> {
+  function visitCaseClause(node: qt.CaseClause): VisitResult<CaseOrDefaultClause> {
     return node.update(visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), Nodes.visit(node.statements, nestedElemVisitor, qf.is.statement));
   }
-  function visitDefaultClause(node: DefaultClause): VisitResult<CaseOrDefaultClause> {
+  function visitDefaultClause(node: qt.DefaultClause): VisitResult<CaseOrDefaultClause> {
     return visitEachChild(node, nestedElemVisitor, context);
   }
-  function visitTryStatement(node: TryStatement): VisitResult<Statement> {
+  function visitTryStatement(node: qt.TryStatement): VisitResult<Statement> {
     return visitEachChild(node, nestedElemVisitor, context);
   }
-  function visitCatchClause(node: CatchClause): CatchClause {
+  function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = node.update(node.variableDeclaration, visitNode(node.block, nestedElemVisitor, isBlock));
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
-  function visitBlock(node: Block): Block {
+  function visitBlock(node: qt.Block): qt.Block {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
     node = visitEachChild(node, nestedElemVisitor, context);
@@ -1788,9 +1792,9 @@ export function transformSystemModule(context: TrafoContext) {
       return visitEachChild(node, destructuringAndImportCallVisitor, context);
     return node;
   }
-  function visitImportCallExpression(node: ImportCall): Expression {
+  function visitImportCallExpression(node: qt.ImportCall): Expression {
     return new qc.CallExpression(
-      new qc.PropertyAccessExpression(contextObject, new Identifier('import')),
+      new qc.PropertyAccessExpression(contextObject, new qt.Identifier('import')),
       undefined,
       some(node.args) ? [visitNode(node.args[0], destructuringAndImportCallVisitor)] : []
     );
@@ -1823,7 +1827,7 @@ export function transformSystemModule(context: TrafoContext) {
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     if (node.kind === Syntax.SourceFile) {
       const id = getOriginalNodeId(node);
-      currentSourceFile = <SourceFile>node;
+      currentSourceFile = <qt.SourceFile>node;
       moduleInfo = moduleInfoMap[id];
       exportFunction = exportFunctionsMap[id];
       noSubstitution = noSubstitutionMap[id];
@@ -1851,18 +1855,18 @@ export function transformSystemModule(context: TrafoContext) {
   function substituteUnspecified(node: Node) {
     switch (node.kind) {
       case Syntax.ShorthandPropertyAssignment:
-        return substituteShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
+        return substituteShorthandPropertyAssignment(<qt.ShorthandPropertyAssignment>node);
     }
     return node;
   }
-  function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment) {
+  function substituteShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment) {
     const name = node.name;
     if (!qf.is.generatedIdentifier(name) && !qf.is.localName(name)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(name);
       if (importDeclaration) {
         if (qf.is.kind(qc.ImportClause, importDeclaration))
           return setRange(
-            new qc.PropertyAssignment(getSynthesizedClone(name), new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new Identifier('default'))),
+            new qc.PropertyAssignment(getSynthesizedClone(name), new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qt.Identifier('default'))),
             node
           );
         else if (qf.is.kind(qc.ImportSpecifier, importDeclaration)) {
@@ -1881,18 +1885,18 @@ export function transformSystemModule(context: TrafoContext) {
   function substituteExpression(node: Expression) {
     switch (node.kind) {
       case Syntax.Identifier:
-        return substituteExpressionIdentifier(<Identifier>node);
+        return substituteExpressionIdentifier(<qt.Identifier>node);
       case Syntax.BinaryExpression:
-        return substituteBinaryExpression(<BinaryExpression>node);
+        return substituteBinaryExpression(<qt.BinaryExpression>node);
       case Syntax.PrefixUnaryExpression:
       case Syntax.PostfixUnaryExpression:
-        return substituteUnaryExpression(<PrefixUnaryExpression | PostfixUnaryExpression>node);
+        return substituteUnaryExpression(<qt.PrefixUnaryExpression | qt.PostfixUnaryExpression>node);
       case Syntax.MetaProperty:
-        return substituteMetaProperty(<MetaProperty>node);
+        return substituteMetaProperty(<qt.MetaProperty>node);
     }
     return node;
   }
-  function substituteExpressionIdentifier(node: Identifier): Expression {
+  function substituteExpressionIdentifier(node: qt.Identifier): Expression {
     if (qf.get.emitFlags(node) & EmitFlags.HelperName) {
       const externalHelpersModuleName = qf.emit.externalHelpersModuleName(currentSourceFile);
       if (externalHelpersModuleName) return new qc.PropertyAccessExpression(externalHelpersModuleName, node);
@@ -1901,7 +1905,7 @@ export function transformSystemModule(context: TrafoContext) {
     if (!qf.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
-        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new Identifier('default')), node);
+        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qt.Identifier('default')), node);
         else if (qf.is.kind(qc.ImportSpecifier, importDeclaration))
           return setRange(
             new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
@@ -1911,7 +1915,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return node;
   }
-  function substituteBinaryExpression(node: BinaryExpression): Expression {
+  function substituteBinaryExpression(node: qt.BinaryExpression): Expression {
     if (
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
       qf.is.kind(qc.Identifier, node.left) &&
@@ -1930,7 +1934,7 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return node;
   }
-  function substituteUnaryExpression(node: PrefixUnaryExpression | PostfixUnaryExpression): Expression {
+  function substituteUnaryExpression(node: qt.PrefixUnaryExpression | qt.PostfixUnaryExpression): Expression {
     if (
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
       qf.is.kind(qc.Identifier, node.operand) &&
@@ -1952,12 +1956,12 @@ export function transformSystemModule(context: TrafoContext) {
     }
     return node;
   }
-  function substituteMetaProperty(node: MetaProperty) {
-    if (qf.is.importMeta(node)) return new qc.PropertyAccessExpression(contextObject, new Identifier('meta'));
+  function substituteMetaProperty(node: qt.MetaProperty) {
+    if (qf.is.importMeta(node)) return new qc.PropertyAccessExpression(contextObject, new qt.Identifier('meta'));
     return node;
   }
-  function getExports(name: Identifier) {
-    let exportedNames: Identifier[] | undefined;
+  function getExports(name: qt.Identifier) {
+    let exportedNames: qt.Identifier[] | undefined;
     if (!qf.is.generatedIdentifier(name)) {
       const valueDeclaration = resolver.getReferencedImportDeclaration(name) || resolver.getReferencedValueDeclaration(name);
       if (valueDeclaration) {

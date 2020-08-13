@@ -6,10 +6,10 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function transformES2016(context: TrafoContext) {
+export function transformES2016(context: qt.TrafoContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     return visitEachChild(node, visitor, context);
   }
@@ -17,12 +17,12 @@ export function transformES2016(context: TrafoContext) {
     if ((node.trafoFlags & TrafoFlags.ContainsES2016) === 0) return node;
     switch (node.kind) {
       case Syntax.BinaryExpression:
-        return visitBinaryExpression(<BinaryExpression>node);
+        return visitBinaryExpression(<qt.BinaryExpression>node);
       default:
         return visitEachChild(node, visitor, context);
     }
   }
-  function visitBinaryExpression(node: BinaryExpression): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression): Expression {
     switch (node.operatorToken.kind) {
       case Syntax.Asterisk2EqualsToken:
         return visitExponentiationAssignmentExpression(node);
@@ -32,7 +32,7 @@ export function transformES2016(context: TrafoContext) {
         return visitEachChild(node, visitor, context);
     }
   }
-  function visitExponentiationAssignmentExpression(node: BinaryExpression) {
+  function visitExponentiationAssignmentExpression(node: qt.BinaryExpression) {
     let target: Expression;
     let value: Expression;
     const left = visitNode(node.left, visitor, isExpression);
@@ -58,7 +58,7 @@ export function transformES2016(context: TrafoContext) {
     }
     return qf.create.assignment(target, createMathPow(value, right, node)).setRange(node);
   }
-  function visitExponentiationExpression(node: BinaryExpression) {
+  function visitExponentiationExpression(node: qt.BinaryExpression) {
     // Transforms `a ** b` into `Math.pow(a, b)`
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);

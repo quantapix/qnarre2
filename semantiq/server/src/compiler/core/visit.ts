@@ -1,4 +1,4 @@
-import { EmitFlags, Modifier, Node, NodeFlags, Token } from '../types';
+import { EmitFlags, Modifier, Node, NodeFlags, qt.Token } from '../types';
 import { MutableNodes, Nodes } from './bases';
 import { qf } from './frame';
 import { Syntax } from '../syntax';
@@ -119,7 +119,7 @@ function addForBindingPattern(p: qc.ParamDeclaration, c: qt.TrafoContext) {
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForIniter(p: qc.ParamDeclaration, name: Identifier, init: Expression, c: qt.TrafoContext) {
+function addForIniter(p: qc.ParamDeclaration, name: qt.Identifier, init: Expression, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -296,7 +296,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.LiteralTyping:
       return n.update(visitNode(n.literal, cb, isExpression));
     case Syntax.ObjectBindingPattern:
-      return n.update(nodesVisitor(n.elems, cb, BindingElem.kind));
+      return n.update(nodesVisitor(n.elems, cb, qt.BindingElem.kind));
     case Syntax.ArrayBindingPattern:
       return n.update(nodesVisitor(n.elems, cb, isArrayBindingElem));
     case Syntax.BindingElem:
@@ -372,7 +372,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         visitNode(n.whenFalse, cb, isExpression)
       );
     case Syntax.TemplateExpression:
-      return n.update(visitNode(n.head, cb, TemplateHead.kind), nodesVisitor(n.templateSpans, cb, isTemplateSpan));
+      return n.update(visitNode(n.head, cb, qt.TemplateHead.kind), nodesVisitor(n.templateSpans, cb, isTemplateSpan));
     case Syntax.YieldExpression:
       return n.update(visitNode(n.asteriskToken, tokenVisitor, isToken), visitNode(n.expression, cb, isExpression));
     case Syntax.SpreadElem:
@@ -394,7 +394,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
     case Syntax.MetaProperty:
       return n.update(visitNode(n.name, cb, isIdentifier));
     case Syntax.TemplateSpan:
-      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.literal, cb, TemplateMiddle.kindOrTemplateTail));
+      return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.literal, cb, qt.TemplateMiddle.kindOrTemplateTail));
     case Syntax.Block:
       return n.update(nodesVisitor(n.statements, cb, qf.is.statement));
     case Syntax.VariableStatement:
@@ -500,7 +500,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         visitNode(n.moduleSpecifier, cb, isExpression)
       );
     case Syntax.ImportClause:
-      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.namedBindings, cb, isNamedImportBindings), (node as ImportClause).isTypeOnly);
+      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.namedBindings, cb, isNamedImportBindings), (node as qt.ImportClause).isTypeOnly);
     case Syntax.NamespaceImport:
       return n.update(visitNode(n.name, cb, isIdentifier));
     case Syntax.NamespaceExport:
@@ -517,7 +517,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: qt.TrafoC
         nodesVisitor(n.modifiers, cb, isModifier),
         visitNode(n.exportClause, cb, isNamedExportBindings),
         visitNode(n.moduleSpecifier, cb, isExpression),
-        (node as ExportDeclaration).isTypeOnly
+        (node as qt.ExportDeclaration).isTypeOnly
       );
     case Syntax.NamedExports:
       return n.update(nodesVisitor(n.elems, cb, isExportSpecifier));
@@ -1000,11 +1000,11 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
     else {
       const lp = createMap<boolean>();
       for (let i = 0; i < ls; i++) {
-        const lp = ss[i] as PrologueDirective;
+        const lp = ss[i] as qt.PrologueDirective;
         lp.set(leftPrologue.expression.text, true);
       }
       for (let i = rs - 1; i >= 0; i--) {
-        const rp = declarations[i] as PrologueDirective;
+        const rp = declarations[i] as qt.PrologueDirective;
         if (!lp.has(rp.expression.text)) {
           left.unshift(rp);
         }
@@ -1015,26 +1015,26 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   return ss;
 }
 export function liftToBlock(ns: readonly Node[]): Statement {
-  qu.assert(qu.every(ns, qf.is.statement), 'Cannot lift nodes to a Block.');
-  return (qu.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
+  qu.assert(qu.every(ns, qf.is.statement), 'Cannot lift nodes to a qt.Block.');
+  return (qu.singleOrUndefined(ns) as Statement) || new qt.Block(<Nodes<Statement>>ns);
 }
 export function createGetSymbolWalker(
-  getRestTypeOfSignature: (sig: Signature) => Type,
-  getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
-  getReturnTypeOfSignature: (sig: Signature) => Type,
-  getBaseTypes: (t: Type) => Type[],
-  resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
-  getTypeOfSymbol: (sym: Symbol) => Type,
-  getResolvedSymbol: (node: Node) => Symbol,
-  getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
-  getConstraintOfTypeParam: (typeParam: TypeParam) => Type | undefined,
-  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
-  getTypeArgs: (t: TypeReference) => readonly Type[]
+  getRestTypeOfSignature: (sig: qt.Signature) => qt.Type,
+  getTypePredicateOfSignature: (sig: qt.Signature) => TypePredicate | undefined,
+  getReturnTypeOfSignature: (sig: qt.Signature) => qt.Type,
+  getBaseTypes: (t: qt.Type) => qt.Type[],
+  resolveStructuredTypeMembers: (t: qt.ObjectType) => qt.ResolvedType,
+  getTypeOfSymbol: (sym: qt.Symbol) => qt.Type,
+  getResolvedSymbol: (node: Node) => qt.Symbol,
+  getIndexTypeOfStructuredType: (t: qt.Type, kind: qt.IndexKind) => qt.Type | undefined,
+  getConstraintOfTypeParam: (typeParam: qt.TypeParam) => qt.Type | undefined,
+  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => qt.Identifier,
+  getTypeArgs: (t: qt.TypeReference) => readonly qt.Type[]
 ) {
   return getSymbolWalker;
-  function getSymbolWalker(accept: (symbol: Symbol) => boolean = () => true): SymbolWalker {
-    const visitedTypes: Type[] = [];
-    const visitedSymbols: Symbol[] = [];
+  function getSymbolWalker(accept: (symbol: qt.Symbol) => boolean = () => true): qt.SymbolWalker {
+    const visitedTypes: qt.Type[] = [];
+    const visitedSymbols: qt.Symbol[] = [];
     return {
       walkType: (t) => {
         try {
@@ -1055,50 +1055,50 @@ export function createGetSymbolWalker(
         }
       },
     };
-    function visitType(t: Type | undefined) {
+    function visitType(t: qt.Type | undefined) {
       if (!t) return;
       if (visitedTypes[t.id]) return;
       visitedTypes[t.id] = t;
       const shouldBail = visitSymbol(t.symbol);
       if (shouldBail) return;
       if (t.flags & TypeFlags.Object) {
-        const objectType = t as ObjectType;
+        const objectType = t as qt.ObjectType;
         const objectFlags = objectType.objectFlags;
-        if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as TypeReference);
-        if (objectFlags & ObjectFlags.Mapped) visitMappedType(t as MappedType);
-        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as InterfaceType);
+        if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as qt.TypeReference);
+        if (objectFlags & ObjectFlags.Mapped) visitMappedType(t as qt.MappedType);
+        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as qt.InterfaceType);
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
-      if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as TypeParam);
-      if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as UnionOrIntersectionType);
-      if (t.flags & TypeFlags.Index) visitIndexType(t as IndexType);
-      if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as IndexedAccessType);
+      if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as qt.TypeParam);
+      if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as qt.UnionOrIntersectionType);
+      if (t.flags & TypeFlags.Index) visitIndexType(t as qt.IndexType);
+      if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as qt.IndexedAccessType);
     }
-    function visitTypeReference(t: TypeReference) {
+    function visitTypeReference(t: qt.TypeReference) {
       visitType(t.target);
       qu.each(getTypeArgs(t), visitType);
     }
-    function visitTypeParam(t: TypeParam) {
+    function visitTypeParam(t: qt.TypeParam) {
       visitType(qf.get.constraintOfTypeParam(t));
     }
-    function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
+    function visitUnionOrIntersectionType(t: qt.UnionOrIntersectionType) {
       qu.each(t.types, visitType);
     }
-    function visitIndexType(t: IndexType) {
+    function visitIndexType(t: qt.IndexType) {
       visitType(t.type);
     }
-    function visitIndexedAccessType(t: IndexedAccessType) {
+    function visitIndexedAccessType(t: qt.IndexedAccessType) {
       visitType(t.objectType);
       visitType(t.indexType);
       visitType(t.constraint);
     }
-    function visitMappedType(t: MappedType) {
+    function visitMappedType(t: qt.MappedType) {
       visitType(t.typeParam);
       visitType(t.constraintType);
       visitType(t.templateType);
       visitType(t.modifiersType);
     }
-    function visitSignature(signature: Signature) {
+    function visitSignature(signature: qt.Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
       if (typePredicate) visitType(typePredicate.type);
       qu.each(signature.typeParams, visitType);
@@ -1108,13 +1108,13 @@ export function createGetSymbolWalker(
       visitType(getRestTypeOfSignature(signature));
       visitType(qf.get.returnTypeOfSignature(signature));
     }
-    function visitInterfaceType(interfaceT: InterfaceType) {
+    function visitInterfaceType(interfaceT: qt.InterfaceType) {
       visitObjectType(interfaceT);
       qu.each(interfaceT.typeParams, visitType);
       qu.each(getBaseTypes(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
-    function visitObjectType(t: ObjectType) {
+    function visitObjectType(t: qt.ObjectType) {
       const stringIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.String);
       visitType(stringIndexType);
       const numberIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.Number);
@@ -1130,7 +1130,7 @@ export function createGetSymbolWalker(
         visitSymbol(p);
       }
     }
-    function visitSymbol(s?: Symbol): boolean {
+    function visitSymbol(s?: qt.Symbol): boolean {
       if (!s) return false;
       const i = s.getId();
       if (visitedSymbols[i]) return false;
@@ -1141,7 +1141,7 @@ export function createGetSymbolWalker(
       if (s.exports) s.exports.forEach(visitSymbol);
       qu.each(s.declarations, (d) => {
         if ((d as any).type && (d as any).type.kind === Syntax.TypingQuery) {
-          const query = (d as any).type as TypingQuery;
+          const query = (d as any).type as qt.TypingQuery;
           const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));
           visitSymbol(entity);
         }

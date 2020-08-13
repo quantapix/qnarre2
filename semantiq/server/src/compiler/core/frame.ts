@@ -29,8 +29,8 @@ export function newCreate(f: qt.Frame) {
           : k === Syntax.Identifier
           ? new qc.Identifier(Syntax.Identifier, pos, end)
           : k === Syntax.PrivateIdentifier
-          ? new PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
-          : new Token<T>(k, pos, end);
+          ? new qt.PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
+          : new qt.Token<T>(k, pos, end);
       if (parent) {
         n.parent = parent;
         n.flags = parent.flags & NodeFlags.ContextFlags;
@@ -155,7 +155,7 @@ export function newCreate(f: qt.Frame) {
         thisArg = new qc.ThisExpression();
         target = <qt.PrimaryExpression>callee;
       } else if (qf.get.emitFlags(callee) & qt.EmitFlags.HelperName) {
-        thisArg = VoidExpression.zero();
+        thisArg = qt.VoidExpression.zero();
         target = qf.nest.forAccess(callee);
       } else {
         switch (callee.kind) {
@@ -223,7 +223,7 @@ export function newCreate(f: qt.Frame) {
     lessThan(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.LessThanToken, r);
     }
-    //qf.create.assignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
+    //qf.create.assignment(l: qt.ObjectLiteralExpression | qt.ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
     assignment(l: qt.Expression, r: qt.Expression): qc.BinaryExpression;
     assignment(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.EqualsToken, r);

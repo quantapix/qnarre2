@@ -35,14 +35,14 @@ import * as qy from '../syntax';
 //                                    "break" abrupt completions jump to the CONTINUE or
 //                                    BREAK labels, respectively.
 //  .endloop                        - Marks the end of a loop.
-//  .with (x)                       - Marks the beginning of a WithStatement block, using
+//  .with (x)                       - Marks the beginning of a qt.WithStatement block, using
 //                                    the supplied expression.
-//  .endwith                        - Marks the end of a WithStatement.
-//  .switch                         - Marks the beginning of a SwitchStatement.
-//  .endswitch                      - Marks the end of a SwitchStatement.
-//  .labeled NAME                   - Marks the beginning of a LabeledStatement with the
+//  .endwith                        - Marks the end of a qt.WithStatement.
+//  .switch                         - Marks the beginning of a qt.SwitchStatement.
+//  .endswitch                      - Marks the end of a qt.SwitchStatement.
+//  .labeled NAME                   - Marks the beginning of a qt.LabeledStatement with the
 //                                    supplied name.
-//  .endlabeled                     - Marks the end of a LabeledStatement.
+//  .endlabeled                     - Marks the end of a qt.LabeledStatement.
 //  .try TRY, CATCH, FINALLY, END   - Marks the beginning of a protected region, and the
 //                                    labels for each block.
 //  .catch (x)                      - Marks the beginning of a catch block.
@@ -166,12 +166,12 @@ interface ExceptionBlock {
   kind: CodeBlockKind.Exception;
   state: ExceptionBlockState;
   startLabel: Label;
-  catchVariable?: Identifier;
+  catchVariable?: qt.Identifier;
   catchLabel?: Label;
   finallyLabel?: Label;
   endLabel: Label;
 }
-// A generated code that tracks the target for 'break' statements in a LabeledStatement.
+// A generated code that tracks the target for 'break' statements in a qt.LabeledStatement.
 interface LabeledBlock {
   kind: CodeBlockKind.Labeled;
   labelText: string;
@@ -194,7 +194,7 @@ interface LoopBlock {
 // a generated block associated with a 'with' statement
 interface WithBlock {
   kind: CodeBlockKind.With;
-  expression: Identifier;
+  expression: qt.Identifier;
   startLabel: Label;
   endLabel: Label;
 }
@@ -225,7 +225,7 @@ function getInstructionName(instruction: Instruction): string {
       return undefined!; // TODO: GH#18217
   }
 }
-export function transformGenerators(context: TrafoContext) {
+export function transformGenerators(context: qt.TrafoContext) {
   const { resumeLexicalEnvironment, endLexicalEnvironment, hoistFunctionDeclaration, hoistVariableDeclaration } = context;
   const compilerOpts = context.getCompilerOpts();
   const languageVersion = getEmitScriptTarget(compilerOpts);
@@ -233,7 +233,7 @@ export function transformGenerators(context: TrafoContext) {
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onSubstituteNode = onSubstituteNode;
   let renamedCatchVariables: Map<boolean>;
-  let renamedCatchVariableDeclarations: Identifier[];
+  let renamedCatchVariableDeclarations: qt.Identifier[];
   let inGeneratorFunctionBody: boolean;
   let inStatementContainingYield: boolean;
   // The following three arrays store information about generated code blocks.
@@ -250,7 +250,7 @@ export function transformGenerators(context: TrafoContext) {
   // allocating objects to store the same information to avoid GC overhead.
   //
   let labelOffsets: number[] | undefined; // The operation offset at which the label is defined.
-  let labelExpressions: LiteralExpression[][] | undefined; // The NumericLiteral nodes bound to each label.
+  let labelExpressions: LiteralExpression[][] | undefined; // The qt.NumericLiteral nodes bound to each label.
   let nextLabelId = 1; // The next label id to use.
   // Operations store information about generated code for the function body. This
   // Includes things like statements, assignments, breaks (jumps), and yields.
@@ -260,7 +260,7 @@ export function transformGenerators(context: TrafoContext) {
   let operations: OpCode[] | undefined; // The operation to perform.
   let operationArgs: (OperationArgs | undefined)[] | undefined; // The args to the operation.
   let operationLocations: (TextRange | undefined)[] | undefined; // The source map location for the operation.
-  let state: Identifier; // The name of the state object used by the generator at runtime.
+  let state: qt.Identifier; // The name of the state object used by the generator at runtime.
   // The following variables store information used by the `build` function:
   //
   let blockIndex = 0; // The index of the current block.
@@ -268,13 +268,13 @@ export function transformGenerators(context: TrafoContext) {
   let labelNumbers: number[][] | undefined;
   let lastOperationWasAbrupt: boolean; // Indicates whether the last operation was abrupt (break/continue).
   let lastOperationWasCompletion: boolean; // Indicates whether the last operation was a completion (return/throw).
-  let clauses: CaseClause[] | undefined; // The case clauses generated for labels.
+  let clauses: qt.CaseClause[] | undefined; // The case clauses generated for labels.
   let statements: Statement[] | undefined; // The statements for the current label.
   let exceptionBlockStack: ExceptionBlock[] | undefined; // A stack of containing exception blocks.
   let currentExceptionBlock: ExceptionBlock | undefined; // The current exception block.
   let withBlockStack: WithBlock[] | undefined; // A stack containing `with` blocks.
   return chainBundle(transformSourceFile);
-  function transformSourceFile(node: SourceFile) {
+  function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile || (node.trafoFlags & TrafoFlags.ContainsGenerator) === 0) return node;
     const visited = visitEachChild(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
@@ -291,13 +291,13 @@ export function transformGenerators(context: TrafoContext) {
   function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.DoStatement:
-        return visitDoStatement(<DoStatement>node);
+        return visitDoStatement(<qt.DoStatement>node);
       case Syntax.WhileStatement:
-        return visitWhileStatement(<WhileStatement>node);
+        return visitWhileStatement(<qt.WhileStatement>node);
       case Syntax.SwitchStatement:
-        return visitSwitchStatement(<SwitchStatement>node);
+        return visitSwitchStatement(<qt.SwitchStatement>node);
       case Syntax.LabeledStatement:
-        return visitLabeledStatement(<LabeledStatement>node);
+        return visitLabeledStatement(<qt.LabeledStatement>node);
       default:
         return visitJavaScriptInGeneratorFunctionBody(node);
     }
@@ -305,24 +305,24 @@ export function transformGenerators(context: TrafoContext) {
   function visitJavaScriptInGeneratorFunctionBody(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(<qt.FunctionDeclaration>node);
       case Syntax.FunctionExpression:
-        return visitFunctionExpression(<FunctionExpression>node);
+        return visitFunctionExpression(<qt.FunctionExpression>node);
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
-        return visitAccessorDeclaration(<AccessorDeclaration>node);
+        return visitAccessorDeclaration(<qt.AccessorDeclaration>node);
       case Syntax.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(<qt.VariableStatement>node);
       case Syntax.ForStatement:
-        return visitForStatement(<ForStatement>node);
+        return visitForStatement(<qt.ForStatement>node);
       case Syntax.ForInStatement:
-        return visitForInStatement(<ForInStatement>node);
+        return visitForInStatement(<qt.ForInStatement>node);
       case Syntax.BreakStatement:
-        return visitBreakStatement(<BreakStatement>node);
+        return visitBreakStatement(<qt.BreakStatement>node);
       case Syntax.ContinueStatement:
-        return visitContinueStatement(<ContinueStatement>node);
+        return visitContinueStatement(<qt.ContinueStatement>node);
       case Syntax.ReturnStatement:
-        return visitReturnStatement(<ReturnStatement>node);
+        return visitReturnStatement(<qt.ReturnStatement>node);
       default:
         if (node.trafoFlags & TrafoFlags.ContainsYield) return visitJavaScriptContainingYield(node);
         if (node.trafoFlags & (TrafoFlags.ContainsGenerator | TrafoFlags.ContainsHoistedDeclarationOrCompletion)) return visitEachChild(node, visitor, context);
@@ -332,21 +332,21 @@ export function transformGenerators(context: TrafoContext) {
   function visitJavaScriptContainingYield(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.BinaryExpression:
-        return visitBinaryExpression(<BinaryExpression>node);
+        return visitBinaryExpression(<qt.BinaryExpression>node);
       case Syntax.ConditionalExpression:
-        return visitConditionalExpression(<ConditionalExpression>node);
+        return visitConditionalExpression(<qt.ConditionalExpression>node);
       case Syntax.YieldExpression:
-        return visitYieldExpression(<YieldExpression>node);
+        return visitYieldExpression(<qt.YieldExpression>node);
       case Syntax.ArrayLiteralExpression:
-        return visitArrayLiteralExpression(<ArrayLiteralExpression>node);
+        return visitArrayLiteralExpression(<qt.ArrayLiteralExpression>node);
       case Syntax.ObjectLiteralExpression:
-        return visitObjectLiteralExpression(<ObjectLiteralExpression>node);
+        return visitObjectLiteralExpression(<qt.ObjectLiteralExpression>node);
       case Syntax.ElemAccessExpression:
-        return visitElemAccessExpression(<ElemAccessExpression>node);
+        return visitElemAccessExpression(<qt.ElemAccessExpression>node);
       case Syntax.CallExpression:
-        return visitCallExpression(<CallExpression>node);
+        return visitCallExpression(<qt.CallExpression>node);
       case Syntax.NewExpression:
-        return visitNewExpression(<NewExpression>node);
+        return visitNewExpression(<qt.NewExpression>node);
       default:
         return visitEachChild(node, visitor, context);
     }
@@ -354,14 +354,14 @@ export function transformGenerators(context: TrafoContext) {
   function visitGenerator(node: Node): VisitResult<Node> {
     switch (node.kind) {
       case Syntax.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(<qt.FunctionDeclaration>node);
       case Syntax.FunctionExpression:
-        return visitFunctionExpression(<FunctionExpression>node);
+        return visitFunctionExpression(<qt.FunctionExpression>node);
       default:
         return Debug.failBadSyntax(node);
     }
   }
-  function visitFunctionDeclaration(node: FunctionDeclaration): Statement | undefined {
+  function visitFunctionDeclaration(node: qt.FunctionDeclaration): Statement | undefined {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(
@@ -388,7 +388,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function visitFunctionExpression(node: FunctionExpression): Expression {
+  function visitFunctionExpression(node: qt.FunctionExpression): Expression {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(
@@ -406,7 +406,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function visitAccessorDeclaration(node: AccessorDeclaration) {
+  function visitAccessorDeclaration(node: qt.AccessorDeclaration) {
     const savedInGeneratorFunctionBody = inGeneratorFunctionBody;
     const savedInStatementContainingYield = inStatementContainingYield;
     inGeneratorFunctionBody = false;
@@ -416,7 +416,7 @@ export function transformGenerators(context: TrafoContext) {
     inStatementContainingYield = savedInStatementContainingYield;
     return node;
   }
-  function transformGeneratorFunctionBody(body: Block) {
+  function transformGeneratorFunctionBody(body: qt.Block) {
     // Save existing generator state
     const statements: Statement[] = [];
     const savedInGeneratorFunctionBody = inGeneratorFunctionBody;
@@ -467,9 +467,9 @@ export function transformGenerators(context: TrafoContext) {
     operationArgs = savedOperationArgs;
     operationLocations = savedOperationLocations;
     state = savedState;
-    return setRange(new Block(statements, body.multiLine), body);
+    return setRange(new qt.Block(statements, body.multiLine), body);
   }
-  function visitVariableStatement(node: VariableStatement): Statement | undefined {
+  function visitVariableStatement(node: qt.VariableStatement): Statement | undefined {
     if (node.trafoFlags & TrafoFlags.ContainsYield) {
       transformAndEmitVariableDeclarationList(node.declarationList);
       return;
@@ -477,7 +477,7 @@ export function transformGenerators(context: TrafoContext) {
       // Do not hoist custom prologues.
       if (qf.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
       for (const variable of node.declarationList.declarations) {
-        hoistVariableDeclaration(<Identifier>variable.name);
+        hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
       const variables = qf.get.initializedVariables(node.declarationList);
       if (variables.length === 0) {
@@ -486,7 +486,7 @@ export function transformGenerators(context: TrafoContext) {
       return qf.emit.setSourceMapRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
   }
-  function visitBinaryExpression(node: BinaryExpression): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression): Expression {
     const assoc = qf.get.expressionAssociativity(node);
     switch (assoc) {
       case Associativity.Left:
@@ -497,7 +497,7 @@ export function transformGenerators(context: TrafoContext) {
         return qc.assert.never(assoc);
     }
   }
-  function visitRightAssociativeBinaryExpression(node: BinaryExpression) {
+  function visitRightAssociativeBinaryExpression(node: qt.BinaryExpression) {
     const { left, right } = node;
     if (containsYield(right)) {
       let target: Expression;
@@ -513,9 +513,9 @@ export function transformGenerators(context: TrafoContext) {
           //  .mark resumeLabel
           //      _a.b = %sent%;
           target = updatePropertyAccess(
-            <PropertyAccessExpression>left,
-            cacheExpression(visitNode((<PropertyAccessExpression>left).expression, visitor, isLeftExpression)),
-            (<PropertyAccessExpression>left).name
+            <qt.PropertyAccessExpression>left,
+            cacheExpression(visitNode((<qt.PropertyAccessExpression>left).expression, visitor, isLeftExpression)),
+            (<qt.PropertyAccessExpression>left).name
           );
           break;
         case Syntax.ElemAccessExpression:
@@ -530,9 +530,9 @@ export function transformGenerators(context: TrafoContext) {
           //  .mark resumeLabel
           //      _a[_b] = %sent%;
           target = updateElemAccess(
-            <ElemAccessExpression>left,
-            cacheExpression(visitNode((<ElemAccessExpression>left).expression, visitor, isLeftExpression)),
-            cacheExpression(visitNode((<ElemAccessExpression>left).argExpression, visitor, isExpression))
+            <qt.ElemAccessExpression>left,
+            cacheExpression(visitNode((<qt.ElemAccessExpression>left).expression, visitor, isLeftExpression)),
+            cacheExpression(visitNode((<qt.ElemAccessExpression>left).argExpression, visitor, isExpression))
           );
           break;
         default:
@@ -542,7 +542,10 @@ export function transformGenerators(context: TrafoContext) {
       const operator = node.operatorToken.kind;
       if (isCompoundAssignment(operator)) {
         return setRange(
-          qf.create.assignment(target, setRange(new BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
+          qf.create.assignment(
+            target,
+            setRange(new qt.BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)
+          ),
           node
         );
       }
@@ -550,7 +553,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitLeftAssociativeBinaryExpression(node: BinaryExpression) {
+  function visitLeftAssociativeBinaryExpression(node: qt.BinaryExpression) {
     if (containsYield(node.right)) {
       if (syntax.is.logicalOperator(node.operatorToken.kind)) return visitLogicalBinaryExpression(node);
       else if (node.operatorToken.kind === Syntax.CommaToken) return visitCommaExpression(node);
@@ -569,7 +572,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitLogicalBinaryExpression(node: BinaryExpression) {
+  function visitLogicalBinaryExpression(node: qt.BinaryExpression) {
     // Logical binary expressions (`&&` and `||`) are shortcutting expressions and need
     // to be transformed as such:
     //
@@ -612,7 +615,7 @@ export function transformGenerators(context: TrafoContext) {
     markLabel(resultLabel);
     return resultLocal;
   }
-  function visitCommaExpression(node: BinaryExpression) {
+  function visitCommaExpression(node: qt.BinaryExpression) {
     // [source]
     //      x = a(), yield, b();
     //
@@ -638,7 +641,7 @@ export function transformGenerators(context: TrafoContext) {
       }
     }
   }
-  function visitConditionalExpression(node: ConditionalExpression): Expression {
+  function visitConditionalExpression(node: qt.ConditionalExpression): Expression {
     // [source]
     //      x = a() ? yield : b();
     //
@@ -670,7 +673,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitYieldExpression(node: YieldExpression): LeftExpression {
+  function visitYieldExpression(node: qt.YieldExpression): LeftExpression {
     // [source]
     //      x = yield a();
     //
@@ -689,7 +692,7 @@ export function transformGenerators(context: TrafoContext) {
     markLabel(resumeLabel);
     return createGeneratorResume(node);
   }
-  function visitArrayLiteralExpression(node: ArrayLiteralExpression) {
+  function visitArrayLiteralExpression(node: qt.ArrayLiteralExpression) {
     return visitElems(node.elems, undefined, node.multiLine);
   }
   function visitElems(elems: Nodes<Expression>, leadingElem?: Expression, location?: TextRange, multiLine?: boolean) {
@@ -703,17 +706,17 @@ export function transformGenerators(context: TrafoContext) {
     //  .mark resumeLabel
     //      ar = _a.concat([%sent%, 2]);
     const numInitialElems = countInitialNodesWithoutYield(elems);
-    let temp: Identifier | undefined;
+    let temp: qt.Identifier | undefined;
     if (numInitialElems > 0) {
       temp = declareLocal();
       const initialElems = Nodes.visit(elems, visitor, isExpression, 0, numInitialElems);
-      emitAssignment(temp, new ArrayLiteralExpression(leadingElem ? [leadingElem, ...initialElems] : initialElems));
+      emitAssignment(temp, new qt.ArrayLiteralExpression(leadingElem ? [leadingElem, ...initialElems] : initialElems));
       leadingElem = undefined;
     }
     const expressions = reduceLeft(elems, reduceElem, <Expression[]>[], numInitialElems);
     return temp
-      ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
-      : setRange(new ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine), location);
+      ? createArrayConcat(temp, [new qt.ArrayLiteralExpression(expressions, multiLine)])
+      : setRange(new qt.ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine), location);
     function reduceElem(expressions: Expression[], elem: Expression) {
       if (containsYield(elem) && expressions.length > 0) {
         const hasAssignedTemp = temp !== undefined;
@@ -723,8 +726,8 @@ export function transformGenerators(context: TrafoContext) {
         emitAssignment(
           temp,
           hasAssignedTemp
-            ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
-            : new ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine)
+            ? createArrayConcat(temp, [new qt.ArrayLiteralExpression(expressions, multiLine)])
+            : new qt.ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine)
         );
         leadingElem = undefined;
         expressions = [];
@@ -733,7 +736,7 @@ export function transformGenerators(context: TrafoContext) {
       return expressions;
     }
   }
-  function visitObjectLiteralExpression(node: ObjectLiteralExpression) {
+  function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression) {
     // [source]
     //      o = {
     //          a: 1,
@@ -775,7 +778,7 @@ export function transformGenerators(context: TrafoContext) {
       return expressions;
     }
   }
-  function visitElemAccessExpression(node: ElemAccessExpression) {
+  function visitElemAccessExpression(node: qt.ElemAccessExpression) {
     if (containsYield(node.argExpression)) {
       // [source]
       //      a = x[yield];
@@ -793,7 +796,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitCallExpression(node: CallExpression) {
+  function visitCallExpression(node: qt.CallExpression) {
     if (!qf.is.importCall(node) && forEach(node.args, containsYield)) {
       // [source]
       //      a.b(1, yield, 2);
@@ -810,7 +813,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitNewExpression(node: NewExpression) {
+  function visitNewExpression(node: qt.NewExpression) {
     if (forEach(node.args, containsYield)) {
       // [source]
       //      new a.b(1, yield, 2);
@@ -854,52 +857,52 @@ export function transformGenerators(context: TrafoContext) {
   function transformAndEmitStatementWorker(node: Statement): void {
     switch (node.kind) {
       case Syntax.Block:
-        return transformAndEmitBlock(<Block>node);
+        return transformAndEmitBlock(<qt.Block>node);
       case Syntax.ExpressionStatement:
-        return transformAndEmitExpressionStatement(<ExpressionStatement>node);
+        return transformAndEmitExpressionStatement(<qt.ExpressionStatement>node);
       case Syntax.IfStatement:
-        return transformAndEmitIfStatement(<IfStatement>node);
+        return transformAndEmitIfStatement(<qt.IfStatement>node);
       case Syntax.DoStatement:
-        return transformAndEmitDoStatement(<DoStatement>node);
+        return transformAndEmitDoStatement(<qt.DoStatement>node);
       case Syntax.WhileStatement:
-        return transformAndEmitWhileStatement(<WhileStatement>node);
+        return transformAndEmitWhileStatement(<qt.WhileStatement>node);
       case Syntax.ForStatement:
-        return transformAndEmitForStatement(<ForStatement>node);
+        return transformAndEmitForStatement(<qt.ForStatement>node);
       case Syntax.ForInStatement:
-        return transformAndEmitForInStatement(<ForInStatement>node);
+        return transformAndEmitForInStatement(<qt.ForInStatement>node);
       case Syntax.ContinueStatement:
-        return transformAndEmitContinueStatement(<ContinueStatement>node);
+        return transformAndEmitContinueStatement(<qt.ContinueStatement>node);
       case Syntax.BreakStatement:
-        return transformAndEmitBreakStatement(<BreakStatement>node);
+        return transformAndEmitBreakStatement(<qt.BreakStatement>node);
       case Syntax.ReturnStatement:
-        return transformAndEmitReturnStatement(<ReturnStatement>node);
+        return transformAndEmitReturnStatement(<qt.ReturnStatement>node);
       case Syntax.WithStatement:
-        return transformAndEmitWithStatement(<WithStatement>node);
+        return transformAndEmitWithStatement(<qt.WithStatement>node);
       case Syntax.SwitchStatement:
-        return transformAndEmitSwitchStatement(<SwitchStatement>node);
+        return transformAndEmitSwitchStatement(<qt.SwitchStatement>node);
       case Syntax.LabeledStatement:
-        return transformAndEmitLabeledStatement(<LabeledStatement>node);
+        return transformAndEmitLabeledStatement(<qt.LabeledStatement>node);
       case Syntax.ThrowStatement:
-        return transformAndEmitThrowStatement(<ThrowStatement>node);
+        return transformAndEmitThrowStatement(<qt.ThrowStatement>node);
       case Syntax.TryStatement:
-        return transformAndEmitTryStatement(<TryStatement>node);
+        return transformAndEmitTryStatement(<qt.TryStatement>node);
       default:
         return emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function transformAndEmitBlock(node: Block): void {
+  function transformAndEmitBlock(node: qt.Block): void {
     if (containsYield(node)) {
       transformAndEmitStatements(node.statements);
     } else {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function transformAndEmitExpressionStatement(node: ExpressionStatement) {
+  function transformAndEmitExpressionStatement(node: qt.ExpressionStatement) {
     emitStatement(visitNode(node, visitor, qf.is.statement));
   }
-  function transformAndEmitVariableDeclarationList(node: VariableDeclarationList): VariableDeclarationList | undefined {
+  function transformAndEmitVariableDeclarationList(node: qt.VariableDeclarationList): qt.VariableDeclarationList | undefined {
     for (const variable of node.declarations) {
-      const name = getSynthesizedClone(<Identifier>variable.name);
+      const name = getSynthesizedClone(<qt.Identifier>variable.name);
       qf.emit.setCommentRange(name, variable.name);
       hoistVariableDeclaration(name);
     }
@@ -923,10 +926,10 @@ export function transformGenerators(context: TrafoContext) {
     }
     return;
   }
-  function transformInitializedVariable(node: VariableDeclaration) {
-    return qf.emit.setSourceMapRange(qf.create.assignment(qf.emit.setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
+  function transformInitializedVariable(node: qt.VariableDeclaration) {
+    return qf.emit.setSourceMapRange(qf.create.assignment(qf.emit.setSourceMapRange(<qt.Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
   }
-  function transformAndEmitIfStatement(node: IfStatement) {
+  function transformAndEmitIfStatement(node: qt.IfStatement) {
     if (containsYield(node)) {
       // [source]
       //      if (x)
@@ -959,7 +962,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function transformAndEmitDoStatement(node: DoStatement) {
+  function transformAndEmitDoStatement(node: qt.DoStatement) {
     if (containsYield(node)) {
       // [source]
       //      do {
@@ -987,7 +990,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitDoStatement(node: DoStatement) {
+  function visitDoStatement(node: qt.DoStatement) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
       node = visitEachChild(node, visitor, context);
@@ -996,7 +999,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function transformAndEmitWhileStatement(node: WhileStatement) {
+  function transformAndEmitWhileStatement(node: qt.WhileStatement) {
     if (containsYield(node)) {
       // [source]
       //      while (i < 10) {
@@ -1022,7 +1025,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitWhileStatement(node: WhileStatement) {
+  function visitWhileStatement(node: qt.WhileStatement) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
       node = visitEachChild(node, visitor, context);
@@ -1031,7 +1034,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function transformAndEmitForStatement(node: ForStatement) {
+  function transformAndEmitForStatement(node: qt.ForStatement) {
     if (containsYield(node)) {
       // [source]
       //      for (var i = 0; i < 10; i++) {
@@ -1076,14 +1079,14 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitForStatement(node: ForStatement) {
+  function visitForStatement(node: qt.ForStatement) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
     }
     const initer = node.initer;
     if (initer && qf.is.kind(qc.VariableDeclarationList, initer)) {
       for (const variable of initer.declarations) {
-        hoistVariableDeclaration(<Identifier>variable.name);
+        hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
       const variables = qf.get.initializedVariables(initer);
       node = updateFor(
@@ -1101,7 +1104,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function transformAndEmitForInStatement(node: ForInStatement) {
+  function transformAndEmitForInStatement(node: qt.ForInStatement) {
     // TODO(rbuckton): Source map locations
     if (containsYield(node)) {
       // [source]
@@ -1129,7 +1132,7 @@ export function transformGenerators(context: TrafoContext) {
       const keysIndex = createLoopVariable(); // _i
       const initer = node.initer;
       hoistVariableDeclaration(keysIndex);
-      emitAssignment(keysArray, new ArrayLiteralExpression());
+      emitAssignment(keysArray, new qt.ArrayLiteralExpression());
       emitStatement(
         new qc.ForInStatement(
           key,
@@ -1146,9 +1149,9 @@ export function transformGenerators(context: TrafoContext) {
       let variable: Expression;
       if (qf.is.kind(qc.VariableDeclarationList, initer)) {
         for (const variable of initer.declarations) {
-          hoistVariableDeclaration(<Identifier>variable.name);
+          hoistVariableDeclaration(<qt.Identifier>variable.name);
         }
-        variable = <Identifier>getSynthesizedClone(initer.declarations[0].name);
+        variable = <qt.Identifier>getSynthesizedClone(initer.declarations[0].name);
       } else {
         variable = visitNode(initer, visitor, isExpression);
         assert(qf.is.leftHandSideExpression(variable));
@@ -1163,7 +1166,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitForInStatement(node: ForInStatement) {
+  function visitForInStatement(node: qt.ForInStatement) {
     // [source]
     //      for (var x in a) {
     //
@@ -1182,9 +1185,9 @@ export function transformGenerators(context: TrafoContext) {
     const initer = node.initer;
     if (qf.is.kind(qc.VariableDeclarationList, initer)) {
       for (const variable of initer.declarations) {
-        hoistVariableDeclaration(<Identifier>variable.name);
+        hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
-      node = node.update(<Identifier>initer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, qf.is.statement, liftToBlock));
+      node = node.update(<qt.Identifier>initer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, qf.is.statement, liftToBlock));
     } else {
       node = visitEachChild(node, visitor, context);
     }
@@ -1193,7 +1196,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function transformAndEmitContinueStatement(node: ContinueStatement): void {
+  function transformAndEmitContinueStatement(node: qt.ContinueStatement): void {
     const label = findContinueTarget(node.label ? idText(node.label) : undefined);
     if (label > 0) {
       emitBreak(label, node);
@@ -1202,14 +1205,14 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(node);
     }
   }
-  function visitContinueStatement(node: ContinueStatement): Statement {
+  function visitContinueStatement(node: qt.ContinueStatement): Statement {
     if (inStatementContainingYield) {
       const label = findContinueTarget(node.label && idText(node.label));
       if (label > 0) return createInlineBreak(label, node);
     }
     return visitEachChild(node, visitor, context);
   }
-  function transformAndEmitBreakStatement(node: BreakStatement): void {
+  function transformAndEmitBreakStatement(node: qt.BreakStatement): void {
     const label = findBreakTarget(node.label ? idText(node.label) : undefined);
     if (label > 0) {
       emitBreak(label, node);
@@ -1218,20 +1221,20 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(node);
     }
   }
-  function visitBreakStatement(node: BreakStatement): Statement {
+  function visitBreakStatement(node: qt.BreakStatement): Statement {
     if (inStatementContainingYield) {
       const label = findBreakTarget(node.label && idText(node.label));
       if (label > 0) return createInlineBreak(label, node);
     }
     return visitEachChild(node, visitor, context);
   }
-  function transformAndEmitReturnStatement(node: ReturnStatement): void {
+  function transformAndEmitReturnStatement(node: qt.ReturnStatement): void {
     emitReturn(visitNode(node.expression, visitor, isExpression), node);
   }
-  function visitReturnStatement(node: ReturnStatement) {
+  function visitReturnStatement(node: qt.ReturnStatement) {
     return createInlineReturn(visitNode(node.expression, visitor, isExpression), node);
   }
-  function transformAndEmitWithStatement(node: WithStatement) {
+  function transformAndEmitWithStatement(node: qt.WithStatement) {
     if (containsYield(node)) {
       // [source]
       //      with (x) {
@@ -1249,7 +1252,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function transformAndEmitSwitchStatement(node: SwitchStatement) {
+  function transformAndEmitSwitchStatement(node: qt.SwitchStatement) {
     if (containsYield(node.caseBlock)) {
       // [source]
       //      switch (x) {
@@ -1300,7 +1303,7 @@ export function transformGenerators(context: TrafoContext) {
       // clause or the next case clause with a `yield` in its expression, up to the next
       // case clause with a `yield` in its expression.
       let clausesWritten = 0;
-      let pendingClauses: CaseClause[] = [];
+      let pendingClauses: qt.CaseClause[] = [];
       while (clausesWritten < numClauses) {
         let defaultClausesSkipped = 0;
         for (let i = clausesWritten; i < numClauses; i++) {
@@ -1338,7 +1341,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitSwitchStatement(node: SwitchStatement) {
+  function visitSwitchStatement(node: qt.SwitchStatement) {
     if (inStatementContainingYield) {
       beginScriptSwitchBlock();
     }
@@ -1348,7 +1351,7 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function transformAndEmitLabeledStatement(node: LabeledStatement) {
+  function transformAndEmitLabeledStatement(node: qt.LabeledStatement) {
     if (containsYield(node)) {
       // [source]
       //      x: {
@@ -1367,7 +1370,7 @@ export function transformGenerators(context: TrafoContext) {
       emitStatement(visitNode(node, visitor, qf.is.statement));
     }
   }
-  function visitLabeledStatement(node: LabeledStatement) {
+  function visitLabeledStatement(node: qt.LabeledStatement) {
     if (inStatementContainingYield) {
       beginScriptLabeledBlock(idText(node.label));
     }
@@ -1377,10 +1380,10 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function transformAndEmitThrowStatement(node: ThrowStatement): void {
+  function transformAndEmitThrowStatement(node: qt.ThrowStatement): void {
     emitThrow(visitNode(node.expression, visitor, isExpression), node);
   }
-  function transformAndEmitTryStatement(node: TryStatement) {
+  function transformAndEmitTryStatement(node: qt.TryStatement) {
     if (containsYield(node)) {
       // [source]
       //      try {
@@ -1445,7 +1448,7 @@ export function transformGenerators(context: TrafoContext) {
     if (qf.is.kind(qc.Identifier, node)) return substituteExpressionIdentifier(node);
     return node;
   }
-  function substituteExpressionIdentifier(node: Identifier) {
+  function substituteExpressionIdentifier(node: qt.Identifier) {
     if (!qf.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
       const original = qf.get.originalOf(node);
       if (qf.is.kind(qc.Identifier, original) && original.parent) {
@@ -1463,13 +1466,13 @@ export function transformGenerators(context: TrafoContext) {
     }
     return node;
   }
-  function cacheExpression(node: Expression): Identifier {
-    if (qf.is.generatedIdentifier(node) || qf.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
+  function cacheExpression(node: Expression): qt.Identifier {
+    if (qf.is.generatedIdentifier(node) || qf.get.emitFlags(node) & EmitFlags.HelperName) return <qt.Identifier>node;
     const temp = createTempVariable(hoistVariableDeclaration);
     emitAssignment(temp, node, node);
     return temp;
   }
-  function declareLocal(name?: string): Identifier {
+  function declareLocal(name?: string): qt.Identifier {
     const temp = name ? createUniqueName(name) : createTempVariable(undefined);
     hoistVariableDeclaration(temp);
     return temp;
@@ -1518,7 +1521,7 @@ export function transformGenerators(context: TrafoContext) {
     const block = peekBlock();
     return block && block.kind;
   }
-  function beginWithBlock(expression: Identifier): void {
+  function beginWithBlock(expression: qt.Identifier): void {
     const startLabel = defineLabel();
     const endLabel = defineLabel();
     markLabel(startLabel);
@@ -1547,15 +1550,15 @@ export function transformGenerators(context: TrafoContext) {
     emitNop();
     return endLabel;
   }
-  function beginCatchBlock(variable: VariableDeclaration): void {
+  function beginCatchBlock(variable: qt.VariableDeclaration): void {
     assert(peekBlockKind() === CodeBlockKind.Exception);
     // generated identifiers should already be unique within a file
-    let name: Identifier;
+    let name: qt.Identifier;
     if (qf.is.generatedIdentifier(variable.name)) {
       name = variable.name;
       hoistVariableDeclaration(variable.name);
     } else {
-      const text = idText(<Identifier>variable.name);
+      const text = idText(<qt.Identifier>variable.name);
       name = declareLocal(text);
       if (!renamedCatchVariables) {
         renamedCatchVariables = createMap<boolean>();
@@ -1743,17 +1746,17 @@ export function transformGenerators(context: TrafoContext) {
     }
     return new qc.OmittedExpression();
   }
-  function createInstruction(instruction: Instruction): NumericLiteral {
+  function createInstruction(instruction: Instruction): qt.NumericLiteral {
     const literal = qc.asLiteral(instruction);
     qf.emit.addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
     return literal;
   }
-  function createInlineBreak(label: Label, location?: TextRange): ReturnStatement {
+  function createInlineBreak(label: Label, location?: TextRange): qt.ReturnStatement {
     Debug.assertLessThan(0, label, 'Invalid label');
-    return setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
+    return setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
   }
-  function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
-    return setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
+  function createInlineReturn(expression?: Expression, location?: TextRange): qt.ReturnStatement {
+    return setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
   function createGeneratorResume(location?: TextRange): LeftExpression {
     return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []), location);
@@ -1825,7 +1828,7 @@ export function transformGenerators(context: TrafoContext) {
     return createGeneratorHelper(
       context,
       qf.emit.setFlags(
-        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
+        new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, state)], undefined, new qt.Block(buildResult, buildResult.length > 0)),
         EmitFlags.ReuseTempVariableScope
       )
     );
@@ -1891,7 +1894,7 @@ export function transformGenerators(context: TrafoContext) {
         // surround the statements in generated `with` blocks to create the same environment.
         for (let i = withBlockStack.length - 1; i >= 0; i--) {
           const withBlock = withBlockStack[i];
-          statements = [new qc.WithStatement(withBlock.expression, new Block(statements))];
+          statements = [new qc.WithStatement(withBlock.expression, new qt.Block(statements))];
         }
       }
       if (currentExceptionBlock) {
@@ -1902,7 +1905,7 @@ export function transformGenerators(context: TrafoContext) {
         statements.unshift(
           new qc.ExpressionStatement(
             new qc.CallExpression(new qc.PropertyAccessExpression(new qc.PropertyAccessExpression(state, 'trys'), 'push'), undefined, [
-              new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
+              new qt.ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
             ])
           )
         );
@@ -2046,7 +2049,7 @@ export function transformGenerators(context: TrafoContext) {
     lastOperationWasCompletion = true;
     writeStatement(
       qf.emit.setFlags(
-        setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
+        setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
     );
@@ -2054,7 +2057,7 @@ export function transformGenerators(context: TrafoContext) {
   function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     writeStatement(
-      qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+      qf.emit.setFlags(setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
     );
   }
   function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
@@ -2062,7 +2065,7 @@ export function transformGenerators(context: TrafoContext) {
       qf.emit.setFlags(
         new qc.IfStatement(
           condition,
-          qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          qf.emit.setFlags(setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2073,7 +2076,7 @@ export function transformGenerators(context: TrafoContext) {
       qf.emit.setFlags(
         new qc.IfStatement(
           qf.create.logicalNot(condition),
-          qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          qf.emit.setFlags(setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2083,7 +2086,7 @@ export function transformGenerators(context: TrafoContext) {
     lastOperationWasAbrupt = true;
     writeStatement(
       qf.emit.setFlags(
-        setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
+        setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
     );
@@ -2091,15 +2094,15 @@ export function transformGenerators(context: TrafoContext) {
   function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     writeStatement(
-      qf.emit.setFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps)
+      qf.emit.setFlags(setRange(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps)
     );
   }
   function writeEndfinally(): void {
     lastOperationWasAbrupt = true;
-    writeStatement(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
+    writeStatement(new qc.ReturnStatement(new qt.ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
   }
 }
-function createGeneratorHelper(context: TrafoContext, body: FunctionExpression) {
+function createGeneratorHelper(context: qt.TrafoContext, body: qt.FunctionExpression) {
   context.requestEmitHelper(generatorHelper);
   return new qc.CallExpression(getUnscopedHelperName('__generator'), undefined, [new qc.ThisExpression(), body]);
 }
@@ -2162,7 +2165,7 @@ function createGeneratorHelper(context: TrafoContext, body: FunctionExpression) 
 //                        entering a finally block.
 //
 // For examples of how these are used, see the comments in ./transformers/generators.ts
-export const generatorHelper: UnscopedEmitHelper = {
+export const generatorHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:generator',
   importName: '__generator',
   scoped: false,
@@ -2170,7 +2173,7 @@ export const generatorHelper: UnscopedEmitHelper = {
   text: `
             var __generator = (this && this.__generator) || function (thisArg, body) {
                 var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-                return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+                return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof qt.Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
                 function verb(n) { return function (v) { return step([n, v]); }; }
                 function step(op) {
                     if (f) throw new TypeError("Generator is already executing.");

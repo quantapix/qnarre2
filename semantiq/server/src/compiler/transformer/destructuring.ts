@@ -13,9 +13,9 @@ interface FlattenContext {
   hoistTempVariables: boolean;
   emitExpression: (value: Expression) => void;
   emitBindingOrAssignment: (target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange, original: Node | undefined) => void;
-  createArrayBindingOrAssignmentPattern: (elems: BindingOrAssignmentElem[]) => ArrayBindingOrAssignmentPattern;
-  createObjectBindingOrAssignmentPattern: (elems: BindingOrAssignmentElem[]) => ObjectBindingOrAssignmentPattern;
-  createArrayBindingOrAssignmentElem: (node: Identifier) => BindingOrAssignmentElem;
+  createArrayBindingOrAssignmentPattern: (elems: qt.BindingOrAssignmentElem[]) => qt.ArrayBindingOrAssignmentPattern;
+  createObjectBindingOrAssignmentPattern: (elems: qt.BindingOrAssignmentElem[]) => ObjectBindingOrAssignmentPattern;
+  createArrayBindingOrAssignmentElem: (node: qt.Identifier) => qt.BindingOrAssignmentElem;
   visitor?: (node: Node) => VisitResult<Node>;
 }
 export const enum FlattenLevel {
@@ -23,12 +23,12 @@ export const enum FlattenLevel {
   ObjectRest,
 }
 export function flattenDestructuringAssignment(
-  node: VariableDeclaration | DestructuringAssignment,
+  node: qt.VariableDeclaration | DestructuringAssignment,
   visitor: ((node: Node) => VisitResult<Node>) | undefined,
-  context: TrafoContext,
+  context: qt.TrafoContext,
   level: FlattenLevel,
   needsValue?: boolean,
-  createAssignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression
+  createAssignmentCallback?: (name: qt.Identifier, value: Expression, location?: TextRange) => Expression
 ): Expression {
   let location: TextRange = node;
   let value: Expression | undefined;
@@ -79,13 +79,13 @@ export function flattenDestructuringAssignment(
   function emitBindingOrAssignment(target: BindingOrAssignmentElemTarget, value: Expression, location: TextRange, original: Node) {
     qf.assert.node(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
     const expression = qf.create.assignmentCallback
-      ? qf.create.assignmentCallback(<Identifier>target, value, location)
+      ? qf.create.assignmentCallback(<qt.Identifier>target, value, location)
       : qf.create.assignment(visitNode(<Expression>target, visitor, isExpression), value).setRange(location);
     expression.original = original;
     emitExpression(expression);
   }
 }
-function bindingOrAssignmentElemAssignsToName(elem: BindingOrAssignmentElem, escName: __String): boolean {
+function bindingOrAssignmentElemAssignsToName(elem: qt.BindingOrAssignmentElem, escName: __String): boolean {
   const target = getTargetOfBindingOrAssignmentElem(elem)!;
   if (qf.is.bindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
   if (qf.is.kind(qc.Identifier, target)) return target.escapedText === escName;
@@ -98,7 +98,7 @@ function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPat
   }
   return false;
 }
-function bindingOrAssignmentElemContainsNonLiteralComputedName(elem: BindingOrAssignmentElem): boolean {
+function bindingOrAssignmentElemContainsNonLiteralComputedName(elem: qt.BindingOrAssignmentElem): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(elem);
   if (propertyName && qf.is.kind(qc.ComputedPropertyName, propertyName) && !qf.is.literalExpression(propertyName.expression)) return true;
   const target = getTargetOfBindingOrAssignmentElem(elem);
@@ -108,23 +108,23 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
   return !!forEach(getElemsOfBindingOrAssignmentPattern(pattern), bindingOrAssignmentElemContainsNonLiteralComputedName);
 }
 export function flattenDestructuringBinding(
-  node: VariableDeclaration | ParamDeclaration,
+  node: qt.VariableDeclaration | qt.ParamDeclaration,
   visitor: (node: Node) => VisitResult<Node>,
-  context: TrafoContext,
+  context: qt.TrafoContext,
   level: FlattenLevel,
   rval?: Expression,
   hoistTempVariables = false,
   skipIniter?: boolean
-): VariableDeclaration[] {
+): qt.VariableDeclaration[] {
   let pendingExpressions: Expression[] | undefined;
   const pendingDeclarations: {
     pendingExpressions?: Expression[];
-    name: BindingName;
+    name: qt.BindingName;
     value: Expression;
     location?: TextRange;
     original?: Node;
   }[] = [];
-  const declarations: VariableDeclaration[] = [];
+  const declarations: qt.VariableDeclaration[] = [];
   const flattenContext: FlattenContext = {
     context,
     level,
@@ -179,7 +179,7 @@ export function flattenDestructuringBinding(
     pendingDeclarations.push({ pendingExpressions, name: target, value, location, original });
   }
 }
-function flattenBindingOrAssignmentElem(flattenContext: FlattenContext, elem: BindingOrAssignmentElem, value: Expression | undefined, location: TextRange, skipIniter?: boolean) {
+function flattenBindingOrAssignmentElem(flattenContext: FlattenContext, elem: qt.BindingOrAssignmentElem, value: Expression | undefined, location: TextRange, skipIniter?: boolean) {
   if (!skipIniter) {
     const initer = visitNode(getIniterOfBindingOrAssignmentElem(elem), flattenContext.visitor, isExpression);
     if (initer) {
@@ -197,14 +197,20 @@ function flattenBindingOrAssignmentElem(flattenContext: FlattenContext, elem: Bi
     flattenContext.emitBindingOrAssignment(bindingTarget, value!, location, elem);
   }
 }
-function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElem, pattern: ObjectBindingOrAssignmentPattern, value: Expression, location: TextRange) {
+function flattenObjectBindingOrAssignmentPattern(
+  flattenContext: FlattenContext,
+  parent: qt.BindingOrAssignmentElem,
+  pattern: ObjectBindingOrAssignmentPattern,
+  value: Expression,
+  location: TextRange
+) {
   const elems = getElemsOfBindingOrAssignmentPattern(pattern);
   const numElems = elems.length;
   if (numElems !== 1) {
     const reuseIdentifierExpressions = !qf.is.declarationBindingElem(parent) || numElems !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElems: BindingOrAssignmentElem[] | undefined;
+  let bindingElems: qt.BindingOrAssignmentElem[] | undefined;
   let computedTempVariables: Expression[] | undefined;
   for (let i = 0; i < numElems; i++) {
     const elem = elems[i];
@@ -224,7 +230,7 @@ function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext,
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
         if (qf.is.kind(qc.ComputedPropertyName, propertyName)) {
-          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElemAccessExpression).argExpression);
+          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as qt.ElemAccessExpression).argExpression);
         }
         flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
       }
@@ -241,7 +247,13 @@ function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext,
     flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElems), value, location, pattern);
   }
 }
-function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElem, pattern: ArrayBindingOrAssignmentPattern, value: Expression, location: TextRange) {
+function flattenArrayBindingOrAssignmentPattern(
+  flattenContext: FlattenContext,
+  parent: qt.BindingOrAssignmentElem,
+  pattern: qt.ArrayBindingOrAssignmentPattern,
+  value: Expression,
+  location: TextRange
+) {
   const elems = getElemsOfBindingOrAssignmentPattern(pattern);
   const numElems = elems.length;
   if (flattenContext.level < FlattenLevel.ObjectRest && flattenContext.downlevelIteration) {
@@ -255,8 +267,8 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
     const reuseIdentifierExpressions = !qf.is.declarationBindingElem(parent) || numElems !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElems: BindingOrAssignmentElem[] | undefined;
-  let restContainingElems: [Identifier, BindingOrAssignmentElem][] | undefined;
+  let bindingElems: qt.BindingOrAssignmentElem[] | undefined;
+  let restContainingElems: [Identifier, qt.BindingOrAssignmentElem][] | undefined;
   for (let i = 0; i < numElems; i++) {
     const elem = elems[i];
     if (flattenContext.level >= FlattenLevel.ObjectRest) {
@@ -265,7 +277,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
         if (flattenContext.hoistTempVariables) {
           flattenContext.context.hoistVariableDeclaration(temp);
         }
-        restContainingElems = append(restContainingElems, <[Identifier, BindingOrAssignmentElem]>[temp, elem]);
+        restContainingElems = append(restContainingElems, <[Identifier, qt.BindingOrAssignmentElem]>[temp, elem]);
         bindingElems = append(bindingElems, flattenContext.createArrayBindingOrAssignmentElem(temp));
       } else {
         bindingElems = append(bindingElems, elem);
@@ -302,7 +314,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
     argExpression.text = argExpression.text;
     return new qc.ElemAccessExpression(value, argExpression);
   } else {
-    const name = new Identifier(idText(propertyName));
+    const name = new qt.Identifier(idText(propertyName));
     return new qc.PropertyAccessExpression(value, name);
   }
 }
@@ -319,27 +331,27 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
     return temp;
   }
 }
-function makeArrayBindingPattern(elems: BindingOrAssignmentElem[]) {
+function makeArrayBindingPattern(elems: qt.BindingOrAssignmentElem[]) {
   qf.assert.eachNode(elems, isArrayBindingElem);
-  return new ArrayBindingPattern(<ArrayBindingElem[]>elems);
+  return new qt.ArrayBindingPattern(<qt.ArrayBindingElem[]>elems);
 }
-function makeArrayAssignmentPattern(elems: BindingOrAssignmentElem[]) {
-  return new ArrayLiteralExpression(map(elems, convertToArrayAssignmentElem));
+function makeArrayAssignmentPattern(elems: qt.BindingOrAssignmentElem[]) {
+  return new qt.ArrayLiteralExpression(map(elems, convertToArrayAssignmentElem));
 }
-function makeObjectBindingPattern(elems: BindingOrAssignmentElem[]) {
-  qf.assert.eachNode(elems, BindingElem.kind);
-  return ObjectBindingPattern.create(<BindingElem[]>elems);
+function makeObjectBindingPattern(elems: qt.BindingOrAssignmentElem[]) {
+  qf.assert.eachNode(elems, qt.BindingElem.kind);
+  return qt.ObjectBindingPattern.create(<qt.BindingElem[]>elems);
 }
-function makeObjectAssignmentPattern(elems: BindingOrAssignmentElem[]) {
+function makeObjectAssignmentPattern(elems: qt.BindingOrAssignmentElem[]) {
   return new qc.ObjectLiteralExpression(map(elems, convertToObjectAssignmentElem));
 }
-function makeBindingElem(name: Identifier) {
-  return new BindingElem(undefined, name);
+function makeBindingElem(name: qt.Identifier) {
+  return new qt.BindingElem(undefined, name);
 }
-function makeAssignmentElem(name: Identifier) {
+function makeAssignmentElem(name: qt.Identifier) {
   return name;
 }
-export const restHelper: UnscopedEmitHelper = {
+export const restHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:rest',
   importName: '__rest',
   scoped: false,
@@ -356,7 +368,7 @@ export const restHelper: UnscopedEmitHelper = {
                 return t;
             };`,
 };
-function createRestCall(context: TrafoContext, value: Expression, elems: readonly BindingOrAssignmentElem[], computedTempVariables: readonly Expression[], location: TextRange): Expression {
+function createRestCall(context: qt.TrafoContext, value: Expression, elems: readonly qt.BindingOrAssignmentElem[], computedTempVariables: readonly Expression[], location: TextRange): Expression {
   context.requestEmitHelper(restHelper);
   const propertyNames: Expression[] = [];
   let computedTempVariableOffset = 0;
@@ -372,5 +384,5 @@ function createRestCall(context: TrafoContext, value: Expression, elems: readonl
       }
     }
   }
-  return new qc.CallExpression(getUnscopedHelperName('__rest'), undefined, [value, new ArrayLiteralExpression(propertyNames).setRange(location)]);
+  return new qc.CallExpression(getUnscopedHelperName('__rest'), undefined, [value, new qt.ArrayLiteralExpression(propertyNames).setRange(location)]);
 }

@@ -11,12 +11,12 @@ export function getOriginalNodeId(node: Node) {
   return node ? qf.get.nodeId(node) : 0;
 }
 export interface ExternalModuleInfo {
-  externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];
-  externalHelpersImportDeclaration: ImportDeclaration | undefined;
-  exportSpecifiers: Map<ExportSpecifier[]>;
-  exportedBindings: Identifier[][];
-  exportedNames: Identifier[] | undefined;
-  exportEquals: ExportAssignment | undefined;
+  externalImports: (ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration)[];
+  externalHelpersImportDeclaration: qt.ImportDeclaration | undefined;
+  exportSpecifiers: Map<qt.ExportSpecifier[]>;
+  exportedBindings: qt.Identifier[][];
+  exportedNames: qt.Identifier[] | undefined;
+  exportEquals: qt.ExportAssignment | undefined;
   hasExportStarsToExportValues: boolean;
 }
 function containsDefaultReference(node: NamedImportBindings | undefined) {
@@ -24,22 +24,22 @@ function containsDefaultReference(node: NamedImportBindings | undefined) {
   if (!qf.is.kind(qc.NamedImports, node)) return false;
   return some(node.elems, isNamedDefaultReference);
 }
-function isNamedDefaultReference(e: ImportSpecifier): boolean {
+function isNamedDefaultReference(e: qt.ImportSpecifier): boolean {
   return e.propertyName !== undefined && e.propertyName.escapedText === InternalSymbol.Default;
 }
-export function chainBundle(transformSourceFile: (x: SourceFile) => SourceFile): (x: SourceFile | Bundle) => SourceFile | Bundle {
+export function chainBundle(transformSourceFile: (x: qt.SourceFile) => qt.SourceFile): (x: qt.SourceFile | qt.Bundle) => qt.SourceFile | qt.Bundle {
   return transformSourceFileOrBundle;
-  function transformSourceFileOrBundle(node: SourceFile | Bundle) {
+  function transformSourceFileOrBundle(node: qt.SourceFile | qt.Bundle) {
     return node.kind === Syntax.SourceFile ? transformSourceFile(node) : transformBundle(node);
   }
-  function transformBundle(node: Bundle) {
+  function transformBundle(node: qt.Bundle) {
     return new qc.Bundle(map(node.sourceFiles, transformSourceFile), node.prepends);
   }
 }
-export function getExportNeedsImportStarHelper(node: ExportDeclaration): boolean {
+export function getExportNeedsImportStarHelper(node: qt.ExportDeclaration): boolean {
   return !!qf.get.namespaceDeclarationNode(node);
 }
-export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean {
+export function getImportNeedsImportStarHelper(node: qt.ImportDeclaration): boolean {
   if (!!qf.get.namespaceDeclarationNode(node)) return true;
   const bindings = node.importClause && node.importClause.namedBindings;
   if (!bindings) return false;
@@ -52,49 +52,49 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
   }
   return (defaultRefCount > 0 && defaultRefCount !== bindings.elems.length) || (!!(bindings.elems.length - defaultRefCount) && qf.is.defaultImport(node));
 }
-export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
+export function getImportNeedsImportDefaultHelper(node: qt.ImportDeclaration): boolean {
   return (
     !getImportNeedsImportStarHelper(node) &&
     (qf.is.defaultImport(node) || (!!node.importClause && qf.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
   );
 }
-export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOpts: CompilerOpts): ExternalModuleInfo {
-  const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
-  const exportSpecifiers = new MultiMap<ExportSpecifier>();
-  const exportedBindings: Identifier[][] = [];
+export function collectExternalModuleInfo(sourceFile: qt.SourceFile, resolver: qt.EmitResolver, compilerOpts: qt.CompilerOpts): ExternalModuleInfo {
+  const externalImports: (ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration)[] = [];
+  const exportSpecifiers = new MultiMap<qt.ExportSpecifier>();
+  const exportedBindings: qt.Identifier[][] = [];
   const uniqueExports = createMap<boolean>();
-  let exportedNames: Identifier[] | undefined;
+  let exportedNames: qt.Identifier[] | undefined;
   let hasExportDefault = false;
-  let exportEquals: ExportAssignment | undefined;
+  let exportEquals: qt.ExportAssignment | undefined;
   let hasExportStarsToExportValues = false;
   let hasImportStar = false;
   let hasImportDefault = false;
   for (const node of sourceFile.statements) {
     switch (node.kind) {
       case Syntax.ImportDeclaration:
-        externalImports.push(<ImportDeclaration>node);
-        if (!hasImportStar && getImportNeedsImportStarHelper(<ImportDeclaration>node)) {
+        externalImports.push(<qt.ImportDeclaration>node);
+        if (!hasImportStar && getImportNeedsImportStarHelper(<qt.ImportDeclaration>node)) {
           hasImportStar = true;
         }
-        if (!hasImportDefault && getImportNeedsImportDefaultHelper(<ImportDeclaration>node)) {
+        if (!hasImportDefault && getImportNeedsImportDefaultHelper(<qt.ImportDeclaration>node)) {
           hasImportDefault = true;
         }
         break;
       case Syntax.ImportEqualsDeclaration:
-        if ((<ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference) {
-          externalImports.push(<ImportEqualsDeclaration>node);
+        if ((<qt.ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference) {
+          externalImports.push(<qt.ImportEqualsDeclaration>node);
         }
         break;
       case Syntax.ExportDeclaration:
-        if ((<ExportDeclaration>node).moduleSpecifier) {
-          if (!(<ExportDeclaration>node).exportClause) {
-            externalImports.push(<ExportDeclaration>node);
+        if ((<qt.ExportDeclaration>node).moduleSpecifier) {
+          if (!(<qt.ExportDeclaration>node).exportClause) {
+            externalImports.push(<qt.ExportDeclaration>node);
             hasExportStarsToExportValues = true;
           } else {
-            externalImports.push(<ExportDeclaration>node);
+            externalImports.push(<qt.ExportDeclaration>node);
           }
         } else {
-          for (const spec of cast((<ExportDeclaration>node).exportClause, isNamedExports).elems) {
+          for (const spec of cast((<qt.ExportDeclaration>node).exportClause, isNamedExports).elems) {
             if (!uniqueExports.get(idText(spec.name))) {
               const name = spec.propertyName || spec.name;
               exportSpecifiers.add(idText(name), spec);
@@ -109,13 +109,13 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
       case Syntax.ExportAssignment:
-        if ((<ExportAssignment>node).isExportEquals && !exportEquals) {
-          exportEquals = <ExportAssignment>node;
+        if ((<qt.ExportAssignment>node).isExportEquals && !exportEquals) {
+          exportEquals = <qt.ExportAssignment>node;
         }
         break;
       case Syntax.VariableStatement:
         if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
-          for (const decl of (<VariableStatement>node).declarationList.declarations) {
+          for (const decl of (<qt.VariableStatement>node).declarationList.declarations) {
             exportedNames = collectExportedVariableInfo(decl, uniqueExports, exportedNames);
           }
         }
@@ -124,11 +124,11 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
           if (qf.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
-              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.decl.name(<FunctionDeclaration>node));
+              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.decl.name(<qt.FunctionDeclaration>node));
               hasExportDefault = true;
             }
           } else {
-            const name = (<FunctionDeclaration>node).name!;
+            const name = (<qt.FunctionDeclaration>node).name!;
             if (!uniqueExports.get(idText(name))) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), name);
               uniqueExports.set(idText(name), true);
@@ -141,11 +141,11 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
           if (qf.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
-              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.decl.name(<ClassDeclaration>node));
+              multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), qf.decl.name(<qt.ClassDeclaration>node));
               hasExportDefault = true;
             }
           } else {
-            const name = (<ClassDeclaration>node).name;
+            const name = (<qt.ClassDeclaration>node).name;
             if (name && !uniqueExports.get(idText(name))) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), name);
               uniqueExports.set(idText(name), true);
@@ -170,7 +170,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
     externalHelpersImportDeclaration,
   };
 }
-function collectExportedVariableInfo(decl: VariableDeclaration | BindingElem, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
+function collectExportedVariableInfo(decl: qt.VariableDeclaration | qt.BindingElem, uniqueExports: Map<boolean>, exportedNames: qt.Identifier[] | undefined) {
   if (qf.is.kind(qc.BindingPattern, decl.name)) {
     for (const elem of decl.name.elems) {
       if (!qf.is.kind(qc.OmittedExpression, elem)) {
@@ -201,7 +201,7 @@ export function isSimpleCopiableExpression(expression: Expression) {
 export function isSimpleInlineableExpression(expression: Expression) {
   return (!qf.is.kind(qc.Identifier, expression) && isSimpleCopiableExpression(expression)) || qf.is.wellKnownSymbolSyntactically(expression);
 }
-export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
+export function isCompoundAssignment(kind: qt.BinaryOperator): kind is CompoundAssignmentOperator {
   return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;
 }
 export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssignmentOperator): BitwiseOperatorOrHigher {
@@ -232,7 +232,7 @@ export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssi
       return Syntax.CaretToken;
   }
 }
-export function addPrologueDirectivesAndInitialSuperCall(ctor: ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
+export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
   if (ctor.body) {
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
@@ -259,12 +259,12 @@ export function helperString(input: TemplateStringsArray, ...args: string[]) {
     return result;
   };
 }
-export function getProperties(node: ClassExpression | ClassDeclaration, requireIniter: boolean, isStatic: boolean): readonly PropertyDeclaration[] {
-  return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as PropertyDeclaration[];
+export function getProperties(node: qt.ClassExpression | qt.ClassDeclaration, requireIniter: boolean, isStatic: boolean): readonly qt.PropertyDeclaration[] {
+  return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as qt.PropertyDeclaration[];
 }
-function isInitializedOrStaticProperty(member: ClassElem, requireIniter: boolean, isStatic: boolean) {
+function isInitializedOrStaticProperty(member: qt.ClassElem, requireIniter: boolean, isStatic: boolean) {
   return qf.is.kind(qc.PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qf.has.staticModifier(member) === isStatic;
 }
-export function isInitializedProperty(member: ClassElem): member is PropertyDeclaration & { initer: Expression } {
-  return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initer !== undefined;
+export function isInitializedProperty(member: qt.ClassElem): member is qt.PropertyDeclaration & { initer: Expression } {
+  return member.kind === Syntax.PropertyDeclaration && (<qt.PropertyDeclaration>member).initer !== undefined;
 }

@@ -6,20 +6,20 @@ import * as qd from '../diags';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
+export function getDeclarationDiagnostics(host: qt.EmitHost, resolver: qt.EmitResolver, file: qt.SourceFile | undefined): DiagnosticWithLocation[] | undefined {
   if (file && qf.is.jsonSourceFile(file)) return [];
   const compilerOpts = host.getCompilerOpts();
   const result = transformNodes(resolver, host, compilerOpts, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], false);
   return result.diagnostics;
 }
-function hasInternalAnnotation(range: CommentRange, currentSourceFile: SourceFile) {
+function hasInternalAnnotation(range: qt.CommentRange, currentSourceFile: qt.SourceFile) {
   const comment = currentSourceFile.text.substring(range.pos, range.end);
   return qu.stringContains(comment, '@internal');
 }
-export function isInternalDeclaration(node: Node, currentSourceFile: SourceFile) {
+export function isInternalDeclaration(node: Node, currentSourceFile: qt.SourceFile) {
   const parseTreeNode = qf.get.parseTreeOf(node);
   if (parseTreeNode && parseTreeNode.kind === Syntax.Param) {
-    const paramIdx = (parseTreeNode.parent as FunctionLike).params.indexOf(parseTreeNode as ParamDeclaration);
+    const paramIdx = (parseTreeNode.parent as FunctionLike).params.indexOf(parseTreeNode as qt.ParamDeclaration);
     const previousSibling = paramIdx > 0 ? (parseTreeNode.parent as FunctionLike).params[paramIdx - 1] : undefined;
     const text = currentSourceFile.text;
     const commentRanges = previousSibling
@@ -40,7 +40,7 @@ const declarationEmitNodeBuilderFlags =
   NodeBuilderFlags.AllowEmptyTuple |
   NodeBuilderFlags.GenerateNamesForShadowedTypeParams |
   NodeBuilderFlags.NoTruncation;
-export function transformDeclarations(context: TrafoContext) {
+export function transformDeclarations(context: qt.TrafoContext) {
   const throwDiagnostic = () => fail('Diagnostic emitted without context');
   let getSymbolAccessibilityDiagnostic: GetSymbolAccessibilityDiagnostic = throwDiagnostic;
   let needsDeclare = true;
@@ -51,11 +51,11 @@ export function transformDeclarations(context: TrafoContext) {
   let enclosingDeclaration: Node;
   let necessaryTypeReferences: QMap<true> | undefined;
   let lateMarkedStatements: LateVisibilityPaintedStatement[] | undefined;
-  let lateStatementReplacementMap: QMap<VisitResult<LateVisibilityPaintedStatement | ExportAssignment>>;
+  let lateStatementReplacementMap: QMap<VisitResult<LateVisibilityPaintedStatement | qt.ExportAssignment>>;
   let suppressNewDiagnosticContexts: boolean;
-  let exportedModulesFromDeclarationEmit: Symbol[] | undefined;
+  let exportedModulesFromDeclarationEmit: qt.Symbol[] | undefined;
   const host = context.getEmitHost();
-  const symbolTracker: SymbolTracker = {
+  const symbolTracker: qt.SymbolTracker = {
     trackSymbol,
     reportInaccessibleThisError,
     reportInaccessibleUniqueSymbolError,
@@ -67,10 +67,10 @@ export function transformDeclarations(context: TrafoContext) {
     reportNonlocalAugmentation,
   };
   let errorNameNode: DeclarationName | undefined;
-  let currentSourceFile: SourceFile;
-  let refs: QMap<SourceFile>;
+  let currentSourceFile: qt.SourceFile;
+  let refs: QMap<qt.SourceFile>;
   let libs: QMap<boolean>;
-  let emittedImports: readonly AnyImportSyntax[] | undefined;
+  let emittedImports: readonly qt.AnyImportSyntax[] | undefined;
   const resolver = context.getEmitResolver();
   const opts = context.getCompilerOpts();
   const { noResolve, stripInternal } = opts;
@@ -82,13 +82,13 @@ export function transformDeclarations(context: TrafoContext) {
       necessaryTypeReferences.set(ref, true);
     }
   }
-  function trackReferencedAmbientModule(node: ModuleDeclaration, symbol: Symbol) {
+  function trackReferencedAmbientModule(node: qt.ModuleDeclaration, symbol: qt.Symbol) {
     const directives = resolver.getTypeReferenceDirectivesForSymbol(symbol, SymbolFlags.All);
     if (length(directives)) return recordTypeReferenceDirectivesIfNecessary(directives);
     const container = node.sourceFile;
     refs.set('' + getOriginalNodeId(container), container);
   }
-  function handleSymbolAccessibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
+  function handleSymbolAccessibilityError(symbolAccessibilityResult: qt.SymbolAccessibilityResult) {
     if (symbolAccessibilityResult.accessibility === SymbolAccessibility.Accessible) {
       if (symbolAccessibilityResult && symbolAccessibilityResult.aliasesToMakeVisible) {
         if (!lateMarkedStatements) lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
@@ -124,10 +124,10 @@ export function transformDeclarations(context: TrafoContext) {
       }
     }
   }
-  function trackExternalModuleSymbolOfImportTyping(symbol: Symbol) {
+  function trackExternalModuleSymbolOfImportTyping(symbol: qt.Symbol) {
     if (!isBundledEmit) (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
   }
-  function trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
+  function trackSymbol(symbol: qt.Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
     if (symbol.flags & SymbolFlags.TypeParam) return;
     handleSymbolAccessibilityError(resolver.isSymbolAccessible(symbol, enclosingDeclaration, meaning, true));
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
@@ -161,7 +161,7 @@ export function transformDeclarations(context: TrafoContext) {
       );
     }
   }
-  function reportNonlocalAugmentation(containingFile: SourceFile, parentSymbol: Symbol, symbol: Symbol) {
+  function reportNonlocalAugmentation(containingFile: qt.SourceFile, parentSymbol: qt.Symbol, symbol: qt.Symbol) {
     const primaryDeclaration = find(parentSymbol.declarations, (d) => d.sourceFile === containingFile)!;
     const augmentingDeclarations = filter(symbol.declarations, (d) => d.sourceFile !== containingFile);
     for (const augmentations of augmentingDeclarations) {
@@ -173,7 +173,7 @@ export function transformDeclarations(context: TrafoContext) {
       );
     }
   }
-  function transformDeclarationsForJS(sourceFile: SourceFile, bundled?: boolean) {
+  function transformDeclarationsForJS(sourceFile: qt.SourceFile, bundled?: boolean) {
     const oldDiag = getSymbolAccessibilityDiagnostic;
     getSymbolAccessibilityDiagnostic = (s) => ({
       diagnosticMessage: s.errorModuleName
@@ -185,14 +185,14 @@ export function transformDeclarations(context: TrafoContext) {
     getSymbolAccessibilityDiagnostic = oldDiag;
     return result;
   }
-  function transformRoot(node: Bundle): Bundle;
-  function transformRoot(node: SourceFile): SourceFile;
-  function transformRoot(node: SourceFile | Bundle): SourceFile | Bundle;
-  function transformRoot(node: SourceFile | Bundle) {
+  function transformRoot(node: qt.Bundle): qt.Bundle;
+  function transformRoot(node: qt.SourceFile): qt.SourceFile;
+  function transformRoot(node: qt.SourceFile | qt.Bundle): qt.SourceFile | qt.Bundle;
+  function transformRoot(node: qt.SourceFile | qt.Bundle) {
     if (node.kind === Syntax.SourceFile && node.isDeclarationFile) return node;
     if (node.kind === Syntax.Bundle) {
       isBundledEmit = true;
-      refs = new QMap<SourceFile>();
+      refs = new QMap<qt.SourceFile>();
       libs = new QMap<boolean>();
       let hasNoDefaultLib = false;
       const bundle = new qc.Bundle(
@@ -252,7 +252,7 @@ export function transformDeclarations(context: TrafoContext) {
       bundle.syntheticLibReferences = getLibReferences();
       bundle.hasNoDefaultLib = hasNoDefaultLib;
       const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, true).declarationFilePath!));
-      const referenceVisitor = mapReferencesIntoArray(bundle.syntheticFileReferences as FileReference[], outputFilePath);
+      const referenceVisitor = mapReferencesIntoArray(bundle.syntheticFileReferences as qt.FileReference[], outputFilePath);
       refs.forEach(referenceVisitor);
       return bundle;
     }
@@ -270,7 +270,7 @@ export function transformDeclarations(context: TrafoContext) {
     necessaryTypeReferences = undefined;
     refs = collectReferences(currentSourceFile, new QMap());
     libs = collectLibs(currentSourceFile, new QMap());
-    const references: FileReference[] = [];
+    const references: qt.FileReference[] = [];
     const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, true).declarationFilePath!));
     const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
     let combinedStatements: Nodes<Statement>;
@@ -295,7 +295,7 @@ export function transformDeclarations(context: TrafoContext) {
     function getFileReferencesForUsedTypeReferences() {
       return necessaryTypeReferences ? mapDefined(arrayFrom(necessaryTypeReferences.keys()), getFileReferenceForTypeName) : [];
     }
-    function getFileReferenceForTypeName(typeName: string): FileReference | undefined {
+    function getFileReferenceForTypeName(typeName: string): qt.FileReference | undefined {
       if (emittedImports) {
         for (const importStatement of emittedImports) {
           if (qf.is.kind(qc.ImportEqualsDeclaration, importStatement) && qp_qf.is.kind(qc.ExternalModuleReference, importStatement.moduleReference)) {
@@ -308,12 +308,12 @@ export function transformDeclarations(context: TrafoContext) {
       }
       return { fileName: typeName, pos: -1, end: -1 };
     }
-    function mapReferencesIntoArray(references: FileReference[], outputFilePath: string): (file: SourceFile) => void {
+    function mapReferencesIntoArray(references: qt.FileReference[], outputFilePath: string): (file: qt.SourceFile) => void {
       return (file) => {
         let declFileName: string;
         if (file.isDeclarationFile) declFileName = file.fileName;
         else {
-          if (isBundledEmit && contains((node as Bundle).sourceFiles, file)) return;
+          if (isBundledEmit && contains((node as qt.Bundle).sourceFiles, file)) return;
           const paths = getOutputPathsFor(file, host, true);
           declFileName = paths.declarationFilePath || paths.jsFilePath || file.fileName;
         }
@@ -338,7 +338,7 @@ export function transformDeclarations(context: TrafoContext) {
       };
     }
   }
-  function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: QMap<SourceFile>) {
+  function collectReferences(sourceFile: qt.SourceFile | qt.UnparsedSource, ret: QMap<qt.SourceFile>) {
     if (noResolve || (!qf.is.kind(qc.UnparsedSource, sourceFile) && sourceFile.isJS())) return ret;
     forEach(sourceFile.referencedFiles, (f) => {
       const elem = host.getSourceFileFromReference(sourceFile, f);
@@ -346,24 +346,24 @@ export function transformDeclarations(context: TrafoContext) {
     });
     return ret;
   }
-  function collectLibs(sourceFile: SourceFile | UnparsedSource, ret: QMap<boolean>) {
+  function collectLibs(sourceFile: qt.SourceFile | qt.UnparsedSource, ret: QMap<boolean>) {
     forEach(sourceFile.libReferenceDirectives, (ref) => {
       const lib = host.getLibFileFromReference(ref);
       if (lib) ret.set(toFileNameLowerCase(ref.fileName), true);
     });
     return ret;
   }
-  function filterBindingPatternIniters(name: BindingName) {
+  function filterBindingPatternIniters(name: qt.BindingName) {
     if (name.kind === Syntax.Identifier) return name;
     if (name.is(ArrayBindingPattern)) return name.update(name, Nodes.visit(name.elems, visitBindingElem));
     return name.update(Nodes.visit(name.elems, visitBindingElem));
-    function visitBindingElem<T extends ArrayBindingElem>(elem: T): T;
-    function visitBindingElem(elem: ArrayBindingElem): ArrayBindingElem {
+    function visitBindingElem<T extends qt.ArrayBindingElem>(elem: T): T;
+    function visitBindingElem(elem: qt.ArrayBindingElem): qt.ArrayBindingElem {
       if (elem.kind === Syntax.OmittedExpression) return elem;
       return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternIniters(elem.name), shouldPrintWithIniter(elem) ? elem.initer : undefined);
     }
   }
-  function ensureParam(p: ParamDeclaration, modifierMask?: ModifierFlags, type?: Typing): ParamDeclaration {
+  function ensureParam(p: qt.ParamDeclaration, modifierMask?: ModifierFlags, type?: Typing): qt.ParamDeclaration {
     let oldDiag: typeof getSymbolAccessibilityDiagnostic | undefined;
     if (!suppressNewDiagnosticContexts) {
       oldDiag = getSymbolAccessibilityDiagnostic;
@@ -375,7 +375,7 @@ export function transformDeclarations(context: TrafoContext) {
       maskModifiers(p, modifierMask),
       p.dot3Token,
       filterBindingPatternIniters(p.name),
-      resolver.isOptionalParam(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
+      resolver.isOptionalParam(p) ? p.questionToken || new qt.Token(Syntax.QuestionToken) : undefined,
       ensureType(p, type || p.type, true),
       ensureNoIniter(p)
     );
@@ -390,18 +390,18 @@ export function transformDeclarations(context: TrafoContext) {
     return;
   }
   type HasInferredType =
-    | FunctionDeclaration
-    | MethodDeclaration
-    | GetAccessorDeclaration
-    | SetAccessorDeclaration
-    | BindingElem
-    | ConstructSignatureDeclaration
-    | VariableDeclaration
-    | MethodSignature
-    | CallSignatureDeclaration
-    | ParamDeclaration
-    | PropertyDeclaration
-    | PropertySignature;
+    | qt.FunctionDeclaration
+    | qt.MethodDeclaration
+    | qt.GetAccessorDeclaration
+    | qt.SetAccessorDeclaration
+    | qt.BindingElem
+    | qt.ConstructSignatureDeclaration
+    | qt.VariableDeclaration
+    | qt.MethodSignature
+    | qt.CallSignatureDeclaration
+    | qt.ParamDeclaration
+    | qt.PropertyDeclaration
+    | qt.PropertySignature;
   function ensureType(node: HasInferredType, type: Typing | undefined, ignorePrivate?: boolean): Typing | undefined {
     if (!ignorePrivate && qf.has.effectiveModifier(node, ModifierFlags.Private)) return;
     if (shouldPrintWithIniter(node)) return;
@@ -431,8 +431,8 @@ export function transformDeclarations(context: TrafoContext) {
       return returnValue || new qc.KeywordTyping(Syntax.AnyKeyword);
     }
   }
-  function isDeclarationAndNotVisible(node: NamedDecl) {
-    node = qf.get.parseTreeOf(node) as NamedDecl;
+  function isDeclarationAndNotVisible(node: qt.NamedDecl) {
+    node = qf.get.parseTreeOf(node) as qt.NamedDecl;
     switch (node.kind) {
       case Syntax.FunctionDeclaration:
       case Syntax.ModuleDeclaration:
@@ -442,7 +442,7 @@ export function transformDeclarations(context: TrafoContext) {
       case Syntax.EnumDeclaration:
         return !resolver.qf.is.declarationVisible(node);
       case Syntax.VariableDeclaration:
-        return !getBindingNameVisible(node as VariableDeclaration);
+        return !getBindingNameVisible(node as qt.VariableDeclaration);
       case Syntax.ImportEqualsDeclaration:
       case Syntax.ImportDeclaration:
       case Syntax.ExportDeclaration:
@@ -451,25 +451,25 @@ export function transformDeclarations(context: TrafoContext) {
     }
     return false;
   }
-  function getBindingNameVisible(elem: BindingElem | VariableDeclaration | OmittedExpression): boolean {
+  function getBindingNameVisible(elem: qt.BindingElem | qt.VariableDeclaration | qt.OmittedExpression): boolean {
     if (qf.is.kind(qc.OmittedExpression, elem)) return false;
     if (qf.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elems, getBindingNameVisible);
     return resolver.qf.is.declarationVisible(elem);
   }
-  function updateParamsList(node: Node, params: Nodes<ParamDeclaration>, modifierMask?: ModifierFlags) {
+  function updateParamsList(node: Node, params: Nodes<qt.ParamDeclaration>, modifierMask?: ModifierFlags) {
     if (qf.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
     const newParams = map(params, (p) => ensureParam(p, modifierMask));
     if (!newParams) return undefined!;
     return new Nodes(newParams, params.trailingComma);
   }
-  function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
-    let newParams: ParamDeclaration[] | undefined;
+  function updateAccessorParamsList(input: qt.AccessorDeclaration, isPrivate: boolean) {
+    let newParams: qt.ParamDeclaration[] | undefined;
     if (!isPrivate) {
       const thisParam = getThisNode(ParamDeclaration, input);
       if (thisParam) newParams = [ensureParam(thisParam)];
     }
     if (qf.is.kind(qc.SetAccessorDeclaration, input)) {
-      let newValueParam: ParamDeclaration | undefined;
+      let newValueParam: qt.ParamDeclaration | undefined;
       if (!isPrivate) {
         const valueParam = qf.get.setAccessorValueParam(input);
         if (valueParam) {
@@ -480,9 +480,9 @@ export function transformDeclarations(context: TrafoContext) {
       if (!newValueParam) newValueParam = new qc.ParamDeclaration(undefined, undefined, 'value');
       newParams = append(newParams, newValueParam);
     }
-    return new Nodes(newParams || emptyArray) as Nodes<ParamDeclaration>;
+    return new Nodes(newParams || emptyArray) as Nodes<qt.ParamDeclaration>;
   }
-  function ensureTypeParams(node: Node, params: Nodes<TypeParamDeclaration> | undefined) {
+  function ensureTypeParams(node: Node, params: Nodes<qt.TypeParamDeclaration> | undefined) {
     return qf.has.effectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
   }
   function isEnclosingDeclaration(node: Node) {
@@ -506,7 +506,10 @@ export function transformDeclarations(context: TrafoContext) {
     if (qf.is.withDocNodes(updated) && qf.is.withDocNodes(original)) updated.doc = original.doc;
     return qf.emit.setCommentRange(updated, qf.emit.commentRange(original));
   }
-  function rewriteModuleSpecifier<T extends Node>(parent: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTyping, input: T | undefined): T | StringLiteral {
+  function rewriteModuleSpecifier<T extends Node>(
+    parent: qt.ImportEqualsDeclaration | qt.ImportDeclaration | qt.ExportDeclaration | qt.ModuleDeclaration | qt.ImportTyping,
+    input: T | undefined
+  ): T | qt.StringLiteral {
     if (!input) return undefined!;
     resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== Syntax.ModuleDeclaration && parent.kind !== Syntax.ImportTyping);
     if (qf.is.stringLiteralLike(input)) {
@@ -520,7 +523,7 @@ export function transformDeclarations(context: TrafoContext) {
     }
     return input;
   }
-  function transformImportEqualsDeclaration(decl: ImportEqualsDeclaration) {
+  function transformImportEqualsDeclaration(decl: qt.ImportEqualsDeclaration) {
     if (!resolver.qf.is.declarationVisible(decl)) return;
     if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
       const spec = qf.get.externalModuleImportEqualsDeclarationExpression(decl);
@@ -533,7 +536,7 @@ export function transformDeclarations(context: TrafoContext) {
       return decl;
     }
   }
-  function transformImportDeclaration(decl: ImportDeclaration) {
+  function transformImportDeclaration(decl: qt.ImportDeclaration) {
     if (!decl.importClause) return decl.update(undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
     const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.qf.is.declarationVisible(decl.importClause) ? decl.importClause.name : undefined;
     if (!decl.importClause.namedBindings) {
@@ -655,7 +658,7 @@ export function transformDeclarations(context: TrafoContext) {
             ensureTypeParams(input, input.typeParams),
             updateParamsList(input, input.params),
             ensureType(input, input.type)
-          ) as MethodSignature;
+          ) as qt.MethodSignature;
           sig.name = input.name;
           sig.modifiers = new Nodes(ensureModifiers(input));
           sig.questionToken = input.questionToken;
@@ -722,7 +725,12 @@ export function transformDeclarations(context: TrafoContext) {
         }
         case Syntax.ConstructorTyping: {
           return cleanup(
-            ConstructorDeclaration.updateTypeNode(input, Nodes.visit(input.typeParams, visitDeclarationSubtree), updateParamsList(input, input.params), visitNode(input.type, visitDeclarationSubtree))
+            qt.ConstructorDeclaration.updateTypeNode(
+              input,
+              Nodes.visit(input.typeParams, visitDeclarationSubtree),
+              updateParamsList(input, input.params),
+              visitNode(input.type, visitDeclarationSubtree)
+            )
           );
         }
         case Syntax.ImportTyping: {
@@ -747,7 +755,7 @@ export function transformDeclarations(context: TrafoContext) {
       return returnValue && preserveDoc(returnValue, input).setOriginal(input);
     }
   }
-  function isPrivateMethodTypeParam(node: TypeParamDeclaration) {
+  function isPrivateMethodTypeParam(node: qt.TypeParamDeclaration) {
     return node.parent.kind === Syntax.MethodDeclaration && qf.has.effectiveModifier(node.parent, ModifierFlags.Private);
   }
   function visitDeclarationStmts(input: Node): VisitResult<Node> {
@@ -845,10 +853,10 @@ export function transformDeclarations(context: TrafoContext) {
         );
         if (clean && resolver.isExpandoFunctionDeclaration(input)) {
           const props = resolver.getPropertiesOfContainerFunction(input);
-          const fakespace = new qc.ModuleDeclaration(undefined, undefined, clean.name || new Identifier('_default'), new qc.ModuleBlock([]), NodeFlags.Namespace);
+          const fakespace = new qc.ModuleDeclaration(undefined, undefined, clean.name || new qt.Identifier('_default'), new qc.ModuleBlock([]), NodeFlags.Namespace);
           fakespace.flags ^= NodeFlags.Synthesized;
-          fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
-          fakespace.locals = new SymbolTable(props);
+          fakespace.parent = enclosingDeclaration as qt.SourceFile | qt.NamespaceDeclaration;
+          fakespace.locals = new qt.SymbolTable(props);
           fakespace.symbol = props[0].parent!;
           const declarations = mapDefined(props, (p) => {
             if (!qf.is.kind(qc.PropertyAccessExpression, p.valueDeclaration)) return;
@@ -908,7 +916,7 @@ export function transformDeclarations(context: TrafoContext) {
         const modifiers = new Nodes(ensureModifiers(input));
         const typeParams = ensureTypeParams(input, input.typeParams);
         const ctor = qf.get.firstConstructorWithBody(input);
-        let paramProperties: readonly PropertyDeclaration[] | undefined;
+        let paramProperties: readonly qt.PropertyDeclaration[] | undefined;
         if (ctor) {
           const oldDiag = getSymbolAccessibilityDiagnostic;
           paramProperties = compact(
@@ -919,12 +927,12 @@ export function transformDeclarations(context: TrafoContext) {
                 return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoIniter(param)), param);
               return walkBindingPattern(param.name);
               function walkBindingPattern(pattern: BindingPattern) {
-                let elems: PropertyDeclaration[] | undefined;
+                let elems: qt.PropertyDeclaration[] | undefined;
                 for (const elem of pattern.elems) {
                   if (qf.is.kind(qc.OmittedExpression, elem)) continue;
                   if (qf.is.kind(qc.BindingPattern, elem.name)) elems = concatenate(elems, walkBindingPattern(elem.name));
                   elems = elems || [];
-                  elems.push(PropertyDeclaration.create(undefined, ensureModifiers(param), elem.name as Identifier, undefined, ensureType(elem, undefined), undefined));
+                  elems.push(PropertyDeclaration.create(undefined, ensureModifiers(param), elem.name as qt.Identifier, undefined, ensureType(elem, undefined), undefined));
                 }
                 return elems;
               }
@@ -933,7 +941,7 @@ export function transformDeclarations(context: TrafoContext) {
           getSymbolAccessibilityDiagnostic = oldDiag;
         }
         const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qf.is.kind(qc.PrivateIdentifier, member.name));
-        const privateIdentifier = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : undefined;
+        const privateIdentifier = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new qt.PrivateIdentifier('#private'), undefined, undefined, undefined)] : undefined;
         const memberNodes = concatenate(concatenate(privateIdentifier, paramProperties), Nodes.visit(input.members, visitDeclarationSubtree));
         const members = new Nodes(memberNodes);
         const extendsClause = qf.get.effectiveBaseTypeNode(input);
@@ -1000,16 +1008,16 @@ export function transformDeclarations(context: TrafoContext) {
       return node && preserveDoc(node, input).setOriginal(input);
     }
   }
-  function transformVariableStatement(input: VariableStatement) {
+  function transformVariableStatement(input: qt.VariableStatement) {
     if (!forEach(input.declarationList.declarations, getBindingNameVisible)) return;
     const nodes = Nodes.visit(input.declarationList.declarations, visitDeclarationSubtree);
     if (!length(nodes)) return;
     return input.update(new Nodes(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
   }
-  function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
-    return flatten<VariableDeclaration>(mapDefined(d.elems, (e) => recreateBindingElem(e)));
+  function recreateBindingPattern(d: BindingPattern): qt.VariableDeclaration[] {
+    return flatten<qt.VariableDeclaration>(mapDefined(d.elems, (e) => recreateBindingElem(e)));
   }
-  function recreateBindingElem(e: ArrayBindingElem) {
+  function recreateBindingElem(e: qt.ArrayBindingElem) {
     if (e.kind === Syntax.OmittedExpression) return;
     if (e.name) {
       if (!getBindingNameVisible(e)) return;
@@ -1023,9 +1031,9 @@ export function transformDeclarations(context: TrafoContext) {
       oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
     }
-    errorNameNode = (node as NamedDecl).name;
+    errorNameNode = (node as qt.NamedDecl).name;
     assert(resolver.isLateBound(qf.get.parseTreeOf(node) as Declaration));
-    const decl = (node as NamedDecl) as LateBoundDecl;
+    const decl = (node as qt.NamedDecl) as qt.LateBoundDecl;
     const entityName = decl.name.expression;
     checkEntityNameVisibility(entityName, enclosingDeclaration);
     if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag!;
@@ -1050,13 +1058,13 @@ export function transformDeclarations(context: TrafoContext) {
     let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async);
     let additions = needsDeclare && !isAlwaysType(node) ? ModifierFlags.Ambient : ModifierFlags.None;
     const parentIsFile = node.parent.kind === Syntax.SourceFile;
-    if (!parentIsFile || (isBundledEmit && parentIsFile && qf.is.externalModule(node.parent as SourceFile))) {
+    if (!parentIsFile || (isBundledEmit && parentIsFile && qf.is.externalModule(node.parent as qt.SourceFile))) {
       mask ^= ModifierFlags.Ambient;
       additions = ModifierFlags.None;
     }
     return maskModifierFlags(node, mask, additions);
   }
-  function getTypeAnnotationFromAllAccessorDeclarations(node: AccessorDeclaration, accessors: AllAccessorDeclarations) {
+  function getTypeAnnotationFromAllAccessorDeclarations(node: qt.AccessorDeclaration, accessors: qt.AllAccessorDeclarations) {
     let accessorType = getTypeAnnotationFromAccessor(node);
     if (!accessorType && node !== accessors.firstAccessor) {
       accessorType = getTypeAnnotationFromAccessor(accessors.firstAccessor);
@@ -1068,7 +1076,7 @@ export function transformDeclarations(context: TrafoContext) {
     }
     return accessorType;
   }
-  function transformHeritageClauses(nodes: Nodes<HeritageClause> | undefined) {
+  function transformHeritageClauses(nodes: Nodes<qt.HeritageClause> | undefined) {
     return new Nodes(
       filter(
         map(nodes, (clause) =>
@@ -1102,10 +1110,10 @@ function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFla
   if (flags & ModifierFlags.Default && flags & ModifierFlags.Ambient) flags ^= ModifierFlags.Ambient;
   return flags;
 }
-function getTypeAnnotationFromAccessor(accessor: AccessorDeclaration): Typing | undefined {
+function getTypeAnnotationFromAccessor(accessor: qt.AccessorDeclaration): Typing | undefined {
   if (accessor) return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.params.length > 0 ? accessor.params[0].type : undefined;
 }
-type CanHaveLiteralIniter = VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration;
+type CanHaveLiteralIniter = qt.VariableDeclaration | qt.PropertyDeclaration | qt.PropertySignature | qt.ParamDeclaration;
 function canHaveLiteralIniter(node: Node): boolean {
   switch (node.kind) {
     case Syntax.PropertyDeclaration:
@@ -1118,17 +1126,17 @@ function canHaveLiteralIniter(node: Node): boolean {
   return false;
 }
 type ProcessedDeclarationStmt =
-  | FunctionDeclaration
-  | ModuleDeclaration
-  | ImportEqualsDeclaration
-  | InterfaceDeclaration
-  | ClassDeclaration
-  | TypeAliasDeclaration
-  | EnumDeclaration
-  | VariableStatement
-  | ImportDeclaration
-  | ExportDeclaration
-  | ExportAssignment;
+  | qt.FunctionDeclaration
+  | qt.ModuleDeclaration
+  | qt.ImportEqualsDeclaration
+  | qt.InterfaceDeclaration
+  | qt.ClassDeclaration
+  | qt.TypeAliasDeclaration
+  | qt.EnumDeclaration
+  | qt.VariableStatement
+  | qt.ImportDeclaration
+  | qt.ExportDeclaration
+  | qt.ExportAssignment;
 function isPreservedDeclarationStmt(node: Node): node is ProcessedDeclarationStmt {
   switch (node.kind) {
     case Syntax.FunctionDeclaration:
@@ -1147,24 +1155,24 @@ function isPreservedDeclarationStmt(node: Node): node is ProcessedDeclarationStm
   return false;
 }
 type ProcessedComponent =
-  | ConstructSignatureDeclaration
-  | ConstructorDeclaration
-  | MethodDeclaration
-  | GetAccessorDeclaration
-  | SetAccessorDeclaration
-  | PropertyDeclaration
-  | PropertySignature
-  | MethodSignature
-  | CallSignatureDeclaration
-  | IndexSignatureDeclaration
-  | VariableDeclaration
-  | TypeParamDeclaration
-  | ExpressionWithTypings
-  | TypingReference
-  | ConditionalTyping
-  | FunctionTyping
-  | ConstructorTyping
-  | ImportTyping;
+  | qt.ConstructSignatureDeclaration
+  | qt.ConstructorDeclaration
+  | qt.MethodDeclaration
+  | qt.GetAccessorDeclaration
+  | qt.SetAccessorDeclaration
+  | qt.PropertyDeclaration
+  | qt.PropertySignature
+  | qt.MethodSignature
+  | qt.CallSignatureDeclaration
+  | qt.IndexSignatureDeclaration
+  | qt.VariableDeclaration
+  | qt.TypeParamDeclaration
+  | qt.ExpressionWithTypings
+  | qt.TypingReference
+  | qt.ConditionalTyping
+  | qt.FunctionTyping
+  | qt.ConstructorTyping
+  | qt.ImportTyping;
 function isProcessedComponent(node: Node): node is ProcessedComponent {
   switch (node.kind) {
     case Syntax.ConstructSignature:

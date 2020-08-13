@@ -127,7 +127,7 @@ export class QMap<T> extends Map<string, T> {
     return r;
   }
 }
-export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
+export const emptyMap = new QMap<never>() as QReadonlyMap<never> & qt.ReadonlyPragmaMap;
 export type QReadonlyMap<V> = ReadonlyMap<string, V>;
 export class MultiMap<T> extends QMap<T[]> {
   add(k: string, v: T) {

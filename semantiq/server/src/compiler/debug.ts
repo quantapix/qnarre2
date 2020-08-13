@@ -48,24 +48,24 @@ export function enableDebugInfo() {
   if (isDebugInfoEnabled) return;
   Object.defineProperties(Node.Symbol.prototype, {
     __debugFlags: {
-      get(this: Symbol) {
+      get(this: qt.Symbol) {
         return qf.format.symbolFlags(this.flags);
       },
     },
   });
   Object.defineProperties(Node.Type.prototype, {
     __debugFlags: {
-      get(this: Type) {
+      get(this: qt.Type) {
         return qf.format.typeFlags(this.flags);
       },
     },
     __debugObjectFlags: {
-      get(this: Type) {
-        return this.flags & TypeFlags.Object ? qf.format.objectFlags((<ObjectType>this).objectFlags) : '';
+      get(this: qt.Type) {
+        return this.flags & TypeFlags.Object ? qf.format.objectFlags((<qt.ObjectType>this).objectFlags) : '';
       },
     },
     __debugTypeToString: {
-      value(this: Type) {
+      value(this: qt.Type) {
         return this.checker.typeToString(this);
       },
     },
