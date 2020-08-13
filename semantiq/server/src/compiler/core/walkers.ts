@@ -96,7 +96,7 @@ function addValueAssignments(ps: Nodes<qc.ParamDeclaration>, c: qt.TrafoContext)
       r[i] = updated;
     }
   }
-  if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
+  if (r) return new Nodes(r, ps.trailingComma).setRange(ps);
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qc.ParamDeclaration, c: qt.TrafoContext) {
@@ -124,20 +124,16 @@ function addForIniter(p: qc.ParamDeclaration, name: Identifier, init: Expression
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       qf.emit.setFlags(
-        setRange(
-          new qc.Block([
-            new qc.ExpressionStatement(
-              qf.emit.setFlags(
-                setRange(
-                  qf.create.assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)),
-                  p
-                ),
-                EmitFlags.NoComments
-              )
-            ),
-          ]),
-          p
-        ),
+        new qc.Block([
+          new qc.ExpressionStatement(
+            qf.emit.setFlags(
+              qf.create
+                .assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments))
+                .setRange(p),
+              EmitFlags.NoComments
+            )
+          ),
+        ]).setRange(p),
         EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments
       )
     )
@@ -1015,7 +1011,7 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
       }
     }
   }
-  if (isNodes(ss)) return setRange(new Nodes(left, ss.trailingComma), ss);
+  if (isNodes(ss)) return new Nodes(left, ss.trailingComma).setRange(ss);
   return ss;
 }
 export function liftToBlock(ns: readonly Node[]): Statement {

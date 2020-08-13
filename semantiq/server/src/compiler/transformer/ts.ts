@@ -391,7 +391,7 @@ export function transformTypeScript(context: TrafoContext) {
       emitFlags |= EmitFlags.NoTrailingSourceMap;
     }
     qc.compute.aggregate(classDeclaration);
-    setRange(classDeclaration, node);
+    classDeclaration.setRange(node);
     classDeclaration.setOriginal(node);
     qf.emit.setFlags(classDeclaration, emitFlags);
     return classDeclaration;
@@ -405,13 +405,13 @@ export function transformTypeScript(context: TrafoContext) {
     const classExpression = new qc.ClassExpression(undefined, name, undefined, heritageClauses, members);
     qc.compute.aggregate(classExpression);
     classExpression.setOriginal(node);
-    setRange(classExpression, location);
+    classExpression.setRange(location);
     const statement = new qc.VariableStatement(
       undefined,
       new qc.VariableDeclarationList([new qc.VariableDeclaration(declName, undefined, classAlias ? qf.create.assignment(classAlias, classExpression) : classExpression)], NodeFlags.Let)
     );
     statement.setOriginal(node);
-    setRange(statement, location);
+    statement.setRange(location);
     qf.emit.setCommentRange(statement, node);
     return statement;
   }
@@ -420,7 +420,7 @@ export function transformTypeScript(context: TrafoContext) {
     const classExpression = new qc.ClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
     qc.compute.aggregate(classExpression);
     classExpression.setOriginal(node);
-    setRange(classExpression, node);
+    classExpression.setRange(node);
     return classExpression;
   }
   function transformClassMembers(node: ClassDeclaration | ClassExpression) {
@@ -956,7 +956,7 @@ export function transformTypeScript(context: TrafoContext) {
     qu.addRange(statements, Nodes.visit(body.statements, visitor, qf.is.statement, indexOfFirstStatement));
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
     const block = new Block(setRange(new Nodes(statements), body.statements), true);
-    setRange(block, body);
+    block.setRange(body);
     block.setOriginal(body);
     return block;
   }
@@ -1084,7 +1084,7 @@ export function transformTypeScript(context: TrafoContext) {
     const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
-      setRange(updated, node.movePastModifiers());
+      updated.setRange(node.movePastModifiers());
       qf.emit.setSourceMapRange(updated, node.movePastModifiers());
       qf.emit.setFlags(updated.name, EmitFlags.NoTrailingSourceMap);
     }
@@ -1174,7 +1174,7 @@ export function transformTypeScript(context: TrafoContext) {
       qf.emit.setSyntheticLeadingComments(enumStatement, undefined);
       qf.emit.setSyntheticTrailingComments(enumStatement, undefined);
     }
-    setRange(enumStatement, node);
+    enumStatement.setRange(node);
     qf.emit.addFlags(enumStatement, emitFlags);
     statements.push(enumStatement);
     statements.push(new EndOfDeclarationMarker(node));
@@ -1196,7 +1196,7 @@ export function transformTypeScript(context: TrafoContext) {
     const valueExpression = transformEnumMemberDeclarationValue(member);
     const innerAssignment = qf.create.assignment(new qc.ElemAccessExpression(currentNamespaceContainerName, name), valueExpression);
     const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : qf.create.assignment(new qc.ElemAccessExpression(currentNamespaceContainerName, innerAssignment), name);
-    return setRange(new qc.ExpressionStatement(setRange(outerAssignment, member)), member);
+    return setRange(new qc.ExpressionStatement(outerAssignment.setRange(member)), member);
   }
   function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
     const value = resolver.getConstantValue(member);
@@ -1304,7 +1304,7 @@ export function transformTypeScript(context: TrafoContext) {
       qf.emit.setSyntheticLeadingComments(moduleStatement, undefined);
       qf.emit.setSyntheticTrailingComments(moduleStatement, undefined);
     }
-    setRange(moduleStatement, node);
+    moduleStatement.setRange(node);
     qf.emit.addFlags(moduleStatement, emitFlags);
     statements.push(moduleStatement);
     statements.push(new EndOfDeclarationMarker(node));
@@ -1344,7 +1344,7 @@ export function transformTypeScript(context: TrafoContext) {
     currentNamespace = savedCurrentNamespace;
     currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
     const block = new Block(setRange(new Nodes(statements), true));
-    setRange(block, blockLocation);
+    block.setRange(blockLocation);
     if (!node.body || node.body.kind !== Syntax.ModuleBlock) {
       qf.emit.setFlags(block, qc.get.emitFlags(block) | EmitFlags.NoComments);
     }
@@ -1428,13 +1428,10 @@ export function transformTypeScript(context: TrafoContext) {
     qf.emit.setFlags(moduleReference, EmitFlags.NoComments | EmitFlags.NoNestedComments);
     if (isNamedExternalModuleExport(node) || !isExportOfNamespace(node)) {
       return setOriginalNode(
-        setRange(
-          new qc.VariableStatement(
-            Nodes.visit(node.modifiers, modifierVisitor, isModifier),
-            new qc.VariableDeclarationList([new qc.VariableDeclaration(node.name, undefined, moduleReference).setOriginal(node)])
-          ),
-          node
-        ),
+        new qc.VariableStatement(
+          Nodes.visit(node.modifiers, modifierVisitor, isModifier),
+          new qc.VariableDeclarationList([new qc.VariableDeclaration(node.name, undefined, moduleReference).setOriginal(node)])
+        ).setRange(node),
         node
       );
     }

@@ -1,6 +1,9 @@
+import { qf } from './core';
 import * as qc from './core';
+import { Node } from './type';
 import * as qt from './type';
 import * as qu from './util';
+import { Syntax } from './syntax';
 export const nullTrafoContext: qt.TrafoContext = {
   enableEmitNotification: qu.noop,
   enableSubstitution: qu.noop,
@@ -27,8 +30,8 @@ export const nullTrafoContext: qt.TrafoContext = {
 export interface TransformationResult<T extends Node> {
   transformed: T[];
   diagnostics?: DiagnosticWithLocation[];
-  substituteNode(hint: EmitHint, node: Node): Node;
-  emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void;
+  substituteNode(hint: qt.EmitHint, node: Node): Node;
+  emitNodeWithNotification(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void;
   isEmitNotificationEnabled?(node: Node): boolean;
   dispose(): void;
 }
@@ -103,10 +106,10 @@ function wrapScriptTransformerFactory(transformer: TransformerFactory<SourceFile
 function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
   return wrapCustomTransformerFactory(transformer, identity);
 }
-export function noEmitSubstitution(_hint: EmitHint, node: Node) {
+export function noEmitSubstitution(_hint: qt.EmitHint, node: Node) {
   return node;
 }
-export function noEmitNotification(hint: EmitHint, node: Node, callback: (hint: EmitHint, node: Node) => void) {
+export function noEmitNotification(hint: qt.EmitHint, node: Node, callback: (hint: qt.EmitHint, node: Node) => void) {
   callback(hint, node);
 }
 export function transformNodes<T extends Node>(
@@ -119,16 +122,16 @@ export function transformNodes<T extends Node>(
 ): TransformationResult<T> {
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(Syntax.Count);
   let lexicalEnvironmentVariableDeclarations: VariableDeclaration[];
-  let lexicalEnvironmentFunctionDeclarations: FunctionDeclaration[];
-  let lexicalEnvironmentStatements: Statement[];
-  let lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
+  let lexicalEnvironmentFunctionDeclarations: qt.FunctionDeclaration[];
+  let lexicalEnvironmentStatements: qt.Statement[];
+  let lexicalEnvironmentFlags = qt.LexicalEnvironmentFlags.None;
   let lexicalEnvironmentVariableDeclarationsStack: VariableDeclaration[][] = [];
-  let lexicalEnvironmentFunctionDeclarationsStack: FunctionDeclaration[][] = [];
-  let lexicalEnvironmentStatementsStack: Statement[][] = [];
-  let lexicalEnvironmentFlagsStack: LexicalEnvironmentFlags[] = [];
+  let lexicalEnvironmentFunctionDeclarationsStack: qt.FunctionDeclaration[][] = [];
+  let lexicalEnvironmentStatementsStack: qt.Statement[][] = [];
+  let lexicalEnvironmentFlagsStack: qt.LexicalEnvironmentFlags[] = [];
   let lexicalEnvironmentStackOffset = 0;
   let lexicalEnvironmentSuspended = false;
-  let emitHelpers: EmitHelper[] | undefined;
+  let emitHelpers: qt.EmitHelper[] | undefined;
   let onSubstituteNode: qt.TrafoContext['onSubstituteNode'] = noEmitSubstitution;
   let onEmitNode: qt.TrafoContext['onEmitNode'] = noEmitNotification;
   let state = TransformationState.Uninitialized;
@@ -206,7 +209,7 @@ export function transformNodes<T extends Node>(
   function isSubstitutionEnabled(node: Node) {
     return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qf.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
-  function substituteNode(hint: EmitHint, node: Node) {
+  function substituteNode(hint: qt.EmitHint, node: Node) {
     qu.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
     return (node && isSubstitutionEnabled(node) && onSubstituteNode(hint, node)) || node;
   }
@@ -217,29 +220,29 @@ export function transformNodes<T extends Node>(
   function isEmitNotificationEnabled(node: Node) {
     return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qf.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
-  function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+  function emitNodeWithNotification(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) {
     qu.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
     if (node) {
       if (isEmitNotificationEnabled(node)) onEmitNode(hint, node, emitCallback);
       else emitCallback(hint, node);
     }
   }
-  function hoistVariableDeclaration(name: Identifier): void {
+  function hoistVariableDeclaration(name: qt.Identifier): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     const decl = qf.emit.setFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
-    if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParams) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParams;
+    if (lexicalEnvironmentFlags & qt.LexicalEnvironmentFlags.InParams) lexicalEnvironmentFlags |= qt.LexicalEnvironmentFlags.VariablesHoistedInParams;
   }
-  function hoistFunctionDeclaration(func: FunctionDeclaration): void {
+  function hoistFunctionDeclaration(func: qt.FunctionDeclaration): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qf.emit.setFlags(func, EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentFunctionDeclarations) lexicalEnvironmentFunctionDeclarations = [func];
     else lexicalEnvironmentFunctionDeclarations.push(func);
   }
-  function addInitializationStatement(node: Statement): void {
+  function addInitializationStatement(node: qt.Statement): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qf.emit.setFlags(node, EmitFlags.CustomPrologue);
@@ -258,7 +261,7 @@ export function transformNodes<T extends Node>(
     lexicalEnvironmentVariableDeclarations = undefined!;
     lexicalEnvironmentFunctionDeclarations = undefined!;
     lexicalEnvironmentStatements = undefined!;
-    lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
+    lexicalEnvironmentFlags = qt.LexicalEnvironmentFlags.None;
   }
   function suspendLexicalEnvironment(): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
@@ -272,11 +275,11 @@ export function transformNodes<T extends Node>(
     qu.assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
     lexicalEnvironmentSuspended = false;
   }
-  function endLexicalEnvironment(): Statement[] | undefined {
+  function endLexicalEnvironment(): qt.Statement[] | undefined {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
       if (lexicalEnvironmentVariableDeclarations) {
@@ -303,13 +306,13 @@ export function transformNodes<T extends Node>(
     }
     return statements;
   }
-  function setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void {
+  function setLexicalEnvironmentFlags(flags: qt.LexicalEnvironmentFlags, value: boolean): void {
     lexicalEnvironmentFlags = value ? lexicalEnvironmentFlags | flags : lexicalEnvironmentFlags & ~flags;
   }
-  function getLexicalEnvironmentFlags(): LexicalEnvironmentFlags {
+  function getLexicalEnvironmentFlags(): qt.LexicalEnvironmentFlags {
     return lexicalEnvironmentFlags;
   }
-  function requestEmitHelper(helper: EmitHelper): void {
+  function requestEmitHelper(helper: qt.EmitHelper): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     qu.assert(!helper.scoped, 'Cannot request a scoped emit helper.');
@@ -320,7 +323,7 @@ export function transformNodes<T extends Node>(
     }
     emitHelpers = qu.append(emitHelpers, helper);
   }
-  function readEmitHelpers(): EmitHelper[] | undefined {
+  function readEmitHelpers(): qt.EmitHelper[] | undefined {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     const helpers = emitHelpers;
@@ -343,7 +346,7 @@ export function transformNodes<T extends Node>(
     }
   }
 }
-export const valuesHelper: UnscopedEmitHelper = {
+export const valuesHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:values',
   importName: '__values',
   scoped: false,
@@ -360,11 +363,11 @@ export const valuesHelper: UnscopedEmitHelper = {
                 throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
             };`,
 };
-export function createValuesHelper(context: qt.TrafoContext, expression: Expression, location?: TextRange) {
+export function createValuesHelper(context: qt.TrafoContext, expression: qt.Expression, location?: qu.TextRange) {
   context.requestEmitHelper(valuesHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__values'), undefined, [expression]), location);
+  return new qc.CallExpression(getUnscopedHelperName('__values'), undefined, [expression]).setRange(location);
 }
-export const readHelper: UnscopedEmitHelper = {
+export const readHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:read',
   importName: '__read',
   scoped: false,
@@ -386,11 +389,11 @@ export const readHelper: UnscopedEmitHelper = {
                 return ar;
             };`,
 };
-export function createReadHelper(context: qt.TrafoContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
+export function createReadHelper(context: qt.TrafoContext, iteratorRecord: qt.Expression, count: number | undefined, location?: qu.TextRange) {
   context.requestEmitHelper(readHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__read'), undefined, count !== undefined ? [iteratorRecord, qc.asLiteral(count)] : [iteratorRecord]), location);
+  return new qc.CallExpression(getUnscopedHelperName('__read'), undefined, count !== undefined ? [iteratorRecord, qc.asLiteral(count)] : [iteratorRecord]).setRange(location);
 }
-export const spreadHelper: UnscopedEmitHelper = {
+export const spreadHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:spread',
   importName: '__spread',
   scoped: false,
@@ -401,11 +404,11 @@ export const spreadHelper: UnscopedEmitHelper = {
                 return ar;
             };`,
 };
-export function createSpreadHelper(context: qt.TrafoContext, argList: readonly Expression[], location?: TextRange) {
+export function createSpreadHelper(context: qt.TrafoContext, argList: readonly qt.Expression[], location?: qu.TextRange) {
   context.requestEmitHelper(spreadHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__spread'), undefined, argList), location);
+  return new qc.CallExpression(getUnscopedHelperName('__spread'), undefined, argList).setRange(location);
 }
-export const spreadArraysHelper: UnscopedEmitHelper = {
+export const spreadArraysHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:spreadArrays',
   importName: '__spreadArrays',
   scoped: false,
@@ -418,7 +421,7 @@ export const spreadArraysHelper: UnscopedEmitHelper = {
                 return r;
             };`,
 };
-export function createSpreadArraysHelper(context: qt.TrafoContext, argList: readonly Expression[], location?: TextRange) {
+export function createSpreadArraysHelper(context: qt.TrafoContext, argList: readonly qt.Expression[], location?: qu.TextRange) {
   context.requestEmitHelper(spreadArraysHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__spreadArrays'), undefined, argList), location);
+  return new qc.CallExpression(getUnscopedHelperName('__spreadArrays'), undefined, argList).setRange(location);
 }

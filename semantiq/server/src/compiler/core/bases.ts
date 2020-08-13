@@ -269,7 +269,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     this.original = n;
     if (n) {
       const e = n.emitNode;
-      if (e) this.emitNode = qf.emit.qf.emit.merge(e, this.emitNode);
+      if (e) this.emitNode = qf.emit.merge(e, this.emitNode);
     }
     return this;
   }
@@ -834,26 +834,26 @@ export class Signature implements qt.Signature {
     if (this.hasRestParam()) {
       const restIndex = this.params.length - 1;
       const restType = this.typeOfSymbol(this.params[restIndex]);
+      const expandSignatureParamsWithTupleMembers = (restType: TupleTypeReference, restIndex: number) => {
+        const elemTypes = this.typeArgs(restType);
+        const minLength = restType.target.minLength;
+        const tupleRestIndex = restType.target.hasRestElem ? elemTypes.length - 1 : -1;
+        const associatedNames = restType.target.labeledElemDeclarations;
+        const restParams = map(elemTypes, (t, i) => {
+          const tupleLabelName = !!associatedNames && this.tupleElemLabel(associatedNames[i]);
+          const name = tupleLabelName || this.paramNameAtPosition(sig, restIndex + i);
+          const f = i === tupleRestIndex ? qt.CheckFlags.RestParam : i >= minLength ? qt.CheckFlags.OptionalParam : 0;
+          const symbol = new Symbol(SymbolFlags.FunctionScopedVariable, name, f);
+          symbol.type = i === tupleRestIndex ? qf.create.arrayType(t) : t;
+          return symbol;
+        });
+        return concatenate(this.params.slice(0, restIndex), restParams);
+      };
       if (qf.is.tupleType(restType)) return [expandSignatureParamsWithTupleMembers(restType, restIndex)];
-      else if (!skipUnionExpanding && restType.flags & qt.TypeFlags.Union && every((restType as UnionType).types, qf.is.tupleType))
-        return map((restType as UnionType).types, (t) => expandSignatureParamsWithTupleMembers(t as TupleTypeReference, restIndex));
+      else if (!skipUnionExpanding && restType.flags & qt.TypeFlags.Union && qu.every((restType as UnionType).types, qf.is.tupleType))
+        return qu.map((restType as UnionType).types, (t) => expandSignatureParamsWithTupleMembers(t as TupleTypeReference, restIndex));
     }
     return [this.params];
-    const expandSignatureParamsWithTupleMembers = (restType: TupleTypeReference, restIndex: number) => {
-      const elemTypes = this.typeArgs(restType);
-      const minLength = restType.target.minLength;
-      const tupleRestIndex = restType.target.hasRestElem ? elemTypes.length - 1 : -1;
-      const associatedNames = restType.target.labeledElemDeclarations;
-      const restParams = map(elemTypes, (t, i) => {
-        const tupleLabelName = !!associatedNames && this.tupleElemLabel(associatedNames[i]);
-        const name = tupleLabelName || this.paramNameAtPosition(sig, restIndex + i);
-        const f = i === tupleRestIndex ? qt.CheckFlags.RestParam : i >= minLength ? qt.CheckFlags.OptionalParam : 0;
-        const symbol = new Symbol(SymbolFlags.FunctionScopedVariable, name, f);
-        symbol.type = i === tupleRestIndex ? qf.create.arrayType(t) : t;
-        return symbol;
-      });
-      return concatenate(this.params.slice(0, restIndex), restParams);
-    };
   }
   paramNameAtPosition(pos: number) {
     const l = s.params.length - (this.hasRestParam() ? 1 : 0);

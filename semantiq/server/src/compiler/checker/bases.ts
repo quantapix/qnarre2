@@ -1399,13 +1399,10 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         const name = needsPostExportDefault || !(this.flags & SymbolFlags.Property) ? localName : getUnusedName(localName, this);
         let textRange: Node | undefined = this.declarations && find(this.declarations, (d) => d.kind === Syntax.VariableDeclaration);
         if (textRange && textRange.parent.kind === Syntax.VariableDeclarationList && textRange.parent.declarations.length === 1) textRange = textRange.parent.parent;
-        const statement = setRange(
-          new qc.VariableStatement(
-            undefined,
-            new qc.VariableDeclarationList([new qc.VariableDeclaration(name, serializeTypeForDeclaration(context, type, this, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
-          ),
-          textRange
-        );
+        const statement = new qc.VariableStatement(
+          undefined,
+          new qc.VariableDeclarationList([new qc.VariableDeclaration(name, serializeTypeForDeclaration(context, type, this, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
+        ).setRange(textRange);
         addResult(statement, name !== localName ? modifierFlags & ~ModifierFlags.Export : modifierFlags);
         if (name !== localName && !isPrivate) addResult(new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(name, localName)])), ModifierFlags.None);
       }

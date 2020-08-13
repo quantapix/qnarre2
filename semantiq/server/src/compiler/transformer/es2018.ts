@@ -162,7 +162,7 @@ export function transformES2018(context: TrafoContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
-      return setRange(new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node).setOriginal(node);
+      return new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))).setRange(node).setOriginal(node);
     return visitEachChild(node, visitor, context);
   }
   function visitYieldExpression(node: YieldExpression) {
@@ -170,16 +170,13 @@ export function transformES2018(context: TrafoContext) {
       if (node.asteriskToken) {
         const expression = visitNode(node.expression, visitor, isExpression);
         return setOriginalNode(
-          setRange(
-            new qc.YieldExpression(
-              createAwaitHelper(context, node.update(node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))
-            ),
-            node
-          ),
+          new qc.YieldExpression(
+            createAwaitHelper(context, node.update(node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))
+          ).setRange(node),
           node
         );
       }
-      return setRange(new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node).setOriginal(node);
+      return new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())).setRange(node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }

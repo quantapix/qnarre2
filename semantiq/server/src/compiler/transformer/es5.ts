@@ -1,8 +1,6 @@
-import * as qb from '../base';
 import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
-import * as qt from '../types';
+import { qf, Node, Nodes } from '../core';
+import * as qt from '../type';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
 export function transformES5(context: TrafoContext) {
@@ -46,7 +44,7 @@ export function transformES5(context: TrafoContext) {
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
     if (qc.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
-    if (literalName) return setRange(new qs.ElemAccessExpression(node.expression, literalName), node);
+    if (literalName) return new qs.ElemAccessExpression(node.expression, literalName).setRange(node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
@@ -56,7 +54,7 @@ export function transformES5(context: TrafoContext) {
   }
   function trySubstituteReservedName(name: Identifier) {
     const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
-    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return setRange(qc.asLiteral(name), name);
+    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return qc.asLiteral(name).setRange(name);
     return;
   }
 }

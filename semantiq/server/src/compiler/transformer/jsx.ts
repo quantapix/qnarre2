@@ -119,7 +119,7 @@ export function transformJsx(context: TrafoContext) {
     else if (node.kind === Syntax.StringLiteral) {
       const literal = qc.asLiteral(tryDecodeEntities(node.text) || node.text);
       literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
-      return setRange(literal, node);
+      return literal.setRange(node);
     } else if (node.kind === Syntax.JsxExpression) {
       if (node.expression === undefined) return new qc.BooleanLiteral(true);
       return visitJsxExpression(node);

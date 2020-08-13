@@ -56,7 +56,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
     text = text.substring(1, text.length - (isLast ? 1 : 2));
   }
   text = text.replace(/\r\n?/g, '\n');
-  return setRange(qc.asLiteral(text), node);
+  return qc.asLiteral(text).setRange(node);
 }
 function createTemplateObjectHelper(context: TrafoContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
   context.requestEmitHelper(templateObjectHelper);

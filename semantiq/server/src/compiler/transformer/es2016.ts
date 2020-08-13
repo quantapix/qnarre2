@@ -40,25 +40,22 @@ export function transformES2016(context: TrafoContext) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argExpressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = setRange(
-        new qs.ElemAccessExpression(
-          setRange(qf.create.assignment(expressionTemp, left.expression), left.expression),
-          setRange(qf.create.assignment(argExpressionTemp, left.argExpression), left.argExpression)
-        ),
-        left
-      );
-      value = setRange(new qs.ElemAccessExpression(expressionTemp, argExpressionTemp), left);
+      target = new qs.ElemAccessExpression(
+        qf.create.assignment(expressionTemp, left.expression).setRange(left.expression),
+        qf.create.assignment(argExpressionTemp, left.argExpression).setRange(left.argExpression)
+      ).setRange(left);
+      value = new qs.ElemAccessExpression(expressionTemp, argExpressionTemp).setRange(left);
     } else if (qc.is.kind(qc.PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = setRange(new qc.PropertyAccessExpression(setRange(qf.create.assignment(expressionTemp, left.expression), left.expression), left.name), left);
-      value = setRange(new qc.PropertyAccessExpression(expressionTemp, left.name), left);
+      target = new qc.PropertyAccessExpression(qf.create.assignment(expressionTemp, left.expression).setRange(left.expression), left.name).setRange(left);
+      value = new qc.PropertyAccessExpression(expressionTemp, left.name).setRange(left);
     } else {
       // Transforms `a **= b` into `a = Math.pow(a, b)`
       target = left;
       value = left;
     }
-    return setRange(qf.create.assignment(target, createMathPow(value, right, node)), node);
+    return qf.create.assignment(target, createMathPow(value, right, node)).setRange(node);
   }
   function visitExponentiationExpression(node: BinaryExpression) {
     // Transforms `a ** b` into `Math.pow(a, b)`

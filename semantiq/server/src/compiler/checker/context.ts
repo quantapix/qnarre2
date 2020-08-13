@@ -991,12 +991,12 @@ export class QContext {
       for (const s of signatures) {
         if (s.declaration) privateProtected |= qf.get.selectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
       }
-      if (privateProtected) return [setRange(new qc.ConstructorDeclaration(undefined, qf.create.modifiersFromFlags(privateProtected), [], undefined), signatures[0].declaration)];
+      if (privateProtected) return [new qc.ConstructorDeclaration(undefined, qf.create.modifiersFromFlags(privateProtected), [], undefined).setRange(signatures[0].declaration)];
     }
     const results = [];
     for (const sig of signatures) {
       const decl = this.signatureToSignatureDeclarationHelper(sig, outputKind);
-      results.push(setRange(decl, sig.declaration));
+      results.push(decl.setRange(sig.declaration));
     }
     return results;
   }
@@ -1032,7 +1032,7 @@ export class QContext {
     for (const sig of signatures) {
       const decl = this.signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, includePrivateSymbol, bundled) as FunctionDeclaration;
       decl.name = new Identifier(localName);
-      addResult(setRange(decl, (sig.declaration && sig.declaration.parent.kind === Syntax.VariableDeclaration && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
+      addResult(decl.setRange((sig.declaration && sig.declaration.parent.kind === Syntax.VariableDeclaration && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
     }
     if (!(symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) && !!symbol.exports && !!symbol.exports.size)) {
       const props = filter(qf.get.propertiesOfType(type), isNamespaceMember);
@@ -1091,10 +1091,13 @@ export class QContext {
     }
     const indexSignatures = serializeIndexSignatures(classType, baseTypes[0]);
     addResult(
-      setRange(
-        new qc.ClassDeclaration(undefined, undefined, localName, typeParamDecls, heritageClauses, [...indexSignatures, ...staticMembers, ...constructors, ...publicProperties, ...privateProperties]),
-        symbol.declarations && filter(symbol.declarations, (d) => d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression)[0]
-      ),
+      new qc.ClassDeclaration(undefined, undefined, localName, typeParamDecls, heritageClauses, [
+        ...indexSignatures,
+        ...staticMembers,
+        ...constructors,
+        ...publicProperties,
+        ...privateProperties,
+      ]).setRange(symbol.declarations && filter(symbol.declarations, (d) => d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression)[0]),
       modifierFlags
     );
   }
@@ -1429,72 +1432,60 @@ export class QContext {
         const result: AccessorDeclaration[] = [];
         if (p.flags & SymbolFlags.SetAccessor) {
           result.push(
-            setRange(
-              new qc.SetAccessorDeclaration(
-                undefined,
-                qf.create.modifiersFromFlags(flag),
-                name,
-                [
-                  new qc.ParamDeclaration(
-                    undefined,
-                    undefined,
-                    undefined,
-                    'arg',
-                    undefined,
-                    isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled)
-                  ),
-                ],
-                undefined
-              ),
-              find(p.declarations, isSetAccessor) || firstPropertyLikeDecl
-            )
+            new qc.SetAccessorDeclaration(
+              undefined,
+              qf.create.modifiersFromFlags(flag),
+              name,
+              [
+                new qc.ParamDeclaration(
+                  undefined,
+                  undefined,
+                  undefined,
+                  'arg',
+                  undefined,
+                  isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled)
+                ),
+              ],
+              undefined
+            ).setRange(find(p.declarations, isSetAccessor) || firstPropertyLikeDecl)
           );
         }
         if (p.flags & SymbolFlags.GetAccessor) {
           const isPrivate = modifierFlags & ModifierFlags.Private;
           result.push(
-            setRange(
-              new qc.GetAccessorDeclaration(
-                undefined,
-                qf.create.modifiersFromFlags(flag),
-                name,
-                [],
-                isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
-                undefined
-              ),
-              find(p.declarations, isGetAccessor) || firstPropertyLikeDecl
-            )
+            new qc.GetAccessorDeclaration(
+              undefined,
+              qf.create.modifiersFromFlags(flag),
+              name,
+              [],
+              isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
+              undefined
+            ).setRange(find(p.declarations, isGetAccessor) || firstPropertyLikeDecl)
           );
         }
         return result;
       } else if (p.flags & (SymbolFlags.Property | SymbolFlags.Variable)) {
-        return setRange(
-          createProperty(
-            undefined,
-            qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
-            name,
-            p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
-            isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
-            undefined
-          ),
-          find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl
-        );
+        return createProperty(
+          undefined,
+          qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+          name,
+          p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
+          isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
+          undefined
+        ).setRange(find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl);
       }
       if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
         const type = p.typeOfSymbol();
         const signatures = getSignaturesOfType(type, SignatureKind.Call);
         if (flag & ModifierFlags.Private) {
-          return setRange(
-            createProperty(
-              undefined,
-              qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
-              name,
-              p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
-              undefined,
-              undefined
-            ),
-            find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]
-          );
+          return createProperty(
+            undefined,
+            qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+            name,
+            p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
+            undefined,
+            undefined
+          ).setRange(find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]);
         }
         const results = [];
         for (const sig of signatures) {
@@ -1502,7 +1493,7 @@ export class QContext {
           decl.name = name;
           if (flag) decl.modifiers = new Nodes(qf.create.modifiersFromFlags(flag));
           if (p.flags & SymbolFlags.Optional) decl.questionToken = new Token(Syntax.QuestionToken);
-          results.push(setRange(decl, sig.declaration));
+          results.push(decl.setRange(sig.declaration));
         }
         return (results as unknown) as T[];
       }
@@ -1607,7 +1598,7 @@ export class QContext {
       }
       const reexports = filter(ss, (d) => d.kind === Syntax.ExportDeclaration && !!d.moduleSpecifier && !!d.exportClause && d.exportClause.kind === Syntax.NamedExports) as ExportDeclaration[];
       if (length(reexports) > 1) {
-        const gs = group(reexports, (decl) => decl.moduleSpecifier?.kind === Syntax.StringLiteral ? '>' + decl.moduleSpecifier.text : '>'));
+        const gs = group(reexports, (d) => (d.moduleSpecifier?.kind === Syntax.StringLiteral ? '>' + d.moduleSpecifier.text : '>'));
         if (gs.length !== reexports.length) {
           for (const g of gs) {
             if (g.length > 1) {

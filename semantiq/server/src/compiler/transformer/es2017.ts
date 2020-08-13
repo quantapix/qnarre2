@@ -186,7 +186,7 @@ export function transformES2017(context: TrafoContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (inTopLevelContext()) return visitEachChild(node, visitor, context);
-    return setRange(new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)), node).setOriginal(node);
+    return new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)).setRange(node).setOriginal(node);
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
     return node.update(
@@ -322,7 +322,7 @@ export function transformES2017(context: TrafoContext) {
         }
       }
       const block = new Block(statements, true);
-      setRange(block, node.body);
+      block.setRange(node.body);
       if (emitSuperHelpers && hasSuperElemAccess) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
           qf.emit.addHelper(block, advancedAsyncSuperHelper);
@@ -336,7 +336,7 @@ export function transformES2017(context: TrafoContext) {
       const declarations = endLexicalEnvironment();
       if (some(declarations)) {
         const block = convertToFunctionBody(expression);
-        result = block.update(setRange(new Nodes(concatenate(declarations, block.statements)), block.statements));
+        result = block.update(new Nodes(concatenate(declarations, block.statements)).setRange(block.statements));
       } else {
         result = expression;
       }
@@ -410,7 +410,7 @@ export function transformES2017(context: TrafoContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name), node);
+    if (node.expression.kind === Syntax.SuperKeyword) return new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name).setRange(node);
     return node;
   }
   function substituteElemAccessExpression(node: ElemAccessExpression) {
@@ -431,8 +431,8 @@ export function transformES2017(context: TrafoContext) {
   }
   function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value'), location);
-    return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), location);
+      return new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
+    return new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
   }
 }
 export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: EscapedMap<true>) {

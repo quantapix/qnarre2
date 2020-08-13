@@ -66,7 +66,6 @@ export function newCreate(f: qt.Frame) {
       n.data = s.data;
       return n;
     }
-
     fromNode(n: Exclude<qt.PropertyNameLiteral, qt.PrivateIdentifier>): qt.StringLiteral {
       const r = new qc.StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
       r.textSourceNode = n;
@@ -165,7 +164,7 @@ export function newCreate(f: qt.Frame) {
               // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
               target = new qc.PropertyAccessExpression(
-                this.assignment(thisArg, (<qt.PropertyAccessExpression>callee).expression).setRange((<qt.PropertyAccessExpression>callee).expression),
+                this.assignment(thisArg, (<qt.PropertyAccessExpression>callee).expression).setRange(callee.expression),
                 (<qt.PropertyAccessExpression>callee).name
               );
               target.setRange(callee);
@@ -179,10 +178,7 @@ export function newCreate(f: qt.Frame) {
             if (qf.is.toBeCapturedInTempVariable((<qt.ElemAccessExpression>callee).expression, cacheIdentifiers)) {
               // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
-              target = new qc.ElemAccessExpression(
-                this.assignment(thisArg, (<qt.ElemAccessExpression>callee).expression).setRange((<qt.ElemAccessExpression>callee).expression),
-                (<qt.ElemAccessExpression>callee).argExpression
-              );
+              target = new qc.ElemAccessExpression(this.assignment(thisArg, (<qt.ElemAccessExpression>callee).expression).setRange(callee.expression), (<qt.ElemAccessExpression>callee).argExpression);
               target.setRange(callee);
             } else {
               thisArg = (<qt.ElemAccessExpression>callee).expression;
@@ -324,7 +320,7 @@ export function newCreate(f: qt.Frame) {
       if (n.kind === Syntax.QualifiedName) {
         const left = createExpressionFromEntityName(n.left);
         const right = getMutableClone(n.right);
-        return setRange(new qc.PropertyAccessExpression(left, right), n);
+        return new qc.PropertyAccessExpression(left, right).setRange(n);
       }
       return getMutableClone(n);
     }
@@ -346,52 +342,46 @@ export function newCreate(f: qt.Frame) {
           const properties: qt.ObjectLiteralElemLike[] = [];
           if (getAccessor) {
             const getterFunction = new qc.FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.params, undefined, getAccessor.body!);
-            setRange(getterFunction, getAccessor);
+            getterFunction.setRange(getAccessor);
             getterFunction.setOriginal(getAccessor);
             const getter = new qc.PropertyAssignment('get', getterFunction);
             properties.push(getter);
           }
           if (setAccessor) {
             const setterFunction = new qc.FunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.params, undefined, setAccessor.body!);
-            setRange(setterFunction, setAccessor);
+            setterFunction.setRange(setAccessor);
             setterFunction.setOriginal(setAccessor);
             const setter = new qc.PropertyAssignment('set', setterFunction);
             properties.push(setter);
           }
           properties.push(new qc.PropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
           properties.push(new qc.PropertyAssignment('configurable', new qc.BooleanLiteral(true)));
-          const expression = setRange(
-            new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'defineProperty'), undefined, [
-              receiver,
-              createExpressionForPropertyName(property.name),
-              new qc.ObjectLiteralExpression(properties, multiLine),
-            ]),
-            firstAccessor
-          );
+          const expression = new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'defineProperty'), undefined, [
+            receiver,
+            createExpressionForPropertyName(property.name),
+            new qc.ObjectLiteralExpression(properties, multiLine),
+          ]).setRange(firstAccessor);
           return qf.calc.aggregate(expression);
         }
         return;
       }
       function createExpressionForPropertyAssignment(property: qt.PropertyAssignment, receiver: qt.Expression) {
-        return qf.calc.aggregate(setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer), property).setOriginal(property));
+        return qf.calc.aggregate(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initer).setRange(property).setOriginal(property));
       }
       function createExpressionForShorthandPropertyAssignment(property: qt.ShorthandPropertyAssignment, receiver: qt.Expression) {
         return qf.calc.aggregate(
-          setRange(this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
+          this.assignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)).setRange(property).setOriginal(property)
         );
       }
       function createExpressionForMethodDeclaration(method: qt.MethodDeclaration, receiver: qt.Expression) {
         return qf.calc.aggregate(
           setOriginalNode(
-            setRange(
-              this.assignment(
-                createMemberAccessForPropertyName(receiver, method.name, method.name),
-                setRange(new qc.FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.params, undefined, method.body!), method).setOriginal(method)
-              ),
-              method
+            this.assignment(
+              createMemberAccessForPropertyName(receiver, method.name, method.name),
+              new qc.FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.params, undefined, method.body!).setRange(method).setOriginal(method)
             ),
             method
-          )
+          ).setRange(method)
         );
       }
       switch (property.kind) {
@@ -411,21 +401,21 @@ export function newCreate(f: qt.Frame) {
       return tag === 'undefined' ? this.strictEquality(value, qc.VoidExpression.zero()) : this.strictEquality(new qc.TypeOfExpression(value), qc.asLiteral(tag));
     }
     createMemberAccessForPropertyName(target: qt.Expression, memberName: qt.PropertyName, location?: qu.TextRange): qt.MemberExpression {
-      if (memberName.kind === Syntax.ComputedPropertyName) return setRange(new qc.ElemAccessExpression(target, memberName.expression), location);
+      if (memberName.kind === Syntax.ComputedPropertyName) return new qc.ElemAccessExpression(target, memberName.expression).setRange(location);
       else {
-        const expression = setRange(
-          memberName.kind === Syntax.Identifier || memberName.kind === Syntax.PrivateIdentifier ? new qc.PropertyAccessExpression(target, memberName) : new qc.ElemAccessExpression(target, memberName),
-          memberName
-        );
+        const expression = (memberName.kind === Syntax.Identifier || memberName.kind === Syntax.PrivateIdentifier
+          ? new qc.PropertyAccessExpression(target, memberName)
+          : new qc.ElemAccessExpression(target, memberName)
+        ).setRange(memberName);
         qf.emit.getOrCreate(expression).flags |= EmitFlags.NoNestedSourceMaps;
         return expression;
       }
     }
     createFunctionCall(func: qt.Expression, thisArg: qt.Expression, argsList: readonly qt.Expression[], location?: qu.TextRange) {
-      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argsList]), location);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argsList]).setRange(location);
     }
     createFunctionApply(func: qt.Expression, thisArg: qt.Expression, argsExpression: qt.Expression, location?: qu.TextRange) {
-      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argsExpression]), location);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argsExpression]).setRange(location);
     }
     createArraySlice(array: qt.Expression, start?: number | qt.Expression) {
       const argsList: qt.Expression[] = [];
@@ -436,7 +426,7 @@ export function newCreate(f: qt.Frame) {
       return new qc.CallExpression(new qc.PropertyAccessExpression(array, 'concat'), undefined, values);
     }
     createMathPow(left: qt.Expression, right: qt.Expression, location?: qu.TextRange) {
-      return setRange(new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Math'), 'pow'), undefined, [left, right]), location);
+      return new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Math'), 'pow'), undefined, [left, right]).setRange(location);
     }
     createTempVariable(record?: (i: qt.Identifier) => void): qt.Identifier;
     createTempVariable(record: ((i: qt.Identifier) => void) | undefined, reserved: boolean): qt.GeneratedIdentifier;

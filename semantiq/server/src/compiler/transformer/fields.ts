@@ -348,7 +348,7 @@ export function transformClassFields(context: TrafoContext) {
     const constructor = transformConstructor(n, isDerivedClass);
     if (constructor) ms.push(constructor);
     qu.addRange(ms, Nodes.visit(n.members, classElemVisitor, isClassElem));
-    return setRange(new Nodes(ms), n.members);
+    return new Nodes(ms).setRange(n.members);
   }
   function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElem): member is PropertyDeclaration {
     if (!member.kind === Syntax.PropertyDeclaration || qc.has.staticModifier(member)) return false;
@@ -364,7 +364,7 @@ export function transformClassFields(context: TrafoContext) {
     if (!body) {
       return;
     }
-    return qf.emit.setStartsOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, params ?? [], body), constructor || node).setOriginal(constructor));
+    return qf.emit.setStartsOnNewLine(new qc.ConstructorDeclaration(undefined, undefined, params ?? [], body).setRange(constructor || node).setOriginal(constructor));
   }
   function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
     const useDefineForClassFields = context.getCompilerOpts().useDefineForClassFields;
@@ -399,7 +399,7 @@ export function transformClassFields(context: TrafoContext) {
       qu.addRange(statements, Nodes.visit(constructor.body!.statements, visitor, qf.is.statement, indexOfFirstStatement));
     }
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-    return setRange(new Block(setRange(new Nodes(statements), constructor ? constructor.body!.statements : node.members), true), constructor ? constructor.body : undefined);
+    return new Block(new Nodes(statements).setRange(constructor ? constructor.body!.statements : node.members), true).setRange(constructor ? constructor.body : undefined);
   }
   function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftExpression) {
     for (const property of properties) {
