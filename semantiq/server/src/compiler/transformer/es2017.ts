@@ -185,7 +185,7 @@ export function transformES2017(context: qt.TrafoContext) {
       visitNode(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
     );
   }
-  function visitAwaitExpression(node: qt.AwaitExpression): Expression {
+  function visitAwaitExpression(node: qt.AwaitExpression): qt.Expression {
     if (inTopLevelContext()) return visitEachChild(node, visitor, context);
     return new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)).setRange(node).setOriginal(node);
   }
@@ -202,7 +202,7 @@ export function transformES2017(context: qt.TrafoContext) {
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
-  function visitFunctionDeclaration(node: qt.FunctionDeclaration): VisitResult<Statement> {
+  function visitFunctionDeclaration(node: qt.FunctionDeclaration): VisitResult<qt.Statement> {
     return node.update(
       undefined,
       Nodes.visit(node.modifiers, visitor, isModifier),
@@ -214,7 +214,7 @@ export function transformES2017(context: qt.TrafoContext) {
       qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
-  function visitFunctionExpression(node: qt.FunctionExpression): Expression {
+  function visitFunctionExpression(node: qt.FunctionExpression): qt.Expression {
     return node.update(
       Nodes.visit(node.modifiers, visitor, isModifier),
       node.asteriskToken,
@@ -246,7 +246,7 @@ export function transformES2017(context: qt.TrafoContext) {
       }
     }
   }
-  function isVariableDeclarationListWithCollidingName(node: ForIniter): node is qt.VariableDeclarationList {
+  function isVariableDeclarationListWithCollidingName(node: qt.ForIniter): node is qt.VariableDeclarationList {
     return !!node && qf.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParamName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: qt.VariableDeclarationList, hasReceiver: boolean) {
@@ -285,9 +285,9 @@ export function transformES2017(context: qt.TrafoContext) {
     }
     return false;
   }
-  function transformAsyncFunctionBody(node: qt.MethodDeclaration | qt.AccessorDeclaration | qt.FunctionDeclaration | qt.FunctionExpression): FunctionBody;
-  function transformAsyncFunctionBody(node: qt.ArrowFunction): ConciseBody;
-  function transformAsyncFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
+  function transformAsyncFunctionBody(node: qt.MethodDeclaration | qt.AccessorDeclaration | qt.FunctionDeclaration | qt.FunctionExpression): qt.FunctionBody;
+  function transformAsyncFunctionBody(node: qt.ArrowFunction): qt.ConciseBody;
+  function transformAsyncFunctionBody(node: qt.FunctionLikeDeclaration): qt.ConciseBody {
     resumeLexicalEnvironment();
     const original = qf.get.originalOf(node, isFunctionLike);
     const nodeType = original.type;
@@ -305,9 +305,9 @@ export function transformES2017(context: qt.TrafoContext) {
       capturedSuperProperties = qc.createEscapedMap<true>();
       hasSuperElemAccess = false;
     }
-    let result: ConciseBody;
+    let result: qt.ConciseBody;
     if (!isArrowFunction) {
-      const statements: Statement[] = [];
+      const statements: qt.Statement[] = [];
       const statementOffset = addPrologue(statements, (<qt.Block>node.body).statements, false, visitor);
       statements.push(
         new qc.ReturnStatement(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArgs, promiseConstructor, transformAsyncFunctionBodyWorker(<qt.Block>node.body, statementOffset)))
@@ -322,7 +322,7 @@ export function transformES2017(context: qt.TrafoContext) {
           insertStatementsAfterStandardPrologue(statements, [variableStatement]);
         }
       }
-      const block = new qt.Block(statements, true);
+      const block = new qc.Block(statements, true);
       block.setRange(node.body);
       if (emitSuperHelpers && hasSuperElemAccess) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
@@ -349,11 +349,11 @@ export function transformES2017(context: qt.TrafoContext) {
     }
     return result;
   }
-  function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
+  function transformAsyncFunctionBodyWorker(body: qt.ConciseBody, start?: number) {
     if (qf.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, qf.is.statement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
-  function getPromiseConstructor(type: Typing | undefined) {
+  function getPromiseConstructor(type: qt.Typing | undefined) {
     const typeName = type && qf.get.entityNameFromTypeNode(type);
     if (typeName && qf.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
@@ -396,10 +396,10 @@ export function transformES2017(context: qt.TrafoContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<Expression>node);
+    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
     return node;
   }
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
         return substitutePropertyAccessExpression(<qt.PropertyAccessExpression>node);
@@ -418,7 +418,7 @@ export function transformES2017(context: qt.TrafoContext) {
     if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argExpression, node);
     return node;
   }
-  function substituteCallExpression(node: qt.CallExpression): Expression {
+  function substituteCallExpression(node: qt.CallExpression): qt.Expression {
     const expression = node.expression;
     if (qf.is.superProperty(expression)) {
       const argExpression = qf.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
@@ -430,13 +430,13 @@ export function transformES2017(context: qt.TrafoContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
+  function createSuperElemAccessInAsyncMethod(argExpression: qt.Expression, location: TextRange): qt.LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
       return new qc.PropertyAccessExpression(new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
     return new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
   }
 }
-export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, node: FunctionLikeDeclaration, names: EscapedMap<true>) {
+export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, node: qt.FunctionLikeDeclaration, names: EscapedMap<true>) {
   const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
   const accessors: qt.PropertyAssignment[] = [];
   names.forEach((_, key) => {
@@ -445,7 +445,7 @@ export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, no
     getterAndSetter.push(
       new qc.PropertyAssignment(
         'get',
-        new qt.ArrowFunction(
+        new qc.ArrowFunction(
           undefined,
           undefined,
           [],
@@ -459,7 +459,7 @@ export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, no
       getterAndSetter.push(
         new qc.PropertyAssignment(
           'set',
-          new qt.ArrowFunction(
+          new qc.ArrowFunction(
             undefined,
             undefined,
             [new qc.ParamDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
@@ -467,7 +467,7 @@ export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, no
             undefined,
             qf.create.assignment(
               qf.emit.setFlags(new qc.PropertyAccessExpression(qf.emit.setFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution),
-              new qt.Identifier('v')
+              new qc.Identifier('v')
             )
           )
         )
@@ -478,7 +478,7 @@ export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, no
   return new qc.VariableStatement(
     undefined,
     new qc.VariableDeclarationList(
-      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qc.CallExpression(new qc.PropertyAccessExpression(new qt.Identifier('Object'), 'create'), true))],
+      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'create'), true))],
       NodeFlags.Const
     )
   );
@@ -499,13 +499,13 @@ export const awaiterHelper: qt.UnscopedEmitHelper = {
                 });
             };`,
 };
-function createAwaiterHelper(context: qt.TrafoContext, hasLexicalThis: boolean, hasLexicalArgs: boolean, promiseConstructor: EntityName | Expression | undefined, body: qt.Block) {
+function createAwaiterHelper(context: qt.TrafoContext, hasLexicalThis: boolean, hasLexicalArgs: boolean, promiseConstructor: qt.EntityName | qt.Expression | undefined, body: qt.Block) {
   context.requestEmitHelper(awaiterHelper);
   const generatorFunc = new qc.FunctionExpression([], undefined, body);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as qt.EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
   return new qc.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
     hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(),
-    hasLexicalArgs ? new qt.Identifier('args') : qc.VoidExpression.zero(),
+    hasLexicalArgs ? new qc.Identifier('args') : qc.VoidExpression.zero(),
     promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qc.VoidExpression.zero(),
     generatorFunc,
   ]);

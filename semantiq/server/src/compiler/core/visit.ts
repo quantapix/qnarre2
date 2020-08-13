@@ -119,7 +119,7 @@ function addForBindingPattern(p: qc.ParamDeclaration, c: qt.TrafoContext) {
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForIniter(p: qc.ParamDeclaration, name: qt.Identifier, init: Expression, c: qt.TrafoContext) {
+function addForIniter(p: qc.ParamDeclaration, name: qt.Identifier, init: qt.Expression, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -979,9 +979,9 @@ function findSpanEnd<T>(array: readonly T[], test: (value: T) => boolean, start:
   }
   return i;
 }
-export function mergeLexicalEnvironment(ss: Nodes<Statement>, declarations: readonly Statement[] | undefined): Nodes<Statement>;
-export function mergeLexicalEnvironment(ss: Statement[], declarations: readonly Statement[] | undefined): Statement[];
-export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, declarations: readonly Statement[] | undefined) {
+export function mergeLexicalEnvironment(ss: Nodes<qt.Statement>, declarations: readonly qt.Statement[] | undefined): Nodes<qt.Statement>;
+export function mergeLexicalEnvironment(ss: qt.Statement[], declarations: readonly qt.Statement[] | undefined): qt.Statement[];
+export function mergeLexicalEnvironment(ss: qt.Statement[] | Nodes<qt.Statement>, declarations: readonly qt.Statement[] | undefined) {
   if (!some(declarations)) return ss;
   const ls = findSpanEnd(ss, isPrologueDirective, 0);
   const lf = findSpanEnd(ss, isHoistedFunction, ls);
@@ -1014,13 +1014,13 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   if (isNodes(ss)) return new Nodes(left, ss.trailingComma).setRange(ss);
   return ss;
 }
-export function liftToBlock(ns: readonly Node[]): Statement {
+export function liftToBlock(ns: readonly Node[]): qt.Statement {
   qu.assert(qu.every(ns, qf.is.statement), 'Cannot lift nodes to a qt.Block.');
-  return (qu.singleOrUndefined(ns) as Statement) || new qt.Block(<Nodes<Statement>>ns);
+  return (qu.singleOrUndefined(ns) as qt.Statement) || new qc.Block(<Nodes<qt.Statement>>ns);
 }
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: qt.Signature) => qt.Type,
-  getTypePredicateOfSignature: (sig: qt.Signature) => TypePredicate | undefined,
+  getTypePredicateOfSignature: (sig: qt.Signature) => qt.TypePredicate | undefined,
   getReturnTypeOfSignature: (sig: qt.Signature) => qt.Type,
   getBaseTypes: (t: qt.Type) => qt.Type[],
   resolveStructuredTypeMembers: (t: qt.ObjectType) => qt.ResolvedType,
@@ -1028,7 +1028,7 @@ export function createGetSymbolWalker(
   getResolvedSymbol: (node: Node) => qt.Symbol,
   getIndexTypeOfStructuredType: (t: qt.Type, kind: qt.IndexKind) => qt.Type | undefined,
   getConstraintOfTypeParam: (typeParam: qt.TypeParam) => qt.Type | undefined,
-  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => qt.Identifier,
+  getFirstIdentifier: (node: qt.EntityNameOrEntityNameExpression) => qt.Identifier,
   getTypeArgs: (t: qt.TypeReference) => readonly qt.Type[]
 ) {
   return getSymbolWalker;

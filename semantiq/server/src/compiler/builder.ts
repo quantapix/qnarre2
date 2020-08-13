@@ -10,7 +10,7 @@ export type AffectedFileResult<T> = { result: T; affected: qt.SourceFile | qt.Pr
 export interface BuilderProgramHost {
   useCaseSensitiveFileNames(): boolean;
   createHash?: (data: string) => string;
-  writeFile?: WriteFileCallback;
+  writeFile?: qt.WriteFileCallback;
 }
 export interface BuilderProgram {
   getState(): ReusableBuilderProgramState;
@@ -29,7 +29,7 @@ export interface BuilderProgram {
   getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
   getAllDependencies(sourceFile: qt.SourceFile): readonly string[];
   getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  emit(targetSourceFile?: qt.SourceFile, writeFile?: WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
   getCurrentDirectory(): string;
   close(): void;
 }
@@ -38,7 +38,7 @@ export interface SemanticDiagnosticsBuilderProgram extends BuilderProgram {
 }
 export interface EmitAndSemanticDiagnosticsBuilderProgram extends SemanticDiagnosticsBuilderProgram {
   emitNextAffectedFile(
-    writeFile?: WriteFileCallback,
+    writeFile?: qt.WriteFileCallback,
     cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
@@ -143,13 +143,13 @@ export interface ReusableBuilderProgramState extends ReusableBuilderState {
   semanticDiagnosticsPerFile?: ReadonlyMap<readonly ReusableDiagnostic[] | readonly Diagnostic[]> | undefined;
   changedFilesSet?: ReadonlyMap<true>;
   affectedFiles?: readonly qt.SourceFile[] | undefined;
-  currentChangedFilePath?: Path | undefined;
+  currentChangedFilePath?: qt.Path | undefined;
   currentAffectedFilesSignatures?: QReadonlyMap<string> | undefined;
   currentAffectedFilesExportedModulesMap?: Readonly<BuilderState.ComputingExportedModulesMap> | undefined;
   semanticDiagnosticsFromOldState?: Map<true>;
   program?: qt.Program | undefined;
   compilerOpts: qt.CompilerOpts;
-  affectedFilesPendingEmit?: readonly Path[] | undefined;
+  affectedFilesPendingEmit?: readonly qt.Path[] | undefined;
   affectedFilesPendingEmitKind?: ReadonlyMap<BuilderFileEmit> | undefined;
   affectedFilesPendingEmitIndex?: number | undefined;
   hasReusableDiagnostic?: true;
@@ -163,7 +163,7 @@ export interface BuilderProgramState extends BuilderState {
   changedFilesSet: Map<true>;
   affectedFiles: readonly qt.SourceFile[] | undefined;
   affectedFilesIndex: number | undefined;
-  currentChangedFilePath: Path | undefined;
+  currentChangedFilePath: qt.Path | undefined;
   currentAffectedFilesSignatures: Map<string> | undefined;
   currentAffectedFilesExportedModulesMap: BuilderState.ComputingExportedModulesMap | undefined;
   seenAffectedFiles: Map<true> | undefined;
@@ -171,7 +171,7 @@ export interface BuilderProgramState extends BuilderState {
   semanticDiagnosticsFromOldState?: Map<true>;
   program: qt.Program | undefined;
   compilerOpts: qt.CompilerOpts;
-  affectedFilesPendingEmit: Path[] | undefined;
+  affectedFilesPendingEmit: qt.Path[] | undefined;
   affectedFilesPendingEmitKind: Map<BuilderFileEmit> | undefined;
   affectedFilesPendingEmitIndex: number | undefined;
   emittedBuildInfo?: boolean;
@@ -229,7 +229,7 @@ function createBuilderProgramState(newProgram: qt.Program, getCanonicalFileName:
     ) {
       state.changedFilesSet.set(sourceFilePath, true);
     } else if (canCopySemanticDiagnostics) {
-      const sourceFile = newProgram.getSourceFileByPath(sourceFilePath as Path)!;
+      const sourceFile = newProgram.getSourceFileByPath(sourceFilePath as qt.Path)!;
       if (sourceFile.isDeclarationFile && !copyDeclarationFileDiagnostics) {
         return;
       }
@@ -274,7 +274,7 @@ function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newPro
     return qnr.toPath(path, buildInfoDirectory, getCanonicalFileName);
   }
 }
-function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: qt.Program, toPath: (path: string) => Path): DiagnosticRelatedInformation {
+function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: qt.Program, toPath: (path: string) => qt.Path): DiagnosticRelatedInformation {
   const { file } = diagnostic;
   return {
     ...diagnostic,
@@ -348,13 +348,13 @@ function getNextAffectedFile(state: BuilderProgramState, cancellationToken: qt.C
     state.affectedFiles = BuilderState.getFilesAffectedBy(
       state,
       program,
-      nextKey.value as Path,
+      nextKey.value as qt.Path,
       cancellationToken,
       computeHash,
       state.currentAffectedFilesSignatures,
       state.currentAffectedFilesExportedModulesMap
     );
-    state.currentChangedFilePath = nextKey.value as Path;
+    state.currentChangedFilePath = nextKey.value as qt.Path;
     state.affectedFilesIndex = 0;
     state.seenAffectedFiles = state.seenAffectedFiles || new QMap<true>();
   }
@@ -395,7 +395,7 @@ function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFi
     forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) => handleDtsMayChangeOf(state, path, cancellationToken, computeHash));
   }
 }
-function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOf(state: BuilderProgramState, path: qt.Path, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, path);
   if (!state.changedFilesSet.has(path)) {
     const program = Debug.checkDefined(state.program);
@@ -417,18 +417,18 @@ function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellati
   }
   return false;
 }
-function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: Path) {
+function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: qt.Path) {
   if (!state.semanticDiagnosticsFromOldState) return true;
   state.semanticDiagnosticsFromOldState.delete(path);
   state.semanticDiagnosticsPerFile!.delete(path);
   return !state.semanticDiagnosticsFromOldState.size;
 }
-function isChangedSignagure(state: BuilderProgramState, path: Path) {
+function isChangedSignagure(state: BuilderProgramState, path: qt.Path) {
   const newSignature = Debug.checkDefined(state.currentAffectedFilesSignatures).get(path);
   const oldSignagure = Debug.checkDefined(state.fileInfos.get(path)).signature;
   return newSignature !== oldSignagure;
 }
-function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
+function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean) {
   if (!state.exportedModulesMap || !state.changedFilesSet.has(affectedFile.resolvedPath)) {
     return;
   }
@@ -455,7 +455,7 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
     qu.forEachEntry(
       state.currentAffectedFilesExportedModulesMap,
       (exportedModules, exportedFromPath) =>
-        exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+        exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
     )
   ) {
     return;
@@ -465,23 +465,23 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
     (exportedModules, exportedFromPath) =>
       !state.currentAffectedFilesExportedModulesMap!.has(exportedFromPath) &&
       exportedModules.has(affectedFile.resolvedPath) &&
-      forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+      forEachFilesReferencingPath(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
   );
 }
-function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
+function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: qt.Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean) {
   return qu.forEachEntry(
     state.referencedMap!,
-    (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn)
+    (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as qt.Path, seenFileAndExportsOfFile, fn)
   );
 }
-function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean): boolean {
+function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: qt.Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean): boolean {
   if (!addToSeen(seenFileAndExportsOfFile, filePath)) return false;
   if (fn(state, filePath)) return true;
   assert(!!state.currentAffectedFilesExportedModulesMap);
   if (
     qu.forEachEntry(
       state.currentAffectedFilesExportedModulesMap,
-      (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+      (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
     )
   ) {
     return true;
@@ -492,14 +492,14 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
       (exportedModules, exportedFromPath) =>
         !state.currentAffectedFilesExportedModulesMap!.has(exportedFromPath) &&
         exportedModules.has(filePath) &&
-        forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+        forEachFileAndExportsOfFile(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
     )
   ) {
     return true;
   }
   return !!qu.forEachEntry(
     state.referencedMap!,
-    (referencesInFile, referencingFilePath) => referencesInFile.has(filePath) && !seenFileAndExportsOfFile.has(referencingFilePath) && fn(state, referencingFilePath as Path)
+    (referencesInFile, referencingFilePath) => referencesInFile.has(filePath) && !seenFileAndExportsOfFile.has(referencingFilePath) && fn(state, referencingFilePath as qt.Path)
   );
 }
 function doneWithAffectedFile(state: BuilderProgramState, affected: qt.SourceFile | qt.Program, emitKind?: BuilderFileEmit, isPendingEmit?: boolean, isBuildInfoEmit?: boolean) {
@@ -612,7 +612,7 @@ function convertToReusableCompilerOpts(opts: qt.CompilerOpts, relativeToBuildInf
   const { optsNameMap } = getOptsNameMap();
   for (const name in opts) {
     if (hasProperty(opts, name)) {
-      result[name] = convertToReusableCompilerOptionValue(optsNameMap.get(name.toLowerCase()), opts[name] as CompilerOptsValue, relativeToBuildInfo);
+      result[name] = convertToReusableCompilerOptionValue(optsNameMap.get(name.toLowerCase()), opts[name] as qt.CompilerOptsValue, relativeToBuildInfo);
     }
   }
   if (result.configFilePath) {
@@ -620,7 +620,7 @@ function convertToReusableCompilerOpts(opts: qt.CompilerOpts, relativeToBuildInf
   }
   return result;
 }
-function convertToReusableCompilerOptionValue(option: CommandLineOption | undefined, value: CompilerOptsValue, relativeToBuildInfo: (path: string) => string) {
+function convertToReusableCompilerOptionValue(option: qt.CommandLineOption | undefined, value: qt.CompilerOptsValue, relativeToBuildInfo: (path: string) => string) {
   if (option) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
@@ -743,7 +743,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   }
   return builderProgram;
   function emitNextAffectedFile(
-    writeFile?: WriteFileCallback,
+    writeFile?: qt.WriteFileCallback,
     cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
@@ -785,7 +785,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   }
   function emit(
     targetSourceFile?: qt.SourceFile,
-    writeFile?: WriteFileCallback,
+    writeFile?: qt.WriteFileCallback,
     cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
@@ -850,7 +850,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
     return diagnostics || emptyArray;
   }
 }
-function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFilePendingEmit: Path, kind: BuilderFileEmit) {
+function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFilePendingEmit: qt.Path, kind: BuilderFileEmit) {
   if (!state.affectedFilesPendingEmit) state.affectedFilesPendingEmit = [];
   if (!state.affectedFilesPendingEmitKind) state.affectedFilesPendingEmitKind = new QMap();
   const existingKind = state.affectedFilesPendingEmitKind.get(affectedFilePendingEmit);
@@ -860,7 +860,7 @@ function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFileP
     state.affectedFilesPendingEmitIndex = 0;
   }
 }
-function getMapOfReferencedSet(mapLike: MapLike<readonly string[]> | undefined, toPath: (path: string) => Path): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
+function getMapOfReferencedSet(mapLike: MapLike<readonly string[]> | undefined, toPath: (path: string) => qt.Path): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
   if (!mapLike) return;
   const map = new QMap<BuilderState.ReferencedSet>();
   for (const key in mapLike) {
@@ -953,7 +953,7 @@ export interface EmitOutput {
   outputFiles: OutputFile[];
   emitSkipped: boolean;
   diagnostics: readonly Diagnostic[];
-  exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
+  exportedModulesFromDeclarationEmit?: qt.ExportedModulesFromDeclarationEmit;
 }
 export interface OutputFile {
   name: string;
@@ -1004,11 +1004,11 @@ export namespace BuilderState {
     }
     return;
   }
-  function getReferencedFileFromImportLiteral(checker: qt.TypeChecker, importName: StringLiteralLike) {
+  function getReferencedFileFromImportLiteral(checker: qt.TypeChecker, importName: qt.StringLiteralLike) {
     const symbol = checker.getSymbolAtLocation(importName);
     return symbol && getReferencedFileFromImportedModuleSymbol(symbol);
   }
-  function getReferencedFileFromFileName(program: qt.Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: GetCanonicalFileName): Path {
+  function getReferencedFileFromFileName(program: qt.Program, fileName: string, sourceFileDirectory: qt.Path, getCanonicalFileName: GetCanonicalFileName): qt.Path {
     return toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
   }
   function getReferencedFiles(program: qt.Program, sourceFile: qt.SourceFile, getCanonicalFileName: GetCanonicalFileName): QMap<true> | undefined {
@@ -1054,7 +1054,7 @@ export namespace BuilderState {
         if (declarationSourceFile && declarationSourceFile !== sourceFile) addReferencedFile(declarationSourceFile.resolvedPath);
       }
     }
-    function addReferencedFile(referencedPath: Path) {
+    function addReferencedFile(referencedPath: qt.Path) {
       if (!referencedFiles) referencedFiles = new QMap<true>();
       referencedFiles.set(referencedPath, true);
     }
@@ -1111,7 +1111,7 @@ export namespace BuilderState {
   export function getFilesAffectedBy(
     state: BuilderState,
     programOfThisState: qt.Program,
-    path: Path,
+    path: qt.Path,
     cancellationToken: qt.CancellationToken | undefined,
     computeHash: ComputeHash,
     cacheToUpdateSignature?: QMap<string>,
@@ -1134,9 +1134,9 @@ export namespace BuilderState {
     return result;
   }
   export function updateSignaturesFromCache(state: BuilderState, signatureCache: QMap<string>) {
-    signatureCache.forEach((signature, path) => updateSignatureOfFile(state, signature, path as Path));
+    signatureCache.forEach((signature, path) => updateSignatureOfFile(state, signature, path as qt.Path));
   }
-  export function updateSignatureOfFile(state: BuilderState, signature: string | undefined, path: Path) {
+  export function updateSignatureOfFile(state: BuilderState, signature: string | undefined, path: qt.Path) {
     state.fileInfos.get(path)!.signature = signature;
     state.hasCalledUpdateShapeSignature.set(path, true);
   }
@@ -1185,7 +1185,7 @@ export namespace BuilderState {
     cacheToUpdateSignature.set(sourceFile.resolvedPath, latestSignature);
     return !prevSignature || latestSignature !== prevSignature;
   }
-  function updateExportedModules(sourceFile: qt.SourceFile, exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined, exportedModulesMapCache: ComputingExportedModulesMap) {
+  function updateExportedModules(sourceFile: qt.SourceFile, exportedModulesFromDeclarationEmit: qt.ExportedModulesFromDeclarationEmit | undefined, exportedModulesMapCache: ComputingExportedModulesMap) {
     if (!exportedModulesFromDeclarationEmit) {
       exportedModulesMapCache.set(sourceFile.resolvedPath, false);
       return;
@@ -1193,7 +1193,7 @@ export namespace BuilderState {
     let exportedModules: QMap<true> | undefined;
     exportedModulesFromDeclarationEmit.forEach((symbol) => addExportedModule(getReferencedFileFromImportedModuleSymbol(symbol)));
     exportedModulesMapCache.set(sourceFile.resolvedPath, exportedModules || false);
-    function addExportedModule(exportedModulePath: Path | undefined) {
+    function addExportedModule(exportedModulePath: qt.Path | undefined) {
       if (exportedModulePath) {
         if (!exportedModules) exportedModules = new QMap<true>();
         exportedModules.set(exportedModulePath, true);
@@ -1223,14 +1223,14 @@ export namespace BuilderState {
         if (references) {
           const iterator = references.keys();
           for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
-            queue.push(iterResult.value as Path);
+            queue.push(iterResult.value as qt.Path);
           }
         }
       }
     }
     return arrayFrom(
       mapDefinedIterator(seenMap.keys(), (path) => {
-        const file = programOfThisState.getSourceFileByPath(path as Path);
+        const file = programOfThisState.getSourceFileByPath(path as qt.Path);
         return file ? file.fileName : path;
       })
     );
@@ -1242,8 +1242,8 @@ export namespace BuilderState {
     }
     return state.allFileNames;
   }
-  export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: Path) {
-    return arrayFrom(mapDefinedIterator(state.referencedMap!.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
+  export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: qt.Path) {
+    return arrayFrom(mapDefinedIterator(state.referencedMap!.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as qt.Path) : undefined)));
   }
   function containsOnlyAmbientModules(sourceFile: qt.SourceFile) {
     for (const statement of sourceFile.statements) {

@@ -35,7 +35,7 @@ export function transformJsx(context: qt.TrafoContext) {
         return visitEachChild(node, visitor, context);
     }
   }
-  function transformJsxChildToExpression(node: JsxChild): Expression | undefined {
+  function transformJsxChildToExpression(node: qt.JsxChild): qt.Expression | undefined {
     switch (node.kind) {
       case Syntax.JsxText:
         return visitJsxText(node);
@@ -60,14 +60,14 @@ export function transformJsx(context: qt.TrafoContext) {
   function visitJsxFragment(node: qt.JsxFragment, isChild: boolean) {
     return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, node);
   }
-  function visitJsxOpeningLikeElem(node: JsxOpeningLikeElem, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
+  function visitJsxOpeningLikeElem(node: qt.JsxOpeningLikeElem, children: readonly qt.JsxChild[] | undefined, isChild: boolean, location: TextRange) {
     const tagName = getTagName(node);
-    let objectProperties: Expression | undefined;
+    let objectProperties: qt.Expression | undefined;
     const attrs = node.attributes.properties;
     if (attrs.length === 0) {
       objectProperties = new qc.NullLiteral();
     } else {
-      const segments = flatten<Expression | qt.ObjectLiteralExpression>(
+      const segments = flatten<qt.Expression | qt.ObjectLiteralExpression>(
         spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
           isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElem))
         )
@@ -94,7 +94,7 @@ export function transformJsx(context: qt.TrafoContext) {
     }
     return elem;
   }
-  function visitJsxOpeningFragment(node: qt.JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
+  function visitJsxOpeningFragment(node: qt.JsxOpeningFragment, children: readonly qt.JsxChild[], isChild: boolean, location: TextRange) {
     const elem = qf.create.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOpts.reactNamespace!,
@@ -115,7 +115,7 @@ export function transformJsx(context: qt.TrafoContext) {
     const expression = transformJsxAttributeIniter(node.initer);
     return new qc.PropertyAssignment(name, expression);
   }
-  function transformJsxAttributeIniter(node: qt.StringLiteral | qt.JsxExpression | undefined): Expression {
+  function transformJsxAttributeIniter(node: qt.StringLiteral | qt.JsxExpression | undefined): qt.Expression {
     if (node === undefined) return new qc.BooleanLiteral(true);
     else if (node.kind === Syntax.StringLiteral) {
       const literal = qc.asLiteral(tryDecodeEntities(node.text) || node.text);
@@ -167,7 +167,7 @@ export function transformJsx(context: qt.TrafoContext) {
     const decoded = decodeEntities(text);
     return decoded === text ? undefined : decoded;
   }
-  function getTagName(node: qt.JsxElem | JsxOpeningLikeElem): Expression {
+  function getTagName(node: qt.JsxElem | qt.JsxOpeningLikeElem): qt.Expression {
     if (node.kind === Syntax.JsxElem) return getTagName(node.opening);
     else {
       const name = node.tagName;

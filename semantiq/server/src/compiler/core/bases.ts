@@ -773,7 +773,7 @@ export class Signature implements qt.Signature {
         this.resolvedPredicate = qf.get.unionTypePredicate(this.unions) || noTypePredicate;
       } else {
         const type = this.declaration && this.effectiveReturnTypeNode(this.declaration);
-        let jsdocPredicate: TypePredicate | undefined;
+        let jsdocPredicate: qt.TypePredicate | undefined;
         if (!type && qf.is.inJSFile(this.declaration)) {
           const jsdocSignature = this.thisOfTypeTag(this.declaration!);
           if (jsdocSignature && this !== jsdocSignature) jsdocPredicate = this.typePredicateOfSignature(jsdocSignature);
@@ -792,7 +792,7 @@ export class Signature implements qt.Signature {
         : this.unions
         ? this.unionType(map(this.unions, this.returnTypeOfSignature), UnionReduction.Subtype)
         : this.returnTypeFromAnnotation(this.declaration!) ||
-          (qf.is.missing((<FunctionLikeDeclaration>this.declaration).body) ? anyType : this.returnTypeFromBody(<FunctionLikeDeclaration>this.declaration));
+          (qf.is.missing((<qt.FunctionLikeDeclaration>this.declaration).body) ? anyType : this.returnTypeFromBody(<qt.FunctionLikeDeclaration>this.declaration));
       if (this.flags & qt.SignatureFlags.IsInnerCallChain) type = addOptionalTypeMarker(t);
       else if (this.flags & qt.SignatureFlags.IsOuterCallChain) {
         type = this.optionalType(t);
@@ -802,7 +802,7 @@ export class Signature implements qt.Signature {
           const typeNode = this.effectiveReturnTypeNode(this.declaration);
           if (typeNode) error(typeNode, qd.msgs.Return_type_annotation_circularly_references_itself);
           else if (noImplicitAny) {
-            const declaration = <Declaration>this.declaration;
+            const declaration = <qt.Declaration>this.declaration;
             const name = this.declaration.nameOf(declaration);
             if (name) {
               error(
@@ -1284,7 +1284,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
   sourceMapPath?: string;
   sourceMapText?: string;
   syntheticReferences?: readonly qt.UnparsedSyntheticReference[];
-  texts: readonly UnparsedSourceText[];
+  texts: readonly qt.UnparsedSourceText[];
   oldFileOfCurrentEmit?: boolean;
   parsedSourceMap?: qt.RawSourceMap | false | undefined;
   lineAndCharOf(pos: number): LineAndChar;
@@ -1377,7 +1377,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     let referencedFiles: qc.FileReference[] | undefined;
     let typeReferenceDirectives: string[] | undefined;
     let libReferenceDirectives: qc.FileReference[] | undefined;
-    let texts: UnparsedSourceText[] | undefined;
+    let texts: qt.UnparsedSourceText[] | undefined;
     for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Prologue:

@@ -155,9 +155,9 @@ interface CompilerHostLikeForCache {
   readFile(fileName: string, encoding?: string): string | undefined;
   directoryExists?(directory: string): boolean;
   createDirectory?(directory: string): void;
-  writeFile?: WriteFileCallback;
+  writeFile?: qt.WriteFileCallback;
 }
-export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: qt.CompilerHost['getSourceFile']) {
+export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => qt.Path, getSourceFile?: qt.CompilerHost['getSourceFile']) {
   const originalReadFile = host.readFile;
   const originalFileExists = host.fileExists;
   const originalDirectoryExists = host.directoryExists;
@@ -173,7 +173,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     if (value !== undefined) return value !== false ? value : undefined;
     return setReadFileCache(key, fileName);
   };
-  const setReadFileCache = (key: Path, fileName: string) => {
+  const setReadFileCache = (key: qt.Path, fileName: string) => {
     const newValue = originalReadFile.call(host, fileName);
     readFileCache.set(key, newValue !== undefined ? newValue : false);
     return newValue;
@@ -444,9 +444,9 @@ export function isProgramUptoDate(
   program: qt.Program | undefined,
   rootFileNames: string[],
   newOpts: qt.CompilerOpts,
-  getSourceVersion: (path: Path, fileName: string) => string | undefined,
+  getSourceVersion: (path: qt.Path, fileName: string) => string | undefined,
   fileExists: (fileName: string) => boolean,
-  hasInvalidatedResolution: HasInvalidatedResolution,
+  hasInvalidatedResolution: qt.HasInvalidatedResolution,
   hasChangedAutomaticTypeDirectiveNames: boolean,
   projectReferences: readonly qt.ProjectReference[] | undefined
 ): boolean {
@@ -581,12 +581,12 @@ export function createProgram(
   let sourceFileToPackageName = createMap<string>();
   let redirectTargetsMap = new MultiMap<string>();
   const filesByName = createMap<qt.SourceFile | false | undefined>();
-  let missingFilePaths: readonly Path[] | undefined;
+  let missingFilePaths: readonly qt.Path[] | undefined;
   const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createMap<qt.SourceFile>() : undefined;
   let resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined;
   let projectReferenceRedirects: Map<qt.ResolvedProjectReference | false> | undefined;
-  let mapFromFileToProjectReferenceRedirects: Map<Path> | undefined;
-  let mapFromToProjectReferenceRedirectSource: Map<SourceOfProjectReferenceRedirect> | undefined;
+  let mapFromFileToProjectReferenceRedirects: Map<qt.Path> | undefined;
+  let mapFromToProjectReferenceRedirectSource: Map<qt.SourceOfProjectReferenceRedirect> | undefined;
   const useSourceOfProjectReferenceRedirect = !!host.useSourceOfProjectReferenceRedirect?.() && !opts.disableSourceOfProjectReferenceRedirect;
   const { onProgramCreateComplete, fileExists } = updateHostForUseSourceOfProjectReferenceRedirect({
     compilerHost: host,
@@ -650,7 +650,7 @@ export function createProgram(
         });
       }
     }
-    missingFilePaths = arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as Path) : undefined)));
+    missingFilePaths = arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as qt.Path) : undefined)));
     files = stableSort(processingDefaultLibFiles, compareDefaultLibFiles).concat(processingOtherFiles);
     processingDefaultLibFiles = undefined;
     processingOtherFiles = undefined;
@@ -759,7 +759,7 @@ export function createProgram(
   function getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): qt.ResolvedModuleWithFailedLookupLocations | undefined {
     return moduleResolutionCache && resolveModuleNameFromCache(moduleName, containingFile, moduleResolutionCache);
   }
-  function toPath(fileName: string): Path {
+  function toPath(fileName: string): qt.Path {
     return qnr.toPath(fileName, currentDirectory, getCanonicalFileName);
   }
   function getCommonSourceDirectory() {
@@ -1024,7 +1024,7 @@ export function createProgram(
     redirectTargetsMap = oldProgram.redirectTargetsMap;
     return (oldProgram.structureIsReused = StructureIsReused.Completely);
   }
-  function getEmitHost(writeFileCallback?: WriteFileCallback): qt.EmitHost {
+  function getEmitHost(writeFileCallback?: qt.WriteFileCallback): qt.EmitHost {
     return {
       getPrependNodes,
       getCanonicalFileName,
@@ -1056,7 +1056,7 @@ export function createProgram(
       redirectTargetsMap,
     };
   }
-  function emitBuildInfo(writeFileCallback?: WriteFileCallback): qt.EmitResult {
+  function emitBuildInfo(writeFileCallback?: qt.WriteFileCallback): qt.EmitResult {
     assert(!opts.out && !opts.outFile);
     performance.mark('beforeEmit');
     const emitResult = emitFiles(notImplementedResolver, getEmitHost(writeFileCallback), undefined, noTransformers, false, true);
@@ -1102,7 +1102,7 @@ export function createProgram(
   }
   function emit(
     sourceFile?: qt.SourceFile,
-    writeFileCallback?: WriteFileCallback,
+    writeFileCallback?: qt.WriteFileCallback,
     cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
     transformers?: qt.CustomTransformers,
@@ -1116,7 +1116,7 @@ export function createProgram(
   function emitWorker(
     program: qt.Program,
     sourceFile: qt.SourceFile | undefined,
-    writeFileCallback: WriteFileCallback | undefined,
+    writeFileCallback: qt.WriteFileCallback | undefined,
     cancellationToken: qt.CancellationToken | undefined,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers,
@@ -1136,7 +1136,7 @@ export function createProgram(
   function getSourceFile(fileName: string): qt.SourceFile | undefined {
     return getSourceFileByPath(toPath(fileName));
   }
-  function getSourceFileByPath(path: Path): qt.SourceFile | undefined {
+  function getSourceFileByPath(path: qt.Path): qt.SourceFile | undefined {
     return filesByName.get(path) || undefined;
   }
   function getDiagnosticsHelper<T extends Diagnostic>(
@@ -1279,7 +1279,7 @@ export function createProgram(
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
           case Syntax.VariableDeclaration:
-            if ((<FunctionLikeDeclaration | qt.VariableDeclaration | qt.ParamDeclaration | qt.PropertyDeclaration>parent).type === node) {
+            if ((<qt.FunctionLikeDeclaration | qt.VariableDeclaration | qt.ParamDeclaration | qt.PropertyDeclaration>parent).type === node) {
               diagnostics.push(qf.create.diagnosticForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1359,7 +1359,7 @@ export function createProgram(
           case Syntax.FunctionExpression:
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
-            if (nodes === (<DeclarationWithTypeParamChildren>parent).typeParams) {
+            if (nodes === (<qt.DeclarationWithTypeParamChildren>parent).typeParams) {
               diagnostics.push(qf.create.diagnosticForNodes(nodes, qd.Type_param_declarations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1484,7 +1484,7 @@ export function createProgram(
   function fileReferenceIsEqualTo(a: qt.FileReference, b: qt.FileReference): boolean {
     return a.fileName === b.fileName;
   }
-  function moduleNameIsEqualTo(a: StringLiteralLike | qt.Identifier, b: StringLiteralLike | qt.Identifier): boolean {
+  function moduleNameIsEqualTo(a: qt.StringLiteralLike | qt.Identifier, b: qt.StringLiteralLike | qt.Identifier): boolean {
     return a.kind === Syntax.Identifier ? b.kind === Syntax.Identifier && a.escapedText === b.escapedText : b.kind === Syntax.StringLiteral && a.text === b.text;
   }
   function collectExternalModuleReferences(file: qt.SourceFile): void {
@@ -1493,7 +1493,7 @@ export function createProgram(
     }
     const isJavaScriptFile = file.isJS();
     const isExternalModuleFile = qf.is.externalModule(file);
-    let imports: StringLiteralLike[] | undefined;
+    let imports: qt.StringLiteralLike[] | undefined;
     let moduleAugmentations: (StringLiteral | qt.Identifier)[] | undefined;
     let ambientModules: string[] | undefined;
     if (opts.importHelpers && (opts.isolatedModules || isExternalModuleFile) && !file.isDeclarationFile) {
@@ -1514,7 +1514,7 @@ export function createProgram(
     file.moduleAugmentations = moduleAugmentations || emptyArray;
     file.ambientModuleNames = ambientModules || emptyArray;
     return;
-    function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
+    function collectModuleReferences(node: qt.Statement, inAmbientModule: boolean): void {
       if (qf.is.anyImportOrReExport(node)) {
         const moduleNameExpr = qf.get.externalModuleName(node);
         if (moduleNameExpr && qf.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
@@ -1546,7 +1546,7 @@ export function createProgram(
         if (qf.is.requireCall(node, true)) {
           imports = append(imports, node.args[0]);
         } else if (qf.is.importCall(node) && node.args.length === 1 && qf.is.stringLiteralLike(node.args[0])) {
-          imports = append(imports, node.args[0] as StringLiteralLike);
+          imports = append(imports, node.args[0] as qt.StringLiteralLike);
         } else if (qf.is.literalImportTyping(node)) {
           imports = append(imports, node.arg.literal);
         }
@@ -1633,7 +1633,7 @@ export function createProgram(
         : createRefFileDiagnostic(refFile, qd.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
     );
   }
-  function createRedirectSourceFile(redirectTarget: qt.SourceFile, unredirected: qt.SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): qt.SourceFile {
+  function createRedirectSourceFile(redirectTarget: qt.SourceFile, unredirected: qt.SourceFile, fileName: string, path: qt.Path, resolvedPath: qt.Path, originalFileName: string): qt.SourceFile {
     const redirect: qt.SourceFile = Object.create(redirectTarget);
     redirect.fileName = fileName;
     redirect.path = path;
@@ -1661,7 +1661,7 @@ export function createProgram(
     });
     return redirect;
   }
-  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: qt.RefFile | undefined, packageId: qt.PackageId | undefined): qt.SourceFile | undefined {
+  function findSourceFile(fileName: string, path: qt.Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: qt.RefFile | undefined, packageId: qt.PackageId | undefined): qt.SourceFile | undefined {
     if (useSourceOfProjectReferenceRedirect) {
       let source = getSourceOfProjectReferenceRedirect(fileName);
       if (!source && host.realpath && opts.preserveSymlinks && isDeclarationFileName(fileName) && qu.stringContains(fileName, nodeModulesPathPart)) {
@@ -1709,7 +1709,7 @@ export function createProgram(
       }
       return file || undefined;
     }
-    let redirectedPath: Path | undefined;
+    let redirectedPath: qt.Path | undefined;
     if (refFile && !useSourceOfProjectReferenceRedirect) {
       const redirectProject = getProjectReferenceRedirectProject(fileName);
       if (redirectProject) {
@@ -1786,7 +1786,7 @@ export function createProgram(
       });
     }
   }
-  function addFileToFilesByName(file: qt.SourceFile | undefined, path: Path, redirectedPath: Path | undefined) {
+  function addFileToFilesByName(file: qt.SourceFile | undefined, path: qt.Path, redirectedPath: qt.Path | undefined) {
     if (redirectedPath) {
       filesByName.set(redirectedPath, file);
       filesByName.set(path, file || false);
@@ -1820,7 +1820,7 @@ export function createProgram(
     const referencedProjectPath = mapFromFileToProjectReferenceRedirects.get(toPath(fileName));
     return referencedProjectPath && getResolvedProjectReferenceByPath(referencedProjectPath);
   }
-  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined {
+  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: qt.Path) => T | undefined): T | undefined {
     return forEachProjectReference(projectReferences, resolvedProjectReferences, (resolvedRef, index, parent) => {
       const ref = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
       const resolvedRefPath = toPath(resolveProjectReferencePath(ref));
@@ -1884,7 +1884,7 @@ export function createProgram(
       });
     }
   }
-  function getResolvedProjectReferenceByPath(projectReferencePath: Path): qt.ResolvedProjectReference | undefined {
+  function getResolvedProjectReferenceByPath(projectReferencePath: qt.Path): qt.ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
       return;
     }
@@ -2486,7 +2486,7 @@ export function createProgram(
     if (opts.outDir) return containsPath(opts.outDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames());
     if (fileExtensionIsOneOf(filePath, supportedJSExtensions) || fileExtensionIs(filePath, Extension.Dts)) {
       const filePathWithoutExtension = removeFileExtension(filePath);
-      return !!getSourceFileByPath((filePathWithoutExtension + Extension.Ts) as Path) || !!getSourceFileByPath((filePathWithoutExtension + Extension.Tsx) as Path);
+      return !!getSourceFileByPath((filePathWithoutExtension + Extension.Ts) as qt.Path) || !!getSourceFileByPath((filePathWithoutExtension + Extension.Tsx) as qt.Path);
     }
     return false;
   }
@@ -2500,15 +2500,15 @@ export function createProgram(
 }
 interface SymlinkedDirectory {
   real: string;
-  realPath: Path;
+  realPath: qt.Path;
 }
 interface HostForUseSourceOfProjectReferenceRedirect {
   compilerHost: qt.CompilerHost;
   useSourceOfProjectReferenceRedirect: boolean;
-  toPath(fileName: string): Path;
+  toPath(fileName: string): qt.Path;
   getResolvedProjectReferences(): readonly (ResolvedProjectReference | undefined)[] | undefined;
-  getSourceOfProjectReferenceRedirect(fileName: string): SourceOfProjectReferenceRedirect | undefined;
-  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
+  getSourceOfProjectReferenceRedirect(fileName: string): qt.SourceOfProjectReferenceRedirect | undefined;
+  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: qt.ResolvedProjectReference | undefined, resolvedProjectReferencePath: qt.Path) => T | undefined): T | undefined;
 }
 function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSourceOfProjectReferenceRedirect) {
   let mapOfDeclarationDirectories: Map<true> | undefined;
@@ -2583,7 +2583,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     const directoryPath = ensureTrailingDirectorySeparator(host.toPath(directory));
     if (symlinkedDirectories.has(directoryPath)) return;
     const real = normalizePath(originalRealpath.call(host.compilerHost, directory));
-    let realPath: Path;
+    let realPath: qt.Path;
     if (real === directory || (realPath = ensureTrailingDirectorySeparator(host.toPath(real))) === directoryPath) {
       symlinkedDirectories.set(directoryPath, false);
       return;
@@ -2676,9 +2676,9 @@ export function createPrependNodes(
   }
   return nodes || emptyArray;
 }
-export function resolveProjectReferencePath(ref: qt.ProjectReference): ResolvedConfigFileName;
-export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: qt.ProjectReference): ResolvedConfigFileName;
-export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | qt.ProjectReference, ref?: qt.ProjectReference): ResolvedConfigFileName {
+export function resolveProjectReferencePath(ref: qt.ProjectReference): qt.ResolvedConfigFileName;
+export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: qt.ProjectReference): qt.ResolvedConfigFileName;
+export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | qt.ProjectReference, ref?: qt.ProjectReference): qt.ResolvedConfigFileName {
   const passedInRef = ref ? ref : (hostOrRef as qt.ProjectReference);
   return resolveConfigFileProjectName(passedInRef.path);
 }

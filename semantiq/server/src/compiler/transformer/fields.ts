@@ -28,8 +28,8 @@ export function transformClassFields(context: qt.TrafoContext) {
   context.onSubstituteNode = onSubstituteNode;
   let enabledSubstitutions: ClassPropertySubstitutionFlags;
   let classAliases: qt.Identifier[];
-  let pendingExpressions: Expression[] | undefined;
-  let pendingStatements: Statement[] | undefined;
+  let pendingExpressions: qt.Expression[] | undefined;
+  let pendingStatements: qt.Statement[] | undefined;
   const privateIdentifierEnvironmentStack: (PrivateIdentifierEnvironment | undefined)[] = [];
   let currentPrivateIdentifierEnvironment: PrivateIdentifierEnvironment | undefined;
   return chainBundle(transformSourceFile);
@@ -45,7 +45,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     switch (node.kind) {
       case Syntax.ClassExpression:
       case Syntax.ClassDeclaration:
-        return visitClassLike(node as ClassLikeDeclaration);
+        return visitClassLike(node as qt.ClassLikeDeclaration);
       case Syntax.PropertyDeclaration:
         return visitPropertyDeclaration(node as qt.PropertyDeclaration);
       case Syntax.VariableStatement:
@@ -84,7 +84,7 @@ export function transformClassFields(context: qt.TrafoContext) {
   }
   function visitPrivateIdentifier(node: qt.PrivateIdentifier) {
     if (!shouldTransformPrivateFields) return node;
-    return new qt.Identifier('').setOriginal(node);
+    return new qc.Identifier('').setOriginal(node);
   }
   function classElemVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
@@ -132,7 +132,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return;
   }
-  function createPrivateIdentifierAccess(info: PrivateIdentifierInfo, receiver: Expression): Expression {
+  function createPrivateIdentifierAccess(info: PrivateIdentifierInfo, receiver: qt.Expression): qt.Expression {
     receiver = visitNode(receiver, visitor, isExpression);
     switch (info.placement) {
       case PrivateIdentifierPlacement.InstanceField:
@@ -157,7 +157,7 @@ export function transformClassFields(context: qt.TrafoContext) {
         const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
         const existingValue = new qc.PrefixUnaryExpression(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
         return setOriginalNode(
-          createPrivateIdentifierAssignment(info, initializeExpression || readExpression, new qt.BinaryExpression(existingValue, operator, qc.asLiteral(1)), Syntax.EqualsToken),
+          createPrivateIdentifierAssignment(info, initializeExpression || readExpression, new qc.BinaryExpression(existingValue, operator, qc.asLiteral(1)), Syntax.EqualsToken),
           node
         );
       }
@@ -175,11 +175,11 @@ export function transformClassFields(context: qt.TrafoContext) {
         const returnValue = valueIsDiscarded ? undefined : createTempVariable(hoistVariableDeclaration);
         return setOriginalNode(
           inlineExpressions(
-            compact<Expression>([
+            compact<qt.Expression>([
               createPrivateIdentifierAssignment(
                 info,
                 initializeExpression || readExpression,
-                new qt.BinaryExpression(returnValue ? qf.create.assignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
+                new qc.BinaryExpression(returnValue ? qf.create.assignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
                 Syntax.EqualsToken
               ),
               returnValue,
@@ -207,7 +207,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     if (node.expression.kind === Syntax.PostfixUnaryExpression) return node.update(visitPostfixUnaryExpression(node.expression, true));
     return visitEachChild(node, visitor, context);
   }
-  function createCopiableReceiverExpr(receiver: Expression): { readExpression: Expression; initializeExpression: Expression | undefined } {
+  function createCopiableReceiverExpr(receiver: qt.Expression): { readExpression: qt.Expression; initializeExpression: qt.Expression | undefined } {
     const clone = isSynthesized(receiver) ? receiver : getSynthesizedClone(receiver);
     if (isSimpleInlineableExpression(receiver)) return { readExpression: clone, initializeExpression: undefined };
     const readExpression = createTempVariable(hoistVariableDeclaration);
@@ -248,7 +248,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function createPrivateIdentifierAssignment(info: PrivateIdentifierInfo, receiver: Expression, right: Expression, operator: qt.AssignmentOperator) {
+  function createPrivateIdentifierAssignment(info: PrivateIdentifierInfo, receiver: qt.Expression, right: qt.Expression, operator: qt.AssignmentOperator) {
     switch (info.placement) {
       case PrivateIdentifierPlacement.InstanceField: {
         return createPrivateIdentifierInstanceFieldAssignment(info, receiver, right, operator);
@@ -257,7 +257,7 @@ export function transformClassFields(context: qt.TrafoContext) {
         return fail('Unexpected private identifier placement');
     }
   }
-  function createPrivateIdentifierInstanceFieldAssignment(info: PrivateIdentifierInstanceField, receiver: Expression, right: Expression, operator: qt.AssignmentOperator) {
+  function createPrivateIdentifierInstanceFieldAssignment(info: PrivateIdentifierInstanceField, receiver: qt.Expression, right: qt.Expression, operator: qt.AssignmentOperator) {
     receiver = visitNode(receiver, visitor, isExpression);
     right = visitNode(right, visitor, isExpression);
     if (isCompoundAssignment(operator)) {
@@ -266,12 +266,12 @@ export function transformClassFields(context: qt.TrafoContext) {
         context,
         initializeExpression || readExpression,
         info.weakMapName,
-        new qt.BinaryExpression(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
+        new qc.BinaryExpression(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
       );
     }
     return createClassPrivateFieldSetHelper(context, receiver, info.weakMapName, right);
   }
-  function visitClassLike(node: ClassLikeDeclaration) {
+  function visitClassLike(node: qt.ClassLikeDeclaration) {
     const savedPendingExpressions = pendingExpressions;
     pendingExpressions = undefined;
     if (shouldTransformPrivateFields) {
@@ -291,7 +291,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
     const extendsClauseElem = qf.get.effectiveBaseTypeNode(node);
     const isDerivedClass = !!(extendsClauseElem && qf.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword);
-    const statements: Statement[] = [
+    const statements: qt.Statement[] = [
       node.update(undefined, node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass)),
     ];
     if (some(pendingExpressions)) {
@@ -303,7 +303,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return statements;
   }
-  function visitClassExpression(node: qt.ClassExpression): Expression {
+  function visitClassExpression(node: qt.ClassExpression): qt.Expression {
     if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
     const isDecoratedClassDeclaration = qf.get.originalOf(node).kind === Syntax.ClassDeclaration;
     const staticProperties = getProperties(node, true);
@@ -321,7 +321,7 @@ export function transformClassFields(context: qt.TrafoContext) {
         }
         return classExpression;
       } else {
-        const expressions: Expression[] = [];
+        const expressions: qt.Expression[] = [];
         const isClassWithConstructorReference = resolver.getNodeCheckFlags(node) & NodeCheckFlags.ClassWithConstructorReference;
         const temp = createTempVariable(hoistVariableDeclaration, !!isClassWithConstructorReference);
         if (isClassWithConstructorReference) {
@@ -377,9 +377,9 @@ export function transformClassFields(context: qt.TrafoContext) {
     if (!constructor && !some(properties)) return visitFunctionBody(undefined, visitor, context);
     resumeLexicalEnvironment();
     let indexOfFirstStatement = 0;
-    let statements: Statement[] = [];
+    let statements: qt.Statement[] = [];
     if (!constructor && isDerivedClass) {
-      statements.push(new qc.ExpressionStatement(new qc.CallExpression(new qc.SuperExpression(), undefined, [new qc.SpreadElem(new qt.Identifier('args'))])));
+      statements.push(new qc.ExpressionStatement(new qc.CallExpression(new qc.SuperExpression(), undefined, [new qc.SpreadElem(new qc.Identifier('args'))])));
     }
     if (constructor) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
@@ -401,9 +401,9 @@ export function transformClassFields(context: qt.TrafoContext) {
       qu.addRange(statements, Nodes.visit(constructor.body!.statements, visitor, qf.is.statement, indexOfFirstStatement));
     }
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-    return new qt.Block(new Nodes(statements).setRange(constructor ? constructor.body!.statements : node.members), true).setRange(constructor ? constructor.body : undefined);
+    return new qc.Block(new Nodes(statements).setRange(constructor ? constructor.body!.statements : node.members), true).setRange(constructor ? constructor.body : undefined);
   }
-  function addPropertyStatements(statements: Statement[], properties: readonly qt.PropertyDeclaration[], receiver: LeftExpression) {
+  function addPropertyStatements(statements: qt.Statement[], properties: readonly qt.PropertyDeclaration[], receiver: qt.LeftExpression) {
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
       if (!expression) continue;
@@ -414,8 +414,8 @@ export function transformClassFields(context: qt.TrafoContext) {
       statements.push(statement);
     }
   }
-  function generateInitializedPropertyExpressions(properties: readonly qt.PropertyDeclaration[], receiver: LeftExpression) {
-    const expressions: Expression[] = [];
+  function generateInitializedPropertyExpressions(properties: readonly qt.PropertyDeclaration[], receiver: qt.LeftExpression) {
+    const expressions: qt.Expression[] = [];
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
       if (!expression) continue;
@@ -427,7 +427,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return expressions;
   }
-  function transformProperty(property: qt.PropertyDeclaration, receiver: LeftExpression) {
+  function transformProperty(property: qt.PropertyDeclaration, receiver: qt.LeftExpression) {
     const emitAssignment = !context.getCompilerOpts().useDefineForClassFields;
     const propertyName =
       property.name.kind === Syntax.ComputedPropertyName && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(qf.get.generatedNameForNode(property.name)) : property.name;
@@ -479,20 +479,20 @@ export function transformClassFields(context: qt.TrafoContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression) return substituteExpression(node as Expression);
+    if (hint === EmitHint.Expression) return substituteExpression(node as qt.Expression);
     return node;
   }
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case Syntax.Identifier:
         return substituteExpressionIdentifier(node as qt.Identifier);
     }
     return node;
   }
-  function substituteExpressionIdentifier(node: qt.Identifier): Expression {
+  function substituteExpressionIdentifier(node: qt.Identifier): qt.Expression {
     return trySubstituteClassAlias(node) || node;
   }
-  function trySubstituteClassAlias(node: qt.Identifier): Expression | undefined {
+  function trySubstituteClassAlias(node: qt.Identifier): qt.Expression | undefined {
     if (enabledSubstitutions & ClassPropertySubstitutionFlags.ClassAliases) {
       if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ConstructorReferenceInClass) {
         const declaration = resolver.getReferencedValueDeclaration(node);
@@ -509,7 +509,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return;
   }
-  function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
+  function getPropertyNameExpressionIfNeeded(name: qt.PropertyName, shouldHoist: boolean): qt.Expression | undefined {
     if (name.kind === Syntax.ComputedPropertyName) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = qf.skip.partiallyEmittedExpressions(expression);
@@ -539,7 +539,7 @@ export function transformClassFields(context: qt.TrafoContext) {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });
-    (pendingExpressions || (pendingExpressions = [])).push(qf.create.assignment(weakMapName, new qc.NewExpression(new qt.Identifier('WeakMap'), undefined, [])));
+    (pendingExpressions || (pendingExpressions = [])).push(qf.create.assignment(weakMapName, new qc.NewExpression(new qc.Identifier('WeakMap'), undefined, [])));
   }
   function accessPrivateIdentifier(name: qt.PrivateIdentifier) {
     if (currentPrivateIdentifierEnvironment) {
@@ -564,7 +564,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     if (qf.is.thisProperty(node) || qf.is.superProperty(node) || !isSimpleCopiableExpression(node.expression)) {
       receiver = createTempVariable(hoistVariableDeclaration);
       (receiver as qt.Identifier).autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
-      (pendingExpressions || (pendingExpressions = [])).push(new qt.BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
+      (pendingExpressions || (pendingExpressions = [])).push(new qc.BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
     }
     return new qc.PropertyAccessExpression(
       new qc.ParenthesizedExpression(
@@ -574,7 +574,7 @@ export function transformClassFields(context: qt.TrafoContext) {
             undefined,
             'value',
             [new qc.ParamDeclaration(undefined, undefined, undefined, undefined)],
-            new qt.Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, param, Syntax.EqualsToken))])
+            new qc.Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, param, Syntax.EqualsToken))])
           ),
         ])
       ),
@@ -591,7 +591,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     }
     return visitNode(node, visitorDestructuringTarget);
   }
-  function visitObjectAssignmentTarget(node: ObjectLiteralElemLike) {
+  function visitObjectAssignmentTarget(node: qt.ObjectLiteralElemLike) {
     if (node.kind === Syntax.PropertyAssignment) {
       const target = getTargetOfBindingOrAssignmentElem(node);
       if (target && qf.is.privateIdentifierPropertyAccessExpression(target)) {
@@ -608,7 +608,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     return node.update(Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElemLike));
   }
 }
-function createPrivateInstanceFieldIniter(receiver: LeftExpression, initer: Expression | undefined, weakMapName: qt.Identifier) {
+function createPrivateInstanceFieldIniter(receiver: qt.LeftExpression, initer: qt.Expression | undefined, weakMapName: qt.Identifier) {
   return new qc.CallExpression(new qc.PropertyAccessExpression(weakMapName, 'set'), undefined, [receiver, initer || qc.VoidExpression.zero()]);
 }
 export const classPrivateFieldGetHelper: qt.UnscopedEmitHelper = {
@@ -622,7 +622,7 @@ export const classPrivateFieldGetHelper: qt.UnscopedEmitHelper = {
                 return privateMap.get(receiver);
             };`,
 };
-function createClassPrivateFieldGetHelper(context: qt.TrafoContext, receiver: Expression, privateField: qt.Identifier) {
+function createClassPrivateFieldGetHelper(context: qt.TrafoContext, receiver: qt.Expression, privateField: qt.Identifier) {
   context.requestEmitHelper(classPrivateFieldGetHelper);
   return new qc.CallExpression(getUnscopedHelperName('__classPrivateFieldGet'), undefined, [receiver, privateField]);
 }
@@ -638,7 +638,7 @@ export const classPrivateFieldSetHelper: qt.UnscopedEmitHelper = {
                 return value;
             };`,
 };
-function createClassPrivateFieldSetHelper(context: qt.TrafoContext, receiver: Expression, privateField: qt.Identifier, value: Expression) {
+function createClassPrivateFieldSetHelper(context: qt.TrafoContext, receiver: qt.Expression, privateField: qt.Identifier, value: qt.Expression) {
   context.requestEmitHelper(classPrivateFieldSetHelper);
   return new qc.CallExpression(getUnscopedHelperName('__classPrivateFieldSet'), undefined, [receiver, privateField, value]);
 }

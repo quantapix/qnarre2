@@ -736,7 +736,7 @@ function create() {
       if (s >= 0) r.trailingComma = true;
       return r;
     }
-    parseJsxChildren(tag: qt.JsxOpeningElem | qt.JsxOpeningFragment): Nodes<JsxChild> {
+    parseJsxChildren(tag: qt.JsxOpeningElem | qt.JsxOpeningFragment): Nodes<qt.JsxChild> {
       const list = [];
       const listPos = getNodePos();
       const o = this.value;
@@ -1180,7 +1180,7 @@ function create() {
       const p = getNodePos();
       if (tok() === Syntax.EndOfFileToken) {
         source.statements = create.nodes([], p, p);
-        source.endOfFileToken = parse.tokenNode<EndOfFileToken>();
+        source.endOfFileToken = parse.tokenNode<qt.EndOfFileToken>();
       } else {
         const n = create.node(Syntax.ExpressionStatement) as qt.JsonObjectExpressionStatement;
         switch (tok()) {
@@ -2155,10 +2155,10 @@ function create() {
           return this.updateExpression();
       }
     }
-    updateExpression(): UpdateExpression {
+    updateExpression(): qt.UpdateExpression {
       if (tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) {
         const n = create.node(Syntax.PrefixUnaryExpression);
-        n.operator = <PrefixUnaryOperator>tok();
+        n.operator = <qt.PrefixUnaryOperator>tok();
         next.tok();
         n.operand = this.leftHandSideExpressionOrHigher();
         return finishNode(n);
@@ -2170,7 +2170,7 @@ function create() {
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
-        n.operator = <PostfixUnaryOperator>tok();
+        n.operator = <qt.PostfixUnaryOperator>tok();
         next.tok();
         return finishNode(n);
       }
@@ -2181,7 +2181,7 @@ function create() {
       if (tok() === Syntax.ImportKeyword) {
         if (lookAhead(next.isOpenParenOrLessThan)) {
           source.flags |= NodeFlags.PossiblyContainsDynamicImport;
-          expression = this.tokenNode<PrimaryExpression>();
+          expression = this.tokenNode<qt.PrimaryExpression>();
         } else if (lookAhead(next.isDot)) {
           const fullStart = scanner.getStartPos();
           next.tok();
@@ -2204,7 +2204,7 @@ function create() {
       return this.memberExpressionRest(expression, true);
     }
     superExpression(): qc.MemberExpression {
-      const expression = this.tokenNode<PrimaryExpression>();
+      const expression = this.tokenNode<qt.PrimaryExpression>();
       if (tok() === Syntax.LessThanToken) {
         const startPos = getNodePos();
         const typeArgs = tryParse(this.typeArgsInExpression);
@@ -2281,7 +2281,7 @@ function create() {
           expression = this.taggedTemplateRest(expression, questionDotToken, undefined);
           continue;
         }
-        return <MemberExpression>expression;
+        return <qt.MemberExpression>expression;
       }
     }
     taggedTemplateRest(tag: qt.LeftExpression, questionDotToken: qt.QuestionDotToken | undefined, typeArgs: Nodes<qt.Typing> | undefined) {
@@ -2359,7 +2359,7 @@ function create() {
         case Syntax.NullKeyword:
         case Syntax.TrueKeyword:
         case Syntax.FalseKeyword:
-          return this.tokenNode<PrimaryExpression>();
+          return this.tokenNode<qt.PrimaryExpression>();
         case Syntax.OpenParenToken:
           return this.parenthesizedExpression();
         case Syntax.OpenBracketToken:
@@ -2522,7 +2522,7 @@ function create() {
             addRelatedInfo(e, qf.create.fileDiagnostic(source, openBracePosition, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
           }
         }
-      } else n.statements = create.missingList<Statement>();
+      } else n.statements = create.missingList<qt.Statement>();
       return finishNode(n);
     }
     functionBlock(f: SignatureFlags, m?: qd.Message): qt.Block {
@@ -2830,7 +2830,7 @@ function create() {
           }
         default:
           if (n.decorators || n.modifiers) {
-            const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, qd.msgs.Declaration_expected);
+            const missing = create.missingNode<qt.Statement>(Syntax.MissingDeclaration, true, qd.msgs.Declaration_expected);
             missing.pos = n.pos;
             missing.decorators = n.decorators;
             missing.modifiers = n.modifiers;
@@ -3069,10 +3069,10 @@ function create() {
     classExpression(): qc.ClassExpression {
       return <qt.ClassExpression>this.classDeclarationOrExpression(create.nodeWithDoc(Syntax.Unknown), Syntax.ClassExpression);
     }
-    classDeclaration(n: ClassLikeDeclaration): qt.ClassDeclaration {
+    classDeclaration(n: qt.ClassLikeDeclaration): qt.ClassDeclaration {
       return <qt.ClassDeclaration>this.classDeclarationOrExpression(n, Syntax.ClassDeclaration);
     }
-    classDeclarationOrExpression(n: ClassLikeDeclaration, kind: ClassLikeDeclaration['kind']): ClassLikeDeclaration {
+    classDeclarationOrExpression(n: qt.ClassLikeDeclaration, kind: qt.ClassLikeDeclaration['kind']): qt.ClassLikeDeclaration {
       n.kind = kind;
       this.expected(Syntax.ClassKeyword);
       n.name = this.nameOfClassDeclarationOrExpression();
@@ -3152,7 +3152,7 @@ function create() {
       if (this.expected(Syntax.OpenBraceToken)) {
         n.statements = ctx.parseList(Context.BlockStatements, this.statement);
         this.expected(Syntax.CloseBraceToken);
-      } else n.statements = create.missingList<Statement>();
+      } else n.statements = create.missingList<qt.Statement>();
       return finishNode(n);
     }
     moduleOrNamespaceDeclaration(n: qt.ModuleDeclaration, flags: NodeFlags): qt.ModuleDeclaration {
@@ -3266,7 +3266,7 @@ function create() {
     }
     namedImportsOrExports(kind: Syntax.NamedImports): qt.NamedImports;
     namedImportsOrExports(kind: Syntax.NamedExports): qt.NamedExports;
-    namedImportsOrExports(kind: Syntax): NamedImportsOrExports {
+    namedImportsOrExports(kind: Syntax): qt.NamedImportsOrExports {
       const n = create.node(kind);
       n.elems = <Nodes<qt.ImportSpecifier> | Nodes<qt.ExportSpecifier>>(
         ctx.parseBracketedList(Context.ImportOrExportSpecifiers, kind === Syntax.NamedImports ? this.importSpecifier : this.exportSpecifier, Syntax.OpenBraceToken, Syntax.CloseBraceToken)
@@ -3279,7 +3279,7 @@ function create() {
     importSpecifier() {
       return this.importOrExportSpecifier(Syntax.ImportSpecifier);
     }
-    importOrExportSpecifier(kind: Syntax): ImportOrExportSpecifier {
+    importOrExportSpecifier(kind: Syntax): qt.ImportOrExportSpecifier {
       const n = create.node(kind);
       let checkIdentifierIsKeyword = qy.is.keyword(tok()) && !is.identifier();
       let checkIdentifierStart = scanner.getTokenPos();
@@ -3383,13 +3383,13 @@ function create() {
         n.opening = opening;
         n.children = ctx.parseJsxChildren(n.opening);
         n.closing = this.closing(inExpressionContext);
-        const tagNamesEq = (a: JsxTagNameExpression, b: JsxTagNameExpression): boolean => {
+        const tagNamesEq = (a: qt.JsxTagNameExpression, b: qt.JsxTagNameExpression): boolean => {
           if (a.kind !== b.kind) return false;
           if (a.kind === Syntax.Identifier) return a.escapedText === (<qc.Identifier>b).escapedText;
           if (a.kind === Syntax.ThisKeyword) return true;
           return (
             (a as qt.PropertyAccessExpression).name.escapedText === (b as qt.PropertyAccessExpression).name.escapedText &&
-            tagNamesEq(a.expression as JsxTagNameExpression, (b as qt.PropertyAccessExpression).expression as JsxTagNameExpression)
+            tagNamesEq(a.expression as qt.JsxTagNameExpression, (b as qt.PropertyAccessExpression).expression as qt.JsxTagNameExpression)
           );
         };
         if (!tagNamesEq(n.opening.tagName, n.closing.tagName)) {
@@ -3428,7 +3428,7 @@ function create() {
       currentToken = scanner.scanJsxToken();
       return finishNode(n);
     }
-    child(openingTag: qt.JsxOpeningElem | qt.JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
+    child(openingTag: qt.JsxOpeningElem | qt.JsxOpeningFragment, token: JsxTokenSyntax): qt.JsxChild | undefined {
       switch (token) {
         case Syntax.EndOfFileToken:
           if (openingTag.kind === Syntax.JsxOpeningFragment) {
@@ -3469,7 +3469,7 @@ function create() {
       const tagName = this.elemName();
       const typeArgs = parse.typeArgs();
       const attributes = this.attributes();
-      let n: JsxOpeningLikeElem;
+      let n: qt.JsxOpeningLikeElem;
       if (tok() === Syntax.GreaterThanToken) {
         n = create.node(Syntax.JsxOpeningElem, fullStart);
         this.scanText();
@@ -3487,9 +3487,9 @@ function create() {
       n.attributes = attributes;
       return finishNode(n);
     }
-    elemName(): JsxTagNameExpression {
+    elemName(): qt.JsxTagNameExpression {
       this.scanIdentifier();
-      let e: JsxTagNameExpression = tok() === Syntax.ThisKeyword ? parse.tokenNode<qt.ThisExpression>() : parse.identifierName();
+      let e: qt.JsxTagNameExpression = tok() === Syntax.ThisKeyword ? parse.tokenNode<qt.ThisExpression>() : parse.identifierName();
       while (parse.optional(Syntax.DotToken)) {
         const n = create.node(Syntax.PropertyAccessExpression, e.pos);
         n.expression = e;
@@ -4169,7 +4169,7 @@ function create() {
       n.typeExpression = finishNode(n2);
       return finishNode(n);
     }
-    getDocTypeAliasName(fullName: DocNamespaceBody | undefined) {
+    getDocTypeAliasName(fullName: qt.DocNamespaceBody | undefined) {
       if (fullName) {
         let rightNode = fullName;
         while (true) {
@@ -4382,7 +4382,7 @@ function create() {
             return qf.is.missing((n as qt.TypingReference).typeName);
           case Syntax.FunctionTyping:
           case Syntax.ConstructorTyping: {
-            const { params, type } = n as FunctionOrConstructorTyping;
+            const { params, type } = n as qt.FunctionOrConstructorTyping;
             const isMissingList = (ns: Nodes<Node>) => !!(ns as MissingList<Node>).isMissingList;
             return isMissingList(params) || hasArrowFunctionBlockingError(type);
           }
@@ -4440,7 +4440,7 @@ function create() {
   function reScanHeadOrNoSubstTemplate(): Syntax {
     return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
   }
-  function addDocComment<T extends HasDoc>(n: T): T {
+  function addDocComment<T extends qt.HasDoc>(n: T): T {
     qu.assert(!n.doc);
     const doc = mapDefined(qc.getDoc.commentRanges(n, source.text), (comment) => parseDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (doc.length) n.doc = doc;
@@ -4458,7 +4458,7 @@ function create() {
     };
     qf.each.childRecursively(root, bindParentToChild);
   }
-  function comment(parent: HasDoc, start: number, length: number): qt.Doc | undefined {
+  function comment(parent: qt.HasDoc, start: number, length: number): qt.Doc | undefined {
     const saveToken = currentToken;
     const saveParseDiagnosticsLength = diags.length;
     const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
@@ -4872,7 +4872,7 @@ interface PragmaContext {
   moduleName?: string;
 }
 export function processCommentPragmas(ctx: PragmaContext, sourceText: string): void {
-  const ps: PragmaPseudoMapEntry[] = [];
+  const ps: qt.PragmaPseudoMapEntry[] = [];
   for (const r of qy.get.leadingCommentRanges(sourceText, 0) || emptyArray) {
     const comment = sourceText.substring(r.pos, r.end);
     extractPragmas(ps, r, comment);
@@ -4902,7 +4902,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         const referencedFiles = c.referencedFiles;
         const typeReferenceDirectives = c.typeReferenceDirectives;
         const libReferenceDirectives = c.libReferenceDirectives;
-        forEach(toArray(entryOrList) as PragmaPseudoMap['reference'][], (arg) => {
+        forEach(toArray(entryOrList) as qt.PragmaPseudoMap['reference'][], (arg) => {
           const { types, lib, path } = arg.args;
           if (arg.args['no-default-lib']) {
             c.hasNoDefaultLib = true;
@@ -4914,7 +4914,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         break;
       }
       case 'amd-dependency': {
-        c.amdDependencies = map(toArray(entryOrList) as PragmaPseudoMap['amd-dependency'][], (x) => ({
+        c.amdDependencies = map(toArray(entryOrList) as qt.PragmaPseudoMap['amd-dependency'][], (x) => ({
           name: x.args.name,
           path: x.args.path,
         }));
@@ -4924,9 +4924,9 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         if (entryOrList instanceof Array) {
           for (const entry of entryOrList) {
             if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, qd.msgs.An_AMD_module_cannot_have_multiple_name_assignments);
-            c.moduleName = (entry as PragmaPseudoMap['amd-module']).args.name;
+            c.moduleName = (entry as qt.PragmaPseudoMap['amd-module']).args.name;
           }
-        } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).args.name;
+        } else c.moduleName = (entryOrList as qt.PragmaPseudoMap['amd-module']).args.name;
         break;
       }
       case 'ts-nocheck':
@@ -4953,10 +4953,10 @@ const namedArgRegExCache = new qu.QMap<RegExp>();
 const tripleSlashXMLCommentStartRegEx = /^\/\/\/\s*<(\S+)\s.*?\/>/im;
 const singleLinePragmaRegEx = /^\/\/\/?\s*@(\S+)\s*(.*)\s*$/im;
 const multiLinePragmaRegEx = /\s*@(\S+)\s*(.*)\s*$/gim;
-function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: qt.CommentRange, text: string) {
+function extractPragmas(pragmas: qt.PragmaPseudoMapEntry[], range: qt.CommentRange, text: string) {
   const tripleSlash = range.kind === Syntax.SingleLineCommentTrivia && tripleSlashXMLCommentStartRegEx.exec(text);
   if (tripleSlash) {
-    const name = tripleSlash[1].toLowerCase() as keyof PragmaPseudoMap;
+    const name = tripleSlash[1].toLowerCase() as keyof qt.PragmaPseudoMap;
     const pragma = commentPragmas[name] as qt.PragmaDefinition;
     if (!pragma || !(pragma.kind! & PragmaKindFlags.TripleSlashXML)) return;
     if (pragma.args) {
@@ -4982,14 +4982,14 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: qt.CommentRange,
           } else arg[arg.name] = matchResult[3];
         }
       }
-      pragmas.push({ name, args: { args: arg, range } } as PragmaPseudoMapEntry);
-    } else pragmas.push({ name, args: { args: {}, range } } as PragmaPseudoMapEntry);
+      pragmas.push({ name, args: { args: arg, range } } as qt.PragmaPseudoMapEntry);
+    } else pragmas.push({ name, args: { args: {}, range } } as qt.PragmaPseudoMapEntry);
     return;
   }
   const singleLine = range.kind === Syntax.SingleLineCommentTrivia && singleLinePragmaRegEx.exec(text);
-  const addPragmaForMatch = (ps: PragmaPseudoMapEntry[], range: qt.CommentRange, k: PragmaKindFlags, match: RegExpExecArray) => {
+  const addPragmaForMatch = (ps: qt.PragmaPseudoMapEntry[], range: qt.CommentRange, k: PragmaKindFlags, match: RegExpExecArray) => {
     if (!match) return;
-    const name = match[1].toLowerCase() as keyof PragmaPseudoMap;
+    const name = match[1].toLowerCase() as keyof qt.PragmaPseudoMap;
     const p = commentPragmas[name] as qt.PragmaDefinition;
     if (!p || !(p.kind! & k)) return;
     const getNamedPragmaArgs = (text?: string): { [i: string]: string } | 'fail' => {
@@ -5008,7 +5008,7 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: qt.CommentRange,
     const args = match[2];
     const a = getNamedPragmaArgs(args);
     if (a === 'fail') return;
-    ps.push({ name, args: { args: a, range } } as PragmaPseudoMapEntry);
+    ps.push({ name, args: { args: a, range } } as qt.PragmaPseudoMapEntry);
     return;
   };
   if (singleLine) return addPragmaForMatch(pragmas, range, PragmaKindFlags.SingleLine, singleLine);

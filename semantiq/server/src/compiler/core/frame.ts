@@ -29,8 +29,8 @@ export function newCreate(f: qt.Frame) {
           : k === Syntax.Identifier
           ? new qc.Identifier(Syntax.Identifier, pos, end)
           : k === Syntax.PrivateIdentifier
-          ? new qt.PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
-          : new qt.Token<T>(k, pos, end);
+          ? new qc.PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
+          : new qc.Token<T>(k, pos, end);
       if (parent) {
         n.parent = parent;
         n.flags = parent.flags & NodeFlags.ContextFlags;
@@ -387,7 +387,7 @@ export function newCreate(f: qt.Frame) {
       switch (property.kind) {
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
-          return createExpressionForAccessorDeclaration(n.properties, property as typeof property & { name: Exclude<PropertyName, qt.PrivateIdentifier> }, receiver, !!n.multiLine);
+          return createExpressionForAccessorDeclaration(n.properties, property as typeof property & { name: Exclude<qt.PropertyName, qt.PrivateIdentifier> }, receiver, !!n.multiLine);
         case Syntax.PropertyAssignment:
           return createExpressionForPropertyAssignment(property, receiver);
         case Syntax.ShorthandPropertyAssignment:

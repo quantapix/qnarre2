@@ -691,7 +691,7 @@ export function newIs(f: qt.Frame) {
             case Syntax.ThisTyping:
               return !!tp.isThisType;
             case Syntax.Identifier:
-              return !tp.isThisType && this.partOfTypeNode(n) && maybeTypeParamReference(n) && qf.get.typeFromTypeNodeWorker(<Typing>n) === tp;
+              return !tp.isThisType && this.partOfTypeNode(n) && maybeTypeParamReference(n) && qf.get.typeFromTypeNodeWorker(<qt.Typing>n) === tp;
             case Syntax.TypingQuery:
               return true;
           }
@@ -894,8 +894,8 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     typeRelatedTo(s: qt.Type, t: qt.Type, relation: qu.QMap<qt.RelationComparisonResult>) {
-      if (this.freshLiteralType(s)) s = (<FreshableType>s).regularType;
-      if (this.freshLiteralType(t)) t = (<FreshableType>t).regularType;
+      if (this.freshLiteralType(s)) s = (<qt.FreshableType>s).regularType;
+      if (this.freshLiteralType(t)) t = (<qt.FreshableType>t).regularType;
       if (s === t) return true;
       if (relation !== identityRelation) {
         if ((relation === comparableRelation && !(t.flags & TypeFlags.Never) && this.simpleTypeRelatedTo(t, s, relation)) || this.simpleTypeRelatedTo(s, t, relation)) return true;
@@ -1144,7 +1144,7 @@ export function newIs(f: qt.Frame) {
       if (s.flags & TypeFlags.EnumLiteral && getBaseTypeOfEnumLiteralType(<qt.LiteralType>s) === t) return true;
       return containsType(t.types, s);
     }
-    incomplete(flowType: FlowType) {
+    incomplete(flowType: qt.FlowType) {
       return flowType.flags === 0;
     }
     evolvingArrayTypeList(types: qt.Type[]) {
@@ -1618,7 +1618,7 @@ export function newIs(f: qt.Frame) {
       const setProp = qf.get.propertyOfType(objectLitType, 'set' as qu.__String);
       return !setProp;
     }
-    assignmentToReadonlyEntity(e: Expression, s: qt.Symbol, assignmentKind: AssignmentKind) {
+    assignmentToReadonlyEntity(e: qt.Expression, s: qt.Symbol, assignmentKind: AssignmentKind) {
       if (assignmentKind === AssignmentKind.None) return false;
       if (isReadonlySymbol(s)) {
         if (s.flags & qt.SymbolFlags.Property && this.accessExpression(e) && e.expression.kind === Syntax.ThisKeyword) {
@@ -1822,7 +1822,7 @@ export function newIs(f: qt.Frame) {
         (n.kind === Syntax.ElemAccessExpression && isConstantMemberAccess((<qt.ElemAccessExpression>n).expression) && this.stringLiteralLike((<qt.ElemAccessExpression>n).argExpression))
       );
     }
-    typeReferenceIdentifier(n: EntityName): boolean {
+    typeReferenceIdentifier(n: qt.EntityName): boolean {
       while (n.parent.kind === Syntax.QualifiedName) {
         n = n.parent as qt.QualifiedName;
       }
@@ -1841,13 +1841,13 @@ export function newIs(f: qt.Frame) {
         return false;
       });
     }
-    nWithinClass(n: Node, classDeclaration: ClassLikeDeclaration) {
+    nWithinClass(n: Node, classDeclaration: qt.ClassLikeDeclaration) {
       return !!forEachEnclosingClass(n, (n) => n === classDeclaration);
     }
-    inRightSideOfImportOrExportAssignment(n: EntityName) {
+    inRightSideOfImportOrExportAssignment(n: qt.EntityName) {
       return getLeftSideOfImportEqualsOrExportAssignment(n) !== undefined;
     }
-    importTypeQualifierPart(n: EntityName): qt.ImportTyping | undefined {
+    importTypeQualifierPart(n: qt.EntityName): qt.ImportTyping | undefined {
       let p = n.parent;
       while (p.kind === Syntax.QualifiedName) {
         n = p;
@@ -2055,7 +2055,7 @@ export function newHas(f: qt.Frame) {
     numericPropertyNames(t: qt.Type) {
       return qf.get.indexTypeOfType(t, IndexKind.Number) && !qf.get.indexTypeOfType(t, IndexKind.String);
     }
-    correctArity(n: CallLikeExpression, args: readonly Expression[], signature: qt.Signature, signatureHelpTrailingComma = false) {
+    correctArity(n: qt.CallLikeExpression, args: readonly qt.Expression[], signature: qt.Signature, signatureHelpTrailingComma = false) {
       let argCount: number;
       let callIsIncomplete = false;
       let effectiveParamCount = getParamCount(signature);
@@ -2066,7 +2066,7 @@ export function newHas(f: qt.Frame) {
           const lastSpan = last(n.template.templateSpans);
           callIsIncomplete = qf.is.missing(lastSpan.literal) || !!lastSpan.literal.isUnterminated;
         } else {
-          const templateLiteral = <LiteralExpression>n.template;
+          const templateLiteral = <qt.LiteralExpression>n.template;
           qu.assert(templateLiteral.kind === Syntax.NoSubstitutionLiteral);
           callIsIncomplete = !!templateLiteral.isUnterminated;
         }
@@ -2096,7 +2096,7 @@ export function newHas(f: qt.Frame) {
       }
       return true;
     }
-    correctTypeArgArity(signature: qt.Signature, typeArgs: Nodes<Typing> | undefined) {
+    correctTypeArgArity(signature: qt.Signature, typeArgs: Nodes<qt.Typing> | undefined) {
       const numTypeParams = length(signature.typeParams);
       const minTypeArgCount = getMinTypeArgCount(signature.typeParams);
       return !qu.some(typeArgs) || (typeArgs.length >= minTypeArgCount && typeArgs.length <= numTypeParams);
@@ -2129,7 +2129,7 @@ export function newHas(f: qt.Frame) {
     parseDiagnostics(sFile: qt.SourceFile): boolean {
       return sFile.parseqd.msgs.length > 0;
     }
-    sameNamedThisProperty(thisProperty: Expression, expression: qt.Expression) {
+    sameNamedThisProperty(thisProperty: qt.Expression, expression: qt.Expression) {
       return (
         thisProperty.kind === Syntax.PropertyAccessExpression &&
         thisProperty.expression.kind === Syntax.ThisKeyword &&

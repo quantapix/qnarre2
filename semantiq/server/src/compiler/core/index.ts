@@ -185,7 +185,7 @@ export namespace qt.BindingOrAssignmentElem {
     return <qt.ObjectLiteralElemLike>e;
   }
 }
-export namespace BindingOrAssignmentPattern {
+export namespace qt.BindingOrAssignmentPattern {
   export function getElemsOfBindingOrAssignmentPattern(name: qt.BindingOrAssignmentPattern): readonly qt.BindingOrAssignmentElem[] {
     switch (name.kind) {
       case Syntax.ObjectBindingPattern:

@@ -1,5 +1,5 @@
 import { dirSeparator } from './syntax';
-import { Extension, Path, ScriptKind } from './types';
+import { Extension, qt.Path, ScriptKind } from './types';
 import { qf } from './core';
 import * as qc from './core';
 import * as qd from './diags';
@@ -45,7 +45,7 @@ export function getRootLength(path: string) {
   const rootLength = qy.get.encodedRootLength(path);
   return rootLength < 0 ? ~rootLength : rootLength;
 }
-export function getDirectoryPath(path: Path): Path;
+export function getDirectoryPath(path: qt.Path): qt.Path;
 export function getDirectoryPath(path: string): string;
 export function getDirectoryPath(path: string): string {
   path = normalizeSlashes(path);
@@ -153,9 +153,9 @@ function getPathWithoutRoot(pathComponents: readonly string[]) {
 export function getNormalizedAbsolutePathWithoutRoot(fileName: string, currentDirectory: string | undefined) {
   return getPathWithoutRoot(getNormalizedPathComponents(fileName, currentDirectory));
 }
-export function toPath(fileName: string, basePath: string | undefined, getCanonicalFileName: (path: string) => string): Path {
+export function toPath(fileName: string, basePath: string | undefined, getCanonicalFileName: (path: string) => string): qt.Path {
   const nonCanonicalizedPath = isRootedDiskPath(fileName) ? normalizePath(fileName) : getNormalizedAbsolutePath(fileName, basePath);
-  return <Path>getCanonicalFileName(nonCanonicalizedPath);
+  return <qt.Path>getCanonicalFileName(nonCanonicalizedPath);
 }
 export function normalizePathAndParts(path: string): { path: string; parts: string[] } {
   path = normalizeSlashes(path);
@@ -166,13 +166,13 @@ export function normalizePathAndParts(path: string): { path: string; parts: stri
   }
   return { path: root, parts };
 }
-export function removeTrailingDirectorySeparator(path: Path): Path;
+export function removeTrailingDirectorySeparator(path: qt.Path): qt.Path;
 export function removeTrailingDirectorySeparator(path: string): string;
 export function removeTrailingDirectorySeparator(path: string) {
   if (hasTrailingDirectorySeparator(path)) return path.substr(0, path.length - 1);
   return path;
 }
-export function ensureTrailingDirectorySeparator(path: Path): Path;
+export function ensureTrailingDirectorySeparator(path: qt.Path): qt.Path;
 export function ensureTrailingDirectorySeparator(path: string): string;
 export function ensureTrailingDirectorySeparator(path: string) {
   if (!hasTrailingDirectorySeparator(path)) return path + dirSeparator;
@@ -300,9 +300,9 @@ export function getRelativePathToDirectoryOrUrl(
   }
   return getPathFromPathComponents(pathComponents);
 }
-export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path) => T | undefined): T | undefined;
+export function forEachAncestorDirectory<T>(directory: qt.Path, callback: (_: qt.Path) => T | undefined): T | undefined;
 export function forEachAncestorDirectory<T>(directory: string, callback: (_: string) => T | undefined): T | undefined;
-export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path) => T | undefined): T | undefined {
+export function forEachAncestorDirectory<T>(directory: qt.Path, callback: (_: qt.Path) => T | undefined): T | undefined {
   while (true) {
     const result = callback(directory);
     if (result !== undefined) return result;
@@ -311,7 +311,7 @@ export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path)
     directory = parentPath;
   }
 }
-export function isNodeModulesDirectory(dirPath: Path) {
+export function isNodeModulesDirectory(dirPath: qt.Path) {
   return qu.endsWith(dirPath, '/node_modules');
 }
 function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qu.GetCanonicalFileName): [string, string] {
@@ -500,7 +500,7 @@ export function tryRemoveExtension(path: string, extension: string): string | un
 export function removeExtension(path: string, extension: string): string {
   return path.substring(0, path.length - extension.length);
 }
-export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
+export function changeExtension<T extends string | qt.Path>(path: T, newExtension: string): T {
   return <T>changeAnyExtension(path, newExtension, extensionsToRemove, false);
 }
 export interface FileSystemEntries {

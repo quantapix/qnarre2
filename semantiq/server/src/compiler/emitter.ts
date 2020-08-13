@@ -273,7 +273,7 @@ export function emitFiles(
   const { enter, exit } = performance.createTimer('printTime', 'beforePrint', 'afterPrint');
   let bundleBuildInfo: qt.BundleBuildInfo | undefined;
   let emitSkipped = false;
-  let exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined;
+  let exportedModulesFromDeclarationEmit: qt.ExportedModulesFromDeclarationEmit | undefined;
   enter();
   forEachEmittedFile(host, emitSourceFileOrBundle, getSourceFilesToEmit(host, targetSourceFile, forceDtsEmit), forceDtsEmit, onlyBuildInfo, !targetSourceFile);
   exit();
@@ -742,7 +742,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   const relativeToBuildInfo = bundleFileInfo ? Debug.checkDefined(printerOpts.relativeToBuildInfo) : undefined;
   const recordInternalSection = printerOpts.recordInternalSection;
   let sourceFileTextPos = 0;
-  let sourceFileTextKind: BundleFileTextLikeKind = BundleFileSectionKind.Text;
+  let sourceFileTextKind: qt.BundleFileTextLikeKind = BundleFileSectionKind.Text;
   let sourceMapsDisabled = true;
   let sourceMapGenerator: qt.SourceMapGenerator | undefined;
   let sourceMapSource: qt.SourceMapSource;
@@ -778,7 +778,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         qu.assert(qf.is.kind(qc.Identifier, node), 'Expected an qt.Identifier node.');
         break;
       case EmitHint.Expression:
-        qu.assert(qf.is.expression(node), 'Expected an Expression node.');
+        qu.assert(qf.is.expression(node), 'Expected an qt.Expression node.');
         break;
     }
     switch (node.kind) {
@@ -808,7 +808,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     writeUnparsedSource(unparsed, beginPrint());
     return endPrint();
   }
-  function writeNode(hint: EmitHint, node: Typing, sourceFile: undefined, output: qt.EmitTextWriter): void;
+  function writeNode(hint: EmitHint, node: qt.Typing, sourceFile: undefined, output: qt.EmitTextWriter): void;
   function writeNode(hint: EmitHint, node: Node, sourceFile: qt.SourceFile, output: qt.EmitTextWriter): void;
   function writeNode(hint: EmitHint, node: Node, sourceFile: qt.SourceFile | undefined, output: qt.EmitTextWriter) {
     const previousWriter = writer;
@@ -830,7 +830,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function getTextPosWithWriteLine() {
     return writer.getTextPosWithWriteLine ? writer.getTextPosWithWriteLine() : writer.getTextPos();
   }
-  function updateOrPushBundleFileTextLike(pos: number, end: number, kind: BundleFileTextLikeKind) {
+  function updateOrPushBundleFileTextLike(pos: number, end: number, kind: qt.BundleFileTextLikeKind) {
     const last = lastOrUndefined(bundleFileInfo!.sections);
     if (last && last.kind === kind) {
       last.end = end;
@@ -1009,9 +1009,9 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (node === undefined) return;
     return pipelineEmit(EmitHint.IdentifierName, node);
   }
-  function emitExpression(node: Expression): Node;
-  function emitExpression(node: Expression | undefined): Node | undefined;
-  function emitExpression(node: Expression | undefined): Node | undefined {
+  function emitExpression(node: qt.Expression): Node;
+  function emitExpression(node: qt.Expression | undefined): Node | undefined;
+  function emitExpression(node: qt.Expression | undefined): Node | undefined {
     if (node === undefined) return;
     return pipelineEmit(EmitHint.Expression, node);
   }
@@ -1077,12 +1077,12 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         case Syntax.TemplateHead:
         case Syntax.TemplateMiddle:
         case Syntax.TemplateTail:
-          return emitLiteral(<LiteralExpression>node, false);
+          return emitLiteral(<qt.LiteralExpression>node, false);
         case Syntax.UnparsedSource:
         case Syntax.UnparsedPrepend:
           return emitUnparsedSourceOrPrepend(<qt.UnparsedSource>node);
         case Syntax.UnparsedPrologue:
-          return writeUnparsedNode(<UnparsedNode>node);
+          return writeUnparsedNode(<qt.UnparsedNode>node);
         case Syntax.UnparsedText:
         case Syntax.UnparsedInternalText:
           return emitUnparsedTextLike(<qt.UnparsedTextLike>node);
@@ -1354,7 +1354,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         case Syntax.StringLiteral:
         case Syntax.RegexLiteral:
         case Syntax.NoSubstitutionLiteral:
-          return emitLiteral(<LiteralExpression>node, false);
+          return emitLiteral(<qt.LiteralExpression>node, false);
         case Syntax.Identifier:
           return emitIdentifier(<qt.Identifier>node);
         case Syntax.FalseKeyword:
@@ -1525,7 +1525,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       emit(text);
     }
   }
-  function writeUnparsedNode(unparsed: UnparsedNode) {
+  function writeUnparsedNode(unparsed: qt.UnparsedNode) {
     writer.rawWrite(unparsed.parent.text.substring(unparsed.pos, unparsed.end));
   }
   function emitUnparsedTextLike(unparsed: qt.UnparsedTextLike) {
@@ -1559,7 +1559,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     writePunctuation('.');
     emit(node.right);
   }
-  function emitEntityName(node: EntityName) {
+  function emitEntityName(node: qt.EntityName) {
     if (node.kind === Syntax.Identifier) {
       emitExpression(node);
     } else {
@@ -1925,7 +1925,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function emitPropertyAccessExpression(node: qt.PropertyAccessExpression) {
     const expression = cast(emitExpression(node.expression), isExpression);
-    const token = node.questionDotToken || (createNode(Syntax.DotToken, node.expression.end, node.name.pos) as DotToken);
+    const token = node.questionDotToken || (createNode(Syntax.DotToken, node.expression.end, node.name.pos) as qt.DotToken);
     const linesBeforeDot = linesBetweenNodes(node, node.expression, token);
     const linesAfterDot = linesBetweenNodes(node, token, node.name);
     writeLinesAndIndent(linesBeforeDot, false);
@@ -1942,10 +1942,10 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     emit(node.name);
     decreaseIndentIf(linesBeforeDot, linesAfterDot);
   }
-  function mayNeedDotDotForPropertyAccess(expression: Expression) {
+  function mayNeedDotDotForPropertyAccess(expression: qt.Expression) {
     expression = qf.skip.partiallyEmittedExpressions(expression);
     if (qf.is.kind(qc.NumericLiteral, expression)) {
-      const text = getLiteralTextOfNode(<LiteralExpression>expression, false);
+      const text = getLiteralTextOfNode(<qt.LiteralExpression>expression, false);
       return !expression.numericLiteralFlags && !qu.stringContains(text, qt.Token.toString(Syntax.DotToken)!);
     } else if (qf.is.accessExpression(expression)) {
       const constantValue = qf.emit.constantValue(expression);
@@ -2087,7 +2087,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
           return fail(`Invalid state ${stateStack[stackIndex]} for emitBinaryExpressionWorker`);
       }
     }
-    function maybePipelineEmitExpression(next: Expression) {
+    function maybePipelineEmitExpression(next: qt.Expression) {
       stateStack[stackIndex]++;
       const savedLastNode = lastNode;
       const savedLastSubstitution = lastSubstitution;
@@ -2169,7 +2169,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitBlock(node: qt.Block) {
     emitBlockStatements(node, !node.multiLine && isEmptyBlock(node));
   }
-  function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
+  function emitBlockStatements(node: qt.BlockLike, forceSingleLine: boolean) {
     emitTokenWithComment(Syntax.OpenBraceToken, node.pos, writePunctuation, node);
     const format = forceSingleLine || qf.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
     emitList(node, node.statements, format);
@@ -2270,7 +2270,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
     emitEmbeddedStatement(node, node.statement);
   }
-  function emitForBinding(node: qt.VariableDeclarationList | Expression | undefined) {
+  function emitForBinding(node: qt.VariableDeclarationList | qt.Expression | undefined) {
     if (node !== undefined) {
       if (node.kind === Syntax.VariableDeclarationList) {
         emit(node);
@@ -2390,7 +2390,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitBlockCallback(_hint: EmitHint, body: Node): void {
     emitBlockFunctionBody(<qt.Block>body);
   }
-  function emitSignatureAndBody(node: FunctionLikeDeclaration, emitSignatureHead: (node: SignatureDeclaration) => void) {
+  function emitSignatureAndBody(node: qt.FunctionLikeDeclaration, emitSignatureHead: (node: qt.SignatureDeclaration) => void) {
     const body = node.body;
     if (body) {
       if (qf.is.kind(qc.Block, body)) {
@@ -2431,7 +2431,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (body.multiLine) return false;
     if (!isSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) return false;
     if (getLeadingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines) || getClosingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines)) return false;
-    let previousStatement: Statement | undefined;
+    let previousStatement: qt.Statement | undefined;
     for (const statement of body.statements) {
       if (getSeparatingLineTerminatorCount(previousStatement, statement, ListFormat.PreserveLines) > 0) return false;
       previousStatement = statement;
@@ -2567,7 +2567,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     emitModuleReference(node.moduleReference);
     writeTrailingSemicolon();
   }
-  function emitModuleReference(node: ModuleReference) {
+  function emitModuleReference(node: qt.ModuleReference) {
     if (node.kind === Syntax.Identifier) {
       emitExpression(node);
     } else {
@@ -2668,12 +2668,12 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitExportSpecifier(node: qt.ExportSpecifier) {
     emitImportOrExportSpecifier(node);
   }
-  function emitNamedImportsOrExports(node: NamedImportsOrExports) {
+  function emitNamedImportsOrExports(node: qt.NamedImportsOrExports) {
     writePunctuation('{');
     emitList(node, node.elems, ListFormat.NamedImportsOrExportsElems);
     writePunctuation('}');
   }
-  function emitImportOrExportSpecifier(node: ImportOrExportSpecifier) {
+  function emitImportOrExportSpecifier(node: qt.ImportOrExportSpecifier) {
     if (node.propertyName) {
       emit(node.propertyName);
       writeSpace();
@@ -2751,7 +2751,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       writePunctuation('}');
     }
   }
-  function emitJsxTagName(node: JsxTagNameExpression) {
+  function emitJsxTagName(node: qt.JsxTagNameExpression) {
     if (node.kind === Syntax.Identifier) {
       emitExpression(node);
     } else {
@@ -2768,7 +2768,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     const pos = emitTokenWithComment(Syntax.DefaultKeyword, node.pos, writeKeyword, node);
     emitCaseOrDefaultClauseRest(node, node.statements, pos);
   }
-  function emitCaseOrDefaultClauseRest(parentNode: Node, statements: Nodes<Statement>, colonPos: number) {
+  function emitCaseOrDefaultClauseRest(parentNode: Node, statements: Nodes<qt.Statement>, colonPos: number) {
     const emitAsSingleStatement = statements.length === 1 && (isSynthesized(parentNode) || isSynthesized(statements[0]) || startsOnSameLine(parentNode, statements[0], currentSourceFile!));
     let format = ListFormat.CaseOrDefaultClauseStatements;
     if (emitAsSingleStatement) {
@@ -3125,14 +3125,14 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       writeSpace();
     }
   }
-  function emitTypeAnnotation(node: Typing | undefined) {
+  function emitTypeAnnotation(node: qt.Typing | undefined) {
     if (node) {
       writePunctuation(':');
       writeSpace();
       emit(node);
     }
   }
-  function emitIniter(node: Expression | undefined, equalCommentStartPos: number, container: Node) {
+  function emitIniter(node: qt.Expression | undefined, equalCommentStartPos: number, container: Node) {
     if (node) {
       writeSpace();
       emitTokenWithComment(Syntax.EqualsToken, equalCommentStartPos, writeOperator, container);
@@ -3152,7 +3152,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       emit(node);
     }
   }
-  function emitExpressionWithLeadingSpace(node: Expression | undefined) {
+  function emitExpressionWithLeadingSpace(node: qt.Expression | undefined) {
     if (node) {
       writeSpace();
       emitExpression(node);
@@ -3164,7 +3164,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       writeSpace();
     }
   }
-  function emitEmbeddedStatement(parent: Node, node: Statement) {
+  function emitEmbeddedStatement(parent: Node, node: qt.Statement) {
     if (qf.is.kind(qc.Block, node) || qf.get.emitFlags(parent) & EmitFlags.SingleLine) {
       writeSpace();
       emit(node);
@@ -3182,11 +3182,11 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitDecorators(parentNode: Node, decorators: Nodes<qt.Decorator> | undefined) {
     emitList(parentNode, decorators, ListFormat.Decorators);
   }
-  function emitTypeArgs(parentNode: Node, typeArgs: Nodes<Typing> | undefined) {
+  function emitTypeArgs(parentNode: Node, typeArgs: Nodes<qt.Typing> | undefined) {
     emitList(parentNode, typeArgs, ListFormat.TypeArgs);
   }
   function emitTypeParams(
-    parentNode: SignatureDeclaration | qt.InterfaceDeclaration | qt.TypeAliasDeclaration | qt.ClassDeclaration | qt.ClassExpression,
+    parentNode: qt.SignatureDeclaration | qt.InterfaceDeclaration | qt.TypeAliasDeclaration | qt.ClassDeclaration | qt.ClassExpression,
     typeParams: Nodes<qt.TypeParamDeclaration> | undefined
   ) {
     if (qf.is.functionLike(parentNode) && parentNode.typeArgs) return emitTypeArgs(parentNode, parentNode.typeArgs);
@@ -3547,7 +3547,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     }
     return 0;
   }
-  function isEmptyBlock(block: BlockLike) {
+  function isEmptyBlock(block: qt.BlockLike) {
     return block.statements.length === 0 && endOnSameLineAsStart(block, block, currentSourceFile!);
   }
   function skipSynthesizedParentheses(node: Node) {
@@ -3626,8 +3626,8 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       case Syntax.ForStatement:
       case Syntax.ForOfStatement:
       case Syntax.ForInStatement:
-        generateNames((<qt.ForStatement | ForInOrOfStatement>node).initer);
-        generateNames((<qt.ForStatement | ForInOrOfStatement>node).statement);
+        generateNames((<qt.ForStatement | qt.ForInOrOfStatement>node).initer);
+        generateNames((<qt.ForStatement | qt.ForInOrOfStatement>node).statement);
         break;
       case Syntax.SwitchStatement:
         generateNames((<qt.SwitchStatement>node).caseBlock);
@@ -3637,7 +3637,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         break;
       case Syntax.CaseClause:
       case Syntax.DefaultClause:
-        forEach((<CaseOrDefaultClause>node).statements, generateNames);
+        forEach((<qt.CaseOrDefaultClause>node).statements, generateNames);
         break;
       case Syntax.TryStatement:
         generateNames((<qt.TryStatement>node).tryBlock);
@@ -3669,7 +3669,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         break;
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
-        forEach((<BindingPattern>node).elems, generateNames);
+        forEach((<qt.BindingPattern>node).elems, generateNames);
         break;
       case Syntax.ImportDeclaration:
         generateNames((<qt.ImportDeclaration>node).importClause);
@@ -3705,7 +3705,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         break;
     }
   }
-  function generateNameIfNeeded(name: DeclarationName | undefined) {
+  function generateNameIfNeeded(name: qt.DeclarationName | undefined) {
     if (name) {
       if (qf.is.generatedIdentifier(name)) {
         generateName(name);

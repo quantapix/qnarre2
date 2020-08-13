@@ -1408,7 +1408,7 @@ export function newNest(f: qt.Frame) {
       return e;
     }
     conditionalTypeMember(n: qt.Typing) {
-      return n.kind === Syntax.ConditionalTyping ? new qt.ParenthesizedTyping(n) : n;
+      return n.kind === Syntax.ConditionalTyping ? new qc.ParenthesizedTyping(n) : n;
     }
     elemTypeMember(n: qt.Typing) {
       switch (n.kind) {
@@ -1416,7 +1416,7 @@ export function newNest(f: qt.Frame) {
         case Syntax.IntersectionTyping:
         case Syntax.FunctionTyping:
         case Syntax.ConstructorTyping:
-          return new qt.ParenthesizedTyping(n);
+          return new qc.ParenthesizedTyping(n);
       }
       return conditionalTypeMember(n);
     }
@@ -1425,7 +1425,7 @@ export function newNest(f: qt.Frame) {
         case Syntax.TypingQuery:
         case Syntax.TypingOperator:
         case Syntax.InferTyping:
-          return new qt.ParenthesizedTyping(n);
+          return new qc.ParenthesizedTyping(n);
       }
       return elemTypeMember(n);
     }
@@ -1437,7 +1437,7 @@ export function newNest(f: qt.Frame) {
         const ps = [] as qt.Typing[];
         for (let i = 0; i < ns.length; ++i) {
           const p = ns[i] as Node;
-          ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new qt.ParenthesizedTyping(p) : (p as qt.Typing));
+          ps.push(i === 0 && qf.is.functionOrConstructorTyping(p) && p.typeParams ? new qc.ParenthesizedTyping(p) : (p as qt.Typing));
         }
         return new Nodes(ps);
       }
@@ -1670,13 +1670,13 @@ export namespace fixme {
     return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
-    return qf.emit.setFlags(new qt.Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+    return qf.emit.setFlags(new qc.Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
-    return expressions.length > 10 ? new qt.CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
+    return expressions.length > 10 ? new qc.CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
   }
   export function convertToFunctionBody(node: qt.ConciseBody, multiLine?: boolean): qt.Block {
-    return node.kind === Syntax.Block ? node : new qt.Block([new qt.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
+    return node.kind === Syntax.Block ? node : new qc.Block([new qc.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
     sourceFile: qt.SourceFile,
@@ -1702,9 +1702,9 @@ export namespace fixme {
           }
           if (qu.some(helperNames)) {
             helperNames.sort(compareCaseSensitive);
-            namedBindings = new qt.NamedImports(
+            namedBindings = new qc.NamedImports(
               qu.map(helperNames, (name) =>
-                sourceFile.isFileLevelUniqueName(name) ? new qt.ImportSpecifier(undefined, new qt.Identifier(name)) : new qb.ImportSpecifier(new qt.Identifier(name), getUnscopedHelperName(name))
+                sourceFile.isFileLevelUniqueName(name) ? new qc.ImportSpecifier(undefined, new qc.Identifier(name)) : new qb.ImportSpecifier(new qc.Identifier(name), getUnscopedHelperName(name))
               )
             );
             const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
@@ -1715,11 +1715,11 @@ export namespace fixme {
       } else {
         const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOpts, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
         if (externalHelpersModuleName) {
-          namedBindings = new qt.NamespaceImport(externalHelpersModuleName);
+          namedBindings = new qc.NamespaceImport(externalHelpersModuleName);
         }
       }
       if (namedBindings) {
-        const externalHelpersImportDeclaration = new qt.ImportDeclaration(undefined, undefined, new qt.ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
+        const externalHelpersImportDeclaration = new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
         qf.emit.addFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }

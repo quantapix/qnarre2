@@ -22,7 +22,7 @@ export function transformES2016(context: qt.TrafoContext) {
         return visitEachChild(node, visitor, context);
     }
   }
-  function visitBinaryExpression(node: qt.BinaryExpression): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     switch (node.operatorToken.kind) {
       case Syntax.Asterisk2EqualsToken:
         return visitExponentiationAssignmentExpression(node);
@@ -33,8 +33,8 @@ export function transformES2016(context: qt.TrafoContext) {
     }
   }
   function visitExponentiationAssignmentExpression(node: qt.BinaryExpression) {
-    let target: Expression;
-    let value: Expression;
+    let target: qt.Expression;
+    let value: qt.Expression;
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);
     if (qf.is.kind(qc.ElemAccessExpression, left)) {

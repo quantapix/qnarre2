@@ -362,7 +362,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
   const toCanonicalFilePath = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
   return (dirName, callback, recursive, opts) => (recursive ? createDirectoryWatcher(dirName, opts, callback) : host.watchDirectory(dirName, callback, recursive, opts));
   function createDirectoryWatcher(dirName: string, opts: qt.WatchOpts | undefined, callback?: DirectoryWatcherCallback): ChildDirectoryWatcher {
-    const dirPath = toCanonicalFilePath(dirName) as Path;
+    const dirPath = toCanonicalFilePath(dirName) as qt.Path;
     let directoryWatcher = cache.get(dirPath);
     if (directoryWatcher) {
       directoryWatcher.refCount++;
@@ -405,7 +405,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       },
     };
   }
-  function invokeCallbacks(dirPath: Path, fileNameOrInvokeMap: string | Map<true>) {
+  function invokeCallbacks(dirPath: qt.Path, fileNameOrInvokeMap: string | Map<true>) {
     let fileName: string | undefined;
     let invokeMap: Map<true> | undefined;
     if (isString(fileNameOrInvokeMap)) {
@@ -424,7 +424,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       }
     });
   }
-  function nonSyncUpdateChildWatches(dirName: string, dirPath: Path, fileName: string, opts: qt.WatchOpts | undefined) {
+  function nonSyncUpdateChildWatches(dirName: string, dirPath: qt.Path, fileName: string, opts: qt.WatchOpts | undefined) {
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher && host.directoryExists(dirName)) {
       scheduleUpdateChildWatches(dirName, dirPath, opts);
@@ -433,7 +433,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     invokeCallbacks(dirPath, fileName);
     removeChildWatches(parentWatcher);
   }
-  function scheduleUpdateChildWatches(dirName: string, dirPath: Path, opts: qt.WatchOpts | undefined) {
+  function scheduleUpdateChildWatches(dirName: string, dirPath: qt.Path, opts: qt.WatchOpts | undefined) {
     if (!cacheToUpdateChildWatches.has(dirPath)) {
       cacheToUpdateChildWatches.set(dirPath, { dirName, opts });
     }
@@ -455,8 +455,8 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       } = cacheToUpdateChildWatches.entries().next();
       assert(!done);
       cacheToUpdateChildWatches.delete(dirPath);
-      invokeCallbacks(dirPath as Path, invokeMap);
-      updateChildWatches(dirName, dirPath as Path, opts);
+      invokeCallbacks(dirPath as qt.Path, invokeMap);
+      updateChildWatches(dirName, dirPath as qt.Path, opts);
     }
     sysLog(`sysLog:: invokingWatchers:: ${timestamp() - start}ms:: ${cacheToUpdateChildWatches.size}`);
     callbackCache.forEach((callbacks, rootDirName) => {
@@ -476,7 +476,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       removeChildWatches(cache.get(toCanonicalFilePath(childWatcher.dirName)));
     }
   }
-  function updateChildWatches(dirName: string, dirPath: Path, opts: qt.WatchOpts | undefined) {
+  function updateChildWatches(dirName: string, dirPath: qt.Path, opts: qt.WatchOpts | undefined) {
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher) {
       parentWatcher.childWatches = watchChildDirectories(dirName, parentWatcher.childWatches, opts);
@@ -811,7 +811,7 @@ export interface System {
   base64encode?(input: string): string;
   bufferFrom?(input: string, encoding?: string): Buffer;
   now?(): Date;
-  require?(baseDir: string, moduleName: string): RequireResult;
+  require?(baseDir: string, moduleName: string): qt.RequireResult;
 }
 export interface FileWatcher {
   close(): void;

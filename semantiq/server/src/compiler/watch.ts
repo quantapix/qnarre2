@@ -217,7 +217,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   let watchedWildcardDirectories: Map<WildcardDirectoryWatcher>;
   let timerToUpdateProgram: any;
   const sourceFilesCache = createMap<HostFileInfo>();
-  let missingFilePathsRequestedForRelease: Path[] | undefined;
+  let missingFilePathsRequestedForRelease: qt.Path[] | undefined;
   let hasChangedCompilerOpts = false;
   let hasChangedAutomaticTypeDirectiveNames = false;
   const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
@@ -336,7 +336,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     }
     return builderProgram;
   }
-  function createNewProgram(hasInvalidatedResolution: HasInvalidatedResolution) {
+  function createNewProgram(hasInvalidatedResolution: qt.HasInvalidatedResolution) {
     writeLog('CreatingProgramWith::');
     writeLog(`  roots: ${JSON.stringify(rootFileNames)}`);
     writeLog(`  opts: ${JSON.stringify(compilerOpts)}`);
@@ -384,7 +384,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     if (isFileMissingOnHost(sourceFilesCache.get(path))) return false;
     return directoryStructureHost.fileExists(fileName);
   }
-  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): qt.SourceFile | undefined {
+  function getVersionedSourceFileByPath(fileName: string, path: qt.Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): qt.SourceFile | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     if (isFileMissingOnHost(hostSourceFile)) {
       return;
@@ -416,7 +416,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     }
     return hostSourceFile.sourceFile;
   }
-  function nextSourceFileVersion(path: Path) {
+  function nextSourceFileVersion(path: qt.Path) {
     const hostSourceFile = sourceFilesCache.get(path);
     if (hostSourceFile !== undefined) {
       if (isFileMissingOnHost(hostSourceFile)) {
@@ -426,7 +426,7 @@ export function createWatchProgram<T extends BuilderProgram>(
       }
     }
   }
-  function getSourceVersion(path: Path): string | undefined {
+  function getSourceVersion(path: qt.Path): string | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     return !hostSourceFile || !hostSourceFile.version ? undefined : hostSourceFile.version;
   }
@@ -522,7 +522,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     canConfigFileJsonReportNoInputFiles = canJsonReportNoInutFiles(configFileParseResult.raw);
     hasChangedConfigFileParsingErrors = true;
   }
-  function onSourceFileChange(fileName: string, eventKind: FileWatcherEventKind, path: Path) {
+  function onSourceFileChange(fileName: string, eventKind: FileWatcherEventKind, path: qt.Path) {
     updateCachedSystemWithFile(fileName, path, eventKind);
     if (eventKind === FileWatcherEventKind.Deleted && sourceFilesCache.has(path)) {
       resolutionCache.invalidateResolutionOfFile(path);
@@ -531,15 +531,15 @@ export function createWatchProgram<T extends BuilderProgram>(
     nextSourceFileVersion(path);
     scheduleProgramUpdate();
   }
-  function updateCachedSystemWithFile(fileName: string, path: Path, eventKind: FileWatcherEventKind) {
+  function updateCachedSystemWithFile(fileName: string, path: qt.Path, eventKind: FileWatcherEventKind) {
     if (cachedDirectoryStructureHost) {
       cachedDirectoryStructureHost.addOrDeleteFile(fileName, path, eventKind);
     }
   }
-  function watchMissingFilePath(missingFilePath: Path) {
+  function watchMissingFilePath(missingFilePath: qt.Path) {
     return watchFilePath(host, missingFilePath, onMissingFileChange, PollingInterval.Medium, watchOpts, missingFilePath, WatchType.MissingFile);
   }
-  function onMissingFileChange(fileName: string, eventKind: FileWatcherEventKind, missingFilePath: Path) {
+  function onMissingFileChange(fileName: string, eventKind: FileWatcherEventKind, missingFilePath: qt.Path) {
     updateCachedSystemWithFile(fileName, missingFilePath, eventKind);
     if (eventKind === FileWatcherEventKind.Created && missingFilesMap.has(missingFilePath)) {
       missingFilesMap.get(missingFilePath)!.close();
@@ -561,7 +561,7 @@ export function createWatchProgram<T extends BuilderProgram>(
       directory,
       (fileOrDirectory) => {
         assert(!!configFileName);
-        let fileOrDirectoryPath: Path | undefined = toPath(fileOrDirectory);
+        let fileOrDirectoryPath: qt.Path | undefined = toPath(fileOrDirectory);
         if (cachedDirectoryStructureHost) {
           cachedDirectoryStructureHost.addOrDeleteFileOrDirectory(fileOrDirectory, fileOrDirectoryPath);
         }
@@ -673,7 +673,7 @@ export interface ProgramToEmitFilesAndReportErrors {
   getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
   getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  emit(targetSourceFile?: qt.SourceFile, writeFile?: WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
 }
 export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileName: (s: string) => void) {
   if (program.getCompilerOpts().listFiles || program.getCompilerOpts().listFilesOnly) {
@@ -687,7 +687,7 @@ export function emitFilesAndReportErrors(
   reportDiagnostic: DiagnosticReporter,
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
-  writeFile?: WriteFileCallback,
+  writeFile?: qt.WriteFileCallback,
   cancellationToken?: qt.CancellationToken,
   emitOnlyDtsFiles?: boolean,
   customTransformers?: qt.CustomTransformers
@@ -731,7 +731,7 @@ export function emitFilesAndReportErrorsAndGetExitStatus(
   reportDiagnostic: DiagnosticReporter,
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
-  writeFile?: WriteFileCallback,
+  writeFile?: qt.WriteFileCallback,
   cancellationToken?: qt.CancellationToken,
   emitOnlyDtsFiles?: boolean,
   customTransformers?: qt.CustomTransformers
@@ -986,8 +986,8 @@ export interface CachedDirectoryStructureHost extends DirectoryStructureHost {
   useCaseSensitiveFileNames: boolean;
   getDirectories(path: string): string[];
   readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
-  addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path): FileAndDirectoryExistence | undefined;
-  addOrDeleteFile(fileName: string, filePath: Path, eventKind: FileWatcherEventKind): void;
+  addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: qt.Path): FileAndDirectoryExistence | undefined;
+  addOrDeleteFile(fileName: string, filePath: qt.Path, eventKind: FileWatcherEventKind): void;
   clearCache(): void;
 }
 interface MutableFileSystemEntries {
@@ -1017,16 +1017,16 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   function toPath(fileName: string) {
     return qnr.toPath(fileName, currentDirectory, getCanonicalFileName);
   }
-  function getCachedFileSystemEntries(rootDirPath: Path): MutableFileSystemEntries | undefined {
+  function getCachedFileSystemEntries(rootDirPath: qt.Path): MutableFileSystemEntries | undefined {
     return cachedReadDirectoryResult.get(ensureTrailingDirectorySeparator(rootDirPath));
   }
-  function getCachedFileSystemEntriesForBaseDir(path: Path): MutableFileSystemEntries | undefined {
+  function getCachedFileSystemEntriesForBaseDir(path: qt.Path): MutableFileSystemEntries | undefined {
     return getCachedFileSystemEntries(getDirectoryPath(path));
   }
   function getBaseNameOfFileName(fileName: string) {
     return getBaseFileName(normalizePath(fileName));
   }
-  function createCachedFileSystemEntries(rootDir: string, rootDirPath: Path) {
+  function createCachedFileSystemEntries(rootDir: string, rootDirPath: qt.Path) {
     const resultFromHost: MutableFileSystemEntries = {
       files: map(host.readDirectory!(rootDir, ['*.*']), getBaseNameOfFileName) || [],
       directories: host.getDirectories!(rootDir) || [],
@@ -1034,7 +1034,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     cachedReadDirectoryResult.set(ensureTrailingDirectorySeparator(rootDirPath), resultFromHost);
     return resultFromHost;
   }
-  function tryReadDirectory(rootDir: string, rootDirPath: Path): MutableFileSystemEntries | undefined {
+  function tryReadDirectory(rootDir: string, rootDirPath: qt.Path): MutableFileSystemEntries | undefined {
     rootDirPath = ensureTrailingDirectorySeparator(rootDirPath);
     const cachedResult = getCachedFileSystemEntries(rootDirPath);
     if (cachedResult) return cachedResult;
@@ -1104,7 +1104,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   function realpath(s: string) {
     return host.realpath ? host.realpath(s) : s;
   }
-  function addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path) {
+  function addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: qt.Path) {
     const existingResult = getCachedFileSystemEntries(fileOrDirectoryPath);
     if (existingResult) {
       clearCache();
@@ -1130,7 +1130,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     }
     return fsQueryResult;
   }
-  function addOrDeleteFile(fileName: string, filePath: Path, eventKind: FileWatcherEventKind) {
+  function addOrDeleteFile(fileName: string, filePath: qt.Path, eventKind: FileWatcherEventKind) {
     if (eventKind === FileWatcherEventKind.Changed) {
       return;
     }
@@ -1154,7 +1154,7 @@ export enum ConfigFileProgramReloadLevel {
   Partial,
   Full,
 }
-export function updateMissingFilePathsWatch(program: qt.Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
+export function updateMissingFilePathsWatch(program: qt.Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: qt.Path) => FileWatcher) {
   const missingFilePaths = program.getMissingFilePaths();
   const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
   mutateMap(missingFileWatches, newMissingFilePathMap, {
@@ -1214,14 +1214,14 @@ export type WatchFile<X, Y> = (
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
-export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: Path) => void;
+export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: qt.Path) => void;
 export type WatchFilePath<X, Y> = (
   host: WatchFileHost,
   file: string,
   callback: FilePathWatcherCallback,
   pollingInterval: PollingInterval,
   opts: qt.WatchOpts | undefined,
-  path: Path,
+  path: qt.Path,
   detailInfo1: X,
   detailInfo2?: Y
 ) => FileWatcher;
@@ -1250,7 +1250,7 @@ function getWatchFactoryWith<X, Y = undefined>(
   watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: qt.WatchOpts | undefined) => FileWatcher
 ): WatchFactory<X, Y> {
   const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
-  const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
+  const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, qt.Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
   const createDirectoryWatcher: CreateFileWatcher<WatchDirectoryHost, WatchDirectoryFlags, undefined, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchDirectory);
   if (watchLogLevel === WatchLogLevel.Verbose && sysLog === noop) {
     setSysLog((s) => log(s));
@@ -1267,7 +1267,7 @@ function getWatchFactoryWith<X, Y = undefined>(
 function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, opts: qt.WatchOpts | undefined): FileWatcher {
   return host.watchFile(file, callback, pollingInterval, opts);
 }
-function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, opts: qt.WatchOpts | undefined, path: Path): FileWatcher {
+function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, opts: qt.WatchOpts | undefined, path: qt.Path): FileWatcher {
   return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, opts);
 }
 function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, opts: qt.WatchOpts | undefined): FileWatcher {

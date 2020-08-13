@@ -51,7 +51,7 @@ function getPreferencesForUpdate(compilerOpts: qt.CompilerOpts, oldImportSpecifi
 }
 export function updateModuleSpecifier(
   compilerOpts: qt.CompilerOpts,
-  importingSourceFileName: Path,
+  importingSourceFileName: qt.Path,
   toFileName: string,
   host: qt.ModuleSpecifierResolutionHost,
   oldImportSpecifier: string
@@ -63,19 +63,19 @@ export function updateModuleSpecifier(
 export function getModuleSpecifier(
   compilerOpts: qt.CompilerOpts,
   importingSourceFile: qt.SourceFile,
-  importingSourceFileName: Path,
+  importingSourceFileName: qt.Path,
   toFileName: string,
   host: qt.ModuleSpecifierResolutionHost,
   preferences: qt.UserPreferences = {}
 ): string {
   return getModuleSpecifierWorker(compilerOpts, importingSourceFileName, toFileName, host, getPreferences(preferences, compilerOpts, importingSourceFile));
 }
-export function getNodeModulesPackageName(compilerOpts: qt.CompilerOpts, importingSourceFileName: Path, nodeModulesFileName: string, host: qt.ModuleSpecifierResolutionHost): string | undefined {
+export function getNodeModulesPackageName(compilerOpts: qt.CompilerOpts, importingSourceFileName: qt.Path, nodeModulesFileName: string, host: qt.ModuleSpecifierResolutionHost): string | undefined {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts, true));
 }
-function getModuleSpecifierWorker(compilerOpts: qt.CompilerOpts, importingSourceFileName: Path, toFileName: string, host: qt.ModuleSpecifierResolutionHost, preferences: Preferences): string {
+function getModuleSpecifierWorker(compilerOpts: qt.CompilerOpts, importingSourceFileName: qt.Path, toFileName: string, host: qt.ModuleSpecifierResolutionHost, preferences: Preferences): string {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts)) || getLocalModuleSpecifier(toFileName, info, compilerOpts, preferences);
@@ -98,9 +98,9 @@ export function getModuleSpecifiers(
 }
 interface Info {
   readonly getCanonicalFileName: GetCanonicalFileName;
-  readonly sourceDirectory: Path;
+  readonly sourceDirectory: qt.Path;
 }
-function getInfo(importingSourceFileName: Path, host: qt.ModuleSpecifierResolutionHost): Info {
+function getInfo(importingSourceFileName: qt.Path, host: qt.ModuleSpecifierResolutionHost): Info {
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
   const sourceDirectory = getDirectoryPath(importingSourceFileName);
   return { getCanonicalFileName, sourceDirectory };
@@ -532,13 +532,13 @@ interface PackageJson extends PackageJsonPathFields {
   name?: string;
   version?: string;
 }
-function readPackageJsonField<TMatch, K extends MatchingKeys<PackageJson, string | undefined>>(
+function readPackageJsonField<TMatch, K extends qt.MatchingKeys<PackageJson, string | undefined>>(
   jsonContent: PackageJson,
   fieldName: K,
   typeOfTag: 'string',
   state: ModuleResolutionState
 ): PackageJson[K] | undefined;
-function readPackageJsonField<K extends MatchingKeys<PackageJson, object | undefined>>(
+function readPackageJsonField<K extends qt.MatchingKeys<PackageJson, object | undefined>>(
   jsonContent: PackageJson,
   fieldName: K,
   typeOfTag: 'object',
@@ -912,7 +912,7 @@ export function createModuleResolutionCacheWithMaps(
         current = parent;
       }
     }
-    function getCommonPrefix(directory: Path, resolution: string) {
+    function getCommonPrefix(directory: qt.Path, resolution: string) {
       const resolutionDirectory = toPath(getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
       let i = 0;
       const limit = Math.min(directory.length, resolutionDirectory.length);
@@ -1634,10 +1634,10 @@ type SearchResult<T> = { value: T | undefined } | undefined;
 function toSearchResult<T>(value: T | undefined): SearchResult<T> {
   return value !== undefined ? { value } : undefined;
 }
-export function importFromModuleSpecifier(node: StringLiteralLike): qt.AnyValidImportOrReExport {
+export function importFromModuleSpecifier(node: qt.StringLiteralLike): qt.AnyValidImportOrReExport {
   return tryGetImportFromModuleSpecifier(node) || qu.failBadSyntax(node.parent);
 }
-export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): qt.AnyValidImportOrReExport | undefined {
+export function tryGetImportFromModuleSpecifier(node: qt.StringLiteralLike): qt.AnyValidImportOrReExport | undefined {
   switch (node.parent.kind) {
     case Syntax.ImportDeclaration:
     case Syntax.ExportDeclaration:
@@ -1645,7 +1645,7 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): qt.Any
     case Syntax.ExternalModuleReference:
       return (node.parent as qt.ExternalModuleReference).parent as qt.AnyValidImportOrReExport;
     case Syntax.CallExpression:
-      return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
+      return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as qt.RequireOrImportCall) : undefined;
     case Syntax.LiteralTyping:
       assert(node.kind === Syntax.StringLiteral);
       return qu.tryCast(node.parent.parent, qt.ImportTyping.kind) as qt.ValidImportTyping | undefined;

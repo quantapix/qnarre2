@@ -26,7 +26,7 @@ export interface BuildOpts {
   extendedDiagnostics?: boolean;
   locale?: string;
   generateCpuProfile?: string;
-  [option: string]: CompilerOptsValue | undefined;
+  [option: string]: qt.CompilerOptsValue | undefined;
 }
 enum BuildResultFlags {
   None = 0,
@@ -39,8 +39,8 @@ enum BuildResultFlags {
   EmitErrors = 1 << 6,
   AnyErrors = ConfigFileErrors | SyntaxErrors | TypeErrors | DeclarationEmitErrors | EmitErrors,
 }
-export type ResolvedConfigFilePath = ResolvedConfigFileName & Path;
-interface FileMap<T, U extends Path = Path> extends Map<T> {
+export type ResolvedConfigFilePath = qt.ResolvedConfigFileName & qt.Path;
+interface FileMap<T, U extends qt.Path = qt.Path> extends Map<T> {
   get(key: U): T | undefined;
   has(key: U): boolean;
   forEach(action: (value: T, key: U) => void): void;
@@ -92,7 +92,7 @@ export interface SolutionBuilderHost<T extends BuilderProgram> extends SolutionB
   reportErrorSummary?: ReportEmitErrorSummary;
 }
 export interface SolutionBuilderWithWatchHost<T extends BuilderProgram> extends SolutionBuilderHostBase<T>, WatchHost {}
-export type BuildOrder = readonly ResolvedConfigFileName[];
+export type BuildOrder = readonly qt.ResolvedConfigFileName[];
 export interface CircularBuildOrder {
   buildOrder: BuildOrder;
   circularDiagnostics: readonly Diagnostic[];
@@ -226,9 +226,9 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly allWatchedConfigFiles: ConfigFileMap<FileWatcher>;
   timerToBuildInvalidatedProject: any;
   reportFileChangeDetected: boolean;
-  watchFile: WatchFile<WatchType, ResolvedConfigFileName>;
-  watchFilePath: WatchFilePath<WatchType, ResolvedConfigFileName>;
-  watchDirectory: WatchDirectory<WatchType, ResolvedConfigFileName>;
+  watchFile: WatchFile<WatchType, qt.ResolvedConfigFileName>;
+  watchFilePath: WatchFilePath<WatchType, qt.ResolvedConfigFileName>;
+  watchDirectory: WatchDirectory<WatchType, qt.ResolvedConfigFileName>;
   writeLog: (s: string) => void;
 }
 function createSolutionBuilderState<T extends BuilderProgram>(
@@ -245,7 +245,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
   const baseCompilerOpts = getCompilerOptsOfBuildOpts(opts);
   const compilerHost = createCompilerHostFromProgramHost(host, () => state.projectCompilerOpts);
   setGetSourceFileAsHashVersioned(compilerHost, host);
-  compilerHost.getParsedCommandLine = (fileName) => parseConfigFile(state, fileName as ResolvedConfigFileName, toResolvedConfigFilePath(state, fileName as ResolvedConfigFileName));
+  compilerHost.getParsedCommandLine = (fileName) => parseConfigFile(state, fileName as qt.ResolvedConfigFileName, toResolvedConfigFilePath(state, fileName as qt.ResolvedConfigFileName));
   compilerHost.resolveModuleNames = maybeBind(host, host.resolveModuleNames);
   compilerHost.resolveTypeReferenceDirectives = maybeBind(host, host.resolveTypeReferenceDirectives);
   const moduleResolutionCache = !compilerHost.resolveModuleNames ? createModuleResolutionCache(currentDirectory, getCanonicalFileName) : undefined;
@@ -255,7 +255,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
     compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
       loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
-  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<ResolvedConfigFileName>(hostWithWatch, opts);
+  const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<qt.ResolvedConfigFileName>(hostWithWatch, opts);
   const state: SolutionBuilderState<T> = {
     host,
     hostWithWatch,
@@ -302,7 +302,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
 function toPath(state: SolutionBuilderState, fileName: string) {
   return qnr.toPath(fileName, state.currentDirectory, state.getCanonicalFileName);
 }
-function toResolvedConfigFilePath(state: SolutionBuilderState, fileName: ResolvedConfigFileName): ResolvedConfigFilePath {
+function toResolvedConfigFilePath(state: SolutionBuilderState, fileName: qt.ResolvedConfigFileName): ResolvedConfigFilePath {
   const { resolvedConfigFilePaths } = state;
   const path = resolvedConfigFilePaths.get(fileName);
   if (path !== undefined) return path;
@@ -313,7 +313,7 @@ function toResolvedConfigFilePath(state: SolutionBuilderState, fileName: Resolve
 function isParsedCommandLine(entry: ConfigFileCacheEntry): entry is qt.ParsedCommandLine {
   return !!(entry as qt.ParsedCommandLine).opts;
 }
-function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): qt.ParsedCommandLine | undefined {
+function parseConfigFile(state: SolutionBuilderState, configFileName: qt.ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): qt.ParsedCommandLine | undefined {
   const { configFileCache } = state;
   const value = configFileCache.get(configFilePath);
   if (value) return isParsedCommandLine(value) ? value : undefined;
@@ -331,20 +331,20 @@ function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedCo
   configFileCache.set(configFilePath, parsed || diagnostic!);
   return parsed;
 }
-function resolveProjectName(state: SolutionBuilderState, name: string): ResolvedConfigFileName {
+function resolveProjectName(state: SolutionBuilderState, name: string): qt.ResolvedConfigFileName {
   return resolveConfigFileProjectName(resolvePath(state.currentDirectory, name));
 }
-function createBuildOrder(state: SolutionBuilderState, roots: readonly ResolvedConfigFileName[]): AnyBuildOrder {
+function createBuildOrder(state: SolutionBuilderState, roots: readonly qt.ResolvedConfigFileName[]): AnyBuildOrder {
   const temporaryMarks = createMap() as ConfigFileMap<true>;
   const permanentMarks = createMap() as ConfigFileMap<true>;
   const circularityReportStack: string[] = [];
-  let buildOrder: ResolvedConfigFileName[] | undefined;
+  let buildOrder: qt.ResolvedConfigFileName[] | undefined;
   let circularDiagnostics: Diagnostic[] | undefined;
   for (const root of roots) {
     visit(root);
   }
   return circularDiagnostics ? { buildOrder: buildOrder || emptyArray, circularDiagnostics } : buildOrder || emptyArray;
-  function visit(configFileName: ResolvedConfigFileName, inCircularContext?: boolean) {
+  function visit(configFileName: qt.ResolvedConfigFileName, inCircularContext?: boolean) {
     const projPath = toResolvedConfigFilePath(state, configFileName);
     if (permanentMarks.has(projPath)) return;
     if (temporaryMarks.has(projPath)) {
@@ -486,10 +486,10 @@ export enum InvalidatedProjectKind {
 }
 export interface InvalidatedProjectBase {
   readonly kind: InvalidatedProjectKind;
-  readonly project: ResolvedConfigFileName;
+  readonly project: qt.ResolvedConfigFileName;
   readonly projectPath: ResolvedConfigFilePath;
-  readonly buildOrder: readonly ResolvedConfigFileName[];
-  done(cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers): ExitStatus;
+  readonly buildOrder: readonly qt.ResolvedConfigFileName[];
+  done(cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): ExitStatus;
   getCompilerOpts(): qt.CompilerOpts;
   getCurrentDirectory(): string;
 }
@@ -512,7 +512,7 @@ export interface BuildInvalidedProject<T extends BuilderProgram> extends Invalid
   getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
   emit(
     targetSourceFile?: qt.SourceFile,
-    writeFile?: WriteFileCallback,
+    writeFile?: qt.WriteFileCallback,
     cancellationToken?: qt.CancellationToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
@@ -520,7 +520,7 @@ export interface BuildInvalidedProject<T extends BuilderProgram> extends Invalid
 }
 export interface UpdateBundleProject<T extends BuilderProgram> extends InvalidatedProjectBase {
   readonly kind: InvalidatedProjectKind.UpdateBundle;
-  emit(writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined;
+  emit(writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined;
 }
 export type InvalidatedProject<T extends BuilderProgram> = UpdateOutputFileStampsProject | BuildInvalidedProject<T> | UpdateBundleProject<T>;
 function doneInvalidatedProject(state: SolutionBuilderState, projectPath: ResolvedConfigFilePath) {
@@ -530,10 +530,10 @@ function doneInvalidatedProject(state: SolutionBuilderState, projectPath: Resolv
 }
 function createUpdateOutputFileStampsProject(
   state: SolutionBuilderState,
-  project: ResolvedConfigFileName,
+  project: qt.ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
   config: qt.ParsedCommandLine,
-  buildOrder: readonly ResolvedConfigFileName[]
+  buildOrder: readonly qt.ResolvedConfigFileName[]
 ): UpdateOutputFileStampsProject {
   let updateOutputFileStampsPending = true;
   return {
@@ -558,11 +558,11 @@ function createUpdateOutputFileStampsProject(
 function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
   kind: InvalidatedProjectKind.Build | InvalidatedProjectKind.UpdateBundle,
   state: SolutionBuilderState<T>,
-  project: ResolvedConfigFileName,
+  project: qt.ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
   projectIndex: number,
   config: qt.ParsedCommandLine,
-  buildOrder: readonly ResolvedConfigFileName[]
+  buildOrder: readonly qt.ResolvedConfigFileName[]
 ): BuildInvalidedProject<T> | UpdateBundleProject<T> {
   enum Step {
     CreateProgram,
@@ -617,13 +617,13 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         buildOrder,
         getCompilerOpts: () => config.opts,
         getCurrentDirectory: () => state.currentDirectory,
-        emit: (writeFile: WriteFileCallback | undefined, customTransformers: qt.CustomTransformers | undefined) => {
+        emit: (writeFile: qt.WriteFileCallback | undefined, customTransformers: qt.CustomTransformers | undefined) => {
           if (step !== Step.EmitBundle) return invalidatedProjectOfBundle;
           return emitBundle(writeFile, customTransformers);
         },
         done,
       };
-  function done(cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers) {
+  function done(cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
     executeSteps(Step.Done, cancellationToken, writeFile, customTransformers);
     return doneInvalidatedProject(state, projectPath);
   }
@@ -679,7 +679,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
   function getSemanticDiagnostics(cancellationToken?: qt.CancellationToken) {
     handleDiagnostics(Debug.checkDefined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
   }
-  function emit(writeFileCallback?: WriteFileCallback, cancellationToken?: qt.CancellationToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
+  function emit(writeFileCallback?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
     Debug.assertIsDefined(program);
     assert(step === Step.Emit);
     program.backupState();
@@ -768,7 +768,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     buildResult = resultFlags;
     return emitDiagnostics;
   }
-  function emitBundle(writeFileCallback?: WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined {
+  function emitBundle(writeFileCallback?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined {
     assert(kind === InvalidatedProjectKind.UpdateBundle);
     if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_update_output_of_project_0, project);
@@ -805,7 +805,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     const emitDiagnostics = finishEmit(emitterDiagnostics, emittedOutputs, minimumDate, false, outputFiles[0].name, BuildResultFlags.DeclarationOutputUnchanged);
     return { emitSkipped: false, diagnostics: emitDiagnostics };
   }
-  function executeSteps(till: Step, cancellationToken?: qt.CancellationToken, writeFile?: WriteFileCallback, customTransformers?: qt.CustomTransformers) {
+  function executeSteps(till: Step, cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
     while (step <= till && step < Step.Done) {
       const currentStep = step;
       switch (step) {
@@ -960,7 +960,7 @@ function buildErrors<T extends BuilderProgram>(
   state.projectCompilerOpts = state.baseCompilerOpts;
   return errorFlags;
 }
-function updateModuleResolutionCache(state: SolutionBuilderState, proj: ResolvedConfigFileName, config: qt.ParsedCommandLine) {
+function updateModuleResolutionCache(state: SolutionBuilderState, proj: qt.ResolvedConfigFileName, config: qt.ParsedCommandLine) {
   if (!state.moduleResolutionCache) return;
   const { moduleResolutionCache } = state;
   const projPath = toPath(state, proj);
@@ -1179,11 +1179,11 @@ function updateOutputTimestamps(state: SolutionBuilderState, proj: qt.ParsedComm
 }
 function queueReferencingProjects(
   state: SolutionBuilderState,
-  project: ResolvedConfigFileName,
+  project: qt.ResolvedConfigFileName,
   projectPath: ResolvedConfigFilePath,
   projectIndex: number,
   config: qt.ParsedCommandLine,
-  buildOrder: readonly ResolvedConfigFileName[],
+  buildOrder: readonly qt.ResolvedConfigFileName[],
   buildResult: BuildResultFlags
 ) {
   if (buildResult & BuildResultFlags.AnyErrors) return;
@@ -1341,7 +1341,7 @@ function buildNextInvalidatedProject(state: SolutionBuilderState) {
   disableCache(state);
   reportErrorSummary(state, buildOrder);
 }
-function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine | undefined) {
+function watchConfigFile(state: SolutionBuilderState, resolved: qt.ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine | undefined) {
   if (!state.watch || state.allWatchedConfigFiles.has(resolvedPath)) return;
   state.allWatchedConfigFiles.set(
     resolvedPath,
@@ -1370,7 +1370,7 @@ function isOutputFile(state: SolutionBuilderState, fileName: string, configFile:
   if (configFile.opts.outDir && containsPath(configFile.opts.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   return !forEach(configFile.fileNames, (inputFile) => isSameFile(state, fileName, inputFile));
 }
-function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
+function watchWildCardDirectories(state: SolutionBuilderState, resolved: qt.ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (!state.watch) return;
   updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), createMap(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
     state.watchDirectory(
@@ -1395,7 +1395,7 @@ function watchWildCardDirectories(state: SolutionBuilderState, resolved: Resolve
     )
   );
 }
-function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
+function watchInputFiles(state: SolutionBuilderState, resolved: qt.ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (!state.watch) return;
   mutateMap(
     getOrCreateValueMapFromConfigFileMap(state.allWatchedInputFiles, resolvedPath),
@@ -1408,7 +1408,7 @@ function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFi
           () => invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.None),
           PollingInterval.Low,
           parsed?.watchOpts,
-          path as Path,
+          path as qt.Path,
           WatchType.SourceFile,
           resolved
         ),
@@ -1520,7 +1520,7 @@ function reportErrorSummary(state: SolutionBuilderState, buildOrder: AnyBuildOrd
     state.host.reportErrorSummary(totalErrors);
   }
 }
-function reportBuildQueue(state: SolutionBuilderState, buildQueue: readonly ResolvedConfigFileName[]) {
+function reportBuildQueue(state: SolutionBuilderState, buildQueue: readonly qt.ResolvedConfigFileName[]) {
   if (state.opts.verbose) {
     reportStatus(state, qd.Projects_in_this_build_Colon_0, buildQueue.map((s) => '\r\n    * ' + relName(state, s)).join(''));
   }
@@ -1670,7 +1670,7 @@ export namespace Status {
     newerProjectName: string;
   }
 }
-export function resolveConfigFileProjectName(project: string): ResolvedConfigFileName {
-  if (fileExtensionIs(project, Extension.Json)) return project as ResolvedConfigFileName;
-  return combinePaths(project, 'tsconfig.json') as ResolvedConfigFileName;
+export function resolveConfigFileProjectName(project: string): qt.ResolvedConfigFileName {
+  if (fileExtensionIs(project, Extension.Json)) return project as qt.ResolvedConfigFileName;
+  return combinePaths(project, 'tsconfig.json') as qt.ResolvedConfigFileName;
 }

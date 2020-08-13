@@ -1005,11 +1005,11 @@ export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
   },
 ];
 export interface OptsNameMap {
-  optsNameMap: qu.QMap<CommandLineOption>;
+  optsNameMap: qu.QMap<qt.CommandLineOption>;
   shortOptionNames: qu.QMap<string>;
 }
 export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptsNameMap {
-  const optsNameMap = createMap<CommandLineOption>();
+  const optsNameMap = createMap<qt.CommandLineOption>();
   const shortOptionNames = createMap<string>();
   forEach(optionDeclarations, (option) => {
     optsNameMap.set(option.name.toLowerCase(), option);
@@ -1365,15 +1365,15 @@ const watchOptsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   unknownDidYouMeanDiagnostic: qd.Unknown_watch_option_0_Did_you_mean_1,
   optionTypeMismatchDiagnostic: qd.Watch_option_0_requires_a_value_of_type_1,
 };
-let commandLineCompilerOptsMapCache: qu.QMap<CommandLineOption>;
+let commandLineCompilerOptsMapCache: qu.QMap<qt.CommandLineOption>;
 function getCommandLineCompilerOptsMap() {
   return commandLineCompilerOptsMapCache || (commandLineCompilerOptsMapCache = commandLineOptsToMap(optionDeclarations));
 }
-let commandLineWatchOptsMapCache: qu.QMap<CommandLineOption>;
+let commandLineWatchOptsMapCache: qu.QMap<qt.CommandLineOption>;
 function getCommandLineWatchOptsMap() {
   return commandLineWatchOptsMapCache || (commandLineWatchOptsMapCache = commandLineOptsToMap(optsForWatch));
 }
-let commandLineTypeAcquisitionMapCache: qu.QMap<CommandLineOption>;
+let commandLineTypeAcquisitionMapCache: qu.QMap<qt.CommandLineOption>;
 function getCommandLineTypeAcquisitionMap() {
   return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptsToMap(typeAcquisitionDeclarations));
 }
@@ -1452,8 +1452,8 @@ function getTsconfigRootOptsMap() {
 }
 interface JsonConversionNotifier {
   onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptsValue): void;
-  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression): void;
-  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression): void;
+  onSetValidOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, value: qt.CompilerOptsValue, valueNode: qt.Expression): void;
+  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, value: qt.CompilerOptsValue, valueNode: qt.Expression): void;
 }
 export function convertToObject(sourceFile: qt.JsonSourceFile, errors: Push<Diagnostic>): any {
   return convertToObjectWorker(sourceFile, errors, undefined);
@@ -1467,12 +1467,12 @@ export function convertToObjectWorker(
 ): any {
   if (!sourceFile.statements.length) return returnValue ? {} : undefined;
   return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOpts);
-  function isRootOptionMap(knownOpts: qu.QMap<CommandLineOption> | undefined) {
+  function isRootOptionMap(knownOpts: qu.QMap<qt.CommandLineOption> | undefined) {
     return knownRootOpts && (knownRootOpts as qt.TsConfigOnlyOption).elemOpts === knownOpts;
   }
   function convertObjectLiteralExpressionToJson(
     node: qt.ObjectLiteralExpression,
-    knownOpts: qu.QMap<CommandLineOption> | undefined,
+    knownOpts: qu.QMap<qt.CommandLineOption> | undefined,
     extraKeyDiagnostics: qt.DidYouMeanOptsDiagnostics | undefined,
     parentOption: string | undefined
   ): any {
@@ -1521,14 +1521,14 @@ export function convertToObjectWorker(
     }
     return result;
   }
-  function convertArrayLiteralExpressionToJson(elems: Nodes<Expression>, elemOption: qt.CommandLineOption | undefined): any[] | void {
+  function convertArrayLiteralExpressionToJson(elems: Nodes<qt.Expression>, elemOption: qt.CommandLineOption | undefined): any[] | void {
     if (!returnValue) return elems.forEach((elem) => convertPropertyValueToJson(elem, elemOption));
     return filter(
       elems.map((elem) => convertPropertyValueToJson(elem, elemOption)),
       (v) => v !== undefined
     );
   }
-  function convertPropertyValueToJson(valueExpression: Expression, option: qt.CommandLineOption | undefined): any {
+  function convertPropertyValueToJson(valueExpression: qt.Expression, option: qt.CommandLineOption | undefined): any {
     switch (valueExpression.kind) {
       case Syntax.TrueKeyword:
         reportInvalidOptionValue(option && option.type !== 'boolean');
@@ -1657,7 +1657,7 @@ export function convertToTSConfig(configParseResult: qt.ParsedCommandLine, confi
   };
   return config;
 }
-function optionMapToObject(optionMap: qu.QMap<CompilerOptsValue>): object {
+function optionMapToObject(optionMap: qu.QMap<qt.CompilerOptsValue>): object {
   return {
     ...arrayFrom(optionMap.entries()).reduce((prev, cur) => ({ ...prev, [cur[0]]: cur[1] }), {}),
   };
@@ -1689,21 +1689,21 @@ function getNameOfCompilerOptionValue(value: qt.CompilerOptsValue, customTypeMap
     return;
   });
 }
-function serializeCompilerOpts(opts: qt.CompilerOpts, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptsValue> {
+function serializeCompilerOpts(opts: qt.CompilerOpts, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<qt.CompilerOptsValue> {
   return serializeOptionBaseObject(opts, getOptsNameMap(), pathOpts);
 }
 function serializeWatchOpts(opts: qt.WatchOpts) {
   return serializeOptionBaseObject(opts, getWatchOptsNameMap());
 }
-function serializeOptionBaseObject(opts: OptsBase, { optsNameMap }: OptsNameMap, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptsValue> {
-  const result = createMap<CompilerOptsValue>();
+function serializeOptionBaseObject(opts: OptsBase, { optsNameMap }: OptsNameMap, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<qt.CompilerOptsValue> {
+  const result = createMap<qt.CompilerOptsValue>();
   const getCanonicalFileName = pathOpts && createGetCanonicalFileName(pathOpts.useCaseSensitiveFileNames);
   for (const name in opts) {
     if (hasProperty(opts, name)) {
       if (optsNameMap.has(name) && optsNameMap.get(name)!.category === qd.Command_line_Opts) {
         continue;
       }
-      const value = <CompilerOptsValue>opts[name];
+      const value = <qt.CompilerOptsValue>opts[name];
       const optionDefinition = optsNameMap.get(name.toLowerCase());
       if (optionDefinition) {
         const customTypeMap = getCustomTypeMapOfCommandLineOption(optionDefinition);
@@ -1757,7 +1757,7 @@ export function generateTSConfig(opts: qt.CompilerOpts, fileNames: readonly stri
     return category !== undefined && category !== qd.Command_line_Opts && (category !== qd.Advanced_Opts || compilerOptsMap.has(name));
   }
   function writeConfigurations() {
-    const categorizedOpts = new MultiMap<CommandLineOption>();
+    const categorizedOpts = new MultiMap<qt.CommandLineOption>();
     for (const option of optionDeclarations) {
       const { category } = option;
       if (isAllowedOption(option)) {
@@ -1840,7 +1840,7 @@ export function parseJsonConfigFileContent(
   basePath: string,
   existingOpts?: qt.CompilerOpts,
   configFileName?: string,
-  resolutionStack?: Path[],
+  resolutionStack?: qt.Path[],
   extraFileExtensions?: readonly qt.FileExtensionInfo[],
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
   existingWatchOpts?: qt.WatchOpts
@@ -1853,7 +1853,7 @@ export function parseJsonSourceFileConfigFileContent(
   basePath: string,
   existingOpts?: qt.CompilerOpts,
   configFileName?: string,
-  resolutionStack?: Path[],
+  resolutionStack?: qt.Path[],
   extraFileExtensions?: readonly qt.FileExtensionInfo[],
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
   existingWatchOpts?: qt.WatchOpts
@@ -1879,7 +1879,7 @@ function parseJsonConfigFileContentWorker(
   existingOpts: qt.CompilerOpts = {},
   existingWatchOpts: qt.WatchOpts | undefined,
   configFileName?: string,
-  resolutionStack: Path[] = [],
+  resolutionStack: qt.Path[] = [],
   extraFileExtensions: readonly qt.FileExtensionInfo[] = [],
   extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>
 ): qt.ParsedCommandLine {
@@ -1922,7 +1922,7 @@ function getErrorForNoInputFiles({ includeSpecs, excludeSpecs }: qt.ConfigFileSp
     JSON.stringify(excludeSpecs || [])
   );
 }
-function shouldReportNoInputFiles(result: qt.ExpandResult, canJsonReportNoInutFiles: boolean, resolutionStack?: Path[]) {
+function shouldReportNoInputFiles(result: qt.ExpandResult, canJsonReportNoInutFiles: boolean, resolutionStack?: qt.Path[]) {
   return result.fileNames.length === 0 && canJsonReportNoInutFiles && (!resolutionStack || resolutionStack.length === 0);
 }
 export function canJsonReportNoInutFiles(raw: any) {
@@ -2039,7 +2039,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host:
       }
       currentOption[option.name] = normalizeOptionValue(option, basePath, value);
     },
-    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptsValue, valueNode: Expression) {
+    onSetValidOptionKeyValueInRoot(key: string, _keyNode: qt.PropertyName, value: qt.CompilerOptsValue, valueNode: qt.Expression) {
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
@@ -2047,7 +2047,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host:
           return;
       }
     },
-    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptsValue, _valueNode: Expression) {
+    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, _value: qt.CompilerOptsValue, _valueNode: qt.Expression) {
       if (key === 'excludes') {
         errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, keyNode, qd.Unknown_option_excludes_Did_you_mean_exclude));
       }
@@ -2183,7 +2183,7 @@ function convertWatchOptsFromJsonWorker(jsonOpts: any, basePath: string, errors:
   return convertOptsFromJson(getCommandLineWatchOptsMap(), jsonOpts, basePath, undefined, watchOptsDidYouMeanDiagnostics, errors);
 }
 function convertOptsFromJson(
-  optsNameMap: qu.QMap<CommandLineOption>,
+  optsNameMap: qu.QMap<qt.CommandLineOption>,
   jsonOpts: any,
   basePath: string,
   defaultOpts: undefined,
@@ -2191,7 +2191,7 @@ function convertOptsFromJson(
   errors: Push<Diagnostic>
 ): qt.WatchOpts | undefined;
 function convertOptsFromJson(
-  optsNameMap: qu.QMap<CommandLineOption>,
+  optsNameMap: qu.QMap<qt.CommandLineOption>,
   jsonOpts: any,
   basePath: string,
   defaultOpts: qt.CompilerOpts | qt.TypeAcquisition,
@@ -2199,7 +2199,7 @@ function convertOptsFromJson(
   errors: Push<Diagnostic>
 ): qt.CompilerOpts | qt.TypeAcquisition;
 function convertOptsFromJson(
-  optsNameMap: qu.QMap<CommandLineOption>,
+  optsNameMap: qu.QMap<qt.CommandLineOption>,
   jsonOpts: any,
   basePath: string,
   defaultOpts: qt.CompilerOpts | qt.TypeAcquisition | qt.WatchOpts | undefined,
@@ -2235,7 +2235,7 @@ function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, va
   if (option.type === 'list') {
     const listOption = option;
     if (listOption.elem.isFilePath || !isString(listOption.elem.type)) {
-      return <CompilerOptsValue>filter(
+      return <qt.CompilerOptsValue>filter(
         map(value, (v) => normalizeOptionValue(listOption.elem, basePath, v)),
         (v) => !!v
       );
@@ -2616,6 +2616,6 @@ export function compilerOptsAffectSemanticDiagnostics(newOpts: qt.CompilerOpts, 
 export function compilerOptsAffectEmit(newOpts: qt.CompilerOpts, oldOpts: qt.CompilerOpts): boolean {
   return oldOpts !== newOpts && affectsEmitOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
 }
-export function getCompilerOptionValue(opts: qt.CompilerOpts, option: CommandLineOption): unknown {
+export function getCompilerOptionValue(opts: qt.CompilerOpts, option: qt.CommandLineOption): unknown {
   return option.strictFlag ? getStrictOptionValue(opts, option.name as StrictOptionName) : opts[option.name];
 }

@@ -1,4 +1,4 @@
-import { FlowNode, Node } from './types';
+import { qt.FlowNode, Node } from './types';
 import { qf } from './core';
 import { Syntax } from './syntax';
 import * as qc from './core';
@@ -10,7 +10,7 @@ export let isDebugging = false;
 let isDebugInfoEnabled = false;
 interface ExtendedDebugModule {
   init(_ts: typeof ts): void;
-  formatControlFlowGraph(flowNode: FlowNode): string;
+  formatControlFlowGraph(flowNode: qt.FlowNode): string;
 }
 let extendedDebugModule: ExtendedDebugModule | undefined;
 function extendedDebug() {
@@ -20,23 +20,23 @@ function extendedDebug() {
   }
   return extendedDebugModule;
 }
-export function printControlFlowGraph(n: FlowNode) {
+export function printControlFlowGraph(n: qt.FlowNode) {
   return console.log(formatControlFlowGraph(n));
 }
-export function formatControlFlowGraph(n: FlowNode) {
+export function formatControlFlowGraph(n: qt.FlowNode) {
   return extendedDebug().formatControlFlowGraph(n);
 }
-export function attachFlowNodeDebugInfo(n: FlowNode) {
+export function attachFlowNodeDebugInfo(n: qt.FlowNode) {
   if (isDebugInfoEnabled) {
     if (!('__debugFlowFlags' in n)) {
       Object.defineProperties(n, {
         __debugFlowFlags: {
-          get(this: FlowNode) {
+          get(this: qt.FlowNode) {
             return formatEnum(this.flags, (ts as any).FlowFlags, true);
           },
         },
         __debugToString: {
-          value(this: FlowNode) {
+          value(this: qt.FlowNode) {
             return formatControlFlowGraph(this);
           },
         },
@@ -118,7 +118,7 @@ export function enableDebugInfo() {
   try {
     if (sys && sys.require) {
       const basePath = getDirectoryPath(resolvePath(sys.getExecutingFilePath()));
-      const result = sys.require(basePath, './compiler-debug') as RequireResult<ExtendedDebugModule>;
+      const result = sys.require(basePath, './compiler-debug') as qt.RequireResult<ExtendedDebugModule>;
       if (!result.error) {
         result.module.init(ts);
         extendedDebugModule = result.module;

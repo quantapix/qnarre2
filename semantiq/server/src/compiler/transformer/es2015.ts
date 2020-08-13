@@ -181,7 +181,7 @@ export function transformES2015(context: qt.TrafoContext) {
         return visitBlock(<qt.Block>node, false);
       case Syntax.BreakStatement:
       case Syntax.ContinueStatement:
-        return visitBreakOrContinueStatement(<BreakOrContinueStatement>node);
+        return visitBreakOrContinueStatement(<qt.BreakOrContinueStatement>node);
       case Syntax.LabeledStatement:
         return visitLabeledStatement(<qt.LabeledStatement>node);
       case Syntax.DoStatement:
@@ -217,7 +217,7 @@ export function transformES2015(context: qt.TrafoContext) {
       case Syntax.TemplateHead:
       case Syntax.TemplateMiddle:
       case Syntax.TemplateTail:
-        return visitTemplateLiteral(<LiteralExpression>node);
+        return visitTemplateLiteral(<qt.LiteralExpression>node);
       case Syntax.StringLiteral:
         return visitStringLiteral(<qt.StringLiteral>node);
       case Syntax.NumericLiteral:
@@ -317,7 +317,7 @@ export function transformES2015(context: qt.TrafoContext) {
     if (node.escapedText !== 'args' || !resolver.isArgsLocalBinding(node)) return node;
     return convertedLoopState.argsName || (convertedLoopState.argsName = createUniqueName('args'));
   }
-  function visitBreakOrContinueStatement(node: BreakOrContinueStatement): qc.Statement {
+  function visitBreakOrContinueStatement(node: qt.BreakOrContinueStatement): qc.Statement {
     if (convertedLoopState) {
       const jump = node.kind === Syntax.BreakStatement ? Jump.Break : Jump.Continue;
       const canUseBreakOrContinue =
@@ -351,17 +351,17 @@ export function transformES2015(context: qt.TrafoContext) {
             if (i === 0) {
               expr = copyExpr;
             } else {
-              expr = new qt.BinaryExpression(expr!, Syntax.CommaToken, copyExpr);
+              expr = new qc.BinaryExpression(expr!, Syntax.CommaToken, copyExpr);
             }
           }
-          returnExpression = new qt.BinaryExpression(expr!, Syntax.CommaToken, returnExpression);
+          returnExpression = new qc.BinaryExpression(expr!, Syntax.CommaToken, returnExpression);
         }
         return new qc.ReturnStatement(returnExpression);
       }
     }
     return visitEachChild(node, visitor, context);
   }
-  function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<Statement> {
+  function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<qt.Statement> {
     const variable = new qc.VariableDeclaration(qf.decl.localName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
     variable.setOriginal(node);
     const statements: qc.Statement[] = [];
@@ -377,7 +377,7 @@ export function transformES2015(context: qt.TrafoContext) {
     }
     const emitFlags = qf.get.emitFlags(node);
     if ((emitFlags & EmitFlags.HasEndOfDeclarationMarker) === 0) {
-      statements.push(new qt.EndOfDeclarationMarker(node));
+      statements.push(new qc.EndOfDeclarationMarker(node));
       qf.emit.setFlags(statement, emitFlags | EmitFlags.HasEndOfDeclarationMarker);
     }
     return singleOrMany(statements);
@@ -426,7 +426,7 @@ export function transformES2015(context: qt.TrafoContext) {
     qf.emit.setFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
     statements.push(statement);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
-    const block = new qt.Block(new Nodes(statements).setRange(true));
+    const block = new qc.Block(new Nodes(statements).setRange(true));
     qf.emit.setFlags(block, EmitFlags.NoComments);
     return block;
   }
@@ -471,13 +471,13 @@ export function transformES2015(context: qt.TrafoContext) {
     }
     const statementsArray = new Nodes(statements);
     statementsArray.setRange(node.members);
-    const block = new qt.Block(statementsArray, true);
+    const block = new qc.Block(statementsArray, true);
     block.setRange(node);
     qf.emit.setFlags(block, EmitFlags.NoComments);
     return block;
   }
   function transformConstructorBody(
-    constructor: (ConstructorDeclaration & { body: FunctionBody }) | undefined,
+    constructor: (ConstructorDeclaration & { body: qt.FunctionBody }) | undefined,
     node: qt.ClassDeclaration | qt.ClassExpression,
     extendsClauseElem: qc.ExpressionWithTypings | undefined,
     hasSynthesizedSuper: boolean
@@ -524,7 +524,7 @@ export function transformES2015(context: qt.TrafoContext) {
     } else {
       insertCaptureThisForNodeIfNeeded(prologue, constructor);
     }
-    const block = new qt.Block(new Nodes(concatenate(prologue, statements)).setRange(true));
+    const block = new qc.Block(new Nodes(concatenate(prologue, statements)).setRange(true));
     block.setRange(constructor.body);
     return block;
   }
@@ -564,7 +564,7 @@ export function transformES2015(context: qt.TrafoContext) {
   function hasDefaultValueOrBindingPattern(node: qt.ParamDeclaration) {
     return node.initer !== undefined || node.name.kind === Syntax.BindingPattern;
   }
-  function addDefaultValueAssignmentsIfNeeded(statements: qc.Statement[], node: FunctionLikeDeclaration): boolean {
+  function addDefaultValueAssignmentsIfNeeded(statements: qc.Statement[], node: qt.FunctionLikeDeclaration): boolean {
     if (!some(node.params, hasDefaultValueOrBindingPattern)) return false;
     let added = false;
     for (const param of node.params) {
@@ -581,7 +581,7 @@ export function transformES2015(context: qt.TrafoContext) {
     }
     return added;
   }
-  function insertDefaultValueAssignmentForBindingPattern(statements: qc.Statement[], param: qt.ParamDeclaration, name: BindingPattern, initer: qc.Expression | undefined): boolean {
+  function insertDefaultValueAssignmentForBindingPattern(statements: qc.Statement[], param: qt.ParamDeclaration, name: qt.BindingPattern, initer: qc.Expression | undefined): boolean {
     if (name.elems.length > 0) {
       insertStatementAfterCustomPrologue(
         statements,
@@ -605,7 +605,7 @@ export function transformES2015(context: qt.TrafoContext) {
     const statement = new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       qf.emit.setFlags(
-        new qt.Block([
+        new qc.Block([
           new qc.ExpressionStatement(
             qf.emit.setFlags(
               qf.create
@@ -626,7 +626,7 @@ export function transformES2015(context: qt.TrafoContext) {
   function shouldAddRestParam(node: qt.ParamDeclaration | undefined, inConstructorWithSynthesizedSuper: boolean): node is qt.ParamDeclaration {
     return !!(node && node.dot3Token && !inConstructorWithSynthesizedSuper);
   }
-  function addRestParamIfNeeded(statements: qc.Statement[], node: FunctionLikeDeclaration, inConstructorWithSynthesizedSuper: boolean): boolean {
+  function addRestParamIfNeeded(statements: qc.Statement[], node: qt.FunctionLikeDeclaration, inConstructorWithSynthesizedSuper: boolean): boolean {
     const prologueStatements: qc.Statement[] = [];
     const param = lastOrUndefined(node.params);
     if (!shouldAddRestParam(param, inConstructorWithSynthesizedSuper)) return false;
@@ -637,7 +637,7 @@ export function transformES2015(context: qt.TrafoContext) {
     const temp = createLoopVariable();
     prologueStatements.push(
       qf.emit.setFlags(
-        new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(declarationName, undefined, new qt.ArrayLiteralExpression([]))])).setRange(param),
+        new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(declarationName, undefined, new qc.ArrayLiteralExpression([]))])).setRange(param),
         EmitFlags.CustomPrologue
       )
     );
@@ -645,7 +645,7 @@ export function transformES2015(context: qt.TrafoContext) {
       new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, qc.asLiteral(restIndex))]).setRange(param),
       qf.create.lessThan(temp, new qc.PropertyAccessExpression(new qc.Identifier('args'), 'length')).setRange(param),
       qf.create.increment(temp).setRange(param),
-      new qt.Block([
+      new qc.Block([
         qf.emit.setStartsOnNewLine(
           new qc.ExpressionStatement(
             qf.create.assignment(
@@ -684,7 +684,7 @@ export function transformES2015(context: qt.TrafoContext) {
     qf.emit.setSourceMapRange(captureThisStatement, node);
     insertStatementAfterCustomPrologue(statements, captureThisStatement);
   }
-  function insertCaptureNewTargetIfNeeded(statements: qc.Statement[], node: FunctionLikeDeclaration, copyOnWrite: boolean): qc.Statement[] {
+  function insertCaptureNewTargetIfNeeded(statements: qc.Statement[], node: qt.FunctionLikeDeclaration, copyOnWrite: boolean): qc.Statement[] {
     if (hierarchyFacts & HierarchyFacts.NewTarget) {
       let newTarget: qc.Expression;
       switch (node.kind) {
@@ -703,7 +703,7 @@ export function transformES2015(context: qt.TrafoContext) {
           newTarget = new qc.ConditionalExpression(
             qf.create.logicalAnd(
               qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
-              new qt.BinaryExpression(qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.decl.localName(node))
+              new qc.BinaryExpression(qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.decl.localName(node))
             ),
             new qc.PropertyAccessExpression(qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
             qc.VoidExpression.zero()
@@ -751,7 +751,7 @@ export function transformES2015(context: qt.TrafoContext) {
   function transformSemicolonClassElemToStatement(member: qt.SemicolonClassElem) {
     return new qc.EmptyStatement().setRange(member);
   }
-  function transformClassMethodDeclarationToStatement(receiver: LeftExpression, member: qt.MethodDeclaration, container: Node) {
+  function transformClassMethodDeclarationToStatement(receiver: qt.LeftExpression, member: qt.MethodDeclaration, container: Node) {
     const commentRange = qf.emit.commentRange(member);
     const sourceMapRange = qf.emit.sourceMapRange(member);
     const memberFunction = transformFunctionLikeToExpression(member, undefined, container);
@@ -777,13 +777,13 @@ export function transformES2015(context: qt.TrafoContext) {
     qf.emit.setFlags(statement, EmitFlags.NoSourceMap);
     return statement;
   }
-  function transformAccessorsToStatement(receiver: LeftExpression, accessors: qt.AllAccessorDeclarations, container: Node): qc.Statement {
+  function transformAccessorsToStatement(receiver: qt.LeftExpression, accessors: qt.AllAccessorDeclarations, container: Node): qc.Statement {
     const statement = new qc.ExpressionStatement(transformAccessorsToExpression(receiver, accessors, container, false));
     qf.emit.setFlags(statement, EmitFlags.NoComments);
     qf.emit.setSourceMapRange(statement, qf.emit.sourceMapRange(accessors.firstAccessor));
     return statement;
   }
-  function transformAccessorsToExpression(receiver: LeftExpression, { firstAccessor, getAccessor, setAccessor }: qt.AllAccessorDeclarations, container: Node, startsOnNewLine: boolean): qc.Expression {
+  function transformAccessorsToExpression(receiver: qt.LeftExpression, { firstAccessor, getAccessor, setAccessor }: qt.AllAccessorDeclarations, container: Node, startsOnNewLine: boolean): qc.Expression {
     const target = getMutableClone(receiver);
     qf.emit.setFlags(target, EmitFlags.NoComments | EmitFlags.NoTrailingSourceMap);
     qf.emit.setSourceMapRange(target, firstAccessor.name);
@@ -792,7 +792,7 @@ export function transformES2015(context: qt.TrafoContext) {
     const propertyName = createExpressionForPropertyName(visitedAccessorName);
     qf.emit.setFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoLeadingSourceMap);
     qf.emit.setSourceMapRange(propertyName, firstAccessor.name);
-    const properties: ObjectLiteralElemLike[] = [];
+    const properties: qt.ObjectLiteralElemLike[] = [];
     if (getAccessor) {
       const getterFunction = transformFunctionLikeToExpression(getAccessor, undefined, container);
       qf.emit.setSourceMapRange(getterFunction, qf.emit.sourceMapRange(getAccessor));
@@ -866,7 +866,7 @@ export function transformES2015(context: qt.TrafoContext) {
     convertedLoopState = savedConvertedLoopState;
     return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.asteriskToken, name, undefined, params, undefined, body);
   }
-  function transformFunctionLikeToExpression(node: FunctionLikeDeclaration, location: TextRange | undefined, name: qc.Identifier | undefined, container: Node | undefined): qt.FunctionExpression {
+  function transformFunctionLikeToExpression(node: qt.FunctionLikeDeclaration, location: TextRange | undefined, name: qc.Identifier | undefined, container: Node | undefined): qt.FunctionExpression {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
     const ancestorFacts =
@@ -882,7 +882,7 @@ export function transformES2015(context: qt.TrafoContext) {
     convertedLoopState = savedConvertedLoopState;
     return new qc.FunctionExpression(undefined, params, undefined, body).setRange(location).setOriginal(node);
   }
-  function transformFunctionBody(node: FunctionLikeDeclaration) {
+  function transformFunctionBody(node: qt.FunctionLikeDeclaration) {
     let multiLine = false;
     let singleLine = false;
     let statementsLocation: TextRange;
@@ -933,7 +933,7 @@ export function transformES2015(context: qt.TrafoContext) {
     }
     statements.unshift(...prologue);
     if (body.kind === Syntax.Block && arrayIsEqualTo(statements, body.statements)) return body;
-    const block = new qt.Block(new Nodes(statements), statementsLocation).setRange(multiLine);
+    const block = new qc.Block(new Nodes(statements), statementsLocation).setRange(multiLine);
     block.setRange(node.body);
     if (!multiLine && singleLine) {
       qf.emit.setFlags(block, EmitFlags.SingleLine);
@@ -997,7 +997,7 @@ export function transformES2015(context: qt.TrafoContext) {
           if (decl.name.kind === Syntax.BindingPattern) {
             assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
           } else {
-            assignment = new qt.BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initer, visitor, isExpression));
+            assignment = new qc.BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initer, visitor, isExpression));
             assignment.setRange(decl);
           }
           assignments = append(assignments, assignment);
@@ -1078,7 +1078,7 @@ export function transformES2015(context: qt.TrafoContext) {
   function resetLabel(node: qt.LabeledStatement) {
     convertedLoopState!.labels!.set(idText(node.label), false);
   }
-  function visitLabeledStatement(node: qt.LabeledStatement): VisitResult<Statement> {
+  function visitLabeledStatement(node: qt.LabeledStatement): VisitResult<qt.Statement> {
     if (convertedLoopState && !convertedLoopState.labels) {
       convertedLoopState.labels = createMap<boolean>();
     }
@@ -1121,7 +1121,7 @@ export function transformES2015(context: qt.TrafoContext) {
   function visitForInStatement(node: qt.ForInStatement, outermostLabeledStatement: qt.LabeledStatement | undefined) {
     return visitIterationStmtWithFacts(HierarchyFacts.ForInOrForOfStatementExcludes, HierarchyFacts.ForInOrForOfStatementIncludes, node, outermostLabeledStatement);
   }
-  function visitForOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined): VisitResult<Statement> {
+  function visitForOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined): VisitResult<qt.Statement> {
     return visitIterationStmtWithFacts(
       HierarchyFacts.ForInOrForOfStatementExcludes,
       HierarchyFacts.ForInOrForOfStatementIncludes,
@@ -1177,7 +1177,7 @@ export function transformES2015(context: qt.TrafoContext) {
   }
 }
 function createSyntheticBlockForConvertedStatements(statements: qc.Statement[]) {
-  return qf.emit.setFlags(new qt.Block(new Nodes(statements), true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+  return qf.emit.setFlags(new qc.Block(new Nodes(statements), true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
 }
 function convertForOfStatementForArray(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement, convertedLoopBodyStatements: qc.Statement[]): qc.Statement {
   const expression = visitNode(node.expression, visitor, isExpression);
@@ -1227,17 +1227,17 @@ function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabe
     EmitFlags.NoTokenTrailingSourceMaps
   );
   return new qc.TryStatement(
-    new qt.Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
+    new qc.Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
     new qc.CatchClause(
       new qc.VariableDeclaration(catchVariable),
       qf.emit.setFlags(
-        new qt.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
+        new qc.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
         EmitFlags.SingleLine
       )
     ),
-    new qt.Block([
+    new qc.Block([
       new qc.TryStatement(
-        new qt.Block([
+        new qc.Block([
           qf.emit.setFlags(
             new qc.IfStatement(
               qf.create.logicalAnd(
@@ -1251,7 +1251,7 @@ function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabe
         ]),
         undefined,
         qf.emit.setFlags(
-          new qt.Block([qf.emit.setFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
+          new qc.Block([qf.emit.setFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
           EmitFlags.SingleLine
         )
       ),
@@ -1325,7 +1325,7 @@ function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopSta
     state.hoistedLocalVariables = [];
   }
   visit(node.name);
-  function visit(node: qc.Identifier | BindingPattern) {
+  function visit(node: qc.Identifier | qt.BindingPattern) {
     if (node.kind === Syntax.Identifier) {
       state.hoistedLocalVariables!.push(node);
     } else {
@@ -1342,7 +1342,7 @@ function convertIterationStmtBodyIfNecessary(
   outermostLabeledStatement: qt.LabeledStatement | undefined,
   ancestorFacts: HierarchyFacts,
   convert?: LoopConverter
-): VisitResult<Statement> {
+): VisitResult<qt.Statement> {
   if (!shouldConvertIterationStmt(node)) {
     let saveAllowedNonLabeledJumps: Jump | undefined;
     if (convertedLoopState) {
@@ -1375,7 +1375,7 @@ function convertIterationStmtBodyIfNecessary(
     if (convert) {
       loop = convert(node, outermostLabeledStatement, bodyFunction.part, ancestorFacts);
     } else {
-      const clone = convertIterationStmtCore(node, initerFunction, new qt.Block(bodyFunction.part, true));
+      const clone = convertIterationStmtCore(node, initerFunction, new qc.Block(bodyFunction.part, true));
       qf.calc.aggregate(clone);
       loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
     }
@@ -1534,12 +1534,12 @@ function createFunctionForIniterOfForStatement(node: ForStatementWithConvertible
           qf.emit.setFlags(
             new qc.FunctionExpression(
               undefined,
-              containsYield ? new qt.Token(Syntax.AsteriskToken) : undefined,
+              containsYield ? new qc.Token(Syntax.AsteriskToken) : undefined,
               undefined,
               undefined,
               undefined,
               undefined,
-              visitNode(new qt.Block(statements, true), visitor, isBlock)
+              visitNode(new qc.Block(statements, true), visitor, isBlock)
             ),
             emitFlags
           )
@@ -1551,7 +1551,7 @@ function createFunctionForIniterOfForStatement(node: ForStatementWithConvertible
   const part = new qc.VariableDeclarationList(map(currentState.loopOutParams, createOutVariable));
   return { functionName, containsYield, functionDeclaration, part };
 }
-function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentState: ConvertedLoopState, outerState: ConvertedLoopState | undefined): IterationStmtPartFunction<Statement[]> {
+function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentState: ConvertedLoopState, outerState: ConvertedLoopState | undefined): IterationStmtPartFunction<qt.Statement[]> {
   const functionName = createUniqueName('_loop');
   startLexicalEnvironment();
   const statement = visitNode(node.statement, visitor, qf.is.statement, liftToBlock);
@@ -1579,7 +1579,7 @@ function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentSta
   }
   copyOutParams(currentState.loopOutParams, LoopOutParamFlags.Body, CopyDirection.ToOutParam, statements);
   insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
-  const loopBody = new qt.Block(statements, true);
+  const loopBody = new qc.Block(statements, true);
   if (statement.kind === Syntax.Block) loopBody.setOriginal(statement);
   const containsYield = (node.statement.trafoFlags & TrafoFlags.ContainsYield) !== 0;
   let emitFlags: EmitFlags = 0;
@@ -1593,7 +1593,7 @@ function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentSta
           functionName,
           undefined,
           qf.emit.setFlags(
-            new qc.FunctionExpression(undefined, containsYield ? new qt.Token(Syntax.AsteriskToken) : undefined, undefined, undefined, currentState.loopParams, undefined, loopBody),
+            new qc.FunctionExpression(undefined, containsYield ? new qc.Token(Syntax.AsteriskToken) : undefined, undefined, undefined, currentState.loopParams, undefined, loopBody),
             emitFlags
           )
         ),
@@ -1607,7 +1607,7 @@ function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentSta
 function copyOutParam(outParam: LoopOutParam, copyDirection: CopyDirection): qt.BinaryExpression {
   const source = copyDirection === CopyDirection.ToOriginal ? outParam.outParamName : outParam.originalName;
   const target = copyDirection === CopyDirection.ToOriginal ? outParam.originalName : outParam.outParamName;
-  return new qt.BinaryExpression(target, Syntax.EqualsToken, source);
+  return new qc.BinaryExpression(target, Syntax.EqualsToken, source);
 }
 function copyOutParams(outParams: LoopOutParam[], partFlags: LoopOutParamFlags, copyDirection: CopyDirection, statements: qc.Statement[]): void {
   for (const outParam of outParams) {
@@ -1618,7 +1618,7 @@ function copyOutParams(outParams: LoopOutParam[], partFlags: LoopOutParamFlags, 
 }
 function generateCallToConvertedLoopIniter(initFunctionExpressionName: qc.Identifier, containsYield: boolean): qc.Statement {
   const call = new qc.CallExpression(initFunctionExpressionName, undefined, []);
-  const callResult = containsYield ? new qc.YieldExpression(new qt.Token(Syntax.AsteriskToken), qf.emit.setFlags(call, EmitFlags.Iterator)) : call;
+  const callResult = containsYield ? new qc.YieldExpression(new qc.Token(Syntax.AsteriskToken), qf.emit.setFlags(call, EmitFlags.Iterator)) : call;
   return new qc.ExpressionStatement(callResult);
 }
 function generateCallToConvertedLoop(loopFunctionExpressionName: qc.Identifier, state: ConvertedLoopState, outerState: ConvertedLoopState | undefined, containsYield: boolean): qc.Statement[] {
@@ -1629,7 +1629,7 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: qc.Identifier, 
     undefined,
     map(state.loopParams, (p) => <qt.Identifier>p.name)
   );
-  const callResult = containsYield ? new qc.YieldExpression(new qt.Token(Syntax.AsteriskToken), qf.emit.setFlags(call, EmitFlags.Iterator)) : call;
+  const callResult = containsYield ? new qc.YieldExpression(new qc.Token(Syntax.AsteriskToken), qf.emit.setFlags(call, EmitFlags.Iterator)) : call;
   if (isSimpleLoop) {
     statements.push(new qc.ExpressionStatement(callResult));
     copyOutParams(state.loopOutParams, LoopOutParamFlags.Body, CopyDirection.ToOriginal, statements);
@@ -1646,10 +1646,10 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: qc.Identifier, 
       } else {
         returnStatement = new qc.ReturnStatement(new qc.PropertyAccessExpression(loopResultName, 'value'));
       }
-      statements.push(new qc.IfStatement(new qt.BinaryExpression(new qt.TypeOfExpression(loopResultName), Syntax.Equals3Token, qc.asLiteral('object')), returnStatement));
+      statements.push(new qc.IfStatement(new qc.BinaryExpression(new qc.TypeOfExpression(loopResultName), Syntax.Equals3Token, qc.asLiteral('object')), returnStatement));
     }
     if (state.nonLocalJumps! & Jump.Break) {
-      statements.push(new qc.IfStatement(new qt.BinaryExpression(loopResultName, Syntax.Equals3Token, qc.asLiteral('break')), new qc.BreakStatement()));
+      statements.push(new qc.IfStatement(new qc.BinaryExpression(loopResultName, Syntax.Equals3Token, qc.asLiteral('break')), new qc.BreakStatement()));
     }
     if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
       const caseClauses: qt.CaseClause[] = [];
@@ -1797,7 +1797,7 @@ function addStatementToStartOfBlock(block: qt.Block, statement: qc.Statement): q
   const transformedStatements = Nodes.visit(block.statements, visitor, qf.is.statement);
   return block.update([statement, ...transformedStatements]);
 }
-function visitMethodDeclaration(node: qt.MethodDeclaration): ObjectLiteralElemLike {
+function visitMethodDeclaration(node: qt.MethodDeclaration): qt.ObjectLiteralElemLike {
   assert(!node.name.kind === Syntax.ComputedPropertyName);
   const functionExpression = transformFunctionLikeToExpression(node, undefined);
   qf.emit.setFlags(functionExpression, EmitFlags.NoLeadingComments | qf.get.emitFlags(functionExpression));
@@ -1820,7 +1820,7 @@ function visitAccessorDeclaration(node: qt.AccessorDeclaration): qt.AccessorDecl
   convertedLoopState = savedConvertedLoopState;
   return updated;
 }
-function visitShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment): ObjectLiteralElemLike {
+function visitShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment): qt.ObjectLiteralElemLike {
   return new qc.PropertyAssignment(node.name, getSynthesizedClone(node.name)).setRange(node);
 }
 function visitComputedPropertyName(node: qt.ComputedPropertyName) {
@@ -1920,7 +1920,7 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: qt.CallExp
   }
   return visitEachChild(node, visitor, context);
 }
-function visitNewExpression(node: qt.NewExpression): LeftExpression {
+function visitNewExpression(node: qt.NewExpression): qt.LeftExpression {
   if (some(node.args, isSpreadElem)) {
     const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
     return new qc.NewExpression(
@@ -1931,9 +1931,9 @@ function visitNewExpression(node: qt.NewExpression): LeftExpression {
   }
   return visitEachChild(node, visitor, context);
 }
-function transformAndSpreadElems(elems: Nodes<Expression>, needsUniqueCopy: boolean, multiLine: boolean, trailingComma: boolean): qc.Expression {
+function transformAndSpreadElems(elems: Nodes<qt.Expression>, needsUniqueCopy: boolean, multiLine: boolean, trailingComma: boolean): qc.Expression {
   const numElems = elems.length;
-  const segments = flatten<Expression>(spanMap(elems, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, trailingComma && end === numElems)));
+  const segments = flatten<qt.Expression>(spanMap(elems, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, trailingComma && end === numElems)));
   if (compilerOpts.downlevelIteration) {
     if (segments.length === 1) {
       const firstSegment = segments[0];
@@ -1965,11 +1965,11 @@ function isCallToHelper(firstSegment: qc.Expression, helperName: __String) {
 function partitionSpread(node: qc.Expression) {
   return node.kind === Syntax.SpreadElem ? visitSpanOfSpreads : visitSpanOfNonSpreads;
 }
-function visitSpanOfSpreads(chunk: qc.Expression[]): VisitResult<Expression> {
+function visitSpanOfSpreads(chunk: qc.Expression[]): VisitResult<qt.Expression> {
   return map(chunk, visitExpressionOfSpread);
 }
-function visitSpanOfNonSpreads(chunk: qc.Expression[], multiLine: boolean, trailingComma: boolean): VisitResult<Expression> {
-  return new qt.ArrayLiteralExpression(Nodes.visit(new Nodes(chunk, trailingComma), visitor, isExpression), multiLine);
+function visitSpanOfNonSpreads(chunk: qc.Expression[], multiLine: boolean, trailingComma: boolean): VisitResult<qt.Expression> {
+  return new qc.ArrayLiteralExpression(Nodes.visit(new Nodes(chunk, trailingComma), visitor, isExpression), multiLine);
 }
 function visitSpreadElem(node: qt.SpreadElem) {
   return visitNode(node.expression, visitor, isExpression);
@@ -1977,7 +1977,7 @@ function visitSpreadElem(node: qt.SpreadElem) {
 function visitExpressionOfSpread(node: qt.SpreadElem) {
   return visitNode(node.expression, visitor, isExpression);
 }
-function visitTemplateLiteral(node: LiteralExpression): LeftExpression {
+function visitTemplateLiteral(node: qt.LiteralExpression): qt.LeftExpression {
   return qc.asLiteral(node.text).setRange(node);
 }
 function visitStringLiteral(node: qt.StringLiteral) {
@@ -2020,7 +2020,7 @@ function addTemplateSpans(expressions: qc.Expression[], node: qt.TemplateExpress
     }
   }
 }
-function visitSuperKeyword(isExpressionOfCall: boolean): LeftExpression {
+function visitSuperKeyword(isExpressionOfCall: boolean): qt.LeftExpression {
   return hierarchyFacts & HierarchyFacts.NonStaticClassElem && !isExpressionOfCall
     ? new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), 'prototype')
     : createFileLevelUniqueName('_super');
@@ -2082,7 +2082,7 @@ function isNameOfDeclarationWithCollidingName(node: qc.Identifier) {
     case Syntax.ClassDeclaration:
     case Syntax.EnumDeclaration:
     case Syntax.VariableDeclaration:
-      return (<qt.NamedDecl>node.parent).name === node && resolver.isDeclarationWithCollidingName(<Declaration>node.parent);
+      return (<qt.NamedDecl>node.parent).name === node && resolver.isDeclarationWithCollidingName(<qt.Declaration>node.parent);
   }
   return false;
 }
@@ -2091,7 +2091,7 @@ function substituteExpression(node: Node) {
     case Syntax.Identifier:
       return substituteExpressionIdentifier(<qt.Identifier>node);
     case Syntax.ThisKeyword:
-      return substituteThisKeyword(<PrimaryExpression>node);
+      return substituteThisKeyword(<qt.PrimaryExpression>node);
   }
   return node;
 }
@@ -2102,7 +2102,7 @@ function substituteExpressionIdentifier(node: qc.Identifier): qc.Identifier {
   }
   return node;
 }
-function isPartOfClassBody(declaration: ClassLikeDeclaration, node: qc.Identifier) {
+function isPartOfClassBody(declaration: qt.ClassLikeDeclaration, node: qc.Identifier) {
   let currentNode: Node | undefined = qf.get.parseTreeOf(node);
   if (!currentNode || currentNode === declaration || currentNode.end <= declaration.pos || currentNode.pos >= declaration.end) return false;
   const blockScope = qf.get.enclosingBlockScopeContainer(declaration);
@@ -2113,7 +2113,7 @@ function isPartOfClassBody(declaration: ClassLikeDeclaration, node: qc.Identifie
   }
   return false;
 }
-function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
+function substituteThisKeyword(node: qt.PrimaryExpression): qt.PrimaryExpression {
   if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) return createFileLevelUniqueName('_this').setRange(node);
   return node;
 }

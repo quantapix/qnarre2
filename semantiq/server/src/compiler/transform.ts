@@ -37,9 +37,9 @@ export interface TransformationResult<T extends Node> {
   isEmitNotificationEnabled?(node: Node): boolean;
   dispose(): void;
 }
-export type Transformer<T extends Node> = (node: T) => T;
-export type TransformerFactory<T extends Node> = (c: qt.TrafoContext) => Transformer<T>;
-function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<qt.SourceFile | qt.Bundle> {
+export type qt.Transformer<T extends Node> = (node: T) => T;
+export type qt.TransformerFactory<T extends Node> = (c: qt.TrafoContext) => qt.Transformer<T>;
+function getModuleTransformer(moduleKind: ModuleKind): qt.TransformerFactory<qt.SourceFile | qt.Bundle> {
   switch (moduleKind) {
     case qt.ModuleKind.ESNext:
     case qt.ModuleKind.ES2020:
@@ -73,7 +73,7 @@ function getScriptTransformers(compilerOpts: qt.CompilerOpts, customTransformers
   const jsx = compilerOpts.jsx;
   const languageVersion = getEmitScriptTarget(compilerOpts);
   const moduleKind = getEmitModuleKind(compilerOpts);
-  const transformers: TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
+  const transformers: qt.TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.before, wrapScriptTransformerFactory));
   transformers.push(transformTypeScript);
   transformers.push(transformClassFields);
@@ -85,27 +85,27 @@ function getScriptTransformers(compilerOpts: qt.CompilerOpts, customTransformers
   return transformers;
 }
 function getDeclarationTransformers(customTransformers?: qt.CustomTransformers) {
-  const transformers: TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
+  const transformers: qt.TransformerFactory<qt.SourceFile | qt.Bundle>[] = [];
   transformers.push(transformDeclarations);
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
   return transformers;
 }
-function wrapCustomTransformer(transformer: qt.CustomTransformer): Transformer<qt.Bundle | qt.SourceFile> {
+function wrapCustomTransformer(transformer: qt.CustomTransformer): qt.Transformer<qt.Bundle | qt.SourceFile> {
   return (node) => (qf.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
 function wrapCustomTransformerFactory<T extends qt.SourceFile | qt.Bundle>(
-  transformer: TransformerFactory<T> | CustomTransformerFactory,
-  handleDefault: (node: Transformer<T>) => Transformer<qt.Bundle | qt.SourceFile>
-): TransformerFactory<qt.Bundle | qt.SourceFile> {
+  transformer: qt.TransformerFactory<T> | qt.CustomTransformerFactory,
+  handleDefault: (node: qt.Transformer<T>) => qt.Transformer<qt.Bundle | qt.SourceFile>
+): qt.TransformerFactory<qt.Bundle | qt.SourceFile> {
   return (context) => {
     const customTransformer = transformer(context);
     return typeof customTransformer === 'function' ? handleDefault(customTransformer) : wrapCustomTransformer(customTransformer);
   };
 }
-function wrapScriptTransformerFactory(transformer: TransformerFactory<qt.SourceFile> | CustomTransformerFactory): TransformerFactory<qt.Bundle | qt.SourceFile> {
+function wrapScriptTransformerFactory(transformer: qt.TransformerFactory<qt.SourceFile> | qt.CustomTransformerFactory): qt.TransformerFactory<qt.Bundle | qt.SourceFile> {
   return wrapCustomTransformerFactory(transformer, chainBundle);
 }
-function wrapDeclarationTransformerFactory(transformer: TransformerFactory<qt.Bundle | qt.SourceFile> | CustomTransformerFactory): TransformerFactory<qt.Bundle | qt.SourceFile> {
+function wrapDeclarationTransformerFactory(transformer: qt.TransformerFactory<qt.Bundle | qt.SourceFile> | qt.CustomTransformerFactory): qt.TransformerFactory<qt.Bundle | qt.SourceFile> {
   return wrapCustomTransformerFactory(transformer, identity);
 }
 export function noEmitSubstitution(_hint: qt.EmitHint, node: Node) {
@@ -119,7 +119,7 @@ export function transformNodes<T extends Node>(
   host: qt.EmitHost | undefined,
   opts: qt.CompilerOpts,
   nodes: readonly T[],
-  transformers: readonly TransformerFactory<T>[],
+  transformers: readonly qt.TransformerFactory<T>[],
   allowDtsFiles: boolean
 ): TransformationResult<T> {
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(Syntax.Count);

@@ -20,7 +20,7 @@ export function transformES2020(context: qt.TrafoContext) {
       case Syntax.ElemAccessExpression:
       case Syntax.CallExpression:
         if (node.flags & NodeFlags.OptionalChain) {
-          const updated = visitOptionalExpression(node as OptionalChain, false, false);
+          const updated = visitOptionalExpression(node as qt.OptionalChain, false, false);
           qc.assert.notNode(updated, isSyntheticReference);
           return updated;
         }
@@ -34,9 +34,9 @@ export function transformES2020(context: qt.TrafoContext) {
         return visitEachChild(node, visitor, context);
     }
   }
-  function flattenChain(chain: OptionalChain) {
+  function flattenChain(chain: qt.OptionalChain) {
     qc.assert.notNode(chain, isNonNullChain);
-    const links: OptionalChain[] = [chain];
+    const links: qt.OptionalChain[] = [chain];
     while (!chain.questionDotToken && !qf.is.kind(qc.TaggedTemplateExpression, chain)) {
       chain = cast(qf.skip.partiallyEmittedExpressions(chain.expression), isOptionalChain);
       qc.assert.notNode(chain, isNonNullChain);
@@ -44,7 +44,7 @@ export function transformES2020(context: qt.TrafoContext) {
     }
     return { expression: chain.expression, chain: links };
   }
-  function visitNonOptionalParenthesizedExpression(node: qt.ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): Expression {
+  function visitNonOptionalParenthesizedExpression(node: qt.ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
     if (qf.is.kind(qc.SyntheticReferenceExpression, expression)) {
       // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
@@ -53,14 +53,14 @@ export function transformES2020(context: qt.TrafoContext) {
     }
     return node.update(expression);
   }
-  function visitNonOptionalPropertyOrElemAccessExpression(node: qt.AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
+  function visitNonOptionalPropertyOrElemAccessExpression(node: qt.AccessExpression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     if (qf.is.optionalChain(node)) {
       // If `node` is an optional chain, then it is the outermost chain of an optional expression.
       return visitOptionalExpression(node, captureThisArg, isDelete);
     }
-    let expression: Expression = visitNode(node.expression, visitor, isExpression);
+    let expression: qt.Expression = visitNode(node.expression, visitor, isExpression);
     qc.assert.notNode(expression, isSyntheticReference);
-    let thisArg: Expression | undefined;
+    let thisArg: qt.Expression | undefined;
     if (captureThisArg) {
       if (shouldCaptureInTempVariable(expression)) {
         thisArg = createTempVariable(hoistVariableDeclaration);
@@ -76,11 +76,11 @@ export function transformES2020(context: qt.TrafoContext) {
         : node.update(expression, visitNode(node.argExpression, visitor, isExpression));
     return thisArg ? new qc.SyntheticReferenceExpression(expression, thisArg) : expression;
   }
-  function visitNonOptionalCallExpression(node: qt.CallExpression, captureThisArg: boolean): Expression {
+  function visitNonOptionalCallExpression(node: qt.CallExpression, captureThisArg: boolean): qt.Expression {
     if (qf.is.optionalChain(node)) return visitOptionalExpression(node, captureThisArg, false);
     return visitEachChild(node, visitor, context);
   }
-  function visitNonOptionalExpression(node: Expression, captureThisArg: boolean, isDelete: boolean): Expression {
+  function visitNonOptionalExpression(node: qt.Expression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     switch (node.kind) {
       case Syntax.ParenthesizedExpression:
         return visitNonOptionalParenthesizedExpression(node as qt.ParenthesizedExpression, captureThisArg, isDelete);
@@ -93,19 +93,19 @@ export function transformES2020(context: qt.TrafoContext) {
         return visitNode(node, visitor, isExpression);
     }
   }
-  function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
+  function visitOptionalExpression(node: qt.OptionalChain, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     const { expression, chain } = flattenChain(node);
     const left = visitNonOptionalExpression(expression, qf.is.callChain(chain[0]), false);
     const leftThisArg = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.thisArg : undefined;
     let leftExpression = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.expression : left;
-    let capturedLeft: Expression = leftExpression;
+    let capturedLeft: qt.Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
       leftExpression = qf.create.assignment(capturedLeft, leftExpression);
       // if (inParamIniter) tempVariableInParam = true;
     }
     let rightExpression = capturedLeft;
-    let thisArg: Expression | undefined;
+    let thisArg: qt.Expression | undefined;
     for (let i = 0; i < chain.length; i++) {
       const segment = chain[i];
       switch (segment.kind) {
@@ -136,15 +136,15 @@ export function transformES2020(context: qt.TrafoContext) {
       rightExpression.setOriginal(segment);
     }
     const target = isDelete
-      ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), new qc.BooleanLiteral(true), new qt.DeleteExpression(rightExpression))
+      ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), new qc.BooleanLiteral(true), new qc.DeleteExpression(rightExpression))
       : new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), qc.VoidExpression.zero(), rightExpression);
     return thisArg ? new qc.SyntheticReferenceExpression(target, thisArg) : target;
   }
-  function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
-    return new qt.BinaryExpression(
-      new qt.BinaryExpression(left, new qt.Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), new qc.NullLiteral()),
-      new qt.Token(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
-      new qt.BinaryExpression(right, new qt.Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), qc.VoidExpression.zero())
+  function createNotNullCondition(left: qt.Expression, right: qt.Expression, invert?: boolean) {
+    return new qc.BinaryExpression(
+      new qc.BinaryExpression(left, new qc.Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), new qc.NullLiteral()),
+      new qc.Token(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
+      new qc.BinaryExpression(right, new qc.Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), qc.VoidExpression.zero())
     );
   }
   function transformNullishCoalescingExpression(node: qt.BinaryExpression) {
@@ -157,7 +157,7 @@ export function transformES2020(context: qt.TrafoContext) {
     }
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }
-  function shouldCaptureInTempVariable(expression: Expression): boolean {
+  function shouldCaptureInTempVariable(expression: qt.Expression): boolean {
     return !qf.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: qt.DeleteExpression) {

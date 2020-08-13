@@ -161,7 +161,7 @@ export function transformES2018(context: qt.TrafoContext) {
         return visitEachChild(node, visitor, context);
     }
   }
-  function visitAwaitExpression(node: qt.AwaitExpression): Expression {
+  function visitAwaitExpression(node: qt.AwaitExpression): qt.Expression {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
       return new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))).setRange(node).setOriginal(node);
     return visitEachChild(node, visitor, context);
@@ -194,9 +194,9 @@ export function transformES2018(context: qt.TrafoContext) {
     }
     return visitEachChild(node, visitor, context);
   }
-  function chunkObjectLiteralElems(elems: readonly ObjectLiteralElemLike[]): Expression[] {
-    let chunkObject: ObjectLiteralElemLike[] | undefined;
-    const objects: Expression[] = [];
+  function chunkObjectLiteralElems(elems: readonly qt.ObjectLiteralElemLike[]): qt.Expression[] {
+    let chunkObject: qt.ObjectLiteralElemLike[] | undefined;
+    const objects: qt.Expression[] = [];
     for (const e of elems) {
       if (e.kind === Syntax.SpreadAssignment) {
         if (chunkObject) {
@@ -217,13 +217,13 @@ export function transformES2018(context: qt.TrafoContext) {
     }
     return objects;
   }
-  function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression): Expression {
+  function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression): qt.Expression {
     if (node.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       const objects = chunkObjectLiteralElems(node.properties);
       if (objects.length && objects[0].kind !== Syntax.ObjectLiteralExpression) {
         objects.unshift(new qc.ObjectLiteralExpression());
       }
-      let expression: Expression = objects[0];
+      let expression: qt.Expression = objects[0];
       if (objects.length > 1) {
         for (let i = 1; i < objects.length; i++) {
           expression = createAssignHelper(context, [expression, objects[i]]);
@@ -252,7 +252,7 @@ export function transformES2018(context: qt.TrafoContext) {
   function visitTaggedTemplateExpression(node: qt.TaggedTemplateExpression) {
     return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
   }
-  function visitBinaryExpression(node: qt.BinaryExpression, noDestructuringValue: boolean): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression, noDestructuringValue: boolean): qt.Expression {
     if (qf.is.destructuringAssignment(node) && node.left.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
     if (node.operatorToken.kind === Syntax.CommaToken)
@@ -297,7 +297,7 @@ export function transformES2018(context: qt.TrafoContext) {
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
     return visitEachChild(node, visitor, context);
   }
-  function visitForStatement(node: qt.ForStatement): VisitResult<Statement> {
+  function visitForStatement(node: qt.ForStatement): VisitResult<qt.Statement> {
     return updateFor(
       node,
       visitNode(node.initer, visitorNoDestructuringValue, isForIniter),
@@ -309,7 +309,7 @@ export function transformES2018(context: qt.TrafoContext) {
   function visitVoidExpression(node: qt.VoidExpression) {
     return visitEachChild(node, visitorNoDestructuringValue, context);
   }
-  function visitForOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined): VisitResult<Statement> {
+  function visitForOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined): VisitResult<qt.Statement> {
     const ancestorFacts = enterSubtree(HierarchyFacts.IterationStmtExcludes, HierarchyFacts.IterationStmtIncludes);
     if (node.initer.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       node = transformForOfStatementWithObjectRest(node);
@@ -321,12 +321,12 @@ export function transformES2018(context: qt.TrafoContext) {
     return result;
   }
   function transformForOfStatementWithObjectRest(node: qt.ForOfStatement) {
-    const initerWithoutParens = qf.skip.parentheses(node.initer) as ForIniter;
+    const initerWithoutParens = qf.skip.parentheses(node.initer) as qt.ForIniter;
     if (qf.is.kind(qc.VariableDeclarationList, initerWithoutParens) || qf.is.kind(qc.AssignmentPattern, initerWithoutParens)) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
       const temp = createTempVariable(undefined);
-      const statements: Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
+      const statements: qt.Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
       if (qf.is.kind(qc.Block, node.statement)) {
         qu.addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
@@ -341,16 +341,16 @@ export function transformES2018(context: qt.TrafoContext) {
         node.awaitModifier,
         setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(temp), node.initer)], NodeFlags.Let), node.initer),
         node.expression,
-        setRange(new qt.Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation)
+        setRange(new qc.Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation)
       );
     }
     return node;
   }
-  function convertForOfStatementHead(node: qt.ForOfStatement, boundValue: Expression) {
+  function convertForOfStatementHead(node: qt.ForOfStatement, boundValue: qt.Expression) {
     const binding = createForOfBindingStatement(node.initer, boundValue);
     let bodyLocation: TextRange | undefined;
     let statementsLocation: TextRange | undefined;
-    const statements: Statement[] = [visitNode(binding, visitor, qf.is.statement)];
+    const statements: qt.Statement[] = [visitNode(binding, visitor, qf.is.statement)];
     const statement = visitNode(node.statement, visitor, qf.is.statement);
     if (qf.is.kind(qc.Block, statement)) {
       qu.addRange(statements, statement.statements);
@@ -359,10 +359,10 @@ export function transformES2018(context: qt.TrafoContext) {
     } else {
       statements.push(statement);
     }
-    return qf.emit.setFlags(setRange(new qt.Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+    return qf.emit.setFlags(setRange(new qc.Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
   }
-  function createDownlevelAwait(expression: Expression) {
-    return enclosingFunctionFlags & FunctionFlags.Generator ? new qc.YieldExpression(undefined, createAwaitHelper(context, expression)) : new qt.AwaitExpression(expression);
+  function createDownlevelAwait(expression: qt.Expression) {
+    return enclosingFunctionFlags & FunctionFlags.Generator ? new qc.YieldExpression(undefined, createAwaitHelper(context, expression)) : new qc.AwaitExpression(expression);
   }
   function transformForAwaitOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = visitNode(node.expression, visitor, isExpression);
@@ -395,17 +395,17 @@ export function transformES2018(context: qt.TrafoContext) {
       EmitFlags.NoTokenTrailingSourceMaps
     );
     return new qc.TryStatement(
-      new qt.Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
+      new qc.Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
         qf.emit.setFlags(
-          new qt.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
+          new qc.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
           EmitFlags.SingleLine
         )
       ),
-      new qt.Block([
+      new qc.Block([
         new qc.TryStatement(
-          new qt.Block([
+          new qc.Block([
             qf.emit.setFlags(
               new qc.IfStatement(
                 qf.create.logicalAnd(qf.create.logicalAnd(result, qf.create.logicalNot(getDone)), qf.create.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
@@ -416,7 +416,7 @@ export function transformES2018(context: qt.TrafoContext) {
           ]),
           undefined,
           qf.emit.setFlags(
-            new qt.Block([qf.emit.setFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
+            new qc.Block([qf.emit.setFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
             EmitFlags.SingleLine
           )
         ),
@@ -504,9 +504,9 @@ export function transformES2018(context: qt.TrafoContext) {
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
-  function transformAsyncGeneratorFunctionBody(node: qt.MethodDeclaration | qt.AccessorDeclaration | qt.FunctionDeclaration | qt.FunctionExpression): FunctionBody {
+  function transformAsyncGeneratorFunctionBody(node: qt.MethodDeclaration | qt.AccessorDeclaration | qt.FunctionDeclaration | qt.FunctionExpression): qt.FunctionBody {
     resumeLexicalEnvironment();
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const statementOffset = addPrologue(statements, node.body!.statements, false, visitor);
     appendObjectRestAssignmentsIfNeeded(statements, node);
     const savedCapturedSuperProperties = capturedSuperProperties;
@@ -518,7 +518,7 @@ export function transformES2018(context: qt.TrafoContext) {
         context,
         new qc.FunctionExpression(
           undefined,
-          new qt.Token(Syntax.AsteriskToken),
+          new qc.Token(Syntax.AsteriskToken),
           node.name && qf.get.generatedNameForNode(node.name),
           undefined,
           [],
@@ -549,12 +549,12 @@ export function transformES2018(context: qt.TrafoContext) {
     hasSuperElemAccess = savedHasSuperElemAccess;
     return block;
   }
-  function transformFunctionBody(node: qt.FunctionDeclaration | qt.FunctionExpression | qt.ConstructorDeclaration | qt.MethodDeclaration | qt.AccessorDeclaration): FunctionBody;
-  function transformFunctionBody(node: qt.ArrowFunction): ConciseBody;
-  function transformFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
+  function transformFunctionBody(node: qt.FunctionDeclaration | qt.FunctionExpression | qt.ConstructorDeclaration | qt.MethodDeclaration | qt.AccessorDeclaration): qt.FunctionBody;
+  function transformFunctionBody(node: qt.ArrowFunction): qt.ConciseBody;
+  function transformFunctionBody(node: qt.FunctionLikeDeclaration): qt.ConciseBody {
     resumeLexicalEnvironment();
     let statementOffset = 0;
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const body = visitNode(node.body, visitor, isConciseBody);
     if (qf.is.kind(qc.Block, body)) {
       statementOffset = addPrologue(statements, body.statements, false, visitor);
@@ -569,7 +569,7 @@ export function transformES2018(context: qt.TrafoContext) {
     }
     return body;
   }
-  function appendObjectRestAssignmentsIfNeeded(statements: Statement[] | undefined, node: FunctionLikeDeclaration): Statement[] | undefined {
+  function appendObjectRestAssignmentsIfNeeded(statements: qt.Statement[] | undefined, node: qt.FunctionLikeDeclaration): qt.Statement[] | undefined {
     for (const param of node.params) {
       if (param.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
         const temp = qf.get.generatedNameForNode(param);
@@ -618,10 +618,10 @@ export function transformES2018(context: qt.TrafoContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<Expression>node);
+    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
     return node;
   }
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
         return substitutePropertyAccessExpression(<qt.PropertyAccessExpression>node);
@@ -640,7 +640,7 @@ export function transformES2018(context: qt.TrafoContext) {
     if (node.expression.kind === Syntax.SuperKeyword) return createSuperElemAccessInAsyncMethod(node.argExpression, node);
     return node;
   }
-  function substituteCallExpression(node: qt.CallExpression): Expression {
+  function substituteCallExpression(node: qt.CallExpression): qt.Expression {
     const expression = node.expression;
     if (qf.is.superProperty(expression)) {
       const argExpression = qf.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
@@ -652,10 +652,10 @@ export function transformES2018(context: qt.TrafoContext) {
     const kind = node.kind;
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
-  function createSuperElemAccessInAsyncMethod(argExpression: Expression, location: TextRange): LeftExpression {
+  function createSuperElemAccessInAsyncMethod(argExpression: qt.Expression, location: TextRange): qt.LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(new qc.PropertyAccessExpression(new qc.CallExpression(new qt.Identifier('_superIndex'), undefined, [argExpression]), 'value'), location);
-    return setRange(new qc.CallExpression(new qt.Identifier('_superIndex'), undefined, [argExpression]), location);
+      return setRange(new qc.PropertyAccessExpression(new qc.CallExpression(new qc.Identifier('_superIndex'), undefined, [argExpression]), 'value'), location);
+    return setRange(new qc.CallExpression(new qc.Identifier('_superIndex'), undefined, [argExpression]), location);
   }
 }
 export const assignHelper: qt.UnscopedEmitHelper = {
@@ -676,8 +676,8 @@ export const assignHelper: qt.UnscopedEmitHelper = {
                 return __assign.apply(this, args);
             };`,
 };
-export function createAssignHelper(context: qt.TrafoContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qc.CallExpression(new qc.PropertyAccessExpression(new qt.Identifier('Object'), 'assign'), undefined, attributesSegments);
+export function createAssignHelper(context: qt.TrafoContext, attributesSegments: qt.Expression[]) {
+  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qc.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }
@@ -688,7 +688,7 @@ export const awaitHelper: qt.UnscopedEmitHelper = {
   text: `
             var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }`,
 };
-function createAwaitHelper(context: qt.TrafoContext, expression: Expression) {
+function createAwaitHelper(context: qt.TrafoContext, expression: qt.Expression) {
   context.requestEmitHelper(awaitHelper);
   return new qc.CallExpression(getUnscopedHelperName('__await'), undefined, [expression]);
 }
@@ -713,7 +713,7 @@ export const asyncGeneratorHelper: qt.UnscopedEmitHelper = {
 function createAsyncGeneratorHelper(context: qt.TrafoContext, generatorFunc: qt.FunctionExpression, hasLexicalThis: boolean) {
   context.requestEmitHelper(asyncGeneratorHelper);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as qt.EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
-  return new qc.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(), new qt.Identifier('args'), generatorFunc]);
+  return new qc.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(), new qc.Identifier('args'), generatorFunc]);
 }
 export const asyncDelegator: qt.UnscopedEmitHelper = {
   name: 'typescript:asyncDelegator',
@@ -727,7 +727,7 @@ export const asyncDelegator: qt.UnscopedEmitHelper = {
                 function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
             };`,
 };
-function createAsyncDelegatorHelper(context: qt.TrafoContext, expression: Expression, location?: TextRange) {
+function createAsyncDelegatorHelper(context: qt.TrafoContext, expression: qt.Expression, location?: TextRange) {
   context.requestEmitHelper(asyncDelegator);
   return setRange(new qc.CallExpression(getUnscopedHelperName('__asyncDelegator'), undefined, [expression]), location);
 }
@@ -744,7 +744,7 @@ export const asyncValues: qt.UnscopedEmitHelper = {
                 function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
             };`,
 };
-function createAsyncValuesHelper(context: qt.TrafoContext, expression: Expression, location?: TextRange) {
+function createAsyncValuesHelper(context: qt.TrafoContext, expression: qt.Expression, location?: TextRange) {
   context.requestEmitHelper(asyncValues);
   return setRange(new qc.CallExpression(getUnscopedHelperName('__asyncValues'), undefined, [expression]), location);
 }

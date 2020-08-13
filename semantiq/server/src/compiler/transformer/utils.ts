@@ -19,7 +19,7 @@ export interface ExternalModuleInfo {
   exportEquals: qt.ExportAssignment | undefined;
   hasExportStarsToExportValues: boolean;
 }
-function containsDefaultReference(node: NamedImportBindings | undefined) {
+function containsDefaultReference(node: qt.NamedImportBindings | undefined) {
   if (!node) return false;
   if (!qf.is.kind(qc.NamedImports, node)) return false;
   return some(node.elems, isNamedDefaultReference);
@@ -195,16 +195,16 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
   }
   return values;
 }
-export function isSimpleCopiableExpression(expression: Expression) {
+export function isSimpleCopiableExpression(expression: qt.Expression) {
   return qf.is.stringLiteralLike(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qf.is.kind(qc.Identifier, expression);
 }
-export function isSimpleInlineableExpression(expression: Expression) {
+export function isSimpleInlineableExpression(expression: qt.Expression) {
   return (!qf.is.kind(qc.Identifier, expression) && isSimpleCopiableExpression(expression)) || qf.is.wellKnownSymbolSyntactically(expression);
 }
-export function isCompoundAssignment(kind: qt.BinaryOperator): kind is CompoundAssignmentOperator {
+export function isCompoundAssignment(kind: qt.BinaryOperator): kind is qt.CompoundAssignmentOperator {
   return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;
 }
-export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssignmentOperator): BitwiseOperatorOrHigher {
+export function getNonAssignmentOperatorForCompoundAssignment(kind: qt.CompoundAssignmentOperator): qt.BitwiseOperatorOrHigher {
   switch (kind) {
     case Syntax.PlusEqualsToken:
       return Syntax.PlusToken;
@@ -232,7 +232,7 @@ export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssi
       return Syntax.CaretToken;
   }
 }
-export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
+export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: qt.Statement[], visitor: Visitor): number {
   if (ctor.body) {
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
@@ -249,7 +249,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDec
   return 0;
 }
 export function helperString(input: TemplateStringsArray, ...args: string[]) {
-  return (uniqueName: EmitHelperUniqueNameCallback) => {
+  return (uniqueName: qt.EmitHelperUniqueNameCallback) => {
     let result = '';
     for (let i = 0; i < args.length; i++) {
       result += input[i];
@@ -265,6 +265,6 @@ export function getProperties(node: qt.ClassExpression | qt.ClassDeclaration, re
 function isInitializedOrStaticProperty(member: qt.ClassElem, requireIniter: boolean, isStatic: boolean) {
   return qf.is.kind(qc.PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qf.has.staticModifier(member) === isStatic;
 }
-export function isInitializedProperty(member: qt.ClassElem): member is qt.PropertyDeclaration & { initer: Expression } {
+export function isInitializedProperty(member: qt.ClassElem): member is qt.PropertyDeclaration & { initer: qt.Expression } {
   return member.kind === Syntax.PropertyDeclaration && (<qt.PropertyDeclaration>member).initer !== undefined;
 }

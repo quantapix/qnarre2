@@ -44,7 +44,7 @@ export function transformES5(context: qt.TrafoContext) {
     if (qf.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
-  function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression): Expression {
+  function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression): qt.Expression {
     if (qf.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
     if (literalName) return new qc.ElemAccessExpression(node.expression, literalName).setRange(node);
