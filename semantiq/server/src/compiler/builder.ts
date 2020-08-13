@@ -381,7 +381,7 @@ function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFi
       state.cleanedDiagnosticsOfLibFiles = true;
       const program = Debug.checkDefined(state.program);
       const opts = program.getCompilerOpts();
-      forEach(program.getSourceFiles(), (f) => program.isSourceFileDefaultLibrary(f) && !skipTypeChecking(f, opts, program) && removeSemanticDiagnosticsOf(state, f.resolvedPath));
+      forEach(program.getSourceFiles(), (f) => program.isSourceFileDefaultLibrary(f) && !f.skipTypeChecking(opts, program) && removeSemanticDiagnosticsOf(state, f.resolvedPath));
     }
     return;
   }

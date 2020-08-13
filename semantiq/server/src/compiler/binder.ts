@@ -88,7 +88,7 @@ function getModuleInstanceStateForAliasTarget(spec: ExportSpecifier, visited: qu
   const name = spec.propertyName || spec.name;
   let p: Node | undefined = spec.parent;
   while (p) {
-    if (qf.is.kind(qc.Block, p) || qf.is.kind(qc.ModuleBlock, p) || qf.is.kind(qc.SourceFile, p)) {
+    if (p.kind === Syntax.Block || p.kind === Syntax.ModuleBlock || p.kind === Syntax.SourceFile) {
       const statements = p.statements;
       let found: ModuleInstanceState | undefined;
       for (const statement of statements) {
@@ -239,7 +239,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
         return qu.getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
       }
       if (qf.is.wellKnownSymbolSyntactically(name)) return qu.getPropertyNameForKnownSymbolName(idText(name.name));
-      if (qf.is.kind(qc.PrivateIdentifier, name)) {
+      if (name.kind === Syntax.PrivateIdentifier) {
         const containingClass = qf.get.containingClass(node);
         if (!containingClass) {
           return;
@@ -287,7 +287,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   }
   function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, replaceable?: boolean): Symbol {
     qu.assert(!qf.has.dynamicName(node));
-    const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (qf.is.kind(qc.ExportSpecifier, node) && node.name.escapedText === 'default');
+    const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (node.kind === Syntax.ExportSpecifier && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
     let symbol: Symbol | undefined;
     if (name === undefined) {
@@ -331,7 +331,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           }
           const relatedInformation: qd.DiagnosticRelatedInformation[] = [];
           if (
-            qf.is.kind(qc.TypeAliasDeclaration, node) &&
+            node.kind === Syntax.TypeAliasDeclaration &&
             qf.is.missing(node.type) &&
             qf.has.syntacticModifier(node, ModifierFlags.Export) &&
             symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
@@ -624,8 +624,8 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       expr.kind === Syntax.Identifier ||
       expr.kind === Syntax.ThisKeyword ||
       expr.kind === Syntax.SuperKeyword ||
-      ((qf.is.kind(qc.PropertyAccessExpression, expr) || qf.is.kind(qc.NonNullExpression, expr) || qf.is.kind(qc.ParenthesizedExpression, expr)) && isNarrowableReference(expr.expression)) ||
-      (qf.is.kind(qc.ElemAccessExpression, expr) && qf.is.stringOrNumericLiteralLike(expr.argExpression) && isNarrowableReference(expr.expression))
+      ((expr.kind === Syntax.PropertyAccessExpression || expr.kind === Syntax.NonNullExpression || expr.kind === Syntax.ParenthesizedExpression) && isNarrowableReference(expr.expression)) ||
+      (expr.kind === Syntax.ElemAccessExpression && qf.is.stringOrNumericLiteralLike(expr.argExpression) && isNarrowableReference(expr.expression))
     );
   }
   function containsNarrowableReference(expr: Expression): boolean {
@@ -641,7 +641,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     return false;
   }
   function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
-    return qf.is.kind(qc.TypeOfExpression, expr1) && isNarrowableOperand(expr1.expression) && qf.is.stringLiteralLike(expr2);
+    return expr1.kind === Syntax.TypeOfExpression && isNarrowableOperand(expr1.expression) && qf.is.stringLiteralLike(expr2);
   }
   function isNarrowableInOperands(left: Expression, right: Expression) {
     return qf.is.stringLiteralLike(left) && isNarrowingExpression(right);
@@ -762,7 +762,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
   }
   function isTopLevelLogicalExpression(node: Node): boolean {
-    while (qf.is.kind(qc.ParenthesizedExpression, node.parent) || (qf.is.kind(qc.PrefixUnaryExpression, node.parent) && node.parent.operator === Syntax.ExclamationToken)) {
+    while (node.parent.kind === Syntax.ParenthesizedExpression || (node.parent.kind === Syntax.PrefixUnaryExpression && node.parent.operator === Syntax.ExclamationToken)) {
       node = node.parent;
     }
     return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(qf.is.optionalChain(node.parent) && node.parent.expression === node);
@@ -1200,7 +1200,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       stackIndex--;
     }
     function maybeBind(node: Node) {
-      if (node && qf.is.kind(qc.BinaryExpression, node)) {
+      if (node && node.kind === Syntax.BinaryExpression) {
         stackIndex++;
         workStacks.expr[stackIndex] = node;
         workStacks.state[stackIndex] = BindBinaryExpressionFlowState.BindThenBindChildren;
@@ -1234,8 +1234,8 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     currentFlow = finishFlowLabel(postExpressionLabel);
   }
   function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElem) {
-    const name = !qf.is.kind(qc.OmittedExpression, node) ? node.name : undefined;
-    if (qf.is.kind(qc.BindingPattern, name)) {
+    const name = node.kind !== Syntax.OmittedExpression ? node.name : undefined;
+    if (name.kind === Syntax.BindingPattern) {
       for (const child of name.elems) {
         bindInitializedVariableFlow(child);
       }
@@ -1339,7 +1339,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
     if (node.expression.kind === Syntax.PropertyAccessExpression) {
       const propertyAccess = <PropertyAccessExpression>node.expression;
-      if (qf.is.kind(qc.Identifier, propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && qf.is.pushOrUnshiftIdentifier(propertyAccess.name)) {
+      if (propertyAccess.name.kind === Syntax.Identifier && isNarrowableOperand(propertyAccess.expression) && qf.is.pushOrUnshiftIdentifier(propertyAccess.name)) {
         currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
       }
     }
@@ -1450,8 +1450,8 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     return qf.is.externalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, undefined, node, symbolFlags, symbolExcludes);
   }
   function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
-    const body = qf.is.kind(qc.SourceFile, node) ? node : qu.tryCast(node.body, isModuleBlock);
-    return !!body && body.statements.some((s) => qf.is.kind(qc.ExportDeclaration, s) || qf.is.kind(qc.ExportAssignment, s));
+    const body = node.kind === Syntax.SourceFile ? node : qu.tryCast(node.body, isModuleBlock);
+    return !!body && body.statements.some((s) => s.kind === Syntax.ExportDeclaration || s.kind === Syntax.ExportAssignment);
   }
   function setExportContextFlag(node: ModuleDeclaration | SourceFile) {
     if (node.flags & NodeFlags.Ambient && !hasExportDeclarations(node)) {
@@ -1580,14 +1580,14 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       parent = typeAlias;
       bind(typeAlias.typeExpression);
       const declName = qf.decl.nameOf(typeAlias);
-      if ((qf.is.kind(qc.DocEnumTag, typeAlias) || !typeAlias.fullName) && declName && qf.is.propertyAccessEntityNameExpression(declName.parent)) {
+      if ((typeAlias.kind === Syntax.DocEnumTag || !typeAlias.fullName) && declName && qf.is.propertyAccessEntityNameExpression(declName.parent)) {
         const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
         if (isTopLevel) {
           bindPotentiallyMissingNamespaces(
             file.symbol,
             declName.parent,
             isTopLevel,
-            !!qc.findAncestor(declName, (d) => qf.is.kind(qc.PropertyAccessExpression, d) && d.name.escapedText === 'prototype'),
+            !!qc.findAncestor(declName, (d) => d.kind === Syntax.PropertyAccessExpression && d.name.escapedText === 'prototype'),
             false
           );
           const oldContainer = container;
@@ -1609,7 +1609,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
             case qt.AssignmentDeclarationKind.Property:
               container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression)
                 ? file
-                : qf.is.kind(qc.PropertyAccessExpression, declName.parent.expression)
+                : declName.parent.expression.kind === Syntax.PropertyAccessExpression
                 ? declName.parent.expression.name
                 : declName.parent.expression;
               break;
@@ -1621,7 +1621,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           }
           container = oldContainer;
         }
-      } else if (qf.is.kind(qc.DocEnumTag, typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
+      } else if (typeAlias.kind === Syntax.DocEnumTag || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
         parent = typeAlias.parent;
         bindBlockScopedDeclaration(typeAlias, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
       } else {
@@ -1677,7 +1677,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
   }
   function isEvalOrArgsIdentifier(node: Node): boolean {
-    return qf.is.kind(qc.Identifier, node) && (node.escapedText === 'eval' || node.escapedText === 'args');
+    return node.kind === Syntax.Identifier && (node.escapedText === 'eval' || node.escapedText === 'args');
   }
   function checkStrictModeEvalOrArgs(contextNode: Node, name: Node | undefined) {
     if (name && name.kind === Syntax.Identifier) {
@@ -1735,13 +1735,13 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   }
   function checkStrictModeLabeledStatement(node: LabeledStatement) {
     if (inStrictMode && opts.target! >= ScriptTarget.ES2015) {
-      if (qf.is.declarationStatement(node.statement) || qf.is.kind(qc.VariableStatement, node.statement)) {
+      if (qf.is.declarationStatement(node.statement) || node.statement.kind === Syntax.VariableStatement) {
         errorOnFirstToken(node.label, qd.A_label_is_not_allowed_here);
       }
     }
   }
   function errorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any) {
-    const span = getSpanOfTokenAtPosition(file, node.pos);
+    const span = file.spanOfTokenAtPos(node.pos);
     file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
   }
   function errorOrSuggestionOnNode(isError: boolean, node: Node, message: qd.Message): void {
@@ -2053,13 +2053,14 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (node.modifiers && node.modifiers.length) {
       file.bindqd.push(createDiagnosticForNode(node, qd.Modifiers_cannot_appear_here));
     }
-    const diag = !qf.is.kind(qc.SourceFile, node.parent)
-      ? qd.Global_module_exports_may_only_appear_at_top_level
-      : !qf.is.externalModule(node.parent)
-      ? qd.Global_module_exports_may_only_appear_in_module_files
-      : !node.parent.isDeclarationFile
-      ? qd.Global_module_exports_may_only_appear_in_declaration_files
-      : undefined;
+    const diag =
+      !node.parent.kind === Syntax.SourceFile
+        ? qd.Global_module_exports_may_only_appear_at_top_level
+        : !qf.is.externalModule(node.parent)
+        ? qd.Global_module_exports_may_only_appear_in_module_files
+        : !node.parent.isDeclarationFile
+        ? qd.Global_module_exports_may_only_appear_in_declaration_files
+        : undefined;
     if (diag) {
       file.bindqd.push(createDiagnosticForNode(node, diag));
     } else {
@@ -2072,7 +2073,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       bindAnonymousDeclaration(node, SymbolFlags.ExportStar, getDeclarationName(node)!);
     } else if (!node.exportClause) {
       declareSymbol(container.symbol.exports, container.symbol, node, SymbolFlags.ExportStar, SymbolFlags.None);
-    } else if (qf.is.kind(qc.NamespaceExport, node.exportClause)) {
+    } else if (node.exportClause.kind === Syntax.NamespaceExport) {
       node.exportClause.parent = node;
       declareSymbol(container.symbol.exports, container.symbol, node.exportClause, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
     }
@@ -2116,7 +2117,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       return symbol;
     });
     if (symbol) {
-      const flags = qf.is.kind(qc.ClassExpression, node.right) ? SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.Class : SymbolFlags.Property | SymbolFlags.ExportValue;
+      const flags = node.right.kind === Syntax.ClassExpression ? SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.Class : SymbolFlags.Property | SymbolFlags.ExportValue;
       declareSymbol(symbol.exports!, symbol, node.left, flags, SymbolFlags.None);
     }
   }
@@ -2135,8 +2136,8 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function bindThisNode(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElemAccessExpression) {
     qu.assert(qf.is.inJSFile(node));
     const hasPrivateIdentifier =
-      (qf.is.kind(qc.node, BinaryExpression) && qf.is.kind(qc.PropertyAccessExpression, node.left) && qf.is.kind(qc.PrivateIdentifier, node.left.name)) ||
-      (qf.is.kind(qc.PropertyAccessExpression, node) && qf.is.kind(qc.PrivateIdentifier, node.name));
+      (BinaryExpression.kind === Syntax.node && node.left.kind === Syntax.PropertyAccessExpression && node.left.name.kind === Syntax.PrivateIdentifier) ||
+      (node.kind === Syntax.PropertyAccessExpression && node.name.kind === Syntax.PrivateIdentifier);
     if (hasPrivateIdentifier) {
       return;
     }
@@ -2145,7 +2146,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionExpression:
         let constructorSymbol: Symbol | undefined = thisContainer.symbol;
-        if (qf.is.kind(qc.thisContainer.parent, BinaryExpression) && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
+        if (thisContainer.parent?.kind === Syntax.BinaryExpression && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
           const l = thisContainer.parent.left;
           if (qf.is.bindableStaticAccessExpression(l) && qf.is.prototypeAccess(l.expression)) {
             constructorSymbol = lookupSymbolForPropertyAccess(l.expression.expression, thisParentContainer);
@@ -2240,7 +2241,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
 
     node.left.parent = node;
     node.right.parent = node;
-    if (qf.is.kind(qc.Identifier, node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
+    if (node.left.expression.kind === Syntax.Identifier && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
       bindExportsPropertyAssignment(node as BindableStaticPropertyAssignmentExpression);
     } else if (qf.has.dynamicName(node)) {
       bindAnonymousDeclaration(node, SymbolFlags.Property | SymbolFlags.Assignment, InternalSymbol.Computed);
@@ -2251,7 +2252,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     }
   }
   function bindStaticPropertyAssignment(node: BindableStaticNameExpression) {
-    qu.assert(!qf.is.kind(qc.Identifier, node));
+    qu.assert(!node.kind === Syntax.Identifier);
     node.expression.parent = node;
     bindPropertyAssignment(node.expression, node, false);
   }
@@ -2290,11 +2291,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (qf.is.functionLikeDeclaration(qf.get.assignedExpandoIniter(declaration)!)) {
       includes = SymbolFlags.Method;
       excludes = SymbolFlags.MethodExcludes;
-    } else if (qf.is.kind(qc.CallExpression, declaration) && qf.is.bindableObjectDefinePropertyCall(declaration)) {
+    } else if (declaration.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(declaration)) {
       if (
         some(declaration.args[2].properties, (p) => {
           const id = qf.decl.nameOf(p);
-          return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'set';
+          return !!id && id.kind === Syntax.Identifier && idText(id) === 'set';
         })
       ) {
         includes |= SymbolFlags.SetAccessor | SymbolFlags.Property;
@@ -2303,7 +2304,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
       if (
         some(declaration.args[2].properties, (p) => {
           const id = qf.decl.nameOf(p);
-          return !!id && qf.is.kind(qc.Identifier, id) && idText(id) === 'get';
+          return !!id && id.kind === Syntax.Identifier && idText(id) === 'get';
         })
       ) {
         includes |= SymbolFlags.GetAccessor | SymbolFlags.Property;
@@ -2317,7 +2318,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     declareSymbol(symbolTable, namespaceSymbol, declaration, includes | SymbolFlags.Assignment, excludes & ~SymbolFlags.Assignment);
   }
   function isTopLevelNamespaceAssignment(propertyAccess: BindableAccessExpression) {
-    return qf.is.kind(qc.BinaryExpression, propertyAccess.parent)
+    return propertyAccess.parent.kind === Syntax.BinaryExpression
       ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === Syntax.SourceFile
       : propertyAccess.parent.parent.kind === Syntax.SourceFile;
   }
@@ -2330,34 +2331,34 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   function isExpandoSymbol(symbol: Symbol): boolean {
     if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) return true;
     const node = symbol.valueDeclaration;
-    if (node && qf.is.kind(qc.CallExpression, node)) return !!qf.get.assignedExpandoIniter(node);
+    if (node && node.kind === Syntax.CallExpression) return !!qf.get.assignedExpandoIniter(node);
     let init = !node
       ? undefined
-      : qf.is.kind(qc.VariableDeclaration, node)
+      : node.kind === Syntax.VariableDeclaration
       ? node.initer
-      : qf.is.kind(qc.BinaryExpression, node)
+      : node.kind === Syntax.BinaryExpression
       ? node.right
-      : qf.is.kind(qc.PropertyAccessExpression, node) && qf.is.kind(qc.BinaryExpression, node.parent)
+      : node.kind === Syntax.PropertyAccessExpression && node.parent.kind === Syntax.BinaryExpression
       ? node.parent.right
       : undefined;
     init = init && qf.get.rightMostAssignedExpression(init);
     if (init) {
-      const isPrototypeAssignment = qf.is.prototypeAccess(qf.is.kind(qc.VariableDeclaration, node) ? node.name : qf.is.kind(qc.BinaryExpression, node) ? node.left : node);
+      const isPrototypeAssignment = qf.is.prototypeAccess(node.kind === Syntax.VariableDeclaration ? node.name : node.kind === Syntax.BinaryExpression ? node.left : node);
       return !!qf.get.expandoIniter(
-        qf.is.kind(qc.BinaryExpression, init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
+        init.kind === Syntax.BinaryExpression && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
         isPrototypeAssignment
       );
     }
     return false;
   }
   function getParentOfBinaryExpression(expr: Node) {
-    while (qf.is.kind(qc.BinaryExpression, expr.parent)) {
+    while (expr.parent.kind === Syntax.BinaryExpression) {
       expr = expr.parent;
     }
     return expr.parent;
   }
   function lookupSymbolForPropertyAccess(node: BindableStaticNameExpression, lookupContainer: Node = container): Symbol | undefined {
-    if (qf.is.kind(qc.Identifier, node)) return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
+    if (node.kind === Syntax.Identifier) return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
     else {
       const symbol = lookupSymbolForPropertyAccess(node.expression);
       return symbol && symbol.exports && symbol.exports.get(qf.get.elemOrPropertyAccessName(node));
@@ -2369,11 +2370,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     action: (e: Declaration, symbol: Symbol | undefined, parent: Symbol | undefined) => Symbol | undefined
   ): Symbol | undefined {
     if (isExportsOrModuleExportsOrAlias(file, e)) return file.symbol;
-    if (qf.is.kind(qc.Identifier, e)) return action(e, lookupSymbolForPropertyAccess(e), parent);
+    if (e.kind === Syntax.Identifier) return action(e, lookupSymbolForPropertyAccess(e), parent);
     else {
       const s = forEachIdentifierInEntityName(e.expression, parent, action);
       const name = qf.get.nameOrArg(e);
-      if (qf.is.kind(qc.PrivateIdentifier, name)) {
+      if (name.kind === Syntax.PrivateIdentifier) {
         fail('unexpected PrivateIdentifier');
       }
       return action(name, s && s.exports && s.exports.get(qf.get.elemOrPropertyAccessName(e)), s);
@@ -2415,7 +2416,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (inStrictMode) {
       checkStrictModeEvalOrArgs(node, node.name);
     }
-    if (!qf.is.kind(qc.BindingPattern, node.name)) {
+    if (!node.name.kind === Syntax.BindingPattern) {
       if (qf.is.blockOrCatchScoped(node)) {
         bindBlockScopedDeclaration(node, SymbolFlags.BlockScopedVariable, SymbolFlags.BlockScopedVariableExcludes);
       } else if (qf.is.paramDeclaration(node)) {
@@ -2432,7 +2433,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
       checkStrictModeEvalOrArgs(node, node.name);
     }
-    if (qf.is.kind(qc.BindingPattern, node.name)) {
+    if (node.name.kind === Syntax.BindingPattern) {
       bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParamDeclaration).parent.params.indexOf(node as ParamDeclaration)) as qu.__String);
     } else {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParamExcludes);
@@ -2485,11 +2486,11 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
     return qf.has.dynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbol.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
   function getInferTypeContainer(node: Node): ConditionalTyping | undefined {
-    const extendsType = qc.findAncestor(node, (n) => n.parent && qf.is.kind(qc.ConditionalTyping, n.parent) && n.parent.extendsType === n);
+    const extendsType = qc.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalTyping && n.parent.extendsType === n);
     return extendsType && (extendsType.parent as ConditionalTyping);
   }
   function bindTypeParam(node: TypeParamDeclaration) {
-    if (qf.is.kind(qc.DocTemplateTag, node.parent)) {
+    if (node.parent.kind === Syntax.DocTemplateTag) {
       const container = find((node.parent.parent as Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
@@ -2530,7 +2531,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
           const isError =
             unreachableCodeIsError(opts) &&
             !(node.flags & NodeFlags.Ambient) &&
-            (!qf.is.kind(qc.VariableStatement, node) || !!(qf.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initer));
+            (!node.kind === Syntax.VariableStatement || !!(qf.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initer));
           eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, qd.Unreachable_code_detected));
         }
       }
@@ -2539,7 +2540,7 @@ function createBinder(): (file: SourceFile, opts: CompilerOpts) => void {
   }
 }
 function eachUnreachableRange(node: Node, cb: (start: Node, last: Node) => void): void {
-  if (qf.is.statement(node) && isExecutableStatement(node) && qf.is.kind(qc.Block, node.parent)) {
+  if (qf.is.statement(node) && isExecutableStatement(node) && node.parent.kind === Syntax.Block) {
     const { statements } = node.parent;
     const slice = sliceAfter(statements, node);
     getRangesWhere(slice, isExecutableStatement, (start, afterEnd) => cb(slice[start], slice[afterEnd - 1]));
@@ -2549,10 +2550,10 @@ function eachUnreachableRange(node: Node, cb: (start: Node, last: Node) => void)
 }
 function isExecutableStatement(s: Statement): boolean {
   return (
-    !qf.is.kind(qc.FunctionDeclaration, s) &&
+    !s.kind === Syntax.FunctionDeclaration &&
     !isPurelyTypeDeclaration(s) &&
-    !qf.is.kind(qc.EnumDeclaration, s) &&
-    !(qf.is.kind(qc.VariableStatement, s) && !(qf.get.combinedFlagsOf(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initer))
+    !s.kind === Syntax.EnumDeclaration &&
+    !(s.kind === Syntax.VariableStatement && !(qf.get.combinedFlagsOf(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initer))
   );
 }
 function isPurelyTypeDeclaration(s: Statement): boolean {
@@ -2575,9 +2576,9 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
     i++;
     node = q.shift()!;
     if (qf.is.exportsIdentifier(node) || qf.is.moduleExportsAccessExpression(node)) return true;
-    else if (qf.is.kind(qc.Identifier, node)) {
+    else if (node.kind === Syntax.Identifier) {
       const symbol = lookupSymbolForNameWorker(sourceFile, node.escapedText);
-      if (!!symbol && !!symbol.valueDeclaration && qf.is.kind(qc.VariableDeclaration, symbol.valueDeclaration) && !!symbol.valueDeclaration.initer) {
+      if (!!symbol && !!symbol.valueDeclaration && symbol.valueDeclaration.kind === Syntax.VariableDeclaration && !!symbol.valueDeclaration.initer) {
         const init = symbol.valueDeclaration.initer;
         q.push(init);
         if (qf.is.assignmentExpression(init, true)) {
@@ -2592,7 +2593,7 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
 function lookupSymbolForNameWorker(container: Node, name: qu.__String): Symbol | undefined {
   const local = container.locals && container.locals.get(name);
   if (local) return local.exportSymbol || local;
-  if (qf.is.kind(qc.SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);
+  if (container.kind === Syntax.SourceFile && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);
   return container.symbol && container.symbol.exports && container.symbol.exports.get(name);
 }
 function setParentPointers(parent: Node, child: Node): void {
@@ -2604,7 +2605,7 @@ function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElemAcces
     qf.is.inJSFile(expr) &&
     expr.parent &&
     expr.parent.kind === Syntax.ExpressionStatement &&
-    (!qf.is.kind(qc.ElemAccessExpression, expr) || qf.is.literalLikeElemAccess(expr)) &&
+    (!expr.kind === Syntax.ElemAccessExpression || qf.is.literalLikeElemAccess(expr)) &&
     !!qc.getDoc.typeTag(expr.parent)
   );
 }

@@ -3431,7 +3431,7 @@ function create() {
     child(openingTag: JsxOpeningElem | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
       switch (token) {
         case Syntax.EndOfFileToken:
-          if (qf.is.kind(qc.JsxOpeningFragment, openingTag)) {
+          if (openingTag.kind === Syntax.JsxOpeningFragment) {
             parse.errorAtRange(openingTag, qd.msgs.JSX_fragment_has_no_corresponding_closing_tag);
           } else {
             const tag = openingTag.tagName;
@@ -4173,7 +4173,7 @@ function create() {
       if (fullName) {
         let rightNode = fullName;
         while (true) {
-          if (qf.is.kind(qc.Identifier, rightNode) || !rightNode.body) return qf.is.kind(qc.Identifier, rightNode) ? rightNode : rightNode.name;
+          if (rightNode.kind === Syntax.Identifier || !rightNode.body) return rightNode.kind === Syntax.Identifier ? rightNode : rightNode.name;
           rightNode = rightNode.body;
         }
       }
@@ -4195,7 +4195,7 @@ function create() {
                 (child.kind === Syntax.DocParamTag || child.kind === Syntax.DocPropertyTag) &&
                 target !== PropertyLike.CallbackParam &&
                 name &&
-                (qf.is.kind(qc.Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
+                (child.name.kind === Syntax.Identifier || !escapedTextsEqual(name, child.name.left))
               ) {
                 return false;
               }
@@ -4484,8 +4484,8 @@ function create() {
     return r;
   }
   function escapedTextsEqual(a: qt.EntityName, b: qt.EntityName): boolean {
-    while (!qf.is.kind(qc.Identifier, a) || !qf.is.kind(qc.Identifier, b)) {
-      if (!qf.is.kind(qc.Identifier, a) && !qf.is.kind(qc.Identifier, b) && a.right.escapedText === b.right.escapedText) {
+    while (a.kind !== Syntax.Identifier || b.kind !== Syntax.Identifier) {
+      if (a.kind !== Syntax.Identifier && b.kind !== Syntax.Identifier && a.right.escapedText === b.right.escapedText) {
         a = a.left;
         b = b.left;
       } else return false;

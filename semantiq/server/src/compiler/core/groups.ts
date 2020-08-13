@@ -789,7 +789,7 @@ export function newCalc(f: qt.Frame) {
     catchClause(n: qt.CatchClause, f: TrafoFlags) {
       let r = f;
       if (!n.variableDeclaration) r |= TrafoFlags.AssertES2019;
-      else if (qf.is.kind(qc.BindingPattern, n.variableDeclaration.name)) r |= TrafoFlags.AssertES2015;
+      else if (n.variableDeclaration.name.kind === Syntax.BindingPattern) r |= TrafoFlags.AssertES2015;
       n.trafoFlags = r | TrafoFlags.HasComputedFlags;
       return r & ~TrafoFlags.CatchClauseExcludes;
     }
@@ -825,7 +825,7 @@ export function newCalc(f: qt.Frame) {
     propertyDeclaration(n: qt.PropertyDeclaration, f: TrafoFlags) {
       let r = f | TrafoFlags.ContainsClassFields;
       if (qu.some(n.decorators) || qf.has.syntacticModifier(n, ModifierFlags.TypeScriptModifier) || n.type || n.questionToken || n.exclamationToken) r |= TrafoFlags.AssertTypeScript;
-      if (qf.is.kind(qc.ComputedPropertyName, n.name) || (qf.has.staticModifier(n) && n.initer)) r |= TrafoFlags.ContainsTypeScriptClassSyntax;
+      if (n.name.kind === Syntax.ComputedPropertyName || (qf.has.staticModifier(n) && n.initer)) r |= TrafoFlags.ContainsTypeScriptClassSyntax;
       n.trafoFlags = r | TrafoFlags.HasComputedFlags;
       return this.propagatePropertyNameFlags(n.name, r & ~TrafoFlags.PropertyExcludes);
     }
@@ -1314,7 +1314,7 @@ export function newNest(f: qt.Frame) {
               //  (a**b)**x  -> (a**b)**x
               return binaryOperatorAssociativity === qt.Associativity.Right;
             } else {
-              if (qf.is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
+              if (emittedOperand.kind === Syntax.BinaryExpression && emittedOperand.operatorToken.kind === binaryOperator) {
                 // No need to parenthesize the right operand when the binary operator and
                 // operand are the same and one of the following:
                 //  x*(a*b)     => x*a*b
@@ -1685,7 +1685,7 @@ export namespace fixme {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
   }
   export function convertToFunctionBody(node: qt.ConciseBody, multiLine?: boolean): qt.Block {
-    return qf.is.kind(Block, node) ? node : new Block([new ReturnStatement(node).setRange(node)], multiLine).setRange(node);
+    return node.kind === Syntax.Block ? node : new Block([new ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function ensureUseStrict(statements: qt.Nodes<qt.Statement>): qt.Nodes<qt.Statement> {
     const foundUseStrict = findUseStrictPrologue(statements);
@@ -1704,7 +1704,7 @@ export namespace fixme {
     hasImportStar?: boolean,
     hasImportDefault?: boolean
   ) {
-    if (compilerOpts.importHelpers && isEffectiveExternalModule(sourceFile, compilerOpts)) {
+    if (compilerOpts.importHelpers && sourceFile.isEffectiveExternalModule(compilerOpts)) {
       let namedBindings: qt.NamedImportBindings | undefined;
       const moduleKind = getEmitModuleKind(compilerOpts);
       if (moduleKind >= qt.ModuleKind.ES2015 && moduleKind <= qt.ModuleKind.ESNext) {
@@ -1723,7 +1723,7 @@ export namespace fixme {
             helperNames.sort(compareCaseSensitive);
             namedBindings = new NamedImports(
               qu.map(helperNames, (name) =>
-                isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qb.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
+                sourceFile.isFileLevelUniqueName(name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qb.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
             const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
@@ -1746,7 +1746,7 @@ export namespace fixme {
     return;
   }
   export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOpts: qt.CompilerOpts, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
-    if (compilerOpts.importHelpers && isEffectiveExternalModule(node, compilerOpts)) {
+    if (compilerOpts.importHelpers && node.isEffectiveExternalModule(compilerOpts)) {
       const externalHelpersModuleName = getExternalHelpersModuleName(node);
       if (externalHelpersModuleName) return externalHelpersModuleName;
       const moduleKind = getEmitModuleKind(compilerOpts);

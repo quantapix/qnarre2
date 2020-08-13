@@ -210,7 +210,7 @@ export function transformDeclarations(context: TrafoContext) {
           if (qc.is.externalOrCommonJsModule(sourceFile) || qc.is.jsonSourceFile(sourceFile)) {
             resultHasExternalModuleIndicator = false;
             needsDeclare = false;
-            const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, true)) : Nodes.visit(sourceFile.statements, visitDeclarationStmts);
+            const statements = sourceFile.isJS() ? new Nodes(transformDeclarationsForJS(sourceFile, true)) : Nodes.visit(sourceFile.statements, visitDeclarationStmts);
             const newFile = qp_updateSourceNode(
               sourceFile,
               [
@@ -230,7 +230,7 @@ export function transformDeclarations(context: TrafoContext) {
             return newFile;
           }
           needsDeclare = true;
-          const updated = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStmts);
+          const updated = sourceFile.isJS() ? new Nodes(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStmts);
           return qp_updateSourceNode(sourceFile, transformAndReplaceLatePaintedStatements(updated), true, [], [], false, []);
         }),
         mapDefined(node.prepends, (prepend) => {
@@ -272,7 +272,7 @@ export function transformDeclarations(context: TrafoContext) {
     const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, true).declarationFilePath!));
     const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
     let combinedStatements: Nodes<Statement>;
-    if (isSourceFileJS(currentSourceFile)) {
+    if (currentSourceFile.isJS()) {
       combinedStatements = new Nodes(transformDeclarationsForJS(node));
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
@@ -337,7 +337,7 @@ export function transformDeclarations(context: TrafoContext) {
     }
   }
   function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: QMap<SourceFile>) {
-    if (noResolve || (!qc.is.kind(qc.UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
+    if (noResolve || (!qc.is.kind(qc.UnparsedSource, sourceFile) && sourceFile.isJS())) return ret;
     forEach(sourceFile.referencedFiles, (f) => {
       const elem = host.getSourceFileFromReference(sourceFile, f);
       if (elem) ret.set('' + getOriginalNodeId(elem), elem);

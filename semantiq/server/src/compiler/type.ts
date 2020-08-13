@@ -2005,7 +2005,7 @@ export interface SourceFile extends Decl {
   languageVariant: qy.LanguageVariant;
   languageVersion: qt.ScriptTarget;
   libReferenceDirectives: readonly FileReference[];
-  lineMap: readonly number[];
+  lineMap?: readonly number[];
   localJsxFactory?: EntityName;
   localJsxNamespace?: qu.__String;
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
@@ -2046,9 +2046,9 @@ export interface SourceFilePrologueDirectiveExpression extends qu.Range {
   text: string;
 }
 export interface SourceFilePrologueInfo {
+  directives: SourceFilePrologueDirective[];
   file: number;
   text: string;
-  directives: SourceFilePrologueDirective[];
 }
 export interface SourceMapEmitResult {
   inputSourceFileNames: readonly string[];
@@ -2075,17 +2075,17 @@ export interface SourceMapSource {
   skipTrivia?: (pos: number) => number;
 }
 export interface SourceMapSpan {
-  emittedLine: number;
   emittedColumn: number;
-  sourceLine: number;
-  sourceColumn: number;
+  emittedLine: number;
   nameIndex?: number;
+  sourceColumn: number;
   sourceIndex: number;
+  sourceLine: number;
 }
 export interface SpreadAssignment extends ObjectLiteralElem, DocContainer {
-  parent?: ObjectLiteralExpression;
   kind: Syntax.SpreadAssignment;
   expression: Expression;
+  parent?: ObjectLiteralExpression;
 }
 export interface SpreadElem extends Expr {
   kind: Syntax.SpreadElem;
@@ -2512,22 +2512,21 @@ export interface UnparsedSection extends Nobj {
   parent?: UnparsedSource;
 }
 export interface UnparsedSource extends Nobj {
-  kind: Syntax.UnparsedSource;
   fileName: string;
-  text: string;
-  prologues: readonly UnparsedPrologue[];
-  helpers?: readonly UnscopedEmitHelper[];
-  referencedFiles: readonly FileReference[];
-  typeReferenceDirectives?: readonly string[];
-  libReferenceDirectives: readonly FileReference[];
   hasNoDefaultLib?: boolean;
+  helpers?: readonly UnscopedEmitHelper[];
+  kind: Syntax.UnparsedSource;
+  libReferenceDirectives: readonly FileReference[];
+  oldFileOfCurrentEmit?: boolean;
+  parsedSourceMap?: RawSourceMap | false;
+  prologues: readonly UnparsedPrologue[];
+  referencedFiles: readonly FileReference[];
   sourceMapPath?: string;
   sourceMapText?: string;
   syntheticReferences?: readonly UnparsedSyntheticReference[];
+  text: string;
   texts: readonly UnparsedSourceText[];
-  oldFileOfCurrentEmit?: boolean;
-  parsedSourceMap?: RawSourceMap | false;
-  getLineAndCharacterOfPosition(pos: number): qy.LineAndChar;
+  typeReferenceDirectives?: readonly string[];
 }
 export interface UnparsedSyntheticReference extends UnparsedSection {
   kind: Syntax.UnparsedSyntheticReference;

@@ -4819,7 +4819,7 @@ export function newGet(f: qt.Frame) {
         container.kind === Syntax.FunctionExpression &&
         container.parent?.kind === Syntax.PropertyAssignment &&
         container.parent?.parent?.kind === Syntax.ObjectLiteralExpression &&
-        qf.is.kind(qc.BinaryExpression, container.parent?.parent?.parent) &&
+        container.parent?.parent?.parent?.kind === Syntax.BinaryExpression &&
         this.assignmentDeclarationKind(container.parent?.parent?.parent) === qt.AssignmentDeclarationKind.Prototype
       ) {
         return (container.parent?.parent?.parent?.left as qt.PropertyAccessExpression).expression;
@@ -4829,7 +4829,7 @@ export function newGet(f: qt.Frame) {
         container.parent?.name.kind === Syntax.Identifier &&
         (container.parent?.name.escapedText === 'value' || container.parent?.name.escapedText === 'get' || container.parent?.name.escapedText === 'set') &&
         container.parent?.parent?.kind === Syntax.ObjectLiteralExpression &&
-        qf.is.kind(qc.CallExpression, container.parent?.parent?.parent) &&
+        container.parent?.parent?.parent?.kind === Syntax.CallExpression &&
         container.parent?.parent?.parent?.args[2] === container.parent?.parent &&
         this.assignmentDeclarationKind(container.parent?.parent?.parent) === qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty
       ) {

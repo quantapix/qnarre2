@@ -20,14 +20,14 @@ export namespace BindingOrAssignmentElem {
       // `1` in `let [[a] = 1] = ...`
       return e.initer;
     }
-    if (qf.is.kind(qc.PropertyAssignment, e)) {
+    if (e.kind === Syntax.PropertyAssignment) {
       // `1` in `({ a: b = 1 } = ...)`
       // `1` in `({ a: {b} = 1 } = ...)`
       // `1` in `({ a: [b] = 1 } = ...)`
       const i = e.initer;
       return qf.is.assignmentExpression(i, true) ? i.right : undefined;
     }
-    if (qf.is.kind(qc.ShorthandPropertyAssignment, e)) {
+    if (e.kind === Syntax.ShorthandPropertyAssignment) {
       // `1` in `({ a = 1 } = ...)`
       return e.objectAssignmentIniter;
     }
@@ -37,7 +37,7 @@ export namespace BindingOrAssignmentElem {
       // `1` in `[[a] = 1] = ...`
       return e.right;
     }
-    if (qf.is.kind(qc.SpreadElem, e)) return getIniterOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
+    if (e.kind === Syntax.SpreadElem) return getIniterOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
     return;
   }
   export function getTargetOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.BindingOrAssignmentElemTarget | undefined {
@@ -93,7 +93,7 @@ export namespace BindingOrAssignmentElem {
       // `a[0]` in `[a[0] = 1] = ...`
       return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.left);
     }
-    if (qf.is.kind(qc.SpreadElem, e)) {
+    if (e.kind === Syntax.SpreadElem) {
       // `a` in `[...a] = ...`
       return getTargetOfBindingOrAssignmentElem(<qt.BindingOrAssignmentElem>e.expression);
     }
@@ -119,7 +119,7 @@ export namespace BindingOrAssignmentElem {
   }
   export function getPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(e);
-    qu.assert(!!propertyName || qf.is.kind(qc.SpreadAssignment, e));
+    qu.assert(!!propertyName || e.kind === Syntax.SpreadAssignment);
     return propertyName;
   }
   export function tryGetPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
@@ -131,8 +131,8 @@ export namespace BindingOrAssignmentElem {
         // `1` in `let { 1: b } = ...`
         if (e.propertyName) {
           const propertyName = e.propertyName;
-          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qb.failBadSyntax(propertyName);
-          return qf.is.kind(qc.ComputedPropertyName, propertyName) && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          if (propertyName.kind === Syntax.PrivateIdentifier) return qb.failBadSyntax(propertyName);
+          return propertyName.kind === Syntax.ComputedPropertyName && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
       case Syntax.PropertyAssignment:
@@ -142,13 +142,13 @@ export namespace BindingOrAssignmentElem {
         // `1` in `({ 1: b } = ...)`
         if (e.name) {
           const propertyName = e.name;
-          if (qf.is.kind(qc.PrivateIdentifier, propertyName)) return qb.failBadSyntax(propertyName);
-          return qf.is.kind(qc.ComputedPropertyName, propertyName) && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          if (propertyName.kind === Syntax.PrivateIdentifier) return qb.failBadSyntax(propertyName);
+          return propertyName.kind === Syntax.ComputedPropertyName && qf.is.stringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
       case Syntax.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
-        if (e.name && qf.is.kind(qc.PrivateIdentifier, e.name)) return qb.failBadSyntax(e.name);
+        if (e.name && e.name.kind === Syntax.PrivateIdentifier) return qb.failBadSyntax(e.name);
         return e.name;
     }
     const target = getTargetOfBindingOrAssignmentElem(e);
@@ -156,7 +156,7 @@ export namespace BindingOrAssignmentElem {
     return;
   }
   export function convertToArrayAssignmentElem(e: qt.BindingOrAssignmentElem) {
-    if (qf.is.kind(qc.BindingElem, e)) {
+    if (e.kind === Syntax.BindingElem) {
       if (e.dot3Token) {
         qf.assert.node(e.name, isIdentifier);
         return new qc.SpreadElem(e.name).setRange(e).setOriginal(e);
@@ -168,7 +168,7 @@ export namespace BindingOrAssignmentElem {
     return <qt.Expression>e;
   }
   export function convertToObjectAssignmentElem(e: qt.BindingOrAssignmentElem) {
-    if (qf.is.kind(qc.BindingElem, e)) {
+    if (e.kind === Syntax.BindingElem) {
       if (e.dot3Token) {
         qf.assert.node(e.name, isIdentifier);
         return new qc.SpreadAssignment(e.name).setRange(e).setOriginal(e);
@@ -209,17 +209,17 @@ export namespace BindingOrAssignmentPattern {
     }
   }
   export function convertToObjectAssignmentPattern(n: qt.ObjectBindingOrAssignmentPattern) {
-    if (qf.is.kind(qc.ObjectBindingPattern, n)) return new qc.ObjectLiteralExpression(qu.map(n.elems, convertToObjectAssignmentElem)).setOriginal(n).setRange(n);
+    if (n.kind === Syntax.ObjectBindingPattern) return new qc.ObjectLiteralExpression(qu.map(n.elems, convertToObjectAssignmentElem)).setOriginal(n).setRange(n);
     qf.assert.node(n, isObjectLiteralExpression);
     return n;
   }
   export function convertToArrayAssignmentPattern(n: qt.ArrayBindingOrAssignmentPattern) {
-    if (qf.is.kind(qc.ArrayBindingPattern, n)) return new qc.ArrayLiteralExpression(qu.map(n.elems, convertToArrayAssignmentElem)).setOriginal(n).setRange(n);
+    if (n.kind === Syntax.ArrayBindingPattern) return new qc.ArrayLiteralExpression(qu.map(n.elems, convertToArrayAssignmentElem)).setOriginal(n).setRange(n);
     qf.assert.node(n, isArrayLiteralExpression);
     return n;
   }
   export function convertToAssignmentElemTarget(n: qt.BindingOrAssignmentElemTarget): qt.Expression {
-    if (qf.is.kind(qc.BindingPattern, n)) return convertToAssignmentPattern(n);
+    if (n.kind === Syntax.BindingPattern) return convertToAssignmentPattern(n);
     qf.assert.node(n, isExpression);
     return n;
   }

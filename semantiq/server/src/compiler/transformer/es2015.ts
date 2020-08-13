@@ -497,7 +497,7 @@ export function transformES2015(context: TrafoContext) {
       superCallExpression = createDefaultSuperCallOrThis();
     } else if (isDerivedClass && statementOffset < constructor.body.statements.length) {
       const firstStatement = constructor.body.statements[statementOffset];
-      if (qf.is.kind(qc.ExpressionStatement, firstStatement) && qf.is.superCall(firstStatement.expression)) {
+      if (firstStatement.kind === Syntax.ExpressionStatement && qf.is.superCall(firstStatement.expression)) {
         superCallExpression = visitImmediateSuperCallInBody(firstStatement.expression);
       }
     }
@@ -554,7 +554,7 @@ export function transformES2015(context: TrafoContext) {
   function visitParam(node: ParamDeclaration): ParamDeclaration | undefined {
     if (node.dot3Token) {
       return;
-    } else if (qf.is.kind(qc.BindingPattern, node.name)) {
+    } else if (node.name.kind === Syntax.BindingPattern) {
       return setRange(new qc.ParamDeclaration(undefined, undefined, undefined, qf.get.generatedNameForNode(node), undefined, undefined, undefined), node).setOriginal(node);
     } else if (node.initer) {
       return setRange(new qc.ParamDeclaration(undefined, undefined, undefined, undefined), node).setOriginal(node);
@@ -562,7 +562,7 @@ export function transformES2015(context: TrafoContext) {
     return node;
   }
   function hasDefaultValueOrBindingPattern(node: ParamDeclaration) {
-    return node.initer !== undefined || qf.is.kind(qc.BindingPattern, node.name);
+    return node.initer !== undefined || node.name.kind === Syntax.BindingPattern;
   }
   function addDefaultValueAssignmentsIfNeeded(statements: qc.Statement[], node: FunctionLikeDeclaration): boolean {
     if (!some(node.params, hasDefaultValueOrBindingPattern)) return false;
@@ -572,7 +572,7 @@ export function transformES2015(context: TrafoContext) {
       if (dot3Token) {
         continue;
       }
-      if (qf.is.kind(qc.BindingPattern, name)) {
+      if (name.kind === Syntax.BindingPattern) {
         added = insertDefaultValueAssignmentForBindingPattern(statements, param, name, initer) || added;
       } else if (initer) {
         insertDefaultValueAssignmentForIniter(statements, param, name, initer);
@@ -764,12 +764,13 @@ export function transformES2015(context: TrafoContext) {
     const memberFunction = transformFunctionLikeToExpression(member, undefined, container);
     const propertyName = visitNode(member.name, visitor, isPropertyName);
     let e: qc.Expression;
-    if (!qf.is.kind(qc.PrivateIdentifier, propertyName) && context.getCompilerOpts().useDefineForClassFields) {
-      const name = qf.is.kind(qc.ComputedPropertyName, propertyName)
-        ? propertyName.expression
-        : qf.is.kind(qc.Identifier, propertyName)
-        ? new qc.StringLiteral(qy.get.unescUnderscores(propertyName.escapedText))
-        : propertyName;
+    if (!propertyName.kind === Syntax.PrivateIdentifier && context.getCompilerOpts().useDefineForClassFields) {
+      const name =
+        propertyName.kind === Syntax.ComputedPropertyName
+          ? propertyName.expression
+          : propertyName.kind === Syntax.Identifier
+          ? new qc.StringLiteral(qy.get.unescUnderscores(propertyName.escapedText))
+          : propertyName;
       e = qf.create.objectDefinePropertyCall(receiver, name, qf.create.propertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
     } else {
       const memberName = createMemberAccessForPropertyName(receiver, propertyName, member.name);
@@ -794,7 +795,7 @@ export function transformES2015(context: TrafoContext) {
     setEmitFlags(target, EmitFlags.NoComments | EmitFlags.NoTrailingSourceMap);
     setSourceMapRange(target, firstAccessor.name);
     const visitedAccessorName = visitNode(firstAccessor.name, visitor, isPropertyName);
-    if (qf.is.kind(qc.PrivateIdentifier, visitedAccessorName)) return qu.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
+    if (visitedAccessorName.kind === Syntax.PrivateIdentifier) return qu.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
     const propertyName = createExpressionForPropertyName(visitedAccessorName);
     setEmitFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoLeadingSourceMap);
     setSourceMapRange(propertyName, firstAccessor.name);
@@ -898,14 +899,14 @@ export function transformES2015(context: TrafoContext) {
     const body = node.body!;
     let statementOffset: number | undefined;
     resumeLexicalEnvironment();
-    if (qf.is.kind(qc.Block, body)) {
+    if (body.kind === Syntax.Block) {
       statementOffset = addStandardPrologue(prologue, body.statements, false);
       statementOffset = addCustomPrologue(statements, body.statements, statementOffset, visitor, isHoistedFunction);
       statementOffset = addCustomPrologue(statements, body.statements, statementOffset, visitor, isHoistedVariableStatement);
     }
     multiLine = addDefaultValueAssignmentsIfNeeded(statements, node) || multiLine;
     multiLine = addRestParamIfNeeded(statements, node, false) || multiLine;
-    if (qf.is.kind(qc.Block, body)) {
+    if (body.kind === Syntax.Block) {
       statementOffset = addCustomPrologue(statements, body.statements, statementOffset, visitor);
       statementsLocation = body.statements;
       addRange(statements, Nodes.visit(body.statements, visitor, isStatement, statementOffset));
@@ -938,7 +939,7 @@ export function transformES2015(context: TrafoContext) {
       multiLine = true;
     }
     statements.unshift(...prologue);
-    if (qf.is.kind(qc.Block, body) && arrayIsEqualTo(statements, body.statements)) return body;
+    if (body.kind === Syntax.Block && arrayIsEqualTo(statements, body.statements)) return body;
     const block = new Block(setRange(new Nodes(statements), statementsLocation), multiLine);
     setRange(block, node.body);
     if (!multiLine && singleLine) {
@@ -1000,7 +1001,7 @@ export function transformES2015(context: TrafoContext) {
         hoistVariableDeclarationDeclaredInConvertedLoop(convertedLoopState, decl);
         if (decl.initer) {
           let assignment: qc.Expression;
-          if (qf.is.kind(qc.BindingPattern, decl.name)) {
+          if (decl.name.kind === Syntax.BindingPattern) {
             assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
           } else {
             assignment = new BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initer, visitor, isExpression));
@@ -1030,7 +1031,7 @@ export function transformES2015(context: TrafoContext) {
       declarationList.setOriginal(node);
       setRange(declarationList, node);
       setCommentRange(declarationList, node);
-      if (node.trafoFlags & TrafoFlags.ContainsBindingPattern && (qf.is.kind(qc.BindingPattern, node.declarations[0].name) || qf.is.kind(qc.BindingPattern, last(node.declarations).name))) {
+      if ((node.trafoFlags & TrafoFlags.ContainsBindingPattern && node.declarations[0].name.kind === Syntax.BindingPattern) || qu.last(node.declarations).name.kind === Syntax.BindingPattern) {
         setSourceMapRange(declarationList, getRangeUnion(declarations));
       }
       return declarationList;
@@ -1059,7 +1060,7 @@ export function transformES2015(context: TrafoContext) {
   }
   function visitVariableDeclarationInLetDeclarationList(node: VariableDeclaration) {
     const name = node.name;
-    if (qf.is.kind(qc.BindingPattern, name)) return visitVariableDeclaration(node);
+    if (name.kind === Syntax.BindingPattern) return visitVariableDeclaration(node);
     if (!node.initer && shouldEmitExplicitIniterForLetDeclaration(node)) {
       const clone = getMutableClone(node);
       clone.initer = qc.VoidExpression.zero();
@@ -1070,7 +1071,7 @@ export function transformES2015(context: TrafoContext) {
   function visitVariableDeclaration(node: VariableDeclaration): VisitResult<VariableDeclaration> {
     const ancestorFacts = enterSubtree(HierarchyFacts.ExportedVariableStatement, HierarchyFacts.None);
     let updated: VisitResult<VariableDeclaration>;
-    if (qf.is.kind(qc.BindingPattern, node.name)) {
+    if (node.name.kind === Syntax.BindingPattern) {
       updated = flattenDestructuringBinding(node, visitor, context, FlattenLevel.All, undefined, (ancestorFacts & HierarchyFacts.ExportedVariableStatement) !== 0);
     } else {
       updated = visitEachChild(node, visitor, context);
@@ -1139,12 +1140,12 @@ export function transformES2015(context: TrafoContext) {
   function convertForOfStatementHead(node: ForOfStatement, boundValue: qc.Expression, convertedLoopBodyStatements: qc.Statement[]) {
     const statements: qc.Statement[] = [];
     const initer = node.initer;
-    if (qf.is.kind(qc.VariableDeclarationList, initer)) {
+    if (initer.kind === Syntax.VariableDeclarationList) {
       if (node.initer.flags & NodeFlags.BlockScoped) {
         enableSubstitutionsForBlockScopedBindings();
       }
       const firstOriginalDeclaration = firstOrUndefined(initer.declarations);
-      if (firstOriginalDeclaration && qf.is.kind(qc.BindingPattern, firstOriginalDeclaration.name)) {
+      if (firstOriginalDeclaration && firstOriginalDeclaration.name.kind === Syntax.BindingPattern) {
         const declarations = flattenDestructuringBinding(firstOriginalDeclaration, visitor, context, FlattenLevel.All, boundValue);
         const declarationList = setRange(new qc.VariableDeclarationList(declarations), node.initer);
         declarationList.setOriginal(node.initer);
@@ -1180,7 +1181,7 @@ export function transformES2015(context: TrafoContext) {
     if (convertedLoopBodyStatements) return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
     else {
       const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
-      if (qf.is.kind(qc.Block, statement)) return statement.update(setRange(new Nodes(concatenate(statements, statement.statements)), statement.statements));
+      if (statement.kind === Syntax.Block) return statement.update(setRange(new Nodes(concatenate(statements, statement.statements)), statement.statements));
       statements.push(statement);
       return createSyntheticBlockForConvertedStatements(statements);
     }
@@ -1192,7 +1193,7 @@ function createSyntheticBlockForConvertedStatements(statements: qc.Statement[]) 
 function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: qc.Statement[]): qc.Statement {
   const expression = visitNode(node.expression, visitor, isExpression);
   const counter = createLoopVariable();
-  const rhsReference = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+  const rhsReference = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
   setEmitFlags(expression, EmitFlags.NoSourceMap | qf.get.emitFlags(expression));
   const forStatement = setRange(
     new qc.ForStatement(
@@ -1218,8 +1219,8 @@ function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledSta
 }
 function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: qc.Statement[], ancestorFacts: HierarchyFacts): qc.Statement {
   const expression = visitNode(node.expression, visitor, isExpression);
-  const iterator = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
-  const result = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
+  const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+  const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
   const errorRecord = createUniqueName('e');
   const catchVariable = qf.get.generatedNameForNode(errorRecord);
   const returnMethod = createTempVariable(undefined);
@@ -1326,13 +1327,13 @@ function shouldConvertPartOfIterationStmt(node: Node) {
   return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ContainsCapturedBlockScopeBinding) !== 0;
 }
 function shouldConvertIniterOfForStatement(node: IterationStmt): node is ForStatementWithConvertibleIniter {
-  return qf.is.kind(qc.ForStatement, node) && !!node.initer && shouldConvertPartOfIterationStmt(node.initer);
+  return node.kind === Syntax.ForStatement && !!node.initer && shouldConvertPartOfIterationStmt(node.initer);
 }
 function shouldConvertConditionOfForStatement(node: IterationStmt): node is ForStatementWithConvertibleCondition {
-  return qf.is.kind(qc.ForStatement, node) && !!node.condition && shouldConvertPartOfIterationStmt(node.condition);
+  return node.kind === Syntax.ForStatement && !!node.condition && shouldConvertPartOfIterationStmt(node.condition);
 }
 function shouldConvertIncrementorOfForStatement(node: IterationStmt): node is ForStatementWithConvertibleIncrementor {
-  return qf.is.kind(qc.ForStatement, node) && !!node.incrementor && shouldConvertPartOfIterationStmt(node.incrementor);
+  return node.kind === Syntax.ForStatement && !!node.incrementor && shouldConvertPartOfIterationStmt(node.incrementor);
 }
 function shouldConvertIterationStmt(node: IterationStmt) {
   return shouldConvertBodyOfIterationStmt(node) || shouldConvertIniterOfForStatement(node);
@@ -1350,7 +1351,7 @@ function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopSta
       state.hoistedLocalVariables!.push(node);
     } else {
       for (const elem of node.elems) {
-        if (!qf.is.kind(qc.OmittedExpression, elem)) {
+        if (!elem.kind === Syntax.OmittedExpression) {
           visit(elem.name);
         }
       }
@@ -1592,7 +1593,7 @@ function createFunctionForBodyOfIterationStmt(node: IterationStmt, currentState:
       );
     }
   }
-  if (qf.is.kind(qc.Block, statement)) {
+  if (statement.kind === Syntax.Block) {
     addRange(statements, statement.statements);
   } else {
     statements.push(statement);
@@ -1600,7 +1601,7 @@ function createFunctionForBodyOfIterationStmt(node: IterationStmt, currentState:
   copyOutParams(currentState.loopOutParams, LoopOutParamFlags.Body, CopyDirection.ToOutParam, statements);
   insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
   const loopBody = new Block(statements, true);
-  if (qf.is.kind(qc.Block, statement)) loopBody.setOriginal(statement);
+  if (statement.kind === Syntax.Block) loopBody.setOriginal(statement);
   const containsYield = (node.statement.trafoFlags & TrafoFlags.ContainsYield) !== 0;
   let emitFlags: EmitFlags = 0;
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
@@ -1714,9 +1715,9 @@ function processLoopVariableDeclaration(
   hasCapturedBindingsInForIniter: boolean
 ) {
   const name = decl.name;
-  if (qf.is.kind(qc.BindingPattern, name)) {
+  if (name.kind === Syntax.BindingPattern) {
     for (const elem of name.elems) {
-      if (!qf.is.kind(qc.OmittedExpression, elem)) {
+      if (!elem.kind === Syntax.OmittedExpression) {
         processLoopVariableDeclaration(container, elem, loopParams, loopOutParams, hasCapturedBindingsInForIniter);
       }
     }
@@ -1729,7 +1730,7 @@ function processLoopVariableDeclaration(
       if (checkFlags & NodeCheckFlags.NeedsLoopOutParam) {
         flags |= LoopOutParamFlags.Body;
       }
-      if (qf.is.kind(qc.ForStatement, container) && container.initer && resolver.isBindingCapturedByNode(container.initer, decl)) {
+      if (container.kind === Syntax.ForStatement && container.initer && resolver.isBindingCapturedByNode(container.initer, decl)) {
         flags |= LoopOutParamFlags.Initer;
       }
       loopOutParams.push({ flags, originalName: name, outParamName });
@@ -1795,7 +1796,7 @@ function visitCatchClause(node: CatchClause): CatchClause {
   const ancestorFacts = enterSubtree(HierarchyFacts.BlockScopeExcludes, HierarchyFacts.BlockScopeIncludes);
   let updated: CatchClause;
   assert(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
-  if (qf.is.kind(qc.BindingPattern, node.variableDeclaration.name)) {
+  if (node.variableDeclaration.name.kind === Syntax.BindingPattern) {
     const temp = createTempVariable(undefined);
     const newVariableDeclaration = new qc.VariableDeclaration(temp);
     setRange(newVariableDeclaration, node.variableDeclaration);
@@ -1815,13 +1816,13 @@ function addStatementToStartOfBlock(block: Block, statement: qc.Statement): Bloc
   return block.update([statement, ...transformedStatements]);
 }
 function visitMethodDeclaration(node: MethodDeclaration): ObjectLiteralElemLike {
-  assert(!qf.is.kind(qc.ComputedPropertyName, node.name));
+  assert(!node.name.kind === Syntax.ComputedPropertyName);
   const functionExpression = transformFunctionLikeToExpression(node, undefined);
   setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | qf.get.emitFlags(functionExpression));
   return setRange(new qc.PropertyAssignment(node.name, functionExpression), node);
 }
 function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaration {
-  assert(!qf.is.kind(qc.ComputedPropertyName, node.name));
+  assert(!node.name.kind === Syntax.ComputedPropertyName);
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
   const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
@@ -1858,7 +1859,7 @@ function visitCallExpression(node: CallExpression) {
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
   const body = cast(cast(qc.skip.outerExpressions(node.expression), isArrowFunction).body, isBlock);
-  const isVariableStatementWithIniter = (stmt: qc.Statement) => qf.is.kind(qc.VariableStatement, stmt) && !!first(stmt.declarationList.declarations).initer;
+  const isVariableStatementWithIniter = (stmt: qc.Statement) => stmt.kind === Syntax.VariableStatement && !!first(stmt.declarationList.declarations).initer;
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
   const bodyStatements = Nodes.visit(body.statements, visitor, isStatement);
@@ -1885,7 +1886,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
     classBodyStart++;
     statements.push(new qc.ExpressionStatement(qf.create.assignment(aliasAssignment.left, cast(variable.name, isIdentifier))));
   }
-  while (!qf.is.kind(qc.ReturnStatement, elemAt(funcStatements, classBodyEnd)!)) {
+  while (elemAt(funcStatements, classBodyEnd)?.kind !== Syntax.ReturnStatement) {
     classBodyEnd--;
   }
   addRange(statements, funcStatements, classBodyStart, classBodyEnd);
@@ -1966,21 +1967,21 @@ function transformAndSpreadElems(elems: Nodes<Expression>, needsUniqueCopy: bool
   }
 }
 function isPackedElem(node: qc.Expression) {
-  return !qf.is.kind(qc.OmittedExpression, node);
+  return !node.kind === Syntax.OmittedExpression;
 }
 function isPackedArrayLiteral(node: qc.Expression) {
   return isArrayLiteralExpression(node) && every(node.elems, isPackedElem);
 }
 function isCallToHelper(firstSegment: qc.Expression, helperName: __String) {
   return (
-    qf.is.kind(qc.CallExpression, firstSegment) &&
-    qf.is.kind(qc.Identifier, firstSegment.expression) &&
+    firstSegment.kind === Syntax.CallExpression &&
+    firstSegment.expression.kind === Syntax.Identifier &&
     qf.get.emitFlags(firstSegment.expression) & EmitFlags.HelperName &&
     firstSegment.expression.escapedText === helperName
   );
 }
 function partitionSpread(node: qc.Expression) {
-  return qf.is.kind(qc.SpreadElem, node) ? visitSpanOfSpreads : visitSpanOfNonSpreads;
+  return node.kind === Syntax.SpreadElem ? visitSpanOfSpreads : visitSpanOfNonSpreads;
 }
 function visitSpanOfSpreads(chunk: qc.Expression[]): VisitResult<Expression> {
   return map(chunk, visitExpressionOfSpread);
@@ -2083,7 +2084,7 @@ function enableSubstitutionsForCapturedThis() {
 function onSubstituteNode(hint: EmitHint, node: Node) {
   node = previousOnSubstituteNode(hint, node);
   if (hint === EmitHint.Expression) return substituteExpression(node);
-  if (qf.is.kind(qc.Identifier, node)) return substituteIdentifier(node);
+  if (node.kind === Syntax.Identifier) return substituteIdentifier(node);
   return node;
 }
 function substituteIdentifier(node: qc.Identifier) {
@@ -2149,7 +2150,7 @@ function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | un
   const callArg = singleOrUndefined((<CallExpression>statementExpression).args);
   if (!callArg || !isSynthesized(callArg) || callArg.kind !== Syntax.SpreadElem) return false;
   const expression = (<SpreadElem>callArg).expression;
-  return qf.is.kind(qc.Identifier, expression) && expression.escapedText === 'args';
+  return expression.kind === Syntax.Identifier && expression.escapedText === 'args';
 }
 function createExtendsHelper(context: TrafoContext, name: qc.Identifier) {
   context.requestEmitHelper(extendsHelper);

@@ -122,7 +122,7 @@ export function transformClassFields(context: TrafoContext) {
   }
   function visitPropertyDeclaration(node: PropertyDeclaration) {
     assert(!some(node.decorators));
-    if (!shouldTransformPrivateFields && qf.is.kind(qc.PrivateIdentifier, node.name))
+    if (!shouldTransformPrivateFields && node.name.kind === Syntax.PrivateIdentifier)
       return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, undefined, undefined, undefined);
     const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initer || !!context.getCompilerOpts().useDefineForClassFields);
     if (expr && !isSimpleInlineableExpression(expr)) {
@@ -140,7 +140,7 @@ export function transformClassFields(context: TrafoContext) {
     }
   }
   function visitPropertyAccessExpression(node: PropertyAccessExpression) {
-    if (shouldTransformPrivateFields && qf.is.kind(qc.PrivateIdentifier, node.name)) {
+    if (shouldTransformPrivateFields && node.name.kind === Syntax.PrivateIdentifier) {
       const privateIdentifierInfo = accessPrivateIdentifier(node.name);
       if (privateIdentifierInfo) return createPrivateIdentifierAccess(privateIdentifierInfo, node.expression).setOriginal(node);
     }
@@ -190,7 +190,7 @@ export function transformClassFields(context: TrafoContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitForStatement(node: ForStatement) {
-    if (node.incrementor && qf.is.kind(qc.PostfixUnaryExpression, node.incrementor)) {
+    if (node.incrementor && node.incrementor.kind === Syntax.PostfixUnaryExpression) {
       return updateFor(
         node,
         visitNode(node.initer, visitor, isForIniter),
@@ -202,7 +202,7 @@ export function transformClassFields(context: TrafoContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitExpressionStatement(node: ExpressionStatement) {
-    if (qf.is.kind(qc.PostfixUnaryExpression, node.expression)) return node.update(visitPostfixUnaryExpression(node.expression, true));
+    if (node.expression.kind === Syntax.PostfixUnaryExpression) return node.update(visitPostfixUnaryExpression(node.expression, true));
     return visitEachChild(node, visitor, context);
   }
   function createCopiableReceiverExpr(receiver: Expression): { readExpression: Expression; initializeExpression: Expression | undefined } {
@@ -275,7 +275,7 @@ export function transformClassFields(context: TrafoContext) {
     if (shouldTransformPrivateFields) {
       startPrivateIdentifierEnvironment();
     }
-    const result = qf.is.kind(qc.ClassDeclaration, node) ? visitClassDeclaration(node) : visitClassExpression(node);
+    const result = node.kind === Syntax.ClassDeclaration ? visitClassDeclaration(node) : visitClassExpression(node);
     if (shouldTransformPrivateFields) {
       endPrivateIdentifierEnvironment();
     }
@@ -283,7 +283,7 @@ export function transformClassFields(context: TrafoContext) {
     return result;
   }
   function doesClassElemNeedTransform(node: ClassElem) {
-    return qf.is.kind(qc.PropertyDeclaration, node) || (shouldTransformPrivateFields && node.name && qf.is.kind(qc.PrivateIdentifier, node.name));
+    return node.kind === Syntax.PropertyDeclaration || (shouldTransformPrivateFields && node.name && node.name.kind === Syntax.PrivateIdentifier);
   }
   function visitClassDeclaration(node: ClassDeclaration) {
     if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
@@ -303,7 +303,7 @@ export function transformClassFields(context: TrafoContext) {
   }
   function visitClassExpression(node: ClassExpression): Expression {
     if (!forEach(node.members, doesClassElemNeedTransform)) return visitEachChild(node, visitor, context);
-    const isDecoratedClassDeclaration = qf.is.kind(qc.ClassDeclaration, qc.get.originalOf(node));
+    const isDecoratedClassDeclaration = qc.get.originalOf(node).kind === Syntax.ClassDeclaration;
     const staticProperties = getProperties(node, true);
     const extendsClauseElem = qf.get.effectiveBaseTypeNode(node);
     const isDerivedClass = !!(extendsClauseElem && qc.skip.outerExpressions(extendsClauseElem.expression).kind !== Syntax.NullKeyword);
@@ -351,7 +351,7 @@ export function transformClassFields(context: TrafoContext) {
     return setRange(new Nodes(ms), n.members);
   }
   function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElem): member is PropertyDeclaration {
-    if (!qf.is.kind(qc.PropertyDeclaration, member) || qc.has.staticModifier(member)) return false;
+    if (!member.kind === Syntax.PropertyDeclaration || qc.has.staticModifier(member)) return false;
     if (context.getCompilerOpts().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
     return isInitializedProperty(member) || (shouldTransformPrivateFields && qf.is.privateIdentifierPropertyDeclaration(member));
   }
@@ -370,7 +370,7 @@ export function transformClassFields(context: TrafoContext) {
     const useDefineForClassFields = context.getCompilerOpts().useDefineForClassFields;
     let properties = getProperties(node, false);
     if (!useDefineForClassFields) {
-      properties = filter(properties, (property) => !!property.initer || qf.is.kind(qc.PrivateIdentifier, property.name));
+      properties = filter(properties, (property) => !!property.initer || property.name.kind === Syntax.PrivateIdentifier);
     }
     if (!constructor && !some(properties)) return visitFunctionBody(undefined, visitor, context);
     resumeLexicalEnvironment();
@@ -428,8 +428,8 @@ export function transformClassFields(context: TrafoContext) {
   function transformProperty(property: PropertyDeclaration, receiver: LeftExpression) {
     const emitAssignment = !context.getCompilerOpts().useDefineForClassFields;
     const propertyName =
-      qf.is.kind(qc.ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(qf.get.generatedNameForNode(property.name)) : property.name;
-    if (shouldTransformPrivateFields && qf.is.kind(qc.PrivateIdentifier, propertyName)) {
+      property.name.kind === Syntax.ComputedPropertyName && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(qf.get.generatedNameForNode(property.name)) : property.name;
+    if (shouldTransformPrivateFields && propertyName.kind === Syntax.PrivateIdentifier) {
       const privateIdentifierInfo = accessPrivateIdentifier(propertyName);
       if (privateIdentifierInfo) {
         switch (privateIdentifierInfo.placement) {
@@ -441,28 +441,29 @@ export function transformClassFields(context: TrafoContext) {
         fail('Undeclared private name for property declaration.');
       }
     }
-    if (qf.is.kind(qc.PrivateIdentifier, propertyName) && !property.initer) {
+    if (propertyName.kind === Syntax.PrivateIdentifier && !property.initer) {
       return;
     }
-    if (qf.is.kind(qc.PrivateIdentifier, propertyName) && !property.initer) {
+    if (propertyName.kind === Syntax.PrivateIdentifier && !property.initer) {
       return;
     }
     const propertyOriginalNode = qc.get.originalOf(property);
     const initer =
       property.initer || emitAssignment
         ? visitNode(property.initer, visitor, isExpression)
-        : qf.is.paramPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qf.is.kind(qc.Identifier, propertyName)
+        : qf.is.paramPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && propertyName.kind === Syntax.Identifier
         ? propertyName
         : qs.VoidExpression.zero();
-    if (emitAssignment || qf.is.kind(qc.PrivateIdentifier, propertyName)) {
+    if (emitAssignment || propertyName.kind === Syntax.PrivateIdentifier) {
       const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, propertyName);
       return qf.create.assignment(memberAccess, initer);
     } else {
-      const name = qf.is.kind(qc.ComputedPropertyName, propertyName)
-        ? propertyName.expression
-        : qf.is.kind(qc.Identifier, propertyName)
-        ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
-        : propertyName;
+      const name =
+        propertyName.kind === Syntax.ComputedPropertyName
+          ? propertyName.expression
+          : propertyName.kind === Syntax.Identifier
+          ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
+          : propertyName;
       const descriptor = qf.create.propertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
       return qf.create.objectDefinePropertyCall(receiver, name, descriptor);
     }
@@ -507,7 +508,7 @@ export function transformClassFields(context: TrafoContext) {
     return;
   }
   function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
-    if (qf.is.kind(qc.ComputedPropertyName, name)) {
+    if (name.kind === Syntax.ComputedPropertyName) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = qc.skip.partiallyEmittedExpressions(expression);
       const inlinable = isSimpleInlineableExpression(innerExpression);
@@ -517,7 +518,7 @@ export function transformClassFields(context: TrafoContext) {
         hoistVariableDeclaration(generatedName);
         return qf.create.assignment(generatedName, expression);
       }
-      return inlinable || qf.is.kind(qc.Identifier, innerExpression) ? undefined : expression;
+      return inlinable || innerExpression.kind === Syntax.Identifier ? undefined : expression;
     }
   }
   function startPrivateIdentifierEnvironment() {
@@ -583,13 +584,13 @@ export function transformClassFields(context: TrafoContext) {
     if (target && qf.is.privateIdentifierPropertyAccessExpression(target)) {
       const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
       if (qf.is.assignmentExpression(node)) return node.update(wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
-      if (qf.is.kind(qc.SpreadElem, node)) return node.update(wrapped);
+      if (node.kind === Syntax.SpreadElem) return node.update(wrapped);
       return wrapped;
     }
     return visitNode(node, visitorDestructuringTarget);
   }
   function visitObjectAssignmentTarget(node: ObjectLiteralElemLike) {
-    if (qf.is.kind(qc.PropertyAssignment, node)) {
+    if (node.kind === Syntax.PropertyAssignment) {
       const target = getTargetOfBindingOrAssignmentElem(node);
       if (target && qf.is.privateIdentifierPropertyAccessExpression(target)) {
         const initer = getIniterOfBindingOrAssignmentElem(node);

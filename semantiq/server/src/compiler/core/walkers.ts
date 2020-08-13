@@ -100,7 +100,7 @@ function addValueAssignments(ps: Nodes<qc.ParamDeclaration>, c: qt.TrafoContext)
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qc.ParamDeclaration, c: qt.TrafoContext) {
-  return p.dot3Token ? p : qf.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
+  return p.dot3Token ? p : p.name.kind === Syntax.BindingPattern ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
 function addForBindingPattern(p: qc.ParamDeclaration, c: qt.TrafoContext) {
   c.addInitializationStatement(

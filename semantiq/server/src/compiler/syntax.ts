@@ -1832,14 +1832,14 @@ export class SourceFile implements SourceFileLike {
   }
   getEndLinePosition(line: number) {
     qu.assert(line >= 0);
-    const lineStarts = get.lineStarts(this.text);
-    const lineIndex = line;
-    const sourceText = this.text;
-    if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
-    const start = lineStarts[lineIndex];
-    let pos = lineStarts[lineIndex + 1] - 1;
-    qu.assert(is.lineBreak(sourceText.charCodeAt(pos)));
-    while (start <= pos && is.lineBreak(sourceText.charCodeAt(pos))) {
+    const ss = get.lineStarts(this.text);
+    const i = line;
+    const t = this.text;
+    if (i + 1 === ss.length) return t.length - 1;
+    const s = ss[i];
+    let pos = ss[i + 1] - 1;
+    qu.assert(is.lineBreak(t.charCodeAt(pos)));
+    while (s <= pos && is.lineBreak(t.charCodeAt(pos))) {
       pos--;
     }
     return pos;

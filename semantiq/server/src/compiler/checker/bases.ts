@@ -1245,7 +1245,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     if (this.flags & SymbolFlags.Enum) this.serializeEnum(symbolName, modifierFlags);
     if (this.flags & SymbolFlags.Class) {
-      if (this.flags & SymbolFlags.Property && this.valueDeclaration.parent.kind === Syntax.BinaryExpression && qf.is.kind(qc.ClassExpression, this.valueDeclaration.parent.right))
+      if (this.flags & SymbolFlags.Property && this.valueDeclaration.parent.kind === Syntax.BinaryExpression && this.valueDeclaration.parent.right.kind === Syntax.ClassExpression)
         this.serializeAsAlias(this.getInternalSymbol(symbolName), modifierFlags);
       else {
         this.serializeAsClass(this.getInternalSymbol(symbolName), modifierFlags);
@@ -1380,7 +1380,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         map(
           qu.filter(qf.get.propertiesOfType(this.typeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
           (p) => {
-            const initializedValue = p.declarations && p.declarations[0] && qf.is.kind(qc.EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
+            const initializedValue = p.declarations && p.declarations[0] && p.declarations[0].kind === Syntax.EnumMember && getConstantValue(p.declarations[0] as EnumMember);
             return new qc.EnumMember(qy.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : qc.asLiteral(initializedValue));
           }
         )
@@ -2253,7 +2253,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return this.valueDeclaration.kind === Syntax.BindingElem && walkUpBindingElemsAndPatterns(this.valueDeclaration).parent.kind === Syntax.CatchClause;
   }
   isSymbolOfDeclarationWithCollidingName() {
-    if (this.flags & SymbolFlags.BlockScoped && !qf.is.kind(qc.SourceFile, this.valueDeclaration)) {
+    if (this.flags & SymbolFlags.BlockScoped && this.valueDeclaration.kind !== Syntax.SourceFile) {
       const ls = this.getLinks();
       if (ls.isDeclarationWithCollidingName === undefined) {
         const container = qf.get.enclosingBlockScopeContainer(this.valueDeclaration);

@@ -124,11 +124,11 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     closeTypeRootsWatch,
     clear,
   };
-  function getResolvedModule(resolution: CachedResolvedModuleWithFailedLookupLocations) {
-    return resolution.resolvedModule;
+  function getResolvedModule(r: CachedResolvedModuleWithFailedLookupLocations) {
+    return r.resolvedModule;
   }
-  function getResolvedTypeReferenceDirective(resolution: CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations) {
-    return resolution.resolvedTypeReferenceDirective;
+  function getResolvedTypeReferenceDirective(r: CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations) {
+    return r.resolvedTypeReferenceDirective;
   }
   function isInDirectoryPath(dir: Path | undefined, file: Path) {
     if (dir === undefined || file.length <= dir.length) return false;

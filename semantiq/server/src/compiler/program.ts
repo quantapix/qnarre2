@@ -853,7 +853,7 @@ export function createProgram(
     assert(j === resolutions.length);
     return result;
     function moduleNameResolvesToAmbientModuleInNonModifiedFile(moduleName: string): boolean {
-      const resolutionToFile = getResolvedModule(oldSourceFile, moduleName);
+      const resolutionToFile = oldSourceFile.resolvedModule(moduleName);
       const resolvedFile = resolutionToFile && oldProgram!.getSourceFile(resolutionToFile.resolvedFileName);
       if (resolutionToFile && resolvedFile) return false;
       const unmodifiedFile = ambientModuleNameToUnmodifiedFileName.get(moduleName);
@@ -1162,7 +1162,7 @@ export function createProgram(
     return getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken);
   }
   function getProgramDiagnostics(sourceFile: SourceFile): readonly Diagnostic[] {
-    if (skipTypeChecking(sourceFile, opts, program)) return emptyArray;
+    if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
     const fileProcessingDiagnosticsInFile = fileProcessingqd.getDiagnostics(sourceFile.fileName);
     const programDiagnosticsInFile = programqd.getDiagnostics(sourceFile.fileName);
     return getMergedProgramDiagnostics(sourceFile, fileProcessingDiagnosticsInFile, programDiagnosticsInFile);
@@ -1178,7 +1178,7 @@ export function createProgram(
     return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancellationToken);
   }
   function getSyntacticDiagnosticsForFile(sourceFile: SourceFile): readonly DiagnosticWithLocation[] {
-    if (isSourceFileJS(sourceFile)) {
+    if (sourceFile.isJS()) {
       if (!sourceFile.additionalSyntacticDiagnostics) {
         sourceFile.additionalSyntacticDiagnostics = getJSSyntacticDiagnosticsForFile(sourceFile);
       }
@@ -1205,10 +1205,10 @@ export function createProgram(
   }
   function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
     return runWithCancellationToken(() => {
-      if (skipTypeChecking(sourceFile, opts, program)) return emptyArray;
+      if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
       const typeChecker = getDiagnosticsProducingTypeChecker();
       assert(!!sourceFile.bindDiagnostics);
-      const isCheckJs = isCheckJsEnabledForFile(sourceFile, opts);
+      const isCheckJs = sourceFile.isCheckJsEnabled(opts);
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       const includeBindAndCheckDiagnostics =
         !isTsNoCheck &&
@@ -1489,7 +1489,7 @@ export function createProgram(
     if (file.imports) {
       return;
     }
-    const isJavaScriptFile = isSourceFileJS(file);
+    const isJavaScriptFile = file.isJS();
     const isExternalModuleFile = qc.is.externalModule(file);
     let imports: StringLiteralLike[] | undefined;
     let moduleAugmentations: (StringLiteral | Identifier)[] | undefined;
@@ -1910,7 +1910,7 @@ export function createProgram(
       const ref = file.typeReferenceDirectives[i];
       const resolvedTypeReferenceDirective = resolutions[i];
       const fileName = toFileNameLowerCase(ref.fileName);
-      setResolvedTypeReferenceDirective(file, fileName, resolvedTypeReferenceDirective);
+      file.setResolvedTypeReferenceDirective(fileName, resolvedTypeReferenceDirective);
       processTypeReferenceDirective(fileName, resolvedTypeReferenceDirective, {
         kind: RefFileKind.TypeReferenceDirective,
         index: i,
@@ -1999,7 +1999,7 @@ export function createProgram(
       assert(resolutions.length === moduleNames.length);
       for (let i = 0; i < moduleNames.length; i++) {
         const resolution = resolutions[i];
-        setResolvedModule(file, moduleNames[i], resolution);
+        file.setResolvedModule(moduleNames[i], resolution);
         if (!resolution) {
           continue;
         }
@@ -2228,7 +2228,7 @@ export function createProgram(
     const outFile = opts.outFile || opts.out;
     const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qc.is.externalModule(f) && !f.isDeclarationFile);
     if (opts.isolatedModules) {
-      const firstNonExternalModuleSourceFile = find(files, (f) => !qc.is.externalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = find(files, (f) => !qc.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.create.fileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));

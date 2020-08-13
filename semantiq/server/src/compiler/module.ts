@@ -1644,7 +1644,7 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
     case Syntax.CallExpression:
       return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as RequireOrImportCall) : undefined;
     case Syntax.LiteralTyping:
-      assert(qf.is.kind(qc.StringLiteral, node));
+      assert(node.kind === Syntax.StringLiteral);
       return qu.tryCast(node.parent.parent, ImportTyping.kind) as ValidImportTyping | undefined;
     default:
       return;

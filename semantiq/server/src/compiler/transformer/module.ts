@@ -47,7 +47,7 @@ export function transformModule(context: TrafoContext) {
     if (
       node.isDeclarationFile ||
       !(
-        isEffectiveExternalModule(node, compilerOpts) ||
+        node.isEffectiveExternalModule(compilerOpts) ||
         node.trafoFlags & TrafoFlags.ContainsDynamicImport ||
         (qc.is.jsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOpts) && (compilerOpts.out || compilerOpts.outFile))
       )
@@ -1161,7 +1161,7 @@ export function transformSystemModule(context: TrafoContext) {
   let noSubstitution: boolean[] | undefined;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOpts) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
+    if (node.isDeclarationFile || !(node.isEffectiveExternalModule(compilerOpts) || node.trafoFlags & TrafoFlags.ContainsDynamicImport)) return node;
     const id = getOriginalNodeId(node);
     currentSourceFile = node;
     enclosingBlockScopedContainer = node;

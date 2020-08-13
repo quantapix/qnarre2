@@ -2686,8 +2686,8 @@ export function newCheck(f: qt.Frame) {
             const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
               let span: TextSpan | undefined;
-              if (!isEffectiveExternalModule(sourceFile, compilerOpts)) {
-                if (!span) span = getSpanOfTokenAtPosition(sourceFile, n.pos);
+              if (!sourceFile.isEffectiveExternalModule(compilerOpts)) {
+                if (!span) span = sourceFile.spanOfTokenAtPos(n.pos);
                 const diagnostic = qf.create.fileDiagnostic(
                   sourceFile,
                   span.start,
@@ -2697,7 +2697,7 @@ export function newCheck(f: qt.Frame) {
                 diagnostics.add(diagnostic);
               }
               if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) {
-                span = getSpanOfTokenAtPosition(sourceFile, n.pos);
+                span = sourceFile.spanOfTokenAtPos(n.pos);
                 const diagnostic = qf.create.fileDiagnostic(
                   sourceFile,
                   span.start,
@@ -2710,7 +2710,7 @@ export function newCheck(f: qt.Frame) {
           } else {
             const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
-              const span = getSpanOfTokenAtPosition(sourceFile, n.pos);
+              const span = sourceFile.spanOfTokenAtPos(n.pos);
               const diagnostic = qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
               const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor && (qf.get.functionFlags(func) & FunctionFlags.Async) === 0) {
@@ -4207,7 +4207,7 @@ export function newCheck(f: qt.Frame) {
         const decl = qf.get.hostSignatureFromDoc(n);
         if (decl) {
           const i = qc.getDoc.tags(decl).filter(isDocParamTag).indexOf(n);
-          if (i > -1 && i < decl.params.length && qf.is.kind(qc.BindingPattern, decl.params[i].name)) return;
+          if (i > -1 && i < decl.params.length && decl.params[i].name.kind === Syntax.BindingPattern) return;
           if (!containsArgsReference(decl)) {
             if (n.name.kind === Syntax.QualifiedName)
               error(n.name, qd.msgs.Qualified_name_0_is_not_allowed_without_a_leading_param_object_1, entityNameToString(n.name), entityNameToString(n.name.left));
@@ -4817,7 +4817,7 @@ export function newCheck(f: qt.Frame) {
       this.expression(n.expression);
       const sourceFile = n.sourceFile;
       if (!hasParseDiagnostics(sourceFile)) {
-        const start = getSpanOfTokenAtPosition(sourceFile, n.pos).start;
+        const start = sourceFile.spanOfTokenAtPos(n.pos).start;
         const end = n.statement.pos;
         grammarErrorAtPos(sourceFile, start, end - start, qd.msgs.The_with_statement_is_not_supported_All_symbols_in_a_with_block_will_have_type_any);
       }
@@ -5882,7 +5882,7 @@ export function newCheck(f: qt.Frame) {
     sourceFileWorker(n: qc.SourceFile) {
       const links = qf.get.nodeLinks(n);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
-        if (skipTypeChecking(n, compilerOpts, host)) return;
+        if (n.skipTypeChecking(compilerOpts, host)) return;
         checkGrammar.sourceFile(n);
         clear(potentialThisCollisions);
         clear(potentialNewTargetCollisions);
@@ -5916,7 +5916,7 @@ export function newCheck(f: qt.Frame) {
     externalEmitHelpers(n: Node, helpers: ExternalEmitHelpers) {
       if ((requestedExternalEmitHelpers & helpers) !== helpers && compilerOpts.importHelpers) {
         const sourceFile = n.sourceFile;
-        if (isEffectiveExternalModule(sourceFile, compilerOpts) && !(n.flags & NodeFlags.Ambient)) {
+        if (sourceFile.isEffectiveExternalModule(compilerOpts) && !(n.flags & NodeFlags.Ambient)) {
           const helpersModule = resolveHelpersModule(sourceFile, n);
           if (helpersModule !== unknownSymbol) {
             const uncheckedHelpers = helpers & ~requestedExternalEmitHelpers;
@@ -6104,7 +6104,7 @@ export function newCheck(f: qt.Frame) {
           return false;
         } else if ((n.kind === Syntax.ImportDeclaration || n.kind === Syntax.ImportEqualsDeclaration) && flags & ModifierFlags.Ambient) {
           return grammarErrorOnNode(lastDeclare!, qd.msgs.A_0_modifier_cannot_be_used_with_an_import_declaration, 'declare');
-        } else if (n.kind === Syntax.Param && flags & ModifierFlags.ParamPropertyModifier && qf.is.kind(qc.BindingPattern, (<ParamDeclaration>n).name)) {
+        } else if (n.kind === Syntax.Param && flags & ModifierFlags.ParamPropertyModifier && n.name.kind === Syntax.BindingPattern) {
           return grammarErrorOnNode(n, qd.msgs.A_param_property_may_not_be_declared_using_a_binding_pattern);
         } else if (n.kind === Syntax.Param && flags & ModifierFlags.ParamPropertyModifier && (<ParamDeclaration>n).dot3Token) {
           return grammarErrorOnNode(n, qd.msgs.A_param_property_cannot_be_declared_using_a_rest_param);
@@ -6724,7 +6724,7 @@ export function newCheck(f: qt.Frame) {
         const nodeArgs = n.args;
         if (nodeArgs.length !== 1) return grammarErrorOnNode(n, qd.msgs.Dynamic_import_must_have_one_spec_as_an_arg);
         this.forDisallowedTrailingComma(nodeArgs);
-        if (qf.is.kind(qc.SpreadElem, nodeArgs[0])) return grammarErrorOnNode(nodeArgs[0], qd.msgs.Specifier_of_dynamic_import_cannot_be_spread_elem);
+        if (nodeArgs[0].kind === Syntax.SpreadElem) return grammarErrorOnNode(nodeArgs[0], qd.msgs.Specifier_of_dynamic_import_cannot_be_spread_elem);
         return false;
       }
     })();

@@ -320,7 +320,7 @@ export function newCreate(f: qt.Frame) {
       return new qu.TextRange(pos, pos + qy.toString(k)!.length);
     }
     createExpressionFromEntityName(n: qt.EntityName | qt.Expression): qt.Expression {
-      if (qf.is.kind(QualifiedName, n)) {
+      if (n.kind === Syntax.QualifiedName) {
         const left = createExpressionFromEntityName(n.left);
         const right = getMutableClone(n.right);
         return setRange(new qc.PropertyAccessExpression(left, right), n);
@@ -328,12 +328,12 @@ export function newCreate(f: qt.Frame) {
       return getMutableClone(n);
     }
     createExpressionForPropertyName(memberName: Exclude<qt.PropertyName, qt.PrivateIdentifier>): qt.Expression {
-      if (qf.is.kind(qc.Identifier, memberName)) return qc.asLiteral(memberName);
-      else if (qf.is.kind(qc.ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
+      if (memberName.kind === Syntax.Identifier) return qc.asLiteral(memberName);
+      else if (memberName.kind === Syntax.ComputedPropertyName) return getMutableClone(memberName.expression);
       return getMutableClone(memberName);
     }
     createExpressionForObjectLiteralElemLike(n: qt.ObjectLiteralExpression, property: qt.ObjectLiteralElemLike, receiver: qt.Expression): qt.Expression | undefined {
-      if (property.name && qf.is.kind(qc.PrivateIdentifier, property.name)) qc.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
+      if (property.name && property.name.kind === Syntax.PrivateIdentifier) qc.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
       function createExpressionForAccessorDeclaration(
         properties: Nodes<qt.Declaration>,
         property: qt.AccessorDeclaration & { name: Exclude<qt.PropertyName, qt.PrivateIdentifier> },
@@ -410,10 +410,10 @@ export function newCreate(f: qt.Frame) {
       return tag === 'undefined' ? this.strictEquality(value, qc.VoidExpression.zero()) : this.strictEquality(new qc.TypeOfExpression(value), qc.asLiteral(tag));
     }
     createMemberAccessForPropertyName(target: qt.Expression, memberName: qt.PropertyName, location?: qu.TextRange): qt.MemberExpression {
-      if (qf.is.kind(qc.ComputedPropertyName, memberName)) return setRange(new qc.ElemAccessExpression(target, memberName.expression), location);
+      if (memberName.kind === Syntax.ComputedPropertyName) return setRange(new qc.ElemAccessExpression(target, memberName.expression), location);
       else {
         const expression = setRange(
-          qf.is.kind(qc.Identifier, memberName) || qf.is.kind(qc.PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new qc.ElemAccessExpression(target, memberName),
+          memberName.kind === Syntax.Identifier || memberName.kind === Syntax.PrivateIdentifier ? new qc.PropertyAccessExpression(target, memberName) : new qc.ElemAccessExpression(target, memberName),
           memberName
         );
         getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -2687,7 +2687,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.SourceFile:
           const pos = qy.skipTrivia(s.text, 0, false);
           if (pos === s.text.length) return new qu.TextSpan();
-          return getSpanOfTokenAtPosition(s, pos);
+          return s.spanOfTokenAtPos(pos);
         case Syntax.BindingElem:
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
@@ -2714,7 +2714,7 @@ export function newGet(f: qt.Frame) {
           const end = n.statements.length > 0 ? n.statements[0].pos : n.end;
           return qu.TextSpan.from(start, end);
       }
-      if (e === undefined) return getSpanOfTokenAtPosition(s, n.pos);
+      if (e === undefined) return s.spanOfTokenAtPos(n.pos);
       qu.assert(e.kind !== Syntax.DocComment);
       const isMissing = qf.is.missing(e);
       const pos = isMissing || n.kind === Syntax.JsxText ? e.pos : qy.skipTrivia(s.text, e.pos);

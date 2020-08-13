@@ -33,7 +33,7 @@ export function transformES2017(context: TrafoContext) {
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile) return node;
     setContextFlag(ContextFlags.NonTopLevel, false);
-    setContextFlag(ContextFlags.HasLexicalThis, !isEffectiveStrictModeSourceFile(node, compilerOpts));
+    setContextFlag(ContextFlags.HasLexicalThis, !node.isEffectiveStrictMode(compilerOpts));
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;

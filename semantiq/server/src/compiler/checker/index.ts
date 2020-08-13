@@ -364,7 +364,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return node && getTypeArgConstraint(node);
     }
     getSuggestionDiagnostics(file, ct) {
-      if (skipTypeChecking(file, compilerOpts, host)) return empty;
+      if (file.skipTypeChecking(compilerOpts, host)) return empty;
       let diagnostics: qd.DiagnosticWithLocation[] | undefined;
       try {
         cancellationToken = ct;
@@ -642,7 +642,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (resolveExportByName(moduleSymbol, qy.get.escUnderscores('__esModule'), undefined, dontResolveAlias)) return false;
       return true;
     }
-    if (!isSourceFileJS(file)) return hasExportAssignmentSymbol(moduleSymbol);
+    if (!file.isJS()) return hasExportAssignmentSymbol(moduleSymbol);
     return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, qy.get.escUnderscores('__esModule'), undefined, dontResolveAlias);
   }
   function reportNonDefaultExport(moduleSymbol: Symbol, node: ImportClause) {
@@ -1791,7 +1791,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function reportImplicitAny(declaration: Declaration, type: Type, wideningKind?: WideningKind) {
     const typeAsString = typeToString(qf.get.widenedType(type));
-    if (qf.is.inJSFile(declaration) && !isCheckJsEnabledForFile(declaration.sourceFile, compilerOpts)) return;
+    if (qf.is.inJSFile(declaration) && !declaration.sourceFile.isCheckJsEnabled(compilerOpts)) return;
     let diagnostic: qd.Message;
     switch (declaration.kind) {
       case Syntax.BinaryExpression:
@@ -2366,7 +2366,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function reportFlowControlError(node: Node) {
     const block = <Block | ModuleBlock | SourceFile>qc.findAncestor(node, isFunctionOrModuleBlock);
     const sourceFile = node.sourceFile;
-    const span = getSpanOfTokenAtPosition(sourceFile, block.statements.pos);
+    const span = sourceFile.spanOfTokenAtPos(block.statements.pos);
     diagnostics.add(qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.msgs.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
   }
   function markParamAssignments(node: Node) {
@@ -3422,10 +3422,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return true;
   }
   function grammarErrorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = node.sourceFile;
-    if (!hasParseDiagnostics(sourceFile)) {
-      const span = getSpanOfTokenAtPosition(sourceFile, node.pos);
-      diagnostics.add(qf.create.fileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2));
+    const f = node.sourceFile;
+    if (!hasParseDiagnostics(f)) {
+      const s = f.spanOfTokenAtPos(node.pos);
+      diagnostics.add(qf.create.fileDiagnostic(f, s.start, s.length, message, arg0, arg1, arg2));
       return true;
     }
     return false;
@@ -3447,10 +3447,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return false;
   }
   function grammarErrorAfterFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = node.sourceFile;
-    if (!hasParseDiagnostics(sourceFile)) {
-      const span = getSpanOfTokenAtPosition(sourceFile, node.pos);
-      diagnostics.add(qf.create.fileDiagnostic(sourceFile, textSpanEnd(span), 0, message, arg0, arg1, arg2));
+    const f = node.sourceFile;
+    if (!hasParseDiagnostics(f)) {
+      const s = f.spanOfTokenAtPos(node.pos);
+      diagnostics.add(qf.create.fileDiagnostic(f, textSpanEnd(s), 0, message, arg0, arg1, arg2));
       return true;
     }
     return false;

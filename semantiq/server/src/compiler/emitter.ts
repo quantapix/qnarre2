@@ -151,7 +151,7 @@ function getSourceMapFilePath(jsFilePath: string, opts: CompilerOpts) {
 export function getOutputExtension(sourceFile: SourceFile, opts: CompilerOpts): Extension {
   if (qc.is.jsonSourceFile(sourceFile)) return Extension.Json;
   if (opts.jsx === JsxEmit.Preserve) {
-    if (isSourceFileJS(sourceFile)) {
+    if (sourceFile.isJS()) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
     } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
       return Extension.Jsx;
@@ -3727,7 +3727,7 @@ export function createPrinter(printerOpts: PrinterOpts = {}, handlers: PrintHand
     return isFileLevelUniqueName(name) && !generatedNames.has(name) && !(reservedNames && reservedNames.has(name));
   }
   function isFileLevelUniqueName(name: string) {
-    return currentSourceFile ? qnr.isFileLevelUniqueName(currentSourceFile, name, hasGlobalName) : true;
+    return currentSourceFile ? currentSourceFile.isFileLevelUniqueName(name, hasGlobalName) : true;
   }
   function isUniqueLocalName(name: string, container: Node): boolean {
     for (let node = container; qc.is.descendantOf(node, container); node = node.nextContainer!) {

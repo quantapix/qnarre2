@@ -142,7 +142,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     if (qf.is.missing(n)) return this.pos;
     if (qf.is.doc.node(n)) return qy.skipTrivia((s || this.sourceFile)!.text, this.pos, false, true);
     if (doc && qf.is.withDocNodes(n)) return (this.doc![0] as Nobj).tokenPos(s);
-    if (qf.is.kind(SyntaxList, n) && this.children?.length) return this.children![0].tokenPos(s, doc);
+    if (n.kind === Syntax.SyntaxList && this.children?.length) return this.children![0].tokenPos(s, doc);
     return qy.skipTrivia((s || this.sourceFile).text, this.pos);
   }
   start(s?: SourceFileLike, doc?: boolean) {
@@ -510,10 +510,10 @@ export abstract class Symbol implements qt.Symbol {
   isFunction() {
     if (!this.valueDeclaration) return false;
     const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (qf.is.kind(qc.VariableDeclaration, v) && v.initer && qf.is.functionLike(v.initer));
+    return v.kind === Syntax.FunctionDeclaration || (v.kind === Syntax.VariableDeclaration && v.initer && qf.is.functionLike(v.initer));
   }
   isUMDExport() {
-    return this.declarations?.[0] && qf.is.kind(qc.NamespaceExportDeclaration, this.declarations[0]);
+    return this.declarations?.[0] && this.declarations[0].kind === Syntax.NamespaceExportDeclaration;
   }
   skipAlias(c: qt.TypeChecker) {
     return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
@@ -945,131 +945,66 @@ export class Signature implements qt.Signature {
     return this.params.length > 0 ? qf.get.typeAtPosition(this, 0) : fallback;
   }
 }
-export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
+export interface SourceFile extends qy.SourceFile {}
+export class SourceFile extends Decl implements qt.SourceFile {
   static readonly kind = Syntax.SourceFile;
-  kind: Syntax.SourceFile;
-  statements: Nodes<qt.Statement>;
-  endOfFileToken: Token<Syntax.EndOfFileToken>;
-  fileName: string;
-  path: Path;
-  text: string;
-  resolvedPath: Path;
-  originalFileName: string;
-  redirectInfo?: RedirectInfo;
-  amdDependencies: readonly AmdDependency[];
-  moduleName?: string;
-  referencedFiles: readonly FileReference[];
-  typeReferenceDirectives: readonly FileReference[];
-  libReferenceDirectives: readonly FileReference[];
-  languageVariant: LanguageVariant;
-  isDeclarationFile: boolean;
-  renamedDependencies?: qu.QReadonlyMap<string>;
-  hasNoDefaultLib: boolean;
-  languageVersion: ScriptTarget;
-  externalModuleIndicator?: Nobj;
-  scriptKind: ScriptKind;
-  commonJsModuleIndicator?: Nobj;
-  jsGlobalAugmentations?: SymbolTable;
-  identifiers: qu.QMap<string>;
-  nodeCount: number;
-  identifierCount: number;
-  symbolCount: number;
-  parseDiagnostics: qd.DiagnosticWithLocation[];
-  bindDiagnostics: qd.DiagnosticWithLocation[];
-  bindSuggestionDiagnostics?: qd.DiagnosticWithLocation[];
-  docDiagnostics?: qd.DiagnosticWithLocation[];
-  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
-  lineMap: readonly number[];
-  classifiableNames?: qu.ReadonlyEscapedMap<true>;
-  commentDirectives?: qt.CommentDirective[];
-  resolvedModules?: qu.QMap<ResolvedModuleFull | undefined>;
-  resolvedTypeReferenceDirectiveNames: qu.QMap<ResolvedTypeReferenceDirective | undefined>;
-  imports: readonly StringLiteralLike[];
-  moduleAugmentations: readonly (StringLiteral | Identifier)[];
-  patternAmbientModules?: PatternAmbientModule[];
-  ambientModuleNames: readonly string[];
-  checkJsDirective?: CheckJsDirective;
-  version: string;
-  pragmas: ReadonlyPragmaMap;
-  localJsxNamespace?: qu.__String;
-  localJsxFactory?: EntityName;
-  exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
-  kind: Syntax.SourceFile = Syntax.SourceFile;
   _declarationBrand: any;
-  fileName!: string;
-  path!: Path;
-  resolvedPath!: Path;
-  originalFileName!: string;
-  text!: string;
-  scriptSnapshot!: IScriptSnapshot;
-  lineMap!: readonly number[];
-  statements!: Nodes<qt.Statement>;
-  endOfFileToken!: Token<Syntax.EndOfFileToken>;
+  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
+  ambientModuleNames!: string[];
   amdDependencies!: { name: string; path: string }[];
-  moduleName!: string;
-  referencedFiles!: FileReference[];
-  typeReferenceDirectives!: FileReference[];
-  libReferenceDirectives!: FileReference[];
-  syntacticDiagnostics!: qd.DiagnosticWithLocation[];
-  parseDiagnostics!: qd.DiagnosticWithLocation[];
   bindDiagnostics!: qd.DiagnosticWithLocation[];
   bindSuggestionDiagnostics?: qd.DiagnosticWithLocation[];
+  checkJsDirective?: qt.CheckJsDirective;
+  classifiableNames?: qu.ReadonlyEscapedMap<true>;
+  commentDirectives?: qt.CommentDirective[];
+  commonJsModuleIndicator?: Node;
+  docDiagnostics?: qd.DiagnosticWithLocation[];
+  endOfFileToken!: Token<Syntax.EndOfFileToken>;
+  errorExpectations?: qu.TextRange[];
+  exportedModulesFromDeclarationEmit?: qt.ExportedModulesFromDeclarationEmit;
+  externalModuleIndicator?: Node;
+  fileName!: string;
+  hasNoDefaultLib!: boolean;
+  identifierCount!: number;
+  identifiers!: qu.QMap<string>;
+  imports!: readonly qt.StringLiteralLike[];
   isDeclarationFile!: boolean;
   isDefaultLib!: boolean;
-  hasNoDefaultLib!: boolean;
-  externalModuleIndicator!: Nobj;
-  commonJsModuleIndicator!: Nobj;
+  jsGlobalAugmentations?: SymbolTable;
+  kind!: Syntax.SourceFile;
+  languageVariant!: qy.LanguageVariant;
+  languageVersion!: qt.ScriptTarget;
+  libReferenceDirectives!: qt.FileReference[];
+  lineMap?: number[];
+  localJsxFactory?: qt.EntityName;
+  localJsxNamespace?: qu.__String;
+  moduleAugmentations!: qt.StringLiteral[];
+  moduleName?: string;
+  nameTable?: qu.EscapedMap<number>;
   nodeCount!: number;
-  identifierCount!: number;
-  symbolCount!: number;
-  version!: string;
-  scriptKind!: ScriptKind;
-  languageVersion!: ScriptTarget;
-  languageVariant!: LanguageVariant;
-  identifiers!: qu.QMap<string>;
-  nameTable: qu.EscapedMap<number> | undefined;
-  resolvedModules: qu.QMap<ResolvedModuleFull> | undefined;
-  resolvedTypeReferenceDirectiveNames!: qu.QMap<ResolvedTypeReferenceDirective>;
-  imports!: readonly StringLiteralLike[];
-  moduleAugmentations!: StringLiteral[];
-  private namedDeclarations: qu.QMap<qt.Declaration[]> | undefined;
-  ambientModuleNames!: string[];
-  checkJsDirective: CheckJsDirective | undefined;
-  errorExpectations: qu.TextRange[] | undefined;
+  originalFileName!: string;
+  parseDiagnostics!: qd.DiagnosticWithLocation[];
+  path!: qt.Path;
+  patternAmbientModules?: qt.PatternAmbientModule[];
   possiblyContainDynamicImport?: boolean;
-  pragmas!: PragmaMap;
-  localJsxFactory: EntityName | undefined;
-  localJsxNamespace: qu.__String | undefined;
-  constructor(kind: Syntax, pos: number, end: number) {
-    super(kind, pos, end);
-  }
-  redirectInfo?: RedirectInfo | undefined;
-  renamedDependencies?: qu.QReadonlyMap<string> | undefined;
-  jsGlobalAugmentations?: SymbolTable<Symbol> | undefined;
-  docDiagnostics?: qd.DiagnosticWithLocation[] | undefined;
-  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[] | undefined;
-  classifiableNames?: qu.ReadonlyEscapedMap<true> | undefined;
-  commentDirectives?: qt.CommentDirective[] | undefined;
-  patternAmbientModules?: PatternAmbientModule[] | undefined;
-  exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit | undefined;
-  id: number;
-  flags: NodeFlags;
-  modifierFlagsCache: ModifierFlags;
-  trafoFlags: TrafoFlags;
-  decorators?: Nodes<Decorator> | undefined;
-  modifiers?: qt.Modifiers | undefined;
-  original?: Nobj | undefined;
-  symbol: Symbol;
-  localSymbol?: Symbol | undefined;
-  locals?: SymbolTable<Symbol> | undefined;
-  nextContainer?: Nobj | undefined;
-  flowNode?: FlowStart | FlowLabel | FlowAssignment | FlowCall | FlowCondition | FlowSwitchClause | FlowArrayMutation | FlowReduceLabel | undefined;
-  emitNode?: qt.EmitNode | undefined;
-  contextualType?: Type | undefined;
-  inferenceContext?: qt.InferenceContext | undefined;
-  doc?: qt.Doc[] | undefined;
-  is<S extends Syntax, T extends { kind: S; also?: Syntax[] | undefined }>(t: T): this is qt.NodeType<T['kind']> {
-    throw new Error('Method not implemented.');
+  pragmas!: qt.ReadonlyPragmaMap;
+  private namedDeclarations?: qu.QMap<qt.Declaration[]>;
+  redirectInfo?: qt.RedirectInfo;
+  referencedFiles!: qt.FileReference[];
+  renamedDependencies?: qu.QReadonlyMap<string>;
+  resolvedModules?: qu.QMap<qt.ResolvedModuleFull | undefined>;
+  resolvedPath!: qt.Path;
+  resolvedTypeReferenceDirectiveNames!: qu.QMap<qt.ResolvedTypeReferenceDirective>;
+  scriptKind!: qt.ScriptKind;
+  //scriptSnapshot!: IScriptSnapshot;
+  statements!: Nodes<qt.Statement>;
+  symbolCount!: number;
+  syntacticDiagnostics!: qd.DiagnosticWithLocation[];
+  text!: string;
+  typeReferenceDirectives!: qt.FileReference[];
+  version!: string;
+  constructor(k: Syntax, pos: number, end: number) {
+    super(false, k, pos, end);
   }
   getLeadingCommentRangesOfNode(n: Node) {
     return n.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(this.text, n.pos) : undefined;
@@ -1077,14 +1012,14 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
   isStringDoubleQuoted(s: qt.StringLiteralLike) {
     return this.qf.get.sourceTextOfNodeFromSourceFile(s).charCodeAt(0) === qy.Codes.doubleQuote;
   }
-  getResolvedExternalModuleName(host: ResolveModuleNameResolutionHost, file: SourceFile, referenceFile?: SourceFile): string {
+  getResolvedExternalModuleName(host: qt.ResolveModuleNameResolutionHost, file: SourceFile, referenceFile?: SourceFile): string {
     return file.moduleName || qf.get.externalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
   }
-  getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
+  getSourceFilesToEmit(host: qt.EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
     const opts = host.getCompilerOpts();
     if (opts.outFile || opts.out) {
       const moduleKind = getEmitModuleKind(opts);
-      const moduleEmitEnabled = opts.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
+      const moduleEmitEnabled = opts.emitDeclarationOnly || moduleKind === qt.ModuleKind.AMD || moduleKind === qt.ModuleKind.System;
       return qu.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qf.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     } else {
       const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
@@ -1094,71 +1029,140 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
   sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
     const opts = host.getCompilerOpts();
     return (
-      !(opts.noEmitForJsFiles && isSourceFileJS(sourceFile)) &&
+      !(opts.noEmitForJsFiles && sourceFile.isJS()) &&
       !sourceFile.isDeclarationFile &&
       !host.isSourceFileFromExternalLibrary(sourceFile) &&
       !(qf.is.jsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) &&
       (forceDtsEmit || !host.isSourceOfProjectReferenceRedirect(sourceFile.fileName))
     );
   }
-  getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
-    const s = qy.get.lineStarts(sourceFile);
+  lineOfLocalPos(pos: number) {
+    const s = qy.get.lineStarts(this);
     return Scanner.lineOf(s, pos);
   }
   update(t: string, c: qu.TextChange): SourceFile {
     return qp_updateSource(this, t, c);
   }
-  getLineAndCharacterOfPosition(pos: number): qy.LineAndChar {
-    return getLineAndCharacterOfPosition(this, pos);
+  lineEndOfPos(pos: number) {
+    const { line } = this.lineAndCharOf(pos);
+    const ss = this.lineStarts();
+    let i: number | undefined;
+    if (line + 1 >= ss.length) i = this.end;
+    if (!i) i = ss[line + 1] - 1;
+    const t = this.fullText();
+    return t[i] === '\n' && t[i - 1] === '\r' ? i - 1 : i;
   }
-  getLineStarts(): readonly number[] {
-    return getLineStarts(this);
-  }
-  getPositionOfLineAndCharacter(line: number, character: number, allowEdits?: true): number {
-    return computePositionOfLineAndCharacter(getLineStarts(this), line, character, this.text, allowEdits);
-  }
-  getLineEndOfPosition(pos: number): number {
-    const { line } = this.getLineAndCharacterOfPosition(pos);
-    const lineStarts = this.getLineStarts();
-    let lastCharPos: number | undefined;
-    if (line + 1 >= lineStarts.length) {
-      lastCharPos = this.end;
-    }
-    if (!lastCharPos) {
-      lastCharPos = lineStarts[line + 1] - 1;
-    }
-    const fullText = this.fullText();
-    return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
-  }
-  getNamedDecls(): qu.QMap<qt.Declaration[]> {
-    if (!this.namedDeclarations) {
-      this.namedDeclarations = this.computeNamedDecls();
-    }
+  namedDecls(): qu.QMap<qt.Declaration[]> {
+    const worker = (): qu.QMap<qt.Declaration[]> => {
+      const r = new qu.MultiMap<qt.Declaration>();
+      const addDeclaration = (d: qt.Declaration) => {
+        const n = qf.decl.name(d);
+        if (n) r.add(n, d);
+      };
+      const getDeclarations = (name: string) => {
+        let ds = r.get(name);
+        if (!ds) r.set(name, (ds = []));
+        return ds;
+      };
+      const getName = (d: qt.Declaration) => {
+        const n = qf.get.nonAssignedNameOfDeclaration(d);
+        return n && (isComputedPropertyName(n) && n.expression.kind === Syntax.PropertyAccessExpression ? n.expression.name.text : qf.is.propertyName(n) ? getNameFromPropertyName(n) : undefined);
+      };
+      const visit = (n?: Node) => {
+        switch (n?.kind) {
+          case Syntax.FunctionDeclaration:
+          case Syntax.FunctionExpression:
+          case Syntax.MethodDeclaration:
+          case Syntax.MethodSignature:
+            const d = qf.decl.name(n);
+            if (d) {
+              const ds = getDeclarations(d);
+              const last = qu.lastOrUndefined(ds);
+              if (last && n.parent === last.parent && n.symbol === last.symbol) {
+                if (n.body && !last.body) ds[ds.length - 1] = n;
+              } else ds.push(n);
+            }
+            qf.each.child(n, visit);
+            break;
+          case Syntax.ClassDeclaration:
+          case Syntax.ClassExpression:
+          case Syntax.EnumDeclaration:
+          case Syntax.ExportSpecifier:
+          case Syntax.GetAccessor:
+          case Syntax.ImportClause:
+          case Syntax.ImportEqualsDeclaration:
+          case Syntax.ImportSpecifier:
+          case Syntax.InterfaceDeclaration:
+          case Syntax.ModuleDeclaration:
+          case Syntax.NamespaceImport:
+          case Syntax.SetAccessor:
+          case Syntax.TypeAliasDeclaration:
+          case Syntax.TypingLiteral:
+            addDeclaration(n);
+            qf.each.child(n, visit);
+            break;
+          case Syntax.Param:
+            if (!qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) break;
+          case Syntax.VariableDeclaration:
+          case Syntax.BindingElem: {
+            if (n.name.kind === Syntax.BindingPattern) {
+              qf.each.child(n.name, visit);
+              break;
+            }
+            if (n.initer) visit(n.initer);
+          }
+          case Syntax.EnumMember:
+          case Syntax.PropertyDeclaration:
+          case Syntax.PropertySignature:
+            addDeclaration(n);
+            break;
+          case Syntax.ExportDeclaration:
+            if (n.exportClause) {
+              if (n.exportClause.kind === Syntax.NamedExports) qu.each(n.exportClause.elems, visit);
+              else visit(n.exportClause.name);
+            }
+            break;
+          case Syntax.ImportDeclaration:
+            const i = n.importClause;
+            if (i) {
+              if (i.name) addDeclaration(i.name);
+              if (i.namedBindings) {
+                if (i.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(i.namedBindings);
+                else qu.each(i.namedBindings.elems, visit);
+              }
+            }
+            break;
+          case Syntax.BinaryExpression:
+            if (qf.get.assignmentDeclarationKind(n) !== qt.AssignmentDeclarationKind.None) addDeclaration(n);
+          default:
+            if (n) qf.each.child(n, visit);
+        }
+      };
+      qf.each.child(this, visit);
+      return r;
+    };
+    if (!this.namedDeclarations) this.namedDeclarations = worker();
     return this.namedDeclarations;
   }
-  getResolvedModule(sourceFile: SourceFile | undefined, moduleNameText: string): ResolvedModuleFull | undefined {
-    return sourceFile && sourceFile.resolvedModules && sourceFile.resolvedModules.get(moduleNameText);
+  resolvedModule(n: string): qt.ResolvedModuleFull | undefined {
+    return this.resolvedModules?.get(n);
   }
-  setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModuleFull): void {
-    if (!sourceFile.resolvedModules) {
-      sourceFile.resolvedModules = new qu.QMap<ResolvedModuleFull>();
-    }
-    sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
+  setResolvedModule(name: string, m: qt.ResolvedModuleFull) {
+    if (!this.resolvedModules) this.resolvedModules = new qu.QMap<qt.ResolvedModuleFull>();
+    this.resolvedModules.set(name, m);
   }
-  setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective): void {
-    if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
-      sourceFile.resolvedTypeReferenceDirectiveNames = new qu.QMap<ResolvedTypeReferenceDirective | undefined>();
-    }
-    sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
+  setResolvedTypeReferenceDirective(name: string, d: qt.ResolvedTypeReferenceDirective) {
+    if (!this.resolvedTypeReferenceDirectiveNames) this.resolvedTypeReferenceDirectiveNames = new qu.QMap<qt.ResolvedTypeReferenceDirective>();
+    this.resolvedTypeReferenceDirectiveNames.set(name, d);
   }
-  isFileLevelUniqueName(sourceFile: SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
-    return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
+  isFileLevelUniqueName(name: string, hasGlobal?: qt.PrintHandlers['hasGlobalName']) {
+    return !(hasGlobal && hasGlobal(name)) && !this.identifiers.has(name);
   }
-  isEffectiveExternalModule(node: SourceFile, compilerOpts: qt.CompilerOpts) {
-    return qf.is.externalModule(node) || compilerOpts.isolatedModules || (getEmitModuleKind(compilerOpts) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
+  isEffectiveExternalModule(o: qt.CompilerOpts) {
+    return qf.is.externalModule(this) || o.isolatedModules || (getEmitModuleKind(o) === qt.ModuleKind.CommonJS && !!this.commonJsModuleIndicator);
   }
-  isEffectiveStrictModeSourceFile(node: SourceFile, compilerOpts: qt.CompilerOpts) {
-    switch (node.scriptKind) {
+  isEffectiveStrictMode(o: qt.CompilerOpts) {
+    switch (this.scriptKind) {
       case qt.ScriptKind.JS:
       case qt.ScriptKind.TS:
       case qt.ScriptKind.JSX:
@@ -1167,39 +1171,39 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
       default:
         return false;
     }
-    if (node.isDeclarationFile) return false;
-    if (getStrictOptionValue(compilerOpts, 'alwaysStrict')) return true;
-    if (startsWithUseStrict(node.statements)) return true;
-    if (qf.is.externalModule(node) || compilerOpts.isolatedModules) {
-      if (getEmitModuleKind(compilerOpts) >= ModuleKind.ES2015) return true;
-      return !compilerOpts.noImplicitUseStrict;
+    if (this.isDeclarationFile) return false;
+    if (getStrictOptionValue(o, 'alwaysStrict')) return true;
+    if (startsWithUseStrict(this.statements)) return true;
+    if (qf.is.externalModule(this) || o.isolatedModules) {
+      if (getEmitModuleKind(o) >= qt.ModuleKind.ES2015) return true;
+      return !o.noImplicitUseStrict;
     }
     return false;
   }
-  getSpanOfTokenAtPosition(s: SourceFile, pos: number): qu.TextSpan {
-    const scanner = qs_create(true, s.languageVariant);
-    scanner.setText(s.text, pos);
+  spanOfTokenAtPos(pos: number) {
+    const scanner = qs_create(true, this.languageVariant);
+    scanner.setText(this.text, pos);
     scanner.scan();
-    const start = scanner.getTokenPos();
-    return qu.TextSpan.from(start, scanner.getTextPos());
+    const s = scanner.getTokenPos();
+    return qu.TextSpan.from(s, scanner.getTextPos());
   }
-  isSourceFileJS(file: SourceFile) {
-    return qf.is.inJSFile(file);
+  isJS() {
+    return qf.is.inJSFile(this as Node);
   }
-  isSourceFileNotJS(file: SourceFile) {
-    return !qf.is.inJSFile(file);
+  isNotJS() {
+    return !qf.is.inJSFile(this as Node);
   }
-  isSourceFileNotJson(file: SourceFile) {
-    return !qf.is.jsonSourceFile(file);
+  isNotJson() {
+    return !qf.is.jsonSourceFile(this);
   }
-  getOriginalSourceFile(sourceFile: SourceFile) {
-    return qf.get.parseTreeOf(sourceFile, isSourceFile) || sourceFile;
+  originalSource() {
+    return qf.get.parseTreeOf(this as Node, isSourceFile) || this;
   }
-  isCheckJsEnabledForFile(sourceFile: SourceFile, compilerOpts: qt.CompilerOpts) {
-    return sourceFile.checkJsDirective ? sourceFile.checkJsDirective.enabled : compilerOpts.checkJs;
+  isCheckJsEnabled(o: qt.CompilerOpts) {
+    return this.checkJsDirective ? this.checkJsDirective.enabled : o.checkJs;
   }
-  skipTypeChecking(sourceFile: SourceFile, opts: qt.CompilerOpts, host: HostWithIsSourceOfProjectReferenceRedirect) {
-    return (opts.skipLibCheck && sourceFile.isDeclarationFile) || (opts.skipDefaultLibCheck && sourceFile.hasNoDefaultLib) || host.isSourceOfProjectReferenceRedirect(sourceFile.fileName);
+  skipTypeChecking(o: qt.CompilerOpts, host: HostWithIsSourceOfProjectReferenceRedirect) {
+    return (o.skipLibCheck && this.isDeclarationFile) || (o.skipDefaultLibCheck && this.hasNoDefaultLib) || host.isSourceOfProjectReferenceRedirect(this.fileName);
   }
   qp_updateSourceNode(
     node: SourceFile,
@@ -1258,128 +1262,12 @@ export class SourceFile extends Decl implements qy.SourceFile, qt.SourceFile {
     }
     return node;
   }
-  private computeNamedDecls(): qu.QMap<qt.Declaration[]> {
-    const r = new qu.MultiMap<qt.Declaration>();
-    qf.each.child(visit);
-    return r;
-    function addDeclaration(declaration: qt.Declaration) {
-      const name = qf.decl.name(declaration);
-      if (name) r.add(name, declaration);
-    }
-    function getDeclarations(name: string) {
-      let declarations = r.get(name);
-      if (!declarations) r.set(name, (declarations = []));
-      return declarations;
-    }
-    function getDeclarationName(declaration: qt.Declaration) {
-      const name = qf.get.nonAssignedNameOfDeclaration(declaration);
-      return (
-        name &&
-        (isComputedPropertyName(name) && qf.is.kind(qc.PropertyAccessExpression, name.expression) ? name.expression.name.text : qf.is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
-      );
-    }
-    function visit(n: Node) {
-      switch (n.kind) {
-        case Syntax.FunctionDeclaration:
-        case Syntax.FunctionExpression:
-        case Syntax.MethodDeclaration:
-        case Syntax.MethodSignature:
-          const functionDeclaration = n;
-          const declarationName = qf.decl.name(functionDeclaration);
-          if (declarationName) {
-            const declarations = getDeclarations(declarationName);
-            const lastDeclaration = qu.lastOrUndefined(declarations);
-            if (lastDeclaration && functionDeclaration.parent === lastDeclaration.parent && functionDeclaration.symbol === lastDeclaration.symbol) {
-              if (functionDeclaration.body && !(<FunctionLikeDeclaration>lastDeclaration).body) declarations[declarations.length - 1] = functionDeclaration;
-            } else declarations.push(functionDeclaration);
-          }
-          qf.each.child(n, visit);
-          break;
-        case Syntax.ClassDeclaration:
-        case Syntax.ClassExpression:
-        case Syntax.InterfaceDeclaration:
-        case Syntax.TypeAliasDeclaration:
-        case Syntax.EnumDeclaration:
-        case Syntax.ModuleDeclaration:
-        case Syntax.ImportEqualsDeclaration:
-        case Syntax.ExportSpecifier:
-        case Syntax.ImportSpecifier:
-        case Syntax.ImportClause:
-        case Syntax.NamespaceImport:
-        case Syntax.GetAccessor:
-        case Syntax.SetAccessor:
-        case Syntax.TypingLiteral:
-          addDeclaration(n);
-          qf.each.child(n, visit);
-          break;
-        case Syntax.Param:
-          if (!qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) break;
-        case Syntax.VariableDeclaration:
-        case Syntax.BindingElem: {
-          const decl = n;
-          if (qf.is.kind(qc.BindingPattern, decl.name)) {
-            qf.each.child(decl.name, visit);
-            break;
-          }
-          if (decl.initer) visit(decl.initer);
-        }
-        case Syntax.EnumMember:
-        case Syntax.PropertyDeclaration:
-        case Syntax.PropertySignature:
-          addDeclaration(<qt.Declaration>n);
-          break;
-        case Syntax.ExportDeclaration:
-          const exportDeclaration = n;
-          if (exportDeclaration.exportClause) {
-            if (qf.is.kind(qc.NamedExports, exportDeclaration.exportClause)) qu.each(exportDeclaration.exportClause.elems, visit);
-            else visit(exportDeclaration.exportClause.name);
-          }
-          break;
-        case Syntax.ImportDeclaration:
-          const importClause = n.importClause;
-          if (importClause) {
-            if (importClause.name) addDeclaration(importClause.name);
-            if (importClause.namedBindings) {
-              if (importClause.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(importClause.namedBindings);
-              else qu.each(importClause.namedBindings.elems, visit);
-            }
-          }
-          break;
-        case Syntax.BinaryExpression:
-          if (qf.get.assignmentDeclarationKind(n as BinaryExpression) !== qt.AssignmentDeclarationKind.None) addDeclaration(n as BinaryExpression);
-        default:
-          qf.each.child(n, visit);
-      }
-    }
-  }
-  static discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): QReadonlyMap<string> {
-    const result = new qu.QMap<string>();
-    const symlinks = qu.flatten<readonly [string, string]>(
-      mapDefined(
-        files,
-        (sf) =>
-          sf.resolvedModules &&
-          compact(
-            arrayFrom(
-              mapIterator(sf.resolvedModules.values(), (res) =>
-                res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined
-              )
-            )
-          )
-      )
-    );
-    for (const [resolvedPath, originalPath] of symlinks) {
-      const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, getCanonicalFileName);
-      result.set(commonOriginal, commonResolved);
-    }
-    return result;
-  }
 }
 export class SourceMapSource implements qt.SourceMapSource {
   lineMap!: number[];
   constructor(public fileName: string, public text: string, public skipTrivia = (pos: number) => pos) {}
-  getLineAndCharacterOfPosition(pos: number): qy.LineAndChar {
-    return getLineAndCharacterOfPosition(this, pos);
+  lineAndCharOf(pos: number): qy.LineAndChar {
+    return lineAndCharOf(this, pos);
   }
 }
 let allUnscopedEmitHelpers: qu.QReadonlyMap<UnscopedEmitHelper> | undefined;
@@ -1622,4 +1510,22 @@ export function walkUpBindingElemsAndPatterns(e: qt.BindingElem) {
     n = n?.parent?.parent;
   }
   return n?.parent as qt.ParamDeclaration | qt.VariableDeclaration | undefined;
+}
+export function discoverProbableSymlinks(fs: readonly SourceFile[], n: qu.GetCanonicalFileName, cwd: string): qu.QReadonlyMap<string> {
+  const r = new qu.QMap<string>();
+  const ls = qu.flatten<readonly [string, string]>(
+    qu.mapDefined(
+      fs,
+      (f) =>
+        f.resolvedModules &&
+        qu.compact(
+          qu.arrayFrom(qu.mapIterator(f.resolvedModules.values(), (m) => (m && m.originalPath && m.resolvedFileName !== m.originalPath ? ([m.resolvedFileName, m.originalPath] as const) : undefined)))
+        )
+    )
+  );
+  for (const [resolvedPath, originalPath] of ls) {
+    const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, n);
+    r.set(commonOriginal, commonResolved);
+  }
+  return r;
 }

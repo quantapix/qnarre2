@@ -1451,7 +1451,7 @@ export function newResolve(f: qt.Frame) {
       const ambientModule = tryFindAmbientModule(moduleReference, true);
       if (ambientModule) return ambientModule;
       const currentSourceFile = location.sourceFile;
-      const resolvedModule = getResolvedModule(currentSourceFile, moduleReference)!;
+      const resolvedModule = currentSourceFile.resolvedModule(moduleReference)!;
       const resolutionDiagnostic = resolvedModule && getResolutionDiagnostic(compilerOpts, resolvedModule);
       const sourceFile = resolvedModule && !resolutionDiagnostic && host.getSourceFile(resolvedModule.resolvedFileName);
       if (sourceFile) {

@@ -243,10 +243,7 @@ export function transformES2018(context: TrafoContext) {
     return visitEachChild(node, noDestructuringValue ? visitorNoDestructuringValue : visitor, context);
   }
   function visitSourceFile(node: SourceFile): SourceFile {
-    const ancestorFacts = enterSubtree(
-      HierarchyFacts.SourceFileExcludes,
-      isEffectiveStrictModeSourceFile(node, compilerOpts) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes
-    );
+    const ancestorFacts = enterSubtree(HierarchyFacts.SourceFileExcludes, node.isEffectiveStrictMode(compilerOpts) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes);
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
     const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [new qc.VariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations))]);

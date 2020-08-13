@@ -1607,7 +1607,7 @@ export class QContext {
       }
       const reexports = filter(ss, (d) => d.kind === Syntax.ExportDeclaration && !!d.moduleSpecifier && !!d.exportClause && d.exportClause.kind === Syntax.NamedExports) as ExportDeclaration[];
       if (length(reexports) > 1) {
-        const gs = group(reexports, (decl) => (qf.is.kind(qc.StringLiteral, decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
+        const gs = group(reexports, (decl) => decl.moduleSpecifier?.kind === Syntax.StringLiteral ? '>' + decl.moduleSpecifier.text : '>'));
         if (gs.length !== reexports.length) {
           for (const g of gs) {
             if (g.length > 1) {
