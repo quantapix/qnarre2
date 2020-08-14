@@ -1573,7 +1573,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     const saveParent = parent;
     const saveCurrentFlow = currentFlow;
     for (const typeAlias of delayedTypeAliases) {
-      const host = qc.getDoc.host(typeAlias);
+      const host = qf.get.doc.host(typeAlias);
       container = qc.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
       blockScopeContainer = qf.get.enclosingBlockScopeContainer(host) || file;
       currentFlow = initFlowNode({ flags: FlowFlags.Start });
@@ -2606,6 +2606,6 @@ function isSpecialPropertyDeclaration(expr: qt.PropertyAccessExpression | qt.Ele
     expr.parent &&
     expr.parent.kind === Syntax.ExpressionStatement &&
     (!expr.kind === Syntax.ElemAccessExpression || qf.is.literalLikeElemAccess(expr)) &&
-    !!qc.getDoc.typeTag(expr.parent)
+    !!qf.get.doc.typeTag(expr.parent)
   );
 }

@@ -37,7 +37,7 @@ export function transformES2020(context: qt.TrafoContext) {
   function flattenChain(chain: qt.OptionalChain) {
     qc.assert.notNode(chain, isNonNullChain);
     const links: qt.OptionalChain[] = [chain];
-    while (!chain.questionDotToken && !qf.is.kind(qc.TaggedTemplateExpression, chain)) {
+    while (!chain.questionDotToken && !chain.kind === Syntax.TaggedTemplateExpression) {
       chain = cast(qf.skip.partiallyEmittedExpressions(chain.expression), isOptionalChain);
       qc.assert.notNode(chain, isNonNullChain);
       links.unshift(chain);
@@ -46,7 +46,7 @@ export function transformES2020(context: qt.TrafoContext) {
   }
   function visitNonOptionalParenthesizedExpression(node: qt.ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
-    if (qf.is.kind(qc.SyntheticReferenceExpression, expression)) {
+    if (expression.kind === Syntax.SyntheticReferenceExpression) {
       // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
       // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
       return new qc.SyntheticReferenceExpression(node.update(expression.expression), expression.thisArg);
@@ -96,8 +96,8 @@ export function transformES2020(context: qt.TrafoContext) {
   function visitOptionalExpression(node: qt.OptionalChain, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     const { expression, chain } = flattenChain(node);
     const left = visitNonOptionalExpression(expression, qf.is.callChain(chain[0]), false);
-    const leftThisArg = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.thisArg : undefined;
-    let leftExpression = qf.is.kind(qc.SyntheticReferenceExpression, left) ? left.expression : left;
+    const leftThisArg = left.kind === Syntax.SyntheticReferenceExpression ? left.thisArg : undefined;
+    let leftExpression = left.kind === Syntax.SyntheticReferenceExpression ? left.expression : left;
     let capturedLeft: qt.Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
@@ -158,7 +158,7 @@ export function transformES2020(context: qt.TrafoContext) {
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, qf.visit.node(node.right, visitor, isExpression));
   }
   function shouldCaptureInTempVariable(expression: qt.Expression): boolean {
-    return !qf.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
+    return !expression.kind === Syntax.Identifier && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: qt.DeleteExpression) {
     return qf.is.optionalChain(qf.skip.parentheses(n.expression))

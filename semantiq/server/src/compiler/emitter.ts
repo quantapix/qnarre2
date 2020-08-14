@@ -286,7 +286,7 @@ export function emitFiles(
   };
   function emitSourceFileOrBundle({ jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath }: EmitFileNames, sourceFileOrBundle: qt.SourceFile | qt.Bundle | undefined) {
     let buildInfoDirectory: string | undefined;
-    if (buildInfoPath && sourceFileOrBundle && qf.is.kind(qc.Bundle, sourceFileOrBundle)) {
+    if (buildInfoPath && sourceFileOrBundle && sourceFileOrBundle.kind === Syntax.Bundle) {
       buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
       bundleBuildInfo = {
         commonSourceDirectory: relativeToBuildInfo(host.getCommonSourceDirectory()),
@@ -378,10 +378,10 @@ export function emitFiles(
       if (emitOnlyDtsFiles || compilerOpts.emitDeclarationOnly) emitSkipped = true;
       return;
     }
-    const sourceFiles = qf.is.kind(qc.SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
+    const sourceFiles = sourceFileOrBundle.kind === Syntax.SourceFile ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
     const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
     const inputListOrBundle =
-      compilerOpts.outFile || compilerOpts.out ? [new qc.Bundle(filesForEmit, !qf.is.kind(qc.SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
+      compilerOpts.outFile || compilerOpts.out ? [new qc.Bundle(filesForEmit, !sourceFileOrBundle.kind === Syntax.SourceFile ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
     if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOpts)) {
       filesForEmit.forEach(collectLinkedAliases);
     }
@@ -430,12 +430,12 @@ export function emitFiles(
     if (bundleBuildInfo) bundleBuildInfo.dts = declarationPrinter.bundleFileInfo;
   }
   function collectLinkedAliases(node: Node) {
-    if (qf.is.kind(qc.ExportAssignment, node)) {
+    if (node.kind === Syntax.ExportAssignment) {
       if (node.expression.kind === Syntax.Identifier) {
         resolver.collectLinkedAliases(node.expression as qt.Identifier, true);
       }
       return;
-    } else if (qf.is.kind(qc.ExportSpecifier, node)) {
+    } else if (node.kind === Syntax.ExportSpecifier) {
       resolver.collectLinkedAliases(node.propertyName || node.name, true);
       return;
     }
@@ -772,10 +772,10 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function printNode(hint: EmitHint, node: Node, sourceFile: qt.SourceFile): string {
     switch (hint) {
       case EmitHint.SourceFile:
-        qu.assert(qf.is.kind(qc.SourceFile, node), 'Expected a qt.SourceFile node.');
+        qu.assert(node.kind === Syntax.SourceFile, 'Expected a qt.SourceFile node.');
         break;
       case EmitHint.IdentifierName:
-        qu.assert(qf.is.kind(qc.Identifier, node), 'Expected an qt.Identifier node.');
+        qu.assert(node.kind === Syntax.Identifier, 'Expected an qt.Identifier node.');
         break;
       case EmitHint.Expression:
         qu.assert(qf.is.expression(node), 'Expected an qt.Expression node.');
@@ -843,7 +843,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       recordInternalSection &&
       bundleFileInfo &&
       currentSourceFile &&
-      (qf.is.declaration(node) || qf.is.kind(qc.VariableStatement, node)) &&
+      (qf.is.declaration(node) || node.kind === Syntax.VariableStatement) &&
       isInternalDeclaration(node, currentSourceFile) &&
       sourceFileTextKind !== BundleFileSectionKind.Internal
     ) {
@@ -1016,7 +1016,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return pipelineEmit(EmitHint.Expression, node);
   }
   function emitJsxAttributeValue(node: qt.StringLiteral | qt.JsxExpression): Node {
-    return pipelineEmit(qf.is.kind(qc.StringLiteral, node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
+    return pipelineEmit(node.kind === Syntax.StringLiteral ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
   }
   function pipelineEmit(emitHint: EmitHint, node: Node) {
     const savedLastNode = lastNode;
@@ -1474,10 +1474,10 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     const numNodes = bundle ? bundle.sourceFiles.length + numPrepends : 1;
     for (let i = 0; i < numNodes; i++) {
       const currentNode = bundle ? (i < numPrepends ? bundle.prepends[i] : bundle.sourceFiles[i - numPrepends]) : node;
-      const sourceFile = qf.is.kind(qc.SourceFile, currentNode) ? currentNode : qf.is.kind(qc.UnparsedSource, currentNode) ? undefined : currentSourceFile!;
+      const sourceFile = currentNode.kind === Syntax.SourceFile ? currentNode : currentNode.kind === Syntax.UnparsedSource ? undefined : currentSourceFile!;
       const shouldSkip = printerOpts.noEmitHelpers || (!!sourceFile && qf.emit.hasRecordedExternalHelpers(sourceFile));
-      const shouldBundle = (qf.is.kind(qc.SourceFile, currentNode) || qf.is.kind(qc.UnparsedSource, currentNode)) && !isOwnFileEmit;
-      const helpers = qf.is.kind(qc.UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
+      const shouldBundle = (currentNode.kind === Syntax.SourceFile || currentNode.kind === Syntax.UnparsedSource) && !isOwnFileEmit;
+      const helpers = currentNode.kind === Syntax.UnparsedSource ? currentNode.helpers : getSortedEmitHelpers(currentNode);
       if (helpers) {
         for (const helper of helpers) {
           if (!helper.scoped) {
@@ -1944,7 +1944,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function mayNeedDotDotForPropertyAccess(expression: qt.Expression) {
     expression = qf.skip.partiallyEmittedExpressions(expression);
-    if (qf.is.kind(qc.NumericLiteral, expression)) {
+    if (expression.kind === Syntax.NumericLiteral) {
       const text = getLiteralTextOfNode(<qt.LiteralExpression>expression, false);
       return !expression.numericLiteralFlags && !qu.stringContains(text, qt.Token.toString(Syntax.DotToken)!);
     } else if (qf.is.accessExpression(expression)) {
@@ -2094,7 +2094,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       lastNode = next;
       lastSubstitution = undefined;
       const pipelinePhase = getPipelinePhase(PipelinePhase.Notification, EmitHint.Expression, next);
-      if (pipelinePhase === pipelineEmitWithHint && qf.is.kind(qc.next, qt.BinaryExpression)) {
+      if (pipelinePhase === pipelineEmitWithHint && next.kind === Syntax.BinaryExpression) {
         stackIndex++;
         stateStack[stackIndex] = EmitBinaryExpressionState.EmitLeft;
         nodeStack[stackIndex] = next;
@@ -2221,7 +2221,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitDoStatement(node: qt.DoStatement) {
     emitTokenWithComment(Syntax.DoKeyword, node.pos, writeKeyword, node);
     emitEmbeddedStatement(node, node.statement);
-    if (qf.is.kind(qc.Block, node.statement)) {
+    if (node.statement.kind === Syntax.Block) {
       writeSpace();
     } else {
       writeLineOrSpace(node);
@@ -2393,7 +2393,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitSignatureAndBody(node: qt.FunctionLikeDeclaration, emitSignatureHead: (node: qt.SignatureDeclaration) => void) {
     const body = node.body;
     if (body) {
-      if (qf.is.kind(qc.Block, body)) {
+      if (body.kind === Syntax.Block) {
         const indentedFlag = qf.get.emitFlags(node) & EmitFlags.Indented;
         if (indentedFlag) {
           increaseIndent();
@@ -2708,7 +2708,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function emitJsxOpeningElemOrFragment(node: qt.JsxOpeningElem | qt.JsxOpeningFragment) {
     writePunctuation('<');
-    if (qf.is.kind(qc.JsxOpeningElem, node)) {
+    if (node.kind === Syntax.JsxOpeningElem) {
       const indented = writeLineSeparatorsAndIndentBefore(node.tagName, node);
       emitJsxTagName(node.tagName);
       emitTypeArgs(node, node.typeArgs);
@@ -2726,7 +2726,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function emitJsxClosingElemOrFragment(node: qt.JsxClosingElem | qt.JsxClosingFragment) {
     writePunctuation('</');
-    if (qf.is.kind(qc.JsxClosingElem, node)) {
+    if (node.kind === Syntax.JsxClosingElem) {
       emitJsxTagName(node.tagName);
     }
     writePunctuation('>');
@@ -2949,7 +2949,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitSyntheticTripleSlashReferencesIfNeeded(node: qt.Bundle) {
     emitTripleSlashDirectives(!!node.hasNoDefaultLib, node.syntheticFileReferences || [], node.syntheticTypeReferences || [], node.syntheticLibReferences || []);
     for (const prepend of node.prepends) {
-      if (qf.is.kind(qc.UnparsedSource, prepend) && prepend.syntheticReferences) {
+      if (prepend.kind === Syntax.UnparsedSource && prepend.syntheticReferences) {
         for (const ref of prepend.syntheticReferences) {
           emit(ref);
           writeLine();
@@ -3055,7 +3055,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     }
   }
   function emitPrologueDirectivesIfNeeded(sourceFileOrBundle: qt.Bundle | qt.SourceFile) {
-    if (qf.is.kind(qc.SourceFile, sourceFileOrBundle)) {
+    if (sourceFileOrBundle.kind === Syntax.SourceFile) {
       emitPrologueDirectives(sourceFileOrBundle.statements, sourceFileOrBundle);
     } else {
       const seenPrologueDirectives = qu.createMap<true>();
@@ -3095,7 +3095,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return prologues;
   }
   function emitShebangIfNeeded(sourceFileOrBundle: qt.Bundle | qt.SourceFile | qt.UnparsedSource) {
-    if (qf.is.kind(qc.SourceFile, sourceFileOrBundle) || qf.is.kind(qc.UnparsedSource, sourceFileOrBundle)) {
+    if (sourceFileOrBundle.kind === Syntax.SourceFile || sourceFileOrBundle.kind === Syntax.UnparsedSource) {
       const shebang = qy.get.shebang(sourceFileOrBundle.text);
       if (shebang) {
         writeComment(shebang);
@@ -3165,13 +3165,13 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     }
   }
   function emitEmbeddedStatement(parent: Node, node: qt.Statement) {
-    if (qf.is.kind(qc.Block, node) || qf.get.emitFlags(parent) & EmitFlags.SingleLine) {
+    if (node.kind === Syntax.Block || qf.get.emitFlags(parent) & EmitFlags.SingleLine) {
       writeSpace();
       emit(node);
     } else {
       writeLine();
       increaseIndent();
-      if (qf.is.kind(qc.EmptyStatement, node)) {
+      if (node.kind === Syntax.EmptyStatement) {
         pipelineEmit(EmitHint.EmbeddedStatement, node);
       } else {
         emit(node);
@@ -3200,7 +3200,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return (
       param &&
       param.pos === parentNode.pos &&
-      qf.is.kind(qc.ArrowFunction, parentNode) &&
+      parentNode.kind === Syntax.ArrowFunction &&
       !parentNode.type &&
       !some(parentNode.decorators) &&
       !some(parentNode.modifiers) &&
@@ -3211,7 +3211,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       !param.questionToken &&
       !param.type &&
       !param.initer &&
-      qf.is.kind(qc.Identifier, param.name)
+      param.name.kind === Syntax.Identifier
     );
   }
   function emitParamsForArrow(parentNode: qt.FunctionTyping | qt.ArrowFunction, params: Nodes<qt.ParamDeclaration>) {
@@ -3559,7 +3559,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function getTextOfNode(node: Node, includeTrivia?: boolean): string {
     if (qf.is.generatedIdentifier(node)) return generateName(node);
     else if (
-      (qf.is.kind(qc.Identifier, node) || qf.is.kind(qc.PrivateIdentifier, node)) &&
+      (node.kind === Syntax.Identifier || node.kind === Syntax.PrivateIdentifier) &&
       (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && node.sourceFile !== qf.get.originalOf(currentSourceFile)))
     ) {
       return idText(node);
@@ -3573,8 +3573,8 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function getLiteralTextOfNode(node: qt.LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
     if (node.kind === Syntax.StringLiteral && (<qt.StringLiteral>node).textSourceNode) {
       const textSourceNode = (<qt.StringLiteral>node).textSourceNode!;
-      if (qf.is.kind(qc.Identifier, textSourceNode) || qf.is.kind(qc.NumericLiteral, textSourceNode)) {
-        const text = qf.is.kind(qc.NumericLiteral, textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
+      if (textSourceNode.kind === Syntax.Identifier || textSourceNode.kind === Syntax.NumericLiteral) {
+        const text = textSourceNode.kind === Syntax.NumericLiteral ? textSourceNode.text : getTextOfNode(textSourceNode);
         return jsxAttributeEscape
           ? `"${escapeJsxAttributeString(text)}"`
           : neverAsciiEscape || qf.get.emitFlags(node) & EmitFlags.NoAsciiEscaping
@@ -3709,7 +3709,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (name) {
       if (qf.is.generatedIdentifier(name)) {
         generateName(name);
-      } else if (qf.is.kind(qc.BindingPattern, name)) {
+      } else if (name.kind === Syntax.BindingPattern) {
         generateNames(name);
       }
     }
@@ -3802,7 +3802,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function generateNameForImportOrExportDeclaration(node: qt.ImportDeclaration | qt.ExportDeclaration) {
     const expr = qf.get.externalModuleName(node)!;
-    const baseName = qf.is.kind(qc.StringLiteral, expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
+    const baseName = expr.kind === Syntax.StringLiteral ? makeIdentifierFromModuleName(expr.text) : 'module';
     return makeUniqueName(baseName);
   }
   function generateNameForExportDefault() {
@@ -3812,7 +3812,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return makeUniqueName('class');
   }
   function generateNameForMethodOrAccessor(node: qt.MethodDeclaration | qt.AccessorDeclaration) {
-    if (qf.is.kind(qc.Identifier, node.name)) return generateNameCached(node.name);
+    if (node.name.kind === Syntax.Identifier) return generateNameCached(node.name);
     return makeTempVariableName(TempFlags.Auto);
   }
   function generateNameForNode(node: Node, flags?: GeneratedIdentifierFlags): string {
@@ -3863,7 +3863,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     let original = node.original;
     while (original) {
       node = original;
-      if (qf.is.kind(qc.Identifier, node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
+      if (node.kind === Syntax.Identifier && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
         break;
       }
       original = node.original;
@@ -4098,7 +4098,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function pipelineEmitWithSourceMap(hint: EmitHint, node: Node) {
     qu.assert(lastNode === node || lastSubstitution === node);
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
-    if (qf.is.kind(qc.UnparsedSource, node) || qf.is.kind(qc.UnparsedPrepend, node)) {
+    if (node.kind === Syntax.UnparsedSource || node.kind === Syntax.UnparsedPrepend) {
       pipelinePhase(hint, node);
     } else if (qf.is.unparsedNode(node)) {
       const parsed = getParsedSourceMap(node.parent);

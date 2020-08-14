@@ -629,7 +629,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     visit(node.right);
     return inlineExpressions(pendingExpressions);
     function visit(node: qt.Expression) {
-      if (qf.is.kind(qc.BinaryExpression, node) && node.operatorToken.kind === Syntax.CommaToken) {
+      if (node.kind === Syntax.BinaryExpression && node.operatorToken.kind === Syntax.CommaToken) {
         visit(node.left);
         visit(node.right);
       } else {
@@ -840,7 +840,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     }
   }
   function transformAndEmitEmbeddedStatement(node: qt.Statement) {
-    if (qf.is.kind(qc.Block, node)) {
+    if (node.kind === Syntax.Block) {
       transformAndEmitStatements(node.statements);
     } else {
       transformAndEmitStatement(node);
@@ -1058,7 +1058,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const endLabel = beginLoopBlock(incrementLabel);
       if (node.initer) {
         const initer = node.initer;
-        if (qf.is.kind(qc.VariableDeclarationList, initer)) {
+        if (initer.kind === Syntax.VariableDeclarationList) {
           transformAndEmitVariableDeclarationList(initer);
         } else {
           emitStatement(setRange(new qc.ExpressionStatement(qf.visit.node(initer, visitor, isExpression)), initer));
@@ -1084,7 +1084,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       beginScriptLoopBlock();
     }
     const initer = node.initer;
-    if (initer && qf.is.kind(qc.VariableDeclarationList, initer)) {
+    if (initer && initer.kind === Syntax.VariableDeclarationList) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
@@ -1147,7 +1147,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       markLabel(conditionLabel);
       emitBreakWhenFalse(endLabel, qf.create.lessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: qt.Expression;
-      if (qf.is.kind(qc.VariableDeclarationList, initer)) {
+      if (initer.kind === Syntax.VariableDeclarationList) {
         for (const variable of initer.declarations) {
           hoistVariableDeclaration(<qt.Identifier>variable.name);
         }
@@ -1183,7 +1183,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       beginScriptLoopBlock();
     }
     const initer = node.initer;
-    if (qf.is.kind(qc.VariableDeclarationList, initer)) {
+    if (initer.kind === Syntax.VariableDeclarationList) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
@@ -1445,13 +1445,13 @@ export function transformGenerators(context: qt.TrafoContext) {
     return node;
   }
   function substituteExpression(node: qt.Expression): qt.Expression {
-    if (qf.is.kind(qc.Identifier, node)) return substituteExpressionIdentifier(node);
+    if (node.kind === Syntax.Identifier) return substituteExpressionIdentifier(node);
     return node;
   }
   function substituteExpressionIdentifier(node: qt.Identifier) {
     if (!qf.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
       const original = qf.get.originalOf(node);
-      if (qf.is.kind(qc.Identifier, original) && original.parent) {
+      if (original.kind === Syntax.Identifier && original.parent) {
         const declaration = resolver.getReferencedValueDeclaration(original);
         if (declaration) {
           const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];

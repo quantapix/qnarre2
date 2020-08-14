@@ -1038,7 +1038,7 @@ export namespace BuilderState {
     if (sourceFile.moduleAugmentations.length) {
       const checker = program.getTypeChecker();
       for (const moduleName of sourceFile.moduleAugmentations) {
-        if (!qf.is.kind(qc.StringLiteral, moduleName)) continue;
+        if (moduleName.kind !== Syntax.StringLiteral) continue;
         const symbol = checker.getSymbolAtLocation(moduleName);
         if (!symbol) continue;
         addReferenceFromAmbientModule(symbol);

@@ -21,7 +21,7 @@ export interface ExternalModuleInfo {
 }
 function containsDefaultReference(node: qt.NamedImportBindings | undefined) {
   if (!node) return false;
-  if (!qf.is.kind(qc.NamedImports, node)) return false;
+  if (!node.kind === Syntax.NamedImports) return false;
   return some(node.elems, isNamedDefaultReference);
 }
 function isNamedDefaultReference(e: qt.ImportSpecifier): boolean {
@@ -43,7 +43,7 @@ export function getImportNeedsImportStarHelper(node: qt.ImportDeclaration): bool
   if (!!qf.get.namespaceDeclarationNode(node)) return true;
   const bindings = node.importClause && node.importClause.namedBindings;
   if (!bindings) return false;
-  if (!qf.is.kind(qc.NamedImports, bindings)) return false;
+  if (!bindings.kind === Syntax.NamedImports) return false;
   let defaultRefCount = 0;
   for (const binding of bindings.elems) {
     if (isNamedDefaultReference(binding)) {
@@ -55,7 +55,7 @@ export function getImportNeedsImportStarHelper(node: qt.ImportDeclaration): bool
 export function getImportNeedsImportDefaultHelper(node: qt.ImportDeclaration): boolean {
   return (
     !getImportNeedsImportStarHelper(node) &&
-    (qf.is.defaultImport(node) || (!!node.importClause && qf.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+    (qf.is.defaultImport(node) || (!!node.importClause && node.importClause.namedBindings?.kind === Syntax.NamedImports && containsDefaultReference(node.importClause.namedBindings)))
   );
 }
 export function collectExternalModuleInfo(sourceFile: qt.SourceFile, resolver: qt.EmitResolver, compilerOpts: qt.CompilerOpts): ExternalModuleInfo {
@@ -171,9 +171,9 @@ export function collectExternalModuleInfo(sourceFile: qt.SourceFile, resolver: q
   };
 }
 function collectExportedVariableInfo(decl: qt.VariableDeclaration | qt.BindingElem, uniqueExports: Map<boolean>, exportedNames: qt.Identifier[] | undefined) {
-  if (qf.is.kind(qc.BindingPattern, decl.name)) {
+  if (decl.name.kind === Syntax.BindingPattern) {
     for (const elem of decl.name.elems) {
-      if (!qf.is.kind(qc.OmittedExpression, elem)) {
+      if (!elem.kind === Syntax.OmittedExpression) {
         exportedNames = collectExportedVariableInfo(elem, uniqueExports, exportedNames);
       }
     }
@@ -196,10 +196,10 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
   return values;
 }
 export function isSimpleCopiableExpression(expression: qt.Expression) {
-  return qf.is.stringLiteralLike(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qf.is.kind(qc.Identifier, expression);
+  return qf.is.stringLiteralLike(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || expression.kind === Syntax.Identifier;
 }
 export function isSimpleInlineableExpression(expression: qt.Expression) {
-  return (!qf.is.kind(qc.Identifier, expression) && isSimpleCopiableExpression(expression)) || qf.is.wellKnownSymbolSyntactically(expression);
+  return (!expression.kind === Syntax.Identifier && isSimpleCopiableExpression(expression)) || qf.is.wellKnownSymbolSyntactically(expression);
 }
 export function isCompoundAssignment(kind: qt.BinaryOperator): kind is qt.CompoundAssignmentOperator {
   return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;
@@ -237,7 +237,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDec
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
     if (index === statements.length) return index;
-    const superIndex = findIndex(statements, (s) => qf.is.kind(qc.ExpressionStatement, s) && qf.is.superCall(s.expression), index);
+    const superIndex = findIndex(statements, (s) => s.kind === Syntax.ExpressionStatement && qf.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {
         result.push(qf.visit.node(statements[i], visitor, qf.is.statement));
@@ -263,7 +263,7 @@ export function getProperties(node: qt.ClassExpression | qt.ClassDeclaration, re
   return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as qt.PropertyDeclaration[];
 }
 function isInitializedOrStaticProperty(member: qt.ClassElem, requireIniter: boolean, isStatic: boolean) {
-  return qf.is.kind(qc.PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qf.has.staticModifier(member) === isStatic;
+  return member.kind === Syntax.PropertyDeclaration && (!!member.initer || !requireIniter) && qf.has.staticModifier(member) === isStatic;
 }
 export function isInitializedProperty(member: qt.ClassElem): member is qt.PropertyDeclaration & { initer: qt.Expression } {
   return member.kind === Syntax.PropertyDeclaration && (<qt.PropertyDeclaration>member).initer !== undefined;

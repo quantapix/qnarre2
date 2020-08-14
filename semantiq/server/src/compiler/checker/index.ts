@@ -1121,7 +1121,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function maybeAddJsSyntheticRestParam(declaration: qt.SignatureDeclaration | qt.DocSignature, params: qt.Symbol[]): boolean {
     if (declaration.kind === Syntax.DocSignature || !containsArgsReference(declaration)) return false;
     const lastParam = lastOrUndefined(declaration.params);
-    const lastParamTags = lastParam ? qc.getDoc.paramTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParamTag);
+    const lastParamTags = lastParam ? qf.get.doc.paramTags(lastParam) : qf.get.doc.tags(declaration).filter(isDocParamTag);
     const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && p.typeExpression.type.kind === Syntax.DocVariadicTyping ? p.typeExpression.type : undefined));
     const syntheticArgsSymbol = new qc.Symbol(SymbolFlags.Variable, 'args' as qu.__String, qt.CheckFlags.RestParam);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(qf.get.typeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
@@ -2420,7 +2420,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           const classType = (getDeclaredTypeOfSymbol(classSymbol) as qt.InterfaceType).thisType;
           if (classType) return qf.get.flow.typeOfReference(node, classType);
         }
-      } else if (isInJS && (container.kind === Syntax.FunctionExpression || container.kind === Syntax.FunctionDeclaration) && qc.getDoc.classTag(container)) {
+      } else if (isInJS && (container.kind === Syntax.FunctionExpression || container.kind === Syntax.FunctionDeclaration) && qf.get.doc.classTag(container)) {
         const classType = (getDeclaredTypeOfSymbol(qf.get.mergedSymbol(container.symbol)) as qt.InterfaceType).thisType!;
         return qf.get.flow.typeOfReference(node, classType);
       }
@@ -2496,7 +2496,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function reportNonexistentProperty(propNode: qc.Identifier | qc.PrivateIdentifier, containingType: qt.Type) {
     let errorInfo: qd.MessageChain | undefined;
     let relatedInfo: qd.Diagnostic | undefined;
-    if (!is.kind(qc.PrivateIdentifier, propNode) && containingType.flags & qt.TypeFlags.Union && !(containingType.flags & qt.TypeFlags.Primitive)) {
+    if (propNode.kind !== Syntax.PrivateIdentifier && containingType.flags & qt.TypeFlags.Union && !(containingType.flags & qt.TypeFlags.Primitive)) {
       for (const subtype of (containingType as qt.UnionType).types) {
         if (!qf.get.propertyOfType(subtype, propNode.escapedText) && !qf.get.indexInfoOfType(subtype, IndexKind.String)) {
           errorInfo = chainqd.Messages(errorInfo, qd.msgs.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
@@ -2549,7 +2549,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     (prop.checkFlags() & qt.CheckFlags.Instantiated ? s.getLinks(prop).target : prop)!.referenced = qt.SymbolFlags.All;
   }
   function callLikeExpressionMayHaveTypeArgs(node: qt.CallLikeExpression): node is qt.CallExpression | qt.NewExpression | qt.TaggedTemplateExpression | qt.JsxOpeningElem {
-    return qf.is.callOrNewExpression(node) || node.kind === Syntax.TaggedTemplateExpression || qc.isJsx.openingLikeElem(node);
+    return qf.is.callOrNewExpression(node) || node.kind === Syntax.TaggedTemplateExpression || qf.is.jsx.openingLikeElem(node);
   }
   function reorderCandidates(signatures: readonly qt.Signature[], result: qt.Signature[], callChainFlags: SignatureFlags): void {
     let lastParent: Node | undefined;
@@ -2590,7 +2590,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return getInferredTypes(context);
   }
   function inferTypeArgs(node: qt.CallLikeExpression, signature: qt.Signature, args: readonly qt.Expression[], checkMode: CheckMode, context: qt.InferenceContext): qt.Type[] {
-    if (qc.isJsx.openingLikeElem(node)) return inferJsxTypeArgs(node, signature, checkMode, context);
+    if (qf.is.jsx.openingLikeElem(node)) return inferJsxTypeArgs(node, signature, checkMode, context);
     if (node.kind !== Syntax.Decorator) {
       const contextualType = getContextualType(node);
       if (contextualType) {
@@ -2777,7 +2777,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function assignBindingElemTypes(pattern: qt.BindingPattern) {
     for (const elem of pattern.elems) {
-      if (!is.kind(qc.OmittedExpression, elem)) {
+      if (elem.kind !== Syntax.OmittedExpression) {
         if (elem.name.kind === Syntax.Identifier) s.getLinks(qf.get.symbolOfNode(elem)).type = qf.get.typeForBindingElem(elem);
         else assignBindingElemTypes(elem.name);
       }
@@ -2872,8 +2872,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     for (let i = arity; i < patternElems.length; i++) {
       const e = patternElems[i];
       if (i < patternElems.length - 1 || !(e.kind === Syntax.BindingElem && e.dot3Token)) {
-        elemTypes.push(!is.kind(qc.OmittedExpression, e) && hasDefaultValue(e) ? getTypeFromBindingElem(e, false, false) : anyType);
-        if (!is.kind(qc.OmittedExpression, e) && !hasDefaultValue(e)) reportImplicitAny(e, anyType);
+        elemTypes.push(e.kind !== Syntax.OmittedExpression && hasDefaultValue(e) ? getTypeFromBindingElem(e, false, false) : anyType);
+        if (e.kind !== Syntax.OmittedExpression && !hasDefaultValue(e)) reportImplicitAny(e, anyType);
       }
     }
     return createTupleType(elemTypes, type.target.minLength, false, type.target.readonly);

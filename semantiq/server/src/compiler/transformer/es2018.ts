@@ -145,7 +145,7 @@ export function transformES2018(context: qt.TrafoContext) {
       case Syntax.TaggedTemplateExpression:
         return visitTaggedTemplateExpression(node as qt.TaggedTemplateExpression);
       case Syntax.PropertyAccessExpression:
-        if (capturedSuperProperties && qf.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+        if (capturedSuperProperties && node.kind === Syntax.PropertyAccessExpression && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return qf.visit.eachChild(node, visitor, context);
@@ -260,7 +260,7 @@ export function transformES2018(context: qt.TrafoContext) {
     return qf.visit.eachChild(node, visitor, context);
   }
   function visitCatchClause(node: qt.CatchClause) {
-    if (node.variableDeclaration && qf.is.kind(qc.BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
+    if (node.variableDeclaration && node.variableDeclaration.name.kind === Syntax.BindingPattern && node.variableDeclaration.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
       const name = qf.get.generatedNameForNode(node.variableDeclaration.name);
       const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, undefined, name);
       const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -293,7 +293,7 @@ export function transformES2018(context: qt.TrafoContext) {
     return visitVariableDeclarationWorker(node, false);
   }
   function visitVariableDeclarationWorker(node: qt.VariableDeclaration, exportedVariableStatement: boolean): VisitResult<qt.VariableDeclaration> {
-    if (qf.is.kind(qc.BindingPattern, node.name) && node.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
+    if (node.name.kind === Syntax.BindingPattern && node.name.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
     return qf.visit.eachChild(node, visitor, context);
   }
@@ -322,12 +322,12 @@ export function transformES2018(context: qt.TrafoContext) {
   }
   function transformForOfStatementWithObjectRest(node: qt.ForOfStatement) {
     const initerWithoutParens = qf.skip.parentheses(node.initer) as qt.ForIniter;
-    if (qf.is.kind(qc.VariableDeclarationList, initerWithoutParens) || qf.is.kind(qc.AssignmentPattern, initerWithoutParens)) {
+    if (initerWithoutParens.kind === Syntax.VariableDeclarationList || initerWithoutParens.kind === Syntax.AssignmentPattern) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
       const temp = createTempVariable(undefined);
       const statements: qt.Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
-      if (qf.is.kind(qc.Block, node.statement)) {
+      if (node.statement.kind === Syntax.Block) {
         qu.addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
         statementsLocation = node.statement.statements;
@@ -352,7 +352,7 @@ export function transformES2018(context: qt.TrafoContext) {
     let statementsLocation: TextRange | undefined;
     const statements: qt.Statement[] = [qf.visit.node(binding, visitor, qf.is.statement)];
     const statement = qf.visit.node(node.statement, visitor, qf.is.statement);
-    if (qf.is.kind(qc.Block, statement)) {
+    if (statement.kind === Syntax.Block) {
       qu.addRange(statements, statement.statements);
       bodyLocation = statement;
       statementsLocation = statement.statements;
@@ -366,8 +366,8 @@ export function transformES2018(context: qt.TrafoContext) {
   }
   function transformForAwaitOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = qf.visit.node(node.expression, visitor, isExpression);
-    const iterator = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
-    const result = qf.is.kind(qc.Identifier, expression) ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
+    const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
+    const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
     const errorRecord = createUniqueName('e');
     const catchVariable = qf.get.generatedNameForNode(errorRecord);
     const returnMethod = createTempVariable(undefined);
@@ -563,7 +563,7 @@ export function transformES2018(context: qt.TrafoContext) {
     let statementOffset = 0;
     const statements: qt.Statement[] = [];
     const body = qf.visit.node(node.body, visitor, qf.is.conciseBody);
-    if (qf.is.kind(qc.Block, body)) {
+    if (body.kind === Syntax.Block) {
       statementOffset = addPrologue(statements, body.statements, false, visitor);
     }
     qu.addRange(statements, appendObjectRestAssignmentsIfNeeded(undefined, node));
@@ -650,7 +650,7 @@ export function transformES2018(context: qt.TrafoContext) {
   function substituteCallExpression(node: qt.CallExpression): qt.Expression {
     const expression = node.expression;
     if (qf.is.superProperty(expression)) {
-      const argExpression = qf.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
+      const argExpression = expression.kind === Syntax.PropertyAccessExpression ? substitutePropertyAccessExpression(expression) : substituteElemAccessExpression(expression);
       return new qc.CallExpression(new qc.PropertyAccessExpression(argExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.args]);
     }
     return node;

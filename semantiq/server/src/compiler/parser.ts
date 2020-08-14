@@ -4443,7 +4443,7 @@ function create() {
   }
   function addDocComment<T extends qt.HasDoc>(n: T): T {
     qu.assert(!n.doc);
-    const doc = mapDefined(qc.getDoc.commentRanges(n, source.text), (comment) => parseDoc.comment(n, comment.pos, comment.end - comment.pos));
+    const doc = mapDefined(qf.get.doc.commentRanges(n, source.text), (comment) => parseDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (doc.length) n.doc = doc;
     return n;
   }

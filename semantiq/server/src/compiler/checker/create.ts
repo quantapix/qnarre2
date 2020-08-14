@@ -1271,7 +1271,7 @@ export function newResolve(f: qt.Frame) {
           case Syntax.DocTypedefTag:
           case Syntax.DocCallbackTag:
           case Syntax.DocEnumTag:
-            location = qc.getDoc.host(location);
+            location = qf.get.doc.host(location);
             break;
           case Syntax.Param:
             if (
@@ -1892,7 +1892,7 @@ export function newResolve(f: qt.Frame) {
     untypedCall(node: qt.CallLikeExpression): qt.Signature {
       if (callLikeExpressionMayHaveTypeArgs(node)) forEach(node.typeArgs, checkSourceElem);
       if (node.kind === Syntax.TaggedTemplateExpression) check.expression(node.template);
-      else if (qc.isJsx.openingLikeElem(node)) {
+      else if (qf.is.jsx.openingLikeElem(node)) {
         check.expression(node.attributes);
       } else if (node.kind !== Syntax.Decorator) {
         forEach((<qt.CallExpression>node).args, (arg) => {
@@ -1915,7 +1915,7 @@ export function newResolve(f: qt.Frame) {
     ): qt.Signature {
       const isTaggedTemplate = node.kind === Syntax.TaggedTemplateExpression;
       const isDecorator = node.kind === Syntax.Decorator;
-      const isJsxOpeningOrSelfClosingElem = qc.isJsx.openingLikeElem(node);
+      const isJsxOpeningOrSelfClosingElem = qf.is.jsx.openingLikeElem(node);
       const reportErrors = !candidatesOutArray;
       let typeArgs: Nodes<qt.Typing> | undefined;
       if (!isDecorator) {
@@ -2125,7 +2125,7 @@ export function newResolve(f: qt.Frame) {
         skippedGenericFunction(node, checkMode);
         return resolvingSignature;
       }
-      if (callSignatures.some((sig) => qf.is.inJSFile(sig.declaration) && !!qc.getDoc.classTag(sig.declaration!))) {
+      if (callSignatures.some((sig) => qf.is.inJSFile(sig.declaration) && !!qf.get.doc.classTag(sig.declaration!))) {
         error(node, qd.msgs.Value_of_type_0_is_not_callable_Did_you_mean_to_include_new, typeToString(funcType));
         return this.errorCall(node);
       }

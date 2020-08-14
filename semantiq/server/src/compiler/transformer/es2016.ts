@@ -37,7 +37,7 @@ export function transformES2016(context: qt.TrafoContext) {
     let value: qt.Expression;
     const left = qf.visit.node(node.left, visitor, isExpression);
     const right = qf.visit.node(node.right, visitor, isExpression);
-    if (qf.is.kind(qc.ElemAccessExpression, left)) {
+    if (left.kind === Syntax.ElemAccessExpression) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argExpressionTemp = createTempVariable(hoistVariableDeclaration);
@@ -46,7 +46,7 @@ export function transformES2016(context: qt.TrafoContext) {
         qf.create.assignment(argExpressionTemp, left.argExpression).setRange(left.argExpression)
       ).setRange(left);
       value = new qc.ElemAccessExpression(expressionTemp, argExpressionTemp).setRange(left);
-    } else if (qf.is.kind(qc.PropertyAccessExpression, left)) {
+    } else if (left.kind === Syntax.PropertyAccessExpression) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       target = new qc.PropertyAccessExpression(qf.create.assignment(expressionTemp, left.expression).setRange(left.expression), left.name).setRange(left);

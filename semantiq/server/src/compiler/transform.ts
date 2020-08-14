@@ -91,7 +91,7 @@ function getDeclarationTransformers(customTransformers?: qt.CustomTransformers) 
   return transformers;
 }
 function wrapCustomTransformer(transformer: qt.CustomTransformer): qt.Transformer<qt.Bundle | qt.SourceFile> {
-  return (node) => (qf.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
+  return (node) => (node.kind === Syntax.Bundle ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
 function wrapCustomTransformerFactory<T extends qt.SourceFile | qt.Bundle>(
   transformer: qt.TransformerFactory<T> | qt.CustomTransformerFactory,
@@ -202,7 +202,7 @@ export function transformNodes<T extends Node>(
     diagnostics,
   };
   function transformRoot(node: T) {
-    return node && (!qf.is.kind(qc.SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
+    return node && (!node.kind === Syntax.SourceFile || !node.isDeclarationFile) ? transformation(node) : node;
   }
   function enableSubstitution(kind: Syntax) {
     qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');

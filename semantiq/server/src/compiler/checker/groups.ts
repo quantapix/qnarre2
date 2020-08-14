@@ -536,7 +536,7 @@ export function newIs(f: qt.Frame) {
       return (
         this.inJSFile(n) &&
         ((n.type && n.type.kind === Syntax.DocOptionalTyping) ||
-          qc.getDoc.paramTags(n).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping)))
+          qf.get.doc.paramTags(n).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalTyping)))
       );
     }
     optionalParam(n: qt.ParamDeclaration | qt.DocParamTag) {
@@ -1535,7 +1535,7 @@ export function newIs(f: qt.Frame) {
           ? n.initer
           : undefined;
       if (func) {
-        if (qc.getDoc.classTag(n)) return true;
+        if (qf.get.doc.classTag(n)) return true;
         const s = qf.get.symbolOfNode(func);
         return !!s && qu.hasEntries(s.members);
       }
@@ -2072,7 +2072,7 @@ export function newHas(f: qt.Frame) {
         }
       } else if (n.kind === Syntax.Decorator) {
         argCount = getDecoratorArgCount(n, signature);
-      } else if (qc.isJsx.openingLikeElem(n)) {
+      } else if (qf.is.jsx.openingLikeElem(n)) {
         callIsIncomplete = n.attributes.end === n.end;
         if (callIsIncomplete) return true;
         argCount = effectiveMinimumArgs === 0 ? args.length : 1;

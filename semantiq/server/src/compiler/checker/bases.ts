@@ -1598,7 +1598,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         ) {
           type = qf.get.widenedTypeForAssignmentDeclaration(this);
         } else if (
-          qc.isDoc.propertyLikeTag(d) ||
+          qf.is.doc.propertyLikeTag(d) ||
           d.kind === Syntax.PropertyAccessExpression ||
           d.kind === Syntax.ElemAccessExpression ||
           d.kind === Syntax.Identifier ||
@@ -1827,7 +1827,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (!ls.declaredType) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.DeclaredType)) return errorType;
       const d = Debug.check.defined(find(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
-      const typeNode = qc.isDoc.typeAlias(d) ? d.typeExpression : d.type;
+      const typeNode = qf.is.doc.typeAlias(d) ? d.typeExpression : d.type;
       let type = typeNode ? qf.get.typeFromTypeNode(typeNode) : errorType;
       if (popTypeResolution()) {
         const ps = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
@@ -2331,7 +2331,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   isTypeParamSymbolDeclaredInContainer(container: Node) {
     for (const d of this.declarations) {
       if (d.kind === Syntax.TypeParam) {
-        const p = d.parent.kind === Syntax.DocTemplateTag ? qc.getDoc.host(d.parent) : d.parent;
+        const p = d.parent.kind === Syntax.DocTemplateTag ? qf.get.doc.host(d.parent) : d.parent;
         if (p === container) return !(d.parent.kind === Syntax.DocTemplateTag && find((d.parent.parent as qt.Doc).tags!, isDocTypeAlias));
       }
     }

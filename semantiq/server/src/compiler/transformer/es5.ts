@@ -40,18 +40,18 @@ export function transformES5(context: qt.TrafoContext) {
   function onSubstituteNode(hint: EmitHint, node: Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
-    if (qf.is.kind(qc.PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
-    if (qf.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
+    if (node.kind === Syntax.PropertyAccessExpression) return substitutePropertyAccessExpression(node);
+    if (node.kind === Syntax.PropertyAssignment) return substitutePropertyAssignment(node);
     return node;
   }
   function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression): qt.Expression {
-    if (qf.is.kind(qc.PrivateIdentifier, node.name)) return node;
+    if (node.name.kind === Syntax.PrivateIdentifier) return node;
     const literalName = trySubstituteReservedName(node.name);
     if (literalName) return new qc.ElemAccessExpression(node.expression, literalName).setRange(node);
     return node;
   }
   function substitutePropertyAssignment(node: qt.PropertyAssignment): qt.PropertyAssignment {
-    const literalName = qf.is.kind(qc.Identifier, node.name) && trySubstituteReservedName(node.name);
+    const literalName = node.name.kind === Syntax.Identifier && trySubstituteReservedName(node.name);
     if (literalName) return node.update(literalName, node.initer);
     return node;
   }

@@ -599,7 +599,7 @@ export function newCheck(f: qt.Frame) {
               if (reportErrors) {
                 const errorTarget = filterType(reducedTarget, qf.is.excessPropertyCheckTarget);
                 if (!errorNode) return qu.fail();
-                if (errorNode.kind === Syntax.JsxAttributes || qc.isJsx.openingLikeElem(errorNode) || qc.isJsx.openingLikeElem(errorNode.parent)) {
+                if (errorNode.kind === Syntax.JsxAttributes || qf.is.jsx.openingLikeElem(errorNode) || qf.is.jsx.openingLikeElem(errorNode.parent)) {
                   if (prop.valueDeclaration && prop.valueDeclaration.kind === Syntax.JsxAttribute && errorNode.sourceFile === prop.valueDeclaration.name.sourceFile)
                     errorNode = prop.valueDeclaration.name;
                   reportError(qd.msgs.Property_0_does_not_exist_on_type_1, prop.symbolToString(), typeToString(errorTarget));
@@ -1809,7 +1809,7 @@ export function newCheck(f: qt.Frame) {
       const inConstContext = isConstContext(n);
       const checkFlags = inConstContext ? qt.CheckFlags.Readonly : 0;
       const isInJavascript = qf.is.inJSFile(n) && !qf.is.inJsonFile(n);
-      const enumTag = qc.getDoc.enumTag(n);
+      const enumTag = qf.get.doc.enumTag(n);
       const isJSObjectLiteral = !contextualType && isInJavascript && !enumTag;
       let objectFlags: ObjectFlags = freshObjectLiteralFlag;
       let patternWithComputedProperties = false;
@@ -2005,7 +2005,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       jsxOpeningLikeElemOrOpeningFragment(n: qc.JsxOpeningLikeElem | qt.JsxOpeningFragment) {
-        const isNodeOpeningLikeElem = qc.isJsx.openingLikeElem(n);
+        const isNodeOpeningLikeElem = qf.is.jsx.openingLikeElem(n);
         if (isNodeOpeningLikeElem) checkGrammar.jsxElem(<qt.JsxOpeningLikeElem>n);
         this.jsxPreconditions(n);
         const reactRefErr = diagnostics && compilerOpts.jsx === JsxEmit.React ? qd.msgs.Cannot_find_name_0 : undefined;
@@ -2416,7 +2416,7 @@ export function newCheck(f: qt.Frame) {
           declaration.kind !== Syntax.Constructor &&
           declaration.kind !== Syntax.ConstructSignature &&
           declaration.kind !== Syntax.ConstructorTyping &&
-          !qc.isDoc.constructSignature(declaration) &&
+          !qf.is.doc.constructSignature(declaration) &&
           !qf.is.jsConstructor(declaration)
         ) {
           if (noImplicitAny) error(n, qd.new_expression_whose_target_lacks_a_construct_signature_implicitly_has_an_any_type);
@@ -3384,7 +3384,7 @@ export function newCheck(f: qt.Frame) {
       }
     }
     parenthesizedExpression(n: qc.ParenthesizedExpression, checkMode?: CheckMode): qt.Type {
-      const tag = qf.is.inJSFile(n) ? qc.getDoc.typeTag(n) : undefined;
+      const tag = qf.is.inJSFile(n) ? qf.get.doc.typeTag(n) : undefined;
       if (tag) return this.assertionWorker(tag, tag.typeExpression.type, n.expression, checkMode);
       return this.expression(n.expression, checkMode);
     }
@@ -4206,7 +4206,7 @@ export function newCheck(f: qt.Frame) {
       if (!qf.get.paramSymbolFromDoc(n)) {
         const decl = qf.get.hostSignatureFromDoc(n);
         if (decl) {
-          const i = qc.getDoc.tags(decl).filter(isDocParamTag).indexOf(n);
+          const i = qf.get.doc.tags(decl).filter(isDocParamTag).indexOf(n);
           if (i > -1 && i < decl.params.length && decl.params[i].name.kind === Syntax.BindingPattern) return;
           if (!containsArgsReference(decl)) {
             if (n.name.kind === Syntax.QualifiedName)
@@ -4214,7 +4214,7 @@ export function newCheck(f: qt.Frame) {
             else {
               error(n.name, qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name, idText(n.name));
             }
-          } else if (findLast(qc.getDoc.tags(decl), isDocParamTag) === n && n.typeExpression && n.typeExpression.type && !qf.is.arrayType(qf.get.typeFromTypeNode(n.typeExpression.type))) {
+          } else if (findLast(qf.get.doc.tags(decl), isDocParamTag) === n && n.typeExpression && n.typeExpression.type && !qf.is.arrayType(qf.get.typeFromTypeNode(n.typeExpression.type))) {
             error(
               n.name,
               qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_args_if_it_had_an_array_type,
@@ -4228,7 +4228,7 @@ export function newCheck(f: qt.Frame) {
       this.sourceElem(n.typeExpression);
     }
     docFunctionType(n: qc.DocFunctionTyping): void {
-      if (produceDiagnostics && !n.type && !qc.isDoc.constructSignature(n)) reportImplicitAny(n, anyType);
+      if (produceDiagnostics && !n.type && !qf.is.doc.constructSignature(n)) reportImplicitAny(n, anyType);
       this.signatureDeclaration(n);
     }
     docImplementsTag(n: qc.DocImplementsTag): void {
@@ -4241,7 +4241,7 @@ export function newCheck(f: qt.Frame) {
         error(classLike, qd.msgs.Doc_0_is_not_attached_to_a_class, idText(n.tagName));
         return;
       }
-      const augmentsTags = qc.getDoc.tags(classLike).filter(isDocAugmentsTag);
+      const augmentsTags = qf.get.doc.tags(classLike).filter(isDocAugmentsTag);
       qu.assert(augmentsTags.length > 0);
       if (augmentsTags.length > 1) error(augmentsTags[1], qd.msgs.Class_declarations_cannot_have_more_than_one_augments_or_extends_tag);
       const name = getIdentifierFromEntityNameExpression(n.class.expression);
@@ -4273,7 +4273,7 @@ export function newCheck(f: qt.Frame) {
         if (functionFlags & FunctionFlags.Generator && qf.is.present(body)) qf.get.returnTypeOfSignature(qf.get.signatureFromDeclaration(n));
       }
       if (qf.is.inJSFile(n)) {
-        const typeTag = qc.getDoc.typeTag(n);
+        const typeTag = qf.get.doc.typeTag(n);
         if (typeTag && typeTag.typeExpression && !getContextualCallSignature(qf.get.typeFromTypeNode(typeTag.typeExpression), n))
           error(typeTag, qd.msgs.The_type_of_a_function_declaration_must_match_the_function_s_signature);
       }
@@ -6619,7 +6619,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       constructorTypeParams(n: qc.ConstructorDeclaration) {
-        const jsdocTypeParams = qf.is.inJSFile(n) ? qc.getDoc.typeParamDeclarations(n) : undefined;
+        const jsdocTypeParams = qf.is.inJSFile(n) ? qf.get.doc.typeParamDeclarations(n) : undefined;
         const range = n.typeParams || (jsdocTypeParams && firstOrUndefined(jsdocTypeParams));
         if (range) {
           const pos = range.pos === range.end ? range.pos : qy.skipTrivia(n.sourceFile.text, range.pos);

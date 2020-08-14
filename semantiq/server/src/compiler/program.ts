@@ -1517,10 +1517,10 @@ export function createProgram(
     function collectModuleReferences(node: qt.Statement, inAmbientModule: boolean): void {
       if (qf.is.anyImportOrReExport(node)) {
         const moduleNameExpr = qf.get.externalModuleName(node);
-        if (moduleNameExpr && qf.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
+        if (moduleNameExpr && moduleNameExpr.kind === Syntax.StringLiteral && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
           imports = append(imports, moduleNameExpr);
         }
-      } else if (qf.is.kind(qc.ModuleDeclaration, node)) {
+      } else if (node.kind === Syntax.ModuleDeclaration) {
         if (qf.is.ambientModule(node) && (inAmbientModule || qf.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = qf.get.textOfIdentifierOrLiteral(node.name);
           if (isExternalModuleFile || (inAmbientModule && !isExternalModuleNameRelative(nameText))) {
@@ -2383,7 +2383,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qf.is.kind(qc.ObjectLiteralExpression, pathProp.initer)) {
+      if (pathProp.initer.kind === Syntax.ObjectLiteralExpression) {
         for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
           if (isArrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
@@ -2401,7 +2401,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qf.is.kind(qc.ObjectLiteralExpression, pathProp.initer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initer, onKey, key, undefined, message, arg0)) {
+      if (pathProp.initer.kind === Syntax.ObjectLiteralExpression && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initer, onKey, key, undefined, message, arg0)) {
         needCompilerDiagnostic = false;
       }
     }
@@ -2447,7 +2447,7 @@ export function createProgram(
       const jsonObjectLiteral = qf.get.tsConfigObjectLiteralExpression(opts.configFile);
       if (jsonObjectLiteral) {
         for (const prop of qf.get.propertyAssignment(jsonObjectLiteral, 'compilerOpts')) {
-          if (qf.is.kind(qc.ObjectLiteralExpression, prop.initer)) {
+          if (prop.initer.kind === Syntax.ObjectLiteralExpression) {
             _compilerOptsObjectLiteralSyntax = prop.initer;
             break;
           }

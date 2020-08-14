@@ -72,7 +72,7 @@ export function transformJsx(context: qt.TrafoContext) {
           isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElem))
         )
       );
-      if (qf.is.kind(qc.JsxSpreadAttribute, attrs[0])) {
+      if (attrs[0].kind === Syntax.JsxSpreadAttribute) {
         segments.unshift(new qc.ObjectLiteralExpression());
       }
       objectProperties = singleOrUndefined(segments);
@@ -171,7 +171,7 @@ export function transformJsx(context: qt.TrafoContext) {
     if (node.kind === Syntax.JsxElem) return getTagName(node.opening);
     else {
       const name = node.tagName;
-      if (qf.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
+      if (name.kind === Syntax.Identifier && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
       return createExpressionFromEntityName(name);
     }
   }

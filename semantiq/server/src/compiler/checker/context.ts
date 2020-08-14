@@ -864,7 +864,7 @@ export class QContext {
       const getEffectiveDotDotDotForParam = (p: qt.ParamDeclaration) => {
         return p.dot3Token || (p.type && p.type.kind === Syntax.DocVariadicTyping ? new qc.Token(Syntax.Dot3Token) : undefined);
       };
-      if (qc.isDoc.constructSignature(node)) {
+      if (qf.is.doc.constructSignature(node)) {
         let newTypeNode: qt.Typing | undefined;
         return qt.ConstructorDeclaration.createTypeNode(
           Nodes.visit(node.typeParams, this.visitExistingNodeTreeSymbols),

@@ -1587,7 +1587,7 @@ export function convertToObjectWorker(
     }
   }
   function isDoubleQuotedString(node: Node): boolean {
-    return qf.is.kind(qc.StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
+    return node.kind === Syntax.StringLiteral && isStringDoubleQuoted(node, sourceFile);
   }
 }
 function getCompilerOptionValueTypeString(option: qt.CommandLineOption) {

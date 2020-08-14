@@ -58,7 +58,7 @@ export function flattenDestructuringAssignment(
   };
   if (value) {
     value = qf.visit.node(value, visitor, isExpression);
-    if ((qf.is.kind(qc.Identifier, value) && bindingOrAssignmentElemAssignsToName(node, value.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node)) {
+    if ((value.kind === Syntax.Identifier && bindingOrAssignmentElemAssignsToName(node, value.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node)) {
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
       value = ensureIdentifier(flattenContext, value, true, location);
@@ -88,7 +88,7 @@ export function flattenDestructuringAssignment(
 function bindingOrAssignmentElemAssignsToName(elem: qt.BindingOrAssignmentElem, escName: __String): boolean {
   const target = getTargetOfBindingOrAssignmentElem(elem)!;
   if (qf.is.bindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
-  if (qf.is.kind(qc.Identifier, target)) return target.escapedText === escName;
+  if (target.kind === Syntax.Identifier) return target.escapedText === escName;
   return false;
 }
 function bindingOrAssignmentPatternAssignsToName(pattern: qt.BindingOrAssignmentPattern, escName: __String): boolean {
@@ -100,7 +100,7 @@ function bindingOrAssignmentPatternAssignsToName(pattern: qt.BindingOrAssignment
 }
 function bindingOrAssignmentElemContainsNonLiteralComputedName(elem: qt.BindingOrAssignmentElem): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(elem);
-  if (propertyName && qf.is.kind(qc.ComputedPropertyName, propertyName) && !qf.is.literalExpression(propertyName.expression)) return true;
+  if (propertyName && propertyName.kind === Syntax.ComputedPropertyName && !qf.is.literalExpression(propertyName.expression)) return true;
   const target = getTargetOfBindingOrAssignmentElem(elem);
   return !!target && qf.is.bindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
@@ -137,9 +137,9 @@ export function flattenDestructuringBinding(
     createArrayBindingOrAssignmentElem: makeBindingElem,
     visitor,
   };
-  if (qf.is.kind(qc.VariableDeclaration, node)) {
+  if (node.kind === Syntax.VariableDeclaration) {
     let initer = getIniterOfBindingOrAssignmentElem(node);
-    if (initer && ((qf.is.kind(qc.Identifier, initer) && bindingOrAssignmentElemAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node))) {
+    if (initer && ((initer.kind === Syntax.Identifier && bindingOrAssignmentElemAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node))) {
       initer = ensureIdentifier(flattenContext, initer, false, initer);
       node = node.update(node.name, node.type, initer);
     }
@@ -220,7 +220,7 @@ function flattenObjectBindingOrAssignmentPattern(
         flattenContext.level >= FlattenLevel.ObjectRest &&
         !(elem.trafoFlags & (TrafoFlags.ContainsRestOrSpread | TrafoFlags.ContainsObjectRestOrSpread)) &&
         !(getTargetOfBindingOrAssignmentElem(elem)!.trafoFlags & (TrafoFlags.ContainsRestOrSpread | TrafoFlags.ContainsObjectRestOrSpread)) &&
-        !qf.is.kind(qc.ComputedPropertyName, propertyName)
+        !propertyName.kind === Syntax.ComputedPropertyName
       ) {
         bindingElems = append(bindingElems, qf.visit.node(elem, flattenContext.visitor));
       } else {
@@ -229,7 +229,7 @@ function flattenObjectBindingOrAssignmentPattern(
           bindingElems = undefined;
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
-        if (qf.is.kind(qc.ComputedPropertyName, propertyName)) {
+        if (propertyName.kind === Syntax.ComputedPropertyName) {
           computedTempVariables = append<qt.Expression>(computedTempVariables, (rhsValue as qt.ElemAccessExpression).argExpression);
         }
         flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
@@ -282,7 +282,7 @@ function flattenArrayBindingOrAssignmentPattern(
       } else {
         bindingElems = append(bindingElems, elem);
       }
-    } else if (qf.is.kind(qc.OmittedExpression, elem)) {
+    } else if (elem.kind === Syntax.OmittedExpression) {
       continue;
     } else if (!getRestIndicatorOfBindingOrAssignmentElem(elem)) {
       const rhsValue = new qc.ElemAccessExpression(value, i);
@@ -306,7 +306,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: qt.Expre
   return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: qt.Expression, propertyName: qt.PropertyName): qt.LeftExpression {
-  if (qf.is.kind(qc.ComputedPropertyName, propertyName)) {
+  if (propertyName.kind === Syntax.ComputedPropertyName) {
     const argExpression = ensureIdentifier(flattenContext, qf.visit.node(propertyName.expression, flattenContext.visitor), propertyName);
     return new qc.ElemAccessExpression(value, argExpression);
   } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
@@ -319,7 +319,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
   }
 }
 function ensureIdentifier(flattenContext: FlattenContext, value: qt.Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-  if (qf.is.kind(qc.Identifier, value) && reuseIdentifierExpressions) return value;
+  if (value.kind === Syntax.Identifier && reuseIdentifierExpressions) return value;
   else {
     const temp = createTempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
@@ -381,7 +381,7 @@ function createRestCall(
   for (let i = 0; i < elems.length - 1; i++) {
     const propertyName = getPropertyNameOfBindingOrAssignmentElem(elems[i]);
     if (propertyName) {
-      if (qf.is.kind(qc.ComputedPropertyName, propertyName)) {
+      if (propertyName.kind === Syntax.ComputedPropertyName) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
         propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, qf.create.add(temp, qc.asLiteral(''))));

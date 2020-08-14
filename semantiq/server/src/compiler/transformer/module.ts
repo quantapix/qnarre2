@@ -222,7 +222,7 @@ export function transformModule(context: qt.TrafoContext) {
     return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
   }
   function getAMDImportExpressionForImport(node: qt.ImportDeclaration | qt.ExportDeclaration | qt.ImportEqualsDeclaration) {
-    if (qf.is.kind(qc.ImportEqualsDeclaration, node) || qf.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOpts)) {
+    if (node.kind === Syntax.ImportEqualsDeclaration || node.kind === Syntax.ExportDeclaration || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOpts)) {
       return;
     }
     const name = qf.decl.localNameForExternalImport(node, currentSourceFile)!;
@@ -313,7 +313,7 @@ export function transformModule(context: qt.TrafoContext) {
     return qf.visit.eachChild(node, moduleExpressionElemVisitor, context);
   }
   function destructuringNeedsFlattening(node: qt.Expression): boolean {
-    if (qf.is.kind(qc.ObjectLiteralExpression, node)) {
+    if (node.kind === Syntax.ObjectLiteralExpression) {
       for (const elem of node.properties) {
         switch (elem.kind) {
           case Syntax.PropertyAssignment:
@@ -335,11 +335,11 @@ export function transformModule(context: qt.TrafoContext) {
       }
     } else if (isArrayLiteralExpression(node)) {
       for (const elem of node.elems) {
-        if (qf.is.kind(qc.SpreadElem, elem)) {
+        if (elem.kind === Syntax.SpreadElem) {
           if (destructuringNeedsFlattening(elem.expression)) return true;
         } else if (destructuringNeedsFlattening(elem)) return true;
       }
-    } else if (qf.is.kind(qc.Identifier, node)) {
+    } else if (node.kind === Syntax.Identifier) {
       return length(getExports(node)) > (qf.is.exportName(node) ? 1 : 0);
     }
     return false;
@@ -364,7 +364,7 @@ export function transformModule(context: qt.TrafoContext) {
   function createImportCallExpressionUMD(arg: qt.Expression, containsLexicalThis: boolean): qt.Expression {
     needUMDDynamicImportHelper = true;
     if (isSimpleCopiableExpression(arg)) {
-      const argClone = qf.is.generatedIdentifier(arg) ? arg : qf.is.kind(qc.StringLiteral, arg) ? qc.asLiteral(arg) : qf.emit.setFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+      const argClone = qf.is.generatedIdentifier(arg) ? arg : arg.kind === Syntax.StringLiteral ? qc.asLiteral(arg) : qf.emit.setFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
       return new qc.ConditionalExpression(
         new qc.Identifier('__syncRequire'),
         createImportCallExpressionCommonJS(arg, containsLexicalThis),
@@ -529,7 +529,7 @@ export function transformModule(context: qt.TrafoContext) {
       return;
     }
     const generatedName = qf.get.generatedNameForNode(node);
-    if (node.exportClause && qf.is.kind(qc.NamedExports, node.exportClause)) {
+    if (node.exportClause && node.exportClause.kind === Syntax.NamedExports) {
       const statements: qt.Statement[] = [];
       if (moduleKind !== ModuleKind.AMD) {
         statements.push(
@@ -648,7 +648,7 @@ export function transformModule(context: qt.TrafoContext) {
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
       let modifiers: Nodes<Modifier> | undefined;
       for (const variable of node.declarationList.declarations) {
-        if (qf.is.kind(qc.Identifier, variable.name) && qf.is.localName(variable.name)) {
+        if (variable.name.kind === Syntax.Identifier && qf.is.localName(variable.name)) {
           if (!modifiers) {
             modifiers = Nodes.visit(node.modifiers, modifierVisitor, isModifier);
           }
@@ -687,7 +687,7 @@ export function transformModule(context: qt.TrafoContext) {
     return qf.create.assignment(name, value);
   }
   function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
-    if (qf.is.kind(qc.BindingPattern, node.name)) return flattenDestructuringAssignment(qf.visit.node(node, moduleExpressionElemVisitor), false, createAllExportExpressions);
+    if (node.name.kind === Syntax.BindingPattern) return flattenDestructuringAssignment(qf.visit.node(node, moduleExpressionElemVisitor), false, createAllExportExpressions);
     else {
       return qf.create.assignment(
         setRange(new qc.PropertyAccessExpression(new qc.Identifier('exports'), node.name), node.name),
@@ -749,9 +749,9 @@ export function transformModule(context: qt.TrafoContext) {
   }
   function appendExportsOfBindingElem(statements: qt.Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElem): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
-    if (qf.is.kind(qc.BindingPattern, decl.name)) {
+    if (decl.name.kind === Syntax.BindingPattern) {
       for (const elem of decl.name.elems) {
-        if (!qf.is.kind(qc.OmittedExpression, elem)) {
+        if (!elem.kind === Syntax.OmittedExpression) {
           statements = appendExportsOfBindingElem(statements, elem);
         }
       }
@@ -856,7 +856,7 @@ export function transformModule(context: qt.TrafoContext) {
     node = previousOnSubstituteNode(hint, node);
     if (node.id && noSubstitution[node.id]) return node;
     if (hint === EmitHint.Expression) return substituteExpression(<qt.Expression>node);
-    else if (qf.is.kind(qc.ShorthandPropertyAssignment, node)) return substituteShorthandPropertyAssignment(node);
+    else if (node.kind === Syntax.ShorthandPropertyAssignment) return substituteShorthandPropertyAssignment(node);
     return node;
   }
   function substituteShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment): qt.ObjectLiteralElemLike {
@@ -894,8 +894,8 @@ export function transformModule(context: qt.TrafoContext) {
       if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new qc.Identifier('exports'), getSynthesizedClone(node)), node);
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
-        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
-        else if (qf.is.kind(qc.ImportSpecifier, importDeclaration)) {
+        if (importDeclaration.kind === Syntax.ImportClause) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
+        else if (importDeclaration.kind === Syntax.ImportSpecifier) {
           const name = importDeclaration.propertyName || importDeclaration.name;
           return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(name)), node);
         }
@@ -906,7 +906,7 @@ export function transformModule(context: qt.TrafoContext) {
   function substituteBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     if (
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
-      qf.is.kind(qc.Identifier, node.left) &&
+      node.left.kind === Syntax.Identifier &&
       !qf.is.generatedIdentifier(node.left) &&
       !qf.is.localName(node.left) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.left)
@@ -926,7 +926,7 @@ export function transformModule(context: qt.TrafoContext) {
   function substituteUnaryExpression(node: qt.PrefixUnaryExpression | qt.PostfixUnaryExpression): qt.Expression {
     if (
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
-      qf.is.kind(qc.Identifier, node.operand) &&
+      node.operand.kind === Syntax.Identifier &&
       !qf.is.generatedIdentifier(node.operand) &&
       !qf.is.localName(node.operand) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.operand)
@@ -1075,7 +1075,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
   }
   function visitExportDeclaration(node: qt.ExportDeclaration) {
     if (compilerOpts.module !== undefined && compilerOpts.module > ModuleKind.ES2015) return node;
-    if (!node.exportClause || !qf.is.kind(qc.NamespaceExport, node.exportClause) || !node.moduleSpecifier) return node;
+    if (!node.exportClause || !node.exportClause.kind === Syntax.NamespaceExport || !node.moduleSpecifier) return node;
     const oldIdentifier = node.exportClause.name;
     const synthName = qf.get.generatedNameForNode(oldIdentifier);
     const importDecl = new qc.ImportDeclaration(undefined, undefined, new qc.NamespaceImport(synthName), node.moduleSpecifier);
@@ -1085,7 +1085,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
     return [importDecl, exportDecl];
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
-    if (qf.is.kind(qc.SourceFile, node)) {
+    if (node.kind === Syntax.SourceFile) {
       if ((qf.is.externalModule(node) || compilerOpts.isolatedModules) && compilerOpts.importHelpers) {
         helperNameSubstitutions = qu.createMap<qt.Identifier>();
       }
@@ -1097,7 +1097,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (helperNameSubstitutions && qf.is.kind(qc.Identifier, node) && qf.get.emitFlags(node) & EmitFlags.HelperName) return substituteHelperName(node);
+    if (helperNameSubstitutions && node.kind === Syntax.Identifier && qf.get.emitFlags(node) & EmitFlags.HelperName) return substituteHelperName(node);
     return node;
   }
   function substituteHelperName(node: qt.Identifier): qt.Expression {
@@ -1266,7 +1266,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
       if (!externalImport.exportClause) {
         continue;
       }
-      if (qf.is.kind(qc.NamedExports, externalImport.exportClause)) {
+      if (externalImport.exportClause.kind === Syntax.NamedExports) {
         for (const elem of externalImport.exportClause.elems) {
           exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(elem.name || elem.propertyName)), new qc.BooleanLiteral(true)));
         }
@@ -1338,7 +1338,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
           case Syntax.ExportDeclaration:
             assert(importVariableName !== undefined);
             if (entry.exportClause) {
-              if (qf.is.kind(qc.NamedExports, entry.exportClause)) {
+              if (entry.exportClause.kind === Syntax.NamedExports) {
                 const properties: qt.PropertyAssignment[] = [];
                 for (const e of entry.exportClause.elems) {
                   properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qc.ElemAccessExpression(paramName, qc.asLiteral(idText(e.propertyName || e.name)))));
@@ -1490,9 +1490,9 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return singleOrMany(statements);
   }
   function hoistBindingElem(node: qt.VariableDeclaration | qt.BindingElem): void {
-    if (qf.is.kind(qc.BindingPattern, node.name)) {
+    if (node.name.kind === Syntax.BindingPattern) {
       for (const elem of node.name.elems) {
-        if (!qf.is.kind(qc.OmittedExpression, elem)) {
+        if (!elem.kind === Syntax.OmittedExpression) {
           hoistBindingElem(elem);
         }
       }
@@ -1505,7 +1505,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
   }
   function transformInitializedVariable(node: qt.VariableDeclaration, isExportedDeclaration: boolean): qt.Expression {
     const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
-    return qf.is.kind(qc.BindingPattern, node.name)
+    return node.name.kind === Syntax.BindingPattern
       ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, false, qf.create.assignment)
       : node.initer
       ? qf.create.assignment(node.name, qf.visit.node(node.initer, destructuringAndImportCallVisitor, isExpression))
@@ -1583,9 +1583,9 @@ export function transformSystemModule(context: qt.TrafoContext) {
   }
   function appendExportsOfBindingElem(statements: qt.Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElem, exportSelf: boolean): qt.Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
-    if (qf.is.kind(qc.BindingPattern, decl.name)) {
+    if (decl.name.kind === Syntax.BindingPattern) {
       for (const elem of decl.name.elems) {
-        if (!qf.is.kind(qc.OmittedExpression, elem)) {
+        if (!elem.kind === Syntax.OmittedExpression) {
           statements = appendExportsOfBindingElem(statements, elem, exportSelf);
         }
       }
@@ -1638,7 +1638,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return statement;
   }
   function createExportExpression(name: qt.Identifier | qt.StringLiteral, value: qt.Expression) {
-    const exportName = qf.is.kind(qc.Identifier, name) ? qc.asLiteral(name) : name;
+    const exportName = name.kind === Syntax.Identifier ? qc.asLiteral(name) : name;
     qf.emit.setFlags(value, qf.get.emitFlags(value) | EmitFlags.NoComments);
     return qf.emit.setCommentRange(new qc.CallExpression(exportFunction, undefined, [exportName, value]), value);
   }
@@ -1725,7 +1725,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return node;
   }
   function shouldHoistForIniter(node: qt.ForIniter): node is qt.VariableDeclarationList {
-    return qf.is.kind(qc.VariableDeclarationList, node) && shouldHoistVariableDeclarationList(node);
+    return node.kind === Syntax.VariableDeclarationList && shouldHoistVariableDeclarationList(node);
   }
   function visitForIniter(node: qt.ForIniter): qt.ForIniter {
     if (shouldHoistForIniter(node)) {
@@ -1805,12 +1805,12 @@ export function transformSystemModule(context: qt.TrafoContext) {
   }
   function hasExportedReferenceInDestructuringTarget(node: qt.Expression | qt.ObjectLiteralElemLike): boolean {
     if (qf.is.assignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
-    if (qf.is.kind(qc.SpreadElem, node)) return hasExportedReferenceInDestructuringTarget(node.expression);
-    if (qf.is.kind(qc.ObjectLiteralExpression, node)) return some(node.properties, hasExportedReferenceInDestructuringTarget);
+    if (node.kind === Syntax.SpreadElem) return hasExportedReferenceInDestructuringTarget(node.expression);
+    if (node.kind === Syntax.ObjectLiteralExpression) return some(node.properties, hasExportedReferenceInDestructuringTarget);
     if (isArrayLiteralExpression(node)) return some(node.elems, hasExportedReferenceInDestructuringTarget);
-    if (qf.is.kind(qc.ShorthandPropertyAssignment, node)) return hasExportedReferenceInDestructuringTarget(node.name);
-    if (qf.is.kind(qc.PropertyAssignment, node)) return hasExportedReferenceInDestructuringTarget(node.initer);
-    if (qf.is.kind(qc.Identifier, node)) {
+    if (node.kind === Syntax.ShorthandPropertyAssignment) return hasExportedReferenceInDestructuringTarget(node.name);
+    if (node.kind === Syntax.PropertyAssignment) return hasExportedReferenceInDestructuringTarget(node.initer);
+    if (node.kind === Syntax.Identifier) {
       const container = resolver.getReferencedExportContainer(node);
       return container !== undefined && container.kind === Syntax.SourceFile;
     }
@@ -1864,12 +1864,12 @@ export function transformSystemModule(context: qt.TrafoContext) {
     if (!qf.is.generatedIdentifier(name) && !qf.is.localName(name)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(name);
       if (importDeclaration) {
-        if (qf.is.kind(qc.ImportClause, importDeclaration))
+        if (importDeclaration.kind === Syntax.ImportClause)
           return setRange(
             new qc.PropertyAssignment(getSynthesizedClone(name), new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default'))),
             node
           );
-        else if (qf.is.kind(qc.ImportSpecifier, importDeclaration)) {
+        else if (importDeclaration.kind === Syntax.ImportSpecifier) {
           return setRange(
             new qc.PropertyAssignment(
               getSynthesizedClone(name),
@@ -1905,8 +1905,8 @@ export function transformSystemModule(context: qt.TrafoContext) {
     if (!qf.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
-        if (qf.is.kind(qc.ImportClause, importDeclaration)) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
-        else if (qf.is.kind(qc.ImportSpecifier, importDeclaration))
+        if (importDeclaration.kind === Syntax.ImportClause) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
+        else if (importDeclaration.kind === Syntax.ImportSpecifier)
           return setRange(
             new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
             node
@@ -1918,7 +1918,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
   function substituteBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     if (
       syntax.is.assignmentOperator(node.operatorToken.kind) &&
-      qf.is.kind(qc.Identifier, node.left) &&
+      node.left.kind === Syntax.Identifier &&
       !qf.is.generatedIdentifier(node.left) &&
       !qf.is.localName(node.left) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.left)
@@ -1937,7 +1937,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
   function substituteUnaryExpression(node: qt.PrefixUnaryExpression | qt.PostfixUnaryExpression): qt.Expression {
     if (
       (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
-      qf.is.kind(qc.Identifier, node.operand) &&
+      node.operand.kind === Syntax.Identifier &&
       !qf.is.generatedIdentifier(node.operand) &&
       !qf.is.localName(node.operand) &&
       !qf.is.declarationNameOfEnumOrNamespace(node.operand)
