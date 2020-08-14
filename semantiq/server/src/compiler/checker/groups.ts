@@ -770,7 +770,7 @@ export function newIs(f: qt.Frame) {
       return !!(t.flags & TypeFlags.Conditional || (t.flags & TypeFlags.Intersection && qu.some((t as qt.IntersectionType).types, isOrHasGenericConditional)));
     }
     signatureAssignableTo(s: qt.Signature, t: qt.Signature, ignoreReturnTypes: boolean): boolean {
-      return compareSignaturesRelated(s, t, ignoreReturnTypes ? qt.SignatureCheckMode.IgnoreReturnTypes : 0, false, undefined, undefined, compareTypesAssignable, undefined) !== Ternary.False;
+      return compareSignaturesRelated(s, t, ignoreReturnTypes ? qt.SignatureCheckMode.IgnoreReturnTypes : 0, false, undefined, undefined, compareTypesAssignable, undefined) !== qt.Ternary.False;
     }
     anySignature(s: qt.Signature) {
       return (
@@ -826,9 +826,9 @@ export function newIs(f: qt.Frame) {
       if (s === t) return true;
       const id = s.getId() + ',' + t.getId();
       const entry = enumRelation.get(id);
-      if (entry !== undefined && !(!(entry & RelationComparisonResult.Reported) && entry & RelationComparisonResult.Failed && errorReporter)) return !!(entry & RelationComparisonResult.Succeeded);
+      if (entry !== undefined && !(!(entry & qt.RelationComparisonResult.Reported) && entry & qt.RelationComparisonResult.Failed && errorReporter)) return !!(entry & qt.RelationComparisonResult.Succeeded);
       if (s.escName !== t.escName || !(s.flags & qt.SymbolFlags.RegularEnum) || !(t.flags & qt.SymbolFlags.RegularEnum)) {
-        enumRelation.set(id, RelationComparisonResult.Failed | RelationComparisonResult.Reported);
+        enumRelation.set(id, qt.RelationComparisonResult.Failed | qt.RelationComparisonResult.Reported);
         return false;
       }
       const targetEnumType = t.typeOfSymbol();
@@ -838,13 +838,13 @@ export function newIs(f: qt.Frame) {
           if (!targetProperty || !(targetProperty.flags & qt.SymbolFlags.EnumMember)) {
             if (errorReporter) {
               errorReporter(qd.msgs.Property_0_is_missing_in_type_1, property.name, typeToString(getDeclaredTypeOfSymbol(t), undefined, TypeFormatFlags.UseFullyQualifiedType));
-              enumRelation.set(id, RelationComparisonResult.Failed | RelationComparisonResult.Reported);
-            } else enumRelation.set(id, RelationComparisonResult.Failed);
+              enumRelation.set(id, qt.RelationComparisonResult.Failed | qt.RelationComparisonResult.Reported);
+            } else enumRelation.set(id, qt.RelationComparisonResult.Failed);
             return false;
           }
         }
       }
-      enumRelation.set(id, RelationComparisonResult.Succeeded);
+      enumRelation.set(id, qt.RelationComparisonResult.Succeeded);
       return true;
     }
     simpleTypeRelatedTo(st: qt.Type, tt: qt.Type, relation: qu.QMap<qt.RelationComparisonResult>, errorReporter?: qt.ErrorReporter) {
@@ -904,7 +904,7 @@ export function newIs(f: qt.Frame) {
       }
       if (s.flags & TypeFlags.Object && t.flags & TypeFlags.Object) {
         const related = relation.get(getRelationKey(s, t, IntersectionState.None, relation));
-        if (related !== undefined) return !!(related & RelationComparisonResult.Succeeded);
+        if (related !== undefined) return !!(related & qt.RelationComparisonResult.Succeeded);
       }
       if (s.flags & TypeFlags.StructuredOrInstantiable || t.flags & TypeFlags.StructuredOrInstantiable) return check.typeRelatedTo(s, t, relation, undefined);
       return false;
@@ -976,7 +976,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     propertyIdenticalTo(sProp: qt.Symbol, tProp: qt.Symbol): boolean {
-      return compareProperties(sProp, tProp, compareTypesIdentical) !== Ternary.False;
+      return compareProperties(sProp, tProp, compareTypesIdentical) !== qt.Ternary.False;
     }
     matchingSignature(s: qt.Signature, t: qt.Signature, partialMatch: boolean) {
       const sParamCount = getParamCount(s);
@@ -1211,7 +1211,7 @@ export function newIs(f: qt.Frame) {
           const signature = getEffectsSignature((<qt.FlowCall>flow).n);
           if (signature) {
             const predicate = getTypePredicateOfSignature(signature);
-            if (predicate && predicate.kind === TypePredicateKind.AssertsIdentifier) {
+            if (predicate && predicate.kind === qt.TypePredicateKind.AssertsIdentifier) {
               const predicateArg = (<qt.FlowCall>flow).n.args[predicate.paramIndex];
               if (predicateArg && this.falseExpression(predicateArg)) return false;
             }
@@ -1587,7 +1587,7 @@ export function newIs(f: qt.Frame) {
           if (e.kind === Syntax.Identifier) {
             let s = getSymbolAtLocation(e);
             if (s && s.flags & qt.SymbolFlags.Alias) s = this.resolveAlias();
-            return !!(s && s.flags & qt.SymbolFlags.Enum && getEnumKind(s) === EnumKind.Literal);
+            return !!(s && s.flags & qt.SymbolFlags.Enum && getEnumKind(s) === qt.EnumKind.Literal);
           }
       }
       return false;
@@ -1618,8 +1618,8 @@ export function newIs(f: qt.Frame) {
       const setProp = qf.get.propertyOfType(objectLitType, 'set' as qu.__String);
       return !setProp;
     }
-    assignmentToReadonlyEntity(e: qt.Expression, s: qt.Symbol, assignmentKind: AssignmentKind) {
-      if (assignmentKind === AssignmentKind.None) return false;
+    assignmentToReadonlyEntity(e: qt.Expression, s: qt.Symbol, assignmentKind: qt.AssignmentKind) {
+      if (assignmentKind === qt.AssignmentKind.None) return false;
       if (isReadonlySymbol(s)) {
         if (s.flags & qt.SymbolFlags.Property && this.accessExpression(e) && e.expression.kind === Syntax.ThisKeyword) {
           const ctor = qf.get.containingFunction(e);

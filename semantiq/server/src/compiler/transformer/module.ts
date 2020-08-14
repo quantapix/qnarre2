@@ -386,7 +386,7 @@ export function transformModule(context: qt.TrafoContext) {
       new qc.ExpressionStatement(new qc.CallExpression(new qc.Identifier('require'), undefined, [new qc.ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
     ]);
     let func: qt.FunctionExpression | qt.ArrowFunction;
-    if (languageVersion >= ScriptTarget.ES2015) {
+    if (languageVersion >= qt.ScriptTarget.ES2015) {
       func = new qc.ArrowFunction(undefined, body);
     } else {
       func = new qc.FunctionExpression(undefined, params, undefined, body);
@@ -409,7 +409,7 @@ export function transformModule(context: qt.TrafoContext) {
       requireCall = new qc.CallExpression(getUnscopedHelperName('__importStar'), undefined, [requireCall]);
     }
     let func: qt.FunctionExpression | qt.ArrowFunction;
-    if (languageVersion >= ScriptTarget.ES2015) {
+    if (languageVersion >= qt.ScriptTarget.ES2015) {
       func = new qc.ArrowFunction(undefined, requireCall);
     } else {
       func = new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new qc.Block([new qc.ReturnStatement(requireCall)]));
@@ -457,7 +457,7 @@ export function transformModule(context: qt.TrafoContext) {
         statements = append(
           statements,
           setOriginalNode(
-            setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node),
+            setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(variables, languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node),
             node
           )
         );
@@ -469,7 +469,7 @@ export function transformModule(context: qt.TrafoContext) {
           undefined,
           new qc.VariableDeclarationList(
             [setRange(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)).setOriginal(node))],
-            languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
+            languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
           )
         )
       );
@@ -504,7 +504,7 @@ export function transformModule(context: qt.TrafoContext) {
               undefined,
               new qc.VariableDeclarationList(
                 [new qc.VariableDeclaration(getSynthesizedClone(node.name), undefined, createRequireCall(node))],
-                languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
+                languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
               )
             ).setRange(node),
             node
@@ -537,7 +537,7 @@ export function transformModule(context: qt.TrafoContext) {
         );
       }
       for (const spec of node.exportClause.elems) {
-        if (languageVersion === ScriptTarget.ES3) {
+        if (languageVersion === qt.ScriptTarget.ES3) {
           statements.push(
             setOriginalNode(
               new qc.ExpressionStatement(
@@ -794,7 +794,7 @@ export function transformModule(context: qt.TrafoContext) {
   }
   function createUnderscoreUnderscoreESModule() {
     let statement: qt.Statement;
-    if (languageVersion === ScriptTarget.ES3) {
+    if (languageVersion === qt.ScriptTarget.ES3) {
       statement = new qc.ExpressionStatement(createExportExpression(new qc.Identifier('__esModule'), qc.asLiteral(true)));
     } else {
       statement = new qc.ExpressionStatement(
@@ -818,7 +818,7 @@ export function transformModule(context: qt.TrafoContext) {
   }
   function createExportExpression(name: qt.Identifier, value: qt.Expression, location?: TextRange, liveBinding?: boolean) {
     return setRange(
-      liveBinding && languageVersion !== ScriptTarget.ES3
+      liveBinding && languageVersion !== qt.ScriptTarget.ES3
         ? new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'defineProperty'), undefined, [
             new qc.Identifier('exports'),
             qc.asLiteral(name),
@@ -839,7 +839,7 @@ export function transformModule(context: qt.TrafoContext) {
     }
     return node;
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void {
     if (node.kind === Syntax.SourceFile) {
       currentSourceFile = <qt.SourceFile>node;
       currentModuleInfo = moduleInfoMap[getOriginalNodeId(currentSourceFile)];
@@ -852,10 +852,10 @@ export function transformModule(context: qt.TrafoContext) {
       previousOnEmitNode(hint, node, emitCallback);
     }
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
     if (node.id && noSubstitution[node.id]) return node;
-    if (hint === EmitHint.Expression) return substituteExpression(<qt.Expression>node);
+    if (hint === qt.EmitHint.Expression) return substituteExpression(<qt.Expression>node);
     else if (node.kind === Syntax.ShorthandPropertyAssignment) return substituteShorthandPropertyAssignment(node);
     return node;
   }
@@ -1084,7 +1084,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
     exportDecl.setOriginal(node);
     return [importDecl, exportDecl];
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void {
     if (node.kind === Syntax.SourceFile) {
       if ((qf.is.externalModule(node) || compilerOpts.isolatedModules) && compilerOpts.importHelpers) {
         helperNameSubstitutions = qu.createMap<qt.Identifier>();
@@ -1095,7 +1095,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
       previousOnEmitNode(hint, node, emitCallback);
     }
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
     if (helperNameSubstitutions && node.kind === Syntax.Identifier && qf.get.emitFlags(node) & EmitFlags.HelperName) return substituteHelperName(node);
     return node;
@@ -1824,7 +1824,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     }
     return node;
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void {
     if (node.kind === Syntax.SourceFile) {
       const id = getOriginalNodeId(node);
       currentSourceFile = <qt.SourceFile>node;
@@ -1845,11 +1845,11 @@ export function transformSystemModule(context: qt.TrafoContext) {
       previousOnEmitNode(hint, node, emitCallback);
     }
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
     if (isSubstitutionPrevented(node)) return node;
-    if (hint === EmitHint.Expression) return substituteExpression(<qt.Expression>node);
-    else if (hint === EmitHint.Unspecified) return substituteUnspecified(node);
+    if (hint === qt.EmitHint.Expression) return substituteExpression(<qt.Expression>node);
+    else if (hint === qt.EmitHint.Unspecified) return substituteUnspecified(node);
     return node;
   }
   function substituteUnspecified(node: Node) {

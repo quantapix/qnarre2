@@ -23,7 +23,7 @@ export function transformClassFields(context: qt.TrafoContext) {
   const resolver = context.getEmitResolver();
   const compilerOpts = context.getCompilerOpts();
   const languageVersion = getEmitScriptTarget(compilerOpts);
-  const shouldTransformPrivateFields = languageVersion < ScriptTarget.ESNext;
+  const shouldTransformPrivateFields = languageVersion < qt.ScriptTarget.ESNext;
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onSubstituteNode = onSubstituteNode;
   let enabledSubstitutions: ClassPropertySubstitutionFlags;
@@ -35,7 +35,7 @@ export function transformClassFields(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     const opts = context.getCompilerOpts();
-    if (node.isDeclarationFile || (opts.useDefineForClassFields && opts.target === ScriptTarget.ESNext)) return node;
+    if (node.isDeclarationFile || (opts.useDefineForClassFields && opts.target === qt.ScriptTarget.ESNext)) return node;
     const visited = qf.visit.eachChild(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
@@ -357,7 +357,7 @@ export function transformClassFields(context: qt.TrafoContext) {
   }
   function isPropertyDeclarationThatRequiresConstructorStatement(member: qt.ClassElem): member is qt.PropertyDeclaration {
     if (!member.kind === Syntax.PropertyDeclaration || qf.has.staticModifier(member)) return false;
-    if (context.getCompilerOpts().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
+    if (context.getCompilerOpts().useDefineForClassFields) return languageVersion < qt.ScriptTarget.ESNext;
     return isInitializedProperty(member) || (shouldTransformPrivateFields && qf.is.privateIdentifierPropertyDeclaration(member));
   }
   function transformConstructor(node: qt.ClassDeclaration | qt.ClassExpression, isDerivedClass: boolean) {
@@ -480,9 +480,9 @@ export function transformClassFields(context: qt.TrafoContext) {
       classAliases = [];
     }
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression) return substituteExpression(node as qt.Expression);
+    if (hint === qt.EmitHint.Expression) return substituteExpression(node as qt.Expression);
     return node;
   }
   function substituteExpression(node: qt.Expression) {

@@ -384,7 +384,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     if (isFileMissingOnHost(sourceFilesCache.get(path))) return false;
     return directoryStructureHost.fileExists(fileName);
   }
-  function getVersionedSourceFileByPath(fileName: string, path: qt.Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): qt.SourceFile | undefined {
+  function getVersionedSourceFileByPath(fileName: string, path: qt.Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): qt.SourceFile | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     if (isFileMissingOnHost(hostSourceFile)) {
       return;
@@ -737,9 +737,9 @@ export function emitFilesAndReportErrorsAndGetExitStatus(
   customTransformers?: qt.CustomTransformers
 ) {
   const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
-  if (emitResult.emitSkipped && diagnostics.length > 0) return ExitStatus.DiagnosticsPresent_OutputsSkipped;
-  if (diagnostics.length > 0) return ExitStatus.DiagnosticsPresent_OutputsGenerated;
-  return ExitStatus.Success;
+  if (emitResult.emitSkipped && diagnostics.length > 0) return qt.ExitStatus.DiagnosticsPresent_OutputsSkipped;
+  if (diagnostics.length > 0) return qt.ExitStatus.DiagnosticsPresent_OutputsGenerated;
+  return qt.ExitStatus.Success;
 }
 export const noopFileWatcher: FileWatcher = { close: noop };
 export function createWatchHost(system = sys, reportWatchStatus?: WatchStatusReporter): WatchHost {
@@ -1402,7 +1402,7 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
 export function getFallbackOpts(opts: qt.WatchOpts | undefined): qt.WatchOpts {
   const fallbackPolling = opts?.fallbackPolling;
   return {
-    watchFile: fallbackPolling !== undefined ? ((fallbackPolling as unknown) as WatchFileKind) : WatchFileKind.PriorityPollingInterval,
+    watchFile: fallbackPolling !== undefined ? ((fallbackPolling as unknown) as qt.WatchFileKind) : qt.WatchFileKind.PriorityPollingInterval,
   };
 }
 function getWatchInfo<T, X, Y>(file: string, flags: T, opts: qt.WatchOpts | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {

@@ -89,7 +89,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
     refs.set('' + getOriginalNodeId(container), container);
   }
   function handleSymbolAccessibilityError(symbolAccessibilityResult: qt.SymbolAccessibilityResult) {
-    if (symbolAccessibilityResult.accessibility === SymbolAccessibility.Accessible) {
+    if (symbolAccessibilityResult.accessibility === qt.SymbolAccessibility.Accessible) {
       if (symbolAccessibilityResult && symbolAccessibilityResult.aliasesToMakeVisible) {
         if (!lateMarkedStatements) lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
         else {

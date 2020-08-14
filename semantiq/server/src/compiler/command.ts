@@ -66,11 +66,11 @@ export const optsForWatch: qt.CommandLineOption[] = [
   {
     name: 'watchFile',
     type: qu.createMap({
-      fixedpollinginterval: WatchFileKind.FixedPollingInterval,
-      prioritypollinginterval: WatchFileKind.PriorityPollingInterval,
-      dynamicprioritypolling: WatchFileKind.DynamicPriorityPolling,
-      usefsevents: WatchFileKind.UseFsEvents,
-      usefseventsonparentdirectory: WatchFileKind.UseFsEventsOnParentDirectory,
+      fixedpollinginterval: qt.WatchFileKind.FixedPollingInterval,
+      prioritypollinginterval: qt.WatchFileKind.PriorityPollingInterval,
+      dynamicprioritypolling: qt.WatchFileKind.DynamicPriorityPolling,
+      usefsevents: qt.WatchFileKind.UseFsEvents,
+      usefseventsonparentdirectory: qt.WatchFileKind.UseFsEventsOnParentDirectory,
     }),
     category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
@@ -78,9 +78,9 @@ export const optsForWatch: qt.CommandLineOption[] = [
   {
     name: 'watchDirectory',
     type: qu.createMap({
-      usefsevents: WatchDirectoryKind.UseFsEvents,
-      fixedpollinginterval: WatchDirectoryKind.FixedPollingInterval,
-      dynamicprioritypolling: WatchDirectoryKind.DynamicPriorityPolling,
+      usefsevents: qt.WatchDirectoryKind.UseFsEvents,
+      fixedpollinginterval: qt.WatchDirectoryKind.FixedPollingInterval,
+      dynamicprioritypolling: qt.WatchDirectoryKind.DynamicPriorityPolling,
     }),
     category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_watching_directory_on_platforms_that_don_t_support_recursive_watching_natively_Colon_UseFsEvents_default_FixedPollingInterval_DynamicPriorityPolling,
@@ -88,9 +88,9 @@ export const optsForWatch: qt.CommandLineOption[] = [
   {
     name: 'fallbackPolling',
     type: qu.createMap({
-      fixedinterval: PollingWatchKind.FixedInterval,
-      priorityinterval: PollingWatchKind.PriorityInterval,
-      dynamicpriority: PollingWatchKind.DynamicPriority,
+      fixedinterval: qt.PollingWatchKind.FixedInterval,
+      priorityinterval: qt.PollingWatchKind.PriorityInterval,
+      dynamicpriority: qt.PollingWatchKind.DynamicPriority,
     }),
     category: qd.Advanced_Opts,
     description: qd.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
@@ -261,7 +261,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     name: 'target',
     shortName: 't',
     type: qu.createMap({
-      es2020: ScriptTarget.ES2020,
+      es2020: qt.ScriptTarget.ES2020,
     }),
     affectsSourceFile: true,
     affectsModuleResolution: true,
@@ -322,9 +322,9 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'jsx',
     type: qu.createMap({
-      preserve: JsxEmit.Preserve,
-      'react-native': JsxEmit.ReactNative,
-      react: JsxEmit.React,
+      preserve: qt.JsxEmit.Preserve,
+      'react-native': qt.JsxEmit.ReactNative,
+      react: qt.JsxEmit.React,
     }),
     affectsSourceFile: true,
     paramType: qd.KIND,
@@ -443,9 +443,9 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'importsNotUsedAsValues',
     type: qu.createMap({
-      remove: ImportsNotUsedAsValues.Remove,
-      preserve: ImportsNotUsedAsValues.Preserve,
-      error: ImportsNotUsedAsValues.Error,
+      remove: qt.ImportsNotUsedAsValues.Remove,
+      preserve: qt.ImportsNotUsedAsValues.Preserve,
+      error: qt.ImportsNotUsedAsValues.Error,
     }),
     affectsEmit: true,
     affectsSemanticDiagnostics: true,
@@ -571,8 +571,8 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'moduleResolution',
     type: qu.createMap({
-      node: ModuleResolutionKind.NodeJs,
-      classic: ModuleResolutionKind.Classic,
+      node: qt.ModuleResolutionKind.NodeJs,
+      classic: qt.ModuleResolutionKind.Classic,
     }),
     affectsModuleResolution: true,
     paramType: qd.STRATEGY,
@@ -761,8 +761,8 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'newLine',
     type: qu.createMap({
-      crlf: NewLineKind.CarriageReturnLineFeed,
-      lf: NewLineKind.LineFeed,
+      crlf: qt.NewLineKind.CarriageReturnLineFeed,
+      lf: qt.NewLineKind.LineFeed,
     }),
     affectsEmit: true,
     paramType: qd.NEWLINE,
@@ -1025,7 +1025,7 @@ export function getOptsNameMap(): OptsNameMap {
 }
 export const defaultInitCompilerOpts: qt.CompilerOpts = {
   module: ModuleKind.CommonJS,
-  target: ScriptTarget.ES2020,
+  target: qt.ScriptTarget.ES2020,
   strict: true,
   esModuleInterop: true,
   forceConsistentCasingInFileNames: true,
@@ -2074,7 +2074,7 @@ function getExtendsConfigPath(extendedConfig: string, host: qt.ParseConfigHost, 
   extendedConfig = normalizeSlashes(extendedConfig);
   if (isRootedDiskPath(extendedConfig) || startsWith(extendedConfig, './') || startsWith(extendedConfig, '../')) {
     let extendedConfigPath = getNormalizedAbsolutePath(extendedConfig, basePath);
-    if (!host.fileExists(extendedConfigPath) && !endsWith(extendedConfigPath, Extension.Json)) {
+    if (!host.fileExists(extendedConfigPath) && !endsWith(extendedConfigPath, qt.Extension.Json)) {
       extendedConfigPath = `${extendedConfigPath}.json`;
       if (!host.fileExists(extendedConfigPath)) {
         errors.push(createDiagnostic(qd.File_0_not_found, extendedConfig));
@@ -2083,7 +2083,7 @@ function getExtendsConfigPath(extendedConfig: string, host: qt.ParseConfigHost, 
     }
     return extendedConfigPath;
   }
-  const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: ModuleResolutionKind.NodeJs }, host, undefined, undefined, true);
+  const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: qt.ModuleResolutionKind.NodeJs }, host, undefined, undefined, true);
   if (resolved.resolvedModule) return resolved.resolvedModule.resolvedFileName;
   errors.push(createDiagnostic(qd.File_0_not_found, extendedConfig));
   return;
@@ -2325,9 +2325,9 @@ export function getFileNamesFromConfigSpecs(
   let jsonOnlyIncludeRegexes: readonly RegExp[] | undefined;
   if (validatedIncludeSpecs && validatedIncludeSpecs.length > 0) {
     for (const file of host.readDirectory(basePath, supportedExtensionsWithJsonIfResolveJsonModule, validatedExcludeSpecs, validatedIncludeSpecs, undefined)) {
-      if (fileExtensionIs(file, Extension.Json)) {
+      if (fileExtensionIs(file, qt.Extension.Json)) {
         if (!jsonOnlyIncludeRegexes) {
-          const includes = validatedIncludeSpecs.filter((s) => endsWith(s, Extension.Json));
+          const includes = validatedIncludeSpecs.filter((s) => endsWith(s, qt.Extension.Json));
           const includeFilePatterns = map(getRegularExpressionsForWildcards(includes, basePath, 'files'), (pattern) => `^${pattern}$`);
           jsonOnlyIncludeRegexes = includeFilePatterns ? includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, host.useCaseSensitiveFileNames)) : emptyArray;
         }
@@ -2563,7 +2563,7 @@ function filterSameAsDefaultInclude(specs: readonly string[] | undefined) {
   return specs;
 }
 export function getEmitScriptTarget(compilerOpts: qt.CompilerOpts) {
-  return compilerOpts.target || ScriptTarget.ES2020;
+  return compilerOpts.target || qt.ScriptTarget.ES2020;
 }
 export function getEmitModuleKind(compilerOpts: { module?: qt.CompilerOpts['module']; target?: qt.CompilerOpts['target'] }) {
   return typeof compilerOpts.module === 'number' ? compilerOpts.module : ModuleKind.ES2015;
@@ -2571,7 +2571,7 @@ export function getEmitModuleKind(compilerOpts: { module?: qt.CompilerOpts['modu
 export function getEmitModuleResolutionKind(compilerOpts: qt.CompilerOpts) {
   let moduleResolution = compilerOpts.moduleResolution;
   if (moduleResolution === undefined) {
-    moduleResolution = getEmitModuleKind(compilerOpts) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+    moduleResolution = getEmitModuleKind(compilerOpts) === ModuleKind.CommonJS ? qt.ModuleResolutionKind.NodeJs : qt.ModuleResolutionKind.Classic;
   }
   return moduleResolution;
 }

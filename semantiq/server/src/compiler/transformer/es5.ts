@@ -8,9 +8,9 @@ import * as qu from '../utils';
 import * as qy from '../syntax';
 export function transformES5(context: qt.TrafoContext) {
   const compilerOpts = context.getCompilerOpts();
-  let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
+  let previousOnEmitNode: (hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) => void;
   let noSubstitution: boolean[];
-  if (compilerOpts.jsx === JsxEmit.Preserve || compilerOpts.jsx === JsxEmit.ReactNative) {
+  if (compilerOpts.jsx === qt.JsxEmit.Preserve || compilerOpts.jsx === qt.JsxEmit.ReactNative) {
     previousOnEmitNode = context.onEmitNode;
     context.onEmitNode = onEmitNode;
     context.enableEmitNotification(Syntax.JsxOpeningElem);
@@ -26,7 +26,7 @@ export function transformES5(context: qt.TrafoContext) {
   function transformSourceFile(node: qt.SourceFile) {
     return node;
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (emitContext: qt.EmitHint, node: Node) => void) {
     switch (node.kind) {
       case Syntax.JsxOpeningElem:
       case Syntax.JsxClosingElem:
@@ -37,7 +37,7 @@ export function transformES5(context: qt.TrafoContext) {
     }
     previousOnEmitNode(hint, node, emitCallback);
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
     if (node.kind === Syntax.PropertyAccessExpression) return substitutePropertyAccessExpression(node);

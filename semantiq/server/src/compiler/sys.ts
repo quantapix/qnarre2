@@ -590,15 +590,15 @@ export function createSystemWatchFunctions({
     opts = updateOptsForWatchFile(opts, useNonPollingWatchers);
     const watchFileKind = Debug.checkDefined(opts.watchFile);
     switch (watchFileKind) {
-      case WatchFileKind.FixedPollingInterval:
+      case qt.WatchFileKind.FixedPollingInterval:
         return pollingWatchFile(fileName, callback, PollingInterval.Low, undefined);
-      case WatchFileKind.PriorityPollingInterval:
+      case qt.WatchFileKind.PriorityPollingInterval:
         return pollingWatchFile(fileName, callback, pollingInterval, undefined);
-      case WatchFileKind.DynamicPriorityPolling:
+      case qt.WatchFileKind.DynamicPriorityPolling:
         return ensureDynamicPollingWatchFile()(fileName, callback, pollingInterval, undefined);
-      case WatchFileKind.UseFsEvents:
+      case qt.WatchFileKind.UseFsEvents:
         return fsWatch(fileName, FileSystemEntryKind.File, createFsWatchCallbackForFileWatcherCallback(fileName, callback, fileExists), false, pollingInterval, getFallbackOpts(opts));
-      case WatchFileKind.UseFsEventsOnParentDirectory:
+      case qt.WatchFileKind.UseFsEventsOnParentDirectory:
         if (!nonPollingWatchFile) {
           nonPollingWatchFile = createUseFsEventsOnParentDirectoryWatchFile(fsWatch, useCaseSensitiveFileNames);
         }
@@ -614,20 +614,22 @@ export function createSystemWatchFunctions({
     if (opts && opts.watchFile !== undefined) return opts;
     switch (tscWatchFile) {
       case 'PriorityPollingInterval':
-        return { watchFile: WatchFileKind.PriorityPollingInterval };
+        return { watchFile: qt.WatchFileKind.PriorityPollingInterval };
       case 'DynamicPriorityPolling':
-        return { watchFile: WatchFileKind.DynamicPriorityPolling };
+        return { watchFile: qt.WatchFileKind.DynamicPriorityPolling };
       case 'UseFsEvents':
-        return generateWatchFileOpts(WatchFileKind.UseFsEvents, PollingWatchKind.PriorityInterval, opts);
+        return generateWatchFileOpts(WatchFileKind.UseFsEvents, qt.PollingWatchKind.PriorityInterval, opts);
       case 'UseFsEventsWithFallbackDynamicPolling':
-        return generateWatchFileOpts(WatchFileKind.UseFsEvents, PollingWatchKind.DynamicPriority, opts);
+        return generateWatchFileOpts(WatchFileKind.UseFsEvents, qt.PollingWatchKind.DynamicPriority, opts);
       case 'UseFsEventsOnParentDirectory':
         useNonPollingWatchers = true;
       default:
-        return useNonPollingWatchers ? generateWatchFileOpts(WatchFileKind.UseFsEventsOnParentDirectory, PollingWatchKind.PriorityInterval, opts) : { watchFile: WatchFileKind.FixedPollingInterval };
+        return useNonPollingWatchers
+          ? generateWatchFileOpts(WatchFileKind.UseFsEventsOnParentDirectory, qt.PollingWatchKind.PriorityInterval, opts)
+          : { watchFile: qt.WatchFileKind.FixedPollingInterval };
     }
   }
-  function generateWatchFileOpts(watchFile: WatchFileKind, fallbackPolling: PollingWatchKind, opts: qt.WatchOpts | undefined): qt.WatchOpts {
+  function generateWatchFileOpts(watchFile: qt.WatchFileKind, fallbackPolling: qt.PollingWatchKind, opts: qt.WatchOpts | undefined): qt.WatchOpts {
     const defaultFallbackPolling = opts?.fallbackPolling;
     return {
       watchFile,
@@ -656,11 +658,11 @@ export function createSystemWatchFunctions({
     opts = updateOptsForWatchDirectory(opts);
     const watchDirectoryKind = Debug.checkDefined(opts.watchDirectory);
     switch (watchDirectoryKind) {
-      case WatchDirectoryKind.FixedPollingInterval:
+      case qt.WatchDirectoryKind.FixedPollingInterval:
         return pollingWatchFile(directoryName, () => callback(directoryName), PollingInterval.Medium, undefined);
-      case WatchDirectoryKind.DynamicPriorityPolling:
+      case qt.WatchDirectoryKind.DynamicPriorityPolling:
         return ensureDynamicPollingWatchFile()(directoryName, () => callback(directoryName), PollingInterval.Medium, undefined);
-      case WatchDirectoryKind.UseFsEvents:
+      case qt.WatchDirectoryKind.UseFsEvents:
         return fsWatch(
           directoryName,
           FileSystemEntryKind.Directory,
@@ -677,13 +679,13 @@ export function createSystemWatchFunctions({
     if (opts && opts.watchDirectory !== undefined) return opts;
     switch (tscWatchDirectory) {
       case 'RecursiveDirectoryUsingFsWatchFile':
-        return { watchDirectory: WatchDirectoryKind.FixedPollingInterval };
+        return { watchDirectory: qt.WatchDirectoryKind.FixedPollingInterval };
       case 'RecursiveDirectoryUsingDynamicPriorityPolling':
-        return { watchDirectory: WatchDirectoryKind.DynamicPriorityPolling };
+        return { watchDirectory: qt.WatchDirectoryKind.DynamicPriorityPolling };
       default:
         const defaultFallbackPolling = opts?.fallbackPolling;
         return {
-          watchDirectory: WatchDirectoryKind.UseFsEvents,
+          watchDirectory: qt.WatchDirectoryKind.UseFsEvents,
           fallbackPolling: defaultFallbackPolling !== undefined ? defaultFallbackPolling : undefined,
         };
     }

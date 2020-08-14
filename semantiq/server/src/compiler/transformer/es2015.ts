@@ -2032,7 +2032,7 @@ function visitMetaProperty(node: qt.MetaProperty) {
   }
   return node;
 }
-function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) {
   if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && qf.is.functionLike(node)) {
     const ancestorFacts = enterSubtree(
       HierarchyFacts.FunctionExcludes,
@@ -2063,9 +2063,9 @@ function enableSubstitutionsForCapturedThis() {
     context.enableEmitNotification(Syntax.FunctionDeclaration);
   }
 }
-function onSubstituteNode(hint: EmitHint, node: Node) {
+function onSubstituteNode(hint: qt.EmitHint, node: Node) {
   node = previousOnSubstituteNode(hint, node);
-  if (hint === EmitHint.Expression) return substituteExpression(node);
+  if (hint === qt.EmitHint.Expression) return substituteExpression(node);
   if (node.kind === Syntax.Identifier) return substituteIdentifier(node);
   return node;
 }

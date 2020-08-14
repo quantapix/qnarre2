@@ -53,7 +53,7 @@ export function createCompilerHost(opts: qt.CompilerOpts, setParentNodes?: boole
 export function createCompilerHostWorker(opts: qt.CompilerOpts, setParentNodes?: boolean, system = sys): qt.CompilerHost {
   const existingDirectories = qu.createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
-  function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): qt.SourceFile | undefined {
+  function getSourceFile(fileName: string, languageVersion: qt.ScriptTarget, onError?: (message: string) => void): qt.SourceFile | undefined {
     let text: string | undefined;
     try {
       performance.mark('beforeIORead');
@@ -436,7 +436,7 @@ interface DiagnosticCache<T extends Diagnostic> {
   allDiagnostics?: readonly T[];
 }
 interface qt.RefFile extends TextRange {
-  kind: RefFileKind;
+  kind: qt.RefFileKind;
   index: number;
   file: qt.SourceFile;
 }
@@ -611,7 +611,7 @@ export function createProgram(
           if (!parsedRef) continue;
           const out = parsedRef.commandLine.opts.outFile || parsedRef.commandLine.opts.out;
           if (useSourceOfProjectReferenceRedirect) {
-            if (out || getEmitModuleKind(parsedRef.commandLine.opts) === ModuleKind.None) {
+            if (out || getEmitModuleKind(parsedRef.commandLine.opts) === qt.ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
                 processSourceFile(fileName, undefined);
               }
@@ -619,7 +619,7 @@ export function createProgram(
           } else {
             if (out) {
               processSourceFile(changeExtension(out, '.d.ts'), undefined);
-            } else if (getEmitModuleKind(parsedRef.commandLine.opts) === ModuleKind.None) {
+            } else if (getEmitModuleKind(parsedRef.commandLine.opts) === qt.ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
                 if (!fileExtensionIs(fileName, Extension.Dts) && !fileExtensionIs(fileName, Extension.Json)) {
                   processSourceFile(getOutputDeclarationFileName(fileName, parsedRef.commandLine, !host.useCaseSensitiveFileNames()), false, false, undefined);
@@ -1214,11 +1214,11 @@ export function createProgram(
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       const includeBindAndCheckDiagnostics =
         !isTsNoCheck &&
-        (sourceFile.scriptKind === ScriptKind.TS ||
-          sourceFile.scriptKind === ScriptKind.TSX ||
-          sourceFile.scriptKind === ScriptKind.External ||
+        (sourceFile.scriptKind === qt.ScriptKind.TS ||
+          sourceFile.scriptKind === qt.ScriptKind.TSX ||
+          sourceFile.scriptKind === qt.ScriptKind.External ||
           isCheckJs ||
-          sourceFile.scriptKind === ScriptKind.Deferred);
+          sourceFile.scriptKind === qt.ScriptKind.Deferred);
       const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
       const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : emptyArray;
       return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.docDiagnostics : undefined);
@@ -1894,7 +1894,7 @@ export function createProgram(
     forEach(file.referencedFiles, (ref, index) => {
       const referencedFileName = resolveTripleslashReference(ref.fileName, file.originalFileName);
       processSourceFile(referencedFileName, isDefaultLib, undefined, {
-        kind: RefFileKind.ReferenceFile,
+        kind: qt.RefFileKind.ReferenceFile,
         index,
         file,
         pos: ref.pos,
@@ -1914,7 +1914,7 @@ export function createProgram(
       const fileName = toFileNameLowerCase(ref.fileName);
       file.setResolvedTypeReferenceDirective(fileName, resolvedTypeReferenceDirective);
       processTypeReferenceDirective(fileName, resolvedTypeReferenceDirective, {
-        kind: RefFileKind.TypeReferenceDirective,
+        kind: qt.RefFileKind.TypeReferenceDirective,
         index: i,
         file,
         pos: ref.pos,
@@ -2032,7 +2032,7 @@ export function createProgram(
             false,
             false,
             {
-              kind: RefFileKind.Import,
+              kind: qt.RefFileKind.Import,
               index: i,
               file,
               pos,
@@ -2091,7 +2091,7 @@ export function createProgram(
       addFileToFilesByName(sourceFile, sourceFilePath, undefined);
     } else {
       const basePath = getNormalizedAbsolutePath(getDirectoryPath(refPath), host.getCurrentDirectory());
-      sourceFile = host.getSourceFile(refPath, ScriptTarget.JSON) as qt.JsonSourceFile | undefined;
+      sourceFile = host.getSourceFile(refPath, qt.ScriptTarget.JSON) as qt.JsonSourceFile | undefined;
       addFileToFilesByName(sourceFile, sourceFilePath, undefined);
       if (sourceFile === undefined) {
         projectReferenceRedirects.set(sourceFilePath, false);
@@ -2226,18 +2226,18 @@ export function createProgram(
     if (opts.noImplicitUseStrict && getStrictOptionValue(opts, 'alwaysStrict')) {
       createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'noImplicitUseStrict', 'alwaysStrict');
     }
-    const languageVersion = opts.target || ScriptTarget.ES2020;
+    const languageVersion = opts.target || qt.ScriptTarget.ES2020;
     const outFile = opts.outFile || opts.out;
     const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qf.is.externalModule(f) && !f.isDeclarationFile);
     if (opts.isolatedModules) {
-      const firstNonExternalModuleSourceFile = find(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = find(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.create.fileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
     }
     if (outFile && !opts.emitDeclarationOnly) {
-      if (opts.module && !(opts.module === ModuleKind.AMD || opts.module === ModuleKind.System)) {
+      if (opts.module && !(opts.module === qt.ModuleKind.AMD || opts.module === qt.ModuleKind.System)) {
         createDiagnosticForOptionName(qd.Only_amd_and_system_modules_are_supported_alongside_0, opts.out ? 'out' : 'outFile', 'module');
       } else if (opts.module === undefined && firstNonAmbientExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
@@ -2253,7 +2253,7 @@ export function createProgram(
       }
     }
     if (opts.resolveJsonModule) {
-      if (getEmitModuleResolutionKind(opts) !== ModuleResolutionKind.NodeJs) {
+      if (getEmitModuleResolutionKind(opts) !== qt.ModuleResolutionKind.NodeJs) {
         createDiagnosticForOptionName(qd.Option_resolveJsonModule_cannot_be_specified_without_node_module_resolution_strategy, 'resolveJsonModule');
       } else if (!hasJsonModuleEmitEnabled(opts)) {
         createDiagnosticForOptionName(qd.Option_resolveJsonModule_can_only_be_specified_when_module_code_generation_is_commonjs_amd_es2015_or_esNext, 'resolveJsonModule', 'module');
@@ -2327,14 +2327,14 @@ export function createProgram(
     const { kind, index } = refPathToReportErrorOn;
     let pos: number, end: number;
     switch (kind) {
-      case RefFileKind.Import:
+      case qt.RefFileKind.Import:
         pos = qy.skipTrivia(refFile.text, refFile.imports[index].pos);
         end = refFile.imports[index].end;
         break;
-      case RefFileKind.ReferenceFile:
+      case qt.RefFileKind.ReferenceFile:
         ({ pos, end } = refFile.referencedFiles[index]);
         break;
-      case RefFileKind.TypeReferenceDirective:
+      case qt.RefFileKind.TypeReferenceDirective:
         ({ pos, end } = refFile.typeReferenceDirectives[index]);
         break;
       default:

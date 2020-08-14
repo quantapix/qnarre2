@@ -489,9 +489,9 @@ export function transformGenerators(context: qt.TrafoContext) {
   function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     const assoc = qf.get.expressionAssociativity(node);
     switch (assoc) {
-      case Associativity.Left:
+      case qt.Associativity.Left:
         return visitLeftAssociativeBinaryExpression(node);
-      case Associativity.Right:
+      case qt.Associativity.Right:
         return visitRightAssociativeBinaryExpression(node);
       default:
         return qc.assert.never(assoc);
@@ -1439,9 +1439,9 @@ export function transformGenerators(context: qt.TrafoContext) {
     }
     return -1;
   }
-  function onSubstituteNode(hint: EmitHint, node: Node): Node {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node): Node {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression) return substituteExpression(<qt.Expression>node);
+    if (hint === qt.EmitHint.Expression) return substituteExpression(<qt.Expression>node);
     return node;
   }
   function substituteExpression(node: qt.Expression): qt.Expression {

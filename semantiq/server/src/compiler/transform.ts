@@ -39,7 +39,7 @@ export interface TransformationResult<T extends Node> {
 }
 export type qt.Transformer<T extends Node> = (node: T) => T;
 export type qt.TransformerFactory<T extends Node> = (c: qt.TrafoContext) => qt.Transformer<T>;
-function getModuleTransformer(moduleKind: ModuleKind): qt.TransformerFactory<qt.SourceFile | qt.Bundle> {
+function getModuleTransformer(moduleKind: qt.ModuleKind): qt.TransformerFactory<qt.SourceFile | qt.Bundle> {
   switch (moduleKind) {
     case qt.ModuleKind.ESNext:
     case qt.ModuleKind.ES2020:
@@ -77,9 +77,9 @@ function getScriptTransformers(compilerOpts: qt.CompilerOpts, customTransformers
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.before, wrapScriptTransformerFactory));
   transformers.push(transformTypeScript);
   transformers.push(transformClassFields);
-  if (jsx === JsxEmit.React) transformers.push(transformJsx);
-  if (languageVersion < ScriptTarget.ESNext) transformers.push(transformESNext);
-  if (languageVersion < ScriptTarget.ES2020) transformers.push(transformES2020);
+  if (jsx === qt.JsxEmit.React) transformers.push(transformJsx);
+  if (languageVersion < qt.ScriptTarget.ESNext) transformers.push(transformESNext);
+  if (languageVersion < qt.ScriptTarget.ES2020) transformers.push(transformES2020);
   transformers.push(getModuleTransformer(moduleKind));
   qu.addRange(transformers, customTransformers && qu.map(customTransformers.after, wrapScriptTransformerFactory));
   return transformers;

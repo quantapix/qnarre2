@@ -739,14 +739,14 @@ export function newCheck(f: qt.Frame) {
         const id = getRelationKey(source, target, intersectionState | (inPropertyCheck ? IntersectionState.InPropertyCheck : 0), relation);
         const entry = relation.get(id);
         if (entry !== undefined) {
-          if (reportErrors && entry & RelationComparisonResult.Failed && !(entry & RelationComparisonResult.Reported)) {
+          if (reportErrors && entry & qt.RelationComparisonResult.Failed && !(entry & qt.RelationComparisonResult.Reported)) {
           } else {
             if (outofbandVarianceMarkerHandler) {
-              const saved = entry & RelationComparisonResult.ReportsMask;
-              if (saved & RelationComparisonResult.ReportsUnmeasurable) instantiateType(source, makeFunctionTypeMapper(reportUnmeasurableMarkers));
-              if (saved & RelationComparisonResult.ReportsUnreliable) instantiateType(source, makeFunctionTypeMapper(reportUnreliableMarkers));
+              const saved = entry & qt.RelationComparisonResult.ReportsMask;
+              if (saved & qt.RelationComparisonResult.ReportsUnmeasurable) instantiateType(source, makeFunctionTypeMapper(reportUnmeasurableMarkers));
+              if (saved & qt.RelationComparisonResult.ReportsUnreliable) instantiateType(source, makeFunctionTypeMapper(reportUnreliableMarkers));
             }
-            return entry & RelationComparisonResult.Succeeded ? qt.Ternary.True : qt.Ternary.False;
+            return entry & qt.RelationComparisonResult.Succeeded ? qt.Ternary.True : qt.Ternary.False;
           }
         }
         if (!maybeKeys) {
@@ -772,11 +772,11 @@ export function newCheck(f: qt.Frame) {
         if (!(expandingFlags & ExpandingFlags.Source) && isDeeplyNestedType(source, sourceStack, depth)) expandingFlags |= ExpandingFlags.Source;
         if (!(expandingFlags & ExpandingFlags.Target) && isDeeplyNestedType(target, targetStack, depth)) expandingFlags |= ExpandingFlags.Target;
         let originalHandler: typeof outofbandVarianceMarkerHandler;
-        let propagatingVarianceFlags: RelationComparisonResult = 0;
+        let propagatingVarianceFlags: qt.RelationComparisonResult = 0;
         if (outofbandVarianceMarkerHandler) {
           originalHandler = outofbandVarianceMarkerHandler;
           outofbandVarianceMarkerHandler = (onlyUnreliable) => {
-            propagatingVarianceFlags |= onlyUnreliable ? RelationComparisonResult.ReportsUnreliable : RelationComparisonResult.ReportsUnmeasurable;
+            propagatingVarianceFlags |= onlyUnreliable ? qt.RelationComparisonResult.ReportsUnreliable : qt.RelationComparisonResult.ReportsUnmeasurable;
             return originalHandler!(onlyUnreliable);
           };
         }
@@ -787,12 +787,12 @@ export function newCheck(f: qt.Frame) {
         if (result) {
           if (result === qt.Ternary.True || depth === 0) {
             for (let i = maybeStart; i < maybeCount; i++) {
-              relation.set(maybeKeys[i], RelationComparisonResult.Succeeded | propagatingVarianceFlags);
+              relation.set(maybeKeys[i], qt.RelationComparisonResult.Succeeded | propagatingVarianceFlags);
             }
             maybeCount = maybeStart;
           }
         } else {
-          relation.set(id, (reportErrors ? RelationComparisonResult.Reported : 0) | RelationComparisonResult.Failed | propagatingVarianceFlags);
+          relation.set(id, (reportErrors ? qt.RelationComparisonResult.Reported : 0) | qt.RelationComparisonResult.Failed | propagatingVarianceFlags);
           maybeCount = maybeStart;
         }
         return result;
@@ -822,7 +822,7 @@ export function newCheck(f: qt.Frame) {
           if (flags & TypeFlags.Substitution) return isRelatedTo((<qt.SubstitutionType>source).substitute, (<qt.SubstitutionType>target).substitute, false);
           return qt.Ternary.False;
         }
-        let result: Ternary;
+        let result: qt.Ternary;
         let originalErrorInfo: qd.MessageChain | undefined;
         let varianceCheckFailed = false;
         const saveErrorInfo = captureErrorCalculationState();
@@ -924,7 +924,7 @@ export function newCheck(f: qt.Frame) {
             let mapper: qt.TypeMapper | undefined;
             if (sourceParams) {
               const ctx = createInferenceContext(sourceParams, undefined, InferenceFlags.None, isRelatedTo);
-              inferTypes(ctx.inferences, (<qt.ConditionalType>target).extendsType, sourceExtends, InferencePriority.NoConstraints | InferencePriority.AlwaysStrict);
+              inferTypes(ctx.inferences, (<qt.ConditionalType>target).extendsType, sourceExtends, qt.InferencePriority.NoConstraints | qt.InferencePriority.AlwaysStrict);
               sourceExtends = instantiateType(sourceExtends, ctx.mapper);
               mapper = ctx.mapper;
             }
@@ -1049,7 +1049,7 @@ export function newCheck(f: qt.Frame) {
           relation === comparableRelation ||
           (relation === identityRelation ? getMappedTypeModifiers(source) === getMappedTypeModifiers(target) : getCombinedMappedTypeOptionality(source) <= getCombinedMappedTypeOptionality(target));
         if (modifiersRelated) {
-          let result: Ternary;
+          let result: qt.Ternary;
           const targetConstraint = getConstraintTypeFromMappedType(target);
           const sourceConstraint = instantiateType(
             getConstraintTypeFromMappedType(source),
@@ -1540,7 +1540,7 @@ export function newCheck(f: qt.Frame) {
       }
       const isAlias = localOrExportSymbol.flags & qt.SymbolFlags.Alias;
       if (localOrExportSymbol.flags & qt.SymbolFlags.Variable) {
-        if (assignmentKind === AssignmentKind.Definite) return type;
+        if (assignmentKind === qt.AssignmentKind.Definite) return type;
       } else if (isAlias) {
         declaration = find<qt.Declaration>(symbol.declarations, isSomeImportDeclaration);
       }
@@ -1629,7 +1629,7 @@ export function newCheck(f: qt.Frame) {
           break;
         case Syntax.PropertyDeclaration:
         case Syntax.PropertySignature:
-          if (qf.has.syntacticModifier(container, ModifierFlags.Static) && !(compilerOpts.target === ScriptTarget.ESNext && compilerOpts.useDefineForClassFields))
+          if (qf.has.syntacticModifier(container, ModifierFlags.Static) && !(compilerOpts.target === qt.ScriptTarget.ESNext && compilerOpts.useDefineForClassFields))
             error(n, qd.this_cannot_be_referenced_in_a_static_property_initer);
           break;
         case Syntax.ComputedPropertyName:
@@ -1778,7 +1778,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       return createArrayLiteralType(
-        createArrayType(elemTypes.length ? qf.get.unionType(elemTypes, UnionReduction.Subtype) : strictNullChecks ? implicitNeverType : undefinedWideningType, inConstContext)
+        createArrayType(elemTypes.length ? qf.get.unionType(elemTypes, qt.UnionReduction.Subtype) : strictNullChecks ? implicitNeverType : undefinedWideningType, inConstContext)
       );
     }
     computedPropertyName(n: qc.ComputedPropertyName): qt.Type {
@@ -1955,7 +1955,7 @@ export function newCheck(f: qt.Frame) {
       }
       jsxFragment(n: qc.JsxFragment): qt.Type {
         this.jsxOpeningLikeElemOrOpeningFragment(n.openingFragment);
-        if (compilerOpts.jsx === JsxEmit.React && (compilerOpts.jsxFactory || n.sourceFile.pragmas.has('jsx')))
+        if (compilerOpts.jsx === qt.JsxEmit.React && (compilerOpts.jsxFactory || n.sourceFile.pragmas.has('jsx')))
           error(n, compilerOpts.jsxFactory ? qd.msgs.JSX_fragment_is_not_supported_when_using_jsxFactory : qd.msgs.JSX_fragment_is_not_supported_when_using_an_inline_JSX_factory_pragma);
         this.jsxChildren(n);
         return getJsxElemTypeAt(n) || anyType;
@@ -1977,12 +1977,12 @@ export function newCheck(f: qt.Frame) {
       jsxAttributes(n: qc.JsxAttributes, checkMode: CheckMode | undefined) {
         return createJsxAttributesTypeFromAttributesProperty(n.parent, checkMode);
       }
-      jsxReturnAssignableToAppropriateBound(refKind: JsxReferenceKind, elemInstanceType: qt.Type, openingLikeElem: qt.JsxOpeningLikeElem) {
-        if (refKind === JsxReferenceKind.Function) {
+      jsxReturnAssignableToAppropriateBound(refKind: qt.JsxReferenceKind, elemInstanceType: qt.Type, openingLikeElem: qt.JsxOpeningLikeElem) {
+        if (refKind === qt.JsxReferenceKind.Function) {
           const sfcReturnConstraint = getJsxStatelessElemTypeAt(openingLikeElem);
           if (sfcReturnConstraint)
             this.typeRelatedTo(elemInstanceType, sfcReturnConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_return_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
-        } else if (refKind === JsxReferenceKind.Component) {
+        } else if (refKind === qt.JsxReferenceKind.Component) {
           const classConstraint = getJsxElemClassTypeAt(openingLikeElem);
           if (classConstraint)
             this.typeRelatedTo(elemInstanceType, classConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_instance_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
@@ -1999,7 +1999,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       jsxPreconditions(errorNode: Node) {
-        if ((compilerOpts.jsx || JsxEmit.None) === JsxEmit.None) error(errorNode, qd.msgs.Cannot_use_JSX_unless_the_jsx_flag_is_provided);
+        if ((compilerOpts.jsx || qt.JsxEmit.None) === qt.JsxEmit.None) error(errorNode, qd.msgs.Cannot_use_JSX_unless_the_jsx_flag_is_provided);
         if (getJsxElemTypeAt(errorNode) === undefined) {
           if (noImplicitAny) error(errorNode, qd.msgs.JSX_elem_implicitly_has_type_any_because_the_global_type_JSX_Elem_does_not_exist);
         }
@@ -2008,7 +2008,7 @@ export function newCheck(f: qt.Frame) {
         const isNodeOpeningLikeElem = qf.is.jsx.openingLikeElem(n);
         if (isNodeOpeningLikeElem) checkGrammar.jsxElem(<qt.JsxOpeningLikeElem>n);
         this.jsxPreconditions(n);
-        const reactRefErr = diagnostics && compilerOpts.jsx === JsxEmit.React ? qd.msgs.Cannot_find_name_0 : undefined;
+        const reactRefErr = diagnostics && compilerOpts.jsx === qt.JsxEmit.React ? qd.msgs.Cannot_find_name_0 : undefined;
         const reactNamespace = getJsxNamespace(n);
         const reactLocation = isNodeOpeningLikeElem ? (<qt.JsxOpeningLikeElem>n).tagName : n;
         const reactSym = resolveName(reactLocation, reactNamespace, qt.SymbolFlags.Value, reactRefErr, reactNamespace, true);
@@ -2191,7 +2191,7 @@ export function newCheck(f: qt.Frame) {
     propertyAccessExpressionOrQualifiedName(n: qc.PropertyAccessExpression | qt.QualifiedName, left: qt.Expression | qt.QualifiedName, leftType: qt.Type, right: qc.Identifier | qt.PrivateIdentifier) {
       const parentSymbol = qf.get.nodeLinks(left).resolvedSymbol;
       const assignmentKind = qf.get.assignmentTargetKind(n);
-      const apparentType = getApparentType(assignmentKind !== AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(leftType) : leftType);
+      const apparentType = getApparentType(assignmentKind !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(leftType) : leftType);
       if (right.kind === Syntax.PrivateIdentifier) this.externalEmitHelpers(n, ExternalEmitHelpers.ClassPrivateFieldGet);
       const isAnyLike = qf.is.typeAny(apparentType) || apparentType === silentNeverType;
       let prop: qt.Symbol | undefined;
@@ -2217,7 +2217,7 @@ export function newCheck(f: qt.Frame) {
       let propType: qt.Type;
       if (!prop) {
         const indexInfo =
-          !right.kind === Syntax.PrivateIdentifier && (assignmentKind === AssignmentKind.None || !qf.is.genericObjectType(leftType) || isThisTypeParam(leftType))
+          !right.kind === Syntax.PrivateIdentifier && (assignmentKind === qt.AssignmentKind.None || !qf.is.genericObjectType(leftType) || isThisTypeParam(leftType))
             ? qf.get.indexInfoOfType(apparentType, IndexKind.String)
             : undefined;
         if (!(indexInfo && indexInfo.type)) {
@@ -2279,7 +2279,7 @@ export function newCheck(f: qt.Frame) {
       return propagateOptionalTypeMarker(this.elemAccessExpression(n, this.nonNullType(nonOptionalType, n.expression)), n, nonOptionalType !== exprType);
     }
     elemAccessExpression(n: qc.ElemAccessExpression, exprType: qt.Type): qt.Type {
-      const objectType = qf.get.assignmentTargetKind(n) !== AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(exprType) : exprType;
+      const objectType = qf.get.assignmentTargetKind(n) !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(exprType) : exprType;
       const indexExpression = n.argExpression;
       const indexType = this.expression(indexExpression);
       if (objectType === errorType || objectType === silentNeverType) return objectType;
@@ -2640,7 +2640,7 @@ export function newCheck(f: qt.Frame) {
       return true;
     }
     referenceExpression(expr: qt.Expression, invalidReferenceMessage: qd.Message, invalidOptionalChainMessage: qd.Message): boolean {
-      const n = qf.skip.outerExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
+      const n = qf.skip.outerExpressions(expr, qt.OuterExpressionKinds.Assertions | qt.OuterExpressionKinds.Parentheses);
       if (n.kind !== Syntax.qc.Identifier && !qf.is.accessExpression(n)) {
         error(expr, invalidReferenceMessage);
         return false;
@@ -2846,7 +2846,7 @@ export function newCheck(f: qt.Frame) {
       } else if (property.kind === Syntax.SpreadAssignment) {
         if (propertyIndex < properties.length - 1) error(property, qd.msgs.A_rest_elem_must_be_last_in_a_destructuring_pattern);
         else {
-          if (languageVersion < ScriptTarget.ESNext) this.externalEmitHelpers(property, ExternalEmitHelpers.Rest);
+          if (languageVersion < qt.ScriptTarget.ESNext) this.externalEmitHelpers(property, ExternalEmitHelpers.Rest);
           const nonRestNames: qt.PropertyName[] = [];
           if (allProperties) {
             for (const otherProperty of allProperties) {
@@ -3119,9 +3119,9 @@ export function newCheck(f: qt.Frame) {
         case Syntax.Ampersand2Token:
           return getTypeFacts(leftType) & TypeFacts.Truthy ? qf.get.unionType([extractDefinitelyFalsyTypes(strictNullChecks ? leftType : getBaseTypeOfLiteralType(rightType)), rightType]) : leftType;
         case Syntax.Bar2Token:
-          return getTypeFacts(leftType) & TypeFacts.Falsy ? qf.get.unionType([removeDefinitelyFalsyTypes(leftType), rightType], UnionReduction.Subtype) : leftType;
+          return getTypeFacts(leftType) & TypeFacts.Falsy ? qf.get.unionType([removeDefinitelyFalsyTypes(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
         case Syntax.Question2Token:
-          return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? qf.get.unionType([getNonNullableType(leftType), rightType], UnionReduction.Subtype) : leftType;
+          return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? qf.get.unionType([getNonNullableType(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
         case Syntax.EqualsToken:
           const declKind = left.parent.kind === Syntax.BinaryExpression ? qf.get.assignmentDeclarationKind(left.parent) : qt.AssignmentDeclarationKind.None;
           this.assignmentDeclaration(declKind, rightType);
@@ -3269,7 +3269,7 @@ export function newCheck(f: qt.Frame) {
       if (!(functionFlags & FunctionFlags.Generator)) return anyType;
       const isAsync = (functionFlags & FunctionFlags.Async) !== 0;
       if (n.asteriskToken) {
-        if (isAsync && languageVersion < ScriptTarget.ESNext) this.externalEmitHelpers(n, ExternalEmitHelpers.AsyncDelegatorIncludes);
+        if (isAsync && languageVersion < qt.ScriptTarget.ESNext) this.externalEmitHelpers(n, ExternalEmitHelpers.AsyncDelegatorIncludes);
       }
       const returnType = getReturnTypeFromAnnotation(func);
       const iterationTypes = returnType && getIterationTypesOfGeneratorFunctionReturnType(returnType, isAsync);
@@ -3292,7 +3292,7 @@ export function newCheck(f: qt.Frame) {
       this.testingKnownTruthyCallableType(n.condition, n.whenTrue, type);
       const type1 = this.expression(n.whenTrue, checkMode);
       const type2 = this.expression(n.whenFalse, checkMode);
-      return qf.get.unionType([type1, type2], UnionReduction.Subtype);
+      return qf.get.unionType([type1, type2], qt.UnionReduction.Subtype);
     }
     templateExpression(n: qc.TemplateExpression): qt.Type {
       forEach(n.templateSpans, (templateSpan) => {
@@ -3542,7 +3542,7 @@ export function newCheck(f: qt.Frame) {
       if (!typePredicate) return;
       this.sourceElem(n.type);
       const { paramName } = n;
-      if (typePredicate.kind === TypePredicateKind.This || typePredicate.kind === TypePredicateKind.AssertsThis) getTypeFromThisNodeTypeNode(paramName as qt.ThisTyping);
+      if (typePredicate.kind === qt.TypePredicateKind.This || typePredicate.kind === qt.TypePredicateKind.AssertsThis) getTypeFromThisNodeTypeNode(paramName as qt.ThisTyping);
       else {
         if (typePredicate.paramIndex >= 0) {
           if (signature.hasRestParam() && typePredicate.paramIndex === signature.params.length - 1)
@@ -3591,7 +3591,7 @@ export function newCheck(f: qt.Frame) {
       }
       const functionFlags = qf.get.functionFlags(<qt.FunctionLikeDeclaration>n);
       if (!(functionFlags & FunctionFlags.Invalid)) {
-        if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < ScriptTarget.ESNext)
+        if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < qt.ScriptTarget.ESNext)
           this.externalEmitHelpers(n, ExternalEmitHelpers.AsyncGeneratorIncludes);
       }
       this.typeParams(n.typeParams);
@@ -3757,7 +3757,7 @@ export function newCheck(f: qt.Frame) {
     propertyDeclaration(n: qc.PropertyDeclaration | qt.PropertySignature) {
       if (!checkGrammar.decoratorsAndModifiers(n) && !checkGrammar.property(n)) checkGrammar.computedPropertyName(n.name);
       this.variableLikeDeclaration(n);
-      if (n.name.kind === Syntax.PrivateIdentifier && languageVersion < ScriptTarget.ESNext) {
+      if (n.name.kind === Syntax.PrivateIdentifier && languageVersion < qt.ScriptTarget.ESNext) {
         for (let lexicalScope = qf.get.enclosingBlockScopeContainer(n); !!lexicalScope; lexicalScope = qf.get.enclosingBlockScopeContainer(lexicalScope)) {
           qf.get.nodeLinks(lexicalScope).flags |= NodeCheckFlags.ContainsClassWithPrivateIdentifiers;
         }
@@ -3795,7 +3795,7 @@ export function newCheck(f: qt.Frame) {
         if (superCall) {
           if (classExtendsNull) error(superCall, qd.msgs.A_constructor_cannot_contain_a_super_call_when_its_class_extends_null);
           const superCallShouldBeFirst =
-            (compilerOpts.target !== ScriptTarget.ESNext || !compilerOpts.useDefineForClassFields) &&
+            (compilerOpts.target !== qt.ScriptTarget.ESNext || !compilerOpts.useDefineForClassFields) &&
             (qu.some((<qt.ClassDeclaration>n.parent).members, isInstancePropertyWithIniterOrPrivateIdentifierProperty) ||
               some(n.params, (p) => qf.has.syntacticModifier(p, ModifierFlags.ParamPropertyModifier)));
           if (superCallShouldBeFirst) {
@@ -4547,7 +4547,7 @@ export function newCheck(f: qt.Frame) {
         if (n.initer) this.expressionCached(n.initer);
       }
       if (n.kind === Syntax.BindingElem) {
-        if (n.parent.kind === Syntax.ObjectBindingPattern && languageVersion < ScriptTarget.ESNext) this.externalEmitHelpers(n, ExternalEmitHelpers.Rest);
+        if (n.parent.kind === Syntax.ObjectBindingPattern && languageVersion < qt.ScriptTarget.ESNext) this.externalEmitHelpers(n, ExternalEmitHelpers.Rest);
         if (n.propertyName && n.propertyName.kind === Syntax.ComputedPropertyName) this.computedPropertyName(n.propertyName);
         const parent = n.parent.parent;
         const parentType = qf.get.typeForBindingElemParent(parent);
@@ -4615,7 +4615,7 @@ export function newCheck(f: qt.Frame) {
         if (n.kind === Syntax.VariableDeclaration || n.kind === Syntax.BindingElem) this.varDeclaredNamesNotShadowed(n);
         this.collisionWithRequireExportsInGeneratedCode(n, n.name);
         this.collisionWithGlobalPromiseInGeneratedCode(n, n.name);
-        if (!compilerOpts.noEmit && languageVersion < ScriptTarget.ESNext && needCollisionCheckForIdentifier(n, n.name, 'WeakMap')) potentialWeakMapCollisions.push(n);
+        if (!compilerOpts.noEmit && languageVersion < qt.ScriptTarget.ESNext && needCollisionCheckForIdentifier(n, n.name, 'WeakMap')) potentialWeakMapCollisions.push(n);
       }
     }
     variableDeclaration(n: qc.VariableDeclaration) {
@@ -4715,7 +4715,7 @@ export function newCheck(f: qt.Frame) {
       checkGrammar.forInOrForOfStatement(n);
       if (n.awaitModifier) {
         const functionFlags = qf.get.functionFlags(qf.get.containingFunction(n));
-        if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < ScriptTarget.ESNext)
+        if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < qt.ScriptTarget.ESNext)
           this.externalEmitHelpers(n, ExternalEmitHelpers.ForAwaitOfIncludes);
       }
       if (n.initer.kind === Syntax.VariableDeclarationList) this.forInOrForOfVariableDeclaration(n);
@@ -5896,7 +5896,7 @@ export function newCheck(f: qt.Frame) {
             if (!qf.has.parseError(containingNode) && unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) diagnostics.add(diag);
           });
         }
-        if (compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !n.isDeclarationFile && qf.is.externalModule(n)) this.importsForTypeOnlyConversion(n);
+        if (compilerOpts.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Error && !n.isDeclarationFile && qf.is.externalModule(n)) this.importsForTypeOnlyConversion(n);
         if (qf.is.externalOrCommonJsModule(n)) this.externalModuleExports(n);
         if (potentialThisCollisions.length) {
           forEach(potentialThisCollisions, checkIfThisIsCapturedInEnclosingScope);
@@ -5925,7 +5925,7 @@ export function newCheck(f: qt.Frame) {
                 const name = getHelperName(helper);
                 const s = helpersModule.exports!.fetch(qy.get.escUnderscores(name), qt.SymbolFlags.Value);
                 if (!s)
-                  error(n, qd.msgs.This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0, externalHelpersModuleNameText, name);
+                  error(n, qd.msgs.This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0, qt.externalHelpersModuleNameText, name);
               }
             }
           }

@@ -25,7 +25,7 @@ function containsDefaultReference(node: qt.NamedImportBindings | undefined) {
   return some(node.elems, isNamedDefaultReference);
 }
 function isNamedDefaultReference(e: qt.ImportSpecifier): boolean {
-  return e.propertyName !== undefined && e.propertyName.escapedText === InternalSymbol.Default;
+  return e.propertyName !== undefined && e.propertyName.escapedText === qt.InternalSymbol.Default;
 }
 export function chainBundle(transformSourceFile: (x: qt.SourceFile) => qt.SourceFile): (x: qt.SourceFile | qt.Bundle) => qt.SourceFile | qt.Bundle {
   return transformSourceFileOrBundle;

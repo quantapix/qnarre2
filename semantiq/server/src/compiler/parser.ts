@@ -1130,7 +1130,7 @@ function create() {
         return r;
       }
       initializeState(t, languageVersion, syntaxCursor, scriptKind);
-      const declaration = fileExtensionIs(fileName, Extension.Dts);
+      const declaration = fileExtensionIs(fileName, qt.Extension.Dts);
       if (declaration) flags.value |= NodeFlags.Ambient;
       source = create.source(fileName, languageVersion, scriptKind, declaration);
       source.flags = flags.value;
@@ -4958,7 +4958,7 @@ function extractPragmas(pragmas: qt.PragmaPseudoMapEntry[], range: qt.CommentRan
   const tripleSlash = range.kind === Syntax.SingleLineCommentTrivia && tripleSlashXMLCommentStartRegEx.exec(text);
   if (tripleSlash) {
     const name = tripleSlash[1].toLowerCase() as keyof qt.PragmaPseudoMap;
-    const pragma = commentPragmas[name] as qt.PragmaDefinition;
+    const pragma = qt.commentPragmas[name] as qt.PragmaDefinition;
     if (!pragma || !(pragma.kind! & PragmaKindFlags.TripleSlashXML)) return;
     if (pragma.args) {
       const arg: { [index: string]: string | { value: string; pos: number; end: number } } = {};
@@ -4991,7 +4991,7 @@ function extractPragmas(pragmas: qt.PragmaPseudoMapEntry[], range: qt.CommentRan
   const addPragmaForMatch = (ps: qt.PragmaPseudoMapEntry[], range: qt.CommentRange, k: PragmaKindFlags, match: RegExpExecArray) => {
     if (!match) return;
     const name = match[1].toLowerCase() as keyof qt.PragmaPseudoMap;
-    const p = commentPragmas[name] as qt.PragmaDefinition;
+    const p = qt.commentPragmas[name] as qt.PragmaDefinition;
     if (!p || !(p.kind! & k)) return;
     const getNamedPragmaArgs = (text?: string): { [i: string]: string } | 'fail' => {
       if (!text) return {};

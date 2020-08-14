@@ -25,7 +25,7 @@ export class QContext {
   remappedSymbolNames?: qu.QMap<string>;
   checkTruncationLength(): boolean {
     if (this.truncating) return this.truncating;
-    return (this.truncating = this.approximateLength > (this.flags & NodeBuilderFlags.NoTruncation ? noTruncationMaximumTruncationLength : defaultMaximumTruncationLength));
+    return (this.truncating = this.approximateLength > (this.flags & NodeBuilderFlags.NoTruncation ? qt.noTruncationMaximumTruncationLength : qt.defaultMaximumTruncationLength));
   }
   createElidedInformationPlaceholder() {
     this.approximateLength += 3;
@@ -378,7 +378,7 @@ export class QContext {
         if (parent && parent.getExportsOfSymbol()) {
           const exports = parent.getExportsOfSymbol();
           forEachEntry(exports, (ex, name) => {
-            if (qf.get.symbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbol.ExportEquals) {
+            if (qf.get.symbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== qt.InternalSymbol.ExportEquals) {
               symbolName = qy.get.unescUnderscores(name);
               return true;
             }
@@ -411,7 +411,7 @@ export class QContext {
       const nonRootParts = chain.length > 1 ? createAccessFromSymbolChain(chain, chain.length - 1, 1) : undefined;
       const typeParamNodes = overrideTypeArgs || this.lookupTypeParamNodes(chain, 0);
       const spec = this.getSpecifierForModuleSymbol(chain[0]);
-      if (!(this.flags & NodeBuilderFlags.AllowNodeModulesRelativePaths) && getEmitModuleResolutionKind(compilerOpts) === ModuleResolutionKind.NodeJs && spec.indexOf('/node_modules/') >= 0) {
+      if (!(this.flags & NodeBuilderFlags.AllowNodeModulesRelativePaths) && getEmitModuleResolutionKind(compilerOpts) === qt.ModuleResolutionKind.NodeJs && spec.indexOf('/node_modules/') >= 0) {
         this.encounteredError = true;
         if (this.tracker.reportLikelyUnsafeImportRequiredError) {
           this.tracker.reportLikelyUnsafeImportRequiredError(spec);
@@ -577,7 +577,7 @@ export class QContext {
     if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(propertyType).length && !isReadonlySymbol(propertySymbol)) {
       const signatures = getSignaturesOfType(
         filterType(propertyType, (t) => !(t.flags & TypeFlags.Undefined)),
-        SignatureKind.Call
+        qt.SignatureKind.Call
       );
       for (const signature of signatures) {
         const methodDeclaration = <qt.MethodSignature>this.signatureToSignatureDeclarationHelper(signature, Syntax.MethodSignature);
@@ -691,9 +691,10 @@ export class QContext {
     let returnTypeNode: qt.Typing | undefined;
     const typePredicate = getTypePredicateOfSignature(signature);
     if (typePredicate) {
-      const assertsModifier = typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new qc.Token(Syntax.AssertsKeyword) : undefined;
+      const assertsModifier =
+        typePredicate.kind === qt.TypePredicateKind.AssertsThis || typePredicate.kind === qt.TypePredicateKind.AssertsIdentifier ? new qc.Token(Syntax.AssertsKeyword) : undefined;
       const paramName =
-        typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier
+        typePredicate.kind === qt.TypePredicateKind.Identifier || typePredicate.kind === qt.TypePredicateKind.AssertsIdentifier
           ? qf.emit.setFlags(new qc.Identifier(typePredicate.paramName), EmitFlags.NoAsciiEscaping)
           : new qc.ThisTyping();
       const typeNode = typePredicate.type && this.typeToTypeNodeHelper(typePredicate.type);
@@ -951,7 +952,7 @@ export class QContext {
       }
       const sym = resolveEntityName(leftmost, SymbolFlags.All, true, true);
       if (sym) {
-        if (isSymbolAccessible(sym, this.enclosingDeclaration, SymbolFlags.All, false).accessibility !== SymbolAccessibility.Accessible) {
+        if (isSymbolAccessible(sym, this.enclosingDeclaration, SymbolFlags.All, false).accessibility !== qt.SymbolAccessibility.Accessible) {
           hadError = true;
         } else {
           this.tracker?.trackSymbol?.(sym, this.enclosingDeclaration, SymbolFlags.All);
@@ -969,12 +970,12 @@ export class QContext {
     }
     return qf.visit.eachChild(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
   }
-  serializeSignatures(kind: SignatureKind, input: qt.Type, baseType: qt.Type | undefined, outputKind: Syntax) {
+  serializeSignatures(kind: qt.SignatureKind, input: qt.Type, baseType: qt.Type | undefined, outputKind: Syntax) {
     const signatures = getSignaturesOfType(input, kind);
-    if (kind === SignatureKind.Construct) {
+    if (kind === qt.SignatureKind.Construct) {
       if (!baseType && every(signatures, (s) => length(s.params) === 0)) return [];
       if (baseType) {
-        const baseSigs = getSignaturesOfType(baseType, SignatureKind.Construct);
+        const baseSigs = getSignaturesOfType(baseType, qt.SignatureKind.Construct);
         if (!length(baseSigs) && every(signatures, (s) => length(s.params) === 0)) return [];
         if (baseSigs.length === signatures.length) {
           let failed = false;
@@ -1028,7 +1029,7 @@ export class QContext {
     if (reference) return new qc.ExpressionWithTypings(typeArgs, reference);
   }
   serializeAsFunctionNamespaceMerge(type: qt.Type, symbol: qt.Symbol, localName: string, modifierFlags: ModifierFlags) {
-    const signatures = getSignaturesOfType(type, SignatureKind.Call);
+    const signatures = getSignaturesOfType(type, qt.SignatureKind.Call);
     for (const sig of signatures) {
       const decl = this.signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, includePrivateSymbol, bundled) as qt.FunctionDeclaration;
       decl.name = new qc.Identifier(localName);
@@ -1081,7 +1082,7 @@ export class QContext {
       filter(qf.get.propertiesOfType(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
       (p) => serializePropertySymbolForClass(p, true, staticBaseType)
     );
-    const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
+    const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, qt.SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
       ? [new qc.ConstructorDeclaration(undefined, qf.create.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as qt.ConstructorDeclaration[]);
@@ -1116,15 +1117,15 @@ export class QContext {
     return localName;
   }
   getNameCandidateWorker(symbol: qt.Symbol, localName: string) {
-    if (localName === InternalSymbol.Default || localName === InternalSymbol.Class || localName === InternalSymbol.Function) {
+    if (localName === qt.InternalSymbol.Default || localName === qt.InternalSymbol.Class || localName === qt.InternalSymbol.Function) {
       const flags = this.flags;
       this.flags |= NodeBuilderFlags.InInitialEntityName;
       const nameCandidate = symbol.getNameOfSymbolAsWritten(this);
       this.flags = flags;
       localName = nameCandidate.length > 0 && qy.is.singleOrDoubleQuote(nameCandidate.charCodeAt(0)) ? stripQuotes(nameCandidate) : nameCandidate;
     }
-    if (localName === InternalSymbol.Default) localName = '_default';
-    else if (localName === InternalSymbol.ExportEquals) localName = '_exports';
+    if (localName === qt.InternalSymbol.Default) localName = '_default';
+    else if (localName === qt.InternalSymbol.ExportEquals) localName = '_exports';
     localName = qy.is.identifierText(localName) && !qy.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
     return localName;
   }
@@ -1476,7 +1477,7 @@ export class QContext {
       }
       if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
         const type = p.typeOfSymbol();
-        const signatures = getSignaturesOfType(type, SignatureKind.Call);
+        const signatures = getSignaturesOfType(type, qt.SignatureKind.Call);
         if (flag & ModifierFlags.Private) {
           return createProperty(
             undefined,
@@ -1520,7 +1521,7 @@ export class QContext {
         ...oldthis.tracker,
         trackSymbol: (sym, decl, meaning) => {
           const accessibleResult = isSymbolAccessible(sym, decl, meaning, false);
-          if (accessibleResult.accessibility === SymbolAccessibility.Accessible) {
+          if (accessibleResult.accessibility === qt.SymbolAccessibility.Accessible) {
             const chain = context.lookupSymbolChainWorker(sym, meaning);
             if (!(sym.flags & SymbolFlags.Property)) includePrivateSymbol(chain[0]);
           } else if (oldthis.tracker && oldthis.tracker.trackSymbol) {
@@ -1712,8 +1713,8 @@ export class QContext {
         getObjectFlags(typeToSerialize) & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.String) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.Number) &&
-        !!(length(qf.get.propertiesOfType(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, SignatureKind.Call))) &&
-        !length(getSignaturesOfType(typeToSerialize, SignatureKind.Construct)) &&
+        !!(length(qf.get.propertiesOfType(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
+        !length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Construct)) &&
         !getDeclarationWithTypeAnnotation(hostSymbol, enclosingDeclaration) &&
         !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => d.sourceFile !== ctxSrc)) &&
         !some(qf.get.propertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escName)) &&

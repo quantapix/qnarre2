@@ -288,7 +288,7 @@ SyntaxList.prototype.kind = SyntaxList.kind;
 export abstract class Tobj extends Nobj implements qt.Tobj {
   _typingBrand: any;
 }
-export abstract class qt.WithArgsTobj extends Tobj implements qt.WithArgsTobj {
+export abstract class WithArgsTobj extends Tobj implements qt.WithArgsTobj {
   typeArgs?: qt.Nodes<qt.Typing>;
 }
 export abstract class Decl extends Nobj implements qt.Decl {
@@ -301,7 +301,7 @@ export abstract class DeclarationStmt extends NamedDecl implements qt.Declaratio
   name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
   _statementBrand: any;
 }
-export abstract class qt.ClassElem extends NamedDecl implements qt.ClassElem {
+export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
   name?: qt.PropertyName;
   _classElemBrand: any;
 }
@@ -331,7 +331,7 @@ export abstract class ObjectLiteralElem extends NamedDecl implements qt.ObjectLi
 export abstract class PropertyLikeDecl extends NamedDecl implements qt.PropertyLikeDecl {
   name!: qt.PropertyName;
 }
-export abstract class qt.TypeElem extends NamedDecl implements qt.TypeElem {
+export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
   name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
   _typeElemBrand: any;
@@ -412,7 +412,7 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
 export abstract class Stmt extends Nobj implements qt.Stmt {
   _statementBrand: any;
 }
-export abstract class qt.IterationStmt extends Stmt implements qt.IterationStmt {
+export abstract class IterationStmt extends Stmt implements qt.IterationStmt {
   statement!: qt.Statement;
 }
 export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
@@ -443,7 +443,7 @@ export abstract class LiteralExpr extends PrimaryExpr implements qt.LiteralExpr 
 export abstract class DocTobj extends Tobj implements qt.DocTobj {
   _docTypeBrand: any;
 }
-export abstract class qt.DocTag extends Nobj implements qt.DocTag {
+export abstract class DocTag extends Nobj implements qt.DocTag {
   parent?: qt.Doc | qt.DocTypingLiteral;
   tagName: qt.Identifier;
   comment?: string;
@@ -790,7 +790,7 @@ export class Signature implements qt.Signature {
       let type = this.target
         ? instantiateType(this.returnTypeOfSignature(this.target), this.mapper)
         : this.unions
-        ? this.unionType(map(this.unions, this.returnTypeOfSignature), UnionReduction.Subtype)
+        ? this.unionType(map(this.unions, this.returnTypeOfSignature), qt.UnionReduction.Subtype)
         : this.returnTypeFromAnnotation(this.declaration!) ||
           (qf.is.missing((<qt.FunctionLikeDeclaration>this.declaration).body) ? anyType : this.returnTypeFromBody(<qt.FunctionLikeDeclaration>this.declaration));
       if (this.flags & qt.SignatureFlags.IsInnerCallChain) type = addOptionalTypeMarker(t);
@@ -1147,16 +1147,16 @@ export class SourceFile extends Decl implements qt.SourceFile {
   resolvedModule(n: string): qt.ResolvedModuleFull | undefined {
     return this.resolvedModules?.get(n);
   }
-  setResolvedModule(name: string, m: qt.ResolvedModuleFull) {
+  setResolvedModule(n: string, m: qt.ResolvedModuleFull) {
     if (!this.resolvedModules) this.resolvedModules = new qu.QMap<qt.ResolvedModuleFull>();
-    this.resolvedModules.set(name, m);
+    this.resolvedModules.set(n, m);
   }
-  setResolvedTypeReferenceDirective(name: string, d: qt.ResolvedTypeReferenceDirective) {
+  setResolvedTypeReferenceDirective(n: string, d: qt.ResolvedTypeReferenceDirective) {
     if (!this.resolvedTypeReferenceDirectiveNames) this.resolvedTypeReferenceDirectiveNames = new qu.QMap<qt.ResolvedTypeReferenceDirective>();
-    this.resolvedTypeReferenceDirectiveNames.set(name, d);
+    this.resolvedTypeReferenceDirectiveNames.set(n, d);
   }
-  isFileLevelUniqueName(name: string, hasGlobal?: qt.PrintHandlers['hasGlobalName']) {
-    return !(hasGlobal && hasGlobal(name)) && !this.identifiers.has(name);
+  isFileLevelUniqueName(n: string, hasGlobal?: qt.PrintHandlers['hasGlobalName']) {
+    return !(hasGlobal && hasGlobal(n)) && !this.identifiers.has(n);
   }
   isEffectiveExternalModule(o: qt.CompilerOpts) {
     return qf.is.externalModule(this) || o.isolatedModules || (getEmitModuleKind(o) === qt.ModuleKind.CommonJS && !!this.commonJsModuleIndicator);
@@ -1206,7 +1206,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
     return (o.skipLibCheck && this.isDeclarationFile) || (o.skipDefaultLibCheck && this.hasNoDefaultLib) || host.isSourceOfProjectReferenceRedirect(this.fileName);
   }
   qp_updateSourceNode(
-    node: SourceFile,
+    n: SourceFile,
     statements: readonly qt.Statement[],
     isDeclarationFile?: boolean,
     referencedFiles?: SourceFile['referencedFiles'],
@@ -1215,55 +1215,55 @@ export class SourceFile extends Decl implements qt.SourceFile {
     libReferences?: SourceFile['libReferenceDirectives']
   ) {
     if (
-      node.statements !== statements ||
-      (isDeclarationFile !== undefined && node.isDeclarationFile !== isDeclarationFile) ||
-      (referencedFiles !== undefined && node.referencedFiles !== referencedFiles) ||
-      (typeReferences !== undefined && node.typeReferenceDirectives !== typeReferences) ||
-      (libReferences !== undefined && node.libReferenceDirectives !== libReferences) ||
-      (hasNoDefaultLib !== undefined && node.hasNoDefaultLib !== hasNoDefaultLib)
+      n.statements !== statements ||
+      (isDeclarationFile !== undefined && n.isDeclarationFile !== isDeclarationFile) ||
+      (referencedFiles !== undefined && n.referencedFiles !== referencedFiles) ||
+      (typeReferences !== undefined && n.typeReferenceDirectives !== typeReferences) ||
+      (libReferences !== undefined && n.libReferenceDirectives !== libReferences) ||
+      (hasNoDefaultLib !== undefined && n.hasNoDefaultLib !== hasNoDefaultLib)
     ) {
       const updated = <SourceFile>Node.createSynthesized(Syntax.SourceFile);
-      updated.flags |= node.flags;
+      updated.flags |= n.flags;
       updated.statements = new Nodes(statements);
-      updated.endOfFileToken = node.endOfFileToken;
-      updated.fileName = node.fileName;
-      updated.path = node.path;
-      updated.text = node.text;
-      updated.isDeclarationFile = isDeclarationFile === undefined ? node.isDeclarationFile : isDeclarationFile;
-      updated.referencedFiles = referencedFiles === undefined ? node.referencedFiles : referencedFiles;
-      updated.typeReferenceDirectives = typeReferences === undefined ? node.typeReferenceDirectives : typeReferences;
-      updated.hasNoDefaultLib = hasNoDefaultLib === undefined ? node.hasNoDefaultLib : hasNoDefaultLib;
-      updated.libReferenceDirectives = libReferences === undefined ? node.libReferenceDirectives : libReferences;
-      if (node.amdDependencies !== undefined) updated.amdDependencies = node.amdDependencies;
-      if (node.moduleName !== undefined) updated.moduleName = node.moduleName;
-      if (node.languageVariant !== undefined) updated.languageVariant = node.languageVariant;
-      if (node.renamedDependencies !== undefined) updated.renamedDependencies = node.renamedDependencies;
-      if (node.languageVersion !== undefined) updated.languageVersion = node.languageVersion;
-      if (node.scriptKind !== undefined) updated.scriptKind = node.scriptKind;
-      if (node.externalModuleIndicator !== undefined) updated.externalModuleIndicator = node.externalModuleIndicator;
-      if (node.commonJsModuleIndicator !== undefined) updated.commonJsModuleIndicator = node.commonJsModuleIndicator;
-      if (node.identifiers !== undefined) updated.identifiers = node.identifiers;
-      if (node.nodeCount !== undefined) updated.nodeCount = node.nodeCount;
-      if (node.identifierCount !== undefined) updated.identifierCount = node.identifierCount;
-      if (node.symbolCount !== undefined) updated.symbolCount = node.symbolCount;
-      if (node.parseDiagnostics !== undefined) updated.parseDiagnostics = node.parseDiagnostics;
-      if (node.bindDiagnostics !== undefined) updated.bindDiagnostics = node.bindDiagnostics;
-      if (node.bindSuggestionDiagnostics !== undefined) updated.bindSuggestionDiagnostics = node.bindSuggestionDiagnostics;
-      if (node.lineMap !== undefined) updated.lineMap = node.lineMap;
-      if (node.classifiableNames !== undefined) updated.classifiableNames = node.classifiableNames;
-      if (node.resolvedModules !== undefined) updated.resolvedModules = node.resolvedModules;
-      if (node.resolvedTypeReferenceDirectiveNames !== undefined) updated.resolvedTypeReferenceDirectiveNames = node.resolvedTypeReferenceDirectiveNames;
-      if (node.imports !== undefined) updated.imports = node.imports;
-      if (node.moduleAugmentations !== undefined) updated.moduleAugmentations = node.moduleAugmentations;
-      if (node.pragmas !== undefined) updated.pragmas = node.pragmas;
-      if (node.localJsxFactory !== undefined) updated.localJsxFactory = node.localJsxFactory;
-      if (node.localJsxNamespace !== undefined) updated.localJsxNamespace = node.localJsxNamespace;
-      return updated.updateFrom(node);
+      updated.endOfFileToken = n.endOfFileToken;
+      updated.fileName = n.fileName;
+      updated.path = n.path;
+      updated.text = n.text;
+      updated.isDeclarationFile = isDeclarationFile === undefined ? n.isDeclarationFile : isDeclarationFile;
+      updated.referencedFiles = referencedFiles === undefined ? n.referencedFiles : referencedFiles;
+      updated.typeReferenceDirectives = typeReferences === undefined ? n.typeReferenceDirectives : typeReferences;
+      updated.hasNoDefaultLib = hasNoDefaultLib === undefined ? n.hasNoDefaultLib : hasNoDefaultLib;
+      updated.libReferenceDirectives = libReferences === undefined ? n.libReferenceDirectives : libReferences;
+      if (n.amdDependencies !== undefined) updated.amdDependencies = n.amdDependencies;
+      if (n.moduleName !== undefined) updated.moduleName = n.moduleName;
+      if (n.languageVariant !== undefined) updated.languageVariant = n.languageVariant;
+      if (n.renamedDependencies !== undefined) updated.renamedDependencies = n.renamedDependencies;
+      if (n.languageVersion !== undefined) updated.languageVersion = n.languageVersion;
+      if (n.scriptKind !== undefined) updated.scriptKind = n.scriptKind;
+      if (n.externalModuleIndicator !== undefined) updated.externalModuleIndicator = n.externalModuleIndicator;
+      if (n.commonJsModuleIndicator !== undefined) updated.commonJsModuleIndicator = n.commonJsModuleIndicator;
+      if (n.identifiers !== undefined) updated.identifiers = n.identifiers;
+      if (n.nodeCount !== undefined) updated.nodeCount = n.nodeCount;
+      if (n.identifierCount !== undefined) updated.identifierCount = n.identifierCount;
+      if (n.symbolCount !== undefined) updated.symbolCount = n.symbolCount;
+      if (n.parseDiagnostics !== undefined) updated.parseDiagnostics = n.parseDiagnostics;
+      if (n.bindDiagnostics !== undefined) updated.bindDiagnostics = n.bindDiagnostics;
+      if (n.bindSuggestionDiagnostics !== undefined) updated.bindSuggestionDiagnostics = n.bindSuggestionDiagnostics;
+      if (n.lineMap !== undefined) updated.lineMap = n.lineMap;
+      if (n.classifiableNames !== undefined) updated.classifiableNames = n.classifiableNames;
+      if (n.resolvedModules !== undefined) updated.resolvedModules = n.resolvedModules;
+      if (n.resolvedTypeReferenceDirectiveNames !== undefined) updated.resolvedTypeReferenceDirectiveNames = n.resolvedTypeReferenceDirectiveNames;
+      if (n.imports !== undefined) updated.imports = n.imports;
+      if (n.moduleAugmentations !== undefined) updated.moduleAugmentations = n.moduleAugmentations;
+      if (n.pragmas !== undefined) updated.pragmas = n.pragmas;
+      if (n.localJsxFactory !== undefined) updated.localJsxFactory = n.localJsxFactory;
+      if (n.localJsxNamespace !== undefined) updated.localJsxNamespace = n.localJsxNamespace;
+      return updated.updateFrom(n);
     }
-    return node;
+    return n;
   }
 }
-export class qt.SourceMapSource implements qt.SourceMapSource {
+export class SourceMapSource implements qt.SourceMapSource {
   lineMap!: number[];
   constructor(public fileName: string, public text: string, public skipTrivia = (pos: number) => pos) {}
   lineAndCharOf(pos: number): qy.LineAndChar {
@@ -1290,9 +1290,9 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
   lineAndCharOf(pos: number): LineAndChar;
   createUnparsedSource() {
     super();
-    this.prologues = empty;
-    this.referencedFiles = empty;
-    this.libReferenceDirectives = empty;
+    this.prologues = qu.empty;
+    this.referencedFiles = qu.empty;
+    this.libReferenceDirectives = qu.empty;
     this.lineAndCharOf = (pos) => qy.get.lineAndCharOf(this, pos);
   }
   createUnparsedSourceFile(text: string): UnparsedSource;
@@ -1374,11 +1374,11 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
   parseUnparsedSourceFile(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo | undefined, stripInternal: boolean | undefined) {
     let prologues: qt.UnparsedPrologue[] | undefined;
     let helpers: qt.UnscopedEmitHelper[] | undefined;
-    let referencedFiles: qc.FileReference[] | undefined;
+    let referencedFiles: qt.FileReference[] | undefined;
     let typeReferenceDirectives: string[] | undefined;
-    let libReferenceDirectives: qc.FileReference[] | undefined;
+    let libReferenceDirectives: qt.FileReference[] | undefined;
     let texts: qt.UnparsedSourceText[] | undefined;
-    for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
+    for (const section of bundleFileInfo ? bundleFileInfo.sections : qu.empty) {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Prologue:
           (prologues || (prologues = [])).push(createUnparsedNode(section, this) as qt.UnparsedPrologue);
@@ -1406,7 +1406,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
               (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, this) as qt.UnparsedTextLike);
             }
           }
-          prependNode.texts = prependTexts || empty;
+          prependNode.texts = prependTexts || qu.empty;
           (texts || (texts = [])).push(prependNode);
           break;
         case qt.BundleFileSectionKind.Internal:
@@ -1421,11 +1421,11 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
           qc.assert.never(section);
       }
     }
-    this.prologues = prologues || empty;
+    this.prologues = prologues || qu.empty;
     this.helpers = helpers;
-    this.referencedFiles = referencedFiles || empty;
+    this.referencedFiles = referencedFiles || qu.empty;
     this.typeReferenceDirectives = typeReferenceDirectives;
-    this.libReferenceDirectives = libReferenceDirectives || empty;
+    this.libReferenceDirectives = libReferenceDirectives || qu.empty;
     this.texts = texts || [<qt.UnparsedTextLike>createUnparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
   parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo) {
@@ -1453,15 +1453,15 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
           qc.assert.never(section);
       }
     }
-    this.texts = texts || empty;
+    this.texts = texts || qu.empty;
     this.helpers = map(bundleFileInfo.sources && bundleFileInfo.sources.helpers, (name) => getAllUnscopedEmitHelpers().get(name)!);
     this.syntheticReferences = syntheticReferences;
     return this;
   }
 }
 UnparsedSource.prototype.kind = UnparsedSource.kind;
-export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
-  return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
+export function failBadSyntax(n: Node, m?: string, mark?: qu.AnyFunction): never {
+  return qu.fail(`${m || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
 export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
@@ -1511,17 +1511,17 @@ export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'qu
   }
   return;
 }
-function walkUp(n: Node | undefined, k: Syntax) {
+function walkUp(k: Syntax, n?: Node) {
   while (n?.kind === k) {
     n = n.parent;
   }
   return n;
 }
 export function walkUpParenthesizedTypes(n?: Node) {
-  return walkUp(n, Syntax.ParenthesizedTyping);
+  return walkUp(Syntax.ParenthesizedTyping, n);
 }
 export function walkUpParenthesizedExpressions(n?: Node) {
-  return walkUp(n, Syntax.ParenthesizedExpression);
+  return walkUp(Syntax.ParenthesizedExpression, n);
 }
 export function walkUpBindingElemsAndPatterns(e: qt.BindingElem) {
   let n = e.parent as Node | undefined;
@@ -1529,22 +1529,4 @@ export function walkUpBindingElemsAndPatterns(e: qt.BindingElem) {
     n = n?.parent?.parent;
   }
   return n?.parent as qt.ParamDeclaration | qt.VariableDeclaration | undefined;
-}
-export function discoverProbableSymlinks(fs: readonly SourceFile[], n: qu.GetCanonicalFileName, cwd: string): qu.QReadonlyMap<string> {
-  const r = new qu.QMap<string>();
-  const ls = qu.flatten<readonly [string, string]>(
-    qu.mapDefined(
-      fs,
-      (f) =>
-        f.resolvedModules &&
-        qu.compact(
-          qu.arrayFrom(qu.mapIterator(f.resolvedModules.values(), (m) => (m && m.originalPath && m.resolvedFileName !== m.originalPath ? ([m.resolvedFileName, m.originalPath] as const) : undefined)))
-        )
-    )
-  );
-  for (const [resolvedPath, originalPath] of ls) {
-    const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, n);
-    r.set(commonOriginal, commonResolved);
-  }
-  return r;
 }

@@ -194,16 +194,16 @@ export function newCreate(f: qt.Frame) {
       }
       return result;
     }
-    typePredicate(kind: TypePredicateKind, paramName: string | undefined, paramIndex: number | undefined, type: qt.Type | undefined): qt.TypePredicate {
+    typePredicate(kind: qt.TypePredicateKind, paramName: string | undefined, paramIndex: number | undefined, type: qt.Type | undefined): qt.TypePredicate {
       return { kind, paramName, paramIndex, type } as qt.TypePredicate;
     }
     typePredicateFromTypingPredicate(node: qt.TypingPredicate, signature: qt.Signature): qt.TypePredicate {
       const paramName = node.paramName;
       const type = node.type && qf.get.typeFromTypeNode(node.type);
       return paramName.kind === Syntax.ThisTyping
-        ? this.typePredicate(node.assertsModifier ? TypePredicateKind.AssertsThis : TypePredicateKind.This, undefined, type)
+        ? this.typePredicate(node.assertsModifier ? qt.TypePredicateKind.AssertsThis : qt.TypePredicateKind.This, undefined, type)
         : this.typePredicate(
-            node.assertsModifier ? TypePredicateKind.AssertsIdentifier : TypePredicateKind.Identifier,
+            node.assertsModifier ? qt.TypePredicateKind.AssertsIdentifier : qt.TypePredicateKind.Identifier,
             paramName.escapedText as string,
             findIndex(signature.params, (p) => p.escName === paramName.escapedText),
             type
@@ -427,7 +427,7 @@ export function newCreate(f: qt.Frame) {
     finalArrayType(elemType: qt.Type) {
       return elemType.flags & qt.TypeFlags.Never
         ? autoArrayType
-        : this.arrayType(elemType.flags & qt.TypeFlags.Union ? qf.get.unionType((<qt.UnionType>elemType).types, UnionReduction.Subtype) : elemType);
+        : this.arrayType(elemType.flags & qt.TypeFlags.Union ? qf.get.unionType((<qt.UnionType>elemType).types, qt.UnionReduction.Subtype) : elemType);
     }
     arrayLiteralType(type: qt.ObjectType) {
       if (!(getObjectFlags(type) & ObjectFlags.Reference)) return type;
@@ -536,7 +536,7 @@ export function newCreate(f: qt.Frame) {
       const restParamSymbols = mapDefined(candidates, (c) => (c.hasRestParam() ? last(c.params) : undefined));
       let flags = SignatureFlags.None;
       if (restParamSymbols.length !== 0) {
-        const type = this.arrayType(qf.get.unionType(mapDefined(candidates, tryGetRestTypeOfSignature), UnionReduction.Subtype));
+        const type = this.arrayType(qf.get.unionType(mapDefined(candidates, tryGetRestTypeOfSignature), qt.UnionReduction.Subtype));
         params.push(this.combinedSymbolForOverloadFailure(restParamSymbols, type));
         flags |= SignatureFlags.HasRestParam;
       }
@@ -544,7 +544,7 @@ export function newCreate(f: qt.Frame) {
       return this.signature(candidates[0].declaration, undefined, thisParam, params, qf.get.intersectionType(candidates.map(qf.get.returnTypeOfSignature)), undefined, minArgCount, flags);
     }
     combinedSymbolFromTypes(sources: readonly qt.Symbol[], types: qt.Type[]): qt.Symbol {
-      return this.combinedSymbolForOverloadFailure(sources, qf.get.unionType(types, UnionReduction.Subtype));
+      return this.combinedSymbolForOverloadFailure(sources, qf.get.unionType(types, qt.UnionReduction.Subtype));
     }
     combinedSymbolForOverloadFailure(sources: readonly qt.Symbol[], type: qt.Type): qt.Symbol {
       return this.symbolWithType(first(sources), type);
@@ -799,15 +799,15 @@ export function newCreate(f: qt.Frame) {
       }
     }
     makeUnaryTypeMapper(source: qt.Type, target: qt.Type): qt.TypeMapper {
-      return { kind: TypeMapKind.Simple, source, target };
+      return { kind: qt.TypeMapKind.Simple, source, target };
     }
     makeArrayTypeMapper(sources: readonly qt.TypeParam[], targets: readonly qt.Type[] | undefined): qt.TypeMapper {
-      return { kind: TypeMapKind.Array, sources, targets };
+      return { kind: qt.TypeMapKind.Array, sources, targets };
     }
     makeFunctionTypeMapper(func: (t: qt.Type) => qt.Type): qt.TypeMapper {
-      return { kind: TypeMapKind.Function, func };
+      return { kind: qt.TypeMapKind.Function, func };
     }
-    makeCompositeTypeMapper(kind: TypeMapKind.Composite | TypeMapKind.Merged, mapper1: qt.TypeMapper, mapper2: qt.TypeMapper): qt.TypeMapper {
+    makeCompositeTypeMapper(kind: qt.TypeMapKind.Composite | qt.TypeMapKind.Merged, mapper1: qt.TypeMapper, mapper2: qt.TypeMapper): qt.TypeMapper {
       return { kind, mapper1, mapper2 };
     }
   }
@@ -1001,7 +1001,7 @@ export function newInstantiate(f: qt.Frame) {
           ? type
           : flags & qt.TypeFlags.Intersection
           ? qf.get.intersectionType(newTypes, type.aliasSymbol, this.types(type.aliasTypeArgs, mapper))
-          : qf.get.unionType(newTypes, UnionReduction.Literal, type.aliasSymbol, this.types(type.aliasTypeArgs, mapper));
+          : qf.get.unionType(newTypes, qt.UnionReduction.Literal, type.aliasSymbol, this.types(type.aliasTypeArgs, mapper));
       }
       if (flags & qt.TypeFlags.Index) return qf.get.indexType(this.type((<qt.IndexType>type).type, mapper));
       if (flags & qt.TypeFlags.IndexedAccess) return qf.get.indexedAccessType(this.type((<qt.IndexedAccessType>type).objectType, mapper), this.type((<qt.IndexedAccessType>type).indexType, mapper));
@@ -1035,7 +1035,7 @@ export function newInstantiate(f: qt.Frame) {
       if (type.flags & qt.TypeFlags.Union) {
         return qf.get.unionType(
           map((<qt.UnionType>type).types, (t) => this.instantiableTypes(t, mapper)),
-          UnionReduction.None
+          qt.UnionReduction.None
         );
       }
       if (type.flags & qt.TypeFlags.Intersection) return qf.get.intersectionType(map((<qt.IntersectionType>type).types, (t) => this.instantiableTypes(t, mapper)));
@@ -1051,7 +1051,7 @@ export function newInstantiate(f: qt.Frame) {
       });
       if (!inferenceContext) {
         applyToReturnTypes(contextualSignature, signature, (source, target) => {
-          inferTypes(context.inferences, source, target, InferencePriority.ReturnType);
+          inferTypes(context.inferences, source, target, qt.InferencePriority.ReturnType);
         });
       }
       return getSignatureInstantiation(signature, getInferredTypes(context), qf.is.inJSFile(contextualSignature.declaration));
@@ -1181,7 +1181,7 @@ export function newResolve(f: qt.Frame) {
                 break;
               }
             }
-            if (name !== InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & qt.SymbolFlags.ModuleMember))) {
+            if (name !== qt.InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & qt.SymbolFlags.ModuleMember))) {
               if (location.kind === Syntax.SourceFile && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
               else {
                 break loop;
@@ -1335,7 +1335,7 @@ export function newResolve(f: qt.Frame) {
         return;
       }
       if (nameNotFoundMessage) {
-        if (propertyWithInvalidIniter && !(compilerOpts.target === ScriptTarget.ESNext && compilerOpts.useDefineForClassFields)) {
+        if (propertyWithInvalidIniter && !(compilerOpts.target === qt.ScriptTarget.ESNext && compilerOpts.useDefineForClassFields)) {
           const propertyName = (<qt.PropertyDeclaration>propertyWithInvalidIniter).name;
           error(errorLocation, qd.msgs.Initer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor, declarationNameToString(propertyName), diagnosticName(nameArg!));
           return;
@@ -1501,8 +1501,8 @@ export function newResolve(f: qt.Frame) {
             error(errorNode, diag, tsExtension, removeExtension(moduleReference, tsExtension));
           } else if (
             !compilerOpts.resolve.jsonModule &&
-            fileExtensionIs(moduleReference, Extension.Json) &&
-            getEmitModuleResolutionKind(compilerOpts) === ModuleResolutionKind.NodeJs &&
+            fileExtensionIs(moduleReference, qt.Extension.Json) &&
+            getEmitModuleResolutionKind(compilerOpts) === qt.ModuleResolutionKind.NodeJs &&
             hasJsonModuleEmitEnabled(compilerOpts)
           ) {
             error(errorNode, qd.msgs.Cannot_find_module_0_Consider_using_resolveJsonModule_to_import_module_with_json_extension, moduleReference);
@@ -1527,7 +1527,7 @@ export function newResolve(f: qt.Frame) {
       const symbol = this.externalModuleSymbol(moduleSymbol, dontResolveAlias);
       if (!dontResolveAlias && symbol) {
         if (!suppressInteropError && !(symbol.flags & (SymbolFlags.Module | qt.SymbolFlags.Variable)) && !symbol.declarationOfKind(Syntax.SourceFile)) {
-          const compilerOptionName = moduleKind >= ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
+          const compilerOptionName = moduleKind >= qt.ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
           error(referencingLocation, qd.msgs.This_module_can_only_be_referenced_with_ECMAScript_imports_Slashexports_by_turning_on_the_0_flag_and_referencing_its_default_export, compilerOptionName);
           return symbol;
         }
@@ -1558,7 +1558,7 @@ export function newResolve(f: qt.Frame) {
       return symbol;
     }
     baseTypesOfClass(type: qt.InterfaceType) {
-      type.resolvedBaseTypes = resolvingEmptyArray;
+      type.resolvedBaseTypes = qt.resolvingEmptyArray;
       const baseConstructorType = getApparentType(getBaseConstructorTypeOfClass(type));
       if (!(baseConstructorType.flags & (TypeFlags.Object | qt.TypeFlags.Intersection | qt.TypeFlags.Any))) return (type.resolvedBaseTypes = empty);
       const baseTypeNode = getBaseTypeNodeOfClass(type)!;
@@ -1592,7 +1592,7 @@ export function newResolve(f: qt.Frame) {
         error(type.symbol.valueDeclaration, qd.msgs.Type_0_recursively_references_itself_as_a_base_type, typeToString(type, undefined, TypeFormatFlags.WriteArrayAsGenericType));
         return (type.resolvedBaseTypes = empty);
       }
-      if (type.resolvedBaseTypes === resolvingEmptyArray) type.members = undefined;
+      if (type.resolvedBaseTypes === qt.resolvingEmptyArray) type.members = undefined;
       return (type.resolvedBaseTypes = [reducedBaseType]);
     }
     baseTypesOfInterface(type: qt.InterfaceType): void {
@@ -2241,7 +2241,7 @@ export function newResolve(f: qt.Frame) {
     }
     helpersModule(node: qt.SourceFile, errorNode: Node) {
       if (!externalHelpersModule)
-        externalHelpersModule = this.externalModule(node, externalHelpersModuleNameText, qd.msgs.This_syntax_requires_an_imported_helper_but_module_0_cannot_be_found, errorNode) || unknownSymbol;
+        externalHelpersModule = this.externalModule(node, qt.externalHelpersModuleNameText, qd.msgs.This_syntax_requires_an_imported_helper_but_module_0_cannot_be_found, errorNode) || unknownSymbol;
       return externalHelpersModule;
     }
   })());

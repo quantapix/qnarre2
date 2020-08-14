@@ -75,7 +75,7 @@ export const permissiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.
 export const emptyObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 export const emptyJsxObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 emptyJsxObjectType.objectFlags |= ObjectFlags.JsxAttributes;
-export const emptyTypeLiteralSymbol = new qc.Symbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
+export const emptyTypeLiteralSymbol = new qc.Symbol(SymbolFlags.TypeLiteral, qt.InternalSymbol.Type);
 emptyTypeLiteralSymbol.members = new qc.SymbolTable();
 export const emptyTypeLiteralType = qf.create.anonymousType(emptyTypeLiteralSymbol, emptySymbols, qu.empty, qu.empty, undefined, undefined);
 export const emptyGenericType = <qt.GenericType>(<qt.ObjectType>qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined));

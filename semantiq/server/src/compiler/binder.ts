@@ -136,7 +136,7 @@ export function bindSourceFile(file: qt.SourceFile, opts: qt.CompilerOpts) {
 function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   let file: qt.SourceFile;
   let opts: qt.CompilerOpts;
-  let languageVersion: ScriptTarget;
+  let languageVersion: qt.ScriptTarget;
   let parent: Node;
   let container: Node;
   let thisParentContainer: Node;
@@ -1704,7 +1704,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     return qd.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5;
   }
   function checkStrictModeFunctionDeclaration(node: qt.FunctionDeclaration) {
-    if (languageVersion < ScriptTarget.ES2015) {
+    if (languageVersion < qt.ScriptTarget.ES2015) {
       if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !qf.is.functionLike(blockScopeContainer)) {
         const errorSpan = qf.get.errorSpanForNode(file, node);
         file.bindqd.push(qf.create.fileDiagnostic(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
@@ -1734,7 +1734,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     }
   }
   function checkStrictModeLabeledStatement(node: qt.LabeledStatement) {
-    if (inStrictMode && opts.target! >= ScriptTarget.ES2015) {
+    if (inStrictMode && opts.target! >= qt.ScriptTarget.ES2015) {
       if (qf.is.declarationStatement(node.statement) || node.statement.kind === Syntax.VariableStatement) {
         errorOnFirstToken(node.label, qd.A_label_is_not_allowed_here);
       }

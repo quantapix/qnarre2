@@ -152,7 +152,7 @@ function getSourceMapFilePath(jsFilePath: string, opts: qt.CompilerOpts) {
 }
 export function getOutputExtension(sourceFile: qt.SourceFile, opts: qt.CompilerOpts): Extension {
   if (qf.is.jsonSourceFile(sourceFile)) return Extension.Json;
-  if (opts.jsx === JsxEmit.Preserve) {
+  if (opts.jsx === qt.JsxEmit.Preserve) {
     if (sourceFile.isJS()) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
     } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
@@ -176,7 +176,7 @@ function getOutputJSFileName(inputFileName: string, configFile: qt.ParsedCommand
   const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
   const outputFileName = changeExtension(
     getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.opts.outDir),
-    isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.opts.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js
+    isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.opts.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js
   );
   return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.opts.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
 }
@@ -742,7 +742,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   const relativeToBuildInfo = bundleFileInfo ? Debug.checkDefined(printerOpts.relativeToBuildInfo) : undefined;
   const recordInternalSection = printerOpts.recordInternalSection;
   let sourceFileTextPos = 0;
-  let sourceFileTextKind: qt.BundleFileTextLikeKind = BundleFileSectionKind.Text;
+  let sourceFileTextKind: qt.BundleFileTextLikeKind = qt.BundleFileSectionKind.Text;
   let sourceMapsDisabled = true;
   let sourceMapGenerator: qt.SourceMapGenerator | undefined;
   let sourceMapSource: qt.SourceMapSource;
@@ -845,12 +845,12 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       currentSourceFile &&
       (qf.is.declaration(node) || node.kind === Syntax.VariableStatement) &&
       isInternalDeclaration(node, currentSourceFile) &&
-      sourceFileTextKind !== BundleFileSectionKind.Internal
+      sourceFileTextKind !== qt.BundleFileSectionKind.Internal
     ) {
       const prevSourceFileTextKind = sourceFileTextKind;
       recordBundleFileTextLikeSection(writer.getTextPos());
       sourceFileTextPos = getTextPosWithWriteLine();
-      sourceFileTextKind = BundleFileSectionKind.Internal;
+      sourceFileTextKind = qt.BundleFileSectionKind.Internal;
       return prevSourceFileTextKind;
     }
     return;
@@ -901,7 +901,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
           bundleFileInfo.sections.push({
             pos,
             end: writer.getTextPos(),
-            kind: BundleFileSectionKind.Prepend,
+            kind: qt.BundleFileSectionKind.Prepend,
             data: relativeToBuildInfo!((prepend as qt.UnparsedSource).fileName),
             texts: newSections as qt.BundleFileTextLike[],
           });
@@ -1447,7 +1447,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function getHelpersFromBundledSourceFiles(bundle: qt.Bundle): string[] | undefined {
     let result: string[] | undefined;
-    if (moduleKind === ModuleKind.None || printerOpts.noEmitHelpers) {
+    if (moduleKind === qt.ModuleKind.None || printerOpts.noEmitHelpers) {
       return;
     }
     const bundledHelpers = qu.createMap<boolean>();
@@ -1467,7 +1467,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function emitHelpers(node: Node) {
     let helpersEmitted = false;
     const bundle = node.kind === Syntax.Bundle ? <qt.Bundle>node : undefined;
-    if (bundle && moduleKind === ModuleKind.None) {
+    if (bundle && moduleKind === qt.ModuleKind.None) {
       return;
     }
     const numPrepends = bundle ? bundle.prepends.length : 0;
@@ -1497,7 +1497,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
           } else {
             writeLines(helper.text(makeFileLevelOptimisticUniqueName));
           }
-          if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.EmitHelpers, data: helper.name });
+          if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.EmitHelpers, data: helper.name });
           helpersEmitted = true;
         }
       }
@@ -1532,7 +1532,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     const pos = getTextPosWithWriteLine();
     writeUnparsedNode(unparsed);
     if (bundleFileInfo) {
-      updateOrPushBundleFileTextLike(pos, writer.getTextPos(), unparsed.kind === Syntax.UnparsedText ? BundleFileSectionKind.Text : BundleFileSectionKind.Internal);
+      updateOrPushBundleFileTextLike(pos, writer.getTextPos(), unparsed.kind === Syntax.UnparsedText ? qt.BundleFileSectionKind.Text : qt.BundleFileSectionKind.Internal);
     }
   }
   function emitUnparsedSyntheticReference(unparsed: qt.UnparsedSyntheticReference) {
@@ -2964,7 +2964,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (hasNoDefaultLib) {
       const pos = writer.getTextPos();
       writeComment('');
-      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.NoDefaultLib });
+      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.NoDefaultLib });
       writeLine();
     }
     if (currentSourceFile && currentSourceFile.moduleName) {
@@ -2984,19 +2984,19 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     for (const directive of files) {
       const pos = writer.getTextPos();
       writeComment('');
-      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.Reference, data: directive.fileName });
+      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.Reference, data: directive.fileName });
       writeLine();
     }
     for (const directive of types) {
       const pos = writer.getTextPos();
       writeComment('');
-      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.Type, data: directive.fileName });
+      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.Type, data: directive.fileName });
       writeLine();
     }
     for (const directive of libs) {
       const pos = writer.getTextPos();
       writeComment('');
-      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.Lib, data: directive.fileName });
+      if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.Lib, data: directive.fileName });
       writeLine();
     }
   }
@@ -3030,7 +3030,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
           writeLine();
           const pos = writer.getTextPos();
           emit(statement);
-          if (recordBundleFileSection && bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.Prologue, data: statement.expression.text });
+          if (recordBundleFileSection && bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.Prologue, data: statement.expression.text });
           if (seenPrologueDirectives) {
             seenPrologueDirectives.set(statement.expression.text, true);
           }
@@ -3047,7 +3047,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         writeLine();
         const pos = writer.getTextPos();
         emit(prologue);
-        if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: BundleFileSectionKind.Prologue, data: prologue.data });
+        if (bundleFileInfo) bundleFileInfo.sections.push({ pos, end: writer.getTextPos(), kind: qt.BundleFileSectionKind.Prologue, data: prologue.data });
         if (seenPrologueDirectives) {
           seenPrologueDirectives.set(prologue.data, true);
         }

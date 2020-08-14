@@ -1064,7 +1064,7 @@ export namespace BuilderState {
   }
   export function create(newProgram: qt.Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
     const fileInfos = new QMap<FileInfo>();
-    const referencedMap = newProgram.getCompilerOpts().module !== ModuleKind.None ? new QMap<ReferencedSet>() : undefined;
+    const referencedMap = newProgram.getCompilerOpts().module !== qt.ModuleKind.None ? new QMap<ReferencedSet>() : undefined;
     const exportedModulesMap = referencedMap ? new QMap<ReferencedSet>() : undefined;
     const hasCalledUpdateShapeSignature = new QMap<true>();
     const useOldState = canReuseOldState(referencedMap, oldState);
@@ -1174,7 +1174,7 @@ export namespace BuilderState {
           : undefined;
       if (firstDts) {
         assert(
-          fileExtensionIs(firstDts.name, Extension.Dts),
+          fileExtensionIs(firstDts.name, qt.Extension.Dts),
           'File extension for signature expected to be dts',
           () => `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`
         );

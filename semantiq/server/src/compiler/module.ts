@@ -35,7 +35,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
       case 'js':
         return Ending.JsExtension;
       default:
-        return usesJsExtensionOnImports(importingSourceFile) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOpts) !== ModuleResolutionKind.NodeJs ? Ending.Index : Ending.Minimal;
+        return usesJsExtensionOnImports(importingSourceFile) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOpts) !== qt.ModuleResolutionKind.NodeJs ? Ending.Index : Ending.Minimal;
     }
   }
 }
@@ -44,7 +44,7 @@ function getPreferencesForUpdate(compilerOpts: qt.CompilerOpts, oldImportSpecifi
     relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
     ending: hasJSFileExtension(oldImportSpecifier)
       ? Ending.JsExtension
-      : getEmitModuleResolutionKind(compilerOpts) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index')
+      : getEmitModuleResolutionKind(compilerOpts) !== qt.ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index')
       ? Ending.Index
       : Ending.Minimal,
   };
@@ -252,7 +252,7 @@ function tryGetModuleNameFromRootDirs(
   const normalizedSourcePath = getPathRelativeToRootDirs(sourceDirectory, rootDirs, getCanonicalFileName);
   const relativePath =
     normalizedSourcePath !== undefined ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName)) : normalizedTargetPath;
-  return getEmitModuleResolutionKind(compilerOpts) === ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOpts) : removeFileExtension(relativePath);
+  return getEmitModuleResolutionKind(compilerOpts) === qt.ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOpts) : removeFileExtension(relativePath);
 }
 function tryGetModuleNameAsNodeModule(
   moduleFileName: string,
@@ -293,7 +293,7 @@ function tryGetModuleNameAsNodeModule(
   }
   const nodeModulesDirectoryName = moduleSpecifier.substring(parts.topLevelPackageNameIndex + 1);
   const packageName = getPackageNameFromTypesPackageName(nodeModulesDirectoryName);
-  return getEmitModuleResolutionKind(opts) !== ModuleResolutionKind.NodeJs && packageName === nodeModulesDirectoryName ? undefined : packageName;
+  return getEmitModuleResolutionKind(opts) !== qt.ModuleResolutionKind.NodeJs && packageName === nodeModulesDirectoryName ? undefined : packageName;
   function tryDirectoryWithPackageJson(packageRootIndex: number) {
     const packageRootPath = moduleFileName.substring(0, packageRootIndex);
     const packageJsonPath = combinePaths(packageRootPath, 'package.json');
@@ -331,7 +331,7 @@ function tryGetAnyFileFromPath(host: qt.ModuleSpecifierResolutionHost, path: str
   if (!host.fileExists) return;
   const extensions = getSupportedExtensions({ allowJs: true }, [
     { extension: 'node', isMixedContent: false },
-    { extension: 'json', isMixedContent: false, scriptKind: ScriptKind.JSON },
+    { extension: 'json', isMixedContent: false, scriptKind: qt.ScriptKind.JSON },
   ]);
   for (const e of extensions) {
     const fullPath = path + e;
@@ -417,7 +417,7 @@ function getJSExtensionForFile(fileName: string, opts: qt.CompilerOpts): Extensi
     case Extension.Dts:
       return Extension.Js;
     case Extension.Tsx:
-      return opts.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js;
+      return opts.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js;
     case Extension.Js:
     case Extension.Jsx:
     case Extension.Json:
@@ -965,21 +965,21 @@ export function resolveModuleName(
   } else {
     let moduleResolution = compilerOpts.moduleResolution;
     if (moduleResolution === undefined) {
-      moduleResolution = getEmitModuleKind(compilerOpts) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+      moduleResolution = getEmitModuleKind(compilerOpts) === qt.ModuleKind.CommonJS ? qt.ModuleResolutionKind.NodeJs : qt.ModuleResolutionKind.Classic;
       if (traceEnabled) {
-        trace(host, qd.Module_resolution_kind_is_not_specified_using_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, qd.Module_resolution_kind_is_not_specified_using_0, qt.ModuleResolutionKind[moduleResolution]);
       }
     } else {
       if (traceEnabled) {
-        trace(host, qd.Explicitly_specified_module_resolution_kind_Colon_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, qd.Explicitly_specified_module_resolution_kind_Colon_0, qt.ModuleResolutionKind[moduleResolution]);
       }
     }
     perfLogger.logStartResolveModule(moduleName);
     switch (moduleResolution) {
-      case ModuleResolutionKind.NodeJs:
+      case qt.ModuleResolutionKind.NodeJs:
         result = nodeModuleNameResolver(moduleName, containingFile, compilerOpts, host, cache, redirectedReference);
         break;
-      case ModuleResolutionKind.Classic:
+      case qt.ModuleResolutionKind.Classic:
         result = classicNameResolver(moduleName, containingFile, compilerOpts, host, cache, redirectedReference);
         break;
       default:
@@ -1115,7 +1115,7 @@ const tsExtensions = [Extensions.TypeScript, Extensions.JavaScript];
 const tsPlusJsonExtensions = [...tsExtensions, Extensions.Json];
 const tsconfigExtensions = [Extensions.TSConfig];
 function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: qt.ModuleResolutionHost): qt.ResolvedModuleWithFailedLookupLocations {
-  return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: ModuleResolutionKind.NodeJs, allowJs: true }, host, undefined, jsOnlyExtensions, undefined);
+  return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: qt.ModuleResolutionKind.NodeJs, allowJs: true }, host, undefined, jsOnlyExtensions, undefined);
 }
 export function nodeModuleNameResolver(
   moduleName: string,

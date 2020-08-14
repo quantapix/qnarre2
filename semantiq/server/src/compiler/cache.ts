@@ -103,7 +103,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   const moduleResolutionCache = createModuleResolutionCacheWithMaps(perDirectoryResolvedModuleNames, nonRelativeModuleNameCache, getCurrentDirectory(), resolutionHost.getCanonicalFileName);
   const resolvedTypeReferenceDirectives = qu.createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
   const perDirectoryResolvedTypeReferenceDirectives: CacheWithRedirects<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>> = createCacheWithRedirects();
-  const failedLookupDefaultExtensions = [Extension.Ts, Extension.Tsx, Extension.Js, Extension.Jsx, Extension.Json];
+  const failedLookupDefaultExtensions = [Extension.Ts, qt.Extension.Tsx, qt.Extension.Js, qt.Extension.Jsx, qt.Extension.Json];
   const customFailedLookupPaths = qu.createMap<number>();
   const directoryWatchesOfFailedLookups = qu.createMap<DirectoryWatchesOfFailedLookup>();
   const rootDir = rootDirForResolution && removeTrailingDirectorySeparator(getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
@@ -521,7 +521,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     }
   }
   function removeResolutionsFromProjectReferenceRedirects(filePath: qt.Path) {
-    if (!fileExtensionIs(filePath, Extension.Json)) {
+    if (!fileExtensionIs(filePath, qt.Extension.Json)) {
       return;
     }
     const program = resolutionHost.getCurrentProgram();

@@ -291,7 +291,7 @@ export function transformES2017(context: qt.TrafoContext) {
     resumeLexicalEnv();
     const original = qf.get.originalOf(node, isFunctionLike);
     const nodeType = original.type;
-    const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
+    const promiseConstructor = languageVersion < qt.ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
     const hasLexicalArgs = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArgs) !== 0;
     const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
@@ -313,7 +313,7 @@ export function transformES2017(context: qt.TrafoContext) {
         new qc.ReturnStatement(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArgs, promiseConstructor, transformAsyncFunctionBodyWorker(<qt.Block>node.body, statementOffset)))
       );
       insertStatementsAfterStandardPrologue(statements, endLexicalEnv());
-      const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+      const emitSuperHelpers = languageVersion >= qt.ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();
         if (qc.hasEntries(capturedSuperProperties)) {
@@ -357,7 +357,7 @@ export function transformES2017(context: qt.TrafoContext) {
     const typeName = type && qf.get.entityNameFromTypeNode(type);
     if (typeName && qf.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
-      if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) return typeName;
+      if (serializationKind === qt.TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === qt.TypeReferenceSerializationKind.Unknown) return typeName;
     }
     return;
   }
@@ -375,7 +375,7 @@ export function transformES2017(context: qt.TrafoContext) {
       context.enableEmitNotification(Syntax.VariableStatement);
     }
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void {
     if (enabledSubstitutions & ES2017SubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
       const superContainerFlags = resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
       if (superContainerFlags !== enclosingSuperContainerFlags) {
@@ -394,9 +394,9 @@ export function transformES2017(context: qt.TrafoContext) {
     }
     previousOnEmitNode(hint, node, emitCallback);
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
+    if (hint === qt.EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
     return node;
   }
   function substituteExpression(node: qt.Expression) {

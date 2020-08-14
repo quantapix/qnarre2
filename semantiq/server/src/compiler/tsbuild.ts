@@ -72,7 +72,7 @@ function newer(date1: Date, date2: Date): Date {
   return date2 > date1 ? date2 : date1;
 }
 function isDeclarationFile(fileName: string) {
-  return fileExtensionIs(fileName, Extension.Dts);
+  return fileExtensionIs(fileName, qt.Extension.Dts);
 }
 export type ReportEmitErrorSummary = (errorCount: number) => void;
 export interface SolutionBuilderHostBase<T extends BuilderProgram> extends ProgramHost<T> {
@@ -1363,9 +1363,9 @@ function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
 }
 function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: qt.ParsedCommandLine) {
   if (configFile.opts.noEmit) return false;
-  if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) return false;
+  if (!fileExtensionIs(fileName, qt.Extension.Dts) && (fileExtensionIs(fileName, qt.Extension.Ts) || fileExtensionIs(fileName, qt.Extension.Tsx))) return false;
   const out = configFile.opts.outFile || configFile.opts.out;
-  if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + Extension.Dts))) return true;
+  if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + qt.Extension.Dts))) return true;
   if (configFile.opts.declarationDir && containsPath(configFile.opts.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   if (configFile.opts.outDir && containsPath(configFile.opts.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   return !forEach(configFile.fileNames, (inputFile) => isSameFile(state, fileName, inputFile));
@@ -1671,6 +1671,6 @@ export namespace Status {
   }
 }
 export function resolveConfigFileProjectName(project: string): qt.ResolvedConfigFileName {
-  if (fileExtensionIs(project, Extension.Json)) return project as qt.ResolvedConfigFileName;
+  if (fileExtensionIs(project, qt.Extension.Json)) return project as qt.ResolvedConfigFileName;
   return combinePaths(project, 'tsconfig.json') as qt.ResolvedConfigFileName;
 }

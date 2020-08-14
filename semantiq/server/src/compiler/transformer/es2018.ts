@@ -535,7 +535,7 @@ export function transformES2018(context: qt.TrafoContext) {
         !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)
       )
     );
-    const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+    const emitSuperHelpers = languageVersion >= qt.ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
     if (emitSuperHelpers) {
       enableSubstitutionForAsyncMethodsWithSuper();
       const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
@@ -604,7 +604,7 @@ export function transformES2018(context: qt.TrafoContext) {
       context.enableEmitNotification(Syntax.VariableStatement);
     }
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) {
     if (enabledSubstitutions & ESNextSubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
       const superContainerFlags = resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
       if (superContainerFlags !== enclosingSuperContainerFlags) {
@@ -623,9 +623,9 @@ export function transformES2018(context: qt.TrafoContext) {
     }
     previousOnEmitNode(hint, node, emitCallback);
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
+    if (hint === qt.EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<qt.Expression>node);
     return node;
   }
   function substituteExpression(node: qt.Expression) {
@@ -684,7 +684,7 @@ export const assignHelper: qt.UnscopedEmitHelper = {
             };`,
 };
 export function createAssignHelper(context: qt.TrafoContext, attributesSegments: qt.Expression[]) {
-  if (context.getCompilerOpts().target! >= ScriptTarget.ES2015) return new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'assign'), undefined, attributesSegments);
+  if (context.getCompilerOpts().target! >= qt.ScriptTarget.ES2015) return new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qc.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }

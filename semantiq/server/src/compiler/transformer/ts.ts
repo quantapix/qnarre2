@@ -304,7 +304,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     }
   }
   function visitSourceFile(node: qt.SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') && !(qf.is.externalModule(node) && moduleKind >= ModuleKind.ES2015) && !qf.is.jsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') && !(qf.is.externalModule(node) && moduleKind >= qt.ModuleKind.ES2015) && !qf.is.jsonSourceFile(node);
     return qp_updateSourceNode(node, qf.visit.lexicalEnv(node.statements, sourceElemVisitor, context, 0, alwaysStrict));
   }
   function shouldEmitDecorateCallForClass(node: qt.ClassDeclaration) {
@@ -326,7 +326,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (isExportOfNamespace(node)) facts |= ClassFacts.IsExportOfNamespace;
     else if (isDefaultExternalModuleExport(node)) facts |= ClassFacts.IsDefaultExternalExport;
     else if (isNamedExternalModuleExport(node)) facts |= ClassFacts.IsNamedExternalExport;
-    if (languageVersion <= ScriptTarget.ES5 && facts & ClassFacts.MayNeedImmediatelyInvokedFunctionExpression) facts |= ClassFacts.UseImmediatelyInvokedFunctionExpression;
+    if (languageVersion <= qt.ScriptTarget.ES5 && facts & ClassFacts.MayNeedImmediatelyInvokedFunctionExpression) facts |= ClassFacts.UseImmediatelyInvokedFunctionExpression;
     return facts;
   }
   function hasTypeScriptClassSyntax(node: Node) {
@@ -566,7 +566,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     }
     const prefix = getClassMemberPrefix(node, member);
     const memberName = getExpressionForPropertyName(member, true);
-    const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qc.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
+    const descriptor = languageVersion > qt.ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qc.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
     const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, member.movePastDecorators());
     qf.emit.setFlags(helper, EmitFlags.NoComments);
     return helper;
@@ -765,7 +765,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       case Syntax.BigIntKeyword:
         return getGlobalBigIntNameWithFallback();
       case Syntax.SymbolKeyword:
-        return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new qc.Identifier('Symbol');
+        return languageVersion < qt.ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new qc.Identifier('Symbol');
       case Syntax.TypingReference:
         return serializeTypingReference(<qt.TypingReference>node);
       case Syntax.IntersectionTyping:
@@ -826,32 +826,32 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function serializeTypingReference(node: qt.TypingReference): SerializedTypeNode {
     const kind = resolver.getTypeReferenceSerializationKind(node.typeName, currentNameScope || currentLexicalScope);
     switch (kind) {
-      case TypeReferenceSerializationKind.Unknown:
+      case qt.TypeReferenceSerializationKind.Unknown:
         if (qc.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalTyping && (n.parent.trueType === n || n.parent.falseType === n))) return new qc.Identifier('Object');
         const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
         const temp = createTempVariable(hoistVariableDeclaration);
         return new qc.ConditionalExpression(createTypeCheck(qf.create.assignment(temp, serialized), 'function'), temp, new qc.Identifier('Object'));
-      case TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
+      case qt.TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
         return serializeEntityNameAsExpression(node.typeName);
-      case TypeReferenceSerializationKind.VoidNullableOrNeverType:
+      case qt.TypeReferenceSerializationKind.VoidNullableOrNeverType:
         return qc.VoidExpression.zero();
-      case TypeReferenceSerializationKind.BigIntLikeType:
+      case qt.TypeReferenceSerializationKind.BigIntLikeType:
         return getGlobalBigIntNameWithFallback();
-      case TypeReferenceSerializationKind.BooleanType:
+      case qt.TypeReferenceSerializationKind.BooleanType:
         return new qc.Identifier('Boolean');
-      case TypeReferenceSerializationKind.NumberLikeType:
+      case qt.TypeReferenceSerializationKind.NumberLikeType:
         return new qc.Identifier('Number');
-      case TypeReferenceSerializationKind.StringLikeType:
+      case qt.TypeReferenceSerializationKind.StringLikeType:
         return new qc.Identifier('String');
-      case TypeReferenceSerializationKind.ArrayLikeType:
+      case qt.TypeReferenceSerializationKind.ArrayLikeType:
         return new qc.Identifier('Array');
-      case TypeReferenceSerializationKind.ESSymbolType:
-        return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new qc.Identifier('Symbol');
-      case TypeReferenceSerializationKind.TypeWithCallSignature:
+      case qt.TypeReferenceSerializationKind.ESSymbolType:
+        return languageVersion < qt.ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new qc.Identifier('Symbol');
+      case qt.TypeReferenceSerializationKind.TypeWithCallSignature:
         return new qc.Identifier('Function');
-      case TypeReferenceSerializationKind.Promise:
+      case qt.TypeReferenceSerializationKind.Promise:
         return new qc.Identifier('Promise');
-      case TypeReferenceSerializationKind.ObjectType:
+      case qt.TypeReferenceSerializationKind.ObjectType:
         return new qc.Identifier('Object');
       default:
         return qc.assert.never(kind);
@@ -892,7 +892,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return new qc.ConditionalExpression(createTypeCheck(new qc.Identifier('Symbol'), 'function'), new qc.Identifier('Symbol'), new qc.Identifier('Object'));
   }
   function getGlobalBigIntNameWithFallback(): SerializedTypeNode {
-    return languageVersion < ScriptTarget.ESNext
+    return languageVersion < qt.ScriptTarget.ESNext
       ? new qc.ConditionalExpression(createTypeCheck(new qc.Identifier('BigInt'), 'function'), new qc.Identifier('BigInt'), new qc.Identifier('Object'))
       : new qc.Identifier('BigInt');
   }
@@ -1148,7 +1148,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     let emitFlags = EmitFlags.AdviseOnEmitNode;
     const varAdded = addVarForEnumOrModuleDeclaration(statements, node);
     if (varAdded) {
-      if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
+      if (moduleKind !== qt.ModuleKind.System || currentLexicalScope !== currentSourceFile) {
         emitFlags |= EmitFlags.NoLeadingComments;
       }
     }
@@ -1215,7 +1215,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function hasNamespaceQualifiedExportName(node: Node) {
     return (
       isExportOfNamespace(node) ||
-      (isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System)
+      (isExternalModuleExport(node) && moduleKind !== qt.ModuleKind.ES2015 && moduleKind !== qt.ModuleKind.ES2020 && moduleKind !== qt.ModuleKind.ESNext && moduleKind !== qt.ModuleKind.System)
     );
   }
   function recordEmittedDeclarationInScope(node: qt.FunctionDeclaration | qt.ClassDeclaration | qt.ModuleDeclaration | qt.EnumDeclaration) {
@@ -1270,7 +1270,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     let emitFlags = EmitFlags.AdviseOnEmitNode;
     const varAdded = addVarForEnumOrModuleDeclaration(statements, node);
     if (varAdded) {
-      if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
+      if (moduleKind !== qt.ModuleKind.System || currentLexicalScope !== currentSourceFile) {
         emitFlags |= EmitFlags.NoLeadingComments;
       }
     }
@@ -1362,7 +1362,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       return;
     }
     const importClause = qf.visit.node(node.importClause, visitImportClause, isImportClause);
-    return importClause || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Error
+    return importClause || compilerOpts.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Preserve || compilerOpts.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Error
       ? node.update(undefined, undefined, importClause, node.moduleSpecifier)
       : undefined;
   }
@@ -1417,7 +1417,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function visitImportEqualsDeclaration(node: qt.ImportEqualsDeclaration): VisitResult<qt.Statement> {
     if (qf.is.externalModuleImportEqualsDeclaration(node)) {
       const referenced = resolver.referencedAliasDeclaration(node);
-      if (!referenced && compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve)
+      if (!referenced && compilerOpts.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Preserve)
         return setRange(new qc.ImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node).setOriginal(node);
       return referenced ? qf.visit.eachChild(node, visitor, context) : undefined;
     }
@@ -1518,7 +1518,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function isTransformedEnumDeclaration(node: Node): boolean {
     return qf.get.originalOf(node).kind === Syntax.EnumDeclaration;
   }
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void {
     const savedApplicableSubstitutions = applicableSubstitutions;
     const savedCurrentSourceFile = currentSourceFile;
     if (node.kind === Syntax.SourceFile) {
@@ -1534,9 +1534,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
     applicableSubstitutions = savedApplicableSubstitutions;
     currentSourceFile = savedCurrentSourceFile;
   }
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: qt.EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression) return substituteExpression(<qt.Expression>node);
+    if (hint === qt.EmitHint.Expression) return substituteExpression(<qt.Expression>node);
     else if (node.kind === Syntax.ShorthandPropertyAssignment) return substituteShorthandPropertyAssignment(node);
     return node;
   }

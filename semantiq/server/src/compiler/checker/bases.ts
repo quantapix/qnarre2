@@ -56,7 +56,7 @@ export class Type extends qc.Type {
     for (let i = 0; i < types.length; i++) {
       if (i === index) mixedTypes.push(type);
       else if (mixinFlags[i]) {
-        mixedTypes.push(qf.get.returnTypeOfSignature(getSignaturesOfType(types[i], SignatureKind.Construct)[0]));
+        mixedTypes.push(qf.get.returnTypeOfSignature(getSignaturesOfType(types[i], qt.SignatureKind.Construct)[0]));
       }
     }
     return qf.get.intersectionType(mixedTypes);
@@ -115,8 +115,8 @@ export class Type extends qc.Type {
     if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.is.arrayLikeType)) return find(unionTarget.types, (t) => !qf.is.arrayLikeType(t));
   }
   findBestTypeForInvokable(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    let signatureKind = SignatureKind.Call;
-    const hasSignatures = getSignaturesOfType(source, signatureKind).length > 0 || ((signatureKind = SignatureKind.Construct), getSignaturesOfType(source, signatureKind).length > 0);
+    let signatureKind = qt.SignatureKind.Call;
+    const hasSignatures = getSignaturesOfType(source, signatureKind).length > 0 || ((signatureKind = qt.SignatureKind.Construct), getSignaturesOfType(source, signatureKind).length > 0);
     if (hasSignatures) return find(unionTarget.types, (t) => getSignaturesOfType(t, signatureKind).length > 0);
   }
   findMostOverlappyType(source: Type, unionTarget: qt.UnionOrIntersectionType) {
@@ -202,7 +202,7 @@ export class Type extends qc.Type {
         }
       }
     }
-    return mappedTypes && qf.get.unionType(mappedTypes, noReductions ? UnionReduction.None : UnionReduction.Literal);
+    return mappedTypes && qf.get.unionType(mappedTypes, noReductions ? qt.UnionReduction.None : qt.UnionReduction.Literal);
   }
   acceptsVoid(t: Type): boolean {
     return !!(t.flags & qt.TypeFlags.Void);
@@ -450,7 +450,7 @@ export class Type extends qc.Type {
     const sourceFile = enclosingDeclaration && enclosingDeclaration.sourceFile;
     printer.writeNode(EmitHint.Unspecified, typeNode, sourceFile, writer);
     const result = writer.getText();
-    const maxLength = noTruncation ? noTruncationMaximumTruncationLength * 2 : defaultMaximumTruncationLength * 2;
+    const maxLength = noTruncation ? qt.noTruncationMaximumTruncationLength * 2 : qt.defaultMaximumTruncationLength * 2;
     if (maxLength && result && result.length >= maxLength) return result.substr(0, maxLength - '...'.length) + '...';
     return result;
   }
@@ -756,13 +756,13 @@ export class Signature extends qc.Signature {
     result.unions = sig.unions;
     return result;
   }
-  signatureToString(signature: Signature, enclosingDeclaration?: Node, flags = TypeFormatFlags.None, kind?: SignatureKind, writer?: qt.EmitTextWriter): string {
+  signatureToString(signature: Signature, enclosingDeclaration?: Node, flags = TypeFormatFlags.None, kind?: qt.SignatureKind, writer?: qt.EmitTextWriter): string {
     return writer ? signatureToStringWorker(writer).getText() : usingSingleLineStringWriter(signatureToStringWorker);
     function signatureToStringWorker(writer: qt.EmitTextWriter) {
       let sigOutput: Syntax;
-      if (flags & TypeFormatFlags.WriteArrowStyleSignature) sigOutput = kind === SignatureKind.Construct ? Syntax.ConstructorTyping : Syntax.FunctionTyping;
+      if (flags & TypeFormatFlags.WriteArrowStyleSignature) sigOutput = kind === qt.SignatureKind.Construct ? Syntax.ConstructorTyping : Syntax.FunctionTyping;
       else {
-        sigOutput = kind === SignatureKind.Construct ? Syntax.ConstructSignature : Syntax.CallSignature;
+        sigOutput = kind === qt.SignatureKind.Construct ? Syntax.ConstructSignature : Syntax.CallSignature;
       }
       const sig = nodeBuilder.signatureToSignatureDeclaration(
         signature,
@@ -1844,24 +1844,24 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return ls.declaredType;
   }
-  getEnumKind(): EnumKind {
+  getEnumKind(): qt.EnumKind {
     const ls = this.getLinks();
     if (ls.enumKind !== undefined) return ls.enumKind;
     let hasNonLiteralMember = false;
     for (const d of this.declarations ?? []) {
       if (d.kind === Syntax.EnumDeclaration) {
         for (const m of (<qt.EnumDeclaration>d).members) {
-          if (m.initer && qf.is.stringLiteralLike(m.initer)) return (ls.enumKind = EnumKind.Literal);
+          if (m.initer && qf.is.stringLiteralLike(m.initer)) return (ls.enumKind = qt.EnumKind.Literal);
           if (!isLiteralEnumMember(m)) hasNonLiteralMember = true;
         }
       }
     }
-    return (ls.enumKind = hasNonLiteralMember ? EnumKind.Numeric : EnumKind.Literal);
+    return (ls.enumKind = hasNonLiteralMember ? qt.EnumKind.Numeric : qt.EnumKind.Literal);
   }
   getDeclaredTypeOfEnum(): Type {
     const ls = this.getLinks();
     if (ls.declaredType) return ls.declaredType;
-    if (this.getEnumKind() === EnumKind.Literal) {
+    if (this.getEnumKind() === qt.EnumKind.Literal) {
       enumCount++;
       const memberTypeList: Type[] = [];
       for (const d of this.declarations ?? []) {
@@ -1875,7 +1875,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         }
       }
       if (memberTypeList.length) {
-        const e = qf.get.unionType(memberTypeList, UnionReduction.Literal, this, undefined);
+        const e = qf.get.unionType(memberTypeList, qt.UnionReduction.Literal, this, undefined);
         if (e.flags & qt.TypeFlags.Union) {
           e.flags |= qt.TypeFlags.EnumLiteral;
           e.symbol = this;

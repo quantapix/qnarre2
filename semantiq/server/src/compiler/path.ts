@@ -1,7 +1,5 @@
 import { dirSeparator } from './syntax';
-import { Extension, qt.Path, ScriptKind } from './types';
-import { qf } from './core';
-import * as qc from './core';
+import { Extension, Path, ScriptKind } from './types';
 import * as qd from './diags';
 import * as qt from './types';
 import * as qu from './utils';
@@ -45,7 +43,7 @@ export function getRootLength(path: string) {
   const rootLength = qy.get.encodedRootLength(path);
   return rootLength < 0 ? ~rootLength : rootLength;
 }
-export function getDirectoryPath(path: qt.Path): qt.Path;
+export function getDirectoryPath(path: Path): Path;
 export function getDirectoryPath(path: string): string;
 export function getDirectoryPath(path: string): string {
   path = normalizeSlashes(path);
@@ -153,9 +151,9 @@ function getPathWithoutRoot(pathComponents: readonly string[]) {
 export function getNormalizedAbsolutePathWithoutRoot(fileName: string, currentDirectory: string | undefined) {
   return getPathWithoutRoot(getNormalizedPathComponents(fileName, currentDirectory));
 }
-export function toPath(fileName: string, basePath: string | undefined, getCanonicalFileName: (path: string) => string): qt.Path {
+export function toPath(fileName: string, basePath: string | undefined, getCanonicalFileName: (path: string) => string): Path {
   const nonCanonicalizedPath = isRootedDiskPath(fileName) ? normalizePath(fileName) : getNormalizedAbsolutePath(fileName, basePath);
-  return <qt.Path>getCanonicalFileName(nonCanonicalizedPath);
+  return <Path>getCanonicalFileName(nonCanonicalizedPath);
 }
 export function normalizePathAndParts(path: string): { path: string; parts: string[] } {
   path = normalizeSlashes(path);
@@ -166,13 +164,13 @@ export function normalizePathAndParts(path: string): { path: string; parts: stri
   }
   return { path: root, parts };
 }
-export function removeTrailingDirectorySeparator(path: qt.Path): qt.Path;
+export function removeTrailingDirectorySeparator(path: Path): Path;
 export function removeTrailingDirectorySeparator(path: string): string;
 export function removeTrailingDirectorySeparator(path: string) {
   if (hasTrailingDirectorySeparator(path)) return path.substr(0, path.length - 1);
   return path;
 }
-export function ensureTrailingDirectorySeparator(path: qt.Path): qt.Path;
+export function ensureTrailingDirectorySeparator(path: Path): Path;
 export function ensureTrailingDirectorySeparator(path: string): string;
 export function ensureTrailingDirectorySeparator(path: string) {
   if (!hasTrailingDirectorySeparator(path)) return path + dirSeparator;
@@ -300,19 +298,37 @@ export function getRelativePathToDirectoryOrUrl(
   }
   return getPathFromPathComponents(pathComponents);
 }
-export function forEachAncestorDirectory<T>(directory: qt.Path, callback: (_: qt.Path) => T | undefined): T | undefined;
-export function forEachAncestorDirectory<T>(directory: string, callback: (_: string) => T | undefined): T | undefined;
-export function forEachAncestorDirectory<T>(directory: qt.Path, callback: (_: qt.Path) => T | undefined): T | undefined {
+export function forEachAncestorDirectory<T>(d: Path, cb: (_: Path | string) => T | undefined): T | undefined;
+export function forEachAncestorDirectory<T>(d: string, cb: (_: Path | string) => T | undefined): T | undefined;
+export function forEachAncestorDirectory<T>(d: Path | string, cb: (_: Path | string) => T | undefined): T | undefined {
   while (true) {
-    const result = callback(directory);
-    if (result !== undefined) return result;
-    const parentPath = getDirectoryPath(directory);
-    if (parentPath === directory) return;
-    directory = parentPath;
+    const r = cb(d);
+    if (r !== undefined) return r;
+    const p = getDirectoryPath(d);
+    if (p === d) return;
+    d = p;
   }
 }
-export function isNodeModulesDirectory(dirPath: qt.Path) {
-  return qu.endsWith(dirPath, '/node_modules');
+export function isNodeModulesDirectory(d: Path) {
+  return qu.endsWith(d, '/node_modules');
+}
+export function discoverProbableSymlinks(fs: readonly qt.SourceFile[], n: qu.GetCanonicalFileName, cwd: string): qu.QReadonlyMap<string> {
+  const r = new qu.QMap<string>();
+  const ls = qu.flatten<readonly [string, string]>(
+    qu.mapDefined(
+      fs,
+      (f) =>
+        f.resolvedModules &&
+        qu.compact(
+          qu.arrayFrom(qu.mapIterator(f.resolvedModules.values(), (m) => (m && m.originalPath && m.resolvedFileName !== m.originalPath ? ([m.resolvedFileName, m.originalPath] as const) : undefined)))
+        )
+    )
+  );
+  for (const [resolvedPath, originalPath] of ls) {
+    const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, n);
+    r.set(commonOriginal, commonResolved);
+  }
+  return r;
 }
 function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qu.GetCanonicalFileName): [string, string] {
   const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
@@ -500,7 +516,7 @@ export function tryRemoveExtension(path: string, extension: string): string | un
 export function removeExtension(path: string, extension: string): string {
   return path.substring(0, path.length - extension.length);
 }
-export function changeExtension<T extends string | qt.Path>(path: T, newExtension: string): T {
+export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
   return <T>changeAnyExtension(path, newExtension, extensionsToRemove, false);
 }
 export interface FileSystemEntries {
