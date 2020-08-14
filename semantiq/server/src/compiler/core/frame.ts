@@ -911,8 +911,26 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.is = new (class {
+    importClause(n: Node): n is qt.ImportClause {
+      return n.kind === Syntax.ImportClause;
+    }
+    importSpecifier(n: Node): n is qt.ImportSpecifier {
+      return n.kind === Syntax.ImportSpecifier;
+    }
     union(n: qt.Type): n is qt.UnionType {
       return !!(n.flags & TypeFlags.Union);
+    }
+    identifier(n: Node): n is qt.Identifier {
+      return n.kind === Syntax.Identifier;
+    }
+    typeParamDeclaration(n: Node): n is qt.TypeParamDeclaration {
+      return n.kind === Syntax.TypeParam;
+    }
+    paramDeclaration(n: Node): n is qt.ParamDeclaration {
+      return n.kind === Syntax.Param;
+    }
+    decorator(n: Node): n is qt.Decorator {
+      return n.kind === Syntax.Decorator;
     }
     intersection(n: qt.Type): n is qt.IntersectionType {
       return !!(n.flags & TypeFlags.Intersection);
@@ -2270,6 +2288,37 @@ export function newIs(f: qt.Frame) {
     typeDeclarationName(n: Node) {
       return n.kind === Syntax.Identifier && n.parent && this.typeDeclaration(n.parent) && n.parent.name === n;
     }
+    exportSpecifier(n: Node): n is qt.ExportSpecifier {
+      return n.kind === Syntax.ExportSpecifier;
+    }
+    variableDeclaration(n: Node): n is qt.VariableDeclaration {
+      return n.kind === Syntax.VariableDeclaration;
+    }
+    variableDeclarationList(n: Node): n is qt.VariableDeclarationList {
+      return n.kind === Syntax.VariableDeclarationList;
+    }
+    block(n: Node): n is qt.Block {
+      return n.kind === Syntax.Block;
+    }
+    enumMember(n: Node): n is qt.EnumMember {
+      return n.kind === Syntax.EnumMember;
+    }
+    heritageClause(n: Node): n is qt.HeritageClause {
+      return n.kind === Syntax.HeritageClause;
+    }
+    catchClause(n: Node): n is qt.CatchClause {
+      return n.kind === Syntax.CatchClause;
+    }
+    caseBlock(n: Node): n is qt.CaseBlock {
+      return n.kind === Syntax.CaseBlock;
+    }
+    token(n: Node): boolean {
+      return n.kind >= Syntax.FirstToken && n.kind <= Syntax.LastToken;
+    }
+    templateSpan(n: Node): n is qt.TemplateSpan {
+      return n.kind === Syntax.TemplateSpan;
+    }
+
     doc = new (class {
       constructSignature(n: Node) {
         const p = n.kind === Syntax.DocFunctionTyping ? qu.firstOrUndefined(n.params) : undefined;
@@ -2338,6 +2387,27 @@ export function newIs(f: qt.Frame) {
       openingLikeElem(n: Node): n is qt.JsxOpeningLikeElem {
         const k = n.kind;
         return k === Syntax.JsxOpeningElem || k === Syntax.JsxSelfClosingElem;
+      }
+      openingElem(n: Node): n is qt.JsxOpeningElem {
+        return n.kind === Syntax.JsxOpeningElem;
+      }
+      closingElem(n: Node): n is qt.JsxClosingElem {
+        return n.kind === Syntax.JsxClosingElem;
+      }
+      fragment(n: Node): n is qt.JsxFragment {
+        return n.kind === Syntax.JsxFragment;
+      }
+      openingFragment(n: Node): n is qt.JsxOpeningFragment {
+        return n.kind === Syntax.JsxOpeningFragment;
+      }
+      closingFragment(n: Node): n is qt.JsxClosingFragment {
+        return n.kind === Syntax.JsxClosingFragment;
+      }
+      attribute(n: Node): n is qt.JsxAttribute {
+        return n.kind === Syntax.JsxAttribute;
+      }
+      attributes(n: Node): n is qt.JsxAttributes {
+        return n.kind === Syntax.JsxAttributes;
       }
     })();
   })());
@@ -3608,7 +3678,7 @@ function escapeTemplateSubstitution(s: string) {
   return s.replace(templateSub, '\\${');
 }
 function getModifierFlagsWorker(n: Node, doc: boolean): ModifierFlags {
-  if (n.kind >= Syntax.FirstToken && n.kind <= Syntax.LastToken) return ModifierFlags.None;
+  if (qf.is.token(n)) return ModifierFlags.None;
   if (!(n.modifierFlagsCache & ModifierFlags.HasComputedFlags)) n.modifierFlagsCache = qf.get.syntacticModifierFlagsNoCache(n) | ModifierFlags.HasComputedFlags;
   if (doc && !(n.modifierFlagsCache & ModifierFlags.HasComputedDocModifiers) && qf.is.inJSFile(n) && n.parent) {
     n.modifierFlagsCache |= qf.get.doc.modifierFlagsNoCache(n) | ModifierFlags.HasComputedDocModifiers;
