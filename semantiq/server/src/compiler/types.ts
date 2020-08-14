@@ -953,6 +953,7 @@ export interface Frame {
   nest: unknown;
   skip: unknown;
   stmt: unknown;
+  visit: unknown;
 }
 export interface FreshableIntrinsicType extends IntrinsicType {
   freshType: IntrinsicType;
@@ -2285,27 +2286,27 @@ export interface Token<T extends Syntax> extends Nobj {
   kind: T;
 }
 export interface TrafoContext {
-  getEmitResolver(): EmitResolver;
-  getEmitHost(): EmitHost;
+  addDiagnostic(d: qd.DiagnosticWithLocation): void;
+  addInitializationStatement(n: Statement): void;
+  enableEmitNotification(k: Syntax): void;
+  enableSubstitution(k: Syntax): void;
+  endLexicalEnv(): Statement[] | undefined;
   getCompilerOpts(): CompilerOpts;
-  startLexicalEnvironment(): void;
-  setLexicalEnvironmentFlags(flags: qt.LexicalEnvironmentFlags, value: boolean): void;
-  getLexicalEnvironmentFlags(): qt.LexicalEnvironmentFlags;
-  suspendLexicalEnvironment(): void;
-  resumeLexicalEnvironment(): void;
-  endLexicalEnvironment(): Statement[] | undefined;
-  hoistFunctionDeclaration(node: FunctionDeclaration): void;
-  hoistVariableDeclaration(node: Identifier): void;
-  addInitializationStatement(node: Statement): void;
-  requestEmitHelper(helper: EmitHelper): void;
+  getEmitHost(): EmitHost;
+  getEmitResolver(): EmitResolver;
+  getLexicalEnvFlags(): qt.LexicalEnvFlags;
+  hoistFunctionDeclaration(n: FunctionDeclaration): void;
+  hoistVariableDeclaration(n: Identifier): void;
+  isEmitNotificationEnabled(n: Node): boolean;
+  isSubstitutionEnabled(n: Node): boolean;
+  onEmitNode: (h: qt.EmitHint, n: Node, cb: (h: qt.EmitHint, n: Node) => void) => void;
+  onSubstituteNode: (h: qt.EmitHint, n: Node) => Node;
   readEmitHelpers(): EmitHelper[] | undefined;
-  enableSubstitution(kind: Syntax): void;
-  isSubstitutionEnabled(node: Node): boolean;
-  onSubstituteNode: (hint: qt.EmitHint, node: Node) => Node;
-  enableEmitNotification(kind: Syntax): void;
-  isEmitNotificationEnabled(node: Node): boolean;
-  onEmitNode: (hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) => void;
-  addDiagnostic(diag: qd.DiagnosticWithLocation): void;
+  requestEmitHelper(h: EmitHelper): void;
+  resumeLexicalEnv(): void;
+  setLexicalEnvFlags(f: qt.LexicalEnvFlags, v: boolean): void;
+  startLexicalEnv(): void;
+  suspendLexicalEnv(): void;
 }
 export interface TransientIdentifier extends Identifier {
   resolvedSymbol: Symbol;

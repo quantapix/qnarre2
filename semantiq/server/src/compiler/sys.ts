@@ -239,7 +239,7 @@ export function createDynamicPriorityPollingWatchFile(host: { getModifiedTime: N
 }
 function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSensitiveFileNames: boolean): HostWatchFile {
   const fileWatcherCallbacks = new MultiMap<FileWatcherCallback>();
-  const dirWatchers = createMap<DirectoryWatcher>();
+  const dirWatchers = qu.createMap<DirectoryWatcher>();
   const toCanonicalName = createGetCanonicalFileName(useCaseSensitiveFileNames);
   return nonPollingWatchFile;
   function nonPollingWatchFile(fileName: string, callback: FileWatcherCallback, _pollingInterval: PollingInterval, fallbackOpts: qt.WatchOpts | undefined): FileWatcher {
@@ -290,7 +290,7 @@ export function createSingleFileWatcherPerName(watchFile: HostWatchFile, useCase
     watcher: FileWatcher;
     refCount: number;
   }
-  const cache = createMap<SingleFileWatcher>();
+  const cache = qu.createMap<SingleFileWatcher>();
   const callbacksCache = new MultiMap<FileWatcherCallback>();
   const toCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
   return (fileName, callback, pollingInterval, opts) => {
@@ -354,9 +354,9 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     childWatches: ChildWatches;
     refCount: number;
   }
-  const cache = createMap<HostDirectoryWatcher>();
+  const cache = qu.createMap<HostDirectoryWatcher>();
   const callbackCache = new MultiMap<{ dirName: string; callback: DirectoryWatcherCallback }>();
-  const cacheToUpdateChildWatches = createMap<{ dirName: string; opts: qt.WatchOpts | undefined }>();
+  const cacheToUpdateChildWatches = qu.createMap<{ dirName: string; opts: qt.WatchOpts | undefined }>();
   let timerToUpdateChildWatches: any;
   const filePathComparer = getStringComparer(!host.useCaseSensitiveFileNames);
   const toCanonicalFilePath = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
@@ -447,7 +447,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     timerToUpdateChildWatches = undefined;
     sysLog(`sysLog:: onTimerToUpdateChildWatches:: ${cacheToUpdateChildWatches.size}`);
     const start = timestamp();
-    const invokeMap = createMap<true>();
+    const invokeMap = qu.createMap<true>();
     while (!timerToUpdateChildWatches && cacheToUpdateChildWatches.size) {
       const {
         value: [dirPath, { dirName, opts }],
@@ -994,7 +994,7 @@ export let sys: System = (() => {
     }
     function cleanupPaths(profile: import('inspector').Profiler.Profile) {
       let externalFileCounter = 0;
-      const remappedPaths = createMap<string>();
+      const remappedPaths = qu.createMap<string>();
       const normalizedDir = normalizeSlashes(__dirname);
       const fileUrlRoot = `file:`;
       for (const node of profile.nodes) {

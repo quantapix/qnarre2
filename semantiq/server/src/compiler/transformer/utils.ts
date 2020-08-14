@@ -62,7 +62,7 @@ export function collectExternalModuleInfo(sourceFile: qt.SourceFile, resolver: q
   const externalImports: (ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportDeclaration)[] = [];
   const exportSpecifiers = new MultiMap<qt.ExportSpecifier>();
   const exportedBindings: qt.Identifier[][] = [];
-  const uniqueExports = createMap<boolean>();
+  const uniqueExports = qu.createMap<boolean>();
   let exportedNames: qt.Identifier[] | undefined;
   let hasExportDefault = false;
   let exportEquals: qt.ExportAssignment | undefined;
@@ -240,7 +240,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDec
     const superIndex = findIndex(statements, (s) => qf.is.kind(qc.ExpressionStatement, s) && qf.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {
-        result.push(visitNode(statements[i], visitor, qf.is.statement));
+        result.push(qf.visit.node(statements[i], visitor, qf.is.statement));
       }
       return superIndex + 1;
     }

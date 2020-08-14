@@ -61,11 +61,11 @@ const libEntries: [string, string][] = [
   ['esnext.promise', 'lib.esnext.promise.d.ts'],
 ];
 export const libs = libEntries.map((entry) => entry[0]);
-export const libMap = createMap(libEntries);
+export const libMap = qu.createMap(libEntries);
 export const optsForWatch: qt.CommandLineOption[] = [
   {
     name: 'watchFile',
-    type: createMap({
+    type: qu.createMap({
       fixedpollinginterval: WatchFileKind.FixedPollingInterval,
       prioritypollinginterval: WatchFileKind.PriorityPollingInterval,
       dynamicprioritypolling: WatchFileKind.DynamicPriorityPolling,
@@ -77,7 +77,7 @@ export const optsForWatch: qt.CommandLineOption[] = [
   },
   {
     name: 'watchDirectory',
-    type: createMap({
+    type: qu.createMap({
       usefsevents: WatchDirectoryKind.UseFsEvents,
       fixedpollinginterval: WatchDirectoryKind.FixedPollingInterval,
       dynamicprioritypolling: WatchDirectoryKind.DynamicPriorityPolling,
@@ -87,7 +87,7 @@ export const optsForWatch: qt.CommandLineOption[] = [
   },
   {
     name: 'fallbackPolling',
-    type: createMap({
+    type: qu.createMap({
       fixedinterval: PollingWatchKind.FixedInterval,
       priorityinterval: PollingWatchKind.PriorityInterval,
       dynamicpriority: PollingWatchKind.DynamicPriority,
@@ -260,7 +260,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'target',
     shortName: 't',
-    type: createMap({
+    type: qu.createMap({
       es2020: ScriptTarget.ES2020,
     }),
     affectsSourceFile: true,
@@ -274,7 +274,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   {
     name: 'module',
     shortName: 'm',
-    type: createMap({
+    type: qu.createMap({
       none: ModuleKind.None,
       commonjs: ModuleKind.CommonJS,
       amd: ModuleKind.AMD,
@@ -321,7 +321,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   },
   {
     name: 'jsx',
-    type: createMap({
+    type: qu.createMap({
       preserve: JsxEmit.Preserve,
       'react-native': JsxEmit.ReactNative,
       react: JsxEmit.React,
@@ -442,7 +442,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   },
   {
     name: 'importsNotUsedAsValues',
-    type: createMap({
+    type: qu.createMap({
       remove: ImportsNotUsedAsValues.Remove,
       preserve: ImportsNotUsedAsValues.Preserve,
       error: ImportsNotUsedAsValues.Error,
@@ -570,7 +570,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   },
   {
     name: 'moduleResolution',
-    type: createMap({
+    type: qu.createMap({
       node: ModuleResolutionKind.NodeJs,
       classic: ModuleResolutionKind.Classic,
     }),
@@ -760,7 +760,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
   },
   {
     name: 'newLine',
-    type: createMap({
+    type: qu.createMap({
       crlf: NewLineKind.CarriageReturnLineFeed,
       lf: NewLineKind.LineFeed,
     }),
@@ -1009,8 +1009,8 @@ export interface OptsNameMap {
   shortOptionNames: qu.QMap<string>;
 }
 export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptsNameMap {
-  const optsNameMap = createMap<qt.CommandLineOption>();
-  const shortOptionNames = createMap<string>();
+  const optsNameMap = qu.createMap<qt.CommandLineOption>();
+  const shortOptionNames = qu.createMap<string>();
   forEach(optionDeclarations, (option) => {
     optsNameMap.set(option.name.toLowerCase(), option);
     if (option.shortName) {
@@ -1696,7 +1696,7 @@ function serializeWatchOpts(opts: qt.WatchOpts) {
   return serializeOptionBaseObject(opts, getWatchOptsNameMap());
 }
 function serializeOptionBaseObject(opts: OptsBase, { optsNameMap }: OptsNameMap, pathOpts?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<qt.CompilerOptsValue> {
-  const result = createMap<qt.CompilerOptsValue>();
+  const result = qu.createMap<qt.CompilerOptsValue>();
   const getCanonicalFileName = pathOpts && createGetCanonicalFileName(pathOpts.useCaseSensitiveFileNames);
   for (const name in opts) {
     if (hasProperty(opts, name)) {
@@ -2310,9 +2310,9 @@ export function getFileNamesFromConfigSpecs(
 ): qt.ExpandResult {
   basePath = normalizePath(basePath);
   const keyMapper = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
-  const literalFileMap = createMap<string>();
-  const wildcardFileMap = createMap<string>();
-  const wildCardJsonFileMap = createMap<string>();
+  const literalFileMap = qu.createMap<string>();
+  const wildcardFileMap = qu.createMap<string>();
+  const wildCardJsonFileMap = qu.createMap<string>();
   const { filesSpecs, validatedIncludeSpecs, validatedExcludeSpecs, wildcardDirectories } = spec;
   const supportedExtensions = getSupportedExtensions(opts, extraFileExtensions);
   const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts, supportedExtensions);

@@ -24,7 +24,7 @@ export function getModuleInstanceState(node: qt.ModuleDeclaration, visited?: qu.
   }
   return node.body ? getModuleInstanceStateCached(node.body, visited) : ModuleInstanceState.Instantiated;
 }
-function getModuleInstanceStateCached(node: Node, visited = createMap<ModuleInstanceState | undefined>()) {
+function getModuleInstanceStateCached(node: Node, visited = qu.createMap<ModuleInstanceState | undefined>()) {
   const nodeId = '' + qf.get.nodeId(node);
   if (visited.has(nodeId)) return visited.get(nodeId) || ModuleInstanceState.NonInstantiated;
   visited.set(nodeId, undefined);
@@ -2194,7 +2194,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   }
   function addLateBoundAssignmentDeclarationToSymbol(node: qt.BinaryExpression | qt.DynamicNamedDecl, symbol: qt.Symbol | undefined) {
     if (symbol) {
-      const members = symbol.assignmentDeclarations || (symbol.assignmentDeclarations = createMap());
+      const members = symbol.assignmentDeclarations || (symbol.assignmentDeclarations = qu.createMap());
       members.set('' + qf.get.nodeId(node), node);
     }
   }

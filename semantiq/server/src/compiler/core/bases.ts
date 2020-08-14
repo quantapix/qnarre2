@@ -64,7 +64,7 @@ export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Node
   end = -1;
   trailingComma?: boolean;
   trafoFlags = TrafoFlags.None;
-  static isNodes<T extends qt.Nobj>(ns: readonly T[]): ns is Nodes<T> {
+  static is<T extends qt.Nobj>(ns: readonly T[]): ns is Nodes<T> {
     return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
   }
   static from<T extends qt.Nobj>(ts: readonly T[]): Nodes<T>;

@@ -39,7 +39,7 @@ export function flattenDestructuringAssignment(
         location = node = value;
         value = node.right;
       } else {
-        return visitNode(value, visitor, isExpression);
+        return qf.visit.node(value, visitor, isExpression);
       }
     }
   }
@@ -57,7 +57,7 @@ export function flattenDestructuringAssignment(
     visitor,
   };
   if (value) {
-    value = visitNode(value, visitor, isExpression);
+    value = qf.visit.node(value, visitor, isExpression);
     if ((qf.is.kind(qc.Identifier, value) && bindingOrAssignmentElemAssignsToName(node, value.escapedText)) || bindingOrAssignmentElemContainsNonLiteralComputedName(node)) {
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
@@ -80,7 +80,7 @@ export function flattenDestructuringAssignment(
     qf.assert.node(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
     const expression = qf.create.assignmentCallback
       ? qf.create.assignmentCallback(<qt.Identifier>target, value, location)
-      : qf.create.assignment(visitNode(<qt.Expression>target, visitor, isExpression), value).setRange(location);
+      : qf.create.assignment(qf.visit.node(<qt.Expression>target, visitor, isExpression), value).setRange(location);
     expression.original = original;
     emitExpression(expression);
   }
@@ -181,7 +181,7 @@ export function flattenDestructuringBinding(
 }
 function flattenBindingOrAssignmentElem(flattenContext: FlattenContext, elem: qt.BindingOrAssignmentElem, value: qt.Expression | undefined, location: TextRange, skipIniter?: boolean) {
   if (!skipIniter) {
-    const initer = visitNode(getIniterOfBindingOrAssignmentElem(elem), flattenContext.visitor, isExpression);
+    const initer = qf.visit.node(getIniterOfBindingOrAssignmentElem(elem), flattenContext.visitor, isExpression);
     if (initer) {
       value = value ? createDefaultValueCheck(flattenContext, value, initer, location) : initer;
     } else if (!value) {
@@ -222,7 +222,7 @@ function flattenObjectBindingOrAssignmentPattern(
         !(getTargetOfBindingOrAssignmentElem(elem)!.trafoFlags & (TrafoFlags.ContainsRestOrSpread | TrafoFlags.ContainsObjectRestOrSpread)) &&
         !qf.is.kind(qc.ComputedPropertyName, propertyName)
       ) {
-        bindingElems = append(bindingElems, visitNode(elem, flattenContext.visitor));
+        bindingElems = append(bindingElems, qf.visit.node(elem, flattenContext.visitor));
       } else {
         if (bindingElems) {
           flattenContext.emitBindingOrAssignment(flattenContext.createObjectBindingOrAssignmentPattern(bindingElems), value, location, pattern);
@@ -307,7 +307,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: qt.Expre
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: qt.Expression, propertyName: qt.PropertyName): qt.LeftExpression {
   if (qf.is.kind(qc.ComputedPropertyName, propertyName)) {
-    const argExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
+    const argExpression = ensureIdentifier(flattenContext, qf.visit.node(propertyName.expression, flattenContext.visitor), propertyName);
     return new qc.ElemAccessExpression(value, argExpression);
   } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
     const argExpression = getSynthesizedClone(propertyName);

@@ -406,8 +406,8 @@ export function transformDeclarations(context: qt.TrafoContext) {
     if (!ignorePrivate && qf.has.effectiveModifier(node, ModifierFlags.Private)) return;
     if (shouldPrintWithIniter(node)) return;
     const shouldUseResolverType = node.kind === Syntax.Param && (resolver.isRequiredInitializedParam(node) || resolver.isOptionalUninitializedParamProperty(node));
-    if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
-    if (!qf.get.parseTreeOf(node)) return type ? visitNode(type, visitDeclarationSubtree) : new qc.KeywordTyping(Syntax.AnyKeyword);
+    if (type && !shouldUseResolverType) return qf.visit.node(type, visitDeclarationSubtree);
+    if (!qf.get.parseTreeOf(node)) return type ? qf.visit.node(type, visitDeclarationSubtree) : new qc.KeywordTyping(Syntax.AnyKeyword);
     if (node.kind === Syntax.SetAccessor) return new qc.KeywordTyping(Syntax.AnyKeyword);
     errorNameNode = node.name;
     let oldDiag: typeof getSymbolAccessibilityDiagnostic;
@@ -636,12 +636,12 @@ export function transformDeclarations(context: qt.TrafoContext) {
       switch (input.kind) {
         case Syntax.ExpressionWithTypings: {
           if (qf.is.entityName(input.expression) || qf.is.entityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
-          const node = visitEachChild(input, visitDeclarationSubtree, context);
+          const node = qf.visit.eachChild(input, visitDeclarationSubtree, context);
           return cleanup(node.update(parenthesizeTypeParams(node.typeArgs), node.expression));
         }
         case Syntax.TypingReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
-          const node = visitEachChild(input, visitDeclarationSubtree, context);
+          const node = qf.visit.eachChild(input, visitDeclarationSubtree, context);
           return cleanup(node.update(node.typeName, parenthesizeTypeParams(node.typeArgs)));
         }
         case Syntax.ConstructSignature:
@@ -697,7 +697,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
         }
         case Syntax.IndexSignature: {
           return cleanup(
-            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.params), visitNode(input.type, visitDeclarationSubtree) || new qc.KeywordTyping(Syntax.AnyKeyword))
+            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.params), qf.visit.node(input.type, visitDeclarationSubtree) || new qc.KeywordTyping(Syntax.AnyKeyword))
           );
         }
         case Syntax.VariableDeclaration: {
@@ -708,20 +708,20 @@ export function transformDeclarations(context: qt.TrafoContext) {
         }
         case Syntax.TypeParam: {
           if (isPrivateMethodTypeParam(input) && (input.default || input.constraint)) return cleanup(updateTypeParamDeclaration(input, input.name, undefined));
-          return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
+          return cleanup(qf.visit.eachChild(input, visitDeclarationSubtree, context));
         }
         case Syntax.ConditionalTyping: {
-          const checkType = visitNode(input.checkType, visitDeclarationSubtree);
-          const extendsType = visitNode(input.extendsType, visitDeclarationSubtree);
+          const checkType = qf.visit.node(input.checkType, visitDeclarationSubtree);
+          const extendsType = qf.visit.node(input.extendsType, visitDeclarationSubtree);
           const oldEnclosingDecl = enclosingDeclaration;
           enclosingDeclaration = input.trueType;
-          const trueType = visitNode(input.trueType, visitDeclarationSubtree);
+          const trueType = qf.visit.node(input.trueType, visitDeclarationSubtree);
           enclosingDeclaration = oldEnclosingDecl;
-          const falseType = visitNode(input.falseType, visitDeclarationSubtree);
+          const falseType = qf.visit.node(input.falseType, visitDeclarationSubtree);
           return cleanup(input.update(checkType, extendsType, trueType, falseType));
         }
         case Syntax.FunctionTyping: {
-          return cleanup(input.update(Nodes.visit(input.typeParams, visitDeclarationSubtree), updateParamsList(input, input.params), visitNode(input.type, visitDeclarationSubtree)));
+          return cleanup(input.update(Nodes.visit(input.typeParams, visitDeclarationSubtree), updateParamsList(input, input.params), qf.visit.node(input.type, visitDeclarationSubtree)));
         }
         case Syntax.ConstructorTyping: {
           return cleanup(
@@ -729,7 +729,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
               input,
               Nodes.visit(input.typeParams, visitDeclarationSubtree),
               updateParamsList(input, input.params),
-              visitNode(input.type, visitDeclarationSubtree)
+              qf.visit.node(input.type, visitDeclarationSubtree)
             )
           );
         }
@@ -745,7 +745,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
     }
     if (qf.is.kind(qc.TupleTyping, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
       qf.emit.setFlags(input, EmitFlags.SingleLine);
-    return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
+    return cleanup(qf.visit.eachChild(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
       if (returnValue && canProduceDiagnostic && qf.has.dynamicName(input as qt.Declaration)) checkName(input as DeclarationDiagnosticProducing);
       if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;
@@ -823,7 +823,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
             ensureModifiers(input),
             input.name,
             Nodes.visit(input.typeParams, visitDeclarationSubtree, isTypeParamDeclaration),
-            visitNode(input.type, visitDeclarationSubtree, isTypeNode)
+            qf.visit.node(input.type, visitDeclarationSubtree, isTypeNode)
           )
         );
       case Syntax.InterfaceDeclaration: {
@@ -905,7 +905,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
           needsDeclare = previousNeedsDeclare;
           const mods = ensureModifiers(input);
           needsDeclare = false;
-          visitNode(inner, visitDeclarationStmts);
+          qf.visit.node(inner, visitDeclarationStmts);
           const id = '' + getOriginalNodeId(inner!);
           const body = lateStatementReplacementMap.get(id);
           lateStatementReplacementMap.delete(id);

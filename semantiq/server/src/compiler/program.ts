@@ -51,7 +51,7 @@ export function createCompilerHost(opts: qt.CompilerOpts, setParentNodes?: boole
   return createCompilerHostWorker(opts, setParentNodes);
 }
 export function createCompilerHostWorker(opts: qt.CompilerOpts, setParentNodes?: boolean, system = sys): qt.CompilerHost {
-  const existingDirectories = createMap<boolean>();
+  const existingDirectories = qu.createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
   function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): qt.SourceFile | undefined {
     let text: string | undefined;
@@ -105,7 +105,7 @@ export function createCompilerHostWorker(opts: qt.CompilerOpts, setParentNodes?:
       return;
     }
     if (!outputFingerprints) {
-      outputFingerprints = createMap<OutputFingerprint>();
+      outputFingerprints = qu.createMap<OutputFingerprint>();
     }
     const hash = system.createHash(data);
     const mtimeBefore = system.getModifiedTime(fileName);
@@ -163,10 +163,10 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
   const originalDirectoryExists = host.directoryExists;
   const originalCreateDirectory = host.createDirectory;
   const originalWriteFile = host.writeFile;
-  const readFileCache = createMap<string | false>();
-  const fileExistsCache = createMap<boolean>();
-  const directoryExistsCache = createMap<boolean>();
-  const sourceFileCache = createMap<qt.SourceFile>();
+  const readFileCache = qu.createMap<string | false>();
+  const fileExistsCache = qu.createMap<boolean>();
+  const directoryExistsCache = qu.createMap<boolean>();
+  const sourceFileCache = qu.createMap<qt.SourceFile>();
   const readFileWithCache = (fileName: string): string | undefined => {
     const key = toPath(fileName);
     const value = readFileCache.get(key);
@@ -418,7 +418,7 @@ export function loadWithLocalCache<T>(
 ): T[] {
   if (names.length === 0) return [];
   const resolutions: T[] = [];
-  const cache = createMap<T>();
+  const cache = qu.createMap<T>();
   for (const name of names) {
     let result: T;
     if (cache.has(name)) {
@@ -523,16 +523,16 @@ export function createProgram(
   let diagnosticsProducingTypeChecker: qt.TypeChecker;
   let noDiagnosticsTypeChecker: qt.TypeChecker;
   let classifiableNames: EscapedMap<true>;
-  const ambientModuleNameToUnmodifiedFileName = createMap<string>();
+  const ambientModuleNameToUnmodifiedFileName = qu.createMap<string>();
   let refFileMap: MultiMap<ts.RefFile> | undefined;
   const cachedBindAndCheckDiagnosticsForFile: DiagnosticCache<Diagnostic> = {};
   const cachedDeclarationDiagnosticsForFile: DiagnosticCache<DiagnosticWithLocation> = {};
-  let resolvedTypeReferenceDirectives = createMap<qt.ResolvedTypeReferenceDirective | undefined>();
+  let resolvedTypeReferenceDirectives = qu.createMap<qt.ResolvedTypeReferenceDirective | undefined>();
   let fileProcessingDiagnostics = createDiagnosticCollection();
   const maxNodeModuleJsDepth = typeof opts.maxNodeModuleJsDepth === 'number' ? opts.maxNodeModuleJsDepth : 0;
   let currentNodeModulesDepth = 0;
-  const modulesWithElidedImports = createMap<boolean>();
-  const sourceFilesFoundSearchingNodeModules = createMap<boolean>();
+  const modulesWithElidedImports = qu.createMap<boolean>();
+  const sourceFilesFoundSearchingNodeModules = qu.createMap<boolean>();
   performance.mark('beforeProgram');
   const host = createProgramOpts.host || createCompilerHost(opts);
   const configParsingHost = parseConfigHostFromCompilerHostLike(host);
@@ -543,7 +543,7 @@ export function createProgram(
   const currentDirectory = host.getCurrentDirectory();
   const supportedExtensions = getSupportedExtensions(opts);
   const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts, supportedExtensions);
-  const hasEmitBlockingDiagnostics = createMap<boolean>();
+  const hasEmitBlockingDiagnostics = qu.createMap<boolean>();
   let _compilerOptsObjectLiteralSyntax: qt.ObjectLiteralExpression | null | undefined;
   let moduleResolutionCache: ModuleResolutionCache | undefined;
   let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: qt.ResolvedProjectReference) => qt.ResolvedModuleFull[];
@@ -577,12 +577,12 @@ export function createProgram(
     actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) =>
       loadWithLocalCache<qt.ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
   }
-  const packageIdToSourceFile = createMap<qt.SourceFile>();
-  let sourceFileToPackageName = createMap<string>();
+  const packageIdToSourceFile = qu.createMap<qt.SourceFile>();
+  let sourceFileToPackageName = qu.createMap<string>();
   let redirectTargetsMap = new MultiMap<string>();
-  const filesByName = createMap<qt.SourceFile | false | undefined>();
+  const filesByName = qu.createMap<qt.SourceFile | false | undefined>();
   let missingFilePaths: readonly qt.Path[] | undefined;
-  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createMap<qt.SourceFile>() : undefined;
+  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? qu.createMap<qt.SourceFile>() : undefined;
   let resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined;
   let projectReferenceRedirects: Map<qt.ResolvedProjectReference | false> | undefined;
   let mapFromFileToProjectReferenceRedirects: Map<qt.Path> | undefined;
@@ -903,7 +903,7 @@ export function createProgram(
       Exists,
       Modified,
     }
-    const seenPackageNames = createMap<SeenPackageName>();
+    const seenPackageNames = qu.createMap<SeenPackageName>();
     for (const oldSourceFile of oldSourceFiles) {
       let newSourceFile = host.getSourceFileByPath
         ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, opts.target!, undefined, shouldCreateNewSourceFile)
@@ -1448,7 +1448,7 @@ export function createProgram(
     const result = getDiagnostics(sourceFile, cancellationToken);
     if (sourceFile) {
       if (!cache.perFile) {
-        cache.perFile = createMap();
+        cache.perFile = qu.createMap();
       }
       cache.perFile.set(sourceFile.path, result);
     } else {
@@ -1810,7 +1810,7 @@ export function createProgram(
   }
   function getResolvedProjectReferenceToRedirect(fileName: string) {
     if (mapFromFileToProjectReferenceRedirects === undefined) {
-      mapFromFileToProjectReferenceRedirects = createMap();
+      mapFromFileToProjectReferenceRedirects = qu.createMap();
       forEachResolvedProjectReference((referencedProject, referenceProjectPath) => {
         if (referencedProject && toPath(opts.configFilePath!) !== referenceProjectPath) {
           referencedProject.commandLine.fileNames.forEach((f) => mapFromFileToProjectReferenceRedirects!.set(toPath(f), referenceProjectPath));
@@ -1830,7 +1830,7 @@ export function createProgram(
   function getSourceOfProjectReferenceRedirect(file: string) {
     if (!isDeclarationFileName(file)) return;
     if (mapFromToProjectReferenceRedirectSource === undefined) {
-      mapFromToProjectReferenceRedirectSource = createMap();
+      mapFromToProjectReferenceRedirectSource = qu.createMap();
       forEachResolvedProjectReference((resolvedRef) => {
         if (resolvedRef) {
           const out = resolvedRef.commandLine.opts.outFile || resolvedRef.commandLine.opts.out;
@@ -2071,7 +2071,7 @@ export function createProgram(
   }
   function parseProjectReferenceConfigFile(ref: qt.ProjectReference): qt.ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
-      projectReferenceRedirects = createMap<qt.ResolvedProjectReference | false>();
+      projectReferenceRedirects = qu.createMap<qt.ResolvedProjectReference | false>();
     }
     const refPath = resolveProjectReferencePath(ref);
     const sourceFilePath = toPath(refPath);
@@ -2291,7 +2291,7 @@ export function createProgram(
     }
     if (!opts.noEmit && !opts.suppressOutputPathCheck) {
       const emitHost = getEmitHost();
-      const emitFilesSeen = createMap<true>();
+      const emitFilesSeen = qu.createMap<true>();
       forEachEmittedFile(emitHost, (emitFileNames) => {
         if (!opts.emitDeclarationOnly) {
           verifyEmitFilePath(emitFileNames.jsFilePath, emitFilesSeen);
@@ -2528,7 +2528,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
       }
       if (!host.getResolvedProjectReferences()) return false;
       if (!mapOfDeclarationDirectories) {
-        mapOfDeclarationDirectories = createMap();
+        mapOfDeclarationDirectories = qu.createMap();
         host.forEachResolvedProjectReference((ref) => {
           if (!ref) return;
           const out = ref.commandLine.opts.outFile || ref.commandLine.opts.out;
@@ -2579,7 +2579,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
   function handleDirectoryCouldBeSymlink(directory: string) {
     if (!host.getResolvedProjectReferences()) return;
     if (!originalRealpath || !qu.stringContains(directory, nodeModulesPathPart)) return;
-    if (!symlinkedDirectories) symlinkedDirectories = createMap();
+    if (!symlinkedDirectories) symlinkedDirectories = qu.createMap();
     const directoryPath = ensureTrailingDirectorySeparator(host.toPath(directory));
     if (symlinkedDirectories.has(directoryPath)) return;
     const real = normalizePath(originalRealpath.call(host.compilerHost, directory));
@@ -2606,7 +2606,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
         if (!symlinkedDirectory || !startsWith(fileOrDirectoryPath, directoryPath)) return;
         const result = fileOrDirectoryExistsUsingSource(fileOrDirectoryPath.replace(directoryPath, symlinkedDirectory.realPath));
         if (isFile && result) {
-          if (!symlinkedFiles) symlinkedFiles = createMap();
+          if (!symlinkedFiles) symlinkedFiles = qu.createMap();
           const absolutePath = getNormalizedAbsolutePath(fileOrDirectory, host.compilerHost.getCurrentDirectory());
           symlinkedFiles.set(fileOrDirectoryPath, `${symlinkedDirectory.real}${absolutePath.replace(new RegExp(directoryPath, 'i'), '')}`);
         }

@@ -216,7 +216,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   let missingFilesMap: Map<FileWatcher>;
   let watchedWildcardDirectories: Map<WildcardDirectoryWatcher>;
   let timerToUpdateProgram: any;
-  const sourceFilesCache = createMap<HostFileInfo>();
+  const sourceFilesCache = qu.createMap<HostFileInfo>();
   let missingFilePathsRequestedForRelease: qt.Path[] | undefined;
   let hasChangedCompilerOpts = false;
   let hasChangedAutomaticTypeDirectiveNames = false;
@@ -349,7 +349,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     hasChangedAutomaticTypeDirectiveNames = false;
     builderProgram = createProgram(rootFileNames, compilerOpts, compilerHost, builderProgram, configFileParsingDiagnostics, projectReferences);
     resolutionCache.finishCachingPerDirectoryResolution();
-    updateMissingFilePathsWatch(builderProgram.getProgram(), missingFilesMap || (missingFilesMap = createMap()), watchMissingFilePath);
+    updateMissingFilePathsWatch(builderProgram.getProgram(), missingFilesMap || (missingFilesMap = qu.createMap()), watchMissingFilePath);
     if (needsUpdateInTypeRootWatch) {
       resolutionCache.updateTypeRootsWatch();
     }
@@ -550,7 +550,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
   function watchConfigFileWildCardDirectories() {
     if (configFileSpecs) {
-      updateWatchingWildcardDirectories(watchedWildcardDirectories || (watchedWildcardDirectories = createMap()), createMap(configFileSpecs.wildcardDirectories), watchWildcardDirectory);
+      updateWatchingWildcardDirectories(watchedWildcardDirectories || (watchedWildcardDirectories = qu.createMap()), qu.createMap(configFileSpecs.wildcardDirectories), watchWildcardDirectory);
     } else if (watchedWildcardDirectories) {
       clearMap(watchedWildcardDirectories, closeFileWatcherOf);
     }
@@ -998,7 +998,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   if (!host.getDirectories || !host.readDirectory) {
     return;
   }
-  const cachedReadDirectoryResult = createMap<MutableFileSystemEntries>();
+  const cachedReadDirectoryResult = qu.createMap<MutableFileSystemEntries>();
   const getCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
   return {
     useCaseSensitiveFileNames,

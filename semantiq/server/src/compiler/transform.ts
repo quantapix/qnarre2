@@ -9,12 +9,12 @@ import * as qy from './syntax';
 export const nullTrafoContext: qt.TrafoContext = {
   enableEmitNotification: qu.noop,
   enableSubstitution: qu.noop,
-  endLexicalEnvironment: () => undefined,
+  endLexicalEnv: () => undefined,
   getCompilerOpts: () => ({}),
   getEmitHost: qu.notImplemented,
   getEmitResolver: qu.notImplemented,
-  setLexicalEnvironmentFlags: qu.noop,
-  getLexicalEnvironmentFlags: () => 0,
+  setLexicalEnvFlags: qu.noop,
+  getLexicalEnvFlags: () => 0,
   hoistFunctionDeclaration: qu.noop,
   hoistVariableDeclaration: qu.noop,
   addInitializationStatement: qu.noop,
@@ -24,9 +24,9 @@ export const nullTrafoContext: qt.TrafoContext = {
   onSubstituteNode: qu.notImplemented,
   readEmitHelpers: qu.notImplemented,
   requestEmitHelper: qu.noop,
-  resumeLexicalEnvironment: qu.noop,
-  startLexicalEnvironment: qu.noop,
-  suspendLexicalEnvironment: qu.noop,
+  resumeLexicalEnv: qu.noop,
+  startLexicalEnv: qu.noop,
+  suspendLexicalEnv: qu.noop,
   addDiagnostic: qu.noop,
 };
 export interface TransformationResult<T extends Node> {
@@ -126,11 +126,11 @@ export function transformNodes<T extends Node>(
   let lexicalEnvironmentVariableDeclarations: qt.VariableDeclaration[];
   let lexicalEnvironmentFunctionDeclarations: qt.FunctionDeclaration[];
   let lexicalEnvironmentStatements: qt.Statement[];
-  let lexicalEnvironmentFlags = qt.LexicalEnvironmentFlags.None;
+  let lexicalEnvironmentFlags = qt.LexicalEnvFlags.None;
   let lexicalEnvironmentVariableDeclarationsStack: qt.VariableDeclaration[][] = [];
   let lexicalEnvironmentFunctionDeclarationsStack: qt.FunctionDeclaration[][] = [];
   let lexicalEnvironmentStatementsStack: qt.Statement[][] = [];
-  let lexicalEnvironmentFlagsStack: qt.LexicalEnvironmentFlags[] = [];
+  let lexicalEnvironmentFlagsStack: qt.LexicalEnvFlags[] = [];
   let lexicalEnvironmentStackOffset = 0;
   let lexicalEnvironmentSuspended = false;
   let emitHelpers: qt.EmitHelper[] | undefined;
@@ -142,12 +142,12 @@ export function transformNodes<T extends Node>(
     getCompilerOpts: () => opts,
     getEmitResolver: () => resolver!,
     getEmitHost: () => host!,
-    startLexicalEnvironment,
-    suspendLexicalEnvironment,
-    resumeLexicalEnvironment,
-    endLexicalEnvironment,
-    setLexicalEnvironmentFlags,
-    getLexicalEnvironmentFlags,
+    startLexicalEnv,
+    suspendLexicalEnv,
+    resumeLexicalEnv,
+    endLexicalEnv,
+    setLexicalEnvFlags,
+    getLexicalEnvFlags,
     hoistVariableDeclaration,
     hoistFunctionDeclaration,
     addInitializationStatement,
@@ -235,7 +235,7 @@ export function transformNodes<T extends Node>(
     const decl = qf.emit.setFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
-    if (lexicalEnvironmentFlags & qt.LexicalEnvironmentFlags.InParams) lexicalEnvironmentFlags |= qt.LexicalEnvironmentFlags.VariablesHoistedInParams;
+    if (lexicalEnvironmentFlags & qt.LexicalEnvFlags.InParams) lexicalEnvironmentFlags |= qt.LexicalEnvFlags.VariablesHoistedInParams;
   }
   function hoistFunctionDeclaration(func: qt.FunctionDeclaration): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
@@ -251,7 +251,7 @@ export function transformNodes<T extends Node>(
     if (!lexicalEnvironmentStatements) lexicalEnvironmentStatements = [node];
     else lexicalEnvironmentStatements.push(node);
   }
-  function startLexicalEnvironment(): void {
+  function startLexicalEnv(): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
@@ -263,21 +263,21 @@ export function transformNodes<T extends Node>(
     lexicalEnvironmentVariableDeclarations = undefined!;
     lexicalEnvironmentFunctionDeclarations = undefined!;
     lexicalEnvironmentStatements = undefined!;
-    lexicalEnvironmentFlags = qt.LexicalEnvironmentFlags.None;
+    lexicalEnvironmentFlags = qt.LexicalEnvFlags.None;
   }
-  function suspendLexicalEnvironment(): void {
+  function suspendLexicalEnv(): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is already suspended.');
     lexicalEnvironmentSuspended = true;
   }
-  function resumeLexicalEnvironment(): void {
+  function resumeLexicalEnv(): void {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qu.assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
     lexicalEnvironmentSuspended = false;
   }
-  function endLexicalEnvironment(): qt.Statement[] | undefined {
+  function endLexicalEnv(): qt.Statement[] | undefined {
     qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
@@ -308,10 +308,10 @@ export function transformNodes<T extends Node>(
     }
     return statements;
   }
-  function setLexicalEnvironmentFlags(flags: qt.LexicalEnvironmentFlags, value: boolean): void {
+  function setLexicalEnvFlags(flags: qt.LexicalEnvFlags, value: boolean): void {
     lexicalEnvironmentFlags = value ? lexicalEnvironmentFlags | flags : lexicalEnvironmentFlags & ~flags;
   }
-  function getLexicalEnvironmentFlags(): qt.LexicalEnvironmentFlags {
+  function getLexicalEnvFlags(): qt.LexicalEnvFlags {
     return lexicalEnvironmentFlags;
   }
   function requestEmitHelper(helper: qt.EmitHelper): void {

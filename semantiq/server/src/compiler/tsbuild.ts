@@ -54,7 +54,7 @@ interface FileMap<T, U extends qt.Path = qt.Path> extends Map<T> {
 }
 type ConfigFileMap<T> = FileMap<T, ResolvedConfigFilePath>;
 function createConfigFileMap<T>(): ConfigFileMap<T> {
-  return createMap() as ConfigFileMap<T>;
+  return qu.createMap() as ConfigFileMap<T>;
 }
 function getOrCreateValueFromConfigFileMap<T>(configFileMap: ConfigFileMap<T>, resolved: ResolvedConfigFilePath, createT: () => T): T {
   const existingValue = configFileMap.get(resolved);
@@ -267,11 +267,11 @@ function createSolutionBuilderState<T extends BuilderProgram>(
     baseCompilerOpts,
     rootNames,
     baseWatchOpts,
-    resolvedConfigFilePaths: createMap(),
+    resolvedConfigFilePaths: qu.createMap(),
     configFileCache: createConfigFileMap(),
     projectStatus: createConfigFileMap(),
     buildInfoChecked: createConfigFileMap(),
-    extendedConfigCache: createMap(),
+    extendedConfigCache: qu.createMap(),
     builderPrograms: createConfigFileMap(),
     diagnostics: createConfigFileMap(),
     projectPendingBuild: createConfigFileMap(),
@@ -335,8 +335,8 @@ function resolveProjectName(state: SolutionBuilderState, name: string): qt.Resol
   return resolveConfigFileProjectName(resolvePath(state.currentDirectory, name));
 }
 function createBuildOrder(state: SolutionBuilderState, roots: readonly qt.ResolvedConfigFileName[]): AnyBuildOrder {
-  const temporaryMarks = createMap() as ConfigFileMap<true>;
-  const permanentMarks = createMap() as ConfigFileMap<true>;
+  const temporaryMarks = qu.createMap() as ConfigFileMap<true>;
+  const permanentMarks = qu.createMap() as ConfigFileMap<true>;
   const circularityReportStack: string[] = [];
   let buildOrder: qt.ResolvedConfigFileName[] | undefined;
   let circularDiagnostics: Diagnostic[] | undefined;
@@ -710,7 +710,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     let newestDeclarationFileContentChangedTime = minimumDate;
     let anyDtsChanged = false;
     const emitterDiagnostics = createDiagnosticCollection();
-    const emittedOutputs = createMap() as FileMap<string>;
+    const emittedOutputs = qu.createMap() as FileMap<string>;
     outputFiles.forEach(({ name, text, writeByteOrderMark }) => {
       let priorChangeTime: Date | undefined;
       if (!anyDtsChanged && isDeclarationFile(name)) {
@@ -797,7 +797,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     }
     assert(!!outputFiles.length);
     const emitterDiagnostics = createDiagnosticCollection();
-    const emittedOutputs = createMap() as FileMap<string>;
+    const emittedOutputs = qu.createMap() as FileMap<string>;
     outputFiles.forEach(({ name, text, writeByteOrderMark }) => {
       emittedOutputs.set(toPath(state, name), name);
       writeFile(writeFileCallback ? { writeFile: writeFileCallback } : compilerHost, emitterDiagnostics, name, text, writeByteOrderMark);
@@ -1372,7 +1372,7 @@ function isOutputFile(state: SolutionBuilderState, fileName: string, configFile:
 }
 function watchWildCardDirectories(state: SolutionBuilderState, resolved: qt.ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: qt.ParsedCommandLine) {
   if (!state.watch) return;
-  updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), createMap(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
+  updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), qu.createMap(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
     state.watchDirectory(
       state.hostWithWatch,
       dir,

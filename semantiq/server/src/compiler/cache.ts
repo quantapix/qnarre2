@@ -97,19 +97,19 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   const resolvedFileToResolution = new MultiMap<ResolutionWithFailedLookupLocations>();
   const getCurrentDirectory = memoize(() => resolutionHost.getCurrentDirectory!());
   const cachedDirectoryStructureHost = resolutionHost.getCachedDirectoryStructureHost();
-  const resolvedModuleNames = createMap<Map<CachedResolvedModuleWithFailedLookupLocations>>();
+  const resolvedModuleNames = qu.createMap<Map<CachedResolvedModuleWithFailedLookupLocations>>();
   const perDirectoryResolvedModuleNames: CacheWithRedirects<Map<CachedResolvedModuleWithFailedLookupLocations>> = createCacheWithRedirects();
   const nonRelativeModuleNameCache: CacheWithRedirects<PerModuleNameCache> = createCacheWithRedirects();
   const moduleResolutionCache = createModuleResolutionCacheWithMaps(perDirectoryResolvedModuleNames, nonRelativeModuleNameCache, getCurrentDirectory(), resolutionHost.getCanonicalFileName);
-  const resolvedTypeReferenceDirectives = createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
+  const resolvedTypeReferenceDirectives = qu.createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
   const perDirectoryResolvedTypeReferenceDirectives: CacheWithRedirects<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>> = createCacheWithRedirects();
   const failedLookupDefaultExtensions = [Extension.Ts, Extension.Tsx, Extension.Js, Extension.Jsx, Extension.Json];
-  const customFailedLookupPaths = createMap<number>();
-  const directoryWatchesOfFailedLookups = createMap<DirectoryWatchesOfFailedLookup>();
+  const customFailedLookupPaths = qu.createMap<number>();
+  const directoryWatchesOfFailedLookups = qu.createMap<DirectoryWatchesOfFailedLookup>();
   const rootDir = rootDirForResolution && removeTrailingDirectorySeparator(getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
   const rootPath = (rootDir && resolutionHost.toPath(rootDir)) as qt.Path;
   const rootSplitLength = rootPath !== undefined ? rootPath.split(dirSeparator).length : 0;
-  const typeRootsWatches = createMap<FileWatcher>();
+  const typeRootsWatches = qu.createMap<FileWatcher>();
   return {
     startRecordingFilesWithChangedResolutions,
     finishRecordingFilesWithChangedResolutions,
@@ -238,12 +238,12 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     logChanges,
   }: ResolveNamesWithLocalCacheInput<T, R>): (R | undefined)[] {
     const path = resolutionHost.toPath(containingFile);
-    const resolutionsInFile = cache.get(path) || cache.set(path, createMap()).get(path)!;
+    const resolutionsInFile = cache.get(path) || cache.set(path, qu.createMap()).get(path)!;
     const dirPath = getDirectoryPath(path);
     const perDirectoryCache = perDirectoryCacheWithRedirects.getOrCreateMapOfCacheRedirects(redirectedReference);
     let perDirectoryResolution = perDirectoryCache.get(dirPath);
     if (!perDirectoryResolution) {
-      perDirectoryResolution = createMap();
+      perDirectoryResolution = qu.createMap();
       perDirectoryCache.set(dirPath, perDirectoryResolution);
     }
     const resolvedModules: (R | undefined)[] = [];
@@ -252,7 +252,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const program = resolutionHost.getCurrentProgram();
     const oldRedirect = program && program.getResolvedProjectReferenceToRedirect(containingFile);
     const unmatchedRedirects = oldRedirect ? !redirectedReference || redirectedReference.sourceFile.path !== oldRedirect.sourceFile.path : !!redirectedReference;
-    const seenNamesInFile = createMap<true>();
+    const seenNamesInFile = qu.createMap<true>();
     for (const name of names) {
       let resolution = resolutionsInFile.get(name);
       if (
@@ -542,7 +542,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     resolution.isInvalidated = true;
     let changedInAutoTypeReferenced = false;
     for (const containingFilePath of Debug.assertDefined(resolution.files)) {
-      (filesWithInvalidatedResolutions || (filesWithInvalidatedResolutions = createMap<true>())).set(containingFilePath, true);
+      (filesWithInvalidatedResolutions || (filesWithInvalidatedResolutions = qu.createMap<true>())).set(containingFilePath, true);
       changedInAutoTypeReferenced = changedInAutoTypeReferenced || containingFilePath.endsWith(inferredTypesContainingFile);
     }
     if (changedInAutoTypeReferenced) {

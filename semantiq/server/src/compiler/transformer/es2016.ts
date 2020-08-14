@@ -11,7 +11,7 @@ export function transformES2016(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2016) === 0) return node;
@@ -19,7 +19,7 @@ export function transformES2016(context: qt.TrafoContext) {
       case Syntax.BinaryExpression:
         return visitBinaryExpression(<qt.BinaryExpression>node);
       default:
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
     }
   }
   function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
@@ -29,14 +29,14 @@ export function transformES2016(context: qt.TrafoContext) {
       case Syntax.Asterisk2Token:
         return visitExponentiationExpression(node);
       default:
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
     }
   }
   function visitExponentiationAssignmentExpression(node: qt.BinaryExpression) {
     let target: qt.Expression;
     let value: qt.Expression;
-    const left = visitNode(node.left, visitor, isExpression);
-    const right = visitNode(node.right, visitor, isExpression);
+    const left = qf.visit.node(node.left, visitor, isExpression);
+    const right = qf.visit.node(node.right, visitor, isExpression);
     if (qf.is.kind(qc.ElemAccessExpression, left)) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
@@ -60,8 +60,8 @@ export function transformES2016(context: qt.TrafoContext) {
   }
   function visitExponentiationExpression(node: qt.BinaryExpression) {
     // Transforms `a ** b` into `Math.pow(a, b)`
-    const left = visitNode(node.left, visitor, isExpression);
-    const right = visitNode(node.right, visitor, isExpression);
+    const left = qf.visit.node(node.left, visitor, isExpression);
+    const right = qf.visit.node(node.right, visitor, isExpression);
     return createMathPow(left, right, node);
   }
 }

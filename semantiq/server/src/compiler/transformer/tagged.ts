@@ -18,12 +18,12 @@ export function processTaggedTemplateExpression(
   recordTaggedTemplateString: (temp: qt.Identifier) => void,
   level: ProcessLevel
 ) {
-  const tag = visitNode(node.tag, visitor, isExpression);
+  const tag = qf.visit.node(node.tag, visitor, isExpression);
   const templateArgs: qt.Expression[] = [undefined!];
   const cookedStrings: qt.Expression[] = [];
   const rawStrings: qt.Expression[] = [];
   const template = node.template;
-  if (level === ProcessLevel.LiftRestriction && !qf.has.invalidEscape(template)) return visitEachChild(node, visitor, context);
+  if (level === ProcessLevel.LiftRestriction && !qf.has.invalidEscape(template)) return qf.visit.eachChild(node, visitor, context);
   if (qf.is.kind(qc.NoSubstitutionLiteral, template)) {
     cookedStrings.push(createTemplateCooked(template));
     rawStrings.push(getRawLiteral(template, currentSourceFile));
@@ -33,7 +33,7 @@ export function processTaggedTemplateExpression(
     for (const templateSpan of template.templateSpans) {
       cookedStrings.push(createTemplateCooked(templateSpan.literal));
       rawStrings.push(getRawLiteral(templateSpan.literal, currentSourceFile));
-      templateArgs.push(visitNode(templateSpan.expression, visitor, isExpression));
+      templateArgs.push(qf.visit.node(templateSpan.expression, visitor, isExpression));
     }
   }
   const helperCall = createTemplateObjectHelper(context, new qc.ArrayLiteralExpression(cookedStrings), new qc.ArrayLiteralExpression(rawStrings));

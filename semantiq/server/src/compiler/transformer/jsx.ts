@@ -13,7 +13,7 @@ export function transformJsx(context: qt.TrafoContext) {
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
-    const visited = visitEachChild(node, visitor, context);
+    const visited = qf.visit.eachChild(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
@@ -32,7 +32,7 @@ export function transformJsx(context: qt.TrafoContext) {
       case Syntax.JsxExpression:
         return visitJsxExpression(<qt.JsxExpression>node);
       default:
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
     }
   }
   function transformJsxChildToExpression(node: qt.JsxChild): qt.Expression | undefined {
@@ -108,7 +108,7 @@ export function transformJsx(context: qt.TrafoContext) {
     return elem;
   }
   function transformJsxSpreadAttributeToExpression(node: qt.JsxSpreadAttribute) {
-    return visitNode(node.expression, visitor, isExpression);
+    return qf.visit.node(node.expression, visitor, isExpression);
   }
   function transformJsxAttributeToObjectLiteralElem(node: qt.JsxAttribute) {
     const name = getAttributeName(node);
@@ -182,10 +182,10 @@ export function transformJsx(context: qt.TrafoContext) {
     return qc.asLiteral(text);
   }
   function visitJsxExpression(node: qt.JsxExpression) {
-    return visitNode(node.expression, visitor, isExpression);
+    return qf.visit.node(node.expression, visitor, isExpression);
   }
 }
-const entities = createMap<number>({
+const entities = qu.createMap<number>({
   quot: 0x0022,
   amp: 0x0026,
   apos: 0x0027,

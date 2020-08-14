@@ -22,9 +22,9 @@ const enum SignatureFlags {
   None = 0,
   Yield = 1 << 0,
   Await = 1 << 1,
-  qt.Type = 1 << 2,
+  Type = 1 << 2,
   IgnoreMissingOpenBrace = 1 << 4,
-  qt.Doc = 1 << 5,
+  Doc = 1 << 5,
 }
 const enum Context {
   SourceElems,
@@ -40,7 +40,7 @@ const enum Context {
   ArrayBindingElems,
   ArgExpressions,
   ObjectLiteralMembers,
-  qt.JsxAttributes,
+  JsxAttributes,
   JsxChildren,
   ArrayLiteralMembers,
   Params,
@@ -1380,7 +1380,8 @@ function create() {
       if (scanner.hasExtendedEscape()) n.hasExtendedEscape = true;
       if (scanner.isUnterminated()) n.isUnterminated = true;
       if (n.kind === Syntax.NumericLiteral) (<qt.NumericLiteral>n).numericLiteralFlags = scanner.getTokenFlags() & TokenFlags.NumericLiteralFlags;
-      if (qy.is.templateLiteral(n.kind)) (<qt.TemplateHead | qc.TemplateMiddle | qc.TemplateTail | qt.NoSubstitutionLiteral>n).templateFlags = scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
+      if (qy.is.templateLiteral(n.kind))
+        (<qt.TemplateHead | qc.TemplateMiddle | qc.TemplateTail | qt.NoSubstitutionLiteral>n).templateFlags = scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
       next.tok();
       finishNode(n);
       return n;
@@ -4607,7 +4608,7 @@ namespace IncrementalParser {
       ns.pos += delta;
       ns.end += delta;
       for (const n of ns) {
-        visitNode(n);
+        qf.visit.node(n);
       }
     };
     const visitNode = (n: IncrementalNode) => {
@@ -4629,13 +4630,13 @@ namespace IncrementalParser {
       qf.each.child(n, visitNode, visitArray);
       if (qf.is.withDocNodes(n)) {
         for (const d of n.doc!) {
-          visitNode(d);
+          qf.visit.node(d);
         }
       }
       checkNodePositions(n, aggressiveChecks);
     };
     if (isArray) visitArray(<IncrementalNodes>elem);
-    else visitNode(<IncrementalNode>elem);
+    else qf.visit.node(<IncrementalNode>elem);
     return;
   }
   function adjustIntersectingElem(elem: IncrementalElem, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
@@ -4674,16 +4675,16 @@ namespace IncrementalParser {
         ns._children = undefined;
         adjustIntersectingElem(ns, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
         for (const node of ns) {
-          visitNode(node);
+          qf.visit.node(node);
         }
         return;
       }
       qu.assert(fullEnd < changeStart);
     };
 
-    visitNode(source);
+    qf.visit.node(source);
     return;
-    function visitNode(child: IncrementalNode) {
+    function qf.visit.node(child: IncrementalNode) {
       qu.assert(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
         moveElemEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
@@ -4697,7 +4698,7 @@ namespace IncrementalParser {
         qf.each.child(child, visitNode, visitArray);
         if (qf.is.withDocNodes(child)) {
           for (const d of child.doc!) {
-            visitNode(d);
+            qf.visit.node(d);
           }
         }
         checkNodePositions(child, aggressiveChecks);
@@ -4715,7 +4716,7 @@ namespace IncrementalParser {
       };
       if (qf.is.withDocNodes(n)) {
         for (const d of n.doc!) {
-          visitNode(d);
+          qf.visit.node(d);
         }
       }
       qf.each.child(n, visitNode);
@@ -4826,7 +4827,7 @@ namespace IncrementalParser {
       current = undefined!;
       qf.each.child(source, visitNode, visitArray);
       return;
-      function visitNode(n: Node) {
+      function qf.visit.node(n: Node) {
         if (position >= n.pos && position < n.end) {
           qf.each.child(n, visitNode, visitArray);
           return true;

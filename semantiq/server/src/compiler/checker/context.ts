@@ -739,7 +739,7 @@ export class QContext {
         if (this.tracker.trackSymbol && node.kind === Syntax.ComputedPropertyName && qf.is.lateBindableName(node)) {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
-        const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
+        const visited = qf.visit.eachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
         const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<qt.BindingElem>clone).initer = undefined;
         return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
@@ -822,17 +822,17 @@ export class QContext {
     if (cancellationToken && cancellationToken.throwIfCancellationRequested) cancellationToken.throwIfCancellationRequested();
     let hadError = false;
     const file = existing.sourceFile;
-    const transformed = visitNode(existing, this.visitExistingNodeTreeSymbols);
+    const transformed = qf.visit.node(existing, this.visitExistingNodeTreeSymbols);
     if (hadError) return;
     return transformed === existing ? getMutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
     if (node.kind === Syntax.DocAllTyping || node.kind === Syntax.DocNamepathTyping) return new qc.KeywordTyping(Syntax.AnyKeyword);
     if (node.kind === Syntax.DocUnknownTyping) return new qc.KeywordTyping(Syntax.UnknownKeyword);
-    if (node.kind === Syntax.DocNullableTyping) return new qc.UnionTyping([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTyping(Syntax.NullKeyword)]);
-    if (node.kind === Syntax.DocOptionalTyping) return new qc.UnionTyping([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTyping(Syntax.UndefinedKeyword)]);
-    if (node.kind === Syntax.DocNonNullableTyping) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
-    if (node.kind === Syntax.DocVariadicTyping) return new qc.ArrayTyping(visitNode((node as qt.DocVariadicTyping).type, this.visitExistingNodeTreeSymbols));
+    if (node.kind === Syntax.DocNullableTyping) return new qc.UnionTyping([qf.visit.node(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTyping(Syntax.NullKeyword)]);
+    if (node.kind === Syntax.DocOptionalTyping) return new qc.UnionTyping([qf.visit.node(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTyping(Syntax.UndefinedKeyword)]);
+    if (node.kind === Syntax.DocNonNullableTyping) return qf.visit.node(node.type, this.visitExistingNodeTreeSymbols);
+    if (node.kind === Syntax.DocVariadicTyping) return new qc.ArrayTyping(qf.visit.node((node as qt.DocVariadicTyping).type, this.visitExistingNodeTreeSymbols));
     if (node.kind === Syntax.DocTypingLiteral) {
       return new qc.TypingLiteral(
         map(node.docPropertyTags, (t) => {
@@ -843,7 +843,7 @@ export class QContext {
             undefined,
             name,
             t.typeExpression && t.typeExpression.type.kind === Syntax.DocOptionalTyping ? new qc.Token(Syntax.QuestionToken) : undefined,
-            overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || new qc.KeywordTyping(Syntax.AnyKeyword),
+            overrideTypeNode || (t.typeExpression && qf.visit.node(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || new qc.KeywordTyping(Syntax.AnyKeyword),
             undefined
           );
         })
@@ -855,8 +855,8 @@ export class QContext {
         new qc.IndexSignatureDeclaration(
           undefined,
           undefined,
-          [new qc.ParamDeclaration(undefined, undefined, undefined, 'x', undefined, visitNode(node.typeArgs![0], visitExistingNodeTreeSymbols))],
-          visitNode(node.typeArgs![1], this.visitExistingNodeTreeSymbols)
+          [new qc.ParamDeclaration(undefined, undefined, undefined, 'x', undefined, qf.visit.node(node.typeArgs![0], visitExistingNodeTreeSymbols))],
+          qf.visit.node(node.typeArgs![1], this.visitExistingNodeTreeSymbols)
         ),
       ]);
     }
@@ -877,11 +877,11 @@ export class QContext {
                   getEffectiveDotDotDotForParam(p),
                   p.name || getEffectiveDotDotDotForParam(p) ? `args` : `arg${i}`,
                   p.questionToken,
-                  visitNode(p.type, this.visitExistingNodeTreeSymbols),
+                  qf.visit.node(p.type, this.visitExistingNodeTreeSymbols),
                   undefined
                 )
           ),
-          visitNode(newTypeNode || node.type, this.visitExistingNodeTreeSymbols)
+          qf.visit.node(newTypeNode || node.type, this.visitExistingNodeTreeSymbols)
         );
       } else {
         return new qc.FunctionTyping(
@@ -895,11 +895,11 @@ export class QContext {
                 getEffectiveDotDotDotForParam(p),
                 p.name || getEffectiveDotDotDotForParam(p) ? `args` : `arg${i}`,
                 p.questionToken,
-                visitNode(p.type, this.visitExistingNodeTreeSymbols),
+                qf.visit.node(p.type, this.visitExistingNodeTreeSymbols),
                 undefined
               )
           ),
-          visitNode(node.type, this.visitExistingNodeTreeSymbols)
+          qf.visit.node(node.type, this.visitExistingNodeTreeSymbols)
         );
       }
     }
@@ -967,7 +967,7 @@ export class QContext {
     if (file && node.kind === Syntax.TupleTyping && qy.get.lineAndCharOf(file, node.pos).line === qy.get.lineAndCharOf(file, node.end).line) {
       qf.emit.setFlags(node, EmitFlags.SingleLine);
     }
-    return visitEachChild(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
+    return qf.visit.eachChild(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
   }
   serializeSignatures(kind: SignatureKind, input: qt.Type, baseType: qt.Type | undefined, outputKind: Syntax) {
     const signatures = getSignaturesOfType(input, kind);

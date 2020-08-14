@@ -1113,6 +1113,7 @@ export interface Fcalc extends ReturnType<typeof newCalc> {}
 export function newStmt(f: qt.Frame) {
   interface Frame extends qt.Frame {
     create: Fcreate;
+    decl: Fdecl;
     emit: Femit;
     get: Fget;
     has: Fhas;
@@ -1124,21 +1125,20 @@ export function newStmt(f: qt.Frame) {
       scopeMarkerNeeded(n: qt.Statement) {
         return !qf.is.anyImportOrReExport(n) && n.kind !== Syntax.ExportAssignment && !qf.has.syntacticModifier(n, ModifierFlags.Export) && !qf.is.ambientModule(n);
       }
-      //
-      customPrologue(n: qt.Statement) {
-        return !!(qf.get.emitFlags(n as Node) & EmitFlags.CustomPrologue);
-      }
       hoistedFunction(n: qt.Statement) {
         return this.customPrologue(n) && n.kind === Syntax.FunctionDeclaration;
       }
       hoistedVariableStatement(s: qt.Statement) {
         const n = s as Node;
-        if (this.customPrologue(s) && n.kind === Syntax.VariableStatement) return qu.every(n.declarationList.declarations, this.hoistedVariable);
+        if (this.customPrologue(s) && n.kind === Syntax.VariableStatement) return qu.every(n.declarationList.declarations, qf.decl.is.hoistedVariable);
         return false;
+      }
+      customPrologue(n: qt.Statement) {
+        return !!(qf.get.emitFlags(n as Node) & EmitFlags.CustomPrologue);
       }
       externalModuleIndicator(s: qt.Statement) {
         const n = s as Node;
-        return this.anyImportOrReExport(n as Node) || n.kind === Syntax.ExportAssignment || qf.has.syntacticModifier(n, ModifierFlags.Export);
+        return qf.is.anyImportOrReExport(n) || n.kind === Syntax.ExportAssignment || qf.has.syntacticModifier(n, ModifierFlags.Export);
       }
     })();
     insertAllAfterPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined, isPrologue: (n: Node) => boolean): T[] {
@@ -1195,7 +1195,7 @@ export function newStmt(f: qt.Frame) {
       const l = from.length;
       while (i !== undefined && i < l) {
         const s = from[i];
-        if (qf.get.emitFlags(s) & EmitFlags.CustomPrologue && filter(s)) qu.append(to, cb ? visitNode(s, cb, qf.is.statement) : s);
+        if (qf.get.emitFlags(s) & EmitFlags.CustomPrologue && filter(s)) qu.append(to, cb ? qf.visit.node(s, cb, qf.is.statement) : s);
         else break;
         i++;
       }
@@ -1674,9 +1674,6 @@ export namespace fixme {
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
     return expressions.length > 10 ? new qc.CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
-  }
-  export function convertToFunctionBody(node: qt.ConciseBody, multiLine?: boolean): qt.Block {
-    return node.kind === Syntax.Block ? node : new qc.Block([new qc.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
     sourceFile: qt.SourceFile,

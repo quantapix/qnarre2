@@ -28,7 +28,7 @@ const enum ClassFacts {
   IsExported = IsExportOfNamespace | IsDefaultExternalExport | IsNamedExternalExport,
 }
 export function transformTypeScript(context: qt.TrafoContext) {
-  const { startLexicalEnvironment, resumeLexicalEnvironment, endLexicalEnvironment, hoistVariableDeclaration } = context;
+  const { startLexicalEnv, resumeLexicalEnv, endLexicalEnv, hoistVariableDeclaration } = context;
   const resolver = context.getEmitResolver();
   const compilerOpts = context.getCompilerOpts();
   const strictNullChecks = getStrictOptionValue(compilerOpts, 'strictNullChecks');
@@ -137,7 +137,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function visitEllidableStatement(node: qt.ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportAssignment | qt.ExportDeclaration): VisitResult<Node> {
     const parsed = qf.get.parseTreeOf(node);
     if (parsed !== node) {
-      if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return visitEachChild(node, visitor, context);
+      if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return qf.visit.eachChild(node, visitor, context);
       return node;
     }
     switch (node.kind) {
@@ -300,12 +300,12 @@ export function transformTypeScript(context: qt.TrafoContext) {
       case Syntax.JsxOpeningElem:
         return visitJsxJsxOpeningElem(<qt.JsxOpeningElem>node);
       default:
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
     }
   }
   function visitSourceFile(node: qt.SourceFile) {
     const alwaysStrict = getStrictOptionValue(compilerOpts, 'alwaysStrict') && !(qf.is.externalModule(node) && moduleKind >= ModuleKind.ES2015) && !qf.is.jsonSourceFile(node);
-    return qp_updateSourceNode(node, visitLexicalEnvironment(node.statements, sourceElemVisitor, context, 0, alwaysStrict));
+    return qp_updateSourceNode(node, qf.visit.lexicalEnv(node.statements, sourceElemVisitor, context, 0, alwaysStrict));
   }
   function shouldEmitDecorateCallForClass(node: qt.ClassDeclaration) {
     if (node.decorators && node.decorators.length > 0) return true;
@@ -336,11 +336,11 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return some(node.decorators) || some(node.typeParams) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
   }
   function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<qt.Statement> {
-    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qf.has.syntacticModifier(node, ModifierFlags.Export))) return visitEachChild(node, visitor, context);
+    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qf.has.syntacticModifier(node, ModifierFlags.Export))) return qf.visit.eachChild(node, visitor, context);
     const staticProperties = getProperties(node, true);
     const facts = getClassFacts(node, staticProperties);
     if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) {
-      context.startLexicalEnvironment();
+      context.startLexicalEnv();
     }
     const name = node.name || (facts & ClassFacts.NeedsName ? qf.get.generatedNameForNode(node) : undefined);
     const classStatement = facts & ClassFacts.HasConstructorDecorators ? createClassDeclarationHeadWithDecorators(node, name) : createClassDeclarationHeadWithoutDecorators(node, name, facts);
@@ -358,7 +358,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       statement.pos = closingBraceLocation.pos;
       qf.emit.setFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
-      insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
+      insertStatementsAfterStandardPrologue(statements, context.endLexicalEnv());
       const iife = qf.create.immediateArrowFunction(statements);
       qf.emit.setFlags(iife, EmitFlags.TypeScriptClassWrapper);
       const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.decl.localName(node, false, false), undefined, iife)]));
@@ -416,7 +416,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return statement;
   }
   function visitClassExpression(node: qt.ClassExpression): qt.Expression {
-    if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return visitEachChild(node, visitor, context);
+    if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return qf.visit.eachChild(node, visitor, context);
     const classExpression = new qc.ClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
     qf.calc.aggregate(classExpression);
     classExpression.setOriginal(node);
@@ -592,7 +592,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return expression;
   }
   function transformDecorator(decorator: qt.Decorator) {
-    return visitNode(decorator.expression, visitor, isExpression);
+    return qf.visit.node(decorator.expression, visitor, isExpression);
   }
   function transformDecoratorsOfParam(decorators: qt.Decorator[], paramOffset: number) {
     let expressions: qt.Expression[] | undefined;
@@ -906,7 +906,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function visitPropertyNameOfClassElem(member: qt.ClassElem): qt.PropertyName {
     const name = member.name!;
     if (qf.is.kind(qc.ComputedPropertyName, name) && ((!qf.has.staticModifier(member) && currentClassHasParamProperties) || some(member.decorators))) {
-      const expression = visitNode(name.expression, visitor, isExpression);
+      const expression = qf.visit.node(name.expression, visitor, isExpression);
       const innerExpression = qf.skip.partiallyEmittedExpressions(expression);
       if (!isSimpleInlineableExpression(innerExpression)) {
         const generatedName = qf.get.generatedNameForNode(name);
@@ -914,16 +914,16 @@ export function transformTypeScript(context: qt.TrafoContext) {
         return name.update(qf.create.assignment(generatedName, expression));
       }
     }
-    return visitNode(name, visitor, isPropertyName);
+    return qf.visit.node(name, visitor, qf.is.propertyName);
   }
   function visitHeritageClause(node: qt.HeritageClause): qt.HeritageClause | undefined {
     if (node.token === Syntax.ImplementsKeyword) {
       return;
     }
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function visitExpressionWithTypings(node: qt.ExpressionWithTypings): qt.ExpressionWithTypings {
-    return node.update(undefined, visitNode(node.expression, visitor, isLeftExpression));
+    return node.update(undefined, qf.visit.node(node.expression, visitor, isLeftExpression));
   }
   function shouldEmitFunctionLikeDeclaration<T extends qt.FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
     return !qf.is.missing(node.body);
@@ -932,7 +932,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (node.flags & NodeFlags.Ambient) {
       return;
     }
-    const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElem(node), undefined, undefined, visitNode(node.initer, visitor));
+    const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElem(node), undefined, undefined, qf.visit.node(node.initer, visitor));
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
       qf.emit.setSourceMapRange(updated, node.movePastDecorators());
@@ -943,18 +943,18 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return;
     }
-    return node.update(undefined, undefined, visitParamList(node.params, visitor, context), transformConstructorBody(node.body, node));
+    return node.update(undefined, undefined, qf.visit.paramList(node.params, visitor, context), transformConstructorBody(node.body, node));
   }
   function transformConstructorBody(body: qt.Block, constructor: qt.ConstructorDeclaration) {
     const paramsWithPropertyAssignments = constructor && filter(constructor.params, (p) => qf.is.paramPropertyDeclaration(p, constructor));
-    if (!some(paramsWithPropertyAssignments)) return visitFunctionBody(body, visitor, context);
+    if (!some(paramsWithPropertyAssignments)) return qf.visit.functionBody(body, visitor, context);
     let statements: qt.Statement[] = [];
     let indexOfFirstStatement = 0;
-    resumeLexicalEnvironment();
+    resumeLexicalEnv();
     indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
     qu.addRange(statements, map(paramsWithPropertyAssignments, transformParamWithPropertyAssignment));
     qu.addRange(statements, Nodes.visit(body.statements, visitor, qf.is.statement, indexOfFirstStatement));
-    statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
+    statements = mergeLexicalEnv(statements, endLexicalEnv());
     const block = new qc.Block(setRange(new Nodes(statements), body.statements), true);
     block.setRange(body);
     block.setOriginal(body);
@@ -987,9 +987,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       visitPropertyNameOfClassElem(node),
       undefined,
       undefined,
-      visitParamList(node.params, visitor, context),
+      qf.visit.paramList(node.params, visitor, context),
       undefined,
-      visitFunctionBody(node.body, visitor, context)
+      qf.visit.functionBody(node.body, visitor, context)
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1008,9 +1008,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      visitParamList(node.params, visitor, context),
+      qf.visit.paramList(node.params, visitor, context),
       undefined,
-      visitFunctionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1026,8 +1026,8 @@ export function transformTypeScript(context: qt.TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      visitParamList(node.params, visitor, context),
-      visitFunctionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1043,9 +1043,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParamList(node.params, visitor, context),
+      qf.visit.paramList(node.params, visitor, context),
       undefined,
-      visitFunctionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
     );
     if (isExportOfNamespace(node)) {
       const statements: qt.Statement[] = [updated];
@@ -1061,9 +1061,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      visitParamList(node.params, visitor, context),
+      qf.visit.paramList(node.params, visitor, context),
       undefined,
-      visitFunctionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
     );
     return updated;
   }
@@ -1071,17 +1071,17 @@ export function transformTypeScript(context: qt.TrafoContext) {
     const updated = node.update(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       undefined,
-      visitParamList(node.params, visitor, context),
+      qf.visit.paramList(node.params, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
-      visitFunctionBody(node.body, visitor, context)
+      qf.visit.functionBody(node.body, visitor, context)
     );
     return updated;
   }
   function visitParam(node: qt.ParamDeclaration) {
     if (paramIsThsyntax.is.keyword(node)) return;
 
-    const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
+    const updated = node.update(undefined, undefined, node.dot3Token, qf.visit.node(node.name, visitor, isBindingName), undefined, undefined, qf.visit.node(node.initer, visitor, isExpression));
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
       updated.setRange(node.movePastModifiers());
@@ -1097,47 +1097,47 @@ export function transformTypeScript(context: qt.TrafoContext) {
 
       return setRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
     const name = node.name;
     if (qf.is.kind(qc.BindingPattern, name)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, false, createNamespaceExportExpression);
-    return setRange(qf.create.assignment(qf.get.namespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initer, visitor, isExpression)), node);
+    return setRange(qf.create.assignment(qf.get.namespaceMemberNameWithSourceMapsAndWithoutComments(name), qf.visit.node(node.initer, visitor, isExpression)), node);
   }
   function visitVariableDeclaration(node: qt.VariableDeclaration) {
-    return node.update(visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
+    return node.update(qf.visit.node(node.name, visitor, isBindingName), undefined, undefined, qf.visit.node(node.initer, visitor, isExpression));
   }
   function visitParenthesizedExpression(node: qt.ParenthesizedExpression): qt.Expression {
     const innerExpression = qf.skip.outerExpressions(node.expression, ~OuterExpressionKinds.Assertions);
     if (qf.is.assertionExpression(innerExpression)) {
-      const expression = visitNode(node.expression, visitor, isExpression);
+      const expression = qf.visit.node(node.expression, visitor, isExpression);
       if (length(syntax.get.leadingCommentRangesOfNode(expression, currentSourceFile))) return node.update(expression);
       return new qc.PartiallyEmittedExpression(expression, node);
     }
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function visitAssertionExpression(node: qt.AssertionExpression): qt.Expression {
-    const expression = visitNode(node.expression, visitor, isExpression);
+    const expression = qf.visit.node(node.expression, visitor, isExpression);
     return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitNonNullExpression(node: qt.NonNullExpression): qt.Expression {
-    const expression = visitNode(node.expression, visitor, isLeftExpression);
+    const expression = qf.visit.node(node.expression, visitor, isLeftExpression);
     return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitCallExpression(node: qt.CallExpression) {
-    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
+    return node.update(qf.visit.node(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
   }
   function visitNewExpression(node: qt.NewExpression) {
-    return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
+    return node.update(qf.visit.node(node.expression, visitor, isExpression), undefined, Nodes.visit(node.args, visitor, isExpression));
   }
   function visitTaggedTemplateExpression(node: qt.TaggedTemplateExpression) {
-    return node.update(visitNode(node.tag, visitor, isExpression), undefined, visitNode(node.template, visitor, isExpression));
+    return node.update(qf.visit.node(node.tag, visitor, isExpression), undefined, qf.visit.node(node.template, visitor, isExpression));
   }
   function visitJsxSelfClosingElem(node: qt.JsxSelfClosingElem) {
-    return node.update(visitNode(node.tagName, visitor, isJsxTagNameExpression), undefined, visitNode(node.attributes, visitor, isJsxAttributes));
+    return node.update(qf.visit.node(node.tagName, visitor, isJsxTagNameExpression), undefined, qf.visit.node(node.attributes, visitor, isJsxAttributes));
   }
   function visitJsxJsxOpeningElem(node: qt.JsxOpeningElem) {
-    return node.update(visitNode(node.tagName, visitor, isJsxTagNameExpression), undefined, visitNode(node.attributes, visitor, isJsxAttributes));
+    return node.update(qf.visit.node(node.tagName, visitor, isJsxTagNameExpression), undefined, qf.visit.node(node.attributes, visitor, isJsxAttributes));
   }
   function shouldEmitEnumDeclaration(node: qt.EnumDeclaration) {
     return !qf.is.enumConst(node) || compilerOpts.preserveConstEnums || compilerOpts.isolatedModules;
@@ -1184,9 +1184,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
     const savedCurrentNamespaceLocalName = currentNamespaceContainerName;
     currentNamespaceContainerName = localName;
     const statements: qt.Statement[] = [];
-    startLexicalEnvironment();
+    startLexicalEnv();
     const members = map(node.members, transformEnumMember);
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    insertStatementsAfterStandardPrologue(statements, endLexicalEnv());
     qu.addRange(statements, members);
     currentNamespaceContainerName = savedCurrentNamespaceLocalName;
     return new qc.Block(setRange(new Nodes(statements), true));
@@ -1203,7 +1203,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (value !== undefined) return qc.asLiteral(value);
     else {
       enableSubstitutionForNonQualifiedEnumMembers();
-      if (member.initer) return visitNode(member.initer, visitor, isExpression);
+      if (member.initer) return qf.visit.node(member.initer, visitor, isExpression);
       return qc.VoidExpression.zero();
     }
   }
@@ -1318,7 +1318,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     currentNamespace = node;
     currentScopeFirstDeclarationsOfName = undefined;
     const statements: qt.Statement[] = [];
-    startLexicalEnvironment();
+    startLexicalEnv();
     let statementsLocation: TextRange | undefined;
     let blockLocation: TextRange | undefined;
     if (node.body) {
@@ -1339,7 +1339,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
         statementsLocation = moveRangePos(moduleBlock.statements, -1);
       }
     }
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    insertStatementsAfterStandardPrologue(statements, endLexicalEnv());
     currentNamespaceContainerName = savedCurrentNamespaceContainerName;
     currentNamespace = savedCurrentNamespace;
     currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
@@ -1361,7 +1361,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (node.importClause.isTypeOnly) {
       return;
     }
-    const importClause = visitNode(node.importClause, visitImportClause, isImportClause);
+    const importClause = qf.visit.node(node.importClause, visitImportClause, isImportClause);
     return importClause || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Error
       ? node.update(undefined, undefined, importClause, node.moduleSpecifier)
       : undefined;
@@ -1371,7 +1371,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       return;
     }
     const name = resolver.referencedAliasDeclaration(node) ? node.name : undefined;
-    const namedBindings = visitNode(node.namedBindings, visitNamedImportBindings, isNamedImportBindings);
+    const namedBindings = qf.visit.node(node.namedBindings, visitNamedImportBindings, isNamedImportBindings);
     return name || namedBindings ? node.update(name, namedBindings, false) : undefined;
   }
   function visitNamedImportBindings(node: qt.NamedImportBindings): VisitResult<qt.NamedImportBindings> {
@@ -1385,7 +1385,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return resolver.referencedAliasDeclaration(node) ? node : undefined;
   }
   function visitExportAssignment(node: qt.ExportAssignment): VisitResult<qt.Statement> {
-    return resolver.isValueAliasDeclaration(node) ? visitEachChild(node, visitor, context) : undefined;
+    return resolver.isValueAliasDeclaration(node) ? qf.visit.eachChild(node, visitor, context) : undefined;
   }
   function visitExportDeclaration(node: qt.ExportDeclaration): VisitResult<qt.Statement> {
     if (node.isTypeOnly) {
@@ -1395,7 +1395,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (!resolver.isValueAliasDeclaration(node)) {
       return;
     }
-    const exportClause = visitNode(node.exportClause, visitNamedExportBindings, isNamedExportBindings);
+    const exportClause = qf.visit.node(node.exportClause, visitNamedExportBindings, isNamedExportBindings);
     return exportClause ? node.update(undefined, undefined, exportClause, node.moduleSpecifier, node.isTypeOnly) : undefined;
   }
   function visitNamedExports(node: qt.NamedExports): VisitResult<qt.NamedExports> {
@@ -1403,7 +1403,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return some(elems) ? node.update(elems) : undefined;
   }
   function visitNamespaceExports(node: qt.NamespaceExport): VisitResult<qt.NamespaceExport> {
-    return node.update(visitNode(node.name, visitor, isIdentifier));
+    return node.update(qf.visit.node(node.name, visitor, isIdentifier));
   }
   function visitNamedExportBindings(node: qt.NamedExportBindings): VisitResult<qt.NamedExportBindings> {
     return qf.is.kind(qc.NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
@@ -1419,7 +1419,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       const referenced = resolver.referencedAliasDeclaration(node);
       if (!referenced && compilerOpts.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve)
         return setRange(new qc.ImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node).setOriginal(node);
-      return referenced ? visitEachChild(node, visitor, context) : undefined;
+      return referenced ? qf.visit.eachChild(node, visitor, context) : undefined;
     }
     if (!shouldEmitImportEqualsDeclaration(node)) {
       return;

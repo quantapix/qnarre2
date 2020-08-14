@@ -83,7 +83,7 @@ export function newGet(f: qt.Frame) {
           if (jsxPragma) {
             const chosenpragma = qu.qf.is.array(jsxPragma) ? jsxPragma[0] : jsxPragma;
             file.localJsxFactory = qp_parseIsolatedEntityName(chosenpragma.args.factory, languageVersion);
-            visitNode(file.localJsxFactory, markAsSynthetic);
+            qf.visit.node(file.localJsxFactory, markAsSynthetic);
             if (file.localJsxFactory) return (file.localJsxNamespace = this.firstIdentifier(file.localJsxFactory).escapedText);
           }
         }
@@ -92,7 +92,7 @@ export function newGet(f: qt.Frame) {
         _jsxNamespace = 'React' as qu.__String;
         if (compilerOpts.jsxFactory) {
           _jsxFactoryEntity = qp_parseIsolatedEntityName(compilerOpts.jsxFactory, languageVersion);
-          visitNode(_jsxFactoryEntity, markAsSynthetic);
+          qf.visit.node(_jsxFactoryEntity, markAsSynthetic);
           if (_jsxFactoryEntity) _jsxNamespace = this.firstIdentifier(_jsxFactoryEntity).escapedText;
         } else if (compilerOpts.reactNamespace) {
           _jsxNamespace = qy.get.escUnderscores(compilerOpts.reactNamespace);
@@ -103,7 +103,7 @@ export function newGet(f: qt.Frame) {
       const markAsSynthetic = (n: Node): VisitResult<Node> => {
         n.pos = -1;
         n.end = -1;
-        return visitEachChild(n, markAsSynthetic, nullTrafoContext);
+        return qf.visit.eachChild(n, markAsSynthetic, nullTrafoContext);
       };
     }
     emitResolver(s: qt.SourceFile, t: qt.CancellationToken) {

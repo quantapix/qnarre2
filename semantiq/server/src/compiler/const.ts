@@ -251,7 +251,7 @@ export const enum JsxReferenceKind {
   Function,
   Mixed,
 }
-export const enum LexicalEnvironmentFlags {
+export const enum LexicalEnvFlags {
   None = 0,
   InParams = 1 << 0,
   VariablesHoistedInParams = 1 << 1,

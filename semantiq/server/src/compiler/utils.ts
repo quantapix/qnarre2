@@ -1079,9 +1079,9 @@ export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
 export function maybeBind<T, A extends unknown, R>(t: T, cb: ((this: T, ...args: A[]) => R) | undefined): ((...args: A[]) => R) | undefined {
   return cb ? cb.bind(t) : undefined;
 }
-export function eachEntry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
-export function eachEntry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
-export function eachEntry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+export function eachEntryShim<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+export function eachEntryShim<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
+export function eachEntryShim<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
   const ts = m.entries();
   for (let i = ts.next(); !i.done; i = ts.next()) {
     const [k, t] = i.value;
@@ -1487,130 +1487,125 @@ export function isSynthesized(x: Range | number) {
   if (typeof x === 'number') return !(x >= 0);
   return isSynthesized(x.pos) || isSynthesized(x.end);
 }
-interface IteratorShim<T> {
+interface IterShim<T> {
   next(): { value: T; done?: false } | { value: never; done: true };
 }
 interface MapShim<T> {
-  readonly size: number;
-  get(key: string): T | undefined;
-  set(key: string, value: T): this;
-  has(key: string): boolean;
-  delete(key: string): boolean;
   clear(): void;
-  keys(): IteratorShim<string>;
-  values(): IteratorShim<T>;
-  entries(): IteratorShim<[string, T]>;
-  forEach(action: (value: T, key: string) => void): void;
+  delete(k: string): boolean;
+  entries(): IterShim<[string, T]>;
+  forEach(cb: (v: T, k: string) => void): void;
+  get(k: string): T | undefined;
+  has(k: string): boolean;
+  keys(): IterShim<string>;
+  readonly size: number;
+  set(k: string, v: T): this;
+  values(): IterShim<T>;
 }
-export function createMapShim(): new <T>() => MapShim<T> {
-  function createDictionaryObject<T>(): Record<string, T> {
-    const map = Object.create(null);
-    map.__ = undefined;
-    delete map.__;
-    return map;
-  }
-  interface MapEntry<T> {
-    readonly key?: string;
-    value?: T;
-    nextEntry?: MapEntry<T>;
-    previousEntry?: MapEntry<T>;
-    skipNext?: boolean;
-  }
-  class MapIterator<T, U extends string | T | [string, T]> {
-    private currentEntry?: MapEntry<T>;
-    private selector: (key: string, value: T) => U;
-    constructor(currentEntry: MapEntry<T>, selector: (key: string, value: T) => U) {
-      this.currentEntry = currentEntry;
-      this.selector = selector;
-    }
-    public next(): { value: U; done?: false } | { value: never; done: true } {
-      while (this.currentEntry) {
-        const skipNext = !!this.currentEntry.skipNext;
-        this.currentEntry = this.currentEntry.nextEntry;
-        if (!skipNext) break;
+interface EntryShim<T> {
+  readonly k?: string;
+  v?: T;
+  next?: EntryShim<T>;
+  prev?: EntryShim<T>;
+  skip?: boolean;
+}
+export function createMap<T>() {
+  class Iter<T, U extends string | T | [string, T]> {
+    constructor(private e: EntryShim<T> | undefined, private cb: (k: string, v: T) => U) {}
+    next(): { value: U; done?: false } | { value: never; done: true } {
+      while (this.e) {
+        const skip = !!this.e.skip;
+        this.e = this.e.next;
+        if (!skip) break;
       }
-      if (this.currentEntry) return { value: this.selector(this.currentEntry.key!, this.currentEntry.value!), done: false };
+      if (this.e) return { value: this.cb(this.e.k!, this.e.v!), done: false };
       return { value: undefined as never, done: true };
     }
   }
-  return class<T> implements MapShim<T> {
-    private data = createDictionaryObject<MapEntry<T>>();
-    public size = 0;
-    private readonly firstEntry: MapEntry<T>;
-    private lastEntry: MapEntry<T>;
+  const newDict = (): Record<string, EntryShim<T>> => {
+    const d = Object.create(null);
+    d.__ = undefined;
+    delete d.__;
+    return d;
+  };
+  return new (class implements MapShim<T> {
+    data = newDict();
+    size = 0;
+    readonly first: EntryShim<T>;
+    last: EntryShim<T>;
     constructor() {
-      this.firstEntry = {};
-      this.lastEntry = this.firstEntry;
+      this.first = {};
+      this.last = this.first;
     }
-    get(key: string): T | undefined {
-      const entry = this.data[key] as MapEntry<T> | undefined;
-      return entry && entry.value!;
+    get(k: string): T | undefined {
+      const e = this.data[k] as EntryShim<T> | undefined;
+      return e?.v;
     }
-    set(key: string, value: T): this {
-      if (!this.has(key)) {
+    set(k: string, v: T): this {
+      if (!this.has(k)) {
         this.size++;
-        const newEntry: MapEntry<T> = { key, value };
-        this.data[key] = newEntry;
-        const previousLastEntry = this.lastEntry;
-        previousLastEntry.nextEntry = newEntry;
-        newEntry.previousEntry = previousLastEntry;
-        this.lastEntry = newEntry;
-      } else this.data[key].value = value;
+        const e: EntryShim<T> = { k, v };
+        this.data[k] = e;
+        const p = this.last;
+        p.next = e;
+        e.prev = p;
+        this.last = e;
+      } else this.data[k].v = v;
       return this;
     }
-    has(key: string): boolean {
-      return key in this.data;
+    has(k: string) {
+      return k in this.data;
     }
-    delete(key: string): boolean {
-      if (this.has(key)) {
+    delete(k: string): boolean {
+      if (this.has(k)) {
         this.size--;
-        const entry = this.data[key];
-        delete this.data[key];
-        const previousEntry = entry.previousEntry!;
-        previousEntry.nextEntry = entry.nextEntry;
-        if (entry.nextEntry) entry.nextEntry.previousEntry = previousEntry;
-        if (this.lastEntry === entry) this.lastEntry = previousEntry;
-        entry.previousEntry = undefined;
-        entry.nextEntry = previousEntry;
-        entry.skipNext = true;
+        const e = this.data[k];
+        delete this.data[k];
+        const p = e.prev!;
+        p.next = e.next;
+        if (e.next) e.next.prev = p;
+        if (this.last === e) this.last = p;
+        e.prev = undefined;
+        e.next = p;
+        e.skip = true;
         return true;
       }
       return false;
     }
     clear() {
-      this.data = createDictionaryObject<MapEntry<T>>();
+      this.data = newDict();
       this.size = 0;
-      const firstEntry = this.firstEntry;
-      let currentEntry = firstEntry.nextEntry;
-      while (currentEntry) {
-        const nextEntry = currentEntry.nextEntry;
-        currentEntry.previousEntry = undefined;
-        currentEntry.nextEntry = firstEntry;
-        currentEntry.skipNext = true;
-        currentEntry = nextEntry;
+      const f = this.first;
+      let e = f.next;
+      while (e) {
+        const n = e.next;
+        e.prev = undefined;
+        e.next = f;
+        e.skip = true;
+        e = n;
       }
-      firstEntry.nextEntry = undefined;
-      this.lastEntry = firstEntry;
+      f.next = undefined;
+      this.last = f;
     }
-    keys(): IteratorShim<string> {
-      return new MapIterator(this.firstEntry, (key) => key);
+    keys(): IterShim<string> {
+      return new Iter(this.first, (k) => k);
     }
-    values(): IteratorShim<T> {
-      return new MapIterator(this.firstEntry, (_key, value) => value);
+    values(): IterShim<T> {
+      return new Iter(this.first, (_k, v) => v);
     }
-    entries(): IteratorShim<[string, T]> {
-      return new MapIterator(this.firstEntry, (key, value) => [key, value] as [string, T]);
+    entries(): IterShim<[string, T]> {
+      return new Iter(this.first, (k, v) => [k, v] as [string, T]);
     }
-    forEach(action: (value: T, key: string) => void) {
-      const iterator = this.entries();
+    forEach(cb: (v: T, k: string) => void) {
+      const i = this.entries();
       while (true) {
-        const iterResult = iterator.next();
-        if (iterResult.done) break;
-        const [key, value] = iterResult.value;
-        action(value, key);
+        const r = i.next();
+        if (r.done) break;
+        const [key, value] = r.value;
+        cb(value, key);
       }
     }
-  };
+  })();
 }
 export interface Span {
   start: number;

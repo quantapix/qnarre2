@@ -8,6 +8,7 @@ import * as qg from './groups';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
+import * as qv from './visit';
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: qg.Fcalc;
@@ -2150,7 +2151,7 @@ export function newIs(f: qt.Frame) {
     typeOnlyDeclarationIsExport(n: Node) {
       return n.kind === Syntax.ExportSpecifier;
     }
-    nodeStartsNewLexicalEnvironment(n: Node) {
+    nodeStartsNewLexicalEnv(n: Node) {
       switch (n.kind) {
         case Syntax.ArrowFunction:
         case Syntax.Constructor:
@@ -3510,6 +3511,7 @@ export interface Frame extends qt.Frame {
   nest: qg.Fnest;
   skip: qg.Fskip;
   stmt: qg.Fstmt;
+  visit: qv.Fvisit;
 }
 export function newFrame() {
   const f = {} as Frame;
@@ -3525,6 +3527,7 @@ export function newFrame() {
   qg.newNest(f);
   qg.newSkip(f);
   qg.newStmt(f);
+  qv.newVisit(f);
   return f;
 }
 export const qf = newFrame();

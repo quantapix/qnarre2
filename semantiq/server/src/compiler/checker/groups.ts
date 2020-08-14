@@ -1860,7 +1860,7 @@ export function newIs(f: qt.Frame) {
       if (!this.generatedIdentifier(nIn)) {
         const n = qf.get.parseTreeOf(nIn, isIdentifier);
         if (n) {
-          const isPropertyName = n.parent.kind === Syntax.PropertyAccessExpression && (<qt.PropertyAccessExpression>n.parent).name === n;
+          const isPropertyName = n.parent.kind === Syntax.PropertyAccessExpression && n.parent.name === n;
           return !isPropertyName && getReferencedValueSymbol(n) === argsSymbol;
         }
       }
@@ -2156,7 +2156,7 @@ export function newHas(f: qt.Frame) {
           case Syntax.SetAccessor:
             return (<qt.NamedDecl>n).name!.kind === Syntax.ComputedPropertyName && traverse((<qt.NamedDecl>n).name!);
           default:
-            return !nStartsNewLexicalEnvironment(n) && !qf.is.partOfTypeNode(n) && !!qf.each.child(n, traverse);
+            return !nStartsNewLexicalEnv(n) && !qf.is.partOfTypeNode(n) && !!qf.each.child(n, traverse);
         }
       }
     }

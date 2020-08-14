@@ -11,7 +11,7 @@ export function transformES2020(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2020) === 0) return node;
@@ -24,14 +24,14 @@ export function transformES2020(context: qt.TrafoContext) {
           qc.assert.notNode(updated, isSyntheticReference);
           return updated;
         }
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
       case Syntax.BinaryExpression:
         if ((<qt.BinaryExpression>node).operatorToken.kind === Syntax.Question2Token) return transformNullishCoalescingExpression(<qt.BinaryExpression>node);
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
       case Syntax.DeleteExpression:
         return visitDeleteExpression(node as qt.DeleteExpression);
       default:
-        return visitEachChild(node, visitor, context);
+        return qf.visit.eachChild(node, visitor, context);
     }
   }
   function flattenChain(chain: qt.OptionalChain) {
@@ -58,7 +58,7 @@ export function transformES2020(context: qt.TrafoContext) {
       // If `node` is an optional chain, then it is the outermost chain of an optional expression.
       return visitOptionalExpression(node, captureThisArg, isDelete);
     }
-    let expression: qt.Expression = visitNode(node.expression, visitor, isExpression);
+    let expression: qt.Expression = qf.visit.node(node.expression, visitor, isExpression);
     qc.assert.notNode(expression, isSyntheticReference);
     let thisArg: qt.Expression | undefined;
     if (captureThisArg) {
@@ -72,13 +72,13 @@ export function transformES2020(context: qt.TrafoContext) {
     }
     expression =
       node.kind === Syntax.PropertyAccessExpression
-        ? node.update(expression, visitNode(node.name, visitor, isIdentifier))
-        : node.update(expression, visitNode(node.argExpression, visitor, isExpression));
+        ? node.update(expression, qf.visit.node(node.name, visitor, isIdentifier))
+        : node.update(expression, qf.visit.node(node.argExpression, visitor, isExpression));
     return thisArg ? new qc.SyntheticReferenceExpression(expression, thisArg) : expression;
   }
   function visitNonOptionalCallExpression(node: qt.CallExpression, captureThisArg: boolean): qt.Expression {
     if (qf.is.optionalChain(node)) return visitOptionalExpression(node, captureThisArg, false);
-    return visitEachChild(node, visitor, context);
+    return qf.visit.eachChild(node, visitor, context);
   }
   function visitNonOptionalExpression(node: qt.Expression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     switch (node.kind) {
@@ -90,7 +90,7 @@ export function transformES2020(context: qt.TrafoContext) {
       case Syntax.CallExpression:
         return visitNonOptionalCallExpression(node as qt.CallExpression, captureThisArg);
       default:
-        return visitNode(node, visitor, isExpression);
+        return qf.visit.node(node, visitor, isExpression);
     }
   }
   function visitOptionalExpression(node: qt.OptionalChain, captureThisArg: boolean, isDelete: boolean): qt.Expression {
@@ -122,8 +122,8 @@ export function transformES2020(context: qt.TrafoContext) {
           }
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
-              ? new qc.PropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier))
-              : new qc.ElemAccessExpression(rightExpression, visitNode(segment.argExpression, visitor, isExpression));
+              ? new qc.PropertyAccessExpression(rightExpression, qf.visit.node(segment.name, visitor, isIdentifier))
+              : new qc.ElemAccessExpression(rightExpression, qf.visit.node(segment.argExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {
@@ -148,19 +148,21 @@ export function transformES2020(context: qt.TrafoContext) {
     );
   }
   function transformNullishCoalescingExpression(node: qt.BinaryExpression) {
-    let left = visitNode(node.left, visitor, isExpression);
+    let left = qf.visit.node(node.left, visitor, isExpression);
     let right = left;
     if (shouldCaptureInTempVariable(left)) {
       right = createTempVariable(hoistVariableDeclaration);
       left = qf.create.assignment(right, left);
       // if (inParamIniter) tempVariableInParam = true;
     }
-    return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
+    return new qc.ConditionalExpression(createNotNullCondition(left, right), right, qf.visit.node(node.right, visitor, isExpression));
   }
   function shouldCaptureInTempVariable(expression: qt.Expression): boolean {
     return !qf.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: qt.DeleteExpression) {
-    return qf.is.optionalChain(qf.skip.parentheses(n.expression)) ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n) : n.update(visitNode(n.expression, visitor, isExpression));
+    return qf.is.optionalChain(qf.skip.parentheses(n.expression))
+      ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n)
+      : n.update(qf.visit.node(n.expression, visitor, isExpression));
   }
 }

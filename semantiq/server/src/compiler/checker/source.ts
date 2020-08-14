@@ -14,7 +14,7 @@ export function createSourceMapGenerator(host: qt.EmitHost, file: string, source
   const { enter, exit } = generatorOpts.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
   const rawSources: string[] = [];
   const sources: string[] = [];
-  const sourceToSourceIndexMap = createMap<number>();
+  const sourceToSourceIndexMap = qu.createMap<number>();
   let sourcesContent: (string | null)[] | undefined;
   const names: string[] = [];
   let nameToNameIndexMap: Map<number> | undefined;
@@ -71,7 +71,7 @@ export function createSourceMapGenerator(host: qt.EmitHost, file: string, source
   }
   function addName(name: string) {
     enter();
-    if (!nameToNameIndexMap) nameToNameIndexMap = createMap();
+    if (!nameToNameIndexMap) nameToNameIndexMap = qu.createMap();
     let nameIndex = nameToNameIndexMap.get(name);
     if (nameIndex === undefined) {
       nameIndex = names.length;
@@ -500,7 +500,7 @@ export function createDocumentPositionMapper(host: qt.DocumentPositionMapperHost
   const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
   const generatedFile = host.getSourceFileLike(generatedAbsoluteFilePath);
   const sourceFileAbsolutePaths = map.sources.map((source) => getNormalizedAbsolutePath(source, sourceRoot));
-  const sourceToSourceIndexMap = createMap(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
+  const sourceToSourceIndexMap = qu.createMap(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
   let decodedMappings: readonly MappedPosition[] | undefined;
   let generatedMappings: SortedReadonlyArray<MappedPosition> | undefined;
   let sourceMappings: readonly SortedReadonlyArray<SourceMappedPosition>[] | undefined;

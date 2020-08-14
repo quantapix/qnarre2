@@ -174,7 +174,7 @@ export function forEachFileNameOfModule<T>(
 function getAllModulePaths(importingFileName: string, importedFileName: string, host: qt.ModuleSpecifierResolutionHost): readonly string[] {
   const cwd = host.getCurrentDirectory();
   const getCanonicalFileName = hostGetCanonicalFileName(host);
-  const allFileNames = createMap<string>();
+  const allFileNames = qu.createMap<string>();
   let importedFileFromNodeModules = false;
   forEachFileNameOfModule(importingFileName, importedFileName, host, true, (path) => {
     allFileNames.set(path, getCanonicalFileName(path));
@@ -833,8 +833,8 @@ export interface CacheWithRedirects<T> {
   setOwnMap(newOwnMap: Map<T>): void;
 }
 export function createCacheWithRedirects<T>(opts?: qt.CompilerOpts): CacheWithRedirects<T> {
-  let ownMap: Map<T> = createMap();
-  const redirectsMap: Map<Map<T>> = createMap();
+  let ownMap: Map<T> = qu.createMap();
+  const redirectsMap: Map<Map<T>> = qu.createMap();
   return {
     ownMap,
     redirectsMap,
@@ -854,7 +854,7 @@ export function createCacheWithRedirects<T>(opts?: qt.CompilerOpts): CacheWithRe
     const path = redirectedReference.sourceFile.path;
     let redirects = redirectsMap.get(path);
     if (!redirects) {
-      redirects = !opts || optsHaveModuleResolutionChanges(opts, redirectedReference.commandLine.opts) ? createMap() : ownMap;
+      redirects = !opts || optsHaveModuleResolutionChanges(opts, redirectedReference.commandLine.opts) ? qu.createMap() : ownMap;
       redirectsMap.set(path, redirects);
     }
     return redirects;
@@ -889,7 +889,7 @@ export function createModuleResolutionCacheWithMaps(
     return result;
   }
   function createPerModuleNameCache(): PerModuleNameCache {
-    const directoryPathMap = createMap<qt.ResolvedModuleWithFailedLookupLocations>();
+    const directoryPathMap = qu.createMap<qt.ResolvedModuleWithFailedLookupLocations>();
     return { get, set };
     function get(directory: string): qt.ResolvedModuleWithFailedLookupLocations | undefined {
       return directoryPathMap.get(toPath(directory, currentDirectory, getCanonicalFileName));
