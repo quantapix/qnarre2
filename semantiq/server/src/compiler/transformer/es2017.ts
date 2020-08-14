@@ -411,7 +411,7 @@ export function transformES2017(context: qt.TrafoContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name).setRange(node);
+    if (node.expression.kind === Syntax.SuperKeyword) return new qc.PropertyAccessExpression(qf.create.fileLevelUniqueName('_super'), node.name).setRange(node);
     return node;
   }
   function substituteElemAccessExpression(node: qt.ElemAccessExpression) {
@@ -432,8 +432,8 @@ export function transformES2017(context: qt.TrafoContext) {
   }
   function createSuperElemAccessInAsyncMethod(argExpression: qt.Expression, location: TextRange): qt.LeftExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return new qc.PropertyAccessExpression(new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
-    return new qc.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
+      return new qc.PropertyAccessExpression(new qc.CallExpression(qf.create.fileLevelUniqueName('_superIndex'), undefined, [argExpression]), 'value').setRange(location);
+    return new qc.CallExpression(qf.create.fileLevelUniqueName('_superIndex'), undefined, [argExpression]).setRange(location);
   }
 }
 export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, node: qt.FunctionLikeDeclaration, names: EscapedMap<true>) {
@@ -478,7 +478,7 @@ export function createSuperAccessVariableStatement(resolver: qt.EmitResolver, no
   return new qc.VariableStatement(
     undefined,
     new qc.VariableDeclarationList(
-      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'create'), true))],
+      [new qc.VariableDeclaration(qf.create.fileLevelUniqueName('_super'), undefined, new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Object'), 'create'), true))],
       NodeFlags.Const
     )
   );
@@ -506,7 +506,7 @@ function createAwaiterHelper(context: qt.TrafoContext, hasLexicalThis: boolean, 
   return new qc.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
     hasLexicalThis ? new qc.ThisExpression() : qc.VoidExpression.zero(),
     hasLexicalArgs ? new qc.Identifier('args') : qc.VoidExpression.zero(),
-    promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qc.VoidExpression.zero(),
+    promiseConstructor ? qf.create.expressionFromEntityName(promiseConstructor) : qc.VoidExpression.zero(),
     generatorFunc,
   ]);
 }

@@ -103,7 +103,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
       if (errorInfo) {
         if (errorInfo.typeName) {
           context.addDiagnostic(
-            qf.create.diagnosticForNode(
+            qf.create.diagForNode(
               symbolAccessibilityResult.errorNode || errorInfo.errorNode,
               errorInfo.diagnosticMessage,
               qf.get.textOf(errorInfo.typeName),
@@ -113,7 +113,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
           );
         } else {
           context.addDiagnostic(
-            qf.create.diagnosticForNode(
+            qf.create.diagForNode(
               symbolAccessibilityResult.errorNode || errorInfo.errorNode,
               errorInfo.diagnosticMessage,
               symbolAccessibilityResult.errorSymbolName,
@@ -133,26 +133,26 @@ export function transformDeclarations(context: qt.TrafoContext) {
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
   function reportPrivateInBaseOfClassExpression(propertyName: string) {
-    if (errorNameNode) context.addDiagnostic(qf.create.diagnosticForNode(errorNameNode, qd.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
+    if (errorNameNode) context.addDiagnostic(qf.create.diagForNode(errorNameNode, qd.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
   }
   function reportInaccessibleUniqueSymbolError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        qf.create.diagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol')
+        qf.create.diagForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol')
       );
     }
   }
   function reportInaccessibleThisError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        qf.create.diagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
+        qf.create.diagForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
       );
     }
   }
   function reportLikelyUnsafeImportRequiredError(spec: string) {
     if (errorNameNode) {
       context.addDiagnostic(
-        qf.create.diagnosticForNode(
+        qf.create.diagForNode(
           errorNameNode,
           qd.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary,
           declarationNameToString(errorNameNode),
@@ -167,8 +167,8 @@ export function transformDeclarations(context: qt.TrafoContext) {
     for (const augmentations of augmentingDeclarations) {
       context.addDiagnostic(
         addRelatedInfo(
-          qf.create.diagnosticForNode(augmentations, qd.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
-          qf.create.diagnosticForNode(primaryDeclaration, qd.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
+          qf.create.diagForNode(augmentations, qd.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
+          qf.create.diagForNode(primaryDeclaration, qd.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
         )
       );
     }
@@ -772,7 +772,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
         resultHasScopeMarker = true;
         if (input.expression.kind === Syntax.Identifier) return input;
         else {
-          const newId = createOptimisticUniqueName('_default');
+          const newId = qf.create.optimisticUniqueName('_default');
           getSymbolAccessibilityDiagnostic = () => ({
             diagnosticMessage: qd.Default_export_of_the_module_has_or_is_using_private_name_0,
             errorNode: input,
@@ -789,7 +789,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
   }
   function stripExportModifiers(statement: qt.Statement): qt.Statement {
     if (statement.kind === Syntax.ImportEqualsDeclaration || qf.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
-    const clone = getMutableClone(statement);
+    const clone = qf.create.mutableClone(statement);
     const modifiers = qf.create.modifiersFromFlags(qf.get.effectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
     return clone;
@@ -947,7 +947,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
         const extendsClause = qf.get.effectiveBaseTypeNode(input);
         if (extendsClause && !qf.is.entityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
           const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
-          const newId = createOptimisticUniqueName(`${oldId}_base`);
+          const newId = qf.create.optimisticUniqueName(`${oldId}_base`);
           getSymbolAccessibilityDiagnostic = () => ({
             diagnosticMessage: qd.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,
             errorNode: extendsClause,

@@ -536,7 +536,7 @@ export function newCreate(f: qt.Frame) {
       const restParamSymbols = mapDefined(candidates, (c) => (c.hasRestParam() ? last(c.params) : undefined));
       let flags = SignatureFlags.None;
       if (restParamSymbols.length !== 0) {
-        const type = this.arrayType(qf.get.unionType(mapDefined(candidates, tryGetRestTypeOfSignature), qt.UnionReduction.Subtype));
+        const type = this.arrayType(qf.get.unionType(mapDefined(candidates, tryRestType), qt.UnionReduction.Subtype));
         params.push(this.combinedSymbolForOverloadFailure(restParamSymbols, type));
         flags |= SignatureFlags.HasRestParam;
       }
@@ -1325,7 +1325,7 @@ export function newResolve(f: qt.Frame) {
               if (suggestion) {
                 const suggestionName = suggestion.symbolToString();
                 const diagnostic = error(errorLocation, suggestedNameNotFoundMessage, diagnosticName(nameArg!), suggestionName);
-                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagnosticForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
+                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
               }
             }
             if (!suggestion) error(errorLocation, nameNotFoundMessage, diagnosticName(nameArg!));
@@ -1585,7 +1585,7 @@ export function newResolve(f: qt.Frame) {
           qd.msgs.Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members,
           typeToString(reducedBaseType)
         );
-        diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
+        diagnostics.add(qf.create.diagForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
         return (type.resolvedBaseTypes = empty);
       }
       if (type === reducedBaseType || hasBaseType(reducedBaseType, type)) {
@@ -1951,7 +1951,7 @@ export function newResolve(f: qt.Frame) {
             const diags = getSignatureApplicabilityError(node, args, last, assignableRelation, CheckMode.Normal, true, () => chain);
             if (diags) {
               for (const d of diags) {
-                if (last.declaration && candidatesForArgError.length > 3) addRelatedInfo(d, qf.create.diagnosticForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
+                if (last.declaration && candidatesForArgError.length > 3) addRelatedInfo(d, qf.create.diagForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
                 diagnostics.add(d);
               }
             } else {
@@ -1989,7 +1989,7 @@ export function newResolve(f: qt.Frame) {
               const { file, start, length } = diags[0];
               diagnostics.add({ file, start, length, code: chain.code, category: chain.category, messageText: chain, relatedInformation: related });
             } else {
-              diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(node, chain, related));
+              diagnostics.add(qf.create.diagForNodeFromMessageChain(node, chain, related));
             }
           }
         } else if (candidateForArgArityError) {
@@ -2115,7 +2115,7 @@ export function newResolve(f: qt.Frame) {
           if (node.args.length === 1) {
             const text = node.sourceFile.text;
             if (qy.is.lineBreak(text.charCodeAt(qy.skipTrivia(text, node.expression.end, true) - 1)))
-              relatedInformation = qf.create.diagnosticForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
+              relatedInformation = qf.create.diagForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
           }
           invocationError(node.expression, apparentType, SignatureKind.Call, relatedInformation);
         }
@@ -2192,8 +2192,8 @@ export function newResolve(f: qt.Frame) {
       if (!callSignatures.length) {
         const errorDetails = invocationErrorDetails(node.expression, apparentType, SignatureKind.Call);
         const messageChain = chainqd.Messages(errorDetails.messageChain, headMessage);
-        const diag = qf.create.diagnosticForNodeFromMessageChain(node.expression, messageChain);
-        if (errorDetails.relatedMessage) addRelatedInfo(diag, qf.create.diagnosticForNode(node.expression, errorDetails.relatedMessage));
+        const diag = qf.create.diagForNodeFromMessageChain(node.expression, messageChain);
+        if (errorDetails.relatedMessage) addRelatedInfo(diag, qf.create.diagForNode(node.expression, errorDetails.relatedMessage));
         diagnostics.add(diag);
         invocationErrorRecovery(apparentType, SignatureKind.Call, diag);
         return this.errorCall(node);

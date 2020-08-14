@@ -611,13 +611,13 @@ function addForBindingPattern(p: qc.ParamDeclaration, c: qt.TrafoContext) {
 function addForIniter(p: qc.ParamDeclaration, name: qt.Identifier, init: qt.Expression, c: qt.TrafoContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
-      createTypeCheck(getSynthesizedClone(name), 'undefined'),
+      qf.create.typeCheck(qf.create.synthesizedClone(name), 'undefined'),
       qf.emit.setFlags(
         new qc.Block([
           new qc.ExpressionStatement(
             qf.emit.setFlags(
               qf.create
-                .assignment(qf.emit.setFlags(getMutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
+                .assignment(qf.emit.setFlags(qf.create.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
                 .setRange(p),
               EmitFlags.NoComments
             )
@@ -1133,13 +1133,13 @@ export function createGetSymbolWalker(
     }
     function visitTypeReference(t: qt.TypeReference) {
       visitType(t.target);
-      qu.each(getTypeArgs(t), visitType);
+      qf.each.up(getTypeArgs(t), visitType);
     }
     function visitTypeParam(t: qt.TypeParam) {
       visitType(qf.get.constraintOfTypeParam(t));
     }
     function visitUnionOrIntersectionType(t: qt.UnionOrIntersectionType) {
-      qu.each(t.types, visitType);
+      qf.each.up(t.types, visitType);
     }
     function visitIndexType(t: qt.IndexType) {
       visitType(t.type);
@@ -1158,7 +1158,7 @@ export function createGetSymbolWalker(
     function visitSignature(signature: qt.Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
       if (typePredicate) visitType(typePredicate.type);
-      qu.each(signature.typeParams, visitType);
+      qf.each.up(signature.typeParams, visitType);
       for (const param of signature.params) {
         visitSymbol(param);
       }
@@ -1167,8 +1167,8 @@ export function createGetSymbolWalker(
     }
     function visitInterfaceType(interfaceT: qt.InterfaceType) {
       visitObjectType(interfaceT);
-      qu.each(interfaceT.typeParams, visitType);
-      qu.each(getBaseTypes(interfaceT), visitType);
+      qf.each.up(interfaceT.typeParams, visitType);
+      qf.each.up(getBaseTypes(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
     function visitObjectType(t: qt.ObjectType) {
@@ -1196,7 +1196,7 @@ export function createGetSymbolWalker(
       const t = s.typeOfSymbol();
       visitType(t);
       if (s.exports) s.exports.forEach(visitSymbol);
-      qu.each(s.declarations, (d) => {
+      qf.each.up(s.declarations, (d) => {
         if ((d as any).type && (d as any).type.kind === Syntax.TypingQuery) {
           const query = (d as any).type as qt.TypingQuery;
           const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));

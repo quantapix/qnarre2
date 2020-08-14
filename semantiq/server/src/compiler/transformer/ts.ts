@@ -829,8 +829,8 @@ export function transformTypeScript(context: qt.TrafoContext) {
       case qt.TypeReferenceSerializationKind.Unknown:
         if (qc.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalTyping && (n.parent.trueType === n || n.parent.falseType === n))) return new qc.Identifier('Object');
         const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
-        const temp = createTempVariable(hoistVariableDeclaration);
-        return new qc.ConditionalExpression(createTypeCheck(qf.create.assignment(temp, serialized), 'function'), temp, new qc.Identifier('Object'));
+        const temp = qf.create.tempVariable(hoistVariableDeclaration);
+        return new qc.ConditionalExpression(qf.create.typeCheck(qf.create.assignment(temp, serialized), 'function'), temp, new qc.Identifier('Object'));
       case qt.TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
         return serializeEntityNameAsExpression(node.typeName);
       case qt.TypeReferenceSerializationKind.VoidNullableOrNeverType:
@@ -867,7 +867,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     }
     if (node.left.kind === Syntax.Identifier) return createCheckedValue(serializeEntityNameAsExpression(node.left), serializeEntityNameAsExpression(node));
     const left = serializeEntityNameAsExpressionFallback(node.left);
-    const temp = createTempVariable(hoistVariableDeclaration);
+    const temp = qf.create.tempVariable(hoistVariableDeclaration);
     return qf.create.logicalAnd(
       qf.create.logicalAnd(left.left, qf.create.strictInequality(qf.create.assignment(temp, left.right), qc.VoidExpression.zero())),
       new qc.PropertyAccessExpression(temp, node.right)
@@ -876,7 +876,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function serializeEntityNameAsExpression(node: qt.EntityName): SerializedEntityNameAsExpression {
     switch (node.kind) {
       case Syntax.Identifier:
-        const name = getMutableClone(node);
+        const name = qf.create.mutableClone(node);
         name.flags &= ~NodeFlags.Synthesized;
         name.original = undefined;
         name.parent = qf.get.parseTreeOf(currentLexicalScope);
@@ -889,11 +889,11 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return new qc.PropertyAccessExpression(serializeEntityNameAsExpression(node.left), node.right);
   }
   function getGlobalSymbolNameWithFallback(): qt.ConditionalExpression {
-    return new qc.ConditionalExpression(createTypeCheck(new qc.Identifier('Symbol'), 'function'), new qc.Identifier('Symbol'), new qc.Identifier('Object'));
+    return new qc.ConditionalExpression(qf.create.typeCheck(new qc.Identifier('Symbol'), 'function'), new qc.Identifier('Symbol'), new qc.Identifier('Object'));
   }
   function getGlobalBigIntNameWithFallback(): SerializedTypeNode {
     return languageVersion < qt.ScriptTarget.ESNext
-      ? new qc.ConditionalExpression(createTypeCheck(new qc.Identifier('BigInt'), 'function'), new qc.Identifier('BigInt'), new qc.Identifier('Object'))
+      ? new qc.ConditionalExpression(qf.create.typeCheck(new qc.Identifier('BigInt'), 'function'), new qc.Identifier('BigInt'), new qc.Identifier('Object'))
       : new qc.Identifier('BigInt');
   }
   function getExpressionForPropertyName(member: qt.ClassElem | qt.EnumMember, generateNameForComputedPropertyName: boolean): qt.Expression {
@@ -901,7 +901,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (name.kind === Syntax.PrivateIdentifier) return new qc.Identifier('');
     if (name.kind === Syntax.ComputedPropertyName) return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? qf.get.generatedNameForNode(name) : name.expression;
     if (name.kind === Syntax.Identifier) return qc.asLiteral(idText(name));
-    return getSynthesizedClone(name);
+    return qf.create.synthesizedClone(name);
   }
   function visitPropertyNameOfClassElem(member: qt.ClassElem): qt.PropertyName {
     const name = member.name!;
@@ -965,9 +965,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (!name.kind === Syntax.Identifier) {
       return;
     }
-    const propertyName = getMutableClone(name);
+    const propertyName = qf.create.mutableClone(name);
     qf.emit.setFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoSourceMap);
-    const localName = getMutableClone(name);
+    const localName = qf.create.mutableClone(name);
     qf.emit.setFlags(localName, EmitFlags.NoComments);
     return qf.emit.setStartsOnNewLine(
       qf.emit.removeAllComments(
@@ -1424,7 +1424,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (!shouldEmitImportEqualsDeclaration(node)) {
       return;
     }
-    const moduleReference = createExpressionFromEntityName(<qt.EntityName>node.moduleReference);
+    const moduleReference = qf.create.expressionFromEntityName(<qt.EntityName>node.moduleReference);
     qf.emit.setFlags(moduleReference, EmitFlags.NoComments | EmitFlags.NoNestedComments);
     if (isNamedExternalModuleExport(node) || !isExportOfNamespace(node)) {
       return setOriginalNode(
@@ -1479,7 +1479,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function getClassAliasIfNeeded(node: qt.ClassDeclaration) {
     if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ClassWithConstructorReference) {
       enableSubstitutionForClassAliases();
-      const classAlias = createUniqueName(node.name && !qf.is.generatedIdentifier(node.name) ? idText(node.name) : 'default');
+      const classAlias = qf.create.uniqueName(node.name && !qf.is.generatedIdentifier(node.name) ? idText(node.name) : 'default');
       classAliases[getOriginalNodeId(node)] = classAlias;
       hoistVariableDeclaration(classAlias);
       return classAlias;
@@ -1575,7 +1575,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
         if (declaration) {
           const classAlias = classAliases[declaration.id!];
           if (classAlias) {
-            const clone = getSynthesizedClone(classAlias);
+            const clone = qf.create.synthesizedClone(classAlias);
             qf.emit.setSourceMapRange(clone, node);
             qf.emit.setCommentRange(clone, node);
             return clone;

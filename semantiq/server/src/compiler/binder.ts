@@ -164,7 +164,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   let subtreeTrafoFlags: TrafoFlags = TrafoFlags.None;
   let skipTransformFlagAggregation: boolean;
   function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
-    return qf.create.diagnosticForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
+    return qf.create.diagForNodeInSourceFile(node.sourceFile || file, node, message, arg0, arg1, arg2);
   }
   function bindSourceFile(f: qt.SourceFile, opts: qt.CompilerOpts) {
     file = f;
@@ -1525,7 +1525,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
         }
         if (currentKind === ElemKind.Property && existingKind === ElemKind.Property) {
           const span = qf.get.errorSpanForNode(file, identifier);
-          file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
+          file.bindqd.push(qf.create.fileDiag(file, span.start, span.length, qd.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
         }
       }
     }
@@ -1673,7 +1673,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   function checkStrictModeDeleteExpression(node: qt.DeleteExpression) {
     if (inStrictMode && node.expression.kind === Syntax.Identifier) {
       const span = qf.get.errorSpanForNode(file, node.expression);
-      file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
+      file.bindqd.push(qf.create.fileDiag(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
     }
   }
   function isEvalOrArgsIdentifier(node: Node): boolean {
@@ -1684,7 +1684,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
       const identifier = <qt.Identifier>name;
       if (isEvalOrArgsIdentifier(identifier)) {
         const span = qf.get.errorSpanForNode(file, name);
-        file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgsMessage(contextNode), idText(identifier)));
+        file.bindqd.push(qf.create.fileDiag(file, span.start, span.length, getStrictModeEvalOrArgsMessage(contextNode), idText(identifier)));
       }
     }
   }
@@ -1707,7 +1707,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     if (languageVersion < qt.ScriptTarget.ES2015) {
       if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !qf.is.functionLike(blockScopeContainer)) {
         const errorSpan = qf.get.errorSpanForNode(file, node);
-        file.bindqd.push(qf.create.fileDiagnostic(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
+        file.bindqd.push(qf.create.fileDiag(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
       }
     }
   }
@@ -1742,7 +1742,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   }
   function errorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any) {
     const span = file.spanOfTokenAtPos(node.pos);
-    file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
+    file.bindqd.push(qf.create.fileDiag(file, span.start, span.length, message, arg0, arg1, arg2));
   }
   function errorOrSuggestionOnNode(isError: boolean, node: Node, message: qd.Message): void {
     errorOrSuggestionOnRange(isError, node, node, message);
@@ -1751,7 +1751,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     addErrorOrSuggestionDiagnostic(isError, { pos: startNode.tokenPos(file), end: endNode.end }, message);
   }
   function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: qd.Message): void {
-    const diag = qf.create.fileDiagnostic(file, range.pos, range.end - range.pos, message);
+    const diag = qf.create.fileDiag(file, range.pos, range.end - range.pos, message);
     if (isError) {
       file.bindqd.push(diag);
     } else {

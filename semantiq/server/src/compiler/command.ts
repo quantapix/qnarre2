@@ -1479,23 +1479,23 @@ export function convertToObjectWorker(
     const result: any = returnValue ? {} : undefined;
     for (const elem of node.properties) {
       if (elem.kind !== Syntax.PropertyAssignment) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem, qd.Property_assignment_expected));
+        errors.push(qf.create.diagForNodeInSourceFile(sourceFile, elem, qd.Property_assignment_expected));
         continue;
       }
       if (elem.questionToken) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.questionToken, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+        errors.push(qf.create.diagForNodeInSourceFile(sourceFile, elem.questionToken, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
       }
       if (!isDoubleQuotedString(elem.name)) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, qd.String_literal_with_double_quotes_expected));
+        errors.push(qf.create.diagForNodeInSourceFile(sourceFile, elem.name, qd.String_literal_with_double_quotes_expected));
       }
       const textOfKey = qf.is.computedNonLiteralName(elem.name) ? undefined : qf.get.textOfPropertyName(elem.name);
       const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
       const option = keyText && knownOpts ? knownOpts.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
         if (knownOpts) {
-          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, message, arg0, arg1)));
+          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qf.create.diagForNodeInSourceFile(sourceFile, elem.name, message, arg0, arg1)));
         } else {
-          errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, elem.name, extraKeyqd.unknownOptionDiagnostic, keyText));
+          errors.push(qf.create.diagForNodeInSourceFile(sourceFile, elem.name, extraKeyqd.unknownOptionDiagnostic, keyText));
         }
       }
       const value = convertPropertyValueToJson(elem.initer, option);
@@ -1541,14 +1541,14 @@ export function convertToObjectWorker(
         return null;
       case Syntax.StringLiteral:
         if (!isDoubleQuotedString(valueExpression)) {
-          errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.String_literal_with_double_quotes_expected));
+          errors.push(qf.create.diagForNodeInSourceFile(sourceFile, valueExpression, qd.String_literal_with_double_quotes_expected));
         }
         reportInvalidOptionValue(option && isString(option.type) && option.type !== 'string');
         const text = (<qt.StringLiteral>valueExpression).text;
         if (option && !isString(option.type)) {
           const customOption = <qt.CommandLineOptionOfCustomType>option;
           if (!customOption.type.has(text.toLowerCase())) {
-            errors.push(createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) => qf.create.diagnosticForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)));
+            errors.push(createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) => qf.create.diagForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)));
           }
         }
         return text;
@@ -1577,12 +1577,12 @@ export function convertToObjectWorker(
     if (option) {
       reportInvalidOptionValue(true);
     } else {
-      errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal));
+      errors.push(qf.create.diagForNodeInSourceFile(sourceFile, valueExpression, qd.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal));
     }
     return;
     function reportInvalidOptionValue(isError: boolean | undefined) {
       if (isError) {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.Compiler_option_0_requires_a_value_of_type_1, option!.name, getCompilerOptionValueTypeString(option!)));
+        errors.push(qf.create.diagForNodeInSourceFile(sourceFile, valueExpression, qd.Compiler_option_0_requires_a_value_of_type_1, option!.name, getCompilerOptionValueTypeString(option!)));
       }
     }
   }
@@ -2043,13 +2043,13 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host:
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
-          extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) => qf.create.diagnosticForNodeInSourceFile(sourceFile, valueNode, message, arg0));
+          extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) => qf.create.diagForNodeInSourceFile(sourceFile, valueNode, message, arg0));
           return;
       }
     },
     onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, _value: qt.CompilerOptsValue, _valueNode: qt.Expression) {
       if (key === 'excludes') {
-        errors.push(qf.create.diagnosticForNodeInSourceFile(sourceFile, keyNode, qd.Unknown_option_excludes_Did_you_mean_exclude));
+        errors.push(qf.create.diagForNodeInSourceFile(sourceFile, keyNode, qd.Unknown_option_excludes_Did_you_mean_exclude));
       }
     },
   };
@@ -2368,7 +2368,7 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
   });
   function createDiagnostic(message: qd.Message, spec: string): Diagnostic {
     const elem = qf.get.tsConfigPropArrayElemValue(jsonSourceFile, specKey, spec);
-    return elem ? qf.create.diagnosticForNodeInSourceFile(jsonSourceFile!, elem, message, spec) : createCompilerDiagnostic(message, spec);
+    return elem ? qf.create.diagForNodeInSourceFile(jsonSourceFile!, elem, message, spec) : createCompilerDiagnostic(message, spec);
   }
 }
 function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): qd.Message | undefined {
@@ -2487,7 +2487,7 @@ function getFileNames(): qt.ExpandResult {
           const fileName = configFileName || 'tsconfig.json';
           const diagnosticMessage = qd.The_files_list_in_config_file_0_is_empty;
           const nodeValue = firstDefined(qf.get.tsConfigPropArray(sourceFile, 'files'), (property) => property.initer);
-          const error = nodeValue ? qf.create.diagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
+          const error = nodeValue ? qf.create.diagForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
           errors.push(error);
         } else {
           createCompilerDiagnosticOnlyIfJson(qd.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');

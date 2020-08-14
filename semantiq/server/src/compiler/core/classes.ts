@@ -1286,11 +1286,11 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   static readonly kind = Syntax.Identifier;
   kind!: Syntax.Identifier;
   escapedText!: qu.__String;
-  autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
+  autoGenFlags = qt.GeneratedIdentifierFlags.None;
   typeArgs?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>;
   flowNode = undefined;
   originalKeywordKind?: Syntax;
-  autoGenerateId = 0;
+  autoGenId = 0;
   isInDocNamespace?: boolean;
   jsdocDotPos?: number;
   constructor(t: string);
@@ -3165,7 +3165,7 @@ export function asLiteral(v: string | number | qt.PseudoBigInt | boolean | Strin
     if (singleQuote) r.singleQuote = true;
     return r;
   }
-  return qf.create.fromNode(v);
+  return qf.create.from(v);
 }
 export function asExpression<T extends qt.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;

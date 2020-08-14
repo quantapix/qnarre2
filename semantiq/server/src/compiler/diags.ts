@@ -102,7 +102,7 @@ function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): qu.Compariso
   if (d1.relatedInformation && d2.relatedInformation) {
     return (
       qu.compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
-      qu.each(d1.relatedInformation, (d1i, index) => {
+      qf.each.up(d1.relatedInformation, (d1i, index) => {
         const d2i = d2.relatedInformation![index];
         return compareDiagnostics(d1i, d2i);
       }) ||
@@ -140,7 +140,7 @@ export function addRelatedInfo<T extends Diagnostic>(d: T, ...i: DiagnosticRelat
 export function createDiagnosticCollection(): DiagnosticCollection {
   let nonFileDiagnostics = ([] as Diagnostic[]) as qu.Sorteds<Diagnostic>;
   const filesWithDiagnostics = ([] as string[]) as qu.Sorteds<string>;
-  const fileDiagnostics = new qu.QMap<qu.Sorteds<DiagnosticWithLocation>>();
+  const fileDiags = new qu.QMap<qu.Sorteds<DiagnosticWithLocation>>();
   let hasReadNonFileDiagnostics = false;
   return {
     add,
@@ -150,11 +150,11 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     reattachFileDiagnostics,
   };
   function reattachFileDiagnostics(s: qt.SourceFile) {
-    qu.each(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
+    qf.each.up(fileDiags.get(s.fileName), (d) => (d.file = s));
   }
   function lookup(d: Diagnostic): Diagnostic | undefined {
     let ds: qu.Sorteds<Diagnostic> | undefined;
-    if (d.file) ds = fileDiagnostics.get(d.file.fileName);
+    if (d.file) ds = fileDiags.get(d.file.fileName);
     else ds = nonFileDiagnostics;
     if (!ds) return;
     const r = qu.binarySearch(ds, d, qu.identity, compareDiagnosticsSkipRelatedInformation);
@@ -164,10 +164,10 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function add(d: Diagnostic): void {
     let ds: qu.Sorteds<Diagnostic> | undefined;
     if (d.file) {
-      ds = fileDiagnostics.get(d.file.fileName);
+      ds = fileDiags.get(d.file.fileName);
       if (!ds) {
         ds = ([] as Diagnostic[]) as qu.Sorteds<DiagnosticWithLocation>;
-        fileDiagnostics.set(d.file.fileName, ds as qu.Sorteds<DiagnosticWithLocation>);
+        fileDiags.set(d.file.fileName, ds as qu.Sorteds<DiagnosticWithLocation>);
         qu.insertSorted(filesWithDiagnostics, d.file.fileName, qu.compareCaseSensitive);
       }
     } else {
@@ -186,8 +186,8 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function getDiagnostics(fileName: string): DiagnosticWithLocation[];
   function getDiagnostics(): Diagnostic[];
   function getDiagnostics(fileName?: string): Diagnostic[] {
-    if (fileName) return fileDiagnostics.get(fileName) || [];
-    const fileDiags: Diagnostic[] = qu.flatMapToMutable(filesWithDiagnostics, (f) => fileDiagnostics.get(f));
+    if (fileName) return fileDiags.get(fileName) || [];
+    const fileDiags: Diagnostic[] = qu.flatMapToMutable(filesWithDiagnostics, (f) => fileDiags.get(f));
     if (!nonFileDiagnostics.length) return fileDiags;
     fileDiags.unshift(...nonFileDiagnostics);
     return fileDiags;

@@ -22,7 +22,7 @@ export function transformES2019(context: qt.TrafoContext) {
     }
   }
   function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
-    if (!node.variableDeclaration) return node.update(new qc.VariableDeclaration(createTempVariable(undefined)), qf.visit.node(node.block, visitor, isBlock));
+    if (!node.variableDeclaration) return node.update(new qc.VariableDeclaration(qf.create.tempVariable(undefined)), qf.visit.node(node.block, visitor, isBlock));
     return qf.visit.eachChild(node, visitor, context);
   }
 }

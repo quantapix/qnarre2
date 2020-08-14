@@ -732,7 +732,9 @@ export class QContext {
     if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = qf.get.optionalType(paramType);
     const paramTypeNode = this.serializeTypeForDeclaration(paramType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
-      !(this.flags & NodeBuilderFlags.OmitParamModifiers) && preserveModifierFlags && paramDeclaration && paramDeclaration.modifiers ? paramDeclaration.modifiers.map(getSynthesizedClone) : undefined;
+      !(this.flags & NodeBuilderFlags.OmitParamModifiers) && preserveModifierFlags && paramDeclaration && paramDeclaration.modifiers
+        ? paramDeclaration.modifiers.map(qf.create.synthesizedClone)
+        : undefined;
     const isRest = (paramDeclaration && qf.is.restParam(paramDeclaration)) || s.checkFlags() & CheckFlags.RestParam;
     const dot3Token = isRest ? new qc.Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: qt.BindingName): qt.BindingName => {
@@ -741,7 +743,7 @@ export class QContext {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
         const visited = qf.visit.eachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
-        const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
+        const clone = isSynthesized(visited) ? visited : qf.create.synthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<qt.BindingElem>clone).initer = undefined;
         return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
@@ -750,9 +752,9 @@ export class QContext {
     const name = paramDeclaration
       ? paramDeclaration.name
         ? paramDeclaration.name.kind === Syntax.Identifier
-          ? qf.emit.setFlags(getSynthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(qf.create.synthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
           : paramDeclaration.name.kind === Syntax.QualifiedName
-          ? qf.emit.setFlags(getSynthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(qf.create.synthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
           : cloneBindingName(paramDeclaration.name)
         : s.name
       : s.name;
@@ -825,7 +827,7 @@ export class QContext {
     const file = existing.sourceFile;
     const transformed = qf.visit.node(existing, this.visitExistingNodeTreeSymbols);
     if (hadError) return;
-    return transformed === existing ? getMutableClone(existing) : transformed;
+    return transformed === existing ? qf.create.mutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
     if (node.kind === Syntax.DocAllTyping || node.kind === Syntax.DocNamepathTyping) return new qc.KeywordTyping(Syntax.AnyKeyword);
@@ -959,7 +961,7 @@ export class QContext {
           includePrivateSymbol?.(sym);
         }
         if (node.kind === Syntax.Identifier) {
-          const name = sym.flags & SymbolFlags.TypeParam ? this.typeParamToName(getDeclaredTypeOfSymbol(sym)) : getMutableClone(node);
+          const name = sym.flags & SymbolFlags.TypeParam ? this.typeParamToName(getDeclaredTypeOfSymbol(sym)) : qf.create.mutableClone(node);
           name.symbol = sym;
           return qf.emit.setFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
         }
@@ -1448,7 +1450,7 @@ export class QContext {
                 ),
               ],
               undefined
-            ).setRange(find(p.declarations, isSetAccessor) || firstPropertyLikeDecl)
+            ).setRange(find(p.declarations, qf.is.setAccessor) || firstPropertyLikeDecl)
           );
         }
         if (p.flags & SymbolFlags.GetAccessor) {
@@ -1461,7 +1463,7 @@ export class QContext {
               [],
               isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
               undefined
-            ).setRange(find(p.declarations, isGetAccessor) || firstPropertyLikeDecl)
+            ).setRange(find(p.declarations, qf.is.getAccessor) || firstPropertyLikeDecl)
           );
         }
         return result;

@@ -713,7 +713,6 @@ export class Signature extends qc.Signature {
       assignParamType(param);
     }
   }
-
   applyToParamTypes(source: Signature, target: Signature, callback: (s: Type, t: Type) => void) {
     const sourceCount = getParamCount(source);
     const targetCount = getParamCount(target);
@@ -740,12 +739,14 @@ export class Signature extends qc.Signature {
       callback(qf.get.returnTypeOfSignature(source), qf.get.returnTypeOfSignature(target));
     }
   }
-
-  tryGetRestTypeOfSignature(s: Signature): Type | undefined {
-    if (s.hasRestParam()) {
-      const sigRestType = s.params[s.params.length - 1].typeOfSymbol();
-      const restType = qf.is.tupleType(sigRestType) ? getRestTypeOfTupleType(sigRestType) : sigRestType;
-      return restType && qf.get.indexTypeOfType(restType, IndexKind.Number);
+  restTypeOfSignature(): qt.Type {
+    return this.tryRestType() || anyType;
+  }
+  tryRestType(): Type | undefined {
+    if (this.hasRestParam()) {
+      const t = this.params[this.params.length - 1].typeOfSymbol();
+      const r = qf.is.tupleType(t) ? getRestTypeOfTupleType(t) : t;
+      return r && qf.get.indexTypeOfType(r, qt.IndexKind.Number);
     }
     return;
   }
@@ -937,7 +938,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         t.addDuplicates(conflictingSymbolInfo.secondFileLocations);
       } else {
         const addDuplicateErrors = (s: Symbol, m: qd.Message, n: string) => {
-          qu.each(s.declarations, (d) => {
+          qf.each.up(s.declarations, (d) => {
             addDuplicateDeclarationError(d, m, n, this.declarations);
           });
         };
@@ -1068,7 +1069,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
             if (n === 'export=' || !(exportsWithDuplicate && exportsWithDuplicate.length) || symbols.has(n)) return;
             for (const n of exportsWithDuplicate) {
               diagnostics.add(
-                qf.create.diagnosticForNode(
+                qf.create.diagForNode(
                   n,
                   qd.msgs.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
                   lookupTable.get(n)!.specText,
@@ -1953,7 +1954,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return this.members!.get(InternalSymbol.Index);
   }
   getIndexDeclarationOfSymbol(k: IndexKind): qt.IndexSignatureDeclaration | undefined {
-    const syntaxKind = k === IndexKind.Number ? Syntax.NumberKeyword : Syntax.StringKeyword;
+    const syntaxKind = k === qt.IndexKind.Number ? Syntax.NumberKeyword : Syntax.StringKeyword;
     const s = this.getIndexSymbol();
     if (s) {
       for (const d of s.declarations ?? []) {
@@ -2198,7 +2199,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
           if (!isImplementationCompatibleWithOverload(bs, s)) {
             addRelatedInfo(
               error(s.declaration, qd.This_overload_signature_is_not_compatible_with_its_implementation_signature),
-              qf.create.diagnosticForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
+              qf.create.diagForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
             );
             break;
           }
@@ -2324,7 +2325,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
         const message = isExport ? qd._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type : qd._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
         const relatedMessage = isExport ? qd._0_was_exported_here : qd._0_was_imported_here;
         const unescName = qy.get.unescUnderscores(name);
-        addRelatedInfo(error(useSite, message, unescName), qf.create.diagnosticForNode(typeOnlyDeclaration, relatedMessage, unescName));
+        addRelatedInfo(error(useSite, message, unescName), qf.create.diagForNode(typeOnlyDeclaration, relatedMessage, unescName));
       }
     }
   }

@@ -325,7 +325,7 @@ export function transformES2018(context: qt.TrafoContext) {
     if (initerWithoutParens.kind === Syntax.VariableDeclarationList || initerWithoutParens.kind === Syntax.AssignmentPattern) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
-      const temp = createTempVariable(undefined);
+      const temp = qf.create.tempVariable(undefined);
       const statements: qt.Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
       if (node.statement.kind === Syntax.Block) {
         qu.addRange(statements, node.statement.statements);
@@ -366,16 +366,16 @@ export function transformES2018(context: qt.TrafoContext) {
   }
   function transformForAwaitOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = qf.visit.node(node.expression, visitor, isExpression);
-    const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : createTempVariable(undefined);
-    const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : createTempVariable(undefined);
-    const errorRecord = createUniqueName('e');
+    const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.create.tempVariable(undefined);
+    const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : qf.create.tempVariable(undefined);
+    const errorRecord = qf.create.uniqueName('e');
     const catchVariable = qf.get.generatedNameForNode(errorRecord);
-    const returnMethod = createTempVariable(undefined);
+    const returnMethod = qf.create.tempVariable(undefined);
     const callValues = createAsyncValuesHelper(context, expression, node.expression);
     const callNext = new qc.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
     const getDone = new qc.PropertyAccessExpression(result, 'done');
     const getValue = new qc.PropertyAccessExpression(result, 'value');
-    const callReturn = createFunctionCall(returnMethod, iterator, []);
+    const callReturn = qf.create.functionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
     const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qc.VoidExpression.zero()), callValues]) : callValues;
@@ -640,7 +640,7 @@ export function transformES2018(context: qt.TrafoContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name), node);
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(qf.create.fileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElemAccessExpression(node: qt.ElemAccessExpression) {

@@ -211,7 +211,7 @@ export function newDecl(f: qt.Frame) {
     getName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
       const n = this.nameOf(d);
       if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
-        const c = qf.create.getMutableClone(n);
+        const c = qf.create.qf.create.mutableClone(n);
         f |= d.emitFlags(n);
         if (!sourceMaps) f |= EmitFlags.NoSourceMap;
         if (!comments) f |= EmitFlags.NoComments;
@@ -379,7 +379,7 @@ export function newDecl(f: qt.Frame) {
         else if (a.kind === Syntax.SetAccessor) set = a;
         else qu.fail('Accessor has wrong kind');
       } else
-        qu.each(ds, (d) => {
+        qf.each.up(ds, (d) => {
           if (qf.is.accessor(d) && qf.has.syntacticModifier(d, ModifierFlags.Static) === qf.has.syntacticModifier(a, ModifierFlags.Static)) {
             const memberName = qf.get.propertyNameForPropertyNameNode(d.name);
             const accessorName = qf.get.propertyNameForPropertyNameNode(a.name);
@@ -1398,7 +1398,7 @@ export function newNest(f: qt.Frame) {
         const callee = n.expression;
         const k = qf.skip.partiallyEmittedExpressions(callee).kind;
         if (k === Syntax.FunctionExpression || k === Syntax.ArrowFunction) {
-          const c = getMutableClone(e2);
+          const c = qf.create.mutableClone(e2);
           c.expression = new qc.ParenthesizedExpression(callee).setRange(callee);
           return recreateOuterExpressions(e, c, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
         }
@@ -1743,7 +1743,7 @@ export namespace fixme {
       if (create) {
         const parseNode = qf.get.originalOf(node, isSourceFile);
         const emitNode = this.getOrCreate(parseNode);
-        return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
+        return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = qf.create.uniqueName(externalHelpersModuleNameText));
       }
     }
     return;
@@ -1770,7 +1770,7 @@ export namespace fixme {
         return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOpts);
       }
       return (
-        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<qt.StringLiteral>moduleName)
+        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) || qf.create.synthesizedClone(<qt.StringLiteral>moduleName)
       );
     }
     return;

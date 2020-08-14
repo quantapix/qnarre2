@@ -170,7 +170,7 @@ export function newGet(f: qt.Frame) {
             const err = error(n.name, qd.msgs.Module_0_can_only_be_default_imported_using_the_1_flag, moduleSymbol.symbolToString(), compilerOptionName);
             addRelatedInfo(
               err,
-              qf.create.diagnosticForNode(exportAssignment, qd.msgs.This_module_is_declared_with_using_export_and_can_only_be_used_with_a_default_import_when_using_the_0_flag, compilerOptionName)
+              qf.create.diagForNode(exportAssignment, qd.msgs.This_module_is_declared_with_using_export_and_can_only_be_used_with_a_default_import_when_using_the_0_flag, compilerOptionName)
             );
           } else {
             reportNonDefaultExport(moduleSymbol, n);
@@ -230,7 +230,7 @@ export function newGet(f: qt.Frame) {
             if (suggestion !== undefined) {
               const suggestionName = suggestion.symbolToString();
               const diagnostic = error(name, qd.msgs.Module_0_has_no_exported_member_1_Did_you_mean_2, moduleName, declarationName, suggestionName);
-              if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagnosticForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
+              if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
             } else {
               if (moduleSymbol.exports?.has(InternalSymbol.Default)) error(name, qd.msgs.Module_0_has_no_exported_member_1_Did_you_mean_to_use_import_1_from_0_instead, moduleName, declarationName);
               else {
@@ -829,8 +829,8 @@ export function newGet(f: qt.Frame) {
               if (s.valueDeclaration.sourceFile !== exportedMember.valueDeclaration.sourceFile) {
                 const unescName = qy.get.unescUnderscores(s.escName);
                 const exportedMemberName = qu.tryCast(exportedMember.valueDeclaration, isNamedDecl)?.name || exportedMember.valueDeclaration;
-                addRelatedInfo(error(s.valueDeclaration, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(exportedMemberName, qd.msgs._0_was_also_declared_here, unescName));
-                addRelatedInfo(error(exportedMemberName, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagnosticForNode(s.valueDeclaration, qd.msgs._0_was_also_declared_here, unescName));
+                addRelatedInfo(error(s.valueDeclaration, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagForNode(exportedMemberName, qd.msgs._0_was_also_declared_here, unescName));
+                addRelatedInfo(error(exportedMemberName, qd.msgs.Duplicate_identifier_0, unescName), qf.create.diagForNode(s.valueDeclaration, qd.msgs._0_was_also_declared_here, unescName));
               }
               const union = new qc.Symbol(s.flags | exportedMember.flags, name);
               union.type = this.unionType([this.typeOfSymbol(s), this.typeOfSymbol(exportedMember)]);
@@ -1034,7 +1034,7 @@ export function newGet(f: qt.Frame) {
             }
             addRelatedInfo(
               err,
-              qf.create.diagnosticForNode(
+              qf.create.diagForNode(
                 baseConstructorType.symbol.declarations[0],
                 qd.msgs.Did_you_mean_for_0_to_be_constrained_to_type_new_args_Colon_any_1,
                 baseConstructorType.symbol.symbolToString(),
@@ -1438,7 +1438,7 @@ export function newGet(f: qt.Frame) {
               if (errorNode) {
                 const diagnostic = error(errorNode, qd.msgs.Type_param_0_has_a_circular_constraint, typeToString(t));
                 if (currentNode && !qf.is.descendantOf(errorNode, currentNode) && !qf.is.descendantOf(currentNode, errorNode))
-                  addRelatedInfo(diagnostic, qf.create.diagnosticForNode(currentNode, qd.msgs.Circularity_originates_in_type_at_this_location));
+                  addRelatedInfo(diagnostic, qf.create.diagForNode(currentNode, qd.msgs.Circularity_originates_in_type_at_this_location));
               }
             }
             result = circularConstraintType;
@@ -2598,7 +2598,7 @@ export function newGet(f: qt.Frame) {
                     typeToString(fullIndexType),
                     typeToString(objectType)
                   );
-                  diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(accessExpression, errorInfo));
+                  diagnostics.add(qf.create.diagForNodeFromMessageChain(accessExpression, errorInfo));
                 }
               }
             }
@@ -4122,7 +4122,7 @@ export function newGet(f: qt.Frame) {
               return qf.check.iteratedTypeOrElemType(use, expressionType, undefinedType, undefined);
             }
           }
-          if (diagnostic) addRelatedInfo(diagnostic, qf.create.diagnosticForNode(declaration, qd.msgs._0_needs_an_explicit_type_annotation, symbol.symbolToString()));
+          if (diagnostic) addRelatedInfo(diagnostic, qf.create.diagForNode(declaration, qd.msgs._0_needs_an_explicit_type_annotation, symbol.symbolToString()));
         }
       }
     }
@@ -5797,7 +5797,7 @@ export function newGet(f: qt.Frame) {
           if (this.awaitedTypeOfPromise(target)) return;
           const awaitedTypeOfSource = this.awaitedTypeOfPromise(source);
           if (awaitedTypeOfSource && qf.is.typeRelatedTo(awaitedTypeOfSource, target, relation))
-            addRelatedInfo(errorOutputContainer.errors[0], qf.create.diagnosticForNode(errorNode, qd.msgs.Did_you_forget_to_use_await));
+            addRelatedInfo(errorOutputContainer.errors[0], qf.create.diagForNode(errorNode, qd.msgs.Did_you_forget_to_use_await));
         }
       };
     }
@@ -5893,12 +5893,12 @@ export function newGet(f: qt.Frame) {
       }
       return { start, length, sourceFile };
     }
-    diagnosticForCallNode(n: qt.CallLikeExpression, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qd.DiagnosticWithLocation {
+    diagForCallNode(n: qt.CallLikeExpression, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qd.DiagnosticWithLocation {
       if (n.kind === Syntax.CallExpression) {
         const { sourceFile, start, length } = this.diagnosticSpanForCallNode(n);
-        return qf.create.fileDiagnostic(sourceFile, start, length, message, arg0, arg1, arg2, arg3);
+        return qf.create.fileDiag(sourceFile, start, length, message, arg0, arg1, arg2, arg3);
       }
-      return qf.create.diagnosticForNode(n, message, arg0, arg1, arg2, arg3);
+      return qf.create.diagForNode(n, message, arg0, arg1, arg2, arg3);
     }
     argArityError(n: qt.CallLikeExpression, signatures: readonly qt.Signature[], args: readonly qt.Expression[]) {
       let min = Number.POSITIVE_INFINITY;
@@ -5935,7 +5935,7 @@ export function newGet(f: qt.Frame) {
       if (closestSignature && this.minArgCount(closestSignature) > argCount && closestSignature.declaration) {
         const paramDecl = closestSignature.declaration.params[closestSignature.thisParam ? argCount + 1 : argCount];
         if (paramDecl) {
-          related = qf.create.diagnosticForNode(
+          related = qf.create.diagForNode(
             paramDecl,
             paramDecl.name.kind === Syntax.BindingPattern ? qd.msgs.An_arg_matching_this_binding_pattern_was_not_provided : qd.msgs.An_arg_for_0_was_not_provided,
             !paramDecl.name ? argCount : !paramDecl.name.kind === Syntax.BindingPattern ? idText(this.firstIdentifier(paramDecl.name)) : undefined
@@ -5943,9 +5943,9 @@ export function newGet(f: qt.Frame) {
         }
       }
       if (min < argCount && argCount < max)
-        return this.diagnosticForCallNode(n, qd.msgs.No_overload_expects_0_args_but_overloads_do_exist_that_expect_either_1_or_2_args, argCount, belowArgCount, aboveArgCount);
+        return this.diagForCallNode(n, qd.msgs.No_overload_expects_0_args_but_overloads_do_exist_that_expect_either_1_or_2_args, argCount, belowArgCount, aboveArgCount);
       if (!hasSpreadArg && argCount < min) {
-        const diagnostic = this.diagnosticForCallNode(n, error, paramRange, argCount);
+        const diagnostic = this.diagForCallNode(n, error, paramRange, argCount);
         return related ? addRelatedInfo(diagnostic, related) : diagnostic;
       }
       if (hasRestParam || hasSpreadArg) {
@@ -5960,7 +5960,7 @@ export function newGet(f: qt.Frame) {
       spanArray.pos = first(spanArray).pos;
       spanArray.end = last(spanArray).end;
       if (spanArray.end === spanArray.pos) spanArray.end++;
-      const diagnostic = qf.create.diagnosticForNodes(n.sourceFile, spanArray, error, paramRange, argCount);
+      const diagnostic = qf.create.diagForNodes(n.sourceFile, spanArray, error, paramRange, argCount);
       return related ? addRelatedInfo(diagnostic, related) : diagnostic;
     }
     typeArgArityError(n: Node, signatures: readonly qt.Signature[], typeArgs: Nodes<qt.Typing>) {
@@ -5969,7 +5969,7 @@ export function newGet(f: qt.Frame) {
         const sig = signatures[0];
         const min = this.minTypeArgCount(sig.typeParams);
         const max = length(sig.typeParams);
-        return qf.create.diagnosticForNodes(n.sourceFile, typeArgs, qd.msgs.Expected_0_type_args_but_got_1, min < max ? min + '-' + max : min, argCount);
+        return qf.create.diagForNodes(n.sourceFile, typeArgs, qd.msgs.Expected_0_type_args_but_got_1, min < max ? min + '-' + max : min, argCount);
       }
       let belowArgCount = -Infinity;
       let aboveArgCount = Infinity;
@@ -5982,7 +5982,7 @@ export function newGet(f: qt.Frame) {
         }
       }
       if (belowArgCount !== -Infinity && aboveArgCount !== Infinity) {
-        return qf.create.diagnosticForNodes(
+        return qf.create.diagForNodes(
           n.sourceFile,
           typeArgs,
           qd.msgs.No_overload_expects_0_type_args_but_overloads_do_exist_that_expect_either_1_or_2_type_args,
@@ -5991,7 +5991,7 @@ export function newGet(f: qt.Frame) {
           aboveArgCount
         );
       }
-      return qf.create.diagnosticForNodes(n.sourceFile, typeArgs, qd.msgs.Expected_0_type_args_but_got_1, belowArgCount === -Infinity ? aboveArgCount : belowArgCount, argCount);
+      return qf.create.diagForNodes(n.sourceFile, typeArgs, qd.msgs.Expected_0_type_args_but_got_1, belowArgCount === -Infinity ? aboveArgCount : belowArgCount, argCount);
     }
     candidateForOverloadFailure(n: qt.CallLikeExpression, candidates: qt.Signature[], args: readonly qt.Expression[], hasCandidatesOutArray: boolean): qt.Signature {
       qu.assert(candidates.length > 0);

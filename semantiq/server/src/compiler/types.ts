@@ -989,7 +989,7 @@ export interface FunctionTyping extends FunctionOrConstructorTobj {
   kind: Syntax.FunctionTyping;
 }
 export interface GeneratedIdentifier extends Identifier {
-  autoGenerateFlags: qt.GeneratedIdentifierFlags;
+  autoGenFlags: qt.GeneratedIdentifierFlags;
 }
 export interface GenericType extends InterfaceType, TypeReference {
   instantiations: qu.QMap<TypeReference>;
@@ -1015,8 +1015,8 @@ export interface Identifier extends PrimaryExpr, Decl {
   kind: Syntax.Identifier;
   escapedText: qu.__String;
   originalKeywordKind?: Syntax;
-  autoGenerateFlags?: qt.GeneratedIdentifierFlags;
-  autoGenerateId?: number;
+  autoGenFlags?: qt.GeneratedIdentifierFlags;
+  autoGenId?: number;
   isInDocNamespace?: boolean;
   typeArgs?: Nodes<Typing | TypeParamDeclaration>;
   jsdocDotPos?: number;
@@ -2208,6 +2208,7 @@ export interface SymbolWalker {
   walkType(root: Type): { visitedTypes: readonly Type[]; visitedSymbols: readonly Symbol[] };
 }
 export interface SyntaxList extends Nobj {
+  kind: Syntax.SyntaxList;
   children: Nobj[];
 }
 export interface SynthesizedComment extends CommentRange {
@@ -3096,6 +3097,7 @@ export type Node =
   | StringLiteral
   | SuperExpression
   | SwitchStatement
+  | SyntaxList
   | SyntheticExpression
   | SyntheticReferenceExpression
   | TaggedTemplateExpression

@@ -146,7 +146,7 @@ export function flattenDestructuringBinding(
   }
   flattenBindingOrAssignmentElem(flattenContext, node, rval, node, skipIniter);
   if (pendingExpressions) {
-    const temp = createTempVariable(undefined);
+    const temp = qf.create.tempVariable(undefined);
     if (hoistTempVariables) {
       const value = inlineExpressions(pendingExpressions);
       pendingExpressions = undefined;
@@ -273,7 +273,7 @@ function flattenArrayBindingOrAssignmentPattern(
     const elem = elems[i];
     if (flattenContext.level >= FlattenLevel.ObjectRest) {
       if (elem.trafoFlags & TrafoFlags.ContainsObjectRestOrSpread) {
-        const temp = createTempVariable(undefined);
+        const temp = qf.create.tempVariable(undefined);
         if (flattenContext.hoistTempVariables) {
           flattenContext.context.hoistVariableDeclaration(temp);
         }
@@ -288,7 +288,7 @@ function flattenArrayBindingOrAssignmentPattern(
       const rhsValue = new qc.ElemAccessExpression(value, i);
       flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
     } else if (i === numElems - 1) {
-      const rhsValue = createArraySlice(value, i);
+      const rhsValue = qf.create.arraySlice(value, i);
       flattenBindingOrAssignmentElem(flattenContext, elem, rhsValue, elem);
     }
   }
@@ -303,14 +303,14 @@ function flattenArrayBindingOrAssignmentPattern(
 }
 function createDefaultValueCheck(flattenContext: FlattenContext, value: qt.Expression, defaultValue: qt.Expression, location: TextRange): qt.Expression {
   value = ensureIdentifier(flattenContext, value, true, location);
-  return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
+  return new qc.ConditionalExpression(qf.create.typeCheck(value, 'undefined'), defaultValue, value);
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: qt.Expression, propertyName: qt.PropertyName): qt.LeftExpression {
   if (propertyName.kind === Syntax.ComputedPropertyName) {
     const argExpression = ensureIdentifier(flattenContext, qf.visit.node(propertyName.expression, flattenContext.visitor), propertyName);
     return new qc.ElemAccessExpression(value, argExpression);
   } else if (qf.is.stringOrNumericLiteralLike(propertyName)) {
-    const argExpression = getSynthesizedClone(propertyName);
+    const argExpression = qf.create.synthesizedClone(propertyName);
     argExpression.text = argExpression.text;
     return new qc.ElemAccessExpression(value, argExpression);
   } else {
@@ -321,7 +321,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
 function ensureIdentifier(flattenContext: FlattenContext, value: qt.Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
   if (value.kind === Syntax.Identifier && reuseIdentifierExpressions) return value;
   else {
-    const temp = createTempVariable(undefined);
+    const temp = qf.create.tempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
       flattenContext.context.hoistVariableDeclaration(temp);
       flattenContext.emitExpression(qf.create.assignment(temp, value).setRange(location));
@@ -384,7 +384,7 @@ function createRestCall(
       if (propertyName.kind === Syntax.ComputedPropertyName) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
-        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, qf.create.add(temp, qc.asLiteral(''))));
+        propertyNames.push(new qc.ConditionalExpression(qf.create.typeCheck(temp, 'symbol'), temp, qf.create.add(temp, qc.asLiteral(''))));
       } else {
         propertyNames.push(qc.asLiteral(propertyName));
       }

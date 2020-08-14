@@ -1,3 +1,4 @@
+import { InternalSymbol, ReadonlyPragmaMap } from './types';
 export type AnyFunction = (...args: never[]) => void;
 export type AnyConstructor = new (...args: unknown[]) => unknown;
 export function fail(m?: string, mark?: AnyFunction): never {
@@ -97,7 +98,7 @@ export function addMixins(t: any, ss: any[]) {
   ss.forEach((s: any) => {
     Object.getOwnPropertyNames(s.prototype).forEach((n) => {
       if (n == 'constructor') return;
-      console.log(`adding ${s.name}.${n}`);
+      //console.log(`adding ${s.name}.${n}`);
       Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
     });
   });
@@ -127,7 +128,7 @@ export class QMap<T> extends Map<string, T> {
     return r;
   }
 }
-export const emptyMap = new QMap<never>() as QReadonlyMap<never> & qt.ReadonlyPragmaMap;
+export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
 export type QReadonlyMap<V> = ReadonlyMap<string, V>;
 export class MultiMap<T> extends QMap<T[]> {
   add(k: string, v: T) {
@@ -237,24 +238,6 @@ export function findMap<T, U>(ts: readonly T[], cb: (t: T, i: number) => U | und
     if (u) return u;
   }
   return fail();
-}
-export function each<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
-  if (ts) {
-    for (let i = 0; i < ts.length; i++) {
-      const u = cb(ts[i], i);
-      if (u) return u;
-    }
-  }
-  return;
-}
-export function eachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
-  if (ts) {
-    for (let i = ts.length - 1; i >= 0; i--) {
-      const u = cb(ts[i], i);
-      if (u) return u;
-    }
-  }
-  return;
 }
 export function arrayToSet(ts: readonly string[]): QMap<true>;
 export function arrayToSet<T>(ts: readonly T[], key: (t: T) => string | undefined): QMap<true>;
@@ -1079,26 +1062,46 @@ export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
 export function maybeBind<T, A extends unknown, R>(t: T, cb: ((this: T, ...args: A[]) => R) | undefined): ((...args: A[]) => R) | undefined {
   return cb ? cb.bind(t) : undefined;
 }
-export function eachEntryShim<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
-export function eachEntryShim<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
-export function eachEntryShim<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
-  const ts = m.entries();
-  for (let i = ts.next(); !i.done; i = ts.next()) {
-    const [k, t] = i.value;
-    const u = cb(t, k as string & __String);
-    if (u) return u;
+export class Feach {
+  up<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const u = cb(ts[i], i);
+        if (u) return u;
+      }
+    }
+    return;
   }
-  return;
-}
-export function eachKey<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
-export function eachKey<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
-export function eachKey<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
-  const ks = m.keys();
-  for (let i = ks.next(); !i.done; i = ks.next()) {
-    const t = cb(i.value as string & __String);
-    if (t) return t;
+  down<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+    if (ts) {
+      for (let i = ts.length - 1; i >= 0; i--) {
+        const u = cb(ts[i], i);
+        if (u) return u;
+      }
+    }
+    return;
   }
-  return;
+  entry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+  entry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
+  entry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+    const ts = m.entries();
+    for (let i = ts.next(); !i.done; i = ts.next()) {
+      const [k, t] = i.value;
+      const u = cb(t, k as string & __String);
+      if (u) return u;
+    }
+    return;
+  }
+  key<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
+  key<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
+  key<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
+    const ks = m.keys();
+    for (let i = ks.next(); !i.done; i = ks.next()) {
+      const t = cb(i.value as string & __String);
+      if (t) return t;
+    }
+    return;
+  }
 }
 export function copyEntries<T>(s: ReadonlyEscapedMap<T>, t: EscapedMap<T>): void;
 export function copyEntries<T>(s: QReadonlyMap<T>, t: QMap<T>): void;
@@ -1804,7 +1807,7 @@ export namespace perf {
   export function disable() {
     enabled = false;
   }
-  type PerfLogger = typeof import('@microsoft/typescript-etw');
+  type PerfLogger = {}; //typeof import('@microsoft/typescript-etw');
   const nullLogger: PerfLogger = {
     logEvent: noop,
     logErrEvent: noop,
@@ -1829,11 +1832,11 @@ export namespace perf {
   };
   let etwModule;
   try {
-    etwModule = require('@microsoft/typescript-etw');
+    etwModule = { logEvent: undefined }; //require('@microsoft/typescript-etw');
   } catch (e) {
     etwModule = undefined;
   }
-  export const perfLogger: PerfLogger = etwModule && etwModule.logEvent ? etwModule : nullLogger;
+  export const perfLogger: PerfLogger = etwModule?.logEvent ? etwModule : nullLogger;
 }
 export function compareDataObjects(dst: any, src: any): boolean {
   if (!dst || !src || Object.keys(dst).length !== Object.keys(src).length) return false;

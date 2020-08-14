@@ -172,7 +172,7 @@ export function transformJsx(context: qt.TrafoContext) {
     else {
       const name = node.tagName;
       if (name.kind === Syntax.Identifier && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
-      return createExpressionFromEntityName(name);
+      return qf.create.expressionFromEntityName(name);
     }
   }
   function getAttributeName(node: qt.JsxAttribute): qt.StringLiteral | qt.Identifier {
