@@ -2297,7 +2297,7 @@ export class ParamDeclaration extends qb.NamedDecl implements qt.ParamDeclaratio
     this.type = t;
     this.initer = i ? qf.nest.expressionForList(i) : undefined;
   }
-  updateParam(
+  update(
     ds: readonly qt.Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
     d3: qt.Dot3Token | undefined,

@@ -636,12 +636,12 @@ export function transformDeclarations(context: qt.TrafoContext) {
       switch (input.kind) {
         case Syntax.ExpressionWithTypings: {
           if (qf.is.entityName(input.expression) || qf.is.entityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
-          const node = qf.visit.eachChild(input, visitDeclarationSubtree, context);
+          const node = qf.visit.children(input, visitDeclarationSubtree, context);
           return cleanup(node.update(parenthesizeTypeParams(node.typeArgs), node.expression));
         }
         case Syntax.TypingReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
-          const node = qf.visit.eachChild(input, visitDeclarationSubtree, context);
+          const node = qf.visit.children(input, visitDeclarationSubtree, context);
           return cleanup(node.update(node.typeName, parenthesizeTypeParams(node.typeArgs)));
         }
         case Syntax.ConstructSignature:
@@ -708,7 +708,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
         }
         case Syntax.TypeParam: {
           if (isPrivateMethodTypeParam(input) && (input.default || input.constraint)) return cleanup(updateTypeParamDeclaration(input, input.name, undefined));
-          return cleanup(qf.visit.eachChild(input, visitDeclarationSubtree, context));
+          return cleanup(qf.visit.children(input, visitDeclarationSubtree, context));
         }
         case Syntax.ConditionalTyping: {
           const checkType = qf.visit.node(input.checkType, visitDeclarationSubtree);
@@ -745,7 +745,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
     }
     if (input.kind === Syntax.TupleTyping && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
       qf.emit.setFlags(input, EmitFlags.SingleLine);
-    return cleanup(qf.visit.eachChild(input, visitDeclarationSubtree, context));
+    return cleanup(qf.visit.children(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
       if (returnValue && canProduceDiagnostic && qf.has.dynamicName(input as qt.Declaration)) checkName(input as DeclarationDiagnosticProducing);
       if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;

@@ -11,7 +11,7 @@ export function transformES2016(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2016) === 0) return node;
@@ -19,7 +19,7 @@ export function transformES2016(context: qt.TrafoContext) {
       case Syntax.BinaryExpression:
         return visitBinaryExpression(<qt.BinaryExpression>node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
@@ -29,7 +29,7 @@ export function transformES2016(context: qt.TrafoContext) {
       case Syntax.Asterisk2Token:
         return visitExponentiationExpression(node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function visitExponentiationAssignmentExpression(node: qt.BinaryExpression) {

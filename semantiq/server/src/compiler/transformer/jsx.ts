@@ -13,7 +13,7 @@ export function transformJsx(context: qt.TrafoContext) {
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
     currentSourceFile = node;
-    const visited = qf.visit.eachChild(node, visitor, context);
+    const visited = qf.visit.children(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
@@ -32,7 +32,7 @@ export function transformJsx(context: qt.TrafoContext) {
       case Syntax.JsxExpression:
         return visitJsxExpression(<qt.JsxExpression>node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function transformJsxChildToExpression(node: qt.JsxChild): qt.Expression | undefined {

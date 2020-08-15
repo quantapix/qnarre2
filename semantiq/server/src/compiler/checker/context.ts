@@ -742,7 +742,7 @@ export class QContext {
         if (this.tracker.trackSymbol && node.kind === Syntax.ComputedPropertyName && qf.is.lateBindableName(node)) {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
-        const visited = qf.visit.eachChild(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
+        const visited = qf.visit.children(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
         const clone = isSynthesized(visited) ? visited : qf.create.synthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<qt.BindingElem>clone).initer = undefined;
         return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
@@ -970,7 +970,7 @@ export class QContext {
     if (file && node.kind === Syntax.TupleTyping && qy.get.lineAndCharOf(file, node.pos).line === qy.get.lineAndCharOf(file, node.end).line) {
       qf.emit.setFlags(node, EmitFlags.SingleLine);
     }
-    return qf.visit.eachChild(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
+    return qf.visit.children(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
   }
   serializeSignatures(kind: qt.SignatureKind, input: qt.Type, baseType: qt.Type | undefined, outputKind: Syntax) {
     const signatures = getSignaturesOfType(input, kind);

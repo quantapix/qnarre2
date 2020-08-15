@@ -10,7 +10,7 @@ export function transformES2019(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2019) === 0) return node;
@@ -18,11 +18,11 @@ export function transformES2019(context: qt.TrafoContext) {
       case Syntax.CatchClause:
         return visitCatchClause(node as qt.CatchClause);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
     if (!node.variableDeclaration) return node.update(new qc.VariableDeclaration(qf.create.tempVariable(undefined)), qf.visit.node(node.block, visitor, isBlock));
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
 }

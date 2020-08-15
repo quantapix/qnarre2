@@ -691,30 +691,30 @@ export function memoize<T>(cb: () => T): () => T {
     return v;
   };
 }
-function deduplicateSorted<T>(ts: ReadonlySorteds<T>, comparer: EqComparer<T> | Comparer<T>): ReadonlySorteds<T> {
+function deduplicateSorted<T>(ts: ReadonlySorteds<T>, c: EqComparer<T> | Comparer<T>): ReadonlySorteds<T> {
   if (ts.length === 0) return (empty as any) as ReadonlySorteds<T>;
   let last = ts[0];
-  const deduplicated: T[] = [last];
+  const r: T[] = [last];
   for (let i = 1; i < ts.length; i++) {
     const next = ts[i];
-    switch (comparer(next, last)) {
+    switch (c(next, last)) {
       case true:
       case Comparison.EqualTo:
         continue;
       case Comparison.LessThan:
         return fail('Array is unsorted.');
     }
-    deduplicated.push((last = next));
+    r.push((last = next));
   }
-  return (deduplicated as any) as ReadonlySorteds<T>;
+  return (r as any) as ReadonlySorteds<T>;
 }
-export function insertSorted<T>(ts: Sorteds<T>, insert: T, compare: Comparer<T>): void {
+export function insertSorted<T>(ts: Sorteds<T>, t: T, c: Comparer<T>): void {
   if (ts.length === 0) {
-    ts.push(insert);
+    ts.push(t);
     return;
   }
-  const insertIndex = binarySearch(ts, insert, identity, compare);
-  if (insertIndex < 0) ts.splice(~insertIndex, 0, insert);
+  const i = binarySearch(ts, t, identity, c);
+  if (i < 0) ts.splice(~i, 0, t);
 }
 export function sortAndDeduplicate<T>(ts: readonly string[]): ReadonlySorteds<string>;
 export function sortAndDeduplicate<T>(ts: readonly T[], comparer: Comparer<T>, eq?: EqComparer<T>): ReadonlySorteds<T>;
@@ -766,10 +766,10 @@ export function relativeComplement<T>(a: T[] | undefined, b: T[] | undefined, c:
   }
   return r;
 }
-export function sum<T extends Record<K, number>, K extends string>(ts: readonly T[], prop: K): number {
+export function sum<T extends Record<K, number>, K extends string>(ts: readonly T[], k: K): number {
   let r = 0;
   for (const v of ts) {
-    r += v[prop];
+    r += v[k];
   }
   return r;
 }
@@ -819,11 +819,11 @@ export function appendIfUnique<T>(ts: T[] | undefined, toAdd: T, eq?: EqComparer
   }
   return [toAdd];
 }
-function stableSortIndices<T>(ts: readonly T[], indices: number[], comparer: Comparer<T>) {
-  indices.sort((x, y) => comparer(ts[x], ts[y]) || compareNumbers(x, y));
+function stableSortIndices<T>(ts: readonly T[], is: number[], c: Comparer<T>) {
+  is.sort((x, y) => c(ts[x], ts[y]) || compareNumbers(x, y));
 }
-export function sort<T>(ts: readonly T[], comparer?: Comparer<T>): ReadonlySorteds<T> {
-  return (ts.length === 0 ? ts : ts.slice().sort(comparer)) as ReadonlySorteds<T>;
+export function sort<T>(ts: readonly T[], c?: Comparer<T>): ReadonlySorteds<T> {
+  return (ts.length === 0 ? ts : ts.slice().sort(c)) as ReadonlySorteds<T>;
 }
 export function arrayIterator<T>(ts: readonly T[]): Iterator<T> {
   let i = 0;
@@ -897,10 +897,10 @@ export function replaceElem<T>(ts: readonly T[], i: number, t: T): T[] {
   r[i] = t;
   return r;
 }
-export function binarySearch<T, U>(ts: readonly T[], t: T, key: (v: T) => U, c: Comparer<U>, offset?: number): number {
+export function binarySearch<T, U>(ts: readonly T[], t: T, key: (t: T) => U, c: Comparer<U>, offset?: number): number {
   return binarySearchKey(ts, key(t), key, c, offset);
 }
-export function binarySearchKey<T, U>(ts: readonly T[], k: U, key: (v: T) => U, c: Comparer<U>, offset?: number): number {
+export function binarySearchKey<T, U>(ts: readonly T[], k: U, key: (t: T) => U, c: Comparer<U>, offset?: number): number {
   if (!some(ts)) return -1;
   let low = offset || 0;
   let high = ts.length - 1;
@@ -919,27 +919,27 @@ export function binarySearchKey<T, U>(ts: readonly T[], k: U, key: (v: T) => U, 
   }
   return ~low;
 }
-export function reduceLeft<T, U>(ts: readonly T[] | undefined, f: (memo: U, t: T, i: number) => U, initial: U, start?: number, count?: number): U;
-export function reduceLeft<T>(ts: readonly T[], f: (memo: T, t: T, i: number) => T): T | undefined;
-export function reduceLeft<T>(ts: readonly T[] | undefined, f: (memo: T, t: T, i: number) => T, initial?: T, start?: number, count?: number): T | undefined {
+export function reduceLeft<T, U>(ts: readonly T[] | undefined, cb: (a: U, t: T, i: number) => U, init: U, start?: number, count?: number): U;
+export function reduceLeft<T>(ts: readonly T[], cb: (a: T, t: T, i: number) => T): T | undefined;
+export function reduceLeft<T>(ts: readonly T[] | undefined, cb: (a: T, t: T, i: number) => T, init?: T, start?: number, count?: number): T | undefined {
   if (ts && ts.length > 0) {
-    const size = ts.length;
-    if (size > 0) {
+    const l = ts.length;
+    if (l > 0) {
       let pos = start === undefined || start < 0 ? 0 : start;
-      const end = count === undefined || pos + count > size - 1 ? size - 1 : pos + count;
+      const end = count === undefined || pos + count > l - 1 ? l - 1 : pos + count;
       let r: T;
       if (arguments.length <= 2) {
         r = ts[pos];
         pos++;
-      } else r = initial!;
+      } else r = init!;
       while (pos <= end) {
-        r = f(r, ts[pos], pos);
+        r = cb(r, ts[pos], pos);
         pos++;
       }
       return r;
     }
   }
-  return initial;
+  return init;
 }
 export function hasProperty(m: MapLike<any>, k: string): boolean {
   return hasOwnProperty.call(m, k);

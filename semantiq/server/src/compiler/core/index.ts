@@ -1,15 +1,62 @@
-import { Node, SymbolFlags } from '../types';
+import { Node, Nodes } from '../types';
 import { qf } from './frame';
 import { Syntax } from '../syntax';
 import * as qb from './bases';
 import * as qc from './classes';
 import * as qt from '../types';
 import * as qu from '../utils';
-export { MutableNodes, Nodes, qt.Signature, qt.Symbol, qt.SymbolTable, qt.Type } from './bases';
+export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export { cloneMap, findAncestor } from './bases';
 export * from './classes';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
-export namespace qt.BindingOrAssignmentElem {
+export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
+  return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
+}
+export function liftToBlock(ns?: readonly Node[]): qt.Statement {
+  qu.assert(qu.every(ns, qf.is.statement));
+  return (qu.singleOrUndefined(ns) as qt.Statement) || new qc.Block(ns as qt.Statement[]);
+}
+export function mergeLexicalEnv(ss: Nodes<qt.Statement>, ds?: readonly qt.Statement[]): Nodes<qt.Statement>;
+export function mergeLexicalEnv(ss: qt.Statement[], ds?: readonly qt.Statement[]): qt.Statement[];
+export function mergeLexicalEnv(ss: qt.Statement[] | Nodes<qt.Statement>, ds?: readonly qt.Statement[]) {
+  if (!qu.some(ds)) return ss;
+  const findEnd = <T>(ts: readonly T[], cb: (v: T) => boolean, start: number) => {
+    let i = start;
+    while (i < ts.length && cb(ts[i])) {
+      i++;
+    }
+    return i;
+  };
+  const ls = findEnd(ss, qf.is.prologueDirective, 0);
+  const lf = findEnd(ss, qf.stmt.is.hoistedFunction, ls);
+  const lv = findEnd(ss, qf.stmt.is.hoistedVariableStatement, lf);
+  const rs = findEnd(ds, qf.is.prologueDirective, 0);
+  const rf = findEnd(ds, qf.stmt.is.hoistedFunction, rs);
+  const rv = findEnd(ds, qf.stmt.is.hoistedVariableStatement, rf);
+  const rc = findEnd(ds, qf.stmt.is.customPrologue, rv);
+  qu.assert(rc === ds.length);
+  const left = qb.Nodes.is(ss) ? ss.slice() : ss;
+  if (rc > rv) left.splice(lv, 0, ...ds.slice(rv, rc));
+  if (rv > rf) left.splice(lf, 0, ...ds.slice(rf, rv));
+  if (rf > rs) left.splice(ls, 0, ...ds.slice(rs, rf));
+  if (rs > 0) {
+    if (ls === 0) left.splice(0, 0, ...ds.slice(0, rs));
+    else {
+      const m = qu.createMap<boolean>();
+      for (let i = 0; i < ls; i++) {
+        const p = ss[i] as qt.PrologueDirective;
+        m.set(p.expression.text, true);
+      }
+      for (let i = rs - 1; i >= 0; i--) {
+        const p = ds[i] as qt.PrologueDirective;
+        if (!m.has(p.expression.text)) left.unshift(p);
+      }
+    }
+  }
+  if (qb.Nodes.is(ss)) return new qb.Nodes(left, ss.trailingComma).setRange(ss);
+  return ss;
+}
+export namespace BindingOrAssignmentElem {
   export function getIniterOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): qt.Expression | undefined {
     if (qf.is.declarationBindingElem(e)) {
       // `1` in `let { a = 1 } = ...`
@@ -185,7 +232,7 @@ export namespace qt.BindingOrAssignmentElem {
     return <qt.ObjectLiteralElemLike>e;
   }
 }
-export namespace qt.BindingOrAssignmentPattern {
+export namespace BindingOrAssignmentPattern {
   export function getElemsOfBindingOrAssignmentPattern(name: qt.BindingOrAssignmentPattern): readonly qt.BindingOrAssignmentElem[] {
     switch (name.kind) {
       case Syntax.ObjectBindingPattern:

@@ -1279,7 +1279,7 @@ export function newIs(f: qt.Frame) {
     declarationName(n: Node) {
       const k = n.kind;
       const p = n.parent as Node | undefined;
-      return k !== Syntax.SourceFile && !this.kind(qc.BindingPattern, n) && this.declaration(p) && p.name === n;
+      return k !== Syntax.SourceFile && n.kind !== Syntax.BindingPattern && this.declaration(p) && p.name === n;
     }
     typeAlias(n: Node): n is qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag | qt.TypeAliasDeclaration {
       return this.doc.typeAlias(n) || n.kind === Syntax.TypeAliasDeclaration;
@@ -2247,7 +2247,7 @@ export function newIs(f: qt.Frame) {
       return this.emptyBindingPattern(e.name);
     }
     emptyBindingPattern(n: qt.BindingName): n is qt.BindingPattern {
-      if (this.kind(qc.BindingPattern, n)) return qu.every(n.elems, this.emptyBindingElem);
+      if (n.kind === Syntax.BindingPattern) return qu.every(n.elems, this.emptyBindingElem);
       return false;
     }
     requireCall(n: Node | undefined, literal: true): n is qt.RequireOrImportCall & { expression: qt.Identifier; args: [qt.StringLiteralLike] };

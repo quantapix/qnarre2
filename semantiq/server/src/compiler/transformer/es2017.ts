@@ -35,7 +35,7 @@ export function transformES2017(context: qt.TrafoContext) {
     if (node.isDeclarationFile) return node;
     setContextFlag(ContextFlags.NonTopLevel, false);
     setContextFlag(ContextFlags.HasLexicalThis, !node.isEffectiveStrictMode(compilerOpts));
-    const visited = qf.visit.eachChild(node, visitor, context);
+    const visited = qf.visit.children(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
@@ -62,7 +62,7 @@ export function transformES2017(context: qt.TrafoContext) {
     return cb(value);
   }
   function visitDefault(node: Node): VisitResult<Node> {
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2017) === 0) return node;
@@ -83,12 +83,12 @@ export function transformES2017(context: qt.TrafoContext) {
         if (capturedSuperProperties && node.kind === Syntax.PropertyAccessExpression && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
       case Syntax.ElemAccessExpression:
         if (capturedSuperProperties && (<qt.ElemAccessExpression>node).expression.kind === Syntax.SuperKeyword) {
           hasSuperElemAccess = true;
         }
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
       case Syntax.Constructor:
@@ -96,7 +96,7 @@ export function transformES2017(context: qt.TrafoContext) {
       case Syntax.ClassExpression:
         return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitDefault, node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function asyncBodyVisitor(node: Node): VisitResult<Node> {
@@ -123,7 +123,7 @@ export function transformES2017(context: qt.TrafoContext) {
         case Syntax.IfStatement:
         case Syntax.WithStatement:
         case Syntax.LabeledStatement:
-          return qf.visit.eachChild(node, asyncBodyVisitor, context);
+          return qf.visit.children(node, asyncBodyVisitor, context);
         default:
           return qc.assert.never(node, 'Unhandled node.');
       }
@@ -145,25 +145,25 @@ export function transformES2017(context: qt.TrafoContext) {
     if (catchClauseUnshadowedNames) {
       const savedEnclosingFunctionParamNames = enclosingFunctionParamNames;
       enclosingFunctionParamNames = catchClauseUnshadowedNames;
-      const result = qf.visit.eachChild(node, asyncBodyVisitor, context);
+      const result = qf.visit.children(node, asyncBodyVisitor, context);
       enclosingFunctionParamNames = savedEnclosingFunctionParamNames;
       return result;
     }
-    return qf.visit.eachChild(node, asyncBodyVisitor, context);
+    return qf.visit.children(node, asyncBodyVisitor, context);
   }
   function visitVariableStatementInAsyncBody(node: qt.VariableStatement) {
     if (isVariableDeclarationListWithCollidingName(node.declarationList)) {
       const expression = visitVariableDeclarationListWithCollidingNames(node.declarationList, false);
       return expression ? new qc.ExpressionStatement(expression) : undefined;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitForInStatementInAsyncBody(node: qt.ForInStatement) {
     return updateForIn(
       node,
       isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : qf.visit.node(node.initer, visitor, isForIniter),
       qf.visit.node(node.expression, visitor, isExpression),
-      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
+      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, qc.liftToBlock)
     );
   }
   function visitForOfStatementInAsyncBody(node: qt.ForOfStatement) {
@@ -172,7 +172,7 @@ export function transformES2017(context: qt.TrafoContext) {
       qf.visit.node(node.awaitModifier, visitor, isToken),
       isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : qf.visit.node(node.initer, visitor, isForIniter),
       qf.visit.node(node.expression, visitor, isExpression),
-      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
+      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, qc.liftToBlock)
     );
   }
   function visitForStatementInAsyncBody(node: qt.ForStatement) {
@@ -182,11 +182,11 @@ export function transformES2017(context: qt.TrafoContext) {
       isVariableDeclarationListWithCollidingName(initer) ? visitVariableDeclarationListWithCollidingNames(initer, false) : qf.visit.node(node.initer, visitor, isForIniter),
       qf.visit.node(node.condition, visitor, isExpression),
       qf.visit.node(node.incrementor, visitor, isExpression),
-      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, liftToBlock)
+      qf.visit.node(node.statement, asyncBodyVisitor, qf.is.statement, qc.liftToBlock)
     );
   }
   function visitAwaitExpression(node: qt.AwaitExpression): qt.Expression {
-    if (inTopLevelContext()) return qf.visit.eachChild(node, visitor, context);
+    if (inTopLevelContext()) return qf.visit.children(node, visitor, context);
     return new qc.YieldExpression(undefined, qf.visit.node(node.expression, visitor, isExpression)).setRange(node).setOriginal(node);
   }
   function visitMethodDeclaration(node: qt.MethodDeclaration) {
@@ -197,9 +197,9 @@ export function transformES2017(context: qt.TrafoContext) {
       node.name,
       undefined,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.functionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.body(node.body, visitor, context)
     );
   }
   function visitFunctionDeclaration(node: qt.FunctionDeclaration): VisitResult<qt.Statement> {
@@ -209,9 +209,9 @@ export function transformES2017(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.functionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.body(node.body, visitor, context)
     );
   }
   function visitFunctionExpression(node: qt.FunctionExpression): qt.Expression {
@@ -220,19 +220,19 @@ export function transformES2017(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.functionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.body(node.body, visitor, context)
     );
   }
   function visitArrowFunction(node: qt.ArrowFunction) {
     return node.update(
       Nodes.visit(node.modifiers, visitor, isModifier),
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
-      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.functionBody(node.body, visitor, context)
+      qf.get.functionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : qf.visit.body(node.body, visitor, context)
     );
   }
   function recordDeclarationName({ name }: qt.ParamDeclaration | qt.VariableDeclaration | qt.BindingElem, names: EscapedMap<true>) {
@@ -335,9 +335,9 @@ export function transformES2017(context: qt.TrafoContext) {
     } else {
       const expression = createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArgs, promiseConstructor, transformAsyncFunctionBodyWorker(node.body!));
       const declarations = endLexicalEnv();
-      if (some(declarations)) {
-        const block = convertToFunctionBody(expression);
-        result = block.update(new Nodes(concatenate(declarations, block.statements)).setRange(block.statements));
+      if (qu.some(declarations)) {
+        const block = qc.convertToFunctionBody(expression);
+        result = block.update(new Nodes(qu.concatenate(declarations, block.statements)).setRange(block.statements));
       } else {
         result = expression;
       }
@@ -351,7 +351,7 @@ export function transformES2017(context: qt.TrafoContext) {
   }
   function transformAsyncFunctionBodyWorker(body: qt.ConciseBody, start?: number) {
     if (body.kind === Syntax.Block) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, qf.is.statement, start));
-    return convertToFunctionBody(qf.visit.node(body, asyncBodyVisitor, qf.is.conciseBody));
+    return qc.convertToFunctionBody(qf.visit.node(body, asyncBodyVisitor, qf.is.conciseBody));
   }
   function getPromiseConstructor(type: qt.Typing | undefined) {
     const typeName = type && qf.get.entityNameFromTypeNode(type);

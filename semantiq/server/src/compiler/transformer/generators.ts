@@ -276,7 +276,7 @@ export function transformGenerators(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile || (node.trafoFlags & TrafoFlags.ContainsGenerator) === 0) return node;
-    const visited = qf.visit.eachChild(node, visitor, context);
+    const visited = qf.visit.children(node, visitor, context);
     qf.emit.addHelpers(visited, context.readEmitHelpers());
     return visited;
   }
@@ -285,7 +285,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     if (inStatementContainingYield) return visitJavaScriptInStatementContainingYield(node);
     if (inGeneratorFunctionBody) return visitJavaScriptInGeneratorFunctionBody(node);
     if (qf.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
-    if (trafoFlags & TrafoFlags.ContainsGenerator) return qf.visit.eachChild(node, visitor, context);
+    if (trafoFlags & TrafoFlags.ContainsGenerator) return qf.visit.children(node, visitor, context);
     return node;
   }
   function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
@@ -325,7 +325,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         return visitReturnStatement(<qt.ReturnStatement>node);
       default:
         if (node.trafoFlags & TrafoFlags.ContainsYield) return visitJavaScriptContainingYield(node);
-        if (node.trafoFlags & (TrafoFlags.ContainsGenerator | TrafoFlags.ContainsHoistedDeclarationOrCompletion)) return qf.visit.eachChild(node, visitor, context);
+        if (node.trafoFlags & (TrafoFlags.ContainsGenerator | TrafoFlags.ContainsHoistedDeclarationOrCompletion)) return qf.visit.children(node, visitor, context);
         return node;
     }
   }
@@ -348,7 +348,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       case Syntax.NewExpression:
         return visitNewExpression(<qt.NewExpression>node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function visitGenerator(node: Node): VisitResult<Node> {
@@ -366,7 +366,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     if (node.asteriskToken) {
       node = setOriginalNode(
         setRange(
-          new qc.FunctionDeclaration(undefined, node.modifiers, undefined, node.name, undefined, qf.visit.paramList(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body!)),
+          new qc.FunctionDeclaration(undefined, node.modifiers, undefined, node.name, undefined, qf.visit.params(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body!)),
           node
         ),
         node
@@ -376,7 +376,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const savedInStatementContainingYield = inStatementContainingYield;
       inGeneratorFunctionBody = false;
       inStatementContainingYield = false;
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
       inGeneratorFunctionBody = savedInGeneratorFunctionBody;
       inStatementContainingYield = savedInStatementContainingYield;
     }
@@ -392,7 +392,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(
-        setRange(new qc.FunctionExpression(undefined, undefined, node.name, undefined, qf.visit.paramList(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body)), node),
+        setRange(new qc.FunctionExpression(undefined, undefined, node.name, undefined, qf.visit.params(node.params, visitor, context), undefined, transformGeneratorFunctionBody(node.body)), node),
         node
       );
     } else {
@@ -400,7 +400,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const savedInStatementContainingYield = inStatementContainingYield;
       inGeneratorFunctionBody = false;
       inStatementContainingYield = false;
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
       inGeneratorFunctionBody = savedInGeneratorFunctionBody;
       inStatementContainingYield = savedInStatementContainingYield;
     }
@@ -411,7 +411,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     const savedInStatementContainingYield = inStatementContainingYield;
     inGeneratorFunctionBody = false;
     inStatementContainingYield = false;
-    node = qf.visit.eachChild(node, visitor, context);
+    node = qf.visit.children(node, visitor, context);
     inGeneratorFunctionBody = savedInGeneratorFunctionBody;
     inStatementContainingYield = savedInStatementContainingYield;
     return node;
@@ -551,7 +551,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       }
       return node.update(target, qf.visit.node(right, visitor, isExpression));
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitLeftAssociativeBinaryExpression(node: qt.BinaryExpression) {
     if (containsYield(node.right)) {
@@ -570,7 +570,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       clone.right = qf.visit.node(node.right, visitor, isExpression);
       return clone;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitLogicalBinaryExpression(node: qt.BinaryExpression) {
     // Logical binary expressions (`&&` and `||`) are shortcutting expressions and need
@@ -671,7 +671,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       markLabel(resultLabel);
       return resultLocal;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitYieldExpression(node: qt.YieldExpression): qt.LeftExpression {
     // [source]
@@ -794,7 +794,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       clone.argExpression = qf.visit.node(node.argExpression, visitor, isExpression);
       return clone;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitCallExpression(node: qt.CallExpression) {
     if (!qf.is.importCall(node) && forEach(node.args, containsYield)) {
@@ -811,7 +811,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
       return qf.create.functionApply(cacheExpression(qf.visit.node(target, visitor, isLeftExpression)), thisArg, visitElems(node.args), node).setOriginal(node);
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitNewExpression(node: qt.NewExpression) {
     if (forEach(node.args, containsYield)) {
@@ -831,7 +831,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         node
       );
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformAndEmitStatements(statements: readonly qt.Statement[], start = 0) {
     const numStatements = statements.length;
@@ -993,11 +993,11 @@ export function transformGenerators(context: qt.TrafoContext) {
   function visitDoStatement(node: qt.DoStatement) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
       endLoopBlock();
       return node;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformAndEmitWhileStatement(node: qt.WhileStatement) {
     if (containsYield(node)) {
@@ -1028,11 +1028,11 @@ export function transformGenerators(context: qt.TrafoContext) {
   function visitWhileStatement(node: qt.WhileStatement) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
       endLoopBlock();
       return node;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformAndEmitForStatement(node: qt.ForStatement) {
     if (containsYield(node)) {
@@ -1094,10 +1094,10 @@ export function transformGenerators(context: qt.TrafoContext) {
         variables.length > 0 ? inlineExpressions(map(variables, transformInitializedVariable)) : undefined,
         qf.visit.node(node.condition, visitor, isExpression),
         qf.visit.node(node.incrementor, visitor, isExpression),
-        qf.visit.node(node.statement, visitor, qf.is.statement, liftToBlock)
+        qf.visit.node(node.statement, visitor, qf.is.statement, qc.liftToBlock)
       );
     } else {
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
     }
     if (inStatementContainingYield) {
       endLoopBlock();
@@ -1187,9 +1187,9 @@ export function transformGenerators(context: qt.TrafoContext) {
       for (const variable of initer.declarations) {
         hoistVariableDeclaration(<qt.Identifier>variable.name);
       }
-      node = node.update(<qt.Identifier>initer.declarations[0].name, qf.visit.node(node.expression, visitor, isExpression), qf.visit.node(node.statement, visitor, qf.is.statement, liftToBlock));
+      node = node.update(<qt.Identifier>initer.declarations[0].name, qf.visit.node(node.expression, visitor, isExpression), qf.visit.node(node.statement, visitor, qf.is.statement, qc.liftToBlock));
     } else {
-      node = qf.visit.eachChild(node, visitor, context);
+      node = qf.visit.children(node, visitor, context);
     }
     if (inStatementContainingYield) {
       endLoopBlock();
@@ -1210,7 +1210,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const label = findContinueTarget(node.label && idText(node.label));
       if (label > 0) return createInlineBreak(label, node);
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformAndEmitBreakStatement(node: qt.BreakStatement): void {
     const label = findBreakTarget(node.label ? idText(node.label) : undefined);
@@ -1226,7 +1226,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const label = findBreakTarget(node.label && idText(node.label));
       if (label > 0) return createInlineBreak(label, node);
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformAndEmitReturnStatement(node: qt.ReturnStatement): void {
     emitReturn(qf.visit.node(node.expression, visitor, isExpression), node);
@@ -1345,7 +1345,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     if (inStatementContainingYield) {
       beginScriptSwitchBlock();
     }
-    node = qf.visit.eachChild(node, visitor, context);
+    node = qf.visit.children(node, visitor, context);
     if (inStatementContainingYield) {
       endSwitchBlock();
     }
@@ -1374,7 +1374,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     if (inStatementContainingYield) {
       beginScriptLabeledBlock(idText(node.label));
     }
-    node = qf.visit.eachChild(node, visitor, context);
+    node = qf.visit.children(node, visitor, context);
     if (inStatementContainingYield) {
       endLabeledBlock();
     }
@@ -1426,7 +1426,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       }
       endExceptionBlock();
     } else {
-      emitStatement(qf.visit.eachChild(node, visitor, context));
+      emitStatement(qf.visit.children(node, visitor, context));
     }
   }
   function containsYield(node: Node | undefined): boolean {

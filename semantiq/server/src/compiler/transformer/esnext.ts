@@ -10,13 +10,13 @@ export function transformESNext(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsESNext) === 0) return node;
     switch (node.kind) {
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
 }

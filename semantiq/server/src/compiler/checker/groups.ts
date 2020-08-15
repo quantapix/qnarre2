@@ -307,11 +307,11 @@ export function newIs(f: qt.Frame) {
             case Syntax.DocCallbackTag:
             case Syntax.DocEnumTag:
             case Syntax.DocTypedefTag:
-              return !!(n.parent && n.parent.parent && n.parent.parent.parent && this.kind(qt.SourceFile, n.parent.parent.parent));
+              return !!(n.parent && n.parent.parent && n.parent.parent.parent && n.parent.parent.parent.kind === Syntax.SourceFile);
             case Syntax.BindingElem:
               return this.declarationVisible(n.parent.parent);
             case Syntax.VariableDeclaration:
-              if (this.kind(qc.BindingPattern, (n as qt.VariableDeclaration).name) && !((n as qt.VariableDeclaration).name as qt.BindingPattern).elems.length) return false;
+              if (n.name.kind === Syntax.BindingPattern && !n.name.elems.length) return false;
             case Syntax.ClassDeclaration:
             case Syntax.EnumDeclaration:
             case Syntax.FunctionDeclaration:
@@ -1649,8 +1649,8 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     topLevelAwait(n: qt.AwaitExpression) {
-      const container = qf.get.thisContainer(n, true);
-      return this.kind(qt.SourceFile, container);
+      const c = qf.get.thisContainer(n, true);
+      return c.kind === Syntax.SourceFile;
     }
     typeAssignableToKind(s: qt.Type, kind: TypeFlags, strict?: boolean): boolean {
       if (s.flags & kind) return true;

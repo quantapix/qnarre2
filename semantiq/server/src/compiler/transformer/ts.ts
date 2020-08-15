@@ -137,7 +137,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function visitEllidableStatement(node: qt.ImportDeclaration | qt.ImportEqualsDeclaration | qt.ExportAssignment | qt.ExportDeclaration): VisitResult<Node> {
     const parsed = qf.get.parseTreeOf(node);
     if (parsed !== node) {
-      if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return qf.visit.eachChild(node, visitor, context);
+      if (node.trafoFlags & TrafoFlags.ContainsTypeScript) return qf.visit.children(node, visitor, context);
       return node;
     }
     switch (node.kind) {
@@ -300,7 +300,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       case Syntax.JsxOpeningElem:
         return visitJsxJsxOpeningElem(<qt.JsxOpeningElem>node);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function visitSourceFile(node: qt.SourceFile) {
@@ -336,7 +336,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return some(node.decorators) || some(node.typeParams) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
   }
   function visitClassDeclaration(node: qt.ClassDeclaration): VisitResult<qt.Statement> {
-    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qf.has.syntacticModifier(node, ModifierFlags.Export))) return qf.visit.eachChild(node, visitor, context);
+    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qf.has.syntacticModifier(node, ModifierFlags.Export))) return qf.visit.children(node, visitor, context);
     const staticProperties = getProperties(node, true);
     const facts = getClassFacts(node, staticProperties);
     if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) {
@@ -416,7 +416,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return statement;
   }
   function visitClassExpression(node: qt.ClassExpression): qt.Expression {
-    if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return qf.visit.eachChild(node, visitor, context);
+    if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return qf.visit.children(node, visitor, context);
     const classExpression = new qc.ClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
     qf.calc.aggregate(classExpression);
     classExpression.setOriginal(node);
@@ -920,7 +920,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (node.token === Syntax.ImplementsKeyword) {
       return;
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitExpressionWithTypings(node: qt.ExpressionWithTypings): qt.ExpressionWithTypings {
     return node.update(undefined, qf.visit.node(node.expression, visitor, isLeftExpression));
@@ -943,18 +943,18 @@ export function transformTypeScript(context: qt.TrafoContext) {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return;
     }
-    return node.update(undefined, undefined, qf.visit.paramList(node.params, visitor, context), transformConstructorBody(node.body, node));
+    return node.update(undefined, undefined, qf.visit.params(node.params, visitor, context), transformConstructorBody(node.body, node));
   }
   function transformConstructorBody(body: qt.Block, constructor: qt.ConstructorDeclaration) {
     const paramsWithPropertyAssignments = constructor && filter(constructor.params, (p) => qf.is.paramPropertyDeclaration(p, constructor));
-    if (!some(paramsWithPropertyAssignments)) return qf.visit.functionBody(body, visitor, context);
+    if (!some(paramsWithPropertyAssignments)) return qf.visit.body(body, visitor, context);
     let statements: qt.Statement[] = [];
     let indexOfFirstStatement = 0;
     resumeLexicalEnv();
     indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
     qu.addRange(statements, map(paramsWithPropertyAssignments, transformParamWithPropertyAssignment));
     qu.addRange(statements, Nodes.visit(body.statements, visitor, qf.is.statement, indexOfFirstStatement));
-    statements = mergeLexicalEnv(statements, endLexicalEnv());
+    statements = qc.mergeLexicalEnv(statements, endLexicalEnv());
     const block = new qc.Block(setRange(new Nodes(statements), body.statements), true);
     block.setRange(body);
     block.setOriginal(body);
@@ -987,9 +987,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       visitPropertyNameOfClassElem(node),
       undefined,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.visit.functionBody(node.body, visitor, context)
+      qf.visit.body(node.body, visitor, context)
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1008,9 +1008,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.body(node.body, visitor, context) || new qc.Block([])
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1026,8 +1026,8 @@ export function transformTypeScript(context: qt.TrafoContext) {
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElem(node),
-      qf.visit.paramList(node.params, visitor, context),
-      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.params(node.params, visitor, context),
+      qf.visit.body(node.body, visitor, context) || new qc.Block([])
     );
     if (updated !== node) {
       qf.emit.setCommentRange(updated, node);
@@ -1043,9 +1043,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.body(node.body, visitor, context) || new qc.Block([])
     );
     if (isExportOfNamespace(node)) {
       const statements: qt.Statement[] = [updated];
@@ -1061,9 +1061,9 @@ export function transformTypeScript(context: qt.TrafoContext) {
       node.asteriskToken,
       node.name,
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
-      qf.visit.functionBody(node.body, visitor, context) || new qc.Block([])
+      qf.visit.body(node.body, visitor, context) || new qc.Block([])
     );
     return updated;
   }
@@ -1071,10 +1071,10 @@ export function transformTypeScript(context: qt.TrafoContext) {
     const updated = node.update(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       undefined,
-      qf.visit.paramList(node.params, visitor, context),
+      qf.visit.params(node.params, visitor, context),
       undefined,
       node.equalsGreaterThanToken,
-      qf.visit.functionBody(node.body, visitor, context)
+      qf.visit.body(node.body, visitor, context)
     );
     return updated;
   }
@@ -1097,7 +1097,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
 
       return setRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
     const name = node.name;
@@ -1114,7 +1114,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       if (length(syntax.get.leadingCommentRangesOfNode(expression, currentSourceFile))) return node.update(expression);
       return new qc.PartiallyEmittedExpression(expression, node);
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitAssertionExpression(node: qt.AssertionExpression): qt.Expression {
     const expression = qf.visit.node(node.expression, visitor, isExpression);
@@ -1385,7 +1385,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return resolver.referencedAliasDeclaration(node) ? node : undefined;
   }
   function visitExportAssignment(node: qt.ExportAssignment): VisitResult<qt.Statement> {
-    return resolver.isValueAliasDeclaration(node) ? qf.visit.eachChild(node, visitor, context) : undefined;
+    return resolver.isValueAliasDeclaration(node) ? qf.visit.children(node, visitor, context) : undefined;
   }
   function visitExportDeclaration(node: qt.ExportDeclaration): VisitResult<qt.Statement> {
     if (node.isTypeOnly) {
@@ -1419,7 +1419,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       const referenced = resolver.referencedAliasDeclaration(node);
       if (!referenced && compilerOpts.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Preserve)
         return setRange(new qc.ImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node).setOriginal(node);
-      return referenced ? qf.visit.eachChild(node, visitor, context) : undefined;
+      return referenced ? qf.visit.children(node, visitor, context) : undefined;
     }
     if (!shouldEmitImportEqualsDeclaration(node)) {
       return;

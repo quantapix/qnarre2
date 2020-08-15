@@ -11,7 +11,7 @@ export function transformES2020(context: qt.TrafoContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: qt.SourceFile) {
     if (node.isDeclarationFile) return node;
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     if ((node.trafoFlags & TrafoFlags.ContainsES2020) === 0) return node;
@@ -24,14 +24,14 @@ export function transformES2020(context: qt.TrafoContext) {
           qc.assert.notNode(updated, isSyntheticReference);
           return updated;
         }
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
       case Syntax.BinaryExpression:
         if ((<qt.BinaryExpression>node).operatorToken.kind === Syntax.Question2Token) return transformNullishCoalescingExpression(<qt.BinaryExpression>node);
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
       case Syntax.DeleteExpression:
         return visitDeleteExpression(node as qt.DeleteExpression);
       default:
-        return qf.visit.eachChild(node, visitor, context);
+        return qf.visit.children(node, visitor, context);
     }
   }
   function flattenChain(chain: qt.OptionalChain) {
@@ -78,7 +78,7 @@ export function transformES2020(context: qt.TrafoContext) {
   }
   function visitNonOptionalCallExpression(node: qt.CallExpression, captureThisArg: boolean): qt.Expression {
     if (qf.is.optionalChain(node)) return visitOptionalExpression(node, captureThisArg, false);
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitNonOptionalExpression(node: qt.Expression, captureThisArg: boolean, isDelete: boolean): qt.Expression {
     switch (node.kind) {

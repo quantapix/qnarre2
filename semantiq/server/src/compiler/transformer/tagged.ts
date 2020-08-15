@@ -23,7 +23,7 @@ export function processTaggedTemplateExpression(
   const cookedStrings: qt.Expression[] = [];
   const rawStrings: qt.Expression[] = [];
   const template = node.template;
-  if (level === ProcessLevel.LiftRestriction && !qf.has.invalidEscape(template)) return qf.visit.eachChild(node, visitor, context);
+  if (level === ProcessLevel.LiftRestriction && !qf.has.invalidEscape(template)) return qf.visit.children(node, visitor, context);
   if (template.kind === Syntax.NoSubstitutionLiteral) {
     cookedStrings.push(createTemplateCooked(template));
     rawStrings.push(getRawLiteral(template, currentSourceFile));

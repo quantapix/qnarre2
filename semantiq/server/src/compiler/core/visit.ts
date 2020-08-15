@@ -4,6 +4,7 @@ import { Syntax } from '../syntax';
 import * as qb from './bases';
 import * as qc from './classes';
 import * as qg from './groups';
+import * as qi from './index';
 import * as qt from '../types';
 import * as qu from '../utils';
 export type VisitResult<T extends Node> = T | T[] | undefined;
@@ -24,127 +25,35 @@ export function newVisit(f: qt.Frame) {
   }
   const qf = f as Frame;
   return (qf.visit = new (class {
-    one<T extends Node>(n?: T, v?: Visitor) {
-      return v?.(n as Node) as VisitResult<T>;
-    }
-    many<T extends Node>(ns?: Nodes<T>, v?: Visitor, vs?: Visitors) {
-      if (vs) return vs(ns) as VisitResult<T>;
-      if (ns) {
-        for (const n of ns) {
-          const r = v?.(n as Node);
-          if (r) return r as VisitResult<T>;
-        }
-      }
-      return;
-    }
-    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T;
-    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined;
-    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined {
-      if (!n || !v) return n;
-      qf.calc.aggregate(n);
-      const y = v(n as Node);
-      if (!y) return;
-      if (y === n) return n;
-      let n2: T | undefined;
-      const extractSingle = (ns: readonly T[]) => {
-        qu.assert(ns.length <= 1);
-        return qu.singleOrUndefined(ns);
-      };
-      if (qu.isArray(y)) n2 = (lift || extractSingle)(y);
-      else n2 = y as T;
-      qf.assert.node(n2, test);
-      qf.calc.aggregate(n2!);
-      return n2;
-    }
-    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
-    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
-    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
-      if (!ns || !v) return ns;
-      let r: qb.MutableNodes<T> | undefined;
-      const length = ns.length;
-      if (start === undefined || start < 0) start = 0;
-      if (count === undefined || count > length - start) count = length - start;
-      if (start > 0 || count < length) r = new qb.Nodes<T>([], ns.trailingComma && start + count === length);
-      for (let i = 0; i < count; i++) {
-        const n: T = ns[i + start];
-        qf.calc.aggregate(n);
-        const y = n ? v(n) : undefined;
-        if (r !== undefined || y === undefined || y !== n) {
-          if (r === undefined) r = new qb.Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
-          if (y) {
-            if (qu.isArray(y)) {
-              for (const n2 of y) {
-                qf.assert.node(n2, test);
-                qf.calc.aggregate(n2);
-                r.push(n2 as T);
-              }
-            } else {
-              qf.assert.node(y, test);
-              qf.calc.aggregate(y);
-              r.push(y as T);
-            }
-          }
-        }
-      }
-      return r || ns;
-    }
-    lexicalEnv(ss: Nodes<qt.Statement>, v: Visitor, c: qt.TrafoContext, start?: number, strict?: boolean) {
-      c.startLexicalEnv();
-      ss = this.nodes<qt.Statement>(ss, v, qf.is.statement, start);
-      if (strict) {
-        const found = qf.stmt.findUseStrictPrologue(ss);
-        if (!found) ss = new qb.Nodes<qt.Statement>([qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))), ...ss]).setRange(ss);
-      }
-      return mergeLexicalEnv(ss, c.endLexicalEnv());
-    }
-    paramList<T extends Node>(ns: Nodes<T>, v: Visitor, c: qt.TrafoContext, vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>): Nodes<T>;
-    paramList<T extends Node>(
-      ns: Nodes<T> | undefined,
-      v: Visitor,
-      c: qt.TrafoContext,
-      vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
-    ): Nodes<T> | undefined;
-    paramList<T extends Node = qt.ParamDeclaration>(ns: Nodes<T> | undefined, v: Visitor, c: qt.TrafoContext, vs = this.nodes) {
-      let r: Nodes<qt.ParamDeclaration> | undefined;
-      c.startLexicalEnv();
-      if (ns) {
-        c.setLexicalEnvFlags(qt.LexicalEnvFlags.InParams, true);
-        r = vs(ns, v, qf.is.paramDeclaration) as Nodes<qt.ParamDeclaration>;
-        if (c.getLexicalEnvFlags() & qt.LexicalEnvFlags.VariablesHoistedInParams) r = addValueAssignments(r!, c);
-        c.setLexicalEnvFlags(qt.LexicalEnvFlags.InParams, false);
-      }
-      c.suspendLexicalEnv();
-      return r;
-    }
-    functionBody(n: qt.FunctionBody, v: Visitor, c: qt.TrafoContext): qt.FunctionBody;
-    functionBody(n: qt.FunctionBody | undefined, v: Visitor, c: qt.TrafoContext): qt.FunctionBody | undefined;
-    functionBody(n: qt.ConciseBody, v: Visitor, c: qt.TrafoContext): qt.ConciseBody;
-    functionBody(n: qt.ConciseBody | undefined, v: Visitor, c: qt.TrafoContext): qt.ConciseBody | undefined {
+    body(n: qt.FunctionBody, v: Visitor, c: qt.TrafoContext): qt.FunctionBody;
+    body(n: qt.FunctionBody | undefined, v: Visitor, c: qt.TrafoContext): qt.FunctionBody | undefined;
+    body(n: qt.ConciseBody, v: Visitor, c: qt.TrafoContext): qt.ConciseBody;
+    body(n: qt.ConciseBody | undefined, v: Visitor, c: qt.TrafoContext): qt.ConciseBody | undefined {
       c.resumeLexicalEnv();
       const r = this.node(n, v, qf.is.conciseBody);
       const ds = c.endLexicalEnv();
       if (qu.some(ds)) {
-        const b = convertToFunctionBody(r);
-        const ss = mergeLexicalEnv(b.statements, ds);
+        const b = qi.convertToFunctionBody(r);
+        const ss = qi.mergeLexicalEnv(b.statements, ds);
         return b.update(ss);
       }
       return r;
     }
-    eachChild<T extends Node>(node: T, v: Visitor, c: qt.TrafoContext): T;
-    eachChild<T extends Node>(
+    children<T extends Node>(node: T, v: Visitor, c: qt.TrafoContext): T;
+    children<T extends Node>(
       node: T | undefined,
       v: Visitor,
       c: qt.TrafoContext,
       vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined,
       tokenVisitor?: Visitor
     ): T | undefined;
-    eachChild(node: Node | undefined, v: Visitor, c: qt.TrafoContext, vs = this.nodes, tokenVisitor?: Visitor): Node | undefined {
+    children(node: Node | undefined, v: Visitor, c: qt.TrafoContext, vs = this.nodes, tokenVisitor?: Visitor): Node | undefined {
       if (!node) return;
       if (qf.is.token(node) || node.kind === Syntax.ThisTyping) return node;
       const n = node as qc.Node;
       switch (n.kind) {
         case Syntax.Identifier:
-          return n.update(vs(n.typeArgs, v, isTypeNodeOrTypeParamDeclaration));
+          return n.update(vs(n.typeArgs, v, qu.or(qf.is.typeNode, qf.is.typeParamDeclaration)));
         case Syntax.QualifiedName:
           return n.update(this.node(n.left, v, qf.is.entityName), this.node(n.right, v, qf.is.identifier));
         case Syntax.ComputedPropertyName:
@@ -196,28 +105,28 @@ export function newVisit(f: qt.Frame) {
             this.node(n.name, v, qf.is.propertyName),
             this.node(n.questionToken, tokenVisitor, qf.is.token),
             vs(n.typeParams, v, qf.is.typeParamDeclaration),
-            this.paramList(n.params, v, c, vs),
+            this.params(n.params, v, c, vs),
             this.node(n.type, v, qf.is.typeNode),
-            this.functionBody(n.body!, v, c)
+            this.body(n.body!, v, c)
           );
         case Syntax.Constructor:
-          return n.update(vs(n.decorators, v, qf.is.decorator), vs(n.modifiers, v, qf.is.modifier), this.paramList(n.params, v, c, vs), this.functionBody(n.body!, v, c));
+          return n.update(vs(n.decorators, v, qf.is.decorator), vs(n.modifiers, v, qf.is.modifier), this.params(n.params, v, c, vs), this.body(n.body!, v, c));
         case Syntax.GetAccessor:
           return n.update(
             vs(n.decorators, v, qf.is.decorator),
             vs(n.modifiers, v, qf.is.modifier),
             this.node(n.name, v, qf.is.propertyName),
-            this.paramList(n.params, v, c, vs),
+            this.params(n.params, v, c, vs),
             this.node(n.type, v, qf.is.typeNode),
-            this.functionBody(n.body!, v, c)
+            this.body(n.body!, v, c)
           );
         case Syntax.SetAccessor:
           return n.update(
             vs(n.decorators, v, qf.is.decorator),
             vs(n.modifiers, v, qf.is.modifier),
             this.node(n.name, v, qf.is.propertyName),
-            this.paramList(n.params, v, c, vs),
-            this.functionBody(n.body!, v, c)
+            this.params(n.params, v, c, vs),
+            this.body(n.body!, v, c)
           );
         case Syntax.CallSignature:
           return n.update(vs(n.typeParams, v, qf.is.typeParamDeclaration), vs(n.params, v, qf.is.paramDeclaration), this.node(n.type, v, qf.is.typeNode));
@@ -319,18 +228,18 @@ export function newVisit(f: qt.Frame) {
             this.node(n.asteriskToken, tokenVisitor, qf.is.token),
             this.node(n.name, v, qf.is.identifier),
             vs(n.typeParams, v, qf.is.typeParamDeclaration),
-            this.paramList(n.params, v, c, vs),
+            this.params(n.params, v, c, vs),
             this.node(n.type, v, qf.is.typeNode),
-            this.functionBody(n.body, v, c)
+            this.body(n.body, v, c)
           );
         case Syntax.ArrowFunction:
           return n.update(
             vs(n.modifiers, v, qf.is.modifier),
             vs(n.typeParams, v, qf.is.typeParamDeclaration),
-            this.paramList(n.params, v, c, vs),
+            this.params(n.params, v, c, vs),
             this.node(n.type, v, qf.is.typeNode),
             this.node(n.equalsGreaterThanToken, tokenVisitor, qf.is.token),
-            this.functionBody(n.body, v, c)
+            this.body(n.body, v, c)
           );
         case Syntax.DeleteExpression:
           return n.update(this.node(n.expression, v, qf.is.expressionNode));
@@ -385,26 +294,30 @@ export function newVisit(f: qt.Frame) {
         case Syntax.ExpressionStatement:
           return n.update(this.node(n.expression, v, qf.is.expressionNode));
         case Syntax.IfStatement:
-          return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.thenStatement, v, qf.is.statement, liftToBlock), this.node(n.elseStatement, v, qf.is.statement, liftToBlock));
+          return n.update(
+            this.node(n.expression, v, qf.is.expressionNode),
+            this.node(n.thenStatement, v, qf.is.statement, qi.liftToBlock),
+            this.node(n.elseStatement, v, qf.is.statement, qi.liftToBlock)
+          );
         case Syntax.DoStatement:
-          return n.update(this.node(n.statement, v, qf.is.statement, liftToBlock), this.node(n.expression, v, qf.is.expressionNode));
+          return n.update(this.node(n.statement, v, qf.is.statement, qi.liftToBlock), this.node(n.expression, v, qf.is.expressionNode));
         case Syntax.WhileStatement:
-          return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, liftToBlock));
+          return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, qi.liftToBlock));
         case Syntax.ForStatement:
           return n.update(
             this.node(n.initer, v, qf.is.forIniter),
             this.node(n.condition, v, qf.is.expressionNode),
             this.node(n.incrementor, v, qf.is.expressionNode),
-            this.node(n.statement, v, qf.is.statement, liftToBlock)
+            this.node(n.statement, v, qf.is.statement, qi.liftToBlock)
           );
         case Syntax.ForInStatement:
-          return n.update(this.node(n.initer, v, qf.is.forIniter), this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, liftToBlock));
+          return n.update(this.node(n.initer, v, qf.is.forIniter), this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, qi.liftToBlock));
         case Syntax.ForOfStatement:
           return n.update(
             this.node(n.awaitModifier, tokenVisitor, qf.is.token),
             this.node(n.initer, v, qf.is.forIniter),
             this.node(n.expression, v, qf.is.expressionNode),
-            this.node(n.statement, v, qf.is.statement, liftToBlock)
+            this.node(n.statement, v, qf.is.statement, qi.liftToBlock)
           );
         case Syntax.ContinueStatement:
           return n.update(this.node(n.label, v, qf.is.identifier));
@@ -413,11 +326,11 @@ export function newVisit(f: qt.Frame) {
         case Syntax.ReturnStatement:
           return n.update(this.node(n.expression, v, qf.is.expressionNode));
         case Syntax.WithStatement:
-          return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, liftToBlock));
+          return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.statement, v, qf.is.statement, qi.liftToBlock));
         case Syntax.SwitchStatement:
           return n.update(this.node(n.expression, v, qf.is.expressionNode), this.node(n.caseBlock, v, qf.is.caseBlock));
         case Syntax.LabeledStatement:
-          return n.update(this.node(n.label, v, qf.is.identifier), this.node(n.statement, v, qf.is.statement, liftToBlock));
+          return n.update(this.node(n.label, v, qf.is.identifier), this.node(n.statement, v, qf.is.statement, qi.liftToBlock));
         case Syntax.ThrowStatement:
           return n.update(this.node(n.expression, v, qf.is.expressionNode));
         case Syntax.TryStatement:
@@ -438,9 +351,9 @@ export function newVisit(f: qt.Frame) {
             this.node(n.asteriskToken, tokenVisitor, qf.is.token),
             this.node(n.name, v, qf.is.identifier),
             vs(n.typeParams, v, qf.is.typeParamDeclaration),
-            this.paramList(n.params, v, c, vs),
+            this.params(n.params, v, c, vs),
             this.node(n.type, v, qf.is.typeNode),
-            this.functionBody(n.body, v, c)
+            this.body(n.body, v, c)
           );
         case Syntax.ClassDeclaration:
           return n.update(
@@ -557,509 +470,550 @@ export function newVisit(f: qt.Frame) {
           return node;
       }
     }
+    lexicalEnv(ss: Nodes<qt.Statement>, v: Visitor, c: qt.TrafoContext, start?: number, strict?: boolean) {
+      c.startLexicalEnv();
+      ss = this.nodes<qt.Statement>(ss, v, qf.is.statement, start);
+      if (strict) {
+        const found = qf.stmt.findUseStrictPrologue(ss);
+        if (!found) ss = new qb.Nodes<qt.Statement>([qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))), ...ss]).setRange(ss);
+      }
+      return qi.mergeLexicalEnv(ss, c.endLexicalEnv());
+    }
+    many<T extends Node>(ns?: Nodes<T>, v?: Visitor, vs?: Visitors) {
+      if (vs) return vs(ns) as VisitResult<T>;
+      if (ns) {
+        for (const n of ns) {
+          const r = v?.(n as Node);
+          if (r) return r as VisitResult<T>;
+        }
+      }
+      return;
+    }
+    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T;
+    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined;
+    node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined {
+      if (!n || !v) return n;
+      qf.calc.aggregate(n);
+      const y = v(n as Node);
+      if (!y) return;
+      if (y === n) return n;
+      let n2: T | undefined;
+      const extractSingle = (ns: readonly T[]) => {
+        qu.assert(ns.length <= 1);
+        return qu.singleOrUndefined(ns);
+      };
+      if (qu.isArray(y)) n2 = (lift || extractSingle)(y);
+      else n2 = y as T;
+      qf.assert.node(n2, test);
+      qf.calc.aggregate(n2!);
+      return n2;
+    }
+    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T>;
+    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
+    nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
+      if (!ns || !v) return ns;
+      let r: qb.MutableNodes<T> | undefined;
+      const length = ns.length;
+      if (start === undefined || start < 0) start = 0;
+      if (count === undefined || count > length - start) count = length - start;
+      if (start > 0 || count < length) r = new qb.Nodes<T>([], ns.trailingComma && start + count === length);
+      for (let i = 0; i < count; i++) {
+        const n: T = ns[i + start];
+        qf.calc.aggregate(n);
+        const y = n ? v(n) : undefined;
+        if (r !== undefined || y === undefined || y !== n) {
+          if (r === undefined) r = new qb.Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
+          if (y) {
+            if (qu.isArray(y)) {
+              for (const n2 of y) {
+                qf.assert.node(n2, test);
+                qf.calc.aggregate(n2);
+                r.push(n2 as T);
+              }
+            } else {
+              qf.assert.node(y, test);
+              qf.calc.aggregate(y);
+              r.push(y as T);
+            }
+          }
+        }
+      }
+      return r || ns;
+    }
+    one<T extends Node>(n?: T, v?: Visitor) {
+      return v?.(n as Node) as VisitResult<T>;
+    }
+    params<T extends Node>(ns: Nodes<T>, v: Visitor, c: qt.TrafoContext, vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>): Nodes<T>;
+    params<T extends Node>(
+      ns: Nodes<T> | undefined,
+      v: Visitor,
+      c: qt.TrafoContext,
+      vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T> | undefined
+    ): Nodes<T> | undefined;
+    params<T extends Node = qt.ParamDeclaration>(ns: Nodes<T> | undefined, v: Visitor, c: qt.TrafoContext, vs = this.nodes) {
+      let r: Nodes<qt.ParamDeclaration> | undefined;
+      c.startLexicalEnv();
+      if (ns) {
+        c.setLexicalEnvFlags(qt.LexicalEnvFlags.InParams, true);
+        r = vs(ns, v, qf.is.paramDeclaration) as Nodes<qt.ParamDeclaration>;
+        if (r && c.getLexicalEnvFlags() & qt.LexicalEnvFlags.VariablesHoistedInParams) r = addValueAssignments(r, c);
+        c.setLexicalEnvFlags(qt.LexicalEnvFlags.InParams, false);
+      }
+      c.suspendLexicalEnv();
+      return r;
+    }
+    reduce<T>(node: Node | undefined, init: T, cb: (t: T, n: Node) => T, cbs?: (t: T, ns: Nodes) => T): T {
+      if (node === undefined) return init;
+      const reduce = <T>(n: Node | undefined, cb: (t: T, n: Node) => T, init: T) => {
+        return n ? cb(init, n) : init;
+      };
+      const reduce2 = <T>(ns: Nodes | undefined, cb: (t: T, ns: Nodes) => T, init: T) => {
+        return ns ? cb(init, ns) : init;
+      };
+      const reduceAll: (ns: Nodes | undefined, cb: ((t: T, n: Node) => T) | ((t: T, ns: Nodes) => T), init: T) => T = cbs ? reduce2 : qu.reduceLeft;
+      cbs = cbs || cb;
+      const kind = node.kind;
+      if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) return init;
+      if (kind >= Syntax.TypingPredicate && kind <= Syntax.LiteralTyping) return init;
+      let r = init;
+      const n = node as qc.Node;
+      switch (n.kind) {
+        case Syntax.DebuggerStatement:
+        case Syntax.EmptyStatement:
+        case Syntax.NotEmittedStatement:
+        case Syntax.OmittedExpression:
+        case Syntax.SemicolonClassElem:
+          break;
+        case Syntax.QualifiedName:
+          r = reduce(n.left, cb, r);
+          r = reduce(n.right, cb, r);
+          break;
+        case Syntax.ComputedPropertyName:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.Param:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.Decorator:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.PropertySignature:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.questionToken, cb, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.PropertyDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.MethodDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.Constructor:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.GetAccessor:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.SetAccessor:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.ArrayBindingPattern:
+        case Syntax.ObjectBindingPattern:
+          r = reduceAll(n.elems, cbs!, r);
+          break;
+        case Syntax.BindingElem:
+          r = reduce(n.propertyName, cb, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.ArrayLiteralExpression:
+          r = reduceAll(n.elems, cbs!, r);
+          break;
+        case Syntax.ObjectLiteralExpression:
+          r = reduceAll(n.properties, cbs!, r);
+          break;
+        case Syntax.PropertyAccessExpression:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.name, cb, r);
+          break;
+        case Syntax.ElemAccessExpression:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.argExpression, cb, r);
+          break;
+        case Syntax.CallExpression:
+          r = reduce(n.expression, cb, r);
+          r = reduceAll(n.typeArgs, cbs!, r);
+          r = reduceAll(n.args, cbs!, r);
+          break;
+        case Syntax.NewExpression:
+          r = reduce(n.expression, cb, r);
+          r = reduceAll(n.typeArgs, cbs!, r);
+          r = reduceAll(n.args, cbs!, r);
+          break;
+        case Syntax.TaggedTemplateExpression:
+          r = reduce(n.tag, cb, r);
+          r = reduceAll(n.typeArgs, cbs!, r);
+          r = reduce(n.template, cb, r);
+          break;
+        case Syntax.TypeAssertionExpression:
+          r = reduce(n.type, cb, r);
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.FunctionExpression:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.ArrowFunction:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.AwaitExpression:
+        case Syntax.DeleteExpression:
+        case Syntax.NonNullExpression:
+        case Syntax.ParenthesizedExpression:
+        case Syntax.SpreadElem:
+        case Syntax.TypeOfExpression:
+        case Syntax.VoidExpression:
+        case Syntax.YieldExpression:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.PostfixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
+          r = reduce(n.operand, cb, r);
+          break;
+        case Syntax.BinaryExpression:
+          r = reduce(n.left, cb, r);
+          r = reduce(n.right, cb, r);
+          break;
+        case Syntax.ConditionalExpression:
+          r = reduce(n.condition, cb, r);
+          r = reduce(n.whenTrue, cb, r);
+          r = reduce(n.whenFalse, cb, r);
+          break;
+        case Syntax.TemplateExpression:
+          r = reduce(n.head, cb, r);
+          r = reduceAll(n.templateSpans, cbs!, r);
+          break;
+        case Syntax.ClassExpression:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.heritageClauses, cbs!, r);
+          r = reduceAll(n.members, cbs!, r);
+          break;
+        case Syntax.ExpressionWithTypings:
+          r = reduce(n.expression, cb, r);
+          r = reduceAll(n.typeArgs, cbs!, r);
+          break;
+        case Syntax.AsExpression:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.type, cb, r);
+          break;
+        case Syntax.TemplateSpan:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.literal, cb, r);
+          break;
+        case Syntax.Block:
+          r = reduceAll(n.statements, cbs!, r);
+          break;
+        case Syntax.VariableStatement:
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.declarationList, cb, r);
+          break;
+        case Syntax.ExpressionStatement:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.IfStatement:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.thenStatement, cb, r);
+          r = reduce(n.elseStatement, cb, r);
+          break;
+        case Syntax.DoStatement:
+          r = reduce(n.statement, cb, r);
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.WhileStatement:
+        case Syntax.WithStatement:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.statement, cb, r);
+          break;
+        case Syntax.ForStatement:
+          r = reduce(n.initer, cb, r);
+          r = reduce(n.condition, cb, r);
+          r = reduce(n.incrementor, cb, r);
+          r = reduce(n.statement, cb, r);
+          break;
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+          r = reduce(n.initer, cb, r);
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.statement, cb, r);
+          break;
+        case Syntax.ReturnStatement:
+        case Syntax.ThrowStatement:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.SwitchStatement:
+          r = reduce(n.expression, cb, r);
+          r = reduce(n.caseBlock, cb, r);
+          break;
+        case Syntax.LabeledStatement:
+          r = reduce(n.label, cb, r);
+          r = reduce(n.statement, cb, r);
+          break;
+        case Syntax.TryStatement:
+          r = reduce(n.tryBlock, cb, r);
+          r = reduce(n.catchClause, cb, r);
+          r = reduce(n.finallyBlock, cb, r);
+          break;
+        case Syntax.VariableDeclaration:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.VariableDeclarationList:
+          r = reduceAll(n.declarations, cbs!, r);
+          break;
+        case Syntax.FunctionDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.params, cbs!, r);
+          r = reduce(n.type, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.ClassDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.typeParams, cbs!, r);
+          r = reduceAll(n.heritageClauses, cbs!, r);
+          r = reduceAll(n.members, cbs!, r);
+          break;
+        case Syntax.EnumDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduceAll(n.members, cbs!, r);
+          break;
+        case Syntax.ModuleDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.body, cb, r);
+          break;
+        case Syntax.ModuleBlock:
+          r = reduceAll(n.statements, cbs!, r);
+          break;
+        case Syntax.CaseBlock:
+          r = reduceAll(n.clauses, cbs!, r);
+          break;
+        case Syntax.ImportEqualsDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.name, cb, r);
+          r = reduce(n.moduleReference, cb, r);
+          break;
+        case Syntax.ImportDeclaration:
+          r = reduceAll(n.decorators, cbs!, r);
+          r = reduceAll(n.modifiers, cbs!, r);
+          r = reduce(n.importClause, cb, r);
+          r = reduce(n.moduleSpecifier, cb, r);
+          break;
+        case Syntax.ImportClause:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.namedBindings, cb, r);
+          break;
+        case Syntax.NamespaceImport:
+          r = reduce(n.name, cb, r);
+          break;
+        case Syntax.NamespaceExport:
+          r = reduce(n.name, cb, r);
+          break;
+        case Syntax.NamedImports:
+        case Syntax.NamedExports:
+          r = reduceAll(n.elems, cbs!, r);
+          break;
+        case Syntax.ImportSpecifier:
+        case Syntax.ExportSpecifier:
+          r = reduce(n.propertyName, cb, r);
+          r = reduce(n.name, cb, r);
+          break;
+        case Syntax.ExportAssignment:
+          r = qu.reduceLeft(n.decorators, cb, r);
+          r = qu.reduceLeft(n.modifiers, cb, r);
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.ExportDeclaration:
+          r = qu.reduceLeft(n.decorators, cb, r);
+          r = qu.reduceLeft(n.modifiers, cb, r);
+          r = reduce(n.exportClause, cb, r);
+          r = reduce(n.moduleSpecifier, cb, r);
+          break;
+        case Syntax.ExternalModuleReference:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.JsxElem:
+          r = reduce(n.opening, cb, r);
+          r = qu.reduceLeft(n.children, cb, r);
+          r = reduce(n.closing, cb, r);
+          break;
+        case Syntax.JsxFragment:
+          r = reduce(n.openingFragment, cb, r);
+          r = qu.reduceLeft(n.children, cb, r);
+          r = reduce(n.closingFragment, cb, r);
+          break;
+        case Syntax.JsxSelfClosingElem:
+        case Syntax.JsxOpeningElem:
+          r = reduce(n.tagName, cb, r);
+          r = reduceAll(n.typeArgs, cb, r);
+          r = reduce(n.attributes, cb, r);
+          break;
+        case Syntax.JsxAttributes:
+          r = reduceAll(n.properties, cbs!, r);
+          break;
+        case Syntax.JsxClosingElem:
+          r = reduce(n.tagName, cb, r);
+          break;
+        case Syntax.JsxAttribute:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.JsxSpreadAttribute:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.JsxExpression:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.CaseClause:
+          r = reduce(n.expression, cb, r);
+        case Syntax.DefaultClause:
+          r = reduceAll(n.statements, cbs!, r);
+          break;
+        case Syntax.HeritageClause:
+          r = reduceAll(n.types, cbs!, r);
+          break;
+        case Syntax.CatchClause:
+          r = reduce(n.variableDeclaration, cb, r);
+          r = reduce(n.block, cb, r);
+          break;
+        case Syntax.PropertyAssignment:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.ShorthandPropertyAssignment:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.objectAssignmentIniter, cb, r);
+          break;
+        case Syntax.SpreadAssignment:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.EnumMember:
+          r = reduce(n.name, cb, r);
+          r = reduce(n.initer, cb, r);
+          break;
+        case Syntax.SourceFile:
+          r = reduceAll(n.statements, cbs!, r);
+          break;
+        case Syntax.PartiallyEmittedExpression:
+          r = reduce(n.expression, cb, r);
+          break;
+        case Syntax.CommaListExpression:
+          r = reduceAll(n.elems, cbs!, r);
+          break;
+        default:
+          break;
+      }
+      return r;
+    }
   })());
 }
 export interface Fvisit extends ReturnType<typeof newVisit> {}
-const isTypeNodeOrTypeParamDeclaration = qu.or(qf.is.typeNode, qf.is.typeParamDeclaration);
 function addValueAssignments(ps: Nodes<qt.ParamDeclaration>, c: qt.TrafoContext) {
   let r: qt.ParamDeclaration[] | undefined;
+  const forBindingPattern = (p: qc.ParamDeclaration) => {
+    c.addInitializationStatement(
+      new qc.VariableStatement(
+        undefined,
+        new qc.VariableDeclarationList([
+          new qc.VariableDeclaration(
+            p.name,
+            p.type,
+            p.initer
+              ? new qc.ConditionalExpression(qf.create.strictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
+              : qf.get.generatedNameForNode(p)
+          ),
+        ])
+      )
+    );
+    return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
+  };
+  const forIniter = (p: qc.ParamDeclaration, name: qt.Identifier, init: qt.Expression) => {
+    c.addInitializationStatement(
+      new qc.IfStatement(
+        qf.create.typeCheck(qf.create.synthesizedClone(name), 'undefined'),
+        qf.emit.setFlags(
+          new qc.Block([
+            new qc.ExpressionStatement(
+              qf.emit.setFlags(
+                qf.create
+                  .assignment(qf.emit.setFlags(qf.create.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
+                  .setRange(p),
+                EmitFlags.NoComments
+              )
+            ),
+          ]).setRange(p),
+          EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments
+        )
+      )
+    );
+    return p.update(p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
+  };
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
-    const updated = addValueAssignmentIfNeeded(p, c);
-    if (r || updated !== p) {
+    const n = p.dot3Token ? p : p.name.kind === Syntax.BindingPattern ? forBindingPattern(p) : p.initer ? forIniter(p, p.name, p.initer) : p;
+    if (r || n !== p) {
       if (!r) r = ps.slice(0, i);
-      r[i] = updated;
+      r[i] = n;
     }
   }
   if (r) return new qb.Nodes(r, ps.trailingComma).setRange(ps);
   return ps;
-}
-function addValueAssignmentIfNeeded(p: qt.ParamDeclaration, c: qt.TrafoContext) {
-  return p.dot3Token ? p : p.name.kind === Syntax.BindingPattern ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
-}
-function addForBindingPattern(p: qt.ParamDeclaration, c: qt.TrafoContext) {
-  c.addInitializationStatement(
-    new qc.VariableStatement(
-      undefined,
-      new qc.VariableDeclarationList([
-        new qc.VariableDeclaration(
-          p.name,
-          p.type,
-          p.initer
-            ? new qc.ConditionalExpression(qf.create.strictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
-            : qf.get.generatedNameForNode(p)
-        ),
-      ])
-    )
-  );
-  return p.update(p.decorators, p.modifiers, p.dot3Token, qf.get.generatedNameForNode(p), p.questionToken, p.type, undefined);
-}
-function addForIniter(p: qt.ParamDeclaration, name: qt.Identifier, init: qt.Expression, c: qt.TrafoContext) {
-  c.addInitializationStatement(
-    new qc.IfStatement(
-      qf.create.typeCheck(qf.create.synthesizedClone(name), 'undefined'),
-      qf.emit.setFlags(
-        new qc.Block([
-          new qc.ExpressionStatement(
-            qf.emit.setFlags(
-              qf.create
-                .assignment(qf.emit.setFlags(qf.create.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
-                .setRange(p),
-              EmitFlags.NoComments
-            )
-          ),
-        ]).setRange(p),
-        EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments
-      )
-    )
-  );
-  return p.update(p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
-}
-export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo: T, node: Node) => T, cbs?: (memo: T, ns: Nodes) => T): T {
-  if (node === undefined) return initial;
-  const reduce = <T>(n: Node | undefined, cb: (t: T, n: Node) => T, init: T) => {
-    return n ? cb(init, n) : init;
-  };
-  const reduce2 = <T>(ns: Nodes | undefined, cb: (t: T, ns: Nodes) => T, init: T) => {
-    return ns ? cb(init, ns) : init;
-  };
-  const reduceAll: (ns: Nodes | undefined, cb: ((t: T, n: Node) => T) | ((t: T, ns: Nodes) => T), init: T) => T = cbs ? reduce2 : qu.reduceLeft;
-  cbs = cbs || cb;
-  const kind = node.kind;
-  if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) return initial;
-  if (kind >= Syntax.TypingPredicate && kind <= Syntax.LiteralTyping) return initial;
-  let r = initial;
-  const n = node as qc.Node;
-  switch (n.kind) {
-    case Syntax.DebuggerStatement:
-    case Syntax.EmptyStatement:
-    case Syntax.NotEmittedStatement:
-    case Syntax.OmittedExpression:
-    case Syntax.SemicolonClassElem:
-      break;
-    case Syntax.QualifiedName:
-      r = reduce(n.left, cb, r);
-      r = reduce(n.right, cb, r);
-      break;
-    case Syntax.ComputedPropertyName:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.Param:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.Decorator:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.PropertySignature:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.questionToken, cb, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.PropertyDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.MethodDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.Constructor:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.GetAccessor:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.SetAccessor:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.ArrayBindingPattern:
-    case Syntax.ObjectBindingPattern:
-      r = reduceAll(n.elems, cbs!, r);
-      break;
-    case Syntax.BindingElem:
-      r = reduce(n.propertyName, cb, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.ArrayLiteralExpression:
-      r = reduceAll(n.elems, cbs!, r);
-      break;
-    case Syntax.ObjectLiteralExpression:
-      r = reduceAll(n.properties, cbs!, r);
-      break;
-    case Syntax.PropertyAccessExpression:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.name, cb, r);
-      break;
-    case Syntax.ElemAccessExpression:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.argExpression, cb, r);
-      break;
-    case Syntax.CallExpression:
-      r = reduce(n.expression, cb, r);
-      r = reduceAll(n.typeArgs, cbs!, r);
-      r = reduceAll(n.args, cbs!, r);
-      break;
-    case Syntax.NewExpression:
-      r = reduce(n.expression, cb, r);
-      r = reduceAll(n.typeArgs, cbs!, r);
-      r = reduceAll(n.args, cbs!, r);
-      break;
-    case Syntax.TaggedTemplateExpression:
-      r = reduce(n.tag, cb, r);
-      r = reduceAll(n.typeArgs, cbs!, r);
-      r = reduce(n.template, cb, r);
-      break;
-    case Syntax.TypeAssertionExpression:
-      r = reduce(n.type, cb, r);
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.FunctionExpression:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.ArrowFunction:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.AwaitExpression:
-    case Syntax.DeleteExpression:
-    case Syntax.NonNullExpression:
-    case Syntax.ParenthesizedExpression:
-    case Syntax.SpreadElem:
-    case Syntax.TypeOfExpression:
-    case Syntax.VoidExpression:
-    case Syntax.YieldExpression:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.PostfixUnaryExpression:
-    case Syntax.PrefixUnaryExpression:
-      r = reduce(n.operand, cb, r);
-      break;
-    case Syntax.BinaryExpression:
-      r = reduce(n.left, cb, r);
-      r = reduce(n.right, cb, r);
-      break;
-    case Syntax.ConditionalExpression:
-      r = reduce(n.condition, cb, r);
-      r = reduce(n.whenTrue, cb, r);
-      r = reduce(n.whenFalse, cb, r);
-      break;
-    case Syntax.TemplateExpression:
-      r = reduce(n.head, cb, r);
-      r = reduceAll(n.templateSpans, cbs!, r);
-      break;
-    case Syntax.ClassExpression:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.heritageClauses, cbs!, r);
-      r = reduceAll(n.members, cbs!, r);
-      break;
-    case Syntax.ExpressionWithTypings:
-      r = reduce(n.expression, cb, r);
-      r = reduceAll(n.typeArgs, cbs!, r);
-      break;
-    case Syntax.AsExpression:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.type, cb, r);
-      break;
-    case Syntax.TemplateSpan:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.literal, cb, r);
-      break;
-    case Syntax.Block:
-      r = reduceAll(n.statements, cbs!, r);
-      break;
-    case Syntax.VariableStatement:
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.declarationList, cb, r);
-      break;
-    case Syntax.ExpressionStatement:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.IfStatement:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.thenStatement, cb, r);
-      r = reduce(n.elseStatement, cb, r);
-      break;
-    case Syntax.DoStatement:
-      r = reduce(n.statement, cb, r);
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.WhileStatement:
-    case Syntax.WithStatement:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.statement, cb, r);
-      break;
-    case Syntax.ForStatement:
-      r = reduce(n.initer, cb, r);
-      r = reduce(n.condition, cb, r);
-      r = reduce(n.incrementor, cb, r);
-      r = reduce(n.statement, cb, r);
-      break;
-    case Syntax.ForInStatement:
-    case Syntax.ForOfStatement:
-      r = reduce(n.initer, cb, r);
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.statement, cb, r);
-      break;
-    case Syntax.ReturnStatement:
-    case Syntax.ThrowStatement:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.SwitchStatement:
-      r = reduce(n.expression, cb, r);
-      r = reduce(n.caseBlock, cb, r);
-      break;
-    case Syntax.LabeledStatement:
-      r = reduce(n.label, cb, r);
-      r = reduce(n.statement, cb, r);
-      break;
-    case Syntax.TryStatement:
-      r = reduce(n.tryBlock, cb, r);
-      r = reduce(n.catchClause, cb, r);
-      r = reduce(n.finallyBlock, cb, r);
-      break;
-    case Syntax.VariableDeclaration:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.VariableDeclarationList:
-      r = reduceAll(n.declarations, cbs!, r);
-      break;
-    case Syntax.FunctionDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.params, cbs!, r);
-      r = reduce(n.type, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.ClassDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.typeParams, cbs!, r);
-      r = reduceAll(n.heritageClauses, cbs!, r);
-      r = reduceAll(n.members, cbs!, r);
-      break;
-    case Syntax.EnumDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduceAll(n.members, cbs!, r);
-      break;
-    case Syntax.ModuleDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.body, cb, r);
-      break;
-    case Syntax.ModuleBlock:
-      r = reduceAll(n.statements, cbs!, r);
-      break;
-    case Syntax.CaseBlock:
-      r = reduceAll(n.clauses, cbs!, r);
-      break;
-    case Syntax.ImportEqualsDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.name, cb, r);
-      r = reduce(n.moduleReference, cb, r);
-      break;
-    case Syntax.ImportDeclaration:
-      r = reduceAll(n.decorators, cbs!, r);
-      r = reduceAll(n.modifiers, cbs!, r);
-      r = reduce(n.importClause, cb, r);
-      r = reduce(n.moduleSpecifier, cb, r);
-      break;
-    case Syntax.ImportClause:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.namedBindings, cb, r);
-      break;
-    case Syntax.NamespaceImport:
-      r = reduce(n.name, cb, r);
-      break;
-    case Syntax.NamespaceExport:
-      r = reduce(n.name, cb, r);
-      break;
-    case Syntax.NamedImports:
-    case Syntax.NamedExports:
-      r = reduceAll(n.elems, cbs!, r);
-      break;
-    case Syntax.ImportSpecifier:
-    case Syntax.ExportSpecifier:
-      r = reduce(n.propertyName, cb, r);
-      r = reduce(n.name, cb, r);
-      break;
-    case Syntax.ExportAssignment:
-      r = qu.reduceLeft(n.decorators, cb, r);
-      r = qu.reduceLeft(n.modifiers, cb, r);
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.ExportDeclaration:
-      r = qu.reduceLeft(n.decorators, cb, r);
-      r = qu.reduceLeft(n.modifiers, cb, r);
-      r = reduce(n.exportClause, cb, r);
-      r = reduce(n.moduleSpecifier, cb, r);
-      break;
-    case Syntax.ExternalModuleReference:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.JsxElem:
-      r = reduce(n.opening, cb, r);
-      r = qu.reduceLeft(n.children, cb, r);
-      r = reduce(n.closing, cb, r);
-      break;
-    case Syntax.JsxFragment:
-      r = reduce(n.openingFragment, cb, r);
-      r = qu.reduceLeft(n.children, cb, r);
-      r = reduce(n.closingFragment, cb, r);
-      break;
-    case Syntax.JsxSelfClosingElem:
-    case Syntax.JsxOpeningElem:
-      r = reduce(n.tagName, cb, r);
-      r = reduceAll(n.typeArgs, cb, r);
-      r = reduce(n.attributes, cb, r);
-      break;
-    case Syntax.JsxAttributes:
-      r = reduceAll(n.properties, cbs!, r);
-      break;
-    case Syntax.JsxClosingElem:
-      r = reduce(n.tagName, cb, r);
-      break;
-    case Syntax.JsxAttribute:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.JsxSpreadAttribute:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.JsxExpression:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.CaseClause:
-      r = reduce(n.expression, cb, r);
-    case Syntax.DefaultClause:
-      r = reduceAll(n.statements, cbs!, r);
-      break;
-    case Syntax.HeritageClause:
-      r = reduceAll(n.types, cbs!, r);
-      break;
-    case Syntax.CatchClause:
-      r = reduce(n.variableDeclaration, cb, r);
-      r = reduce(n.block, cb, r);
-      break;
-    case Syntax.PropertyAssignment:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.ShorthandPropertyAssignment:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.objectAssignmentIniter, cb, r);
-      break;
-    case Syntax.SpreadAssignment:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.EnumMember:
-      r = reduce(n.name, cb, r);
-      r = reduce(n.initer, cb, r);
-      break;
-    case Syntax.SourceFile:
-      r = reduceAll(n.statements, cbs!, r);
-      break;
-    case Syntax.PartiallyEmittedExpression:
-      r = reduce(n.expression, cb, r);
-      break;
-    case Syntax.CommaListExpression:
-      r = reduceAll(n.elems, cbs!, r);
-      break;
-    default:
-      break;
-  }
-  return r;
-}
-export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
-  return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
-}
-export function mergeLexicalEnv(ss: Nodes<qt.Statement>, ds?: readonly qt.Statement[]): Nodes<qt.Statement>;
-export function mergeLexicalEnv(ss: qt.Statement[], ds?: readonly qt.Statement[]): qt.Statement[];
-export function mergeLexicalEnv(ss: qt.Statement[] | Nodes<qt.Statement>, ds?: readonly qt.Statement[]) {
-  if (!qu.some(ds)) return ss;
-  const findSpanEnd = <T>(ts: readonly T[], cb: (v: T) => boolean, start: number) => {
-    let i = start;
-    while (i < ts.length && cb(ts[i])) {
-      i++;
-    }
-    return i;
-  };
-  const ls = findSpanEnd(ss, qf.is.prologueDirective, 0);
-  const lf = findSpanEnd(ss, qf.stmt.is.hoistedFunction, ls);
-  const lv = findSpanEnd(ss, qf.stmt.is.hoistedVariableStatement, lf);
-  const rs = findSpanEnd(ds, qf.is.prologueDirective, 0);
-  const rf = findSpanEnd(ds, qf.stmt.is.hoistedFunction, rs);
-  const rv = findSpanEnd(ds, qf.stmt.is.hoistedVariableStatement, rf);
-  const rc = findSpanEnd(ds, qf.stmt.is.customPrologue, rv);
-  qu.assert(rc === ds.length);
-  const left = Nodes.is(ss) ? ss.slice() : ss;
-  if (rc > rv) left.splice(lv, 0, ...ds.slice(rv, rc));
-  if (rv > rf) left.splice(lf, 0, ...ds.slice(rf, rv));
-  if (rf > rs) left.splice(ls, 0, ...ds.slice(rs, rf));
-  if (rs > 0) {
-    if (ls === 0) left.splice(0, 0, ...ds.slice(0, rs));
-    else {
-      const lp = qu.createMap<boolean>();
-      for (let i = 0; i < ls; i++) {
-        const p = ss[i] as qt.PrologueDirective;
-        lp.set(p.expression.text, true);
-      }
-      for (let i = rs - 1; i >= 0; i--) {
-        const p = ds[i] as qt.PrologueDirective;
-        if (!lp.has(p.expression.text)) left.unshift(p);
-      }
-    }
-  }
-  if (Nodes.is(ss)) return new qb.Nodes(left, ss.trailingComma).setRange(ss);
-  return ss;
-}
-export function liftToBlock(ns?: readonly Node[]): qt.Statement {
-  qu.assert(qu.every(ns, qf.is.statement));
-  return (qu.singleOrUndefined(ns) as qt.Statement) || new qc.Block(ns as qt.Statement[]);
 }
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: qt.Signature) => qt.Type,
@@ -1193,73 +1147,3 @@ export function createGetSymbolWalker(
     }
   }
 }
-const visit = (n?: Node) => {
-  switch (n?.kind) {
-    case Syntax.FunctionDeclaration:
-    case Syntax.FunctionExpression:
-    case Syntax.MethodDeclaration:
-    case Syntax.MethodSignature:
-      const d = qf.decl.name(n);
-      if (d) {
-        const ds = getDeclarations(d);
-        const last = qu.lastOrUndefined(ds);
-        if (last && n.parent === last.parent && n.symbol === last.symbol) {
-          if (n.body && !last.body) ds[ds.length - 1] = n;
-        } else ds.push(n);
-      }
-      qf.each.child(n, visit);
-      break;
-    case Syntax.ClassDeclaration:
-    case Syntax.ClassExpression:
-    case Syntax.EnumDeclaration:
-    case Syntax.ExportSpecifier:
-    case Syntax.GetAccessor:
-    case Syntax.ImportClause:
-    case Syntax.ImportEqualsDeclaration:
-    case Syntax.ImportSpecifier:
-    case Syntax.InterfaceDeclaration:
-    case Syntax.ModuleDeclaration:
-    case Syntax.NamespaceImport:
-    case Syntax.SetAccessor:
-    case Syntax.TypeAliasDeclaration:
-    case Syntax.TypingLiteral:
-      addDeclaration(n);
-      qf.each.child(n, visit);
-      break;
-    case Syntax.Param:
-      if (!qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) break;
-    case Syntax.VariableDeclaration:
-    case Syntax.BindingElem: {
-      if (n.name.kind === Syntax.BindingPattern) {
-        qf.each.child(n.name, visit);
-        break;
-      }
-      if (n.initer) visit(n.initer);
-    }
-    case Syntax.EnumMember:
-    case Syntax.PropertyDeclaration:
-    case Syntax.PropertySignature:
-      addDeclaration(n);
-      break;
-    case Syntax.ExportDeclaration:
-      if (n.exportClause) {
-        if (n.exportClause.kind === Syntax.NamedExports) qf.each.up(n.exportClause.elems, visit);
-        else visit(n.exportClause.name);
-      }
-      break;
-    case Syntax.ImportDeclaration:
-      const i = n.importClause;
-      if (i) {
-        if (i.name) addDeclaration(i.name);
-        if (i.namedBindings) {
-          if (i.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(i.namedBindings);
-          else qf.each.up(i.namedBindings.elems, visit);
-        }
-      }
-      break;
-    case Syntax.BinaryExpression:
-      if (qf.get.assignmentDeclarationKind(n) !== qt.AssignmentDeclarationKind.None) addDeclaration(n);
-    default:
-      if (n) qf.each.child(n, visit);
-  }
-};

@@ -2,7 +2,7 @@ import { EmitFlags, FunctionFlags, ModifierFlags, Nodes, NodeFlags, ObjectFlags,
 import { Node } from '../types';
 import { qf, Fcreate, Fget, Fhas, Fis } from './frame';
 import { Syntax } from '../syntax';
-import { visitNode, VisitResult } from './visit';
+import { Fvisit, visitNode, VisitResult } from './visit';
 import * as qb from './bases';
 import * as qc from './classes';
 import * as qt from '../types';
@@ -608,6 +608,7 @@ export function newCalc(f: qt.Frame) {
     has: Fhas;
     is: Fis;
     skip: Fskip;
+    visit: Fvisit;
   }
   const qf = f as Frame;
   return (qf.calc = new (class {
@@ -630,7 +631,7 @@ export function newCalc(f: qt.Frame) {
       };
       const subtree = (n: Node): TrafoFlags => {
         if (qf.has.syntacticModifier(n, ModifierFlags.Ambient) || (qf.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypings)) return TrafoFlags.None;
-        return reduceEachChild(n, TrafoFlags.None, child, children);
+        return qf.visit.reduce(n, TrafoFlags.None, child, children);
       };
       const child = (f: TrafoFlags, n: Node): TrafoFlags => f | worker(n);
       const children = (f: TrafoFlags, ns: Nodes<Node>): TrafoFlags => f | nodes(ns);

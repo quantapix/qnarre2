@@ -103,7 +103,7 @@ export function newGet(f: qt.Frame) {
       const markAsSynthetic = (n: Node): VisitResult<Node> => {
         n.pos = -1;
         n.end = -1;
-        return qf.visit.eachChild(n, markAsSynthetic, nullTrafoContext);
+        return qf.visit.children(n, markAsSynthetic, nullTrafoContext);
       };
     }
     emitResolver(s: qt.SourceFile, t: qt.CancellationToken) {

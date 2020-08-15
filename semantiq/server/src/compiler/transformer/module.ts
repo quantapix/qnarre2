@@ -303,14 +303,14 @@ export function transformModule(context: qt.TrafoContext) {
       case Syntax.EndOfDeclarationMarker:
         return visitEndOfDeclarationMarker(<qt.EndOfDeclarationMarker>node);
       default:
-        return qf.visit.eachChild(node, moduleExpressionElemVisitor, context);
+        return qf.visit.children(node, moduleExpressionElemVisitor, context);
     }
   }
   function moduleExpressionElemVisitor(node: qt.Expression): VisitResult<qt.Expression> {
     if (!(node.trafoFlags & TrafoFlags.ContainsDynamicImport) && !(node.trafoFlags & TrafoFlags.ContainsDestructuringAssignment)) return node;
     if (qf.is.importCall(node)) return visitImportCallExpression(node);
     if (qf.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
-    return qf.visit.eachChild(node, moduleExpressionElemVisitor, context);
+    return qf.visit.children(node, moduleExpressionElemVisitor, context);
   }
   function destructuringNeedsFlattening(node: qt.Expression): boolean {
     if (node.kind === Syntax.ObjectLiteralExpression) {
@@ -346,7 +346,7 @@ export function transformModule(context: qt.TrafoContext) {
   }
   function visitDestructuringAssignment(node: qt.DestructuringAssignment): qt.Expression {
     if (destructuringNeedsFlattening(node.left)) return flattenDestructuringAssignment(node, moduleExpressionElemVisitor, context, FlattenLevel.All, false, createAllExportExpressions);
-    return qf.visit.eachChild(node, moduleExpressionElemVisitor, context);
+    return qf.visit.children(node, moduleExpressionElemVisitor, context);
   }
   function visitImportCallExpression(node: qt.ImportCall): qt.Expression {
     const arg = qf.visit.node(firstOrUndefined(node.args), moduleExpressionElemVisitor);
@@ -601,13 +601,13 @@ export function transformModule(context: qt.TrafoContext) {
             undefined,
             Nodes.visit(node.params, moduleExpressionElemVisitor),
             undefined,
-            qf.visit.eachChild(node.body, moduleExpressionElemVisitor, context)
+            qf.visit.children(node.body, moduleExpressionElemVisitor, context)
           ).setRange(node),
           node
         )
       );
     } else {
-      statements = append(statements, qf.visit.eachChild(node, moduleExpressionElemVisitor, context));
+      statements = append(statements, qf.visit.children(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -635,7 +635,7 @@ export function transformModule(context: qt.TrafoContext) {
         )
       );
     } else {
-      statements = append(statements, qf.visit.eachChild(node, moduleExpressionElemVisitor, context));
+      statements = append(statements, qf.visit.children(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -668,7 +668,7 @@ export function transformModule(context: qt.TrafoContext) {
         statements = append(statements, setRange(new qc.ExpressionStatement(inlineExpressions(expressions)), node).setOriginal(node));
       }
     } else {
-      statements = append(statements, qf.visit.eachChild(node, moduleExpressionElemVisitor, context));
+      statements = append(statements, qf.visit.children(node, moduleExpressionElemVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -1060,7 +1060,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
       qu.addRange(statements, Nodes.visit(node.statements, visitor, qf.is.statement, statementOffset));
       return qp_updateSourceNode(node, setRange(new Nodes(statements), node.statements));
     }
-    return qf.visit.eachChild(node, visitor, context);
+    return qf.visit.children(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
@@ -1432,7 +1432,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
         )
       );
     } else {
-      hoistedStatements = append(hoistedStatements, qf.visit.eachChild(node, destructuringAndImportCallVisitor, context));
+      hoistedStatements = append(hoistedStatements, qf.visit.children(node, destructuringAndImportCallVisitor, context));
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       const id = getOriginalNodeId(node);
@@ -1710,7 +1710,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
       node,
       visitForIniter(node.initer),
       qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression),
-      qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock)
+      qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock)
     );
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1723,7 +1723,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
       node.awaitModifier,
       visitForIniter(node.initer),
       qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression),
-      qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock)
+      qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock)
     );
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1742,19 +1742,19 @@ export function transformSystemModule(context: qt.TrafoContext) {
       }
       return expressions ? inlineExpressions(expressions) : new qc.OmittedExpression();
     }
-    return qf.visit.eachChild(node, nestedElemVisitor, context);
+    return qf.visit.children(node, nestedElemVisitor, context);
   }
   function visitDoStatement(node: qt.DoStatement): VisitResult<qt.Statement> {
-    return node.update(qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock), qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression));
+    return node.update(qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock), qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression));
   }
   function visitWhileStatement(node: qt.WhileStatement): VisitResult<qt.Statement> {
-    return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
+    return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock));
   }
   function visitLabeledStatement(node: qt.LabeledStatement): VisitResult<qt.Statement> {
-    return node.update(node.label, qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
+    return node.update(node.label, qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock));
   }
   function visitWithStatement(node: qt.WithStatement): VisitResult<qt.Statement> {
-    return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, liftToBlock));
+    return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), qf.visit.node(node.statement, nestedElemVisitor, qf.is.statement, qc.liftToBlock));
   }
   function visitSwitchStatement(node: qt.SwitchStatement): VisitResult<qt.Statement> {
     return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), qf.visit.node(node.caseBlock, nestedElemVisitor, isCaseBlock));
@@ -1770,10 +1770,10 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return node.update(qf.visit.node(node.expression, destructuringAndImportCallVisitor, isExpression), Nodes.visit(node.statements, nestedElemVisitor, qf.is.statement));
   }
   function visitDefaultClause(node: qt.DefaultClause): VisitResult<qt.CaseOrDefaultClause> {
-    return qf.visit.eachChild(node, nestedElemVisitor, context);
+    return qf.visit.children(node, nestedElemVisitor, context);
   }
   function visitTryStatement(node: qt.TryStatement): VisitResult<qt.Statement> {
-    return qf.visit.eachChild(node, nestedElemVisitor, context);
+    return qf.visit.children(node, nestedElemVisitor, context);
   }
   function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
@@ -1785,7 +1785,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
   function visitBlock(node: qt.Block): qt.Block {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
-    node = qf.visit.eachChild(node, nestedElemVisitor, context);
+    node = qf.visit.children(node, nestedElemVisitor, context);
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
   }
@@ -1793,7 +1793,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     if (qf.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
     else if (qf.is.importCall(node)) return visitImportCallExpression(node);
     else if (node.trafoFlags & TrafoFlags.ContainsDestructuringAssignment || node.trafoFlags & TrafoFlags.ContainsDynamicImport)
-      return qf.visit.eachChild(node, destructuringAndImportCallVisitor, context);
+      return qf.visit.children(node, destructuringAndImportCallVisitor, context);
     return node;
   }
   function visitImportCallExpression(node: qt.ImportCall): qt.Expression {
@@ -1805,7 +1805,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
   }
   function visitDestructuringAssignment(node: qt.DestructuringAssignment): VisitResult<qt.Expression> {
     if (hasExportedReferenceInDestructuringTarget(node.left)) return flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, true);
-    return qf.visit.eachChild(node, destructuringAndImportCallVisitor, context);
+    return qf.visit.children(node, destructuringAndImportCallVisitor, context);
   }
   function hasExportedReferenceInDestructuringTarget(node: qt.Expression | qt.ObjectLiteralElemLike): boolean {
     if (qf.is.assignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
