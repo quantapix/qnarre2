@@ -1,16 +1,16 @@
-import { EmitFlags, Node, NodeFlags, ObjectFlags, TypeFlags } from '../types';
-import { MutableNodes, Nodes } from './bases';
+import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, TypeFlags } from '../types';
 import { qf, Fis } from './frame';
 import { Syntax } from '../syntax';
+import * as qb from './bases';
 import * as qc from './classes';
+import * as qg from './groups';
 import * as qt from '../types';
 import * as qu from '../utils';
-import * as qg from './groups';
 export type VisitResult<T extends Node> = T | T[] | undefined;
 export type Visitor = (n?: Node) => VisitResult<Node>;
-export type Visitors = (ns?: qt.Nodes) => VisitResult<Node>;
+export type Visitors = (ns?: Nodes) => VisitResult<Node>;
 type Tester = (n: Node) => boolean;
-type Lifter<T extends Node> = ((ns?: qt.Nodes) => T) | ((ns?: readonly Node[]) => T);
+type Lifter<T extends Node> = ((ns?: Nodes) => T) | ((ns?: readonly Node[]) => T);
 export function newVisit(f: qt.Frame) {
   interface Frame extends qt.Frame {
     assert: qg.Fassert;
@@ -50,7 +50,7 @@ export function newVisit(f: qt.Frame) {
         qu.assert(ns.length <= 1);
         return qu.singleOrUndefined(ns);
       };
-      if (qu.isArray(y)) n2 = (lift || extractSingle)(y as T[]);
+      if (qu.isArray(y)) n2 = (lift || extractSingle)(y);
       else n2 = y as T;
       qf.assert.node(n2, test);
       qf.calc.aggregate(n2!);
@@ -60,17 +60,17 @@ export function newVisit(f: qt.Frame) {
     nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined;
     nodes<T extends Node>(ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number): Nodes<T> | undefined {
       if (!ns || !v) return ns;
-      let r: MutableNodes<T> | undefined;
+      let r: qb.MutableNodes<T> | undefined;
       const length = ns.length;
       if (start === undefined || start < 0) start = 0;
       if (count === undefined || count > length - start) count = length - start;
-      if (start > 0 || count < length) r = new Nodes<T>([], ns.trailingComma && start + count === length);
+      if (start > 0 || count < length) r = new qb.Nodes<T>([], ns.trailingComma && start + count === length);
       for (let i = 0; i < count; i++) {
         const n: T = ns[i + start];
         qf.calc.aggregate(n);
         const y = n ? v(n) : undefined;
         if (r !== undefined || y === undefined || y !== n) {
-          if (r === undefined) r = new Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
+          if (r === undefined) r = new qb.Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
           if (y) {
             if (qu.isArray(y)) {
               for (const n2 of y) {
@@ -93,7 +93,7 @@ export function newVisit(f: qt.Frame) {
       ss = this.nodes<qt.Statement>(ss, v, qf.is.statement, start);
       if (strict) {
         const found = qf.stmt.findUseStrictPrologue(ss);
-        if (!found) ss = new Nodes<qt.Statement>([qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))), ...ss]).setRange(ss);
+        if (!found) ss = new qb.Nodes<qt.Statement>([qf.emit.setStartsOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))), ...ss]).setRange(ss);
       }
       return mergeLexicalEnv(ss, c.endLexicalEnv());
     }
@@ -561,7 +561,7 @@ export function newVisit(f: qt.Frame) {
 }
 export interface Fvisit extends ReturnType<typeof newVisit> {}
 const isTypeNodeOrTypeParamDeclaration = qu.or(qf.is.typeNode, qf.is.typeParamDeclaration);
-function addValueAssignments(ps: qt.Nodes<qt.ParamDeclaration>, c: qt.TrafoContext) {
+function addValueAssignments(ps: Nodes<qt.ParamDeclaration>, c: qt.TrafoContext) {
   let r: qt.ParamDeclaration[] | undefined;
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
@@ -571,7 +571,7 @@ function addValueAssignments(ps: qt.Nodes<qt.ParamDeclaration>, c: qt.TrafoConte
       r[i] = updated;
     }
   }
-  if (r) return new Nodes(r, ps.trailingComma).setRange(ps);
+  if (r) return new qb.Nodes(r, ps.trailingComma).setRange(ps);
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qt.ParamDeclaration, c: qt.TrafoContext) {
@@ -615,15 +615,15 @@ function addForIniter(p: qt.ParamDeclaration, name: qt.Identifier, init: qt.Expr
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
 }
-export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo: T, node: Node) => T, cbs?: (memo: T, ns: qt.Nodes) => T): T {
+export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo: T, node: Node) => T, cbs?: (memo: T, ns: Nodes) => T): T {
   if (node === undefined) return initial;
   const reduce = <T>(n: Node | undefined, cb: (t: T, n: Node) => T, init: T) => {
     return n ? cb(init, n) : init;
   };
-  const reduce2 = <T>(ns: qt.Nodes | undefined, cb: (t: T, ns: qt.Nodes) => T, init: T) => {
+  const reduce2 = <T>(ns: Nodes | undefined, cb: (t: T, ns: Nodes) => T, init: T) => {
     return ns ? cb(init, ns) : init;
   };
-  const reduceAll: (ns: qt.Nodes | undefined, cb: ((t: T, n: Node) => T) | ((t: T, ns: qt.Nodes) => T), init: T) => T = cbs ? reduce2 : qu.reduceLeft;
+  const reduceAll: (ns: Nodes | undefined, cb: ((t: T, n: Node) => T) | ((t: T, ns: Nodes) => T), init: T) => T = cbs ? reduce2 : qu.reduceLeft;
   cbs = cbs || cb;
   const kind = node.kind;
   if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) return initial;
@@ -1054,7 +1054,7 @@ export function mergeLexicalEnv(ss: qt.Statement[] | Nodes<qt.Statement>, ds?: r
       }
     }
   }
-  if (Nodes.is(ss)) return new Nodes(left, ss.trailingComma).setRange(ss);
+  if (Nodes.is(ss)) return new qb.Nodes(left, ss.trailingComma).setRange(ss);
   return ss;
 }
 export function liftToBlock(ns?: readonly Node[]): qt.Statement {

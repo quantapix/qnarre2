@@ -91,7 +91,7 @@ export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   children?: Nobj[];
   contextualType?: qt.Type;
-  decorators?: Nodes<qt.Decorator>;
+  decorators?: qt.Nodes<qt.Decorator>;
   doc?: qt.Doc[];
   emitNode?: qt.EmitNode;
   flags = NodeFlags.None;
@@ -102,7 +102,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   locals?: qt.SymbolTable;
   localSymbol?: qt.Symbol;
   modifierFlagsCache = ModifierFlags.None;
-  modifiers?: Nodes<qt.Modifier>;
+  modifiers?: qt.Nodes<qt.Modifier>;
   nextContainer?: Node;
   original?: Node;
   symbol!: qt.Symbol;
@@ -279,7 +279,7 @@ export abstract class Tobj extends Nobj implements qt.Tobj {
   _typingBrand: any;
 }
 export abstract class WithArgsTobj extends Tobj implements qt.WithArgsTobj {
-  typeArgs?: Nodes<qt.Typing>;
+  typeArgs?: qt.Nodes<qt.Typing>;
 }
 export abstract class Decl extends Nobj implements qt.Decl {
   _declarationBrand: any;
@@ -298,9 +298,9 @@ export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
 export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDecl {
   kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: qt.Identifier;
-  typeParams?: Nodes<qt.TypeParamDeclaration>;
-  heritageClauses?: Nodes<qt.HeritageClause>;
-  members: Nodes<qt.ClassElem>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
+  heritageClauses?: qt.Nodes<qt.HeritageClause>;
+  members: qt.Nodes<qt.ClassElem>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
@@ -329,10 +329,10 @@ export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
 export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDecl {
   kind!: qt.SignatureDeclaration['kind'];
   name?: qt.PropertyName;
-  typeParams?: Nodes<qt.TypeParamDeclaration>;
-  params!: Nodes<qt.ParamDeclaration>;
+  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
+  params!: qt.Nodes<qt.ParamDeclaration>;
   type?: qt.Typing;
-  typeArgs?: Nodes<qt.Typing>;
+  typeArgs?: qt.Nodes<qt.Typing>;
   constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParamDeclaration[] | undefined, ps?: readonly qt.ParamDeclaration[], t?: qt.Typing, ta?: readonly qt.Typing[]) {
     super(s, k);
     this.typeParams = Nodes.from(ts);
@@ -385,7 +385,7 @@ export abstract class PrimaryExpr extends MemberExpr implements qt.PrimaryExpr {
   _primaryExpressionBrand: any;
 }
 export abstract class ObjectLiteralExpr<T extends qt.ObjectLiteralElem> extends PrimaryExpr implements qt.ObjectLiteralExpr<T> {
-  properties!: Nodes<T>;
+  properties!: qt.Nodes<T>;
   _declarationBrand: any;
 }
 export abstract class TokenOrIdentifier extends Nobj {
@@ -984,7 +984,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
   resolvedTypeReferenceDirectiveNames!: qu.QMap<qt.ResolvedTypeReferenceDirective>;
   scriptKind!: qt.ScriptKind;
   //scriptSnapshot!: IScriptSnapshot;
-  statements!: Nodes<qt.Statement>;
+  statements!: qt.Nodes<qt.Statement>;
   symbolCount!: number;
   syntacticDiagnostics!: qd.DiagnosticWithLocation[];
   text!: string;
