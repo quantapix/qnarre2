@@ -2,7 +2,7 @@ import { CheckFlags, FlowFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, Sym
 import { Fcheck } from './check';
 import { Fget } from './get';
 import { Nodes } from '../core';
-import { qt.Symbol } from './bases';
+import { Symbol } from './bases';
 import { Syntax } from '../syntax';
 import * as qc from '../core';
 import * as qd from '../diags';
@@ -213,7 +213,13 @@ export function newIs(f: qt.Frame) {
     syntacticDefault(n: Node) {
       return (n.kind === Syntax.ExportAssignment && !n.isExportEquals) || qf.has.syntacticModifier(n, ModifierFlags.Default) || n.kind === Syntax.ExportSpecifier;
     }
-    anySymbolAccessible(ss: qt.Symbol[] | undefined, enclosingDeclaration: Node | undefined, initialSymbol: qt.Symbol, meaning: qt.SymbolFlags, compute: boolean): qt.SymbolAccessibilityResult | undefined {
+    anySymbolAccessible(
+      ss: qt.Symbol[] | undefined,
+      enclosingDeclaration: Node | undefined,
+      initialSymbol: qt.Symbol,
+      meaning: qt.SymbolFlags,
+      compute: boolean
+    ): qt.SymbolAccessibilityResult | undefined {
       if (!qu.length(ss)) return;
       let hadAccessibleChain: qt.Symbol | undefined;
       let earlyModuleBail = false;
@@ -826,7 +832,8 @@ export function newIs(f: qt.Frame) {
       if (s === t) return true;
       const id = s.getId() + ',' + t.getId();
       const entry = enumRelation.get(id);
-      if (entry !== undefined && !(!(entry & qt.RelationComparisonResult.Reported) && entry & qt.RelationComparisonResult.Failed && errorReporter)) return !!(entry & qt.RelationComparisonResult.Succeeded);
+      if (entry !== undefined && !(!(entry & qt.RelationComparisonResult.Reported) && entry & qt.RelationComparisonResult.Failed && errorReporter))
+        return !!(entry & qt.RelationComparisonResult.Succeeded);
       if (s.escName !== t.escName || !(s.flags & qt.SymbolFlags.RegularEnum) || !(t.flags & qt.SymbolFlags.RegularEnum)) {
         enumRelation.set(id, qt.RelationComparisonResult.Failed | qt.RelationComparisonResult.Reported);
         return false;
@@ -1098,7 +1105,9 @@ export function newIs(f: qt.Frame) {
           return this.matchingReference((s as qt.NonNullExpression | qt.ParenthesizedExpression).expression, t);
         case Syntax.PropertyAccessExpression:
         case Syntax.ElemAccessExpression:
-          return this.accessExpression(t) && getAccessedPropertyName(<qt.AccessExpression>s) === getAccessedPropertyName(t) && this.matchingReference((<qt.AccessExpression>s).expression, t.expression);
+          return (
+            this.accessExpression(t) && getAccessedPropertyName(<qt.AccessExpression>s) === getAccessedPropertyName(t) && this.matchingReference((<qt.AccessExpression>s).expression, t.expression)
+          );
       }
       return false;
     }
@@ -1902,7 +1911,7 @@ export function newIs(f: qt.Frame) {
       return isValue && n.moduleReference && !this.missing(n.moduleReference);
     }
     referencedAliasDeclaration(n: Node, checkChildren?: boolean): boolean {
-      if (isAliasSymbolDeclaration(n)) {
+      if (qf.is.aliasSymbolDeclaration(n)) {
         const s = qf.get.symbolOfNode(n);
         if (s && s.getLinks(s).referenced) return true;
         const t = s.getLinks(s!).t;

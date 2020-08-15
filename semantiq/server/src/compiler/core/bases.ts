@@ -179,19 +179,19 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
         const e = scanner.getTextPos();
         if (e <= end) {
           qu.assert(t !== Syntax.Identifier);
-          ns.push(qf.create.node(t, pos, e, this));
+          ns.push(qf.create.node(t, pos, e, this as Node));
         }
         pos = e;
         if (t === Syntax.EndOfFileToken) break;
       }
     };
-    const createList = (ns: Nodes) => {
-      const r = qf.create.node(Syntax.SyntaxList, ns.pos, ns.end, this);
+    const createList = (ns: qt.Nodes) => {
+      const r = qf.create.node(Syntax.SyntaxList, ns.pos, ns.end, this as Node);
       r.children = [];
       let p = ns.pos;
       for (const n of ns) {
         addSynthetics(r.children, p, n.pos);
-        r.children.push(n);
+        r.children.push(n as Nobj);
         p = n.end;
       }
       addSynthetics(r.children, p, ns.end);
@@ -216,7 +216,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
             p = n.end;
           }
         };
-        const all = (ns: Nodes) => {
+        const all = (ns: qt.Nodes) => {
           addSynthetics(cs, p, ns.pos);
           cs.push(createList(ns));
           p = ns.end;

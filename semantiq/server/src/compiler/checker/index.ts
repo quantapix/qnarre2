@@ -21,14 +21,13 @@ export class TypeChecker implements Frame {
   instantiate: Finstantiate;
   is: Fis;
   resolve: Fresolve;
-
 }
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
 let nextMergeId = 1;
 let nextFlowId = 1;
 
-function qt.SymbolLinks(this: qt.SymbolLinks) {}
+function SymbolLinks(this: qt.SymbolLinks) {}
 export function isInstantiatedModule(node: qt.ModuleDeclaration, preserveConstEnums: boolean) {
   const moduleState = getModuleInstanceState(node);
   return moduleState === ModuleInstanceState.Instantiated || (preserveConstEnums && moduleState === ModuleInstanceState.ConstEnumOnly);
@@ -63,22 +62,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   let instantiationDepth = 0;
   let constraintDepth = 0;
   let currentNode: Node | undefined;
-  const emptySymbols = new qc.SymbolTable();
-  const arrayVariances = [VarianceFlags.Covariant];
-  const compilerOpts = host.getCompilerOpts();
-  const languageVersion = getEmitScriptTarget(compilerOpts);
-  const moduleKind = getEmitModuleKind(compilerOpts);
-  const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOpts);
-  const strictNullChecks = getStrictOptionValue(compilerOpts, 'strictNullChecks');
-  const strictFunctionTypes = getStrictOptionValue(compilerOpts, 'strictFunctionTypes');
-  const strictBindCallApply = getStrictOptionValue(compilerOpts, 'strictBindCallApply');
-  const strictPropertyInitialization = getStrictOptionValue(compilerOpts, 'strictPropertyInitialization');
-  const noImplicitAny = getStrictOptionValue(compilerOpts, 'noImplicitAny');
-  const noImplicitThis = getStrictOptionValue(compilerOpts, 'noImplicitThis');
-  const keyofStringsOnly = !!compilerOpts.keyofStringsOnly;
-  const freshObjectLiteralFlag = compilerOpts.suppressExcessPropertyErrors ? 0 : ObjectFlags.FreshLiteral;
-  const emitResolver = createResolver();
-  const nodeBuilder = createNodeBuilder();
+  let apparentArgCount: number | undefined;
   class QNode extends qc.Nobj {
     isGlobalSourceFile() {
       return this.kind === Syntax.SourceFile && !is.externalOrCommonJsModule(this as xSourceFile);
@@ -93,16 +77,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return result;
     }
   }
-  const globals = new qc.SymbolTable();
-  const undefinedSymbol = new qc.Symbol(SymbolFlags.Property, 'undefined' as qu.__String);
-  undefinedSymbol.declarations = [];
-  const globalThisSymbol = new qc.Symbol(SymbolFlags.Module, 'globalThis' as qu.__String, qt.CheckFlags.Readonly);
-  globalThisSymbol.exports = globals;
-  globalThisSymbol.declarations = [];
-  globals.set(globalThisSymbol.escName, globalThisSymbol);
-  const argsSymbol = new qc.Symbol(SymbolFlags.Property, 'args' as qu.__String);
-  const requireSymbol = new qc.Symbol(SymbolFlags.Property, 'require' as qu.__String);
-  let apparentArgCount: number | undefined;
   const checker = new class implements qt.TypeChecker {
     getRelationCacheSizes() { return {
       assignable: assignableRelation.size,
@@ -3484,7 +3458,6 @@ function getIterationTypesKeyFromIterationTypeKind(typeKind: IterationTypeKind) 
 }
 
 /*
-
 export interface TypeCheckerOld {
   qf.get.typeOfSymbolAtLocation(symbol: qt.Symbol, node: Node): qt.Type;
   getDeclaredTypeOfSymbol(symbol: qt.Symbol): qt.Type;
