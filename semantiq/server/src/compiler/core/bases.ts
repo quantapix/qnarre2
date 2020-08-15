@@ -86,14 +86,6 @@ export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Node
     }
     return this;
   }
-  visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: qt.Nodes) => V | undefined): V | undefined {
-    if (cbs) return cbs(this);
-    for (const n of this) {
-      const r = cb(n as Node);
-      if (r) return r;
-    }
-    return;
-  }
 }
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
@@ -110,7 +102,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   locals?: qt.SymbolTable;
   localSymbol?: qt.Symbol;
   modifierFlagsCache = ModifierFlags.None;
-  modifiers?: qt.Modifiers;
+  modifiers?: Nodes<qt.Modifier>;
   nextContainer?: Node;
   original?: Node;
   symbol!: qt.Symbol;
@@ -256,9 +248,6 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   indexIn(ns: readonly Node[]) {
     return qu.binarySearch(ns, this as Node, (n) => n.pos, qu.compareNumbers);
   }
-  visit<T>(cb: (n?: Node) => T | undefined): T | undefined {
-    return cb(this as Node);
-  }
   updateFrom(n: Node): this {
     if (this === n) return this;
     const r = this.setOriginal(n).setRange(n);
@@ -290,7 +279,7 @@ export abstract class Tobj extends Nobj implements qt.Tobj {
   _typingBrand: any;
 }
 export abstract class WithArgsTobj extends Tobj implements qt.WithArgsTobj {
-  typeArgs?: qt.Nodes<qt.Typing>;
+  typeArgs?: Nodes<qt.Typing>;
 }
 export abstract class Decl extends Nobj implements qt.Decl {
   _declarationBrand: any;
@@ -309,9 +298,9 @@ export abstract class ClassElem extends NamedDecl implements qt.ClassElem {
 export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDecl {
   kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: qt.Identifier;
-  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
-  heritageClauses?: qt.Nodes<qt.HeritageClause>;
-  members: qt.Nodes<qt.ClassElem>;
+  typeParams?: Nodes<qt.TypeParamDeclaration>;
+  heritageClauses?: Nodes<qt.HeritageClause>;
+  members: Nodes<qt.ClassElem>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
@@ -340,10 +329,10 @@ export abstract class TypeElem extends NamedDecl implements qt.TypeElem {
 export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDecl {
   kind!: qt.SignatureDeclaration['kind'];
   name?: qt.PropertyName;
-  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
-  params!: qt.Nodes<qt.ParamDeclaration>;
+  typeParams?: Nodes<qt.TypeParamDeclaration>;
+  params!: Nodes<qt.ParamDeclaration>;
   type?: qt.Typing;
-  typeArgs?: qt.Nodes<qt.Typing>;
+  typeArgs?: Nodes<qt.Typing>;
   constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParamDeclaration[] | undefined, ps?: readonly qt.ParamDeclaration[], t?: qt.Typing, ta?: readonly qt.Typing[]) {
     super(s, k);
     this.typeParams = Nodes.from(ts);
@@ -1065,76 +1054,6 @@ export class SourceFile extends Decl implements qt.SourceFile {
       const getName = (d: qt.Declaration) => {
         const n = qf.get.nonAssignedNameOfDeclaration(d);
         return n && (isComputedPropertyName(n) && n.expression.kind === Syntax.PropertyAccessExpression ? n.expression.name.text : qf.is.propertyName(n) ? getNameFromPropertyName(n) : undefined);
-      };
-      const visit = (n?: Node) => {
-        switch (n?.kind) {
-          case Syntax.FunctionDeclaration:
-          case Syntax.FunctionExpression:
-          case Syntax.MethodDeclaration:
-          case Syntax.MethodSignature:
-            const d = qf.decl.name(n);
-            if (d) {
-              const ds = getDeclarations(d);
-              const last = qu.lastOrUndefined(ds);
-              if (last && n.parent === last.parent && n.symbol === last.symbol) {
-                if (n.body && !last.body) ds[ds.length - 1] = n;
-              } else ds.push(n);
-            }
-            qf.each.child(n, visit);
-            break;
-          case Syntax.ClassDeclaration:
-          case Syntax.ClassExpression:
-          case Syntax.EnumDeclaration:
-          case Syntax.ExportSpecifier:
-          case Syntax.GetAccessor:
-          case Syntax.ImportClause:
-          case Syntax.ImportEqualsDeclaration:
-          case Syntax.ImportSpecifier:
-          case Syntax.InterfaceDeclaration:
-          case Syntax.ModuleDeclaration:
-          case Syntax.NamespaceImport:
-          case Syntax.SetAccessor:
-          case Syntax.TypeAliasDeclaration:
-          case Syntax.TypingLiteral:
-            addDeclaration(n);
-            qf.each.child(n, visit);
-            break;
-          case Syntax.Param:
-            if (!qf.has.syntacticModifier(n, ModifierFlags.ParamPropertyModifier)) break;
-          case Syntax.VariableDeclaration:
-          case Syntax.BindingElem: {
-            if (n.name.kind === Syntax.BindingPattern) {
-              qf.each.child(n.name, visit);
-              break;
-            }
-            if (n.initer) visit(n.initer);
-          }
-          case Syntax.EnumMember:
-          case Syntax.PropertyDeclaration:
-          case Syntax.PropertySignature:
-            addDeclaration(n);
-            break;
-          case Syntax.ExportDeclaration:
-            if (n.exportClause) {
-              if (n.exportClause.kind === Syntax.NamedExports) qf.each.up(n.exportClause.elems, visit);
-              else visit(n.exportClause.name);
-            }
-            break;
-          case Syntax.ImportDeclaration:
-            const i = n.importClause;
-            if (i) {
-              if (i.name) addDeclaration(i.name);
-              if (i.namedBindings) {
-                if (i.namedBindings.kind === Syntax.NamespaceImport) addDeclaration(i.namedBindings);
-                else qf.each.up(i.namedBindings.elems, visit);
-              }
-            }
-            break;
-          case Syntax.BinaryExpression:
-            if (qf.get.assignmentDeclarationKind(n) !== qt.AssignmentDeclarationKind.None) addDeclaration(n);
-          default:
-            if (n) qf.each.child(n, visit);
-        }
       };
       qf.each.child(this, visit);
       return r;

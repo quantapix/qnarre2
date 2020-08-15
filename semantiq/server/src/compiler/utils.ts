@@ -861,53 +861,52 @@ export function rangeEquals<T>(a: readonly T[], b: readonly T[], pos: number, en
   }
   return true;
 }
-export function elemAt<T>(ts: readonly T[] | undefined, offset: number): T | undefined {
+export function elemAt<T>(ts: readonly T[] | undefined, i: number): T | undefined {
   if (ts) {
-    offset = toOffset(ts, offset);
-    if (offset < ts.length) return ts[offset];
+    i = toOffset(ts, i);
+    if (i < ts.length) return ts[i];
   }
   return;
 }
-export function firstOrUndefined<T>(ts: readonly T[]): T | undefined {
-  return ts.length === 0 ? undefined : ts[0];
+export function firstOrUndefined<T>(ts: readonly T[]) {
+  return ts.length ? ts[0] : undefined;
 }
-export function first<T>(ts: readonly T[]): T {
-  assert(ts.length !== 0);
+export function first<T>(ts: readonly T[]) {
+  assert(ts.length);
   return ts[0];
 }
-export function lastOrUndefined<T>(ts: readonly T[]): T | undefined {
-  return ts.length === 0 ? undefined : ts[ts.length - 1];
+export function lastOrUndefined<T>(ts: readonly T[]) {
+  return ts.length ? ts[ts.length - 1] : undefined;
 }
 export function last<T>(ts: readonly T[]): T {
-  assert(ts.length !== 0);
+  assert(ts.length);
   return ts[ts.length - 1];
 }
-export function singleOrUndefined<T>(ts: readonly T[] | undefined): T | undefined {
-  return ts && ts.length === 1 ? ts[0] : undefined;
+export function singleOrUndefined<T>(ts?: readonly T[]) {
+  return ts?.length === 1 ? ts[0] : undefined;
 }
 export function singleOrMany<T>(ts: T[]): T | T[];
 export function singleOrMany<T>(ts: readonly T[]): T | readonly T[];
-export function singleOrMany<T>(ts: T[] | undefined): T | T[] | undefined;
-export function singleOrMany<T>(ts: readonly T[] | undefined): T | readonly T[] | undefined;
-export function singleOrMany<T>(ts: readonly T[] | undefined): T | readonly T[] | undefined {
-  return ts && ts.length === 1 ? ts[0] : ts;
+export function singleOrMany<T>(ts?: T[]): T | T[] | undefined;
+export function singleOrMany<T>(ts?: readonly T[]): T | readonly T[] | undefined;
+export function singleOrMany<T>(ts?: readonly T[]): T | readonly T[] | undefined {
+  return ts?.length === 1 ? ts[0] : ts;
 }
-export function replaceElem<T>(ts: readonly T[], index: number, value: T): T[] {
+export function replaceElem<T>(ts: readonly T[], i: number, t: T): T[] {
   const r = ts.slice(0);
-  r[index] = value;
+  r[i] = t;
   return r;
 }
-export function binarySearch<T, U>(ts: readonly T[], value: T, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
-  return binarySearchKey(ts, keySelector(value), keySelector, keyComparer, offset);
+export function binarySearch<T, U>(ts: readonly T[], t: T, key: (v: T) => U, c: Comparer<U>, offset?: number): number {
+  return binarySearchKey(ts, key(t), key, c, offset);
 }
-export function binarySearchKey<T, U>(ts: readonly T[], key: U, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
+export function binarySearchKey<T, U>(ts: readonly T[], k: U, key: (v: T) => U, c: Comparer<U>, offset?: number): number {
   if (!some(ts)) return -1;
   let low = offset || 0;
   let high = ts.length - 1;
   while (low <= high) {
     const middle = low + ((high - low) >> 1);
-    const midKey = keySelector(ts[middle]);
-    switch (keyComparer(midKey, key)) {
+    switch (c(key(ts[middle]), k)) {
       case Comparison.LessThan:
         low = middle + 1;
         break;
@@ -942,50 +941,50 @@ export function reduceLeft<T>(ts: readonly T[] | undefined, f: (memo: T, t: T, i
   }
   return initial;
 }
-export function hasProperty(map: MapLike<any>, key: string): boolean {
-  return hasOwnProperty.call(map, key);
+export function hasProperty(m: MapLike<any>, k: string): boolean {
+  return hasOwnProperty.call(m, k);
 }
-export function getProperty<T>(map: MapLike<T>, key: string): T | undefined {
-  return hasOwnProperty.call(map, key) ? map[key] : undefined;
+export function getProperty<T>(m: MapLike<T>, k: string): T | undefined {
+  return hasOwnProperty.call(m, k) ? m[k] : undefined;
 }
-export function getOwnKeys<T>(map: MapLike<T>): string[] {
-  const keys: string[] = [];
-  for (const key in map) {
-    if (hasOwnProperty.call(map, key)) keys.push(key);
+export function getOwnKeys<T>(m: MapLike<T>): string[] {
+  const ks: string[] = [];
+  for (const k in m) {
+    if (hasOwnProperty.call(m, k)) ks.push(k);
   }
-  return keys;
+  return ks;
 }
-export function getAllKeys(obj: object): string[] {
+export function getAllKeys(o: object): string[] {
   const r: string[] = [];
   do {
-    const names = Object.getOwnPropertyNames(obj);
-    for (const name of names) {
-      pushIfUnique(r, name);
+    const ns = Object.getOwnPropertyNames(o);
+    for (const n of ns) {
+      pushIfUnique(r, n);
     }
-  } while ((obj = Object.getPrototypeOf(obj)));
+  } while ((o = Object.getPrototypeOf(o)));
   return r;
 }
-export function getOwnValues<T>(sparseArray: T[]): T[] {
-  const values: T[] = [];
-  for (const key in sparseArray) {
-    if (hasOwnProperty.call(sparseArray, key)) values.push(sparseArray[key]);
+export function getOwnValues<T>(ts: T[]): T[] {
+  const vs: T[] = [];
+  for (const k in ts) {
+    if (hasOwnProperty.call(ts, k)) vs.push(ts[k]);
   }
-  return values;
+  return ts;
 }
-export function arrayFrom<T, U>(iterator: Iterator<T> | IterableIterator<T>, map: (t: T) => U): U[];
-export function arrayFrom<T>(iterator: Iterator<T> | IterableIterator<T>): T[];
-export function arrayFrom<T, U>(iterator: Iterator<T> | IterableIterator<T>, map?: (t: T) => U): (T | U)[] {
+export function arrayFrom<T, U>(i: Iterator<T> | IterableIterator<T>, map: (t: T) => U): U[];
+export function arrayFrom<T>(i: Iterator<T> | IterableIterator<T>): T[];
+export function arrayFrom<T, U>(i: Iterator<T> | IterableIterator<T>, map?: (t: T) => U): (T | U)[] {
   const r: (T | U)[] = [];
-  for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
-    r.push(map ? map(iterResult.value) : iterResult.value);
+  for (let y = i.next(); !y.done; y = i.next()) {
+    r.push(map ? map(y.value) : y.value);
   }
   return r;
 }
 export function assign<T extends object>(t: T, ...args: (T | undefined)[]) {
-  for (const arg of args) {
-    if (arg === undefined) continue;
-    for (const p in arg) {
-      if (hasProperty(arg, p)) t[p] = arg[p];
+  for (const a of args) {
+    if (a === undefined) continue;
+    for (const p in a) {
+      if (hasProperty(a, p)) t[p] = a[p];
     }
   }
   return t;

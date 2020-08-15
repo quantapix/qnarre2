@@ -13,7 +13,7 @@ export class ArrayBindingPattern extends qb.Nobj implements qt.ArrayBindingPatte
   static readonly kind = Syntax.ArrayBindingPattern;
   kind!: Syntax.ArrayBindingPattern;
   parent?: qt.VariableDeclaration | qt.ParamDeclaration | qt.BindingElem;
-  elems: qt.Nodes<qt.ArrayBindingElem>;
+  elems: Nodes<qt.ArrayBindingElem>;
   constructor(es: readonly qt.ArrayBindingElem[]) {
     super(true);
     this.elems = new Nodes(es);
@@ -26,7 +26,7 @@ ArrayBindingPattern.prototype.kind = ArrayBindingPattern.kind;
 export class ArrayLiteralExpression extends qb.PrimaryExpr implements qt.ArrayLiteralExpression {
   static readonly kind = Syntax.ArrayLiteralExpression;
   kind!: Syntax.ArrayLiteralExpression;
-  elems: qt.Nodes<qt.Expression>;
+  elems: Nodes<qt.Expression>;
   multiLine?: boolean;
   constructor(es?: readonly qt.Expression[], multiLine?: boolean) {
     super(true);
@@ -177,7 +177,7 @@ export namespace BindingPattern {
 export class Block extends qb.Stmt implements qt.Block {
   static readonly kind = Syntax.Block;
   kind!: Syntax.Block;
-  statements: qt.Nodes<qt.Statement>;
+  statements: Nodes<qt.Statement>;
   multiLine?: boolean;
   constructor(ss: readonly qt.Statement[], multiLine?: boolean) {
     super();
@@ -240,8 +240,8 @@ export class CallExpression extends qb.LeftExpr implements qt.CallExpression {
   kind!: Syntax.CallExpression;
   expression: qt.LeftExpression;
   questionDotToken?: qt.QuestionDotToken;
-  typeArgs?: qt.Nodes<qt.Typing>;
-  args: qt.Nodes<qt.Expression>;
+  typeArgs?: Nodes<qt.Typing>;
+  args: Nodes<qt.Expression>;
   constructor(e: qt.Expression, ts?: readonly qt.Typing[], es?: readonly qt.Expression[]) {
     super(true);
     this.expression = qf.nest.forAccess(e);
@@ -287,7 +287,7 @@ export class CaseBlock extends qb.Nobj implements qt.CaseBlock {
   static readonly kind = Syntax.CaseBlock;
   kind!: Syntax.CaseBlock;
   parent?: qt.SwitchStatement;
-  clauses: qt.Nodes<qt.CaseOrDefaultClause>;
+  clauses: Nodes<qt.CaseOrDefaultClause>;
   constructor(cs: readonly qt.CaseOrDefaultClause[]) {
     super(true);
     this.clauses = new Nodes(cs);
@@ -302,7 +302,7 @@ export class CaseClause extends qb.Nobj implements qt.CaseClause {
   kind!: Syntax.CaseClause;
   parent?: qt.CaseBlock;
   expression: qt.Expression;
-  statements: qt.Nodes<qt.Statement>;
+  statements: Nodes<qt.Statement>;
   fallthroughFlowNode?: qt.FlowNode;
   constructor(e: qt.Expression, ss: readonly qt.Statement[]) {
     super(true);
@@ -403,7 +403,7 @@ qu.addMixins(ClassExpression, [qb.PrimaryExpr]);
 export class CommaListExpression extends qb.Expr implements qt.CommaListExpression {
   static readonly kind = Syntax.CommaListExpression;
   kind!: Syntax.CommaListExpression;
-  elems: qt.Nodes<qt.Expression>;
+  elems: Nodes<qt.Expression>;
   constructor(es: readonly qt.Expression[]) {
     super(true);
     const flatten = (e: qt.Expression): qt.Expression | readonly qt.Expression[] => {
@@ -562,7 +562,7 @@ export class DefaultClause extends qb.Nobj implements qt.DefaultClause {
   static readonly kind = Syntax.DefaultClause;
   kind!: Syntax.DefaultClause;
   parent?: qt.CaseBlock;
-  statements: qt.Nodes<qt.Statement>;
+  statements: Nodes<qt.Statement>;
   fallthroughFlowNode?: qt.FlowNode;
   constructor(ss: readonly qt.Statement[]) {
     super();
@@ -590,7 +590,7 @@ export class Doc extends qb.Nobj implements qt.Doc {
   static readonly kind = Syntax.DocComment;
   kind!: Syntax.DocComment;
   parent?: qt.HasDoc;
-  tags?: qt.Nodes<qt.DocTag>;
+  tags?: Nodes<qt.DocTag>;
   comment?: string;
   constructor(c?: string, ts?: qt.Nodes<qt.DocTag>) {
     super(true);
@@ -791,7 +791,7 @@ export class DocTemplateTag extends qb.DocTag implements qt.DocTemplateTag {
   static readonly kind = Syntax.DocTemplateTag;
   kind!: Syntax.DocTemplateTag;
   constraint?: qt.DocTypingExpression;
-  typeParams: qt.Nodes<qt.TypeParamDeclaration>;
+  typeParams: Nodes<qt.TypeParamDeclaration>;
   constructor(c: qt.DocTypingExpression | undefined, ts: readonly qt.TypeParamDeclaration[], s?: string) {
     super(Syntax.DocTemplateTag, 'template', s);
     this.constraint = c;
@@ -954,7 +954,7 @@ export class EnumDeclaration extends qb.DeclarationStmt implements qt.EnumDeclar
   static readonly kind = Syntax.EnumDeclaration;
   kind!: Syntax.EnumDeclaration;
   name: qt.Identifier;
-  members: qt.Nodes<qt.EnumMember>;
+  members: Nodes<qt.EnumMember>;
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | qt.Identifier, es: readonly qt.EnumMember[]) {
     super();
     this.decorators = Nodes.from(ds);
@@ -1271,7 +1271,7 @@ export class HeritageClause extends qb.Nobj implements qt.HeritageClause {
   kind!: Syntax.HeritageClause;
   parent?: qt.InterfaceDeclaration | qt.ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-  types: qt.Nodes<qt.ExpressionWithTypings>;
+  types: Nodes<qt.ExpressionWithTypings>;
   constructor(t: qt.HeritageClause['token'], ts: readonly qt.ExpressionWithTypings[]) {
     super(true);
     this.token = t;
@@ -1287,7 +1287,7 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   kind!: Syntax.Identifier;
   escapedText!: qu.__String;
   autoGenFlags = qt.GeneratedIdentifierFlags.None;
-  typeArgs?: qt.Nodes<qt.Typing | qt.TypeParamDeclaration>;
+  typeArgs?: Nodes<qt.Typing | qt.TypeParamDeclaration>;
   flowNode = undefined;
   originalKeywordKind?: Syntax;
   autoGenId = 0;
@@ -1607,9 +1607,9 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
   static readonly kind = Syntax.InterfaceDeclaration;
   kind!: Syntax.InterfaceDeclaration;
   name: qt.Identifier;
-  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
-  heritageClauses?: qt.Nodes<qt.HeritageClause>;
-  members: qt.Nodes<qt.TypeElem>;
+  typeParams?: Nodes<qt.TypeParamDeclaration>;
+  heritageClauses?: Nodes<qt.HeritageClause>;
+  members: Nodes<qt.TypeElem>;
   cache?: readonly qt.DocTag[] | undefined;
   constructor(
     ds: readonly qt.Decorator[] | undefined,
@@ -1644,7 +1644,7 @@ export class InterfaceDeclaration extends qb.DeclarationStmt implements qt.Inter
 InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
 qu.addMixins(InterfaceDeclaration, [qb.DocContainer]);
 export abstract class UnionOrIntersectionTyping extends qb.Tobj implements qt.UnionOrIntersectionType {
-  types: qt.Nodes<qt.Typing>;
+  types: Nodes<qt.Typing>;
   objectFlags: qt.ObjectFlags;
   propertyCache: qb.SymbolTable;
   resolvedProperties: qb.Symbol[];
@@ -1712,7 +1712,7 @@ export class JsxElem extends qb.PrimaryExpr implements qt.JsxElem {
   static readonly kind = Syntax.JsxElem;
   kind!: Syntax.JsxElem;
   opening: qt.JsxOpeningElem;
-  children: qt.Nodes<qt.JsxChild>;
+  children: Nodes<qt.JsxChild>;
   closing: qt.JsxClosingElem;
   constructor(o: qt.JsxOpeningElem, cs: readonly qt.JsxChild[], c: qt.JsxClosingElem) {
     super(true);
@@ -1745,7 +1745,7 @@ export class JsxFragment extends qb.PrimaryExpr implements qt.JsxFragment {
   static readonly kind = Syntax.JsxFragment;
   kind!: Syntax.JsxFragment;
   openingFragment: qt.JsxOpeningFragment;
-  children: qt.Nodes<qt.JsxChild>;
+  children: Nodes<qt.JsxChild>;
   closingFragment: qt.JsxClosingFragment;
   constructor(o: qt.JsxOpeningFragment, cs: readonly qt.JsxChild[], c: qt.JsxClosingFragment) {
     super(true);
@@ -1763,7 +1763,7 @@ export class JsxOpeningElem extends qb.Expr implements qt.JsxOpeningElem {
   kind!: Syntax.JsxOpeningElem;
   parent?: qt.JsxElem;
   tagName: qt.JsxTagNameExpression;
-  typeArgs?: qt.Nodes<qt.Typing>;
+  typeArgs?: Nodes<qt.Typing>;
   attributes: qt.JsxAttributes;
   constructor(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, a: qt.JsxAttributes) {
     super(true);
@@ -1789,7 +1789,7 @@ export class JsxSelfClosingElem extends qb.PrimaryExpr implements qt.JsxSelfClos
   static readonly kind = Syntax.JsxSelfClosingElem;
   kind!: Syntax.JsxSelfClosingElem;
   tagName: qt.JsxTagNameExpression;
-  typeArgs?: qt.Nodes<qt.Typing>;
+  typeArgs?: Nodes<qt.Typing>;
   attributes: qt.JsxAttributes;
   constructor(e: qt.JsxTagNameExpression, ts: readonly qt.Typing[] | undefined, a: qt.JsxAttributes) {
     super(true);
@@ -1996,7 +1996,7 @@ export class ModuleBlock extends qb.Stmt implements qt.ModuleBlock {
   static readonly kind = Syntax.ModuleBlock;
   kind!: Syntax.ModuleBlock;
   parent?: qt.ModuleDeclaration;
-  statements: qt.Nodes<qt.Statement>;
+  statements: Nodes<qt.Statement>;
   constructor(ss: readonly qt.Statement[]) {
     super(true);
     this.statements = new Nodes(ss);
@@ -2036,7 +2036,7 @@ export class NamedExports extends qb.Nobj implements qt.NamedExports {
   static readonly kind = Syntax.NamedExports;
   kind!: Syntax.NamedExports;
   parent?: qt.ExportDeclaration;
-  elems: qt.Nodes<qt.ExportSpecifier>;
+  elems: Nodes<qt.ExportSpecifier>;
   constructor(es: readonly qt.ExportSpecifier[]) {
     super(true);
     this.elems = new Nodes(es);
@@ -2050,7 +2050,7 @@ export class NamedImports extends qb.Nobj implements qt.NamedImports {
   static readonly kind = Syntax.NamedImports;
   kind!: Syntax.NamedImports;
   parent?: qt.ImportClause;
-  elems: qt.Nodes<qt.ImportSpecifier>;
+  elems: Nodes<qt.ImportSpecifier>;
   constructor(es: readonly qt.ImportSpecifier[]) {
     super(true);
     this.elems = new Nodes(es);
@@ -2128,8 +2128,8 @@ export class NewExpression extends qb.PrimaryExpr implements qt.NewExpression {
   static readonly kind = Syntax.NewExpression;
   kind!: Syntax.NewExpression;
   expression: qt.LeftExpression;
-  typeArgs?: qt.Nodes<qt.Typing>;
-  args?: qt.Nodes<qt.Expression>;
+  typeArgs?: Nodes<qt.Typing>;
+  args?: Nodes<qt.Expression>;
   constructor(e: qt.Expression, ts?: readonly qt.Typing[], a?: readonly qt.Expression[]) {
     super(true);
     this.expression = qf.nest.forNew(e);
@@ -2225,7 +2225,7 @@ export class ObjectBindingPattern extends qb.Nobj implements qt.ObjectBindingPat
   static readonly kind = Syntax.ObjectBindingPattern;
   kind!: Syntax.ObjectBindingPattern;
   parent?: qt.VariableDeclaration | qt.ParamDeclaration | qt.BindingElem;
-  elems: qt.Nodes<qt.BindingElem>;
+  elems: Nodes<qt.BindingElem>;
   constructor(es: readonly qt.BindingElem[]) {
     super(true);
     this.elems = new Nodes(es);
@@ -2470,15 +2470,7 @@ export class PropertyDeclaration extends qb.ClassElem implements qt.PropertyDecl
     this.type = t;
     this.initer = i;
   }
-  update(
-    n: PropertyDeclaration,
-    ds: readonly qt.Decorator[] | undefined,
-    ms: readonly Modifier[] | undefined,
-    p: string | qt.PropertyName,
-    q?: qt.QuestionToken | qt.ExclamationToken,
-    t?: qt.Typing,
-    i?: qt.Expression
-  ) {
+  update(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qt.PropertyName, q?: qt.QuestionToken | qt.ExclamationToken, t?: qt.Typing, i?: qt.Expression) {
     return this.decorators !== ds ||
       this.modifiers !== ms ||
       this.name !== p ||
@@ -2486,7 +2478,7 @@ export class PropertyDeclaration extends qb.ClassElem implements qt.PropertyDecl
       this.exclamationToken !== (q !== undefined && q.kind === Syntax.ExclamationToken ? q : undefined) ||
       this.type !== t ||
       this.initer !== i
-      ? new PropertyDeclaration(ds, ms, p, q, t, i).updateFrom(n)
+      ? new PropertyDeclaration(ds, ms, p, q, t, i).updateFrom(this)
       : n;
   }
 }
@@ -2700,7 +2692,7 @@ export class TaggedTemplateExpression extends qb.MemberExpr implements qt.Tagged
   static readonly kind = Syntax.TaggedTemplateExpression;
   kind!: Syntax.TaggedTemplateExpression;
   tag: qt.LeftExpression;
-  typeArgs?: qt.Nodes<qt.Typing>;
+  typeArgs?: Nodes<qt.Typing>;
   template: qt.TemplateLiteral;
   questionDotToken?: qt.QuestionDotToken;
   constructor(tag: qt.Expression, ts: readonly qt.Typing[] | undefined, template: qt.TemplateLiteral);
@@ -2728,7 +2720,7 @@ export class TemplateExpression extends qb.PrimaryExpr implements qt.TemplateExp
   static readonly kind = Syntax.TemplateExpression;
   kind!: Syntax.TemplateExpression;
   head: qt.TemplateHead;
-  templateSpans: qt.Nodes<qt.TemplateSpan>;
+  templateSpans: Nodes<qt.TemplateSpan>;
   constructor(h: qt.TemplateHead, ss: readonly qt.TemplateSpan[]) {
     super(true);
     this.head = h;
@@ -2836,7 +2828,7 @@ TryStatement.prototype.kind = TryStatement.kind;
 export class TupleTyping extends qb.Tobj implements qt.TupleTyping {
   static readonly kind = Syntax.TupleTyping;
   kind!: Syntax.TupleTyping;
-  elems: qt.Nodes<qt.Typing | qt.NamedTupleMember>;
+  elems: Nodes<qt.Typing | qt.NamedTupleMember>;
   constructor(es: readonly (qt.Typing | qt.NamedTupleMember)[]) {
     super(true);
     this.elems = new Nodes(es);
@@ -2850,7 +2842,7 @@ export class TypeAliasDeclaration extends qb.DeclarationStmt implements qt.TypeA
   static readonly kind = Syntax.TypeAliasDeclaration;
   kind!: Syntax.TypeAliasDeclaration;
   name: qt.Identifier;
-  typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
+  typeParams?: Nodes<qt.TypeParamDeclaration>;
   type: qt.Typing;
   cache?: readonly qt.DocTag[] | undefined;
   constructor(ds: readonly qt.Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | qt.Identifier, ts: readonly qt.TypeParamDeclaration[] | undefined, t: qt.Typing) {
@@ -2886,7 +2878,7 @@ TypeAssertion.prototype.kind = TypeAssertion.kind;
 export class TypingLiteral extends qb.Tobj implements qt.TypingLiteral {
   static readonly kind = Syntax.TypingLiteral;
   kind!: Syntax.TypingLiteral;
-  members: qt.Nodes<qt.TypeElem>;
+  members: Nodes<qt.TypeElem>;
   constructor(ms?: readonly qt.TypeElem[]) {
     super(true);
     this.members = new Nodes(ms);
@@ -3053,7 +3045,7 @@ export class VariableDeclarationList extends qb.Nobj implements qt.VariableDecla
   static readonly kind = Syntax.VariableDeclarationList;
   kind!: Syntax.VariableDeclarationList;
   parent?: qt.VariableStatement | qt.ForStatement | qt.ForOfStatement | qt.ForInStatement;
-  declarations: qt.Nodes<qt.VariableDeclaration>;
+  declarations: Nodes<qt.VariableDeclaration>;
   constructor(ds: readonly qt.VariableDeclaration[], f = NodeFlags.None) {
     super(true);
     this.flags |= f & NodeFlags.BlockScoped;
