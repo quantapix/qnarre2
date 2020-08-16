@@ -505,6 +505,12 @@ export abstract class Symbol implements qt.Symbol {
   isUMDExport() {
     return this.declarations?.[0] && this.declarations[0].kind === Syntax.NamespaceExportDeclaration;
   }
+  isNamespaceMember() {
+    return !(this.flags & SymbolFlags.Prototype || this.escName === 'prototype' || (this.valueDeclaration?.parent && qf.is.classLike(this.valueDeclaration.parent)));
+  }
+  isConstEnumSymbol() {
+    return (this.flags & SymbolFlags.ConstEnum) !== 0;
+  }
   skipAlias(c: qt.TypeChecker) {
     return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
   }

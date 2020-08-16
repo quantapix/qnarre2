@@ -2168,7 +2168,7 @@ export interface SymbolLinks {
   nameType?: Type;
   originatingImport?: ImportDeclaration | ImportCall;
   outerTypeParams?: TypeParam[];
-  //referenced?: boolean;
+  referenced?: boolean;
   resolvedExports?: SymbolTable;
   resolvedMembers?: SymbolTable;
   rightSpread?: Symbol;

@@ -1292,7 +1292,7 @@ export function newGet(f: qt.Frame) {
       if (t.flags & qt.TypeFlags.Object) {
         const resolved = resolveStructuredTypeMembers(<qt.ObjectType>type);
         const symbol = resolved.members.get(name);
-        if (symbol && symbolIsValue(symbol)) return symbol;
+        if (symbol && symbol.isValue()) return symbol;
       }
     }
     propertiesOfUnionOrIntersectionType(t: qt.UnionOrIntersectionType): qt.Symbol[] {
@@ -1583,13 +1583,13 @@ export function newGet(f: qt.Frame) {
       type = this.reducedApparentType(t);
       if (t.flags & qt.TypeFlags.Object) {
         const resolved = resolveStructuredTypeMembers(<qt.ObjectType>type);
-        const symbol = resolved.members.get(name);
-        if (symbol && symbolIsValue(symbol)) return symbol;
+        const s = resolved.members.get(name);
+        if (s && s.isValue()) return s;
         const functionType =
           resolved === anyFunctionType ? globalFunctionType : resolved.callSignatures.length ? globalCallableFunctionType : resolved.constructSignatures.length ? globalNewableFunctionType : undefined;
         if (functionType) {
-          const symbol = this.propertyOfObjectType(functionType, name);
-          if (symbol) return symbol;
+          const s = this.propertyOfObjectType(functionType, name);
+          if (s) return s;
         }
         return this.propertyOfObjectType(globalObjectType, name);
       }

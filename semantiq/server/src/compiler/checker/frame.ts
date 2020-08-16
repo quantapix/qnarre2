@@ -332,6 +332,21 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
         else this.markConstEnumAliasAsReferenced();
       }
     }
+    markAliasSymbolAsReferenced() {
+      const ls = this.links;
+      if (!ls.referenced) {
+        ls.referenced = true;
+        const d = this.getDeclarationOfAliasSymbol();
+        qu.assert(d);
+        if (qf.is.internalModuleImportEqualsDeclaration(d)) {
+          const t = this.resolveSymbol();
+          if (t === unknownSymbol || (t && t.flags & SymbolFlags.Value)) qf.check.expressionCached(d.moduleReference);
+        }
+      }
+    }
   }
+  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
+  const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
+
   return checker;
 }

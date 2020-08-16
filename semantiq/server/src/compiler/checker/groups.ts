@@ -566,7 +566,7 @@ export function newIs(f: qt.Frame) {
             : hasDefaultTypeArgs || qu.some(n.typeArgs, mayResolveTypeAlias)))
       );
     }
-    resolvedByTypeAlias(n: Node): boolean {
+    resolvedByTypeAlias(n: Node) {
       const p = n.parent;
       switch (p?.kind) {
         case Syntax.ArrayTyping:
@@ -639,15 +639,15 @@ export function newIs(f: qt.Frame) {
         this.emptyObjectType(t) ||
         !!(
           t.flags &
-          (TypeFlags.Null |
-            TypeFlags.Undefined |
+          (TypeFlags.BigIntLike |
             TypeFlags.BooleanLike |
-            TypeFlags.NumberLike |
-            TypeFlags.BigIntLike |
-            TypeFlags.StringLike |
             TypeFlags.EnumLike |
+            TypeFlags.Index |
             TypeFlags.NonPrimitive |
-            TypeFlags.Index)
+            TypeFlags.Null |
+            TypeFlags.NumberLike |
+            TypeFlags.StringLike |
+            TypeFlags.Undefined)
         )
       );
     }

@@ -2768,9 +2768,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (!typeName) return;
     const rootName = qf.get.firstIdentifier(typeName);
     const meaning = (typeName.kind === Syntax.Identifier ? qt.SymbolFlags.Type : qt.SymbolFlags.Namespace) | qt.SymbolFlags.Alias;
-    const rootSymbol = resolveName(rootName, rootName.escapedText, meaning, undefined, undefined, true);
-    if (rootSymbol && rootSymbol.flags & qt.SymbolFlags.Alias && symbolIsValue(rootSymbol) && !isConstEnumOrConstEnumOnlyModule(rootSymbol.resolveAlias()) && !rootSymbol.getTypeOnlyAliasDeclaration())
-      rootSymbol.markAliasSymbolAsReferenced();
+    const s = resolveName(rootName, rootName.escapedText, meaning, undefined, undefined, true);
+    if (s && s.flags & qt.SymbolFlags.Alias && s.isValue() && !isConstEnumOrConstEnumOnlyModule(s.resolveAlias()) && !s.getTypeOnlyAliasDeclaration())
+      s.markAliasSymbolAsReferenced();
   }
   function markDecoratorMedataDataTypeNodeAsReferenced(node: qt.Typing | undefined): void {
     const entityName = getEntityNameForDecoratorMetadata(node);
