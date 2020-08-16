@@ -132,7 +132,7 @@ export class QContext {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.ObjectKeyword);
     }
-    if (isThisTypeParam(type)) {
+    if (qf.type.is.thisParam(type)) {
       if (this.flags & NodeBuilderFlags.InObjectTypeLiteral) {
         if (!this.encounteredError && !(this.flags & NodeBuilderFlags.AllowThisInObjectLiteral)) {
           this.encounteredError = true;
@@ -701,7 +701,7 @@ export class QContext {
       returnTypeNode = new qc.TypingPredicate(assertsModifier, paramName, typeNode);
     } else {
       const returnType = qf.get.returnTypeOfSignature(signature);
-      if (returnType && !(suppressAny && qf.is.typeAny(returnType))) {
+      if (returnType && !(suppressAny && qf.type.is.any(returnType))) {
         returnTypeNode = this.serializeReturnTypeForSignature(returnType, signature, privateSymbolVisitor, bundledImports);
       } else if (!suppressAny) {
         returnTypeNode = new qc.KeywordTyping(Syntax.AnyKeyword);
@@ -1011,7 +1011,7 @@ export class QContext {
         if (baseType) {
           const baseInfo = qf.get.indexInfoOfType(baseType, type);
           if (baseInfo) {
-            if (qf.is.typeIdenticalTo(info.type, baseInfo.type)) continue;
+            if (qf.type.is.identicalTo(info.type, baseInfo.type)) continue;
           }
         }
         results.push(this.indexInfoToIndexSignatureDeclarationHelper(info, type));
@@ -1166,7 +1166,7 @@ export class QContext {
         this.approximateLength += 10;
         return qf.emit.setFlags(mappedTypeNode, EmitFlags.SingleLine);
       };
-      if (qf.is.genericMappedType(type)) return createMappedTypingFromType(type);
+      if (qf.type.is.genericMapped(type)) return createMappedTypingFromType(type);
       const resolved = resolveStructuredTypeMembers(type);
       if (!resolved.properties.length && !resolved.stringIndexInfo && !resolved.numberIndexInfo) {
         if (!resolved.callSignatures.length && !resolved.constructSignatures.length) {
@@ -1424,7 +1424,7 @@ export class QContext {
           qf.get.propertyOfType(baseType, p.escName) &&
           isReadonlySymbol(qf.get.propertyOfType(baseType, p.escName)!) === isReadonlySymbol(p) &&
           (p.flags & SymbolFlags.Optional) === (qf.get.propertyOfType(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
-          qf.is.typeIdenticalTo(p.typeOfSymbol(), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
+          qf.type.is.identicalTo(p.typeOfSymbol(), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
       ) {
         return [];
       }

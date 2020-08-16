@@ -142,8 +142,8 @@ export function newCreate(f: qt.Frame) {
             const indexInfo = !isLateBoundName(name) && ((NumericLiteral.name(name) && qf.get.indexInfoOfType(type, IndexKind.Number)) || qf.get.indexInfoOfType(type, IndexKind.String));
             if (indexInfo) {
               checkFlags |= qt.CheckFlags.WritePartial | (indexInfo.isReadonly ? qt.CheckFlags.Readonly : 0);
-              indexTypes = append(indexTypes, qf.is.tupleType(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
-            } else if (qf.is.objectLiteralType(type)) {
+              indexTypes = append(indexTypes, qf.type.is.tuple(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
+            } else if (qf.type.is.objectLiteral(type)) {
               checkFlags |= qt.CheckFlags.WritePartial;
               indexTypes = append(indexTypes, undefinedType);
             } else checkFlags |= qt.CheckFlags.ReadPartial;
@@ -172,7 +172,7 @@ export function newCreate(f: qt.Frame) {
         } else if (type !== firstType) {
           checkFlags |= qt.CheckFlags.HasNonUniformType;
         }
-        if (qf.is.literalType(type)) checkFlags |= qt.CheckFlags.HasLiteralType;
+        if (qf.type.is.literal(type)) checkFlags |= qt.CheckFlags.HasLiteralType;
         if (type.flags & qt.TypeFlags.Never) checkFlags |= qt.CheckFlags.HasNeverType;
         propTypes.push(type);
       }
@@ -403,9 +403,9 @@ export function newCreate(f: qt.Frame) {
       return this.anonymousType(undefined, members, empty, empty, indexInfo, undefined);
     }
     reverseMappedType(source: qt.Type, target: qt.MappedType, constraint: qt.IndexType) {
-      if (!(qf.get.indexInfoOfType(source, IndexKind.String) || (qf.get.propertiesOfType(source).length !== 0 && qf.is.partiallyInferableType(source)))) return;
-      if (qf.is.arrayType(source)) return this.arrayType(inferReverseMappedType(getTypeArgs(<qt.TypeReference>source)[0], target, constraint), qf.is.readonlyArrayType(source));
-      if (qf.is.tupleType(source)) {
+      if (!(qf.get.indexInfoOfType(source, IndexKind.String) || (qf.get.propertiesOfType(source).length !== 0 && qf.type.is.partiallyInferable(source)))) return;
+      if (qf.type.is.array(source)) return this.arrayType(inferReverseMappedType(getTypeArgs(<qt.TypeReference>source)[0], target, constraint), qf.type.is.readonlyArray(source));
+      if (qf.type.is.tuple(source)) {
         const elemTypes = map(getTypeArgs(source), (t) => inferReverseMappedType(t, target, constraint));
         const minLength = getMappedTypeModifiers(target) & MappedTypeModifiers.IncludeOptional ? getTypeReferenceArity(source) - (source.target.hasRestElem ? 1 : 0) : source.target.minLength;
         return this.tupleType(elemTypes, minLength, source.target.hasRestElem, source.target.readonly, source.target.labeledElemDeclarations);
@@ -469,7 +469,7 @@ export function newCreate(f: qt.Frame) {
             attributesTable = new qc.SymbolTable();
           }
           const exprType = getReducedType(check.expressionCached(attributeDecl.expression, checkMode));
-          if (qf.is.typeAny(exprType)) hasSpreadAnyType = true;
+          if (qf.type.is.any(exprType)) hasSpreadAnyType = true;
           if (qf.is.validSpreadType(exprType)) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
             if (allAttributesTable) check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
@@ -610,7 +610,7 @@ export function newCreate(f: qt.Frame) {
         const iterationTypes = globalType !== emptyGenericType ? getIterationTypesOfGlobalIterableType(globalType, resolver) : undefined;
         const iterableIteratorReturnType = iterationTypes ? iterationTypes.returnType : anyType;
         const iterableIteratorNextType = iterationTypes ? iterationTypes.nextType : undefinedType;
-        if (qf.is.typeAssignableTo(returnType, iterableIteratorReturnType) && qf.is.typeAssignableTo(iterableIteratorNextType, nextType)) {
+        if (qf.type.is.assignableTo(returnType, iterableIteratorReturnType) && qf.type.is.assignableTo(iterableIteratorNextType, nextType)) {
           if (globalType !== emptyGenericType) return this.typeFromGenericGlobalType(globalType, [yieldType]);
           resolver.getGlobalIterableIteratorType(true);
           return emptyObjectType;
@@ -897,9 +897,9 @@ export function newInstantiate(f: qt.Frame) {
           return mapType(getReducedType(mappedTypeVariable), (t) => {
             if (t.flags & (TypeFlags.AnyOrUnknown | qt.TypeFlags.InstantiableNonPrimitive | qt.TypeFlags.Object | qt.TypeFlags.Intersection) && t !== wildcardType && t !== errorType) {
               const replacementMapper = prependTypeMapping(typeVariable, t, mapper);
-              return qf.is.arrayType(t)
+              return qf.type.is.array(t)
                 ? this.mappedArrayType(t, type, replacementMapper)
-                : qf.is.tupleType(t)
+                : qf.type.is.tuple(t)
                 ? this.mappedTupleType(t, type, replacementMapper)
                 : this.anonymousType(type, replacementMapper);
             }
@@ -911,7 +911,7 @@ export function newInstantiate(f: qt.Frame) {
     }
     mappedArrayType(arrayType: qt.Type, mappedType: qt.MappedType, mapper: qt.TypeMapper) {
       const elemType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
-      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(qf.is.readonlyArrayType(arrayType), getMappedTypeModifiers(mappedType)));
+      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(qf.type.is.readonlyArray(arrayType), getMappedTypeModifiers(mappedType)));
     }
     mappedTupleType(tupleType: qt.TupleTypeReference, mappedType: qt.MappedType, mapper: qt.TypeMapper) {
       const minLength = tupleType.target.minLength;
@@ -1010,7 +1010,7 @@ export function newInstantiate(f: qt.Frame) {
         if (maybeVariable.flags & qt.TypeFlags.TypeVariable) return getSubstitutionType(maybeVariable as qt.TypeVariable, this.type((<qt.SubstitutionType>type).substitute, mapper));
         else {
           const sub = this.type((<qt.SubstitutionType>type).substitute, mapper);
-          if (sub.flags & qt.TypeFlags.AnyOrUnknown || qf.is.typeAssignableTo(getRestrictiveInstantiation(maybeVariable), getRestrictiveInstantiation(sub))) return maybeVariable;
+          if (sub.flags & qt.TypeFlags.AnyOrUnknown || qf.type.is.assignableTo(getRestrictiveInstantiation(maybeVariable), getRestrictiveInstantiation(sub))) return maybeVariable;
           return sub;
         }
       }
@@ -1577,7 +1577,7 @@ export function newResolve(f: qt.Frame) {
       }
       if (baseType === errorType) return (type.resolvedBaseTypes = empty);
       const reducedBaseType = getReducedType(baseType);
-      if (!qf.is.validBaseType(reducedBaseType)) {
+      if (!qf.type.is.validBase(reducedBaseType)) {
         const elaboration = elaborateNeverIntersection(undefined, baseType);
         const diagnostic = chainqd.Messages(
           elaboration,
@@ -1601,7 +1601,7 @@ export function newResolve(f: qt.Frame) {
           for (const node of qf.get.interfaceBaseTypeNodes(<qt.InterfaceDeclaration>declaration)!) {
             const baseType = getReducedType(qf.get.typeFromTypeNode(node));
             if (baseType !== errorType) {
-              if (qf.is.validBaseType(baseType)) {
+              if (qf.type.is.validBase(baseType)) {
                 if (type !== baseType && !hasBaseType(baseType, type)) {
                   if (type.resolvedBaseTypes === empty) type.resolvedBaseTypes = [<qt.ObjectType>baseType];
                   else {
@@ -1821,7 +1821,7 @@ export function newResolve(f: qt.Frame) {
       setStructuredTypeMembers(type, members, empty, empty, stringIndexInfo, numberIndexInfo);
       function addMemberForKeyType(t: qt.Type) {
         const templateMapper = appendTypeMapping(type.mapper, typeParam, t);
-        if (qf.is.typeUsableAsPropertyName(t)) {
+        if (qf.type.is.usableAsPropertyName(t)) {
           const propName = getPropertyNameFromType(t);
           const modifiersProp = qf.get.propertyOfType(modifiersType, propName);
           const isOptional = !!(
@@ -2073,7 +2073,7 @@ export function newResolve(f: qt.Frame) {
     callExpression(node: qt.CallExpression, candidatesOutArray: qt.Signature[] | undefined, checkMode: CheckMode): qt.Signature {
       if (node.expression.kind === Syntax.SuperKeyword) {
         const superType = check.superExpression(node.expression);
-        if (qf.is.typeAny(superType)) {
+        if (qf.type.is.any(superType)) {
           for (const arg of node.args) {
             check.expression(arg);
           }
@@ -2135,7 +2135,7 @@ export function newResolve(f: qt.Frame) {
       if (expressionType === silentNeverType) return silentNeverSignature;
       expressionType = getApparentType(expressionType);
       if (expressionType === errorType) return this.errorCall(node);
-      if (qf.is.typeAny(expressionType)) {
+      if (qf.type.is.any(expressionType)) {
         if (node.typeArgs) error(node, qd.msgs.Untyped_function_calls_may_not_accept_type_args);
         return this.untypedCall(node);
       }

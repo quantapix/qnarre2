@@ -110,7 +110,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getPromisedTypeOfPromise;
     getAwaitedType(type) { return getAwaitedType(type); }
     qf.get.returnTypeOfSignature;
-    isNullableType;
+    qf.type.is.nullable;
     getNullableType;
     getNonNullableType;
     getNonOptionalType = removeOptionalTypeMarker;
@@ -273,7 +273,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     getApparentType;
     qf.get.unionType;
-    isTypeAssignableTo,
+    qf.type.is.assignableTo,
     qf.create.anonymousType,
     qf.create.signature,
     createSymbol,
@@ -292,9 +292,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getNullType: () => nullType,
     getESSymbolType: () => esSymbolType,
     isArrayType;
-    isTupleType;
-    isArrayLikeType;
-    isTypeInvalidDueToUnionDiscriminant;
+    qf.type.is.arrayLike;
+    qf.type.is.invalidDueToUnionDiscriminant;
     getAllPossiblePropertiesOfTypes;
     getSuggestedSymbolForNonexistentProperty;
     getSuggestionForNonexistentProperty;
@@ -628,7 +627,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
     if (exportEquals === moduleSymbol) return;
     const type = exportEquals.typeOfSymbol();
-    return type.flags & qt.TypeFlags.Primitive || getObjectFlags(type) & ObjectFlags.Class || isArrayOrTupleLikeType(type) ? undefined : qf.get.propertyOfType(type, memberName);
+    return type.flags & qt.TypeFlags.Primitive || getObjectFlags(type) & ObjectFlags.Class || qf.type.is.arrayOrTupleLike(type) ? undefined : qf.get.propertyOfType(type, memberName);
   }
   interface ExportCollisionTracker {
     specText: string;
@@ -851,7 +850,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       ls.resolvedSymbol = decl.symbol;
       const declName = decl.kind === Syntax.BinaryExpression ? decl.left : decl.name;
       const type = declName.kind === Syntax.ElemAccessExpression ? check.expressionCached(declName.argExpression) : check.computedPropertyName(declName);
-      if (qf.is.typeUsableAsPropertyName(type)) {
+      if (qf.type.is.usableAsPropertyName(type)) {
         const memberName = getPropertyNameFromType(type);
         const symbolFlags = decl.symbol.flags;
         let lateSymbol = lateSymbols.get(memberName);
@@ -909,7 +908,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function findMixins(types: readonly qt.Type[]): readonly boolean[] {
     const constructorTypeCount = countWhere(types, (t) => getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0);
-    const mixinFlags = map(types, qf.is.mixinConstructorType);
+    const mixinFlags = map(types, qf.type.is.mixinConstructor);
     if (constructorTypeCount > 0 && constructorTypeCount === countWhere(mixinFlags, (b) => b)) {
       const firstMixinIndex = mixinFlags.indexOf(true);
       mixinFlags[firstMixinIndex] = false;
@@ -969,7 +968,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const baseDefaultType = getDefaultTypeArgType(isJavaScriptImplicitAny);
       for (let i = numTypeArgs; i < numTypeParams; i++) {
         let defaultType = getDefaultFromTypeParam(typeParams![i]);
-        if (isJavaScriptImplicitAny && defaultType && (qf.is.typeIdenticalTo(defaultType, unknownType) || qf.is.typeIdenticalTo(defaultType, emptyObjectType))) defaultType = anyType;
+        if (isJavaScriptImplicitAny && defaultType && (qf.type.is.identicalTo(defaultType, unknownType) || qf.type.is.identicalTo(defaultType, emptyObjectType))) defaultType = anyType;
         result[i] = defaultType ? instantiateType(defaultType, createTypeMapper(typeParams!, result)) : baseDefaultType;
       }
       result.length = typeParams!.length;
@@ -1068,8 +1067,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           }
           count++;
           if (
-            qf.is.typeRelatedTo(source, target, strictSubtypeRelation) &&
-            (!(getObjectFlags(getTargetType(source)) & ObjectFlags.Class) || !(getObjectFlags(getTargetType(target)) & ObjectFlags.Class) || qf.is.typeDerivedFrom(source, target))
+            qf.type.is.relatedTo(source, target, strictSubtypeRelation) &&
+            (!(getObjectFlags(getTargetType(source)) & ObjectFlags.Class) || !(getObjectFlags(getTargetType(target)) & ObjectFlags.Class) || qf.type.is.derivedFrom(source, target))
           ) {
             orderedRemoveItemAt(types, i);
             break;
@@ -1089,7 +1088,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         (t.flags & qt.TypeFlags.NumberLiteral && includes & qt.TypeFlags.Number) ||
         (t.flags & qt.TypeFlags.BigIntLiteral && includes & qt.TypeFlags.BigInt) ||
         (t.flags & qt.TypeFlags.UniqueESSymbol && includes & qt.TypeFlags.ESSymbol) ||
-        (qf.is.freshLiteralType(t) && containsType(types, (<qt.LiteralType>t).regularType));
+        (qf.type.is.freshLiteral(t) && containsType(types, (<qt.LiteralType>t).regularType));
       if (remove) orderedRemoveItemAt(types, i);
     }
   }
@@ -1099,7 +1098,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function addTypeToIntersection(typeSet: qu.QMap<qt.Type>, includes: qt.TypeFlags, type: qt.Type) {
     const flags = type.flags;
     if (flags & qt.TypeFlags.Intersection) return addTypesToIntersection(typeSet, includes, (<qt.IntersectionType>type).types);
-    if (isEmptyAnonymousObjectType(type)) {
+    if (qf.type.is.emptyAnonymousObject(type)) {
       if (!(includes & qt.TypeFlags.IncludesEmptyObject)) {
         includes |= qt.TypeFlags.IncludesEmptyObject;
         typeSet.set(type.id.toString(), type);
@@ -1179,9 +1178,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (type.types.length === 2) {
       const firstType = type.types[0];
       const secondType = type.types[1];
-      if (every(type.types, qf.is.emptyObjectTypeOrSpreadsIntoEmptyObject)) return qf.is.emptyObjectType(firstType) ? firstType : qf.is.emptyObjectType(secondType) ? secondType : emptyObjectType;
-      if (qf.is.emptyObjectTypeOrSpreadsIntoEmptyObject(firstType) && isSinglePropertyAnonymousObjectType(secondType)) return getAnonymousPartialType(secondType);
-      if (qf.is.emptyObjectTypeOrSpreadsIntoEmptyObject(secondType) && isSinglePropertyAnonymousObjectType(firstType)) return getAnonymousPartialType(firstType);
+      if (every(type.types, qf.type.is.emptyObjOrSpreadsIntoEmptyObj)) return qf.type.is.emptyObject(firstType) ? firstType : qf.type.is.emptyObject(secondType) ? secondType : emptyObjectType;
+      if (qf.type.is.emptyObjOrSpreadsIntoEmptyObj(firstType) && qf.type.is.singlePropertyAnonymousObject(secondType)) return getAnonymousPartialType(secondType);
+      if (qf.type.is.emptyObjOrSpreadsIntoEmptyObj(secondType) && qf.type.is.singlePropertyAnonymousObject(firstType)) return getAnonymousPartialType(firstType);
     }
     function getAnonymousPartialType(type: qt.Type) {
       const members = new qc.SymbolTable();
@@ -1233,7 +1232,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
-    if (!node || isOrHasGenericConditional(target)) return false;
+    if (!node || qf.type.is.orHasGenericConditional(target)) return false;
     if (!check.typeRelatedTo(source, target, relation, undefined) && elaborateDidYouMeanToCallOrConstruct(node, source, target, relation, headMessage, containingMessageChain, errorOutputContainer))
       return true;
     switch (node.kind) {
@@ -1359,12 +1358,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           if (result && specificSource !== sourcePropType) check.typeRelatedTo(sourcePropType, targetPropType, relation, prop, errorMessage, containingMessageChain, resultObj);
           if (resultObj.errors) {
             const reportedDiag = resultObj.errors[resultObj.errors.length - 1];
-            const propertyName = qf.is.typeUsableAsPropertyName(nameType) ? getPropertyNameFromType(nameType) : undefined;
+            const propertyName = qf.type.is.usableAsPropertyName(nameType) ? getPropertyNameFromType(nameType) : undefined;
             const targetProp = propertyName !== undefined ? qf.get.propertyOfType(target, propertyName) : undefined;
             let issuedElaboration = false;
             if (!targetProp) {
               const indexInfo =
-                (qf.is.typeAssignableToKind(nameType, qt.TypeFlags.NumberLike) && qf.get.indexInfoOfType(target, IndexKind.Number)) || qf.get.indexInfoOfType(target, IndexKind.String) || undefined;
+                (qf.type.is.assignableToKind(nameType, qt.TypeFlags.NumberLike) && qf.get.indexInfoOfType(target, IndexKind.Number)) || qf.get.indexInfoOfType(target, IndexKind.String) || undefined;
               if (indexInfo && indexInfo.declaration && !indexInfo.declaration.sourceFile.hasNoDefaultLib) {
                 issuedElaboration = true;
                 addRelatedInfo(reportedDiag, qf.create.diagForNode(indexInfo.declaration, qd.msgs.The_expected_type_comes_from_this_index_signature));
@@ -1430,14 +1429,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const validChildren = getSemanticJsxChildren(containingElem.children);
       if (!length(validChildren)) return result;
       const moreThanOneRealChildren = length(validChildren) > 1;
-      const arrayLikeTargetParts = filterType(childrenTargetType, isArrayOrTupleLikeType);
-      const nonArrayLikeTargetParts = filterType(childrenTargetType, (t) => !isArrayOrTupleLikeType(t));
+      const arrayLikeTargetParts = filterType(childrenTargetType, qf.type.is.arrayOrTupleLike);
+      const nonArrayLikeTargetParts = filterType(childrenTargetType, (t) => !qf.type.is.arrayOrTupleLike(t));
       if (moreThanOneRealChildren) {
         if (arrayLikeTargetParts !== neverType) {
           const realSource = createTupleType(check.jsxChildren(containingElem, CheckMode.Normal));
           const children = generateJsxChildren(containingElem, getInvalidTextualChildDiagnostic);
           result = elaborateElemwise(children, realSource, arrayLikeTargetParts, relation, containingMessageChain, errorOutputContainer) || result;
-        } else if (!qf.is.typeRelatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
+        } else if (!qf.type.is.relatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
             containingElem.opening.tagName,
@@ -1464,7 +1463,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
                 errorOutputContainer
               ) || result;
           }
-        } else if (!qf.is.typeRelatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
+        } else if (!qf.type.is.relatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
             containingElem.opening.tagName,
@@ -1497,7 +1496,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const len = length(node.elems);
     if (!len) return;
     for (let i = 0; i < len; i++) {
-      if (qf.is.tupleLikeType(target) && !qf.get.propertyOfType(target, ('' + i) as qu.__String)) continue;
+      if (qf.type.is.tupleLike(target) && !qf.get.propertyOfType(target, ('' + i) as qu.__String)) continue;
       const elem = node.elems[i];
       if (elem.kind === Syntax.OmittedExpression) continue;
       const nameType = qf.get.literalType(i);
@@ -1513,13 +1512,13 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
     if (target.flags & qt.TypeFlags.Primitive) return false;
-    if (qf.is.tupleLikeType(source)) return elaborateElemwise(generateLimitedTupleElems(node, target), source, target, relation, containingMessageChain, errorOutputContainer);
+    if (qf.type.is.tupleLike(source)) return elaborateElemwise(generateLimitedTupleElems(node, target), source, target, relation, containingMessageChain, errorOutputContainer);
     const oldContext = node.contextualType;
     node.contextualType = target;
     try {
       const tupleizedType = check.arrayLiteral(node, CheckMode.Contextual, true);
       node.contextualType = oldContext;
-      if (qf.is.tupleLikeType(tupleizedType)) return elaborateElemwise(generateLimitedTupleElems(node, target), tupleizedType, target, relation, containingMessageChain, errorOutputContainer);
+      if (qf.type.is.tupleLike(tupleizedType)) return elaborateElemwise(generateLimitedTupleElems(node, target), tupleizedType, target, relation, containingMessageChain, errorOutputContainer);
       return false;
     } finally {
       node.contextualType = oldContext;
@@ -1791,8 +1790,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         return;
       }
       if (target.flags & qt.TypeFlags.Union) {
-        const [tempSources, tempTargets] = inferFromMatchingTypes(source.flags & qt.TypeFlags.Union ? (<qt.UnionType>source).types : [source], (<qt.UnionType>target).types, isTypeOrBaseIdenticalTo);
-        const [sources, targets] = inferFromMatchingTypes(tempSources, tempTargets, isTypeCloselyMatchedBy);
+        const [tempSources, tempTargets] = inferFromMatchingTypes(source.flags & qt.TypeFlags.Union ? (<qt.UnionType>source).types : [source], (<qt.UnionType>target).types, qf.type.is.orBaseIdenticalTo);
+        const [sources, targets] = inferFromMatchingTypes(tempSources, tempTargets, qf.type.is.closelyMatchedBy);
         if (targets.length === 0) return;
         target = qf.get.unionType(targets);
         if (sources.length === 0) {
@@ -1802,13 +1801,13 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         source = qf.get.unionType(sources);
       } else if (
         target.flags & qt.TypeFlags.Intersection &&
-        some((<qt.IntersectionType>target).types, (t) => !!getInferenceInfoForType(t) || (qf.is.genericMappedType(t) && !!getInferenceInfoForType(qf.get.homomorphicTypeVariable(t) || neverType)))
+        some((<qt.IntersectionType>target).types, (t) => !!getInferenceInfoForType(t) || (qf.type.is.genericMapped(t) && !!getInferenceInfoForType(qf.get.homomorphicTypeVariable(t) || neverType)))
       ) {
         if (!(source.flags & qt.TypeFlags.Union)) {
           const [sources, targets] = inferFromMatchingTypes(
             source.flags & qt.TypeFlags.Intersection ? (<qt.IntersectionType>source).types : [source],
             (<qt.IntersectionType>target).types,
-            qf.is.typeIdenticalTo
+            qf.type.is.identicalTo
           );
           if (sources.length === 0 || targets.length === 0) return;
           source = qf.get.intersectionType(sources);
@@ -1823,7 +1822,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           source === nonInferrableAnyType ||
           source === silentNeverType ||
           (priority & InferencePriority.ReturnType && (source === autoType || source === autoArrayType)) ||
-          isFromInferenceBlockedSource(source)
+          qf.type.is.fromInferenceBlockedSource(source)
         ) {
           return;
         }
@@ -1852,7 +1851,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
               !(priority & InferencePriority.ReturnType) &&
               target.flags & qt.TypeFlags.TypeParam &&
               inference.topLevel &&
-              !qf.is.typeParamAtTopLevel(originalTarget, <qt.TypeParam>target)
+              !qf.type.is.paramAtTopLevel(originalTarget, <qt.TypeParam>target)
             ) {
               inference.topLevel = false;
               clearCachedInferences(inferences);
@@ -1875,7 +1874,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (
         getObjectFlags(source) & ObjectFlags.Reference &&
         getObjectFlags(target) & ObjectFlags.Reference &&
-        ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.is.arrayType(source) && qf.is.arrayType(target))) &&
+        ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target))) &&
         !((<qt.TypeReference>source).node && (<qt.TypeReference>target).node)
       ) {
         inferFromTypeArgs(getTypeArgs(<qt.TypeReference>source), getTypeArgs(<qt.TypeReference>target), getVariances((<qt.TypeReference>source).target));
@@ -1883,7 +1882,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         contravariant = !contravariant;
         inferFromTypes((<qt.IndexType>source).type, (<qt.IndexType>target).type);
         contravariant = !contravariant;
-      } else if ((qf.is.literalType(source) || source.flags & qt.TypeFlags.String) && target.flags & qt.TypeFlags.Index) {
+      } else if ((qf.type.is.literal(source) || source.flags & qt.TypeFlags.String) && target.flags & qt.TypeFlags.Index) {
         const empty = createEmptyObjectTypeFromStringLiteral(source);
         contravariant = !contravariant;
         inferWithPriority(empty, (target as qt.IndexType).type, InferencePriority.LiteralKeyof);
@@ -2053,7 +2052,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       if (constraintType.flags & qt.TypeFlags.Index) {
         const inference = getInferenceInfoForType((<qt.IndexType>constraintType).type);
-        if (inference && !inference.isFixed && !isFromInferenceBlockedSource(source)) {
+        if (inference && !inference.isFixed && !qf.type.is.fromInferenceBlockedSource(source)) {
           const inferredType = inferTypeForHomomorphicMappedType(source, target, <qt.IndexType>constraintType);
           if (inferredType) {
             inferWithPriority(
@@ -2080,7 +2079,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     function inferFromObjectTypes(source: qt.Type, target: qt.Type) {
       const isNonConstructorObject = target.flags & qt.TypeFlags.Object && !(getObjectFlags(target) & ObjectFlags.Anonymous && target.symbol && target.symbol.flags & qt.SymbolFlags.Class);
-      const symbolOrType = isNonConstructorObject ? (qf.is.tupleType(target) ? target.target : target.symbol) : undefined;
+      const symbolOrType = isNonConstructorObject ? (qf.type.is.tuple(target) ? target.target : target.symbol) : undefined;
       if (symbolOrType) {
         if (contains(symbolOrTypeStack, symbolOrType)) {
           inferencePriority = InferencePriority.Circularity;
@@ -2097,12 +2096,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (
         getObjectFlags(source) & ObjectFlags.Reference &&
         getObjectFlags(target) & ObjectFlags.Reference &&
-        ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.is.arrayType(source) && qf.is.arrayType(target)))
+        ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target)))
       ) {
         inferFromTypeArgs(getTypeArgs(<qt.TypeReference>source), getTypeArgs(<qt.TypeReference>target), getVariances((<qt.TypeReference>source).target));
         return;
       }
-      if (qf.is.genericMappedType(source) && qf.is.genericMappedType(target)) {
+      if (qf.type.is.genericMapped(source) && qf.type.is.genericMapped(target)) {
         inferFromTypes(getConstraintTypeFromMappedType(source), getConstraintTypeFromMappedType(target));
         inferFromTypes(getTemplateTypeFromMappedType(source), getTemplateTypeFromMappedType(target));
       }
@@ -2111,11 +2110,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (inferToMappedType(source, <qt.MappedType>target, constraintType)) return;
       }
       if (!typesDefinitelyUnrelated(source, target)) {
-        if (qf.is.arrayType(source) || qf.is.tupleType(source)) {
-          if (qf.is.tupleType(target)) {
-            const sourceLength = qf.is.tupleType(source) ? getLengthOfTupleType(source) : 0;
+        if (qf.type.is.array(source) || qf.type.is.tuple(source)) {
+          if (qf.type.is.tuple(target)) {
+            const sourceLength = qf.type.is.tuple(source) ? getLengthOfTupleType(source) : 0;
             const targetLength = getLengthOfTupleType(target);
-            const sourceRestType = qf.is.tupleType(source) ? getRestTypeOfTupleType(source) : getElemTypeOfArrayType(source);
+            const sourceRestType = qf.type.is.tuple(source) ? getRestTypeOfTupleType(source) : getElemTypeOfArrayType(source);
             const targetRestType = getRestTypeOfTupleType(target);
             const fixedLength = targetLength < sourceLength || sourceRestType ? targetLength : sourceLength;
             for (let i = 0; i < fixedLength; i++) {
@@ -2128,7 +2127,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             }
             return;
           }
-          if (qf.is.arrayType(target)) {
+          if (qf.type.is.array(target)) {
             inferFromIndexTypes(source, target);
             return;
           }
@@ -2182,11 +2181,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function unionObjectAndArrayLiteralCandidates(candidates: qt.Type[]): qt.Type[] {
     if (candidates.length > 1) {
-      const objectLiterals = filter(candidates, qf.is.objectOrArrayLiteralType);
+      const objectLiterals = filter(candidates, qf.type.is.objectOrArrayLiteral);
       if (objectLiterals.length) {
         const literalsType = qf.get.unionType(objectLiterals, qt.UnionReduction.Subtype);
         return concatenate(
-          filter(candidates, (t) => !qf.is.objectOrArrayLiteralType(t)),
+          filter(candidates, (t) => !qf.type.is.objectOrArrayLiteral(t)),
           [literalsType]
         );
       }
@@ -2313,7 +2312,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && qf.is.possiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
         (prop) => [() => check.expression((prop as qt.PropertyAssignment).initer), prop.symbol.escName] as [() => qt.Type, qu.__String]
       ),
-      qf.is.typeAssignableTo,
+      qf.type.is.assignableTo,
       contextualType
     );
   }
@@ -2327,7 +2326,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         ),
         (prop) => [!(prop as qt.JsxAttribute).initer ? () => trueType : () => check.expression((prop as qt.JsxAttribute).initer!), prop.symbol.escName] as [() => qt.Type, qu.__String]
       ),
-      qf.is.typeAssignableTo,
+      qf.type.is.assignableTo,
       contextualType
     );
   }
@@ -2674,9 +2673,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return !!(filterType(type, (t) => (getTypeFacts(t) & notEqualFacts) === notEqualFacts).flags & qt.TypeFlags.Never);
     }
     const type = qf.get.typeOfExpression(node.expression);
-    if (!qf.is.literalType(type)) return false;
+    if (!qf.type.is.literal(type)) return false;
     const switchTypes = getSwitchClauseTypes(node);
-    if (!switchTypes.length || some(switchTypes, isNeitherUnitTypeNorNever)) return false;
+    if (!switchTypes.length || some(switchTypes, qf.type.is.neitherUnitNorNever)) return false;
     return eachTypeContainedIn(mapType(type, getRegularTypeOfLiteralType), switchTypes);
   }
   function functionHasImplicitReturn(func: qt.FunctionLikeDeclaration) {
@@ -2743,7 +2742,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (widened.flags & qt.TypeFlags.Nullable) {
         reportImplicitAny(declaration, anyType);
         return anyType;
-      } else if (qf.is.emptyArrayLiteralType(widened)) {
+      } else if (qf.type.is.emptyArrayLiteral(widened)) {
         reportImplicitAny(declaration, anyArrayType);
         return anyArrayType;
       }
@@ -2899,10 +2898,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const constraint = qf.get.effectiveConstraintOfTypeParam(source);
         const sourceConstraint = constraint && qf.get.typeFromTypeNode(constraint);
         const targetConstraint = qf.get.constraintOfTypeParam(target);
-        if (sourceConstraint && targetConstraint && !qf.is.typeIdenticalTo(sourceConstraint, targetConstraint)) return false;
+        if (sourceConstraint && targetConstraint && !qf.type.is.identicalTo(sourceConstraint, targetConstraint)) return false;
         const sourceDefault = source.default && qf.get.typeFromTypeNode(source.default);
         const targetDefault = getDefaultFromTypeParam(target);
-        if (sourceDefault && targetDefault && !qf.is.typeIdenticalTo(sourceDefault, targetDefault)) return false;
+        if (sourceDefault && targetDefault && !qf.type.is.identicalTo(sourceDefault, targetDefault)) return false;
       }
     }
     return true;
@@ -2949,7 +2948,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       error(initer, qd.msgs.In_ambient_enum_declarations_member_initer_must_be_constant_expression);
     } else {
       const source = check.expression(initer);
-      if (!qf.is.typeAssignableToKind(source, qt.TypeFlags.NumberLike)) {
+      if (!qf.type.is.assignableToKind(source, qt.TypeFlags.NumberLike)) {
         error(
           initer,
           qd.msgs.Only_numeric_enums_can_have_computed_members_but_this_expression_has_type_0_If_you_do_not_need_exhaustiveness_checks_consider_using_an_object_literal_instead,
@@ -3450,7 +3449,7 @@ export interface TypeCheckerOld {
   createArrayType(elemType: qt.Type): qt.Type;
   getElemTypeOfArrayType(arrayType: qt.Type): qt.Type | undefined;
   createPromiseType(type: qt.Type): qt.Type;
-  qf.is.typeAssignableTo(source: qt.Type, target: qt.Type): boolean;
+  qf.type.is.assignableTo(source: qt.Type, target: qt.Type): boolean;
   qf.create.anonymousType(
     symbol: qt.Symbol | undefined,
     members: qt.SymbolTable,
@@ -3476,10 +3475,10 @@ export interface TypeCheckerOld {
   getGlobalDiagnostics(): qd.Diagnostic[];
   getEmitResolver(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): qt.EmitResolver;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
-  qf.is.arrayType(type: qt.Type): boolean;
-  qf.is.tupleType(type: qt.Type): boolean;
-  qf.is.arrayLikeType(type: qt.Type): boolean;
-  isTypeInvalidDueToUnionDiscriminant(contextualType: qt.Type, obj: qt.ObjectLiteralExpression | qt.JsxAttributes): boolean;
+  qf.type.is.array(type: qt.Type): boolean;
+  qf.type.is.tuple(type: qt.Type): boolean;
+  qf.type.is.arrayLike(type: qt.Type): boolean;
+  qf.type.is.invalidDueToUnionDiscriminant(contextualType: qt.Type, obj: qt.ObjectLiteralExpression | qt.JsxAttributes): boolean;
   getAllPossiblePropertiesOfTypes(type: readonly qt.Type[]): qt.Symbol[];
   resolveName(name: string, location: Node | undefined, meaning: qt.SymbolFlags, excludeGlobals: boolean): qt.Symbol | undefined;
   getJsxNamespace(location?: Node): string;

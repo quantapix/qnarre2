@@ -1692,21 +1692,18 @@ export class Type extends qc.Type {
   prependTypeMapping(source: Type, target: Type, mapper: qt.TypeMapper | undefined) {
     return !mapper ? makeUnaryTypeMapper(source, target) : makeCompositeTypeMapper(TypeMapKind.Merged, makeUnaryTypeMapper(source, target), mapper);
   }
-  typeCouldHaveTopLevelSingletonTypes(type: Type): boolean {
-    if (type.flags & qt.TypeFlags.UnionOrIntersection) return !!forEach((type as qt.IntersectionType).types, typeCouldHaveTopLevelSingletonTypes);
-    if (type.flags & qt.TypeFlags.Instantiable) {
-      const constraint = getConstraintOfType(type);
-      if (constraint) return typeCouldHaveTopLevelSingletonTypes(constraint);
+  typeCouldHaveTopLevelSingletonTypes(t: Type): boolean {
+    if (t.flags & qt.TypeFlags.UnionOrIntersection) return !!forEach((t as qt.IntersectionType).types, typeCouldHaveTopLevelSingletonTypes);
+    if (t.flags & qt.TypeFlags.Instantiable) {
+      const c = getConstraintOfType(t);
+      if (c) return typeCouldHaveTopLevelSingletonTypes(c);
     }
-    return type.isUnitType();
+    return this.unit(t);
   }
   unwrapReturnType(returnType: Type, functionFlags: FunctionFlags) {
     const isGenerator = !!(functionFlags & FunctionFlags.Generator);
     const isAsync = !!(functionFlags & FunctionFlags.Async);
     return isGenerator ? getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Return, returnType, isAsync) ?? errorType : isAsync ? getAwaitedType(returnType) ?? errorType : returnType;
-  }
-  typeHasCallOrConstructSignatures(type: Type): boolean {
-    return type.hasCallOrConstructSignatures(checker);
   }
   findMatchingDiscriminantType(source: Type, target: Type, isRelatedTo: (source: Type, target: Type) => Ternary, skipPartial?: boolean) {
     if (target.flags & qt.TypeFlags.Union && source.flags & (TypeFlags.Intersection | qt.TypeFlags.Object)) {
@@ -1740,7 +1737,7 @@ export class Type extends qc.Type {
     }
   }
   findBestTypeForObjectLiteral(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.is.arrayLikeType)) return qf.find.up(unionTarget.types, (t) => !qf.is.arrayLikeType(t));
+    if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.type.is.arrayLike)) return qf.find.up(unionTarget.types, (t) => !qf.type.is.arrayLike(t));
   }
   findBestTypeForInvokable(source: Type, unionTarget: qt.UnionOrIntersectionType) {
     let signatureKind = qt.SignatureKind.Call;
@@ -1761,7 +1758,7 @@ export class Type extends qc.Type {
           bestMatch = target;
           matchingCount = len;
         }
-      } else if (overlap.isUnitType() && 1 >= matchingCount) {
+      } else if (qf.type.is.unit(overlap) && 1 >= matchingCount) {
         bestMatch = target;
         matchingCount = 1;
       }
@@ -1785,13 +1782,13 @@ export class Type extends qc.Type {
     return false;
   }
   allTypesAssignableToKind(source: Type, kind: qt.TypeFlags, strict?: boolean): boolean {
-    return source.flags & qt.TypeFlags.Union ? every((source as qt.UnionType).types, (subType) => allTypesAssignableToKind(subType, kind, strict)) : qf.is.typeAssignableToKind(source, kind, strict);
+    return source.flags & qt.TypeFlags.Union ? every((source as qt.UnionType).types, (subType) => allTypesAssignableToKind(subType, kind, strict)) : qf.type.is.assignableToKind(source, kind, strict);
   }
 
   typeMaybeAssignableTo(source: Type, target: Type) {
-    if (!(source.flags & qt.TypeFlags.Union)) return qf.is.typeAssignableTo(source, target);
+    if (!(source.flags & qt.TypeFlags.Union)) return qf.type.is.assignableTo(source, target);
     for (const t of (<qt.UnionType>source).types) {
-      if (qf.is.typeAssignableTo(t, target)) return true;
+      if (qf.type.is.assignableTo(t, target)) return true;
     }
     return false;
   }
@@ -1861,7 +1858,7 @@ export class Type extends qc.Type {
   }
   typesDefinitelyUnrelated(source: Type, target: Type) {
     return (
-      (qf.is.tupleType(source) && qf.is.tupleType(target) && tupleTypesDefinitelyUnrelated(source, target)) ||
+      (qf.type.is.tuple(source) && qf.type.is.tuple(target) && tupleTypesDefinitelyUnrelated(source, target)) ||
       (!!getUnmatchedProperty(source, target, true) && !!getUnmatchedProperty(target, source, true))
     );
   }
@@ -1872,7 +1869,7 @@ export class Type extends qc.Type {
     const result = !!(
       type.flags & qt.TypeFlags.Instantiable ||
       (type.flags & qt.TypeFlags.Object &&
-        !isNonGenericTopLevelType(type) &&
+        !qf.type.is.nonGenericTopLevel(type) &&
         ((objectFlags & ObjectFlags.Reference && ((<qt.TypeReference>type).node || forEach(getTypeArgs(<qt.TypeReference>type), couldContainTypeVariables))) ||
           (objectFlags & ObjectFlags.Anonymous &&
             type.symbol &&
@@ -1881,7 +1878,7 @@ export class Type extends qc.Type {
           objectFlags & (ObjectFlags.Mapped | ObjectFlags.ObjectRestType))) ||
       (type.flags & qt.TypeFlags.UnionOrIntersection &&
         !(type.flags & qt.TypeFlags.EnumLiteral) &&
-        !isNonGenericTopLevelType(type) &&
+        !qf.type.is.nonGenericTopLevel(type) &&
         some((<qt.UnionOrIntersectionType>type).types, couldContainTypeVariables))
     );
     if (type.flags & qt.TypeFlags.ObjectFlagsType) (<qt.ObjectFlagsType>type).objectFlags |= ObjectFlags.CouldContainTypeVariablesComputed | (result ? ObjectFlags.CouldContainTypeVariables : 0);
@@ -1915,7 +1912,7 @@ export class Type extends qc.Type {
     return strictNullChecks ? qf.get.unionType([type, optionalType]) : type;
   }
   removeOptionalTypeMarker(type: Type): Type {
-    return strictNullChecks ? filterType(type, isNotOptionalTypeMarker) : type;
+    return strictNullChecks ? filterType(type, qf.type.is.notOptionalMarker) : type;
   }
   propagateOptionalTypeMarker(type: Type, node: qt.OptionalChain, wasOptional: boolean) {
     return wasOptional ? (qf.is.outermostOptionalChain(node) ? qf.get.optionalType(type) : addOptionalTypeMarker(type)) : type;
@@ -1933,19 +1930,19 @@ export class Type extends qc.Type {
     let errorReported = false;
     if (getObjectFlags(type) & ObjectFlags.ContainsWideningType) {
       if (type.flags & qt.TypeFlags.Union) {
-        if (some((<qt.UnionType>type).types, qf.is.emptyObjectType)) errorReported = true;
+        if (some((<qt.UnionType>type).types, qf.type.is.emptyObject)) errorReported = true;
         else {
           for (const t of (<qt.UnionType>type).types) {
             if (reportWideningErrorsInType(t)) errorReported = true;
           }
         }
       }
-      if (qf.is.arrayType(type) || qf.is.tupleType(type)) {
+      if (qf.type.is.array(type) || qf.type.is.tuple(type)) {
         for (const t of getTypeArgs(<qt.TypeReference>type)) {
           if (reportWideningErrorsInType(t)) errorReported = true;
         }
       }
-      if (qf.is.objectLiteralType(type)) {
+      if (qf.type.is.objectLiteral(type)) {
         for (const p of getPropertiesOfObjectType(type)) {
           const t = p.typeOfSymbol();
           if (getObjectFlags(t) & ObjectFlags.ContainsWideningType) {
@@ -1959,16 +1956,16 @@ export class Type extends qc.Type {
   }
 
   compareTypesIdentical(source: Type, target: Type): Ternary {
-    return qf.is.typeRelatedTo(source, target, identityRelation) ? Ternary.True : Ternary.False;
+    return qf.type.is.relatedTo(source, target, identityRelation) ? Ternary.True : Ternary.False;
   }
   compareTypesAssignable(source: Type, target: Type): Ternary {
-    return qf.is.typeRelatedTo(source, target, assignableRelation) ? Ternary.True : Ternary.False;
+    return qf.type.is.relatedTo(source, target, assignableRelation) ? Ternary.True : Ternary.False;
   }
   compareTypesSubtypeOf(source: Type, target: Type): Ternary {
-    return qf.is.typeRelatedTo(source, target, subtypeRelation) ? Ternary.True : Ternary.False;
+    return qf.type.is.relatedTo(source, target, subtypeRelation) ? Ternary.True : Ternary.False;
   }
   areTypesComparable(type1: Type, type2: Type): boolean {
-    return isTypeComparableTo(type1, type2) || isTypeComparableTo(type2, type1);
+    return qf.type.is.comparableTo(type1, type2) || qf.type.is.comparableTo(type2, type1);
   }
 
   distributeIndexOverObjectType(objectType: Type, indexType: Type, writing: boolean) {
@@ -2280,7 +2277,7 @@ export class Signature extends qc.Signature {
     if (signature.hasRestParam()) {
       const restType = signature.params[paramCount].typeOfSymbol();
       const index = pos - paramCount;
-      if (!qf.is.tupleType(restType) || restType.target.hasRestElem || index < getTypeArgs(restType).length) return qf.get.indexedAccessType(restType, qf.get.literalType(index));
+      if (!qf.type.is.tuple(restType) || restType.target.hasRestElem || index < getTypeArgs(restType).length) return qf.get.indexedAccessType(restType, qf.get.literalType(index));
     }
     return;
   }
@@ -2364,7 +2361,7 @@ export class Signature extends qc.Signature {
   tryRestType(): Type | undefined {
     if (this.hasRestParam()) {
       const t = this.params[this.params.length - 1].typeOfSymbol();
-      const r = qf.is.tupleType(t) ? getRestTypeOfTupleType(t) : t;
+      const r = qf.type.is.tuple(t) ? getRestTypeOfTupleType(t) : t;
       return r && qf.get.indexTypeOfType(r, qt.IndexKind.Number);
     }
     return;

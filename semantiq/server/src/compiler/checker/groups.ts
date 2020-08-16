@@ -449,7 +449,7 @@ export function newIs(f: qt.Frame) {
     lateBindableName(n: qt.DeclarationName): n is qt.LateBoundName {
       if (n.kind !== Syntax.ComputedPropertyName && n.kind !== Syntax.ElemAccessExpression) return false;
       const e = n.kind === Syntax.ComputedPropertyName ? n.expression : n.argExpression;
-      return this.entityNameExpression(e) && this.typeUsableAsPropertyName(n.kind === Syntax.ComputedPropertyName ? check.computedPropertyName(n) : check.expressionCached(e));
+      return this.entityNameExpression(e) && this.usableAsPropertyName(n.kind === Syntax.ComputedPropertyName ? check.computedPropertyName(n) : check.expressionCached(e));
     }
     lateBoundName(name: qu.__String): boolean {
       return (name as string).charCodeAt(0) === qy.Codes._ && (name as string).charCodeAt(1) === qy.Codes._ && (name as string).charCodeAt(2) === qy.Codes.at;
@@ -624,11 +624,11 @@ export function newIs(f: qt.Frame) {
     anySignature(s: qt.Signature) {
       return (
         !s.typeParams &&
-        (!s.thisParam || this.typeAny(getTypeOfParam(s.thisParam))) &&
+        (!s.thisParam || this.any(getTypeOfParam(s.thisParam))) &&
         s.params.length === 1 &&
         s.hasRestParam() &&
-        (getTypeOfParam(s.params[0]) === anyArrayType || this.typeAny(getTypeOfParam(s.params[0]))) &&
-        this.typeAny(qf.get.returnTypeOfSignature(s))
+        (getTypeOfParam(s.params[0]) === anyArrayType || this.any(getTypeOfParam(s.params[0]))) &&
+        this.any(qf.get.returnTypeOfSignature(s))
       );
     }
     implementationCompatibleWithOverload(implementation: qt.Signature, overload: qt.Signature): boolean {
@@ -746,7 +746,7 @@ export function newIs(f: qt.Frame) {
     }
     functionObjectType(t: qt.ObjectType): boolean {
       const resolved = resolveStructuredTypeMembers(t);
-      return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as qu.__String) && isTypeSubtypeOf(t, globalFunctionType)));
+      return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as qu.__String) && qf.type.is.subtypeOf(t, globalFunctionType)));
     }
     destructuringAssignmentTarget(p: Node) {
       return (p.parent.kind === Syntax.BinaryExpression && (p.parent as qt.BinaryExpression).left === p) || (p.parent.kind === Syntax.ForOfStatement && (p.parent as qt.ForOfStatement).initer === p);
@@ -1088,7 +1088,7 @@ export function newIs(f: qt.Frame) {
       return this.validPropertyAccessWithType(n, n.kind === Syntax.PropertyAccessExpression && n.expression.kind === Syntax.SuperKeyword, property.escName, t);
     }
     validPropertyAccessWithType(n: qt.PropertyAccessExpression | qt.QualifiedName | qt.ImportTyping, isSuper: boolean, propertyName: qu.__String, t: qt.Type): boolean {
-      if (t === errorType || this.typeAny(t)) return true;
+      if (t === errorType || this.any(t)) return true;
       const prop = qf.get.propertyOfType(t, propertyName);
       if (prop) {
         if (n.kind === Syntax.PropertyAccessExpression && this.privateIdentifierPropertyDeclaration(prop.valueDeclaration)) {
@@ -1125,8 +1125,8 @@ export function newIs(f: qt.Frame) {
     }
     untypedFunctionCall(t: qt.Type, apparentFuncType: qt.Type, numCallSignatures: number, numConstructSignatures: number): boolean {
       return (
-        this.typeAny(t) ||
-        (this.typeAny(apparentFuncType) && !!(t.flags & TypeFlags.TypeParam)) ||
+        this.any(t) ||
+        (this.any(apparentFuncType) && !!(t.flags & TypeFlags.TypeParam)) ||
         (!numCallSignatures && !numConstructSignatures && !(apparentFuncType.flags & (TypeFlags.Union | TypeFlags.Never)) && this.typeAssignableTo(t, globalFunctionType))
       );
     }
@@ -1345,7 +1345,7 @@ export function newIs(f: qt.Frame) {
       }
     }
     typeEqualityComparableTo(s: qt.Type, t: qt.Type) {
-      return (t.flags & TypeFlags.Nullable) !== 0 || isTypeComparableTo(s, t);
+      return (t.flags & TypeFlags.Nullable) !== 0 || qf.type.is.comparableTo(s, t);
     }
     nodekind(TypeAssertion, n: qt.Expression) {
       n = qf.skip.parentheses(n);

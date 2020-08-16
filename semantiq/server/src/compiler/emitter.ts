@@ -2855,7 +2855,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         writeSpace();
         writePunctuation('{');
         write('Object');
-        if (tag.typeExpression.qf.is.arrayType) {
+        if (tag.typeExpression.qf.type.is.array) {
           writePunctuation('[');
           writePunctuation(']');
         }
