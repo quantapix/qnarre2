@@ -18,8 +18,8 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   typeOfSymbolWithDeferredType() {
     const ls = this.links;
     if (!ls.type) {
-      qu.assertIsDefined(ls.deferralParent);
-      qu.assertIsDefined(ls.deferralConstituents);
+      qf.assert.defined(ls.deferralParent);
+      qf.assert.defined(ls.deferralConstituents);
       ls.type = ls.deferralParent!.flags & qt.TypeFlags.Union ? qf.get.unionType(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
     }
     return ls.type!;
@@ -74,7 +74,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getDeclarationOfAliasSymbol() {
     const ds = this.declarations;
-    return ds && qu.find(ds, qf.is.aliasSymbolDeclaration);
+    return ds && qf.find.up(ds, qf.is.aliasSymbolDeclaration);
   }
   getTypeOnlyAliasDeclaration(): qt.TypeOnlyCompatibleAliasDeclaration | undefined {
     if (!(this.flags & SymbolFlags.Alias)) return;
@@ -185,7 +185,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return !noAlias && this.isNonLocalAlias() ? this.resolveAlias() : this;
   }
   resolveAlias() {
-    qu.assert((this.flags & SymbolFlags.Alias) !== 0);
+    qf.assert.true((this.flags & SymbolFlags.Alias) !== 0);
     const ls = this.links;
     if (!ls.target) {
       ls.target = resolvingSymbol;
@@ -273,7 +273,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (ls.extendedContainersByFile && (results = ls.extendedContainersByFile.get(id))) return results;
     if (containingFile && containingFile.imports) {
       for (const importRef of containingFile.imports) {
-        if (isSynthesized(importRef)) continue;
+        if (qf.is.synthesized(importRef)) continue;
         const m = resolveExternalModuleName(n, importRef, true);
         if (!m) continue;
         const ref = this.getAliasForSymbolInContainer(m);
@@ -434,7 +434,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   includePrivateSymbol() {
     if (qu.some(this.declarations, qf.is.paramDeclaration)) return;
-    qu.assertIsDefined(deferredPrivates);
+    qf.assert.defined(deferredPrivates);
     getUnusedName(qy.get.unescUnderscores(this.escName), this);
     deferredPrivates.set('' + this.id, this);
   }
@@ -455,7 +455,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const aliasType = this.getDeclaredTypeOfTypeAlias();
     const typeParams = this.links.typeParams;
     const typeParamDecls = map(typeParams, (p) => typeParamToDeclaration(p, context));
-    const jsdocAliasDecl = find(this.declarations, isDocTypeAlias);
+    const jsdocAliasDecl = qf.find.up(this.declarations, isDocTypeAlias);
     const commentText = jsdocAliasDecl ? jsdocAliasDecl.comment || jsdocAliasDecl.parent.comment : undefined;
     const oldFlags = context.flags;
     context.flags |= qt.NodeBuilderFlags.InTypeAlias;
@@ -577,7 +577,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       else {
         const flags = !(this.flags & SymbolFlags.BlockScopedVariable) ? undefined : isConstVariable(this) ? NodeFlags.Const : NodeFlags.Let;
         const name = needsPostExportDefault || !(this.flags & SymbolFlags.Property) ? localName : getUnusedName(localName, this);
-        let textRange: Node | undefined = this.declarations && find(this.declarations, (d) => d.kind === Syntax.VariableDeclaration);
+        let textRange: Node | undefined = this.declarations && qf.find.up(this.declarations, (d) => d.kind === Syntax.VariableDeclaration);
         if (textRange && textRange.parent.kind === Syntax.VariableDeclarationList && textRange.parent.declarations.length === 1) textRange = textRange.parent.parent;
         const statement = new qc.VariableStatement(
           undefined,
@@ -857,7 +857,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       if (!isPrivateWithinAmbient(setter))
         errorOrSuggestion(noImplicitAny, setter, qd.Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_param_type_annotation, this.symbolToString());
     } else {
-      qu.assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
+      qf.assert.true(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
       if (!isPrivateWithinAmbient(getter))
         errorOrSuggestion(noImplicitAny, getter, qd.Property_0_implicitly_has_type_any_because_its_get_accessor_lacks_a_return_type_annotation, this.symbolToString());
     }
@@ -865,7 +865,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getBaseTypeVariableOfClass() {
     const t = getBaseConstructorTypeOfClass(this.getDeclaredTypeOfClassOrInterface());
-    return t.flags & qt.TypeFlags.TypeVariable ? t : t.flags & qt.TypeFlags.Intersection ? qu.find((t as qt.IntersectionType).types, (t) => !!(t.flags & qt.TypeFlags.TypeVariable)) : undefined;
+    return t.flags & qt.TypeFlags.TypeVariable ? t : t.flags & qt.TypeFlags.Intersection ? qf.find.up((t as qt.IntersectionType).types, (t) => !!(t.flags & qt.TypeFlags.TypeVariable)) : undefined;
   }
   getTypeOfFuncClassEnumModule(): Type {
     let ls = this.links;
@@ -936,7 +936,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getOuterTypeParamsOfClassOrInterface(): qt.TypeParam[] | undefined {
     const d = this.flags & SymbolFlags.Class ? this.valueDeclaration : this.declarationOfKind(Syntax.InterfaceDeclaration)!;
-    qu.assert(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
+    qf.assert.true(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
     return getOuterTypeParams(d);
   }
   getLocalTypeParamsOfClassOrInterfaceOrTypeAlias(): qt.TypeParam[] | undefined {
@@ -1002,7 +1002,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const ls = this.links;
     if (!ls.declaredType) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.DeclaredType)) return errorType;
-      const d = Debug.check.defined(find(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
+      const d = Debug.check.defined(qf.find.up(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
       const typeNode = qf.is.doc.typeAlias(d) ? d.typeExpression : d.type;
       let type = typeNode ? qf.get.typeFromTypeNode(typeNode) : errorType;
       if (popTypeResolution()) {
@@ -1177,7 +1177,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return !!(this.checkFlags & CheckFlags.Mapped && !(this as qt.MappedType).type && findResolutionCycleStartIndex(this, TypeSystemPropertyName.Type) >= 0);
   }
   getImmediateAliasedSymbol(): Symbol | undefined {
-    qu.assert((this.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
+    qf.assert.true((this.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
     const ls = this.links;
     if (!ls.immediateTarget) {
       const node = this.getDeclarationOfAliasSymbol();
@@ -1505,7 +1505,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     for (const d of this.declarations) {
       if (d.kind === Syntax.TypeParam) {
         const p = d.parent.kind === Syntax.DocTemplateTag ? qf.get.doc.host(d.parent) : d.parent;
-        if (p === container) return !(d.parent.kind === Syntax.DocTemplateTag && find((d.parent.parent as qt.Doc).tags!, isDocTypeAlias));
+        if (p === container) return !(d.parent.kind === Syntax.DocTemplateTag && qf.find.up((d.parent.parent as qt.Doc).tags!, isDocTypeAlias));
       }
     }
     return false;
@@ -1581,7 +1581,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
   }
   getDeclarationWithTypeAnnotation(n?: Node) {
-    return this.declarations && find(this.declarations, (d) => !!qf.get.effectiveTypeAnnotationNode(d) && (!n || !!qc.findAncestor(d, (a) => a === n)));
+    return this.declarations && qf.find.up(this.declarations, (d) => !!qf.get.effectiveTypeAnnotationNode(d) && (!n || !!qc.findAncestor(d, (a) => a === n)));
   }
   getNameOfSymbolFromNameType(c?: QContext) {
     const t = this.links.nameType;
@@ -1607,7 +1607,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       return 'default';
     }
     if (this.declarations && this.declarations.length) {
-      let d = firstDefined(this.declarations, (d) => (qf.decl.nameOf(d) ? d : undefined));
+      let d = qf.find.defined(this.declarations, (d) => (qf.decl.nameOf(d) ? d : undefined));
       const name = d && qf.decl.nameOf(d);
       if (d && name) {
         if (d.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
@@ -1644,7 +1644,7 @@ export class SymbolTable extends qc.SymbolTable<Symbol> {
     if (f) {
       const s = qf.get.mergedSymbol(this.get(n));
       if (s) {
-        qu.assert((s.checkFlags() & CheckFlags.Instantiated) === 0);
+        qf.assert.true((s.checkFlags() & CheckFlags.Instantiated) === 0);
         if (s.flags & f) return s;
         if (s.flags & SymbolFlags.Alias) {
           const t = s.resolveAlias();
@@ -1729,7 +1729,7 @@ export class Type extends qc.Type {
   findMatchingTypeReferenceOrTypeAliasReference(source: Type, unionTarget: qt.UnionOrIntersectionType) {
     const sourceObjectFlags = getObjectFlags(source);
     if (sourceObjectFlags & (ObjectFlags.Reference | ObjectFlags.Anonymous) && unionTarget.flags & qt.TypeFlags.Union) {
-      return find(unionTarget.types, (target) => {
+      return qf.find.up(unionTarget.types, (target) => {
         if (target.flags & qt.TypeFlags.Object) {
           const overlapObjFlags = sourceObjectFlags & getObjectFlags(target);
           if (overlapObjFlags & ObjectFlags.Reference) return (source as qt.TypeReference).target === (target as qt.TypeReference).target;
@@ -1740,12 +1740,12 @@ export class Type extends qc.Type {
     }
   }
   findBestTypeForObjectLiteral(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.is.arrayLikeType)) return find(unionTarget.types, (t) => !qf.is.arrayLikeType(t));
+    if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.is.arrayLikeType)) return qf.find.up(unionTarget.types, (t) => !qf.is.arrayLikeType(t));
   }
   findBestTypeForInvokable(source: Type, unionTarget: qt.UnionOrIntersectionType) {
     let signatureKind = qt.SignatureKind.Call;
     const hasSignatures = getSignaturesOfType(source, signatureKind).length > 0 || ((signatureKind = qt.SignatureKind.Construct), getSignaturesOfType(source, signatureKind).length > 0);
-    if (hasSignatures) return find(unionTarget.types, (t) => getSignaturesOfType(t, signatureKind).length > 0);
+    if (hasSignatures) return qf.find.up(unionTarget.types, (t) => getSignaturesOfType(t, signatureKind).length > 0);
   }
   findMostOverlappyType(source: Type, unionTarget: qt.UnionOrIntersectionType) {
     let bestMatch: Type | undefined;

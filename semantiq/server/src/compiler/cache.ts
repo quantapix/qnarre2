@@ -199,7 +199,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const globalCache = resolutionHost.getGlobalCache();
     if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
       const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
-        Debug.checkDefined(resolutionHost.globalCacheResolutionModuleName)(moduleName),
+        qf.check.defined(resolutionHost.globalCacheResolutionModuleName)(moduleName),
         resolutionHost.projectName,
         compilerOpts,
         host,
@@ -279,7 +279,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           logChanges = false;
         }
       }
-      qu.assert(resolution !== undefined && !resolution.isInvalidated);
+      qf.assert.true(resolution !== undefined && !resolution.isInvalidated);
       seenNamesInFile.set(name, true);
       resolvedModules.push(getResolutionWithResolvedFileName(resolution));
     }
@@ -338,7 +338,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       failedLookupLocation = isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
       const failedLookupPathSplit = failedLookupLocationPath.split(dirSeparator);
       const failedLookupSplit = failedLookupLocation.split(dirSeparator);
-      qu.assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
+      qf.assert.true(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
       if (failedLookupPathSplit.length > rootSplitLength + 1) {
         return {
           dir: failedLookupSplit.slice(0, rootSplitLength + 1).join(dirSeparator),
@@ -391,7 +391,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       Debug.assertDefined(resolution.files);
     } else {
       resolution.refCount = 1;
-      qu.assert(resolution.files === undefined);
+      qf.assert.true(resolution.files === undefined);
       if (isExternalModuleNameRelative(name)) {
         watchFailedLookupLocationOfResolution(resolution);
       } else {
@@ -405,7 +405,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     (resolution.files || (resolution.files = [])).push(filePath);
   }
   function watchFailedLookupLocationOfResolution(resolution: ResolutionWithFailedLookupLocations) {
-    qu.assert(!!resolution.refCount);
+    qf.assert.true(!!resolution.refCount);
     const { failedLookupLocations } = resolution;
     if (!failedLookupLocations.length) return;
     resolutionsWithFailedLookups.push(resolution);
@@ -420,7 +420,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           customFailedLookupPaths.set(failedLookupLocationPath, refCount + 1);
         }
         if (dirPath === rootPath) {
-          qu.assert(!nonRecursive);
+          qf.assert.true(!nonRecursive);
           setAtRoot = true;
         } else {
           setDirectoryWatcher(dir, dirPath, nonRecursive);
@@ -440,7 +440,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function setDirectoryWatcher(dir: string, dirPath: qt.Path, nonRecursive?: boolean) {
     const dirWatcher = directoryWatchesOfFailedLookups.get(dirPath);
     if (dirWatcher) {
-      qu.assert(!!nonRecursive === !!dirWatcher.nonRecursive);
+      qf.assert.true(!!nonRecursive === !!dirWatcher.nonRecursive);
       dirWatcher.refCount++;
     } else {
       directoryWatchesOfFailedLookups.set(dirPath, { watcher: createDirectoryWatcher(dir, dirPath, nonRecursive), refCount: 1, nonRecursive });
@@ -475,7 +475,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           if (refCount === 1) {
             customFailedLookupPaths.delete(failedLookupLocationPath);
           } else {
-            qu.assert(refCount > 1);
+            qf.assert.true(refCount > 1);
             customFailedLookupPaths.set(failedLookupLocationPath, refCount - 1);
           }
         }
@@ -554,7 +554,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     forEach(resolvedFileToResolution.get(filePath), invalidateResolution);
   }
   function setFilesWithInvalidatedNonRelativeUnresolvedImports(filesMap: ReadonlyMap<readonly string[]>) {
-    qu.assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
+    qf.assert.true(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
     filesWithInvalidatedNonRelativeUnresolvedImports = filesMap;
   }
   function invalidateResolutionOfFailedLookupLocation(fileOrDirectoryPath: qt.Path, isCreatingWatchedDirectory: boolean) {

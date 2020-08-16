@@ -1154,7 +1154,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         variable = <qt.Identifier>qf.create.synthesizedClone(initer.declarations[0].name);
       } else {
         variable = qf.visit.node(initer, visitor, isExpression);
-        assert(qf.is.leftHandSideExpression(variable));
+        qf.assert.true(qf.is.leftHandSideExpression(variable));
       }
       emitAssignment(variable, new qc.ElemAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
@@ -1487,7 +1487,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return label;
   }
   function markLabel(label: Label): void {
-    assert(labelOffsets !== undefined, 'No labels were defined.');
+    qf.assert.true(labelOffsets !== undefined, 'No labels were defined.');
     labelOffsets[label] = operations ? operations.length : 0;
   }
   function beginBlock(block: CodeBlock): number {
@@ -1533,7 +1533,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     });
   }
   function endWithBlock(): void {
-    assert(peekBlockKind() === CodeBlockKind.With);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.With);
     const block = <WithBlock>endBlock();
     markLabel(block.endLabel);
   }
@@ -1551,7 +1551,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return endLabel;
   }
   function beginCatchBlock(variable: qt.VariableDeclaration): void {
-    assert(peekBlockKind() === CodeBlockKind.Exception);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Exception);
     // generated identifiers should already be unique within a file
     let name: qt.Identifier;
     if (qf.is.generatedIdentifier(variable.name)) {
@@ -1569,7 +1569,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       renamedCatchVariableDeclarations[getOriginalNodeId(variable)] = name;
     }
     const exception = <ExceptionBlock>peekBlock();
-    assert(exception.state < ExceptionBlockState.Catch);
+    qf.assert.true(exception.state < ExceptionBlockState.Catch);
     const endLabel = exception.endLabel;
     emitBreak(endLabel);
     const catchLabel = defineLabel();
@@ -1581,9 +1581,9 @@ export function transformGenerators(context: qt.TrafoContext) {
     emitNop();
   }
   function beginFinallyBlock(): void {
-    assert(peekBlockKind() === CodeBlockKind.Exception);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Exception);
     const exception = <ExceptionBlock>peekBlock();
-    assert(exception.state < ExceptionBlockState.Finally);
+    qf.assert.true(exception.state < ExceptionBlockState.Finally);
     const endLabel = exception.endLabel;
     emitBreak(endLabel);
     const finallyLabel = defineLabel();
@@ -1592,7 +1592,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     exception.finallyLabel = finallyLabel;
   }
   function endExceptionBlock(): void {
-    assert(peekBlockKind() === CodeBlockKind.Exception);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Exception);
     const exception = <ExceptionBlock>endBlock();
     const state = exception.state;
     if (state < ExceptionBlockState.Finally) {
@@ -1623,7 +1623,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return breakLabel;
   }
   function endLoopBlock(): void {
-    assert(peekBlockKind() === CodeBlockKind.Loop);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Loop);
     const block = <SwitchBlock>endBlock();
     const breakLabel = block.breakLabel;
     if (!block.isScript) {
@@ -1647,7 +1647,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return breakLabel;
   }
   function endSwitchBlock(): void {
-    assert(peekBlockKind() === CodeBlockKind.Switch);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Switch);
     const block = <SwitchBlock>endBlock();
     const breakLabel = block.breakLabel;
     if (!block.isScript) {
@@ -1672,7 +1672,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     });
   }
   function endLabeledBlock() {
-    assert(peekBlockKind() === CodeBlockKind.Labeled);
+    qf.assert.true(peekBlockKind() === CodeBlockKind.Labeled);
     const block = <LabeledBlock>endBlock();
     if (!block.isScript) {
       markLabel(block.breakLabel);
@@ -1752,7 +1752,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return literal;
   }
   function createInlineBreak(label: Label, location?: TextRange): qt.ReturnStatement {
-    Debug.assertLessThan(0, label, 'Invalid label');
+    qf.assert.lessThan(0, label, 'Invalid label');
     return setRange(new qc.ReturnStatement(new qc.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
   }
   function createInlineReturn(expression?: qt.Expression, location?: TextRange): qt.ReturnStatement {

@@ -62,7 +62,7 @@ export function flattenDestructuringAssignment(
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
       value = ensureIdentifier(flattenContext, value, true, location);
-    } else if (isSynthesized(node)) {
+    } else if (qf.is.synthesized(node)) {
       location = value;
     }
   }

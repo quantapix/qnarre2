@@ -123,7 +123,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     return node;
   }
   function visitPropertyDeclaration(node: qt.PropertyDeclaration) {
-    assert(!some(node.decorators));
+    qf.assert.true(!some(node.decorators));
     if (!shouldTransformPrivateFields && node.name.kind === Syntax.PrivateIdentifier)
       return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, undefined, undefined, undefined);
     const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initer || !!context.getCompilerOpts().useDefineForClassFields);
@@ -136,7 +136,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     receiver = qf.visit.node(receiver, visitor, isExpression);
     switch (info.placement) {
       case PrivateIdentifierPlacement.InstanceField:
-        return createClassPrivateFieldGetHelper(context, isSynthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver), info.weakMapName);
+        return createClassPrivateFieldGetHelper(context, qf.is.synthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver), info.weakMapName);
       default:
         return fail('Unexpected private identifier placement');
     }
@@ -208,7 +208,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     return qf.visit.children(node, visitor, context);
   }
   function createCopiableReceiverExpr(receiver: qt.Expression): { readExpression: qt.Expression; initializeExpression: qt.Expression | undefined } {
-    const clone = isSynthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver);
+    const clone = qf.is.synthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver);
     if (isSimpleInlineableExpression(receiver)) return { readExpression: clone, initializeExpression: undefined };
     const readExpression = qf.create.tempVariable(hoistVariableDeclaration);
     const initializeExpression = qf.create.assignment(readExpression, clone);
@@ -315,7 +315,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     const classExpression = node.update(node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
     if (some(staticProperties) || some(pendingExpressions)) {
       if (isDecoratedClassDeclaration) {
-        Debug.assertIsDefined(pendingStatements, 'Decorated classes transformed by TypeScript are expected to be within a variable declaration.');
+        qf.assert.defined(pendingStatements, 'Decorated classes transformed by TypeScript are expected to be within a variable declaration.');
         if (pendingStatements && pendingExpressions && some(pendingExpressions)) {
           pendingStatements.push(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
         }
@@ -388,7 +388,7 @@ export function transformClassFields(context: qt.TrafoContext) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
     }
     if (constructor?.body) {
-      let afterParamProperties = findIndex(constructor.body.statements, (s) => !qf.is.paramPropertyDeclaration(qf.get.originalOf(s), constructor), indexOfFirstStatement);
+      let afterParamProperties = qf.find.index(constructor.body.statements, (s) => !qf.is.paramPropertyDeclaration(qf.get.originalOf(s), constructor), indexOfFirstStatement);
       if (afterParamProperties === -1) {
         afterParamProperties = constructor.body.statements.length;
       }

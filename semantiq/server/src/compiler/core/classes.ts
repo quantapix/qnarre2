@@ -263,7 +263,7 @@ export class CallChain extends CallExpression implements qt.CallChain {
     this.questionDotToken = q;
   }
   update(e: qt.Expression, ts: readonly qt.Typing[] | undefined, es: readonly qt.Expression[], q?: qt.QuestionDotToken) {
-    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qf.assert.true(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.typeArgs !== ts || this.args !== es ? new CallChain(e, q, ts, es).updateFrom(this) : this;
   }
 }
@@ -321,7 +321,7 @@ export class CatchClause extends qb.Nobj implements qt.CatchClause {
   block: qt.Block;
   constructor(v: string | qt.VariableDeclaration | undefined, b: qt.Block) {
     super(true);
-    this.variableDeclaration = qu.isString(v) ? new VariableDeclaration(v) : v;
+    this.variableDeclaration = qf.is.string(v) ? new VariableDeclaration(v) : v;
     this.block = b;
   }
   update(v: qt.VariableDeclaration | undefined, b: qt.Block) {
@@ -407,7 +407,7 @@ export class CommaListExpression extends qb.Expr implements qt.CommaListExpressi
     super(true);
     const flatten = (e: qt.Expression): qt.Expression | readonly qt.Expression[] => {
       const n = e as qt.Node;
-      if (qu.isSynthesized(n) && !qf.is.parseTreeNode(n) && !n.original && !n.emitNode && !n.id) {
+      if (qf.is.synthesized(n) && !qf.is.parseTreeNode(n) && !n.original && !n.emitNode && !n.id) {
         if (n.kind === Syntax.CommaListExpression) return n.elems;
         if (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.CommaToken) return [n.left, n.right];
       }
@@ -929,7 +929,7 @@ export class ElemAccessChain extends ElemAccessExpression implements qt.ElemAcce
     this.questionDotToken = q;
   }
   update(e: qt.Expression, a: qt.Expression, q?: qt.QuestionDotToken) {
-    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qf.assert.true(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.argExpression !== a ? new ElemAccessChain(e, q, a).updateFrom(this) : this;
   }
 }
@@ -1531,7 +1531,7 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
     oldFileOfCurrentEmit?: boolean
   ) {
     super();
-    if (!qu.isString(javascriptTextOrReadFileText)) {
+    if (!qf.is.string(javascriptTextOrReadFileText)) {
       const cache = new qu.QMap<string | false>();
       const textGetter = (path: string | undefined) => {
         if (path === undefined) return;
@@ -1556,7 +1556,7 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
       };
       this.javascriptPath = declarationTextOrJavascriptPath;
       this.javascriptMapPath = javascriptMapPath;
-      this.declarationPath = qu.checkDefined(javascriptMapTextOrDeclarationPath);
+      this.declarationPath = qf.check.defined(javascriptMapTextOrDeclarationPath);
       this.declarationMapPath = declarationMapPath;
       this.buildInfoPath = declarationMapTextOrBuildInfoPath;
       Object.defineProperties(this, {
@@ -1572,7 +1572,7 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
         },
         declarationText: {
           get() {
-            return definedTextGetter(qu.checkDefined(javascriptMapTextOrDeclarationPath));
+            return definedTextGetter(qf.check.defined(javascriptMapTextOrDeclarationPath));
           },
         },
         declarationMapText: {
@@ -2162,7 +2162,7 @@ export class NonNullChain extends NonNullExpression implements qt.NonNullChain {
     this.flags |= NodeFlags.OptionalChain;
   }
   update(e: qt.Expression) {
-    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qf.assert.true(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e ? new NonNullChain(e).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
@@ -2427,7 +2427,7 @@ export class PropertyAccessChain extends PropertyAccessExpression implements qt.
     this.questionDotToken = q;
   }
   update(e: qt.Expression, n: qt.Identifier, q?: qt.QuestionDotToken) {
-    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qf.assert.true(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).qf.emit.setFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
@@ -3063,7 +3063,7 @@ export class VariableStatement extends qb.Stmt implements qt.VariableStatement {
     super(true);
     this.decorators = undefined;
     this.modifiers = qb.Nodes.from(ms);
-    this.declarationList = qu.isArray(ds) ? new VariableDeclarationList(ds) : ds;
+    this.declarationList = qf.is.array(ds) ? new VariableDeclarationList(ds) : ds;
   }
   update(ms: readonly Modifier[] | undefined, ds: qt.VariableDeclarationList) {
     return this.modifiers !== ms || this.declarationList !== ds ? new VariableStatement(ms, ds).updateFrom(this) : this;
@@ -3139,7 +3139,7 @@ export function asToken<T extends Syntax>(t: T | qt.Token<T>): qt.Token<T> {
   return typeof t === 'number' ? new qb.Token(t) : t;
 }
 export function asName<T extends qt.Identifier | qt.BindingName | qt.PropertyName | qt.EntityName | qt.ThisTyping | undefined>(n: string | T): T | Identifier {
-  return qu.isString(n) ? new Identifier(n) : n;
+  return qf.is.string(n) ? new Identifier(n) : n;
 }
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote: boolean): StringLiteral;
 export function asLiteral(v: string | number, singleQuote: boolean): StringLiteral | NumericLiteral;
@@ -3151,7 +3151,7 @@ export function asLiteral(v: string | number | qt.PseudoBigInt | boolean | Strin
   if (typeof v === 'number') return new NumericLiteral(v + '');
   if (typeof v === 'object' && 'base10Value' in v) return new BigIntLiteral(pseudoBigIntToString(v) + 'n');
   if (typeof v === 'boolean') return v ? new BooleanLiteral(true) : new BooleanLiteral(false);
-  if (qu.isString(v)) {
+  if (qf.is.string(v)) {
     const r = new StringLiteral(v);
     if (singleQuote) r.singleQuote = true;
     return r;

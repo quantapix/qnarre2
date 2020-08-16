@@ -328,7 +328,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       try {
         cancellationToken = ct;
         check.sourceFile(file);
-        assert(!!(qf.get.nodeLinks(file).flags & NodeCheckFlags.TypeChecked));
+        qf.assert.true(!!(qf.get.nodeLinks(file).flags & NodeCheckFlags.TypeChecked));
         diagnostics = qu.addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
         check.unusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
           if (!qf.has.parseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
@@ -422,7 +422,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function mergeModuleAugmentation(moduleName: qt.StringLiteral | qt.Identifier): void {
     const moduleAugmentation = <qt.ModuleDeclaration>moduleName.parent;
     if (moduleAugmentation.symbol.declarations[0] !== moduleAugmentation) {
-      assert(moduleAugmentation.symbol.declarations.length > 1);
+      qf.assert.true(moduleAugmentation.symbol.declarations.length > 1);
       return;
     }
     if (qf.is.globalScopeAugmentation(moduleAugmentation)) globals.merge(moduleAugmentation.symbol.exports!);
@@ -489,7 +489,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function diagnosticName(nameArg: qu.__String | qc.Identifier | qc.PrivateIdentifier) {
-    return isString(nameArg) ? qy.get.unescUnderscores(nameArg as qu.__String) : declarationNameToString(nameArg as qt.Identifier);
+    return qf.is.string(nameArg) ? qy.get.unescUnderscores(nameArg as qu.__String) : declarationNameToString(nameArg as qt.Identifier);
   }
   function canHaveSyntheticDefault(file: qt.SourceFile | undefined, moduleSymbol: qt.Symbol, dontResolveAlias: boolean) {
     if (!allowSyntheticDefaultImports) return false;
@@ -509,7 +509,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const diagnostic = error(node.name, qd.msgs.Module_0_has_no_default_export, moduleSymbol.symbolToString());
       const exportStar = moduleSymbol.exports?.get(InternalSymbol.ExportStar);
       if (exportStar) {
-        const defaultExport = find(
+        const defaultExport = qf.find.up(
           exportStar.declarations,
           (decl) => !!(decl.kind === Syntax.ExportDeclaration && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
         );
@@ -538,7 +538,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           ? reportInvalidImportEqualsExportMember(node, name, declarationName, moduleName)
           : error(name, qd.msgs.Module_0_has_no_exported_member_1, moduleName, declarationName);
       } else {
-        const exportedSymbol = exports ? find(exports.toArray(), (s) => !!qf.get.symbolIfSameReference(s, localSymbol)) : undefined;
+        const exportedSymbol = exports ? qf.find.up(exports.toArray(), (s) => !!qf.get.symbolIfSameReference(s, localSymbol)) : undefined;
         const diagnostic = exportedSymbol
           ? error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_exported_as_2, moduleName, declarationName, exportedSymbol.symbolToString())
           : error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_not_exported, moduleName, declarationName);
@@ -582,7 +582,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function markSymbolOfAliasDeclarationIfTypeOnlyWorker(aliasDeclarationLinks: qt.SymbolLinks, target: qt.Symbol | undefined, overwriteEmpty: boolean): boolean {
     if (target && (aliasDeclarationLinks.typeOnlyDeclaration === undefined || (overwriteEmpty && aliasDeclarationLinks.typeOnlyDeclaration === false))) {
       const exportSymbol = target.exports?.get(InternalSymbol.ExportEquals) ?? target;
-      const typeOnly = exportSymbol.declarations && find(exportSymbol.declarations, isTypeOnlyImportOrExportDeclaration);
+      const typeOnly = exportSymbol.declarations && qf.find.up(exportSymbol.declarations, isTypeOnlyImportOrExportDeclaration);
       aliasDeclarationLinks.typeOnlyDeclaration = typeOnly ?? exportSymbol.links.typeOnlyDeclaration ?? false;
     }
     return !!aliasDeclarationLinks.typeOnlyDeclaration;
@@ -833,7 +833,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return typeParams;
   }
   function addDeclarationToLateBoundSymbol(symbol: qt.Symbol, member: qt.LateBoundDecl | qt.BinaryExpression, symbolFlags: qt.SymbolFlags) {
-    assert(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
+    qf.assert.true(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
     symbol.flags |= symbolFlags;
     member.symbol.links.lateSymbol = symbol;
     if (!symbol.declarations) symbol.declarations = [member];
@@ -845,7 +845,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function lateBindMember(parent: qt.Symbol, earlySymbols: qt.SymbolTable | undefined, lateSymbols: EscapedMap<qt.TransientSymbol>, decl: qt.LateBoundDecl | qt.LateBoundBinaryExpressionDeclaration) {
-    assert(!!decl.symbol, 'The member is expected to have a symbol.');
+    qf.assert.true(!!decl.symbol, 'The member is expected to have a symbol.');
     const ls = qf.get.nodeLinks(decl);
     if (!ls.resolvedSymbol) {
       ls.resolvedSymbol = decl.symbol;
@@ -866,7 +866,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
         lateSymbol.nameType = type;
         addDeclarationToLateBoundSymbol(lateSymbol, decl, symbolFlags);
-        if (lateSymbol.parent) assert(lateSymbol.parent === parent, 'Existing symbol parent should match new one');
+        if (lateSymbol.parent) qf.assert.true(lateSymbol.parent === parent, 'Existing symbol parent should match new one');
         else {
           lateSymbol.parent = parent;
         }
@@ -924,7 +924,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function elaborateNeverIntersection(errorInfo: qd.MessageChain | undefined, type: qt.Type) {
     if (getObjectFlags(type) & ObjectFlags.IsNeverIntersection) {
-      const neverProp = find(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.discriminantWithNeverType);
+      const neverProp = qf.find.up(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.discriminantWithNeverType);
       if (neverProp) {
         return chainqd.Messages(
           errorInfo,
@@ -933,7 +933,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           neverProp.symbolToString()
         );
       }
-      const privateProp = find(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.conflictingPrivateProperty);
+      const privateProp = qf.find.up(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.conflictingPrivateProperty);
       if (privateProp) {
         return chainqd.Messages(
           errorInfo,
@@ -981,7 +981,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (declaration.kind === Syntax.DocSignature || !containsArgsReference(declaration)) return false;
     const lastParam = lastOrUndefined(declaration.params);
     const lastParamTags = lastParam ? qf.get.doc.paramTags(lastParam) : qf.get.doc.tags(declaration).filter(isDocParamTag);
-    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && p.typeExpression.type.kind === Syntax.DocVariadicTyping ? p.typeExpression.type : undefined));
+    const lastParamVariadicType = qf.find.defined(lastParamTags, (p) => (p.typeExpression && p.typeExpression.type.kind === Syntax.DocVariadicTyping ? p.typeExpression.type : undefined));
     const syntheticArgsSymbol = new qc.Symbol(SymbolFlags.Variable, 'args' as qu.__String, qt.CheckFlags.RestParam);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(qf.get.typeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) params.pop();
@@ -1145,7 +1145,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function intersectUnionsOfPrimitiveTypes(types: qt.Type[]) {
     let unionTypes: qt.UnionType[] | undefined;
-    const index = findIndex(types, (t) => !!(getObjectFlags(t) & ObjectFlags.PrimitiveUnion));
+    const index = qf.find.index(types, (t) => !!(getObjectFlags(t) & ObjectFlags.PrimitiveUnion));
     if (index < 0) return false;
     let i = index + 1;
     while (i < types.length) {
@@ -1989,7 +1989,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     function getSingleTypeVariableFromIntersectionTypes(types: qt.Type[]) {
       let typeVariable: qt.Type | undefined;
       for (const type of types) {
-        const t = type.flags & qt.TypeFlags.Intersection && find((<qt.IntersectionType>type).types, (t) => !!getInferenceInfoForType(t));
+        const t = type.flags & qt.TypeFlags.Intersection && qf.find.up((<qt.IntersectionType>type).types, (t) => !!getInferenceInfoForType(t));
         if (!t || (typeVariable && t !== typeVariable)) return;
         typeVariable = t;
       }
@@ -2417,7 +2417,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     let index: number | undefined;
     let specializedIndex = -1;
     let spliceIndex: number;
-    assert(!result.length);
+    qf.assert.true(!result.length);
     for (const signature of signatures) {
       const symbol = signature.declaration && qf.get.symbolOfNode(signature.declaration);
       const parent = signature.declaration && signature.declaration.parent;
@@ -2923,7 +2923,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (qf.is.computedNonLiteralName(member.name)) error(member.name, qd.msgs.Computed_property_names_are_not_allowed_in_enums);
     else {
       const t = qf.get.textOfPropertyName(member.name);
-      if (NumericLiteral.name(t) && !qu.isInfinityOrNaNString(t)) error(member.name, qd.msgs.An_enum_member_cannot_have_a_numeric_name);
+      if (NumericLiteral.name(t) && !qf.is.infOrNaN(t)) error(member.name, qd.msgs.An_enum_member_cannot_have_a_numeric_name);
     }
     if (member.initer) return computeConstantValue(member);
     if (member.parent.flags & NodeFlags.Ambient && !is.enumConst(member.parent) && getEnumKind(qf.get.symbolOfNode(member.parent)) === qt.EnumKind.Numeric) return;
@@ -3018,7 +3018,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         case Syntax.ParenthesizedExpression:
           return evaluate((<qt.ParenthesizedExpression>e).expression);
         case Syntax.Identifier:
-          if (qu.isInfinityOrNaNString(e.escapedText)) return +e.escapedText;
+          if (qf.is.infOrNaN(e.escapedText)) return +e.escapedText;
           return qf.is.missing(e) ? 0 : evaluateEnumMember(e, qf.get.symbolOfNode(member.parent), identifier.escapedText);
         case Syntax.ElemAccessExpression:
         case Syntax.PropertyAccessExpression:

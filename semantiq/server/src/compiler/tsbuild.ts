@@ -253,7 +253,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(
     const loader = (moduleName: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveModuleName(moduleName, containingFile, state.projectCompilerOpts, compilerHost, moduleResolutionCache, redirectedReference).resolvedModule!;
     compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
-      loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedModuleFull>(qf.check.allDefined(moduleNames), containingFile, redirectedReference, loader);
   }
   const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<qt.ResolvedConfigFileName>(hostWithWatch, opts);
   const state: SolutionBuilderState<T> = {
@@ -404,13 +404,13 @@ function getBuildOrderFor(state: SolutionBuilderState, project: string | undefin
   if (isCircularBuildOrder(buildOrderFromState)) return buildOrderFromState;
   if (resolvedProject) {
     const projectPath = toResolvedConfigFilePath(state, resolvedProject);
-    const projectIndex = findIndex(buildOrderFromState, (configFileName) => toResolvedConfigFilePath(state, configFileName) === projectPath);
+    const projectIndex = qf.find.index(buildOrderFromState, (configFileName) => toResolvedConfigFilePath(state, configFileName) === projectPath);
     if (projectIndex === -1) return;
   }
   const buildOrder = resolvedProject ? (createBuildOrder(state, [resolvedProject]) as BuildOrder) : buildOrderFromState;
-  assert(!isCircularBuildOrder(buildOrder));
-  assert(!onlyReferences || resolvedProject !== undefined);
-  assert(!onlyReferences || buildOrder[buildOrder.length - 1] === resolvedProject);
+  qf.assert.true(!isCircularBuildOrder(buildOrder));
+  qf.assert.true(!onlyReferences || resolvedProject !== undefined);
+  qf.assert.true(!onlyReferences || buildOrder[buildOrder.length - 1] === resolvedProject);
   return onlyReferences ? buildOrder.slice(0, buildOrder.length - 1) : buildOrder;
 }
 function enableCache(state: SolutionBuilderState) {
@@ -635,7 +635,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     return withProgramOrUndefined(action) || emptyArray;
   }
   function createProgram() {
-    assert(program === undefined);
+    qf.assert.true(program === undefined);
     if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_build_project_0, project);
       buildResult = BuildResultFlags.Success;
@@ -664,7 +664,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     }
   }
   function getSyntaxDiagnostics(cancellationToken?: qt.CancellationToken) {
-    Debug.assertIsDefined(program);
+    qf.assert.defined(program);
     handleDiagnostics(
       [
         ...program.getConfigFileParsingDiagnostics(),
@@ -677,11 +677,11 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     );
   }
   function getSemanticDiagnostics(cancellationToken?: qt.CancellationToken) {
-    handleDiagnostics(Debug.checkDefined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
+    handleDiagnostics(qf.check.defined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
   }
   function emit(writeFileCallback?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
-    Debug.assertIsDefined(program);
-    assert(step === Step.Emit);
+    qf.assert.defined(program);
+    qf.assert.true(step === Step.Emit);
     program.backupState();
     let declDiagnostics: Diagnostic[] | undefined;
     const reportDeclarationDiagnostics = (d: Diagnostic) => (declDiagnostics || (declDiagnostics = [])).push(d);
@@ -769,7 +769,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     return emitDiagnostics;
   }
   function emitBundle(writeFileCallback?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): qt.EmitResult | BuildInvalidedProject<T> | undefined {
-    assert(kind === InvalidatedProjectKind.UpdateBundle);
+    qf.assert.true(kind === InvalidatedProjectKind.UpdateBundle);
     if (state.opts.dry) {
       reportStatus(state, qd.A_non_dry_build_would_update_output_of_project_0, project);
       buildResult = BuildResultFlags.Success;
@@ -788,14 +788,14 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       },
       customTransformers
     );
-    if (isString(outputFiles)) {
+    if (qf.is.string(outputFiles)) {
       reportStatus(state, qd.Cannot_update_output_of_project_0_because_there_was_error_reading_file_1, project, relName(state, outputFiles));
       step = Step.BuildInvalidatedProjectOfBundle;
       return (invalidatedProjectOfBundle = createBuildOrUpdateInvalidedProject(InvalidatedProjectKind.Build, state, project, projectPath, projectIndex, config, buildOrder) as BuildInvalidedProject<
         T
       >);
     }
-    assert(!!outputFiles.length);
+    qf.assert.true(!!outputFiles.length);
     const emitterDiagnostics = createDiagnosticCollection();
     const emittedOutputs = qu.createMap() as FileMap<string>;
     outputFiles.forEach(({ name, text, writeByteOrderMark }) => {
@@ -825,18 +825,18 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
           emitBundle(writeFile, customTransformers);
           break;
         case Step.BuildInvalidatedProjectOfBundle:
-          Debug.checkDefined(invalidatedProjectOfBundle).done(cancellationToken);
+          qf.check.defined(invalidatedProjectOfBundle).done(cancellationToken);
           step = Step.Done;
           break;
         case Step.QueueReferencingProjects:
-          queueReferencingProjects(state, project, projectPath, projectIndex, config, buildOrder, Debug.checkDefined(buildResult));
+          queueReferencingProjects(state, project, projectPath, projectIndex, config, buildOrder, qf.check.defined(buildResult));
           step++;
           break;
         case Step.Done:
         default:
           assertType<Step.Done>(step);
       }
-      assert(step > currentStep);
+      qf.assert.true(step > currentStep);
     }
   }
 }
@@ -965,11 +965,11 @@ function updateModuleResolutionCache(state: SolutionBuilderState, proj: qt.Resol
   const { moduleResolutionCache } = state;
   const projPath = toPath(state, proj);
   if (moduleResolutionCache.directoryToModuleNameMap.redirectsMap.size === 0) {
-    assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size === 0);
+    qf.assert.true(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size === 0);
     moduleResolutionCache.directoryToModuleNameMap.redirectsMap.set(projPath, moduleResolutionCache.directoryToModuleNameMap.ownMap);
     moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.set(projPath, moduleResolutionCache.moduleNameToDirectoryMap.ownMap);
   } else {
-    assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
+    qf.assert.true(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
     const ref: qt.ResolvedProjectReference = {
       sourceFile: config.opts.configFile!,
       commandLine: config,
@@ -1078,7 +1078,7 @@ function getUpToDateStatusWorker(state: SolutionBuilderState, project: qt.Parsed
           upstreamChangedProject = ref.path;
           continue;
         }
-        assert(oldestOutputFileName !== undefined, 'Should have an oldest output filename here');
+        qf.assert.true(oldestOutputFileName !== undefined, 'Should have an oldest output filename here');
         return {
           type: UpToDateStatusType.OutOfDateWithUpstream,
           outOfDateOutputFileName: oldestOutputFileName,

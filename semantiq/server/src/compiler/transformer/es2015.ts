@@ -907,10 +907,10 @@ export function transformES2015(context: qt.TrafoContext) {
         multiLine = true;
       }
     } else {
-      assert(node.kind === Syntax.ArrowFunction);
+      qf.assert.true(node.kind === Syntax.ArrowFunction);
       statementsLocation = moveRangeEnd(body, -1);
       const equalsGreaterThanToken = node.equalsGreaterThanToken;
-      if (!isSynthesized(equalsGreaterThanToken) && !isSynthesized(body)) {
+      if (!qf.is.synthesized(equalsGreaterThanToken) && !qf.is.synthesized(body)) {
         if (endOnSameLineAsStart(equalsGreaterThanToken, body, currentSourceFile)) {
           singleLine = true;
         } else {
@@ -1268,7 +1268,7 @@ function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression): qc.Expr
     if (property.trafoFlags & TrafoFlags.ContainsYield && hierarchyFacts & HierarchyFacts.AsyncFunctionBody && i < numInitialPropertiesWithoutYield) {
       numInitialPropertiesWithoutYield = i;
     }
-    if (qu.checkDefined(property.name).kind === Syntax.ComputedPropertyName) {
+    if (qf.check.defined(property.name).kind === Syntax.ComputedPropertyName) {
       numInitialProperties = i;
       break;
     }
@@ -1777,7 +1777,7 @@ function transformObjectLiteralMethodDeclarationToExpression(method: qt.MethodDe
 function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
   const ancestorFacts = enterSubtree(HierarchyFacts.BlockScopeExcludes, HierarchyFacts.BlockScopeIncludes);
   let updated: qt.CatchClause;
-  assert(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
+  qf.assert.true(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
   if (node.variableDeclaration.name.kind === Syntax.BindingPattern) {
     const temp = qf.create.tempVariable(undefined);
     const newVariableDeclaration = new qc.VariableDeclaration(temp);
@@ -1798,13 +1798,13 @@ function addStatementToStartOfBlock(block: qt.Block, statement: qc.Statement): q
   return block.update([statement, ...transformedStatements]);
 }
 function visitMethodDeclaration(node: qt.MethodDeclaration): qt.ObjectLiteralElemLike {
-  assert(!node.name.kind === Syntax.ComputedPropertyName);
+  qf.assert.true(!node.name.kind === Syntax.ComputedPropertyName);
   const functionExpression = transformFunctionLikeToExpression(node, undefined);
   qf.emit.setFlags(functionExpression, EmitFlags.NoLeadingComments | qf.get.emitFlags(functionExpression));
   return new qc.PropertyAssignment(node.name, functionExpression).setRange(node);
 }
 function visitAccessorDeclaration(node: qt.AccessorDeclaration): qt.AccessorDeclaration {
-  assert(!node.name.kind === Syntax.ComputedPropertyName);
+  qf.assert.true(!node.name.kind === Syntax.ComputedPropertyName);
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
   const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
@@ -1996,14 +1996,14 @@ function visitTemplateExpression(node: qt.TemplateExpression): qc.Expression {
   addTemplateHead(expressions, node);
   addTemplateSpans(expressions, node);
   const expression = reduceLeft(expressions, qf.create.add)!;
-  if (isSynthesized(expression)) {
+  if (qf.is.synthesized(expression)) {
     expression.pos = node.pos;
     expression.end = node.end;
   }
   return expression;
 }
 function shouldAddTemplateHead(node: qt.TemplateExpression) {
-  assert(node.templateSpans.length !== 0);
+  qf.assert.true(node.templateSpans.length !== 0);
   return node.head.text.length !== 0 || node.templateSpans[0].literal.text.length === 0;
 }
 function addTemplateHead(expressions: qc.Expression[], node: qt.TemplateExpression): void {
@@ -2124,13 +2124,13 @@ function hasSynthesizedDefaultSuperCall(constructor: qt.ConstructorDeclaration |
   if (!constructor || !hasExtendsClause) return false;
   if (some(constructor.params)) return false;
   const statement = firstOrUndefined(constructor.body!.statements);
-  if (!statement || !isSynthesized(statement) || statement.kind !== Syntax.ExpressionStatement) return false;
+  if (!statement || !qf.is.synthesized(statement) || statement.kind !== Syntax.ExpressionStatement) return false;
   const statementExpression = (<qt.ExpressionStatement>statement).expression;
-  if (!isSynthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) return false;
+  if (!qf.is.synthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) return false;
   const callTarget = (<qt.CallExpression>statementExpression).expression;
-  if (!isSynthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) return false;
+  if (!qf.is.synthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) return false;
   const callArg = singleOrUndefined((<qt.CallExpression>statementExpression).args);
-  if (!callArg || !isSynthesized(callArg) || callArg.kind !== Syntax.SpreadElem) return false;
+  if (!callArg || !qf.is.synthesized(callArg) || callArg.kind !== Syntax.SpreadElem) return false;
   const expression = (<qt.SpreadElem>callArg).expression;
   return expression.kind === Syntax.Identifier && expression.escapedText === 'args';
 }

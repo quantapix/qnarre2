@@ -57,7 +57,7 @@ export function newCheck(f: qt.Frame) {
         const parent = n.parent;
         if (symbol) {
           if (parent.kind === Syntax.QualifiedName) {
-            qu.assert(parent.left === n, 'Should only be resolving left side of qualified name as a namespace');
+            qf.assert.true(parent.left === n, 'Should only be resolving left side of qualified name as a namespace');
             const propName = parent.right.escapedText;
             const propType = qf.get.propertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
             if (propType) {
@@ -131,9 +131,9 @@ export function newCheck(f: qt.Frame) {
       return false;
     }
     resolvedBlockScopedVariable(result: qt.Symbol, n: Node): void {
-      qu.assert(!!(result.flags & qt.SymbolFlags.BlockScopedVariable || result.flags & qt.SymbolFlags.Class || result.flags & qt.SymbolFlags.Enum));
+      qf.assert.true(!!(result.flags & qt.SymbolFlags.BlockScopedVariable || result.flags & qt.SymbolFlags.Class || result.flags & qt.SymbolFlags.Enum));
       if (result.flags & (SymbolFlags.Function | qt.SymbolFlags.FunctionScopedVariable | qt.SymbolFlags.Assignment) && result.flags & qt.SymbolFlags.Class) return;
-      const declaration = find(result.declarations, (d) => qf.is.blockOrCatchScoped(d) || qf.is.classLike(d) || d.kind === Syntax.EnumDeclaration);
+      const declaration = qf.find.up(result.declarations, (d) => qf.is.blockOrCatchScoped(d) || qf.is.classLike(d) || d.kind === Syntax.EnumDeclaration);
       if (declaration === undefined) return qu.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
       if (!(declaration.flags & NodeFlags.Ambient) && !qf.is.blockScopedNameDeclaredBeforeUse(declaration, n)) {
         let diagnosticMessage;
@@ -144,7 +144,7 @@ export function newCheck(f: qt.Frame) {
         } else if (result.flags & qt.SymbolFlags.RegularEnum) {
           diagnosticMessage = error(n, qd.msgs.Enum_0_used_before_its_declaration, declarationName);
         } else {
-          qu.assert(!!(result.flags & qt.SymbolFlags.ConstEnum));
+          qf.assert.true(!!(result.flags & qt.SymbolFlags.ConstEnum));
           if (compilerOpts.preserveConstEnums) diagnosticMessage = error(n, qd.msgs.Enum_0_used_before_its_declaration, declarationName);
         }
         if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.create.diagForNode(declaration, qd.msgs._0_is_declared_here, declarationName));
@@ -237,7 +237,7 @@ export function newCheck(f: qt.Frame) {
       let lastSkippedInfo: [qt.Type, qt.Type] | undefined;
       let incompatibleStack: [qd.Message, (string | number)?, (string | number)?, (string | number)?, (string | number)?][] = [];
       let inPropertyCheck = false;
-      qu.assert(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
+      qf.assert.true(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
       const result = isRelatedTo(source, target, !!errorNode, headMessage);
       if (incompatibleStack.length) reportIncompatibleStack();
       if (overflow) {
@@ -271,7 +271,7 @@ export function newCheck(f: qt.Frame) {
         if (errorOutputContainer) (errorOutputContainer.errors || (errorOutputContainer.errors = [])).push(diag);
         if (!errorOutputContainer || !errorOutputContainer.skipLogging) diagnostics.add(diag);
       }
-      if (errorNode && errorOutputContainer && errorOutputContainer.skipLogging && result === qt.Ternary.False) qu.assert(!!errorOutputContainer.errors, 'missed opportunity to interact with error.');
+      if (errorNode && errorOutputContainer && errorOutputContainer.skipLogging && result === qt.Ternary.False) qf.assert.true(!!errorOutputContainer.errors, 'missed opportunity to interact with error.');
       return result !== qt.Ternary.False;
       function resetErrorInfo(saved: ReturnType<typeof captureErrorCalculationState>) {
         errorInfo = saved.errorInfo;
@@ -365,13 +365,13 @@ export function newCheck(f: qt.Frame) {
         if (info) reportRelationError(undefined, ...info);
       }
       function reportError(message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): void {
-        qu.assert(!!errorNode);
+        qf.assert.true(!!errorNode);
         if (incompatibleStack.length) reportIncompatibleStack();
         if (message.elidedInCompatabilityPyramid) return;
         errorInfo = chainqd.Messages(errorInfo, message, arg0, arg1, arg2, arg3);
       }
       function associateRelatedInfo(info: qd.DiagnosticRelatedInformation) {
-        qu.assert(!!errorInfo);
+        qf.assert.true(!!errorInfo);
         if (!relatedInfo) relatedInfo = [info];
         else {
           relatedInfo.push(info);
@@ -1146,8 +1146,8 @@ export function newCheck(f: qt.Frame) {
         const source = getTypeOfSourceProperty(sourceProp);
         if (targetProp.checkFlags() & qt.CheckFlags.DeferredType && !targetProp.links.type) {
           const links = targetProp.links;
-          qg.assertIsDefined(links.deferralParent);
-          qg.assertIsDefined(links.deferralConstituents);
+          qf.assert.defined(links.deferralParent);
+          qf.assert.defined(links.deferralConstituents);
           const unionParent = !!(links.deferralParent.flags & TypeFlags.Union);
           let result = unionParent ? qt.Ternary.False : qt.Ternary.True;
           const targetTypes = links.deferralConstituents;
@@ -1884,7 +1884,7 @@ export function newCheck(f: qt.Frame) {
           offset = i + 1;
           continue;
         } else {
-          qu.assert(memberDecl.kind === Syntax.GetAccessor || memberDecl.kind === Syntax.SetAccessor);
+          qf.assert.true(memberDecl.kind === Syntax.GetAccessor || memberDecl.kind === Syntax.SetAccessor);
           this.nodeDeferred(memberDecl);
         }
         if (computedNameType && !(computedNameType.flags & TypeFlags.StringOrNumberLiteralOrUnique)) {
@@ -2163,11 +2163,11 @@ export function newCheck(f: qt.Frame) {
       if (propertyOnType) {
         const typeValueDecl = propertyOnType.valueDeclaration;
         const typeClass = qf.get.containingClass(typeValueDecl);
-        qu.assert(!!typeClass);
+        qf.assert.true(!!typeClass);
         if (lexicallyScopedIdentifier) {
           const lexicalValueDecl = lexicallyScopedIdentifier.valueDeclaration;
           const lexicalClass = qf.get.containingClass(lexicalValueDecl);
-          qu.assert(!!lexicalClass);
+          qf.assert.true(!!lexicalClass);
           if (qc.findAncestor(lexicalClass, (x) => typeClass === x)) {
             const diagnostic = error(
               right,
@@ -2318,7 +2318,7 @@ export function newCheck(f: qt.Frame) {
       const typeArgTypes = fillMissingTypeArgs(map(typeArgNodes, qf.get.typeFromTypeNode), typeParams, getMinTypeArgCount(typeParams), isJavascript);
       let mapper: qt.TypeMapper | undefined;
       for (let i = 0; i < typeArgNodes.length; i++) {
-        qu.assert(typeParams[i] !== undefined, 'Should not call checkTypeArgs with too many type args');
+        qf.assert.true(typeParams[i] !== undefined, 'Should not call checkTypeArgs with too many type args');
         const constraint = qf.get.constraintOfTypeParam(typeParams[i]);
         if (constraint) {
           const errorInfo = reportErrors && headMessage ? () => chainqd.Messages(undefined, qd.msgs.Type_0_does_not_satisfy_the_constraint_1) : undefined;
@@ -2523,8 +2523,8 @@ export function newCheck(f: qt.Frame) {
     importMetaProperty(n: qc.MetaProperty) {
       if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) error(n, qd.msgs.The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system);
       const file = n.sourceFile;
-      qu.assert(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta n flag.');
-      qu.assert(!!file.externalModuleIndicator, 'Containing file should be a module.');
+      qf.assert.true(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta n flag.');
+      qf.assert.true(!!file.externalModuleIndicator, 'Containing file should be a module.');
       return n.name.escapedText === 'meta' ? getGlobalImportMetaType() : errorType;
     }
     andAggregateYieldOperandTypes(func: qt.FunctionLikeDeclaration, checkMode: CheckMode | undefined) {
@@ -2587,7 +2587,7 @@ export function newCheck(f: qt.Frame) {
       }
     }
     functionExpressionOrObjectLiteralMethod(n: qc.FunctionExpression | qt.ArrowFunction | qt.MethodDeclaration, checkMode?: CheckMode): qt.Type {
-      qu.assert(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
+      qf.assert.true(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
       this.nodeDeferred(n);
       if (checkMode && checkMode & CheckMode.SkipContextSensitive && qf.is.contextSensitive(n)) {
         if (!qf.get.effectiveReturnTypeNode(n) && !hasContextSensitiveParams(n)) {
@@ -2610,7 +2610,7 @@ export function newCheck(f: qt.Frame) {
       return qf.get.symbolOfNode(n).typeOfSymbol();
     }
     functionExpressionOrObjectLiteralMethodDeferred(n: qc.ArrowFunction | qt.FunctionExpression | qt.MethodDeclaration) {
-      qu.assert(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
+      qf.assert.true(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
       const functionFlags = qf.get.functionFlags(n);
       const returnType = getReturnTypeFromAnnotation(n);
       this.allCodePathsInNonVoidFunctionReturnOrThrow(n, returnType);
@@ -3378,7 +3378,7 @@ export function newCheck(f: qt.Frame) {
         n.parent.kind === Syntax.ExportSpecifier;
       if (!ok) error(n, qd.const_enums_can_only_be_used_in_property_or_index_access_expressions_or_the_right_hand_side_of_an_import_declaration_or_export_assignment_or_type_query);
       if (compilerOpts.isolatedModules) {
-        qu.assert(!!(type.symbol.flags & qt.SymbolFlags.ConstEnum));
+        qf.assert.true(!!(type.symbol.flags & qt.SymbolFlags.ConstEnum));
         const constEnumDeclaration = type.symbol.valueDeclaration as qt.EnumDeclaration;
         if (constEnumDeclaration.flags & NodeFlags.Ambient) error(n, qd.msgs.Cannot_access_ambient_const_enums_when_the_isolatedModules_flag_is_provided);
       }
@@ -4214,7 +4214,7 @@ export function newCheck(f: qt.Frame) {
             else {
               error(n.name, qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name, idText(n.name));
             }
-          } else if (findLast(qf.get.doc.tags(decl), isDocParamTag) === n && n.typeExpression && n.typeExpression.type && !qf.is.arrayType(qf.get.typeFromTypeNode(n.typeExpression.type))) {
+          } else if (qf.find.down(qf.get.doc.tags(decl), isDocParamTag) === n && n.typeExpression && n.typeExpression.type && !qf.is.arrayType(qf.get.typeFromTypeNode(n.typeExpression.type))) {
             error(
               n.name,
               qd.msgs.Doc_param_tag_has_name_0_but_there_is_no_param_with_that_name_It_would_match_args_if_it_had_an_array_type,
@@ -4242,7 +4242,7 @@ export function newCheck(f: qt.Frame) {
         return;
       }
       const augmentsTags = qf.get.doc.tags(classLike).filter(isDocAugmentsTag);
-      qu.assert(augmentsTags.length > 0);
+      qf.assert.true(augmentsTags.length > 0);
       if (augmentsTags.length > 1) error(augmentsTags[1], qd.msgs.Class_declarations_cannot_have_more_than_one_augments_or_extends_tag);
       const name = getIdentifierFromEntityNameExpression(n.class.expression);
       const extend = qf.get.classExtendsHeritageElem(classLike);
@@ -4259,7 +4259,7 @@ export function newCheck(f: qt.Frame) {
       if (!hasNonBindableDynamicName(n)) {
         const symbol = qf.get.symbolOfNode(n);
         const localSymbol = n.localSymbol || symbol;
-        const firstDeclaration = find(localSymbol.declarations, (declaration) => declaration.kind === n.kind && !(declaration.flags & NodeFlags.JavaScriptFile));
+        const firstDeclaration = qf.find.up(localSymbol.declarations, (declaration) => declaration.kind === n.kind && !(declaration.flags & NodeFlags.JavaScriptFile));
         if (n === firstDeclaration) this.functionOrConstructorSymbol(localSymbol);
         if (symbol.parent) {
           if (symbol.declarationOfKind(n.kind) === n) this.functionOrConstructorSymbol(symbol);
@@ -5121,7 +5121,7 @@ export function newCheck(f: qt.Frame) {
         if (!baseSymbol) continue;
         const derived = getTargetSymbol(baseSymbol);
         const baseDeclarationFlags = base.declarationModifierFlags();
-        qu.assert(!!derived, "derived should point to something, even if it is the base class' declaration.");
+        qf.assert.true(!!derived, "derived should point to something, even if it is the base class' declaration.");
         if (derived === base) {
           const derivedClassDecl = type.symbol.classLikeDeclaration()!;
           if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !qf.has.syntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
@@ -5165,7 +5165,7 @@ export function newCheck(f: qt.Frame) {
                 : qd.msgs._0_is_defined_as_a_property_in_class_1_but_is_overridden_here_in_2_as_an_accessor;
               error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType), typeToString(type));
             } else if (compilerOpts.useDefineForClassFields) {
-              const uninitialized = find(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as qt.PropertyDeclaration).initer);
+              const uninitialized = qf.find.up(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as qt.PropertyDeclaration).initer);
               if (
                 uninitialized &&
                 !(derived.flags & qt.SymbolFlags.Transient) &&
@@ -5192,7 +5192,7 @@ export function newCheck(f: qt.Frame) {
           } else if (isPrototypeProperty(base)) {
             if (isPrototypeProperty(derived) || derived.flags & qt.SymbolFlags.Property) continue;
             else {
-              qu.assert(!!(derived.flags & qt.SymbolFlags.Accessor));
+              qf.assert.true(!!(derived.flags & qt.SymbolFlags.Accessor));
               errorMessage = qd.msgs.Class_0_defines_instance_member_function_1_but_extended_class_2_defines_it_as_instance_member_accessor;
             }
           } else if (base.flags & qt.SymbolFlags.Accessor) {
@@ -6273,7 +6273,7 @@ export function newCheck(f: qt.Frame) {
               if (heritageClause.types.length > 1) return grammarErrorOnFirstToken(heritageClause.types[1], qd.msgs.Classes_can_only_extend_a_single_class);
               seenExtendsClause = true;
             } else {
-              qu.assert(heritageClause.token === Syntax.ImplementsKeyword);
+              qf.assert.true(heritageClause.token === Syntax.ImplementsKeyword);
               if (seenImplementsClause) return grammarErrorOnFirstToken(heritageClause, qd.implements_clause_already_seen);
               seenImplementsClause = true;
             }
@@ -6289,7 +6289,7 @@ export function newCheck(f: qt.Frame) {
               if (seenExtendsClause) return grammarErrorOnFirstToken(heritageClause, qd.extends_clause_already_seen);
               seenExtendsClause = true;
             } else {
-              qu.assert(heritageClause.token === Syntax.ImplementsKeyword);
+              qf.assert.true(heritageClause.token === Syntax.ImplementsKeyword);
               return grammarErrorOnFirstToken(heritageClause, qd.msgs.Interface_declaration_cannot_have_implements_clause);
             }
             this.heritageClause(heritageClause);
@@ -6306,7 +6306,7 @@ export function newCheck(f: qt.Frame) {
       }
       forGenerator(n: qc.FunctionLikeDeclaration) {
         if (n.asteriskToken) {
-          qu.assert(n.kind === Syntax.FunctionDeclaration || n.kind === Syntax.FunctionExpression || n.kind === Syntax.MethodDeclaration);
+          qf.assert.true(n.kind === Syntax.FunctionDeclaration || n.kind === Syntax.FunctionExpression || n.kind === Syntax.MethodDeclaration);
           if (n.flags & NodeFlags.Ambient) return grammarErrorOnNode(n.asteriskToken, qd.msgs.Generators_are_not_allowed_in_an_ambient_context);
           if (!n.body) return grammarErrorOnNode(n.asteriskToken, qd.msgs.An_overload_signature_cannot_be_declared_as_a_generator);
         }
@@ -6323,7 +6323,7 @@ export function newCheck(f: qt.Frame) {
           if (prop.kind === Syntax.SpreadAssignment) {
             if (inDestructuring) {
               const expression = qf.skip.parentheses(prop.expression);
-              if (isArrayLiteralExpression(expression) || expression.kind === Syntax.ObjectLiteralExpression)
+              if (qf.is.arrayLiteralExpression(expression) || expression.kind === Syntax.ObjectLiteralExpression)
                 return grammarErrorOnNode(prop.expression, qd.msgs.A_rest_elem_cannot_contain_a_binding_pattern);
             }
             continue;
@@ -6399,7 +6399,7 @@ export function newCheck(f: qt.Frame) {
               const diagnostic = qf.create.diagForNode(n.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
               const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor) {
-                qu.assert((qf.get.functionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
+                qf.assert.true((qf.get.functionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
                 const relatedInfo = qf.create.diagForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }

@@ -333,7 +333,7 @@ export function transformModule(context: qt.TrafoContext) {
             qc.assert.never(elem, 'Unhandled object member kind');
         }
       }
-    } else if (isArrayLiteralExpression(node)) {
+    } else if (qf.is.arrayLiteralExpression(node)) {
       for (const elem of node.elems) {
         if (elem.kind === Syntax.SpreadElem) {
           if (destructuringNeedsFlattening(elem.expression)) return true;
@@ -495,7 +495,7 @@ export function transformModule(context: qt.TrafoContext) {
     return new qc.CallExpression(new qc.Identifier('require'), undefined, args);
   }
   function visitImportEqualsDeclaration(node: qt.ImportEqualsDeclaration): VisitResult<qt.Statement> {
-    assert(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+    qf.assert.true(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: qt.Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
       if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
@@ -1336,11 +1336,11 @@ export function transformSystemModule(context: qt.TrafoContext) {
               break;
             }
           case Syntax.ImportEqualsDeclaration:
-            assert(importVariableName !== undefined);
+            qf.assert.true(importVariableName !== undefined);
             statements.push(new qc.ExpressionStatement(qf.create.assignment(importVariableName, paramName)));
             break;
           case Syntax.ExportDeclaration:
-            assert(importVariableName !== undefined);
+            qf.assert.true(importVariableName !== undefined);
             if (entry.exportClause) {
               if (entry.exportClause.kind === Syntax.NamedExports) {
                 const properties: qt.PropertyAssignment[] = [];
@@ -1389,11 +1389,11 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return singleOrMany(statements);
   }
   function visitExportDeclaration(node: qt.ExportDeclaration): VisitResult<qt.Statement> {
-    Debug.assertIsDefined(node);
+    qf.assert.defined(node);
     return;
   }
   function visitImportEqualsDeclaration(node: qt.ImportEqualsDeclaration): VisitResult<qt.Statement> {
-    assert(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+    qf.assert.true(qf.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: qt.Statement[] | undefined;
     hoistVariableDeclaration(qf.decl.localNameForExternalImport(node, currentSourceFile)!);
     if (hasAssociatedEndOfDeclarationMarker(node)) {
@@ -1811,7 +1811,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     if (qf.is.assignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
     if (node.kind === Syntax.SpreadElem) return hasExportedReferenceInDestructuringTarget(node.expression);
     if (node.kind === Syntax.ObjectLiteralExpression) return some(node.properties, hasExportedReferenceInDestructuringTarget);
-    if (isArrayLiteralExpression(node)) return some(node.elems, hasExportedReferenceInDestructuringTarget);
+    if (qf.is.arrayLiteralExpression(node)) return some(node.elems, hasExportedReferenceInDestructuringTarget);
     if (node.kind === Syntax.ShorthandPropertyAssignment) return hasExportedReferenceInDestructuringTarget(node.name);
     if (node.kind === Syntax.PropertyAssignment) return hasExportedReferenceInDestructuringTarget(node.initer);
     if (node.kind === Syntax.Identifier) {

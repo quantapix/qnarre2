@@ -151,7 +151,7 @@ export class QContext {
     }
     const objectFlags = getObjectFlags(type);
     if (objectFlags & ObjectFlags.Reference) {
-      assert(!!(type.flags & TypeFlags.Object));
+      qf.assert.true(!!(type.flags & TypeFlags.Object));
       return (<qt.TypeReference>type).node ? this.visitAndTransformType(type, this.typeReferenceToTypeNode) : this.typeReferenceToTypeNode(<qt.TypeReference>type);
     }
     if (type.flags & TypeFlags.TypeParam || objectFlags & ObjectFlags.ClassOrInterface) {
@@ -179,7 +179,7 @@ export class QContext {
       }
     }
     if (objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped)) {
-      assert(!!(type.flags & TypeFlags.Object));
+      qf.assert.true(!!(type.flags & TypeFlags.Object));
       return this.createAnonymousTypeNode(<qt.ObjectType>type);
     }
     if (type.flags & TypeFlags.Index) {
@@ -250,7 +250,7 @@ export class QContext {
     return typeParamNodes;
   }
   lookupTypeParamNodes(chain: qt.Symbol[], index: number) {
-    assert(chain && 0 <= index && index < chain.length);
+    qf.assert.true(chain && 0 <= index && index < chain.length);
     const symbol = chain[index];
     const symbolId = '' + symbol.getId();
     if (this.typeParamSymbolList && this.typeParamSymbolList.get(symbolId)) return;
@@ -272,7 +272,7 @@ export class QContext {
   getSpecifierForModuleSymbol(s: qt.Symbol) {
     let file = s.declarationOfKind<qt.SourceFile>(Syntax.SourceFile);
     if (!file) {
-      const equivalentFileSymbol = firstDefined(s.declarations, (d) => getFileSymbolIfFileSymbolExportEqualsContainer(d, s));
+      const equivalentFileSymbol = qf.find.defined(s.declarations, (d) => getFileSymbolIfFileSymbolExportEqualsContainer(d, s));
       if (equivalentFileSymbol) file = equivalentFileSymbol.declarationOfKind<qt.SourceFile>(Syntax.SourceFile);
     }
     if (file && file.moduleName !== undefined) return file.moduleName;
@@ -356,8 +356,8 @@ export class QContext {
           return 0;
         }
       };
-      chain = Debug.checkDefined(getSymbolChain(s, meaning, true));
-      assert(chain && chain.length > 0);
+      chain = qf.check.defined(getSymbolChain(s, meaning, true));
+      qf.assert.true(chain && chain.length > 0);
     } else chain = [s];
     return chain;
   }
@@ -602,7 +602,7 @@ export class QContext {
     }
     function preserveCommentsOn<T extends Node>(node: T) {
       if (some(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)) {
-        const d = find(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)! as qt.DocPropertyTag;
+        const d = qf.find.up(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)! as qt.DocPropertyTag;
         const commentText = d.comment;
         if (commentText) {
           qf.emit.setSyntheticLeadingComments(node, [
@@ -743,7 +743,7 @@ export class QContext {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
         const visited = qf.visit.children(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
-        const clone = isSynthesized(visited) ? visited : qf.create.synthesizedClone(visited);
+        const clone = qf.is.synthesized(visited) ? visited : qf.create.synthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<qt.BindingElem>clone).initer = undefined;
         return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
@@ -776,7 +776,7 @@ export class QContext {
   }
   isSingleQuotedStringNamed(d: qt.Declaration) {
     const name = qf.decl.nameOf(d);
-    if (name && name.kind === Syntax.StringLiteral && (name.singleQuote || (!isSynthesized(name) && startsWith(qf.get.textOf(name, false), "'")))) return true;
+    if (name && name.kind === Syntax.StringLiteral && (name.singleQuote || (!qf.is.synthesized(name) && startsWith(qf.get.textOf(name, false), "'")))) return true;
     return false;
   }
   createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
@@ -1151,7 +1151,7 @@ export class QContext {
     const symbol = type.symbol;
     const createTypeNodeFromObjectType = (type: qt.ObjectType): qt.Typing => {
       const createMappedTypingFromType = (type: qt.MappedType) => {
-        assert(!!(type.flags & TypeFlags.Object));
+        qf.assert.true(!!(type.flags & TypeFlags.Object));
         const readonlyToken = type.declaration.readonlyToken ? <qt.ReadonlyToken | qt.PlusToken | qt.MinusToken>new qc.Token(type.declaration.readonlyToken.kind) : undefined;
         const questionToken = type.declaration.questionToken ? <qt.QuestionToken | qt.PlusToken | qt.MinusToken>new qc.Token(type.declaration.questionToken.kind) : undefined;
         let appropriateConstraintTypeNode: qt.Typing;
@@ -1430,7 +1430,10 @@ export class QContext {
       }
       const flag = (modifierFlags & ~ModifierFlags.Async) | (isStatic ? ModifierFlags.Static : 0);
       const name = this.getPropertyNameNodeForSymbol(p);
-      const firstPropertyLikeDecl = find(p.declarations, or(PropertyDeclaration.kind, isAccessor, isVariableDeclaration, qt.PropertySignature.kind, isBinaryExpression, isPropertyAccessExpression));
+      const firstPropertyLikeDecl = qf.find.up(
+        p.declarations,
+        or(PropertyDeclaration.kind, isAccessor, isVariableDeclaration, qt.PropertySignature.kind, isBinaryExpression, isPropertyAccessExpression)
+      );
       if (p.flags & SymbolFlags.Accessor && useAccessors) {
         const result: qt.AccessorDeclaration[] = [];
         if (p.flags & SymbolFlags.SetAccessor) {
@@ -1450,7 +1453,7 @@ export class QContext {
                 ),
               ],
               undefined
-            ).setRange(find(p.declarations, qf.is.setAccessor) || firstPropertyLikeDecl)
+            ).setRange(qf.find.up(p.declarations, qf.is.setAccessor) || firstPropertyLikeDecl)
           );
         }
         if (p.flags & SymbolFlags.GetAccessor) {
@@ -1463,7 +1466,7 @@ export class QContext {
               [],
               isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
               undefined
-            ).setRange(find(p.declarations, qf.is.getAccessor) || firstPropertyLikeDecl)
+            ).setRange(qf.find.up(p.declarations, qf.is.getAccessor) || firstPropertyLikeDecl)
           );
         }
         return result;
@@ -1475,7 +1478,7 @@ export class QContext {
           p.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined,
           isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
           undefined
-        ).setRange(find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl);
+        ).setRange(qf.find.up(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl);
       }
       if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
         const type = p.typeOfSymbol();
@@ -1488,7 +1491,7 @@ export class QContext {
             p.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined,
             undefined,
             undefined
-          ).setRange(find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]);
+          ).setRange(qf.find.up(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]);
         }
         const results = [];
         for (const sig of signatures) {
@@ -1549,8 +1552,8 @@ export class QContext {
     }
     symbolTable.visit();
     const flattenExportAssignedNamespace = (ss: qt.Statement[]) => {
-      const exportAssignment = find(ss, isExportAssignment);
-      const ns = find(ss, isModuleDeclaration);
+      const exportAssignment = qf.find.up(ss, isExportAssignment);
+      const ns = qf.find.up(ss, isModuleDeclaration);
       if (
         ns &&
         exportAssignment &&
@@ -1583,7 +1586,7 @@ export class QContext {
             ),
           ]);
         }
-        if (!find(ss, (s) => s !== ns && qf.is.withName(s, ns.name as qt.Identifier))) {
+        if (!qf.find.up(ss, (s) => s !== ns && qf.is.withName(s, ns.name as qt.Identifier))) {
           results = [];
           forEach(ns.body.statements, (s) => {
             addResult(s, ModifierFlags.None);
@@ -1616,7 +1619,7 @@ export class QContext {
       return ss;
     };
     const inlineExportModifiers = (ss: qt.Statement[]) => {
-      const exportDecl = find(ss, (d) => d.kind === Syntax.ExportDeclaration && !d.moduleSpecifier && !!d.exportClause) as qt.ExportDeclaration | undefined;
+      const exportDecl = qf.find.up(ss, (d) => d.kind === Syntax.ExportDeclaration && !d.moduleSpecifier && !!d.exportClause) as qt.ExportDeclaration | undefined;
       if (exportDecl && exportDecl.exportClause && exportDecl.exportClause.kind === Syntax.NamedExports) {
         const replacements = mapDefined(exportDecl.exportClause.elems, (e) => {
           if (!e.propertyName) {
@@ -1750,7 +1753,7 @@ export class QContext {
         withContext(enclosingDeclaration, flags, tracker, (c) => c.symbolTableToDeclarationStmts(symbolTable, bundled)),
     };
     function withContext<T>(enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker: qt.SymbolTracker | undefined, cb: (context: QContext) => T): T | undefined {
-      assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);
+      qf.assert.true(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);
       const context: QContext = {
         enclosingDeclaration,
         flags: flags || NodeBuilderFlags.None,

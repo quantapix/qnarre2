@@ -266,7 +266,7 @@ export function getPathComponentsRelativeTo(from: string, to: string, stringEqCo
 export function getRelativePathFromDirectory(from: string, to: string, ignoreCase: boolean): string;
 export function getRelativePathFromDirectory(fromDirectory: string, to: string, getCanonicalFileName: qu.GetCanonicalFileName): string;
 export function getRelativePathFromDirectory(fromDirectory: string, to: string, getCanonicalFileNameOrIgnoreCase: qu.GetCanonicalFileName | boolean) {
-  qu.assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, 'Paths must either both be absolute or both be relative');
+  qf.assert.true(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, 'Paths must either both be absolute or both be relative');
   const getCanonicalFileName = typeof getCanonicalFileNameOrIgnoreCase === 'function' ? getCanonicalFileNameOrIgnoreCase : qu.identity;
   const ignoreCase = typeof getCanonicalFileNameOrIgnoreCase === 'boolean' ? getCanonicalFileNameOrIgnoreCase : false;
   const pathComponents = getPathComponentsRelativeTo(fromDirectory, to, ignoreCase ? qu.equateStringsCaseInsensitive : qu.equateStringsCaseSensitive, getCanonicalFileName);
@@ -588,7 +588,7 @@ export function matchFiles(
       if (!includeFileRegexes) {
         results[0].push(name);
       } else {
-        const includeIndex = qu.findIndex(includeFileRegexes, (re) => re.test(absoluteName));
+        const includeIndex = qf.find.index(includeFileRegexes, (re) => re.test(absoluteName));
         if (includeIndex !== -1) {
           results[includeIndex].push(name);
         }

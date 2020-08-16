@@ -83,7 +83,7 @@ export function forEachEmittedFile<T>(
   onlyBuildInfo?: boolean,
   includeBuildInfo?: boolean
 ) {
-  const sourceFiles = isArray(sourceFilesOrTargetSourceFile) ? sourceFilesOrTargetSourceFile : getSourceFilesToEmit(host, sourceFilesOrTargetSourceFile, forceDtsEmit);
+  const sourceFiles = qf.is.array(sourceFilesOrTargetSourceFile) ? sourceFilesOrTargetSourceFile : getSourceFilesToEmit(host, sourceFilesOrTargetSourceFile, forceDtsEmit);
   const opts = host.getCompilerOpts();
   if (opts.outFile || opts.out) {
     const prepends = host.getPrependNodes();
@@ -162,13 +162,13 @@ export function getOutputExtension(sourceFile: qt.SourceFile, opts: qt.CompilerO
   return Extension.Js;
 }
 function rootDirOfOpts(configFile: qt.ParsedCommandLine) {
-  return configFile.opts.rootDir || getDirectoryPath(Debug.checkDefined(configFile.opts.configFilePath));
+  return configFile.opts.rootDir || getDirectoryPath(qf.check.defined(configFile.opts.configFilePath));
 }
 function getOutputPathWithoutChangingExt(inputFileName: string, configFile: qt.ParsedCommandLine, ignoreCase: boolean, outputDir: string | undefined) {
   return outputDir ? resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOpts(configFile), inputFileName, ignoreCase)) : inputFileName;
 }
 export function getOutputDeclarationFileName(inputFileName: string, configFile: qt.ParsedCommandLine, ignoreCase: boolean) {
-  qu.assert(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
+  qf.assert.true(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
   return changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.opts.declarationDir || configFile.opts.outDir), Extension.Dts);
 }
 function getOutputJSFileName(inputFileName: string, configFile: qt.ParsedCommandLine, ignoreCase: boolean) {
@@ -178,7 +178,7 @@ function getOutputJSFileName(inputFileName: string, configFile: qt.ParsedCommand
     getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.opts.outDir),
     isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.opts.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js
   );
-  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.opts.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
+  return !isJsonFile || comparePaths(inputFileName, outputFileName, qf.check.defined(configFile.opts.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
 }
 function createAddOutput() {
   let outputs: string[] | undefined;
@@ -230,7 +230,7 @@ export function getAllProjectOutputs(configFile: qt.ParsedCommandLine, ignoreCas
 }
 export function getOutputFileNames(commandLine: qt.ParsedCommandLine, inputFileName: string, ignoreCase: boolean): readonly string[] {
   inputFileName = normalizePath(inputFileName);
-  qu.assert(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
+  qf.assert.true(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
   const { addOutput, getOutputs } = createAddOutput();
   if (commandLine.opts.outFile || commandLine.opts.out) {
     getSingleOutputFileNames(commandLine, addOutput);
@@ -242,7 +242,7 @@ export function getOutputFileNames(commandLine: qt.ParsedCommandLine, inputFileN
 export function getFirstProjectOutput(configFile: qt.ParsedCommandLine, ignoreCase: boolean): string {
   if (configFile.opts.outFile || configFile.opts.out) {
     const { jsFilePath } = getOutputPathsForBundle(configFile.opts, false);
-    return Debug.checkDefined(jsFilePath, `project ${configFile.opts.configFilePath} expected to have at least one output`);
+    return qf.check.defined(jsFilePath, `project ${configFile.opts.configFilePath} expected to have at least one output`);
   }
   for (const inputFileName of configFile.fileNames) {
     if (fileExtensionIs(inputFileName, Extension.Dts)) continue;
@@ -362,7 +362,7 @@ export function emitFiles(
       isEmitNotificationEnabled: transform.isEmitNotificationEnabled,
       substituteNode: transform.substituteNode,
     });
-    qu.assert(transform.transformed.length === 1, 'Should only see one output from the transform');
+    qf.assert.true(transform.transformed.length === 1, 'Should only see one output from the transform');
     printSourceFileOrBundle(jsFilePath, sourceMapFilePath, transform.transformed[0], printer, compilerOpts);
     transform.dispose();
     if (bundleBuildInfo) bundleBuildInfo.js = printer.bundleFileInfo;
@@ -414,7 +414,7 @@ export function emitFiles(
     const declBlocked = (!!declarationTransform.diagnostics && !!declarationTransform.diagnostics.length) || !!host.isEmitBlocked(declarationFilePath) || !!compilerOpts.noEmit;
     emitSkipped = emitSkipped || declBlocked;
     if (!declBlocked || forceDtsEmit) {
-      qu.assert(declarationTransform.transformed.length === 1, 'Should only see one output from the decl transform');
+      qf.assert.true(declarationTransform.transformed.length === 1, 'Should only see one output from the decl transform');
       printSourceFileOrBundle(declarationFilePath, declarationMapPath, declarationTransform.transformed[0], declarationPrinter, {
         sourceMap: compilerOpts.declarationMap,
         sourceRoot: compilerOpts.sourceRoot,
@@ -517,7 +517,7 @@ export function emitFiles(
       const base64SourceMapText = base64encode(sys, sourceMapText);
       return `data:application/json;base64,${base64SourceMapText}`;
     }
-    const sourceMapFile = getBaseFileName(normalizeSlashes(Debug.checkDefined(sourceMapFilePath)));
+    const sourceMapFile = getBaseFileName(normalizeSlashes(qf.check.defined(sourceMapFilePath)));
     if (mapOpts.mapRoot) {
       let sourceMapDir = normalizeSlashes(mapOpts.mapRoot);
       if (sourceFile) {
@@ -594,7 +594,7 @@ function createSourceFilesFromBundleBuildInfo(bundle: qt.BundleBuildInfo, buildI
     sourceFile.statements = new Nodes();
     return sourceFile;
   });
-  const jsBundle = Debug.checkDefined(bundle.js);
+  const jsBundle = qf.check.defined(bundle.js);
   forEach(jsBundle.sources && jsBundle.sources.prologues, (prologueInfo) => {
     const sourceFile = sourceFiles[prologueInfo.file];
     sourceFile.text = prologueInfo.text;
@@ -617,9 +617,9 @@ export function emitUsingBuildInfo(
   customTransformers?: qt.CustomTransformers
 ): EmitUsingBuildInfoResult {
   const { buildInfoPath, jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath } = getOutputPathsForBundle(config.opts, false);
-  const buildInfoText = host.readFile(Debug.checkDefined(buildInfoPath));
+  const buildInfoText = host.readFile(qf.check.defined(buildInfoPath));
   if (!buildInfoText) return buildInfoPath!;
-  const jsFileText = host.readFile(Debug.checkDefined(jsFilePath));
+  const jsFileText = host.readFile(qf.check.defined(jsFilePath));
   if (!jsFileText) return jsFilePath!;
   const sourceMapText = sourceMapFilePath && host.readFile(sourceMapFilePath);
   if ((sourceMapFilePath && !sourceMapText) || config.opts.inlineSourceMap) return sourceMapFilePath || 'inline sourcemap decoding';
@@ -738,7 +738,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   let write = writeBase;
   let isOwnFileEmit: boolean;
   const bundleFileInfo = printerOpts.writeBundleFileInfo ? ({ sections: [] } as qt.BundleFileInfo) : undefined;
-  const relativeToBuildInfo = bundleFileInfo ? Debug.checkDefined(printerOpts.relativeToBuildInfo) : undefined;
+  const relativeToBuildInfo = bundleFileInfo ? qf.check.defined(printerOpts.relativeToBuildInfo) : undefined;
   const recordInternalSection = printerOpts.recordInternalSection;
   let sourceFileTextPos = 0;
   let sourceFileTextKind: qt.BundleFileTextLikeKind = qt.BundleFileSectionKind.Text;
@@ -771,13 +771,13 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function printNode(hint: EmitHint, node: Node, sourceFile: qt.SourceFile): string {
     switch (hint) {
       case EmitHint.SourceFile:
-        qu.assert(node.kind === Syntax.SourceFile, 'Expected a qt.SourceFile node.');
+        qf.assert.true(node.kind === Syntax.SourceFile, 'Expected a qt.SourceFile node.');
         break;
       case EmitHint.IdentifierName:
-        qu.assert(node.kind === Syntax.Identifier, 'Expected an qt.Identifier node.');
+        qf.assert.true(node.kind === Syntax.Identifier, 'Expected an qt.Identifier node.');
         break;
       case EmitHint.Expression:
-        qu.assert(qf.is.expression(node), 'Expected an qt.Expression node.');
+        qf.assert.true(qf.is.expression(node), 'Expected an qt.Expression node.');
         break;
     }
     switch (node.kind) {
@@ -896,7 +896,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         bundleFileInfo.sections = savedSections!;
         if (prepend.oldFileOfCurrentEmit) bundleFileInfo.sections.push(...newSections);
         else {
-          newSections.forEach((section) => qu.assert(isBundleFileTextLike(section)));
+          newSections.forEach((section) => qf.assert.true(isBundleFileTextLike(section)));
           bundleFileInfo.sections.push({
             pos,
             end: writer.getTextPos(),
@@ -1028,7 +1028,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     }
     const pipelinePhase = getPipelinePhase(PipelinePhase.Notification, emitHint, node);
     pipelinePhase(emitHint, node);
-    qu.assert(lastNode === node);
+    qf.assert.true(lastNode === node);
     const substitute = lastSubstitution;
     lastNode = savedLastNode;
     lastSubstitution = savedLastSubstitution;
@@ -1055,13 +1055,13 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return getPipelinePhase(currentPhase + 1, emitHint, node);
   }
   function pipelineEmitWithNotification(hint: EmitHint, node: Node) {
-    qu.assert(lastNode === node);
+    qf.assert.true(lastNode === node);
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.Notification, hint, node);
     onEmitNode(hint, node, pipelinePhase);
-    qu.assert(lastNode === node);
+    qf.assert.true(lastNode === node);
   }
   function pipelineEmitWithHint(hint: EmitHint, node: Node): void {
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
     if (hint === EmitHint.SourceFile) return emitSourceFile(cast(node, isSourceFile));
     if (hint === EmitHint.IdentifierName) return emitIdentifier(cast(node, isIdentifier));
     if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, isStringLiteral), true);
@@ -1439,10 +1439,10 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     emit(node.constraint);
   }
   function pipelineEmitWithSubstitution(hint: EmitHint, node: Node) {
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.Substitution, hint, node);
     pipelinePhase(hint, lastSubstitution!);
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
   }
   function getHelpersFromBundledSourceFiles(bundle: qt.Bundle): string[] | undefined {
     let result: string[] | undefined;
@@ -2100,7 +2100,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       } else {
         pipelinePhase(EmitHint.Expression, next);
       }
-      qu.assert(lastNode === next);
+      qf.assert.true(lastNode === next);
       lastNode = savedLastNode;
       lastSubstitution = savedLastSubstitution;
     }
@@ -2188,7 +2188,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   }
   function emitExpressionStatement(node: qt.ExpressionStatement) {
     emitExpression(node.expression);
-    if (!qf.is.jsonSourceFile(currentSourceFile!) || isSynthesized(node.expression)) {
+    if (!qf.is.jsonSourceFile(currentSourceFile!) || qf.is.synthesized(node.expression)) {
       writeTrailingSemicolon();
     }
   }
@@ -2428,7 +2428,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function shouldEmitBlockFunctionBodyOnSingleLine(body: qt.Block) {
     if (qf.get.emitFlags(body) & EmitFlags.SingleLine) return true;
     if (body.multiLine) return false;
-    if (!isSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) return false;
+    if (!qf.is.synthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) return false;
     if (getLeadingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines) || getClosingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines)) return false;
     let previousStatement: qt.Statement | undefined;
     for (const statement of body.statements) {
@@ -2768,7 +2768,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     emitCaseOrDefaultClauseRest(node, node.statements, pos);
   }
   function emitCaseOrDefaultClauseRest(parentNode: Node, statements: Nodes<qt.Statement>, colonPos: number) {
-    const emitAsSingleStatement = statements.length === 1 && (isSynthesized(parentNode) || isSynthesized(statements[0]) || startsOnSameLine(parentNode, statements[0], currentSourceFile!));
+    const emitAsSingleStatement = statements.length === 1 && (qf.is.synthesized(parentNode) || qf.is.synthesized(statements[0]) || startsOnSameLine(parentNode, statements[0], currentSourceFile!));
     let format = ListFormat.CaseOrDefaultClauseStatements;
     if (emitAsSingleStatement) {
       writeToken(Syntax.ColonToken, colonPos, writePunctuation, parentNode);
@@ -2937,7 +2937,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     writeLine();
     const statements = node.statements;
     if (emitBodyWithDetachedComments) {
-      const shouldEmitDetachedComment = statements.length === 0 || !qf.is.prologueDirective(statements[0]) || isSynthesized(statements[0]);
+      const shouldEmitDetachedComment = statements.length === 0 || !qf.is.prologueDirective(statements[0]) || qf.is.synthesized(statements[0]);
       if (shouldEmitDetachedComment) {
         emitBodyWithDetachedComments(node, statements, emitSourceFileWorker);
         return;
@@ -3004,7 +3004,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     pushNameGenerationScope(node);
     forEach(node.statements, generateNames);
     emitHelpers(node);
-    const index = findIndex(statements, (statement) => !qf.is.prologueDirective(statement));
+    const index = qf.find.index(statements, (statement) => !qf.is.prologueDirective(statement));
     emitTripleSlashDirectivesIfNeeded(node);
     emitList(node, statements, ListFormat.MultiLine, index === -1 ? statements.length : index);
     popNameGenerationScope(node);
@@ -3470,7 +3470,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       const firstChild = children[0];
       if (firstChild === undefined) return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
       if (firstChild.kind === Syntax.JsxText) return 0;
-      if (!isSynthesized(parentNode.pos) && !isSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
+      if (!qf.is.synthesized(parentNode.pos) && !qf.is.synthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
         if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesToPrevNonWhitespace(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments));
         return startsOnSameLine(parentNode, firstChild, currentSourceFile!) ? 0 : 1;
       }
@@ -3482,7 +3482,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (format & ListFormat.PreserveLines || preserveSourceNewlines) {
       if (previousNode === undefined || nextNode === undefined) return 0;
       if (nextNode.kind === Syntax.JsxText) return 0;
-      else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
+      else if (!qf.is.synthesized(previousNode) && !qf.is.synthesized(nextNode) && previousNode.parent === nextNode.parent) {
         if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesBetween(previousNode, nextNode, currentSourceFile!, includeComments));
         return endOnSameLineAsStart(previousNode, nextNode, currentSourceFile!) ? 0 : 1;
       } else if (synthesizedNodeStartsOnNewLine(previousNode, format) || synthesizedNodeStartsOnNewLine(nextNode, format)) {
@@ -3498,7 +3498,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       if (format & ListFormat.PreferNewLine) return 1;
       const lastChild = lastOrUndefined(children);
       if (lastChild === undefined) return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
-      if (!isSynthesized(parentNode.pos) && !isSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
+      if (!qf.is.synthesized(parentNode.pos) && !qf.is.synthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
         if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesToNextNonWhitespace(lastChild.end, parentNode.end, currentSourceFile!, includeComments));
         return endsOnSameLine(parentNode, lastChild, currentSourceFile!) ? 0 : 1;
       }
@@ -3508,7 +3508,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return 0;
   }
   function getEffectiveLines(getLineDifference: (includeComments: boolean) => number) {
-    qu.assert(!!preserveSourceNewlines);
+    qf.assert.true(!!preserveSourceNewlines);
     const lines = getLineDifference(true);
     if (lines === 0) return getLineDifference(false);
     return lines;
@@ -3527,7 +3527,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     }
   }
   function synthesizedNodeStartsOnNewLine(node: Node, format: ListFormat) {
-    if (isSynthesized(node)) {
+    if (qf.is.synthesized(node)) {
       const startsOnNewLine = qf.emit.startsOnNewLine(node);
       if (startsOnNewLine === undefined) return (format & ListFormat.PreferNewLine) !== 0;
       return startsOnNewLine;
@@ -3540,7 +3540,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     node1 = skipSynthesizedParentheses(node1);
     node2 = skipSynthesizedParentheses(node2);
     if (qf.emit.startsOnNewLine(node2)) return 1;
-    if (!isSynthesized(parent) && !isSynthesized(node1) && !isSynthesized(node2)) {
+    if (!qf.is.synthesized(parent) && !qf.is.synthesized(node1) && !qf.is.synthesized(node2)) {
       if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesBetween(node1, node2, currentSourceFile!, includeComments));
       return endOnSameLineAsStart(node1, node2, currentSourceFile!) ? 0 : 1;
     }
@@ -3550,7 +3550,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return block.statements.length === 0 && endOnSameLineAsStart(block, block, currentSourceFile!);
   }
   function skipSynthesizedParentheses(node: Node) {
-    while (node.kind === Syntax.ParenthesizedExpression && isSynthesized(node)) {
+    while (node.kind === Syntax.ParenthesizedExpression && qf.is.synthesized(node)) {
       node = (<qt.ParenthesizedExpression>node).expression;
     }
     return node;
@@ -3559,12 +3559,12 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     if (qf.is.generatedIdentifier(node)) return generateName(node);
     else if (
       (node.kind === Syntax.Identifier || node.kind === Syntax.PrivateIdentifier) &&
-      (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && node.sourceFile !== qf.get.originalOf(currentSourceFile)))
+      (qf.is.synthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && node.sourceFile !== qf.get.originalOf(currentSourceFile)))
     ) {
       return idText(node);
     } else if (node.kind === Syntax.StringLiteral && (<qt.StringLiteral>node).textSourceNode) {
       return getTextOfNode((<qt.StringLiteral>node).textSourceNode!, includeTrivia);
-    } else if (qf.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
+    } else if (qf.is.literalExpression(node) && (qf.is.synthesized(node) || !node.parent)) {
       return node.text;
     }
     return qf.get.sourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
@@ -3870,7 +3870,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return node;
   }
   function pipelineEmitWithComments(hint: EmitHint, node: Node) {
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
     enterComment();
     hasWrittenComment = false;
     const emitFlags = qf.get.emitFlags(node);
@@ -3916,7 +3916,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
       }
     }
     exitComment();
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
   }
   function emitLeadingSynthesizedComment(comment: qt.SynthesizedComment) {
     if (comment.hasLeadingNewline || comment.kind === Syntax.SingleLineCommentTrivia) {
@@ -4095,7 +4095,7 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
     return node.parsedSourceMap || undefined;
   }
   function pipelineEmitWithSourceMap(hint: EmitHint, node: Node) {
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
     if (node.kind === Syntax.UnparsedSource || node.kind === Syntax.UnparsedPrepend) {
       pipelinePhase(hint, node);
@@ -4129,13 +4129,13 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
         emitSourcePos(source, end);
       }
     }
-    qu.assert(lastNode === node || lastSubstitution === node);
+    qf.assert.true(lastNode === node || lastSubstitution === node);
   }
   function skipSourceTrivia(source: qt.SourceMapSource, pos: number): number {
     return source.syntax.skipTrivia ? source.syntax.skipTrivia(pos) : qy.skipTrivia(source.text, pos);
   }
   function emitPos(pos: number) {
-    if (sourceMapsDisabled || isSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
+    if (sourceMapsDisabled || qf.is.synthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
       return;
     }
     const { line: sourceLine, character: sourceCharacter } = qy.get.lineAndCharOf(sourceMapSource, pos);

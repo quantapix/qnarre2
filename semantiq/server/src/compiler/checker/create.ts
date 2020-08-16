@@ -98,7 +98,7 @@ export function newCreate(f: qt.Frame) {
       return result;
     }
     optionalCallSignature(signature: qt.Signature, callChainFlags: SignatureFlags) {
-      assert(
+      qf.assert.true(
         callChainFlags === SignatureFlags.IsInnerCallChain || callChainFlags === SignatureFlags.IsOuterCallChain,
         'An optional call signature can either be for an inner call chain or an outer call chain, but not both.'
       );
@@ -205,7 +205,7 @@ export function newCreate(f: qt.Frame) {
         : this.typePredicate(
             node.assertsModifier ? qt.TypePredicateKind.AssertsIdentifier : qt.TypePredicateKind.Identifier,
             paramName.escapedText as string,
-            findIndex(signature.params, (p) => p.escName === paramName.escapedText),
+            qf.find.index(signature.params, (p) => p.escName === paramName.escapedText),
             type
           );
     }
@@ -345,7 +345,7 @@ export function newCreate(f: qt.Frame) {
       return this.typeMapper(sources, undefined);
     }
     backreferenceMapper(context: qt.InferenceContext, index: number): qt.TypeMapper {
-      return makeFunctionTypeMapper((t) => (findIndex(context.inferences, (info) => info.typeParam === t) >= index ? unknownType : t));
+      return makeFunctionTypeMapper((t) => (qf.find.index(context.inferences, (info) => info.typeParam === t) >= index ? unknownType : t));
     }
     symbolWithType(source: qt.Symbol, type: qt.Type | undefined) {
       const symbol = new qc.Symbol(source.flags, source.escName, source.checkFlags() & qt.CheckFlags.Readonly);
@@ -463,7 +463,7 @@ export function newCreate(f: qt.Frame) {
           allAttributesTable?.set(attributeSymbol.escName, attributeSymbol);
           if (attributeDecl.name.escapedText === jsxChildrenPropertyName) explicitlySpecifyChildrenAttribute = true;
         } else {
-          assert(attributeDecl.kind === Syntax.JsxSpreadAttribute);
+          qf.assert.true(attributeDecl.kind === Syntax.JsxSpreadAttribute);
           if (attributesTable.size > 0) {
             spread = getSpreadType(spread, this.jsxAttributesType(), attributes.symbol, objectFlags, false);
             attributesTable = new qc.SymbolTable();
@@ -525,7 +525,7 @@ export function newCreate(f: qt.Frame) {
       const params: qt.Symbol[] = [];
       for (let i = 0; i < maxNonRestParam; i++) {
         const symbols = mapDefined(candidates, (s) => (s.hasRestParam(s) ? (i < s.params.length - 1 ? s.params[i] : last(s.params)) : i < s.params.length ? s.params[i] : undefined));
-        assert(symbols.length !== 0);
+        qf.assert.true(symbols.length !== 0);
         params.push(
           this.combinedSymbolFromTypes(
             symbols,
@@ -751,7 +751,7 @@ export function newCreate(f: qt.Frame) {
         },
         getDeclarationStmtsForSourceFile: (node, flags, tracker, bundled) => {
           const n = qf.get.parseTreeOf(node) as qt.SourceFile;
-          assert(n && n.kind === Syntax.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
+          qf.assert.true(n && n.kind === Syntax.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
           const sym = qf.get.symbolOfNode(node);
           if (!sym) return !node.locals ? [] : nodeBuilder.symbolTableToDeclarationStmts(node.locals, node, flags, tracker, bundled);
           return !sym.exports ? [] : nodeBuilder.symbolTableToDeclarationStmts(sym.exports, node, flags, tracker, bundled);
@@ -1296,7 +1296,7 @@ export function newResolve(f: qt.Frame) {
       if (isUse && result && (!lastSelfReferenceLocation || result !== lastSelfReferenceLocation.symbol)) result.referenced! |= meaning;
       if (!result) {
         if (lastLocation) {
-          assert(lastLocation.kind === Syntax.SourceFile);
+          qf.assert.true(lastLocation.kind === Syntax.SourceFile);
           if ((lastLocation as qt.SourceFile).commonJsModuleIndicator && name === 'exports' && meaning & lastLocation.symbol.flags) return lastLocation.symbol;
         }
         if (!excludeGlobals) result = lookup(globals, name, meaning);
@@ -1394,8 +1394,8 @@ export function newResolve(f: qt.Frame) {
       const namespaceMeaning = qt.SymbolFlags.Namespace | (qf.is.inJSFile(name) ? meaning & qt.SymbolFlags.Value : 0);
       let symbol: qt.Symbol | undefined;
       if (name.kind === Syntax.Identifier) {
-        const message = meaning === namespaceMeaning || isSynthesized(name) ? qd.msgs.Cannot_find_namespace_0 : getCannotFindNameDiagnosticForName(qf.get.firstIdentifier(name));
-        const symbolFromJSPrototype = qf.is.inJSFile(name) && !isSynthesized(name) ? this.entityNameFromAssignmentDeclaration(name, meaning) : undefined;
+        const message = meaning === namespaceMeaning || qf.is.synthesized(name) ? qd.msgs.Cannot_find_namespace_0 : getCannotFindNameDiagnosticForName(qf.get.firstIdentifier(name));
+        const symbolFromJSPrototype = qf.is.inJSFile(name) && !qf.is.synthesized(name) ? this.entityNameFromAssignmentDeclaration(name, meaning) : undefined;
         symbol = qf.get.mergedSymbol(this.name(location || name, name.escapedText, meaning, ignoreErrors || symbolFromJSPrototype ? undefined : message, name, true));
         if (!symbol) return qf.get.mergedSymbol(symbolFromJSPrototype);
       } else if (name.kind === Syntax.QualifiedName || name.kind === Syntax.PropertyAccessExpression) {
@@ -1425,8 +1425,8 @@ export function newResolve(f: qt.Frame) {
           return;
         }
       } else throw qc.assert.never(name, 'Unknown entity name kind.');
-      assert((this.checkFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
-      if (!isSynthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
+      qf.assert.true((this.checkFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+      if (!qf.is.synthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
         markSymbolOfAliasDeclarationIfTypeOnly(qf.get.aliasDeclarationFromName(name), symbol, undefined, true);
       return symbol.flags & meaning || dontResolveAlias ? symbol : symbol.resolve.alias();
     }
@@ -1465,7 +1465,7 @@ export function newResolve(f: qt.Frame) {
         return;
       }
       if (patternAmbientModules) {
-        const pattern = findBestPatternMatch(patternAmbientModules, (_) => _.pattern, moduleReference);
+        const pattern = qf.find.bestMatch(patternAmbientModules, (_) => _.pattern, moduleReference);
         if (pattern) {
           const augmentation = patternAmbientModuleAugmentations && patternAmbientModuleAugmentations.get(moduleReference);
           if (augmentation) return qf.get.mergedSymbol(augmentation);
@@ -1978,7 +1978,7 @@ export function newResolve(f: qt.Frame) {
               i++;
             }
             const diags = max > 1 ? allDiagnostics[minIndex] : flatten(allDiagnostics);
-            assert(diags.length > 0, 'No errors reported for 3 or fewer overload signatures');
+            qf.assert.true(diags.length > 0, 'No errors reported for 3 or fewer overload signatures');
             const chain = chainqd.Messages(
               map(diags, (d) => (typeof d.messageText === 'string' ? (d as qd.MessageChain) : d.messageText)),
               qd.msgs.No_overload_matches_this_call
@@ -2247,5 +2247,5 @@ export function newResolve(f: qt.Frame) {
 }
 export interface Fresolve extends ReturnType<typeof newResolve> {}
 export function tryExtractTSExtension(fileName: string): string | undefined {
-  return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
+  return qf.find.up(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
 }

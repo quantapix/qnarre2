@@ -155,23 +155,23 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     return this.pos;
   }
   width(s?: SourceFileLike) {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     return this.end - this.start(s);
   }
   fullWidth() {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     return this.end - this.pos;
   }
   leadingTriviaWidth(s?: SourceFileLike) {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     return this.start(s) - this.pos;
   }
   fullText(s?: SourceFileLike) {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     return (s || this.sourceFile).text.substring(this.pos, this.end);
   }
   getText(s?: SourceFileLike) {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     return (s || this.sourceFile).text.substring(this.start(s), this.end);
   }
   childCount(s?: SourceFileLike) {
@@ -181,7 +181,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     return this.getChildren(s)[i];
   }
   getChildren(s?: SourceFileLike) {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     const scanner = qs_getRaw();
     const addSynthetics = (ns: qu.Push<Nobj>, pos: number, end: number) => {
       scanner.setTextPos(pos);
@@ -189,7 +189,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
         const t = scanner.scan();
         const e = scanner.getTextPos();
         if (e <= end) {
-          qu.assert(t !== Syntax.Identifier);
+          qf.assert.true(t !== Syntax.Identifier);
           ns.push(qf.create.node(t, pos, e, this as Node));
         }
         pos = e;
@@ -243,14 +243,14 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
     return this.children || (this.children = createChildren());
   }
   firstToken(s?: SourceFileLike): Nobj | undefined {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = qu.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
+    const c = qf.find.up(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.firstToken(s);
   }
   lastToken(s?: SourceFileLike): Nobj | undefined {
-    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
+    qf.assert.true(!qf.is.synthesized(this.pos) && !qf.is.synthesized(this.end));
     const cs = this.getChildren(s);
     const c = qu.lastOrUndefined(cs);
     if (!c) return;
@@ -429,8 +429,8 @@ export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements
     if (raw === undefined || t === raw) this.rawText = raw;
     else {
       const r = qs_process(k, raw);
-      qu.assert(typeof r !== 'object');
-      qu.assert(t === r);
+      qf.assert.true(typeof r !== 'object');
+      qf.assert.true(t === r);
       this.rawText = raw;
     }
   }
@@ -536,7 +536,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   nonAugmentationDeclaration() {
     const ds = this.declarations;
-    return ds && qu.find(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
+    return ds && qf.find.up(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
   }
   setValueDeclaration(d: qt.Declaration) {
     const v = this.valueDeclaration;
@@ -550,7 +550,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   classLikeDeclaration(): qt.ClassLikeDeclaration | undefined {
     const ds = this.declarations;
-    return ds && qu.find(ds, qf.is.classLike);
+    return ds && qf.find.up(ds, qf.is.classLike);
   }
   combinedLocalAndExportSymbolFlags(): SymbolFlags {
     return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
@@ -817,7 +817,7 @@ export class Signature implements qt.Signature {
         }
         this.resolvedPredicate = type && t.kind === Syntax.TypingPredicate ? qf.create.typePredicateFromTypingPredicate(t, this) : jsdocPredicate || noTypePredicate;
       }
-      qu.assert(!!this.resolvedPredicate);
+      qf.assert.true(!!this.resolvedPredicate);
     }
     return this.resolvedPredicate === noTypePredicate ? undefined : this.resolvedPredicate;
   }
@@ -1339,8 +1339,8 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     const r = createUnparsedSource();
     let stripInternal: boolean | undefined;
     let bundleFileInfo: qt.BundleFileInfo | undefined;
-    if (!isString(textOrInputFiles)) {
-      qu.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
+    if (!qf.is.string(textOrInputFiles)) {
+      qf.assert.true(mapPathOrType === 'js' || mapPathOrType === 'dts');
       r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
       r.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.javascriptMapPath : textOrInputFiles.declarationMapPath;
       Object.defineProperties(r, {
@@ -1357,11 +1357,11 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
       });
       if (textOrInputFiles.buildInfo && textOrInputFiles.buildInfo.bundle) {
         r.oldFileOfCurrentEmit = textOrInputFiles.oldFileOfCurrentEmit;
-        qu.assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
+        qf.assert.true(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
         stripInternal = mapTextOrStripInternal;
         bundleFileInfo = mapPathOrType === 'js' ? textOrInputFiles.buildInfo.bundle.js : textOrInputFiles.buildInfo.bundle.dts;
         if (r.oldFileOfCurrentEmit) {
-          parseOldFileOfCurrentEmit(r, qu.checkDefined(bundleFileInfo));
+          parseOldFileOfCurrentEmit(r, qf.check.defined(bundleFileInfo));
           return r;
         }
       }
@@ -1371,7 +1371,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
       r.sourceMapPath = mapPathOrType;
       r.sourceMapText = mapTextOrStripInternal as string;
     }
-    qu.assert(!r.oldFileOfCurrentEmit);
+    qf.assert.true(!r.oldFileOfCurrentEmit);
     parseUnparsedSourceFile(r, bundleFileInfo, stripInternal);
     return r;
   }
@@ -1466,7 +1466,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     this.texts = texts || [<qt.UnparsedTextLike>qf.create.unparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
   parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo) {
-    qu.assert(!!this.oldFileOfCurrentEmit);
+    qf.assert.true(!!this.oldFileOfCurrentEmit);
     let texts: qt.UnparsedTextLike[] | undefined;
     let syntheticReferences: qt.UnparsedSyntheticReference[] | undefined;
     for (const section of bundleFileInfo.sections) {
@@ -1506,7 +1506,7 @@ export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
 function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
   if (!ds) return qu.empty;
   const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
-    return qu.firstDefined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
+    return qf.find.defined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
       const superType = c?.get.typeAtLocation(n);
       const baseProperty = superType && c?.get.propertyOfType(superType, pName);
       const inheritedDocs = baseProperty && baseProperty.getDocComment(c);

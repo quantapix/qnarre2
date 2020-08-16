@@ -158,7 +158,7 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
   projectReferencesOrWatchOptsToExtend?: readonly qt.ProjectReference[] | qt.WatchOpts,
   watchOptsOrExtraFileExtensions?: qt.WatchOpts | readonly qt.FileExtensionInfo[]
 ): WatchCompilerHostOfFilesAndCompilerOpts<T> | WatchCompilerHostOfConfigFile<T> {
-  if (isArray(rootFilesOrConfigFileName)) {
+  if (qf.is.array(rootFilesOrConfigFileName)) {
     return createWatchCompilerHostOfFilesAndCompilerOpts({
       rootFiles: rootFilesOrConfigFileName,
       opts: opts!,
@@ -239,7 +239,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   reportWatchDiagnostic(qd.Starting_compilation_in_watch_mode);
   if (configFileName && !host.configFileParsingResult) {
     newLine = getNewLineCharacter(optsToExtendForConfigFile, () => host.getNewLine());
-    assert(!rootFileNames);
+    qf.assert.true(!rootFileNames);
     parseConfigFile();
     newLine = updateNewLine();
   }
@@ -363,7 +363,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     }
   }
   function updateRootFileNames(files: string[]) {
-    assert(!configFileName, 'Cannot update root file names with config file watch mode');
+    qf.assert.true(!configFileName, 'Cannot update root file names with config file watch mode');
     rootFileNames = files;
     scheduleProgramUpdate();
   }
@@ -462,7 +462,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     timerToUpdateProgram = host.setTimeout(updateProgramWithWatchStatus, 250);
   }
   function scheduleProgramReload() {
-    assert(!!configFileName);
+    qf.assert.true(!!configFileName);
     reloadLevel = ConfigFileProgramReloadLevel.Full;
     scheduleProgramUpdate();
   }
@@ -560,7 +560,7 @@ export function createWatchProgram<T extends BuilderProgram>(
       host,
       directory,
       (fileOrDirectory) => {
-        assert(!!configFileName);
+        qf.assert.true(!!configFileName);
         let fileOrDirectoryPath: qt.Path | undefined = toPath(fileOrDirectory);
         if (cachedDirectoryStructureHost) {
           cachedDirectoryStructureHost.addOrDeleteFileOrDirectory(fileOrDirectory, fileOrDirectoryPath);
@@ -1041,7 +1041,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     try {
       return createCachedFileSystemEntries(rootDir, rootDirPath);
     } catch (_e) {
-      assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
+      qf.assert.true(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
       return;
     }
   }

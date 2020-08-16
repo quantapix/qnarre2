@@ -237,7 +237,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDec
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
     if (index === statements.length) return index;
-    const superIndex = findIndex(statements, (s) => s.kind === Syntax.ExpressionStatement && qf.is.superCall(s.expression), index);
+    const superIndex = qf.find.index(statements, (s) => s.kind === Syntax.ExpressionStatement && qf.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {
         result.push(qf.visit.node(statements[i], visitor, qf.is.statement));

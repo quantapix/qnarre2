@@ -94,11 +94,11 @@ export function createSourceMapGenerator(host: qt.EmitHost, file: string, source
     );
   }
   function addMapping(generatedLine: number, generatedCharacter: number, sourceIndex?: number, sourceLine?: number, sourceCharacter?: number, nameIndex?: number) {
-    qu.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-    qu.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
-    qu.assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
-    qu.assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
-    qu.assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
+    qf.assert.true(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+    qf.assert.true(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+    qf.assert.true(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
+    qf.assert.true(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
+    qf.assert.true(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
     enter();
     if (isNewGeneratedPosition(generatedLine, generatedCharacter) || isBacktrackingSourcePosition(sourceIndex, sourceLine, sourceCharacter)) {
       commitPendingMapping();
@@ -121,8 +121,8 @@ export function createSourceMapGenerator(host: qt.EmitHost, file: string, source
     exit();
   }
   function appendSourceMap(generatedLine: number, generatedCharacter: number, map: qt.RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar) {
-    qu.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-    qu.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+    qf.assert.true(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+    qf.assert.true(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
     enter();
     const sourceIndexToNewSourceIndexMap: number[] = [];
     let nameIndexToNewNameIndexMap: number[] | undefined;
@@ -191,7 +191,7 @@ export function createSourceMapGenerator(host: qt.EmitHost, file: string, source
         lastGeneratedCharacter = 0;
       } while (lastGeneratedLine < pendingGeneratedLine);
     } else {
-      Debug.assertEqual(lastGeneratedLine, pendingGeneratedLine, 'generatedLine cannot backtrack');
+      qf.assert.equal(lastGeneratedLine, pendingGeneratedLine, 'generatedLine cannot backtrack');
       if (hasLast) {
         mappings += ',';
       }
@@ -258,11 +258,11 @@ export function isRawSourceMap(x: any): x is qt.RawSourceMap {
     x.version === 3 &&
     typeof x.file === 'string' &&
     typeof x.mappings === 'string' &&
-    isArray(x.sources) &&
+    qf.is.array(x.sources) &&
     every(x.sources, isString) &&
     (x.sourceRoot === undefined || x.sourceRoot === null || typeof x.sourceRoot === 'string') &&
-    (x.sourcesContent === undefined || x.sourcesContent === null || (isArray(x.sourcesContent) && every(x.sourcesContent, isStringOrNull))) &&
-    (x.names === undefined || x.names === null || (isArray(x.names) && every(x.names, isString)))
+    (x.sourcesContent === undefined || x.sourcesContent === null || (qf.is.array(x.sourcesContent) && every(x.sourcesContent, isStringOrNull))) &&
+    (x.names === undefined || x.names === null || (qf.is.array(x.names) && every(x.names, isString)))
   );
 }
 export function tryParseRawSourceMap(text: string) {
@@ -482,7 +482,7 @@ function sameMappedPosition(left: MappedPosition, right: MappedPosition) {
   return left.generatedPosition === right.generatedPosition && left.sourceIndex === right.sourceIndex && left.sourcePosition === right.sourcePosition;
 }
 function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
-  qu.assert(left.sourceIndex === right.sourceIndex);
+  qf.assert.true(left.sourceIndex === right.sourceIndex);
   return compareNumbers(left.sourcePosition, right.sourcePosition);
 }
 function compareGeneratedPositions(left: MappedPosition, right: MappedPosition) {

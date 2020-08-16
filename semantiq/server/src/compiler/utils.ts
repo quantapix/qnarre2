@@ -1,10 +1,10 @@
 import { InternalSymbol, ReadonlyPragmaMap } from './types';
 export type AnyFunction = (...args: never[]) => void;
 export type AnyConstructor = new (...args: unknown[]) => unknown;
-export function fail(m?: string, mark?: AnyFunction): never {
+export function fail(m?: string, f?: AnyFunction): never {
   debugger;
   const e = new Error(m ? `Failure. ${m}` : 'Failure.');
-  Error.captureStackTrace(e, mark || fail);
+  Error.captureStackTrace(e, f || fail);
   throw e;
 }
 export const enum AssertionLevel {
@@ -13,49 +13,201 @@ export const enum AssertionLevel {
   Aggressive = 2,
   VeryAggressive = 3,
 }
-export function assert(cond: unknown, m?: string, info?: string | (() => string), mark?: AnyFunction): asserts cond {
-  if (!cond) {
-    m = m ? `False expression: ${m}` : 'False expression.';
-    if (info) m += '\r\nVerbose Debug Info: ' + (typeof info === 'string' ? info : info());
-    fail(m, mark || assert);
+export interface Frame {
+  assert: Fassert;
+  check: Fcheck;
+  each: Feach;
+  find: Ffind;
+  is: Fis;
+}
+export class Fassert {
+  true(cond: unknown, m?: string, info?: string | (() => string), f?: AnyFunction): asserts cond {
+    if (!cond) {
+      m = m ? `False expression: ${m}` : 'False expression.';
+      if (info) m += '\r\nVerbose Debug Info: ' + (typeof info === 'string' ? info : info());
+      fail(m, f || this.true);
+    }
+  }
+  never(_: never, m = 'Illegal value:', f?: AnyFunction): never {
+    return fail(`${m}`, f || this.never);
+  }
+  equal<T>(a: T, b: T, m1?: string, m2?: string, f?: AnyFunction) {
+    if (a !== b) {
+      const m = m1 ? (m2 ? `${m1} ${m2}` : m1) : '';
+      fail(`Expected ${a} === ${b}. ${m}`, f || this.equal);
+    }
+  }
+  lessThan(a: number, b: number, m?: string, f?: AnyFunction) {
+    if (a >= b) fail(`Expected ${a} < ${b}. ${m || ''}`, f || this.lessThan);
+  }
+  lessThanOrEqual(a: number, b: number, f?: AnyFunction) {
+    if (a > b) fail(`Expected ${a} <= ${b}`, f || this.lessThanOrEqual);
+  }
+  greaterThanOrEqual(a: number, b: number, f?: AnyFunction) {
+    if (a < b) fail(`Expected ${a} >= ${b}`, f || this.greaterThanOrEqual);
+  }
+  defined<T>(t?: T | null, m?: string, f?: AnyFunction): asserts t is NonNullable<T> {
+    if (t === undefined || t === null) fail(m, f || this.defined);
+  }
+  //export function allDefined<T extends Node>(ns: Nodes<T>, m?: string, f?: AnyFunction): asserts value is Nodes<T>;
+  allDefined<T>(ts: readonly T[], m?: string, f?: AnyFunction): asserts ts is readonly NonNullable<T>[];
+  allDefined<T>(ts: readonly T[], m?: string, f?: AnyFunction) {
+    for (const t of ts) {
+      this.defined(t, m, f || this.allDefined);
+    }
   }
 }
-export function assertNever(_: never, msg = 'Illegal value:', mark?: AnyFunction): never {
-  return fail(`${msg}`, mark || assertNever);
-}
-export function assertEqual<T>(a: T, b: T, msg?: string, msg2?: string, mark?: AnyFunction) {
-  if (a !== b) {
-    const m = msg ? (msg2 ? `${msg} ${msg2}` : msg) : '';
-    fail(`Expected ${a} === ${b}. ${m}`, mark || assertEqual);
+export class Fcheck {
+  defined<T>(t?: T | null, m?: string, f?: AnyFunction): T {
+    qf.assert.defined(t, m, f || this.defined);
+    return t;
+  }
+  allDefined<T, TS extends readonly T[]>(ts: TS, m?: string, f?: AnyFunction): TS {
+    qf.assert.allDefined(ts, m, f || this.allDefined);
+    return ts;
   }
 }
-export function assertLessThan(a: number, b: number, msg?: string, mark?: AnyFunction) {
-  if (a >= b) fail(`Expected ${a} < ${b}. ${msg || ''}`, mark || assertLessThan);
-}
-export function assertLessThanOrEqual(a: number, b: number, mark?: AnyFunction) {
-  if (a > b) fail(`Expected ${a} <= ${b}`, mark || assertLessThanOrEqual);
-}
-export function assertGreaterThanOrEqual(a: number, b: number, mark?: AnyFunction) {
-  if (a < b) fail(`Expected ${a} >= ${b}`, mark || assertGreaterThanOrEqual);
-}
-export function assertIsDefined<T>(v: T, m?: string, mark?: AnyFunction): asserts v is NonNullable<T> {
-  if (v === undefined || v === null) fail(m, mark || assertIsDefined);
-}
-export function checkDefined<T>(t?: T | null, msg?: string, mark?: AnyFunction): T {
-  assertIsDefined(t, msg, mark || checkDefined);
-  return t;
-}
-//export function assertEachIsDefined<T extends Node>(ns: Nodes<T>, msg?: string, mark?: AnyFunction): asserts value is Nodes<T>;
-export function assertEachIsDefined<T>(ts: readonly T[], msg?: string, mark?: AnyFunction): asserts ts is readonly NonNullable<T>[];
-export function assertEachIsDefined<T>(ts: readonly T[], msg?: string, mark?: AnyFunction) {
-  for (const t of ts) {
-    assertIsDefined(t, msg, mark || assertEachIsDefined);
+export class Feach {
+  up<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const u = cb(ts[i], i);
+        if (u) return u;
+      }
+    }
+    return;
+  }
+  down<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+    if (ts) {
+      for (let i = ts.length - 1; i >= 0; i--) {
+        const u = cb(ts[i], i);
+        if (u) return u;
+      }
+    }
+    return;
+  }
+  entry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+  entry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
+  entry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+    const ts = m.entries();
+    for (let i = ts.next(); !i.done; i = ts.next()) {
+      const [k, t] = i.value;
+      const u = cb(t, k as string & __String);
+      if (u) return u;
+    }
+    return;
+  }
+  key<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
+  key<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
+  key<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
+    const ks = m.keys();
+    for (let i = ks.next(); !i.done; i = ks.next()) {
+      const t = cb(i.value as string & __String);
+      if (t) return t;
+    }
+    return;
   }
 }
-export function checkEachDefined<T, TS extends readonly T[]>(ts: TS, msg?: string, mark?: AnyFunction): TS {
-  assertEachIsDefined(ts, msg, mark || checkEachDefined);
-  return ts;
+export class Ffind {
+  up<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
+  up<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
+  up<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
+    for (let i = 0; i < ts.length; i++) {
+      const t = ts[i];
+      if (cb(t, i)) return t;
+    }
+    return;
+  }
+  down<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
+  down<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
+  down<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
+    for (let i = ts.length - 1; i >= 0; i--) {
+      const t = ts[i];
+      if (cb(t, i)) return t;
+    }
+    return;
+  }
+  index<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
+    for (let i = start ?? 0; i < ts.length; i++) {
+      if (cb(ts[i], i)) return i;
+    }
+    return -1;
+  }
+  indexDown<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
+    for (let i = start === undefined ? ts.length - 1 : start; i >= 0; i--) {
+      if (cb(ts[i], i)) return i;
+    }
+    return -1;
+  }
+  map<T, U>(ts: readonly T[], cb: (t: T, i: number) => U | undefined): U {
+    for (let i = 0; i < ts.length; i++) {
+      const u = cb(ts[i], i);
+      if (u) return u;
+    }
+    return fail();
+  }
+  defined<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const u = cb(ts[i], i);
+        if (u !== undefined) return u;
+      }
+    }
+    return;
+  }
+  definedIterator<T, U>(ts: Iterator<T>, cb: (i: T) => U | undefined): U | undefined {
+    while (true) {
+      const t = ts.next();
+      if (t.done) return;
+      const u = cb(t.value);
+      if (u !== undefined) return u;
+    }
+  }
+  bestMatch<T>(ts: readonly T[], cb: (t: T) => Pattern, s: string): T | undefined {
+    let r: T | undefined;
+    let l = -1;
+    for (const t of ts) {
+      const p = cb(t);
+      if (qf.is.patternMatch(p, s) && p.prefix.length > l) {
+        l = p.prefix.length;
+        r = t;
+      }
+    }
+    return r;
+  }
 }
+export class Fis {
+  patternMatch({ prefix, suffix }: Pattern, s: string) {
+    return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
+  }
+  array(x: unknown): x is readonly {}[] {
+    return Array.isArray ? Array.isArray(x) : x instanceof Array;
+  }
+  string(x: unknown): x is string {
+    return typeof x === 'string';
+  }
+  number(x: unknown): x is number {
+    return typeof x === 'number';
+  }
+  infOrNaN(n: string | __String) {
+    return n === 'Infinity' || n === '-Infinity' || n === 'NaN';
+  }
+  synthesized(x: number): boolean;
+  synthesized(x: Range): boolean;
+  synthesized(x: Range | number) {
+    //  x === undefined || x === null || isNaN(x) || x < 0;
+    if (typeof x === 'number') return !(x >= 0);
+    return qf.is.synthesized(x.pos) || qf.is.synthesized(x.end);
+  }
+  jsonEqual(a: unknown, b: unknown): boolean {
+    return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, this.jsonEqual));
+  }
+  wildcard(s: string) {
+    return s === '*' || s === 'x' || s === 'X';
+  }
+}
+const qf: Frame = { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), is: new Fis() };
+
 export function getFunctionName(f: AnyFunction) {
   if (typeof f !== 'function') return '';
   if (f.hasOwnProperty('name')) return (f as any).name;
@@ -73,10 +225,10 @@ export function getEnumMembers(e: any) {
   }
   return stableSort<[number, string]>(ms, (x, y) => compareNumbers(x[0], y[0]));
 }
-export function formatEnum(v = 0, e: any, isFlags?: boolean) {
+export function formatEnum(v = 0, e: any, flags?: boolean) {
   const ms = getEnumMembers(e);
   if (v === 0) return ms.length > 0 && ms[0][0] === 0 ? ms[0][1] : '0';
-  if (isFlags) {
+  if (flags) {
     let r = '';
     let fs = v;
     for (const [mv, mk] of ms) {
@@ -110,7 +262,7 @@ export interface MapLike<T> {
 export class QMap<T> extends Map<string, T> {
   constructor(es?: MapLike<T> | [string, T][]) {
     super();
-    if (isArray(es)) {
+    if (qf.is.array(es)) {
       for (const [k, v] of es) {
         this.set(k, v);
       }
@@ -174,13 +326,10 @@ export interface EscapedMultiMap<T> extends EscapedMap<T[]> {
 export function length(xs?: readonly unknown[]) {
   return xs ? xs.length : 0;
 }
-export function isArray(x: unknown): x is readonly {}[] {
-  return Array.isArray ? Array.isArray(x) : x instanceof Array;
-}
 export function toArray<T>(ts: T | T[]): T[];
 export function toArray<T>(ts: T | readonly T[]): readonly T[];
 export function toArray<T>(ts: T | T[]): T[] {
-  return isArray(ts) ? ts : [ts];
+  return qf.is.array(ts) ? ts : [ts];
 }
 export function some<T>(ts?: readonly T[]): ts is readonly T[];
 export function some<T>(ts: readonly T[] | undefined, cb: (t: T) => boolean): boolean;
@@ -202,65 +351,11 @@ export function every<T>(ts: readonly T[] | undefined, cb: (t: T, i: number) => 
   }
   return true;
 }
-export function find<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
-export function find<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
-export function find<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
-  for (let i = 0; i < ts.length; i++) {
-    const t = ts[i];
-    if (cb(t, i)) return t;
-  }
-  return;
-}
-export function findLast<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
-export function findLast<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
-export function findLast<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
-  for (let i = ts.length - 1; i >= 0; i--) {
-    const t = ts[i];
-    if (cb(t, i)) return t;
-  }
-  return;
-}
-export function findIndex<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
-  for (let i = start ?? 0; i < ts.length; i++) {
-    if (cb(ts[i], i)) return i;
-  }
-  return -1;
-}
-export function findLastIndex<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
-  for (let i = start === undefined ? ts.length - 1 : start; i >= 0; i--) {
-    if (cb(ts[i], i)) return i;
-  }
-  return -1;
-}
-export function findMap<T, U>(ts: readonly T[], cb: (t: T, i: number) => U | undefined): U {
-  for (let i = 0; i < ts.length; i++) {
-    const u = cb(ts[i], i);
-    if (u) return u;
-  }
-  return fail();
-}
 export function arrayToSet(ts: readonly string[]): QMap<true>;
 export function arrayToSet<T>(ts: readonly T[], key: (t: T) => string | undefined): QMap<true>;
 export function arrayToSet<T>(ts: readonly T[], key: (t: T) => __String | undefined): EscapedMap<true>;
 export function arrayToSet(ts: readonly any[], key?: (t: any) => string | __String | undefined): QMap<true> | EscapedMap<true> {
   return arrayToMap<any, true>(ts, key || ((t) => t), () => true);
-}
-export function firstDefined<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
-  if (ts) {
-    for (let i = 0; i < ts.length; i++) {
-      const u = cb(ts[i], i);
-      if (u !== undefined) return u;
-    }
-  }
-  return;
-}
-export function firstDefinedIterator<T, U>(ts: Iterator<T>, cb: (i: T) => U | undefined): U | undefined {
-  while (true) {
-    const t = ts.next();
-    if (t.done) return;
-    const u = cb(t.value);
-    if (u !== undefined) return u;
-  }
 }
 export function filter<T, U extends T>(ts: T[], cb: (t: T) => t is U): U[];
 export function filter<T>(ts: T[], cb: (t: T) => boolean): T[];
@@ -366,14 +461,14 @@ export function clear(ts: unknown[]): void {
 }
 export function zipWith<T, U, V>(ts: readonly T[], us: readonly U[], cb: (a: T, b: U, i: number) => V): V[] {
   const vs: V[] = [];
-  assertEqual(ts.length, us.length);
+  qf.assert.equal(ts.length, us.length);
   for (let i = 0; i < ts.length; i++) {
     vs.push(cb(ts[i], us[i], i));
   }
   return vs;
 }
 export function zipToIterator<T, U>(ts: readonly T[], us: readonly U[]): Iterator<[T, U]> {
-  assertEqual(ts.length, us.length);
+  qf.assert.equal(ts.length, us.length);
   let i = 0;
   return {
     next() {
@@ -417,7 +512,7 @@ export function flatten<T>(ts: T[][] | readonly (T | readonly T[] | undefined)[]
   const r = [];
   for (const t of ts) {
     if (t) {
-      if (isArray(t)) addRange(r, t);
+      if (qf.is.array(t)) addRange(r, t);
       else r.push(t);
     }
   }
@@ -430,7 +525,7 @@ export function flatMap<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number
     for (let i = 0; i < ts.length; i++) {
       const u = cb(ts[i], i);
       if (u) {
-        if (isArray(u)) us = addRange(us, u);
+        if (qf.is.array(u)) us = addRange(us, u);
         else us = append(us, u);
       }
     }
@@ -443,7 +538,7 @@ export function flatMapToMutable<T, U>(ts: readonly T[] | undefined, cb: (t: T, 
     for (let i = 0; i < ts.length; i++) {
       const v = cb(ts[i], i);
       if (v) {
-        if (isArray(v)) addRange(r, v);
+        if (qf.is.array(v)) addRange(r, v);
         else {
           r.push(v);
         }
@@ -458,7 +553,7 @@ export function flatMapIterator<T, U>(ts: Iterator<T>, cb: (t: T) => readonly U[
   if (t.done) return emptyIter;
   const getUs = (t: T): Iterator<U> => {
     const u = cb(t);
-    return u === undefined ? emptyIter : isArray(u) ? arrayIterator(u) : u;
+    return u === undefined ? emptyIter : qf.is.array(u) ? arrayIterator(u) : u;
   };
   let us = getUs(t.value);
   return {
@@ -481,9 +576,9 @@ export function sameFlatMap<T>(ts: readonly T[], cb: (t: T, i: number) => T | T[
     for (let i = 0; i < ts.length; i++) {
       const t = ts[i];
       const mapped = cb(t, i);
-      if (r || t !== mapped || isArray(mapped)) {
+      if (r || t !== mapped || qf.is.array(mapped)) {
         if (!r) r = ts.slice(0, i);
-        if (isArray(mapped)) addRange(r, mapped);
+        if (qf.is.array(mapped)) addRange(r, mapped);
         else r.push(mapped);
       }
     }
@@ -616,7 +711,7 @@ export function deduplicate<T>(ts: readonly T[], eq: EqComparer<T>, comparer?: C
   return ts.length === 0 ? [] : ts.length === 1 ? ts.slice() : comparer ? deduplicateRelational(ts, eq, comparer) : deduplicateEquality(ts, eq);
 }
 export function zipToMap<T>(ks: readonly string[], ts: readonly T[]): QMap<T> {
-  assertEqual(ks.length, ts.length);
+  qf.assert.equal(ks.length, ts.length);
   const r = new QMap<T>();
   for (let i = 0; i < ks.length; ++i) {
     r.set(ks[i], ts[i]);
@@ -651,12 +746,6 @@ export function mapMap<T, U>(m: QMap<T> | EscapedMap<T>, f: ((t: T, k: string) =
 }
 export function createEscapedMultiMap<T>(): EscapedMultiMap<T> {
   return new MultiMap<T>() as EscapedMultiMap<T>;
-}
-export function isString(text: unknown): text is string {
-  return typeof text === 'string';
-}
-export function isNumber(x: unknown): x is number {
-  return typeof x === 'number';
 }
 export function tryCast<TOut extends TIn, TIn = any>(t: TIn | undefined, test: (t: TIn) => t is TOut): TOut | undefined;
 export function tryCast<T>(t: T, test: (t: T) => boolean): T | undefined;
@@ -750,9 +839,9 @@ export function relativeComplement<T>(a: T[] | undefined, b: T[] | undefined, c:
   if (!b || !a || b.length === 0 || a.length === 0) return b;
   const r: T[] = [];
   loopB: for (let oa = 0, ob = 0; ob < b.length; ob++) {
-    if (ob > 0) assertGreaterThanOrEqual(c(b[ob], b[ob - 1]), Comparison.EqualTo);
+    if (ob > 0) qf.assert.greaterThanOrEqual(c(b[ob], b[ob - 1]), Comparison.EqualTo);
     loopA: for (const startA = oa; oa < a.length; oa++) {
-      if (oa > startA) assertGreaterThanOrEqual(c(a[oa], a[oa - 1]), Comparison.EqualTo);
+      if (oa > startA) qf.assert.greaterThanOrEqual(c(a[oa], a[oa - 1]), Comparison.EqualTo);
       switch (c(b[ob], a[oa])) {
         case Comparison.LessThan:
           r.push(b[ob]);
@@ -788,8 +877,8 @@ export function combine<T>(a: T | T[] | undefined, b: T | T[] | undefined): T | 
 export function combine<T>(a: T | T[] | undefined, b: T | T[] | undefined) {
   if (a === undefined) return b;
   if (b === undefined) return a;
-  if (isArray(a)) return isArray(b) ? concatenate(a, b) : append(a, b);
-  if (isArray(b)) return append(b, a);
+  if (qf.is.array(a)) return qf.is.array(b) ? concatenate(a, b) : append(a, b);
+  if (qf.is.array(b)) return append(b, a);
   return [a, b];
 }
 function toOffset(ts: readonly any[], offset: number) {
@@ -872,14 +961,14 @@ export function firstOrUndefined<T>(ts: readonly T[]) {
   return ts.length ? ts[0] : undefined;
 }
 export function first<T>(ts: readonly T[]) {
-  assert(ts.length);
+  qf.assert.true(ts.length);
   return ts[0];
 }
 export function lastOrUndefined<T>(ts: readonly T[]) {
   return ts.length ? ts[ts.length - 1] : undefined;
 }
 export function last<T>(ts: readonly T[]): T {
-  assert(ts.length);
+  qf.assert.true(ts.length);
   return ts[ts.length - 1];
 }
 export function singleOrUndefined<T>(ts?: readonly T[]) {
@@ -1061,47 +1150,6 @@ export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
 export function maybeBind<T, A extends unknown, R>(t: T, cb: ((this: T, ...args: A[]) => R) | undefined): ((...args: A[]) => R) | undefined {
   return cb ? cb.bind(t) : undefined;
 }
-export class Feach {
-  up<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
-    if (ts) {
-      for (let i = 0; i < ts.length; i++) {
-        const u = cb(ts[i], i);
-        if (u) return u;
-      }
-    }
-    return;
-  }
-  down<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
-    if (ts) {
-      for (let i = ts.length - 1; i >= 0; i--) {
-        const u = cb(ts[i], i);
-        if (u) return u;
-      }
-    }
-    return;
-  }
-  entry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
-  entry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
-  entry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
-    const ts = m.entries();
-    for (let i = ts.next(); !i.done; i = ts.next()) {
-      const [k, t] = i.value;
-      const u = cb(t, k as string & __String);
-      if (u) return u;
-    }
-    return;
-  }
-  key<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
-  key<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
-  key<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
-    const ks = m.keys();
-    for (let i = ks.next(); !i.done; i = ks.next()) {
-      const t = cb(i.value as string & __String);
-      if (t) return t;
-    }
-    return;
-  }
-}
 export function copyEntries<T>(s: ReadonlyEscapedMap<T>, t: EscapedMap<T>): void;
 export function copyEntries<T>(s: QReadonlyMap<T>, t: QMap<T>): void;
 export function copyEntries<T, U extends EscapedMap<T> | QMap<T>>(s: U, t: U): void {
@@ -1131,9 +1179,6 @@ export function compose<T>(a: (t: T) => T, b: (t: T) => T, c: (t: T) => T, d: (t
 }
 export function min<T>(a: T, b: T, c: Comparer<T>): T {
   return c(a, b) === Comparison.LessThan ? a : b;
-}
-export function isInfinityOrNaNString(n: string | __String) {
-  return n === 'Infinity' || n === '-Infinity' || n === 'NaN';
 }
 export function unhyphenatedJsxName(n: string | __String) {
   return !stringContains(n as string, '-');
@@ -1249,7 +1294,7 @@ export function getSpellingSuggestion<T>(name: string, candidates: T[], getName:
         justCheckExactMatches = true;
         bestCandidate = candidate;
       } else {
-        assert(distance < bestDistance);
+        qf.assert.true(distance < bestDistance);
         bestDistance = distance;
         bestCandidate = candidate;
       }
@@ -1366,20 +1411,8 @@ export function patternText({ prefix, suffix }: Pattern): string {
   return `${prefix}*${suffix}`;
 }
 export function matchedText(pattern: Pattern, candidate: string): string {
-  assert(isPatternMatch(pattern, candidate));
+  qf.assert.true(qf.is.patternMatch(pattern, candidate));
   return candidate.substring(pattern.prefix.length, candidate.length - pattern.suffix.length);
-}
-export function findBestPatternMatch<T>(values: readonly T[], getPattern: (value: T) => Pattern, candidate: string): T | undefined {
-  let matchedValue: T | undefined;
-  let longestMatchPrefixLength = -1;
-  for (const v of values) {
-    const pattern = getPattern(v);
-    if (isPatternMatch(pattern, candidate) && pattern.prefix.length > longestMatchPrefixLength) {
-      longestMatchPrefixLength = pattern.prefix.length;
-      matchedValue = v;
-    }
-  }
-  return matchedValue;
 }
 export function startsWith(s: string, pre: string): boolean {
   return s.lastIndexOf(pre, 0) === 0;
@@ -1389,9 +1422,6 @@ export function removePrefix(s: string, pre: string): string {
 }
 export function tryRemovePrefix(s: string, pre: string, getCanonicalFileName: GetCanonicalFileName = identity): string | undefined {
   return startsWith(getCanonicalFileName(s), getCanonicalFileName(pre)) ? s.substring(pre.length) : undefined;
-}
-function isPatternMatch({ prefix, suffix }: Pattern, candidate: string) {
-  return candidate.length >= prefix.length + suffix.length && startsWith(candidate, prefix) && endsWith(candidate, suffix);
 }
 export function and<T>(f: (arg: T) => boolean, g: (arg: T) => boolean) {
   return (arg: T) => f(arg) && g(arg);
@@ -1481,13 +1511,6 @@ export function padRight(s: string, length: number) {
     s = s + ' ';
   }
   return s;
-}
-export function isSynthesized(x: number): boolean;
-export function isSynthesized(r: Range): boolean;
-export function isSynthesized(x: Range | number) {
-  //  x === undefined || x === null || isNaN(x) || x < 0;
-  if (typeof x === 'number') return !(x >= 0);
-  return isSynthesized(x.pos) || isSynthesized(x.end);
 }
 interface IterShim<T> {
   next(): { value: T; done?: false } | { value: never; done: true };
@@ -1648,7 +1671,7 @@ export class TextSpan implements Span {
     return r?.length === 0 ? undefined : r;
   }
   constructor(public start = 0, public length = 0) {
-    assert(start >= 0 && length >= 0);
+    qf.assert.true(start >= 0 && length >= 0);
   }
   get end() {
     return TextSpan.end(this);
@@ -1684,7 +1707,7 @@ export class TextRange implements Range {
     return dst;
   }
   constructor(public pos = -1, public end = -1) {
-    assert(pos <= end || end === -1);
+    qf.assert.true(pos <= end || end === -1);
   }
   isCollapsed() {
     return this.pos === this.end;
@@ -1726,7 +1749,7 @@ export class TextChange implements Range.Change {
     return new TextChange(TextSpan.from(s, e), e2 - s);
   }
   constructor(public span: Span = new TextSpan(), public newLength = 0) {
-    assert(newLength >= 0);
+    qf.assert.true(newLength >= 0);
   }
   isUnchanged() {
     return this.span.length === 0 && this.newLength === 0;
@@ -1889,10 +1912,7 @@ export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = tru
   return true;
 }
 export function formatStringFromArgs(text: string, args: ArrayLike<string | number>, baseIndex = 0): string {
-  return text.replace(/{(\d+)}/g, (_match, index: string) => '' + checkDefined(args[+index + baseIndex]));
-}
-export function isJsonEqual(a: unknown, b: unknown): boolean {
-  return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
+  return text.replace(/{(\d+)}/g, (_match, index: string) => '' + qf.check.defined(args[+index + baseIndex]));
 }
 export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): T {
   const got = map.get(key);
@@ -1920,16 +1940,16 @@ export function matchPatternOrExact(ss: readonly string[], candidate: string): s
     if (pattern) ps.push(pattern);
     else if (s === candidate) return s;
   }
-  return findBestPatternMatch(ps, (_) => _, candidate);
+  return qf.find.bestMatch(ps, (_) => _, candidate);
 }
 export type Mutable<T extends object> = { -readonly [K in keyof T]: T[K] };
 export function sliceAfter<T>(ts: readonly T[], t: T): readonly T[] {
   const i = ts.indexOf(t);
-  assert(i !== -1);
+  qf.assert.true(i !== -1);
   return ts.slice(i);
 }
 export function minAndMax<T>(ts: readonly T[], getValue: (t: T) => number): { readonly min: number; readonly max: number } {
-  assert(ts.length !== 0);
+  qf.assert.true(ts.length !== 0);
   let min = getValue(ts[0]);
   let max = min;
   for (let i = 1; i < ts.length; i++) {
@@ -1940,7 +1960,7 @@ export function minAndMax<T>(ts: readonly T[], getValue: (t: T) => number): { re
   return { min, max };
 }
 export function tryParsePattern(s: string): Pattern | undefined {
-  assert(s.includes('*'));
+  qf.assert.true(s.includes('*'));
   const i = s.indexOf('*');
   return i === -1
     ? undefined
@@ -1958,7 +1978,7 @@ export function hasChangesInResolutions<T>(
   oldResolutions: QReadonlyMap<T> | undefined,
   comparer: (oldResolution: T, newResolution: T) => boolean
 ): boolean {
-  assert(names.length === newResolutions.length);
+  qf.assert.true(names.length === newResolutions.length);
   for (let i = 0; i < names.length; i++) {
     const newResolution = newResolutions[i];
     const oldResolution = oldResolutions && oldResolutions.get(names[i]);
@@ -1983,14 +2003,14 @@ export namespace semver {
     constructor(major: number, minor?: number, patch?: number, prerelease?: string, build?: string);
     constructor(major: number | string, minor = 0, patch = 0, prerelease = '', build = '') {
       if (typeof major === 'string') {
-        const result = checkDefined(tryParseComponents(major), 'Invalid version');
+        const result = qf.check.defined(tryParseComponents(major), 'Invalid version');
         ({ major, minor, patch, prerelease, build } = result);
       }
-      assert(major >= 0, 'Invalid arg: major');
-      assert(minor >= 0, 'Invalid arg: minor');
-      assert(patch >= 0, 'Invalid arg: patch');
-      assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid arg: prerelease');
-      assert(!build || buildRegExp.test(build), 'Invalid arg: build');
+      qf.assert.true(major >= 0, 'Invalid arg: major');
+      qf.assert.true(minor >= 0, 'Invalid arg: minor');
+      qf.assert.true(patch >= 0, 'Invalid arg: patch');
+      qf.assert.true(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid arg: prerelease');
+      qf.assert.true(!build || buildRegExp.test(build), 'Invalid arg: build');
       this.major = major;
       this.minor = minor;
       this.patch = patch;
@@ -2019,7 +2039,7 @@ export namespace semver {
         case 'patch':
           return new Version(this.major, this.minor, this.patch + 1);
         default:
-          return assertNever(field);
+          return qf.assert.never(field);
       }
     }
     toString() {
@@ -2068,7 +2088,7 @@ export namespace semver {
   export class VersionRange {
     private _alternatives: readonly (readonly Comparator[])[];
     constructor(spec: string) {
-      this._alternatives = spec ? checkDefined(parseRange(spec), 'Invalid range spec.') : empty;
+      this._alternatives = spec ? qf.check.defined(parseRange(spec)) : empty;
     }
     static tryParse(text: string) {
       const sets = parseRange(text);
@@ -2119,9 +2139,9 @@ export namespace semver {
     if (!match) return;
     const [, major, minor = '*', patch = '*', prerelease, build] = match;
     const version = new Version(
-      isWildcard(major) ? 0 : parseInt(major, 10),
-      isWildcard(major) || isWildcard(minor) ? 0 : parseInt(minor, 10),
-      isWildcard(major) || isWildcard(minor) || isWildcard(patch) ? 0 : parseInt(patch, 10),
+      qf.is.wildcard(major) ? 0 : parseInt(major, 10),
+      qf.is.wildcard(major) || qf.is.wildcard(minor) ? 0 : parseInt(minor, 10),
+      qf.is.wildcard(major) || qf.is.wildcard(minor) || qf.is.wildcard(patch) ? 0 : parseInt(patch, 10),
       prerelease,
       build
     );
@@ -2132,14 +2152,14 @@ export namespace semver {
     if (!leftResult) return false;
     const rightResult = parsePartial(right);
     if (!rightResult) return false;
-    if (!isWildcard(leftResult.major)) {
+    if (!qf.is.wildcard(leftResult.major)) {
       comparators.push(createComparator('>=', leftResult.version));
     }
-    if (!isWildcard(rightResult.major)) {
+    if (!qf.is.wildcard(rightResult.major)) {
       comparators.push(
-        isWildcard(rightResult.minor)
+        qf.is.wildcard(rightResult.minor)
           ? createComparator('<', rightResult.version.increment('major'))
-          : isWildcard(rightResult.patch)
+          : qf.is.wildcard(rightResult.patch)
           ? createComparator('<', rightResult.version.increment('minor'))
           : createComparator('<=', rightResult.version)
       );
@@ -2150,15 +2170,15 @@ export namespace semver {
     const result = parsePartial(text);
     if (!result) return false;
     const { version, major, minor, patch } = result;
-    if (!isWildcard(major)) {
+    if (!qf.is.wildcard(major)) {
       switch (operator) {
         case '~':
           comparators.push(createComparator('>=', version));
-          comparators.push(createComparator('<', version.increment(isWildcard(minor) ? 'major' : 'minor')));
+          comparators.push(createComparator('<', version.increment(qf.is.wildcard(minor) ? 'major' : 'minor')));
           break;
         case '^':
           comparators.push(createComparator('>=', version));
-          comparators.push(createComparator('<', version.increment(version.major > 0 || isWildcard(minor) ? 'major' : version.minor > 0 || isWildcard(patch) ? 'minor' : 'patch')));
+          comparators.push(createComparator('<', version.increment(version.major > 0 || qf.is.wildcard(minor) ? 'major' : version.minor > 0 || qf.is.wildcard(patch) ? 'minor' : 'patch')));
           break;
         case '<':
         case '>=':
@@ -2167,18 +2187,18 @@ export namespace semver {
         case '<=':
         case '>':
           comparators.push(
-            isWildcard(minor)
+            qf.is.wildcard(minor)
               ? createComparator(operator === '<=' ? '<' : '>=', version.increment('major'))
-              : isWildcard(patch)
+              : qf.is.wildcard(patch)
               ? createComparator(operator === '<=' ? '<' : '>=', version.increment('minor'))
               : createComparator(operator, version)
           );
           break;
         case '=':
         case undefined:
-          if (isWildcard(minor) || isWildcard(patch)) {
+          if (qf.is.wildcard(minor) || qf.is.wildcard(patch)) {
             comparators.push(createComparator('>=', version));
-            comparators.push(createComparator('<', version.increment(isWildcard(minor) ? 'major' : 'minor')));
+            comparators.push(createComparator('<', version.increment(qf.is.wildcard(minor) ? 'major' : 'minor')));
           } else {
             comparators.push(createComparator('=', version));
           }
@@ -2190,9 +2210,6 @@ export namespace semver {
       comparators.push(createComparator('<', Version.zero));
     }
     return true;
-  }
-  function isWildcard(part: string) {
-    return part === '*' || part === 'x' || part === 'X';
   }
   function createComparator(operator: Comparator['operator'], operand: Version) {
     return { operator, operand };
@@ -2224,7 +2241,7 @@ export namespace semver {
       case '=':
         return cmp === 0;
       default:
-        return assertNever(operator);
+        return qf.assert.never(operator);
     }
   }
   function formatDisjunction(alternatives: readonly (readonly Comparator[])[]) {

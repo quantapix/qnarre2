@@ -56,7 +56,7 @@ export function transformES5(context: qt.TrafoContext) {
     return node;
   }
   function trySubstituteReservedName(name: qt.Identifier) {
-    const token = name.originalKeywordKind || (isSynthesized(name) ? qt.Token.fromString(idText(name)) : undefined);
+    const token = name.originalKeywordKind || (qf.is.synthesized(name) ? qt.Token.fromString(idText(name)) : undefined);
     if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return qc.asLiteral(name).setRange(name);
     return;
   }

@@ -235,7 +235,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
         const nameExpression = name.expression;
         if (qf.is.stringOrNumericLiteralLike(nameExpression)) return qy.get.escUnderscores(nameExpression.text);
         if (qf.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as qu.__String;
-        qu.assert(qf.is.wellKnownSymbolSyntactically(nameExpression));
+        qf.assert.true(qf.is.wellKnownSymbolSyntactically(nameExpression));
         return qu.getPropertyNameForKnownSymbolName(idText((<qt.PropertyAccessExpression>nameExpression).name));
       }
       if (qf.is.wellKnownSymbolSyntactically(name)) return qu.getPropertyNameForKnownSymbolName(idText(name.name));
@@ -272,7 +272,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
       case Syntax.DocFunctionTyping:
         return qf.is.doc.constructSignature(node) ? InternalSymbol.New : InternalSymbol.Call;
       case Syntax.Param:
-        qu.assert(
+        qf.assert.true(
           node.parent.kind === Syntax.DocFunctionTyping,
           'Impossible param parent kind',
           () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected qt.DocFunctionTyping`
@@ -283,10 +283,10 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     }
   }
   function getDisplayName(node: qt.Declaration): string {
-    return qf.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
+    return qf.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(qf.check.defined(getDeclarationName(node)));
   }
   function declareSymbol(symbolTable: qt.SymbolTable, parent: qt.Symbol | undefined, node: qt.Declaration, includes: SymbolFlags, excludes: SymbolFlags, replaceable?: boolean): qt.Symbol {
-    qu.assert(!qf.has.dynamicName(node));
+    qf.assert.true(!qf.has.dynamicName(node));
     const isDefaultExport = qf.has.syntacticModifier(node, ModifierFlags.Default) || (node.kind === Syntax.ExportSpecifier && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
     let symbol: qt.Symbol | undefined;
@@ -355,7 +355,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     }
     addDeclarationToSymbol(symbol, node, includes);
     if (symbol.parent) {
-      qu.assert(symbol.parent === parent, 'Existing symbol parent should match new one');
+      qf.assert.true(symbol.parent === parent, 'Existing symbol parent should match new one');
     } else symbol.parent = parent;
     return symbol;
   }
@@ -366,7 +366,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
         return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
       return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
     } else {
-      if (qf.is.doc.typeAlias(node)) qu.assert(qf.is.inJSFile(node));
+      if (qf.is.doc.typeAlias(node)) qf.assert.true(qf.is.inJSFile(node));
       if ((!qf.is.ambientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || qf.is.doc.typeAlias(node)) {
         if (!container.locals || (qf.has.syntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node)))
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
@@ -2134,7 +2134,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     symbol.setValueDeclaration(node);
   }
   function bindThisNode(PropertyAssignment, node: qt.BindablePropertyAssignmentExpression | qt.PropertyAccessExpression | qt.LiteralLikeElemAccessExpression) {
-    qu.assert(qf.is.inJSFile(node));
+    qf.assert.true(qf.is.inJSFile(node));
     const hasPrivateIdentifier =
       (BinaryExpression.kind === Syntax.node && node.left.kind === Syntax.PropertyAccessExpression && node.left.name.kind === Syntax.PrivateIdentifier) ||
       (node.kind === Syntax.PropertyAccessExpression && node.name.kind === Syntax.PrivateIdentifier);
@@ -2252,7 +2252,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     }
   }
   function bindStaticPropertyAssignment(node: qt.BindableStaticNameExpression) {
-    qu.assert(!node.kind === Syntax.Identifier);
+    qf.assert.true(!node.kind === Syntax.Identifier);
     node.expression.parent = node;
     bindPropertyAssignment(node.expression, node, false);
   }
@@ -2491,7 +2491,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
   }
   function bindTypeParam(node: qt.TypeParamDeclaration) {
     if (node.parent.kind === Syntax.DocTemplateTag) {
-      const container = find((node.parent.parent as qt.Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
+      const container = qf.find.up((node.parent.parent as qt.Doc).tags!, isDocTypeAlias) || qf.get.hostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
           container.locals = new qc.SymbolTable();

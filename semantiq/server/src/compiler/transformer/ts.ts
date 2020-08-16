@@ -105,7 +105,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
         if ((node as qt.ClassDeclaration | qt.FunctionDeclaration).name) {
           recordEmittedDeclarationInScope(node as qt.ClassDeclaration | qt.FunctionDeclaration);
         } else {
-          assert(node.kind === Syntax.ClassDeclaration || qf.has.syntacticModifier(node, ModifierFlags.Default));
+          qf.assert.true(node.kind === Syntax.ClassDeclaration || qf.has.syntacticModifier(node, ModifierFlags.Default));
         }
         if (node.kind === Syntax.ClassDeclaration) {
           currentNameScope = node;
@@ -1329,7 +1329,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
       } else {
         const result = visitModuleDeclaration(<qt.ModuleDeclaration>node.body);
         if (result) {
-          if (isArray(result)) {
+          if (qf.is.array(result)) {
             qu.addRange(statements, result);
           } else {
             statements.push(result);

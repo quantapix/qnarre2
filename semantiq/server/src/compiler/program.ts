@@ -392,7 +392,7 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
   return output;
 }
 export function flattenqd.MessageText(diag: string | qd.MessageChain | undefined, newLine: string, indent = 0): string {
-  if (isString(diag)) return diag;
+  if (qf.is.string(diag)) return diag;
   if (diag === undefined) return '';
   let result = '';
   if (indent) {
@@ -486,7 +486,7 @@ export function getConfigFileParsingDiagnostics(configFileParseResult: qt.Parsed
 function shouldProgramCreateNewSourceFiles(program: qt.Program | undefined, newOpts: qt.CompilerOpts): boolean {
   if (!program) return false;
   const oldOpts = program.getCompilerOpts();
-  return !!sourceFileAffectingCompilerOpts.some((option) => !isJsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
+  return !!sourceFileAffectingCompilerOpts.some((option) => !qf.is.jsonEqual(getCompilerOptionValue(oldOpts, option), getCompilerOptionValue(newOpts, option)));
 }
 function createCreateProgramOpts(
   rootNames: readonly string[],
@@ -512,7 +512,7 @@ export function createProgram(
   _oldProgram?: qt.Program,
   _configFileParsingDiagnostics?: readonly Diagnostic[]
 ): qt.Program {
-  const createProgramOpts = isArray(rootNamesOrOpts) ? createCreateProgramOpts(rootNamesOrOpts, _opts!, _host, _oldProgram, _configFileParsingDiagnostics) : rootNamesOrOpts;
+  const createProgramOpts = qf.is.array(rootNamesOrOpts) ? createCreateProgramOpts(rootNamesOrOpts, _opts!, _host, _oldProgram, _configFileParsingDiagnostics) : rootNamesOrOpts;
   const { rootNames, opts, configFileParsingDiagnostics, projectReferences } = createProgramOpts;
   let { oldProgram } = createProgramOpts;
   let processingDefaultLibFiles: qt.SourceFile[] | undefined;
@@ -550,7 +550,7 @@ export function createProgram(
   const hasInvalidatedResolution = host.hasInvalidatedResolution || (() => false);
   if (host.resolveModuleNames) {
     actualResolveModuleNamesWorker = (moduleNames, containingFile, reusedNames, redirectedReference) =>
-      host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, opts).map((resolved) => {
+      host.resolveModuleNames!(qf.check.allDefined(moduleNames), containingFile, reusedNames, redirectedReference, opts).map((resolved) => {
         if (!resolved || (resolved as qt.ResolvedModuleFull).extension !== undefined) return resolved as qt.ResolvedModuleFull;
         const withExtension = clone(resolved) as qt.ResolvedModuleFull;
         withExtension.extension = qy.get.extensionFromPath(resolved.resolvedFileName);
@@ -561,7 +561,7 @@ export function createProgram(
     const loader = (moduleName: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveModuleName(moduleName, containingFile, opts, host, moduleResolutionCache, redirectedReference).resolvedModule!;
     actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
-      loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedModuleFull>(qf.check.allDefined(moduleNames), containingFile, redirectedReference, loader);
   }
   let actualResolveTypeReferenceDirectiveNamesWorker: (
     typeDirectiveNames: string[],
@@ -570,12 +570,12 @@ export function createProgram(
   ) => (ResolvedTypeReferenceDirective | undefined)[];
   if (host.resolveTypeReferenceDirectives) {
     actualResolveTypeReferenceDirectiveNamesWorker = (typeDirectiveNames, containingFile, redirectedReference) =>
-      host.resolveTypeReferenceDirectives!(Debug.checkEachDefined(typeDirectiveNames), containingFile, redirectedReference, opts);
+      host.resolveTypeReferenceDirectives!(qf.check.allDefined(typeDirectiveNames), containingFile, redirectedReference, opts);
   } else {
     const loader = (typesRef: string, containingFile: string, redirectedReference: qt.ResolvedProjectReference | undefined) =>
       resolveTypeReferenceDirective(typesRef, containingFile, opts, host, redirectedReference).resolvedTypeReferenceDirective!;
     actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) =>
-      loadWithLocalCache<qt.ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
+      loadWithLocalCache<qt.ResolvedTypeReferenceDirective>(qf.check.allDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
   }
   const packageIdToSourceFile = qu.createMap<qt.SourceFile>();
   let sourceFileToPackageName = qu.createMap<string>();
@@ -655,7 +655,7 @@ export function createProgram(
     processingDefaultLibFiles = undefined;
     processingOtherFiles = undefined;
   }
-  assert(!!missingFilePaths);
+  qf.assert.true(!!missingFilePaths);
   if (oldProgram && host.onReleaseOldSourceFile) {
     const oldSourceFiles = oldProgram.getSourceFiles();
     for (const oldSourceFile of oldSourceFiles) {
@@ -838,7 +838,7 @@ export function createProgram(
         ? resolveModuleNamesWorker(unknownModuleNames, containingFile, reusedNames, getResolvedProjectReferenceToRedirect(file.originalFileName))
         : emptyArray;
     if (!result) {
-      assert(resolutions.length === moduleNames.length);
+      qf.assert.true(resolutions.length === moduleNames.length);
       return resolutions;
     }
     let j = 0;
@@ -852,7 +852,7 @@ export function createProgram(
         j++;
       }
     }
-    assert(j === resolutions.length);
+    qf.assert.true(j === resolutions.length);
     return result;
     function moduleNameResolvesToAmbientModuleInNonModifiedFile(moduleName: string): boolean {
       const resolutionToFile = oldSourceFile.resolvedModule(moduleName);
@@ -886,7 +886,7 @@ export function createProgram(
     if (!oldProgram) return StructureIsReused.Not;
     const oldOpts = oldProgram.getCompilerOpts();
     if (changesAffectModuleResolution(oldOpts, opts)) return (oldProgram.structureIsReused = StructureIsReused.Not);
-    assert(!(oldProgram.structureIsReused! & (StructureIsReused.Completely | StructureIsReused.SafeModules)));
+    qf.assert.true(!(oldProgram.structureIsReused! & (StructureIsReused.Completely | StructureIsReused.SafeModules)));
     const oldRootNames = oldProgram.getRootFileNames();
     if (!arrayIsEqualTo(oldRootNames, rootNames)) return (oldProgram.structureIsReused = StructureIsReused.Not);
     if (!arrayIsEqualTo(opts.types, oldOpts.types)) return (oldProgram.structureIsReused = StructureIsReused.Not);
@@ -909,7 +909,7 @@ export function createProgram(
         ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, opts.target!, undefined, shouldCreateNewSourceFile)
         : host.getSourceFile(oldSourceFile.fileName, opts.target!, undefined, shouldCreateNewSourceFile);
       if (!newSourceFile) return (oldProgram.structureIsReused = StructureIsReused.Not);
-      assert(!newSourceFile.redirectInfo, 'Host should not return a redirect source file from `getSourceFile`');
+      qf.assert.true(!newSourceFile.redirectInfo, 'Host should not return a redirect source file from `getSourceFile`');
       let fileChanged: boolean;
       if (oldSourceFile.redirectInfo) {
         if (newSourceFile !== oldSourceFile.redirectInfo.unredirected) return (oldProgram.structureIsReused = StructureIsReused.Not);
@@ -996,7 +996,7 @@ export function createProgram(
     if (host.hasChangedAutomaticTypeDirectiveNames) return (oldProgram.structureIsReused = StructureIsReused.SafeModules);
     missingFilePaths = oldProgram.getMissingFilePaths();
     refFileMap = oldProgram.getRefFileMap();
-    assert(newSourceFiles.length === oldProgram.getSourceFiles().length);
+    qf.assert.true(newSourceFiles.length === oldProgram.getSourceFiles().length);
     for (const newSourceFile of newSourceFiles) {
       filesByName.set(newSourceFile.path, newSourceFile);
     }
@@ -1057,7 +1057,7 @@ export function createProgram(
     };
   }
   function emitBuildInfo(writeFileCallback?: qt.WriteFileCallback): qt.EmitResult {
-    assert(!opts.out && !opts.outFile);
+    qf.assert.true(!opts.out && !opts.outFile);
     performance.mark('beforeEmit');
     const emitResult = emitFiles(notImplementedResolver, getEmitHost(writeFileCallback), undefined, noTransformers, false, true);
     performance.mark('afterEmit');
@@ -1209,7 +1209,7 @@ export function createProgram(
     return runWithCancellationToken(() => {
       if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
       const typeChecker = getDiagnosticsProducingTypeChecker();
-      assert(!!sourceFile.bindDiagnostics);
+      qf.assert.true(!!sourceFile.bindDiagnostics);
       const isCheckJs = sourceFile.isCheckJsEnabled(opts);
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       const includeBindAndCheckDiagnostics =
@@ -1315,19 +1315,19 @@ export function createProgram(
             break;
           case Syntax.InterfaceDeclaration:
             const interfaceKeyword = qt.Token.toString(Syntax.InterfaceKeyword);
-            Debug.assertIsDefined(interfaceKeyword);
+            qf.assert.defined(interfaceKeyword);
             diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
           case Syntax.ModuleDeclaration:
             const moduleKeyword = node.flags & NodeFlags.Namespace ? qt.Token.toString(Syntax.NamespaceKeyword) : qt.Token.toString(Syntax.ModuleKeyword);
-            Debug.assertIsDefined(moduleKeyword);
+            qf.assert.defined(moduleKeyword);
             diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
           case Syntax.TypeAliasDeclaration:
             diagnostics.push(qf.create.diagForNode(node, qd.Type_aliases_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.EnumDeclaration:
-            const enumKeyword = Debug.checkDefined(Token.toString(Syntax.EnumKeyword));
+            const enumKeyword = qf.check.defined(Token.toString(Syntax.EnumKeyword));
             diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
             return 'skip';
           case Syntax.NonNullExpression:
@@ -1626,7 +1626,7 @@ export function createProgram(
   }
   function reportFileNamesDifferOnlyInCasingError(fileName: string, existingFile: qt.SourceFile, refFile: qt.RefFile | undefined): void {
     const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
-    const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
+    const refToReportErrorOn = refs && qf.find.up(refs, (ref) => ref.referencedFileName === existingFile.fileName);
     fileProcessingqd.add(
       refToReportErrorOn
         ? qf.create.fileDiagAtReference(refToReportErrorOn, qd.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
@@ -1669,7 +1669,7 @@ export function createProgram(
         if (realPath !== fileName) source = getSourceOfProjectReferenceRedirect(realPath);
       }
       if (source) {
-        const file = isString(source) ? findSourceFile(source, toPath(source), isDefaultLib, ignoreNoDefaultLib, refFile, packageId) : undefined;
+        const file = qf.is.string(source) ? findSourceFile(source, toPath(source), isDefaultLib, ignoreNoDefaultLib, refFile, packageId) : undefined;
         if (file) addFileToFilesByName(file, path, undefined);
         return file;
       }
@@ -1939,7 +1939,7 @@ export function createProgram(
             const existingFile = getSourceFile(previousResolution.resolvedFileName!)!;
             if (otherFileText !== existingFile.text) {
               const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
-              const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
+              const refToReportErrorOn = refs && qf.find.up(refs, (ref) => ref.referencedFileName === existingFile.fileName);
               fileProcessingqd.add(
                 refToReportErrorOn
                   ? qf.create.fileDiagAtReference(
@@ -1998,7 +1998,7 @@ export function createProgram(
     if (file.imports.length || file.moduleAugmentations.length) {
       const moduleNames = getModuleNames(file);
       const resolutions = resolveModuleNamesReusingOldState(moduleNames, getNormalizedAbsolutePath(file.originalFileName, currentDirectory), file);
-      assert(resolutions.length === moduleNames.length);
+      qf.assert.true(resolutions.length === moduleNames.length);
       for (let i = 0; i < moduleNames.length; i++) {
         const resolution = resolutions[i];
         file.setResolvedModule(moduleNames[i], resolution);
@@ -2086,8 +2086,8 @@ export function createProgram(
         projectReferenceRedirects.set(sourceFilePath, false);
         return;
       }
-      sourceFile = Debug.checkDefined(commandLine.opts.configFile);
-      assert(!sourceFile.path || sourceFile.path === sourceFilePath);
+      sourceFile = qf.check.defined(commandLine.opts.configFile);
+      qf.assert.true(!sourceFile.path || sourceFile.path === sourceFilePath);
       addFileToFilesByName(sourceFile, sourceFilePath, undefined);
     } else {
       const basePath = getNormalizedAbsolutePath(getDirectoryPath(refPath), host.getCurrentDirectory());
@@ -2174,7 +2174,7 @@ export function createProgram(
         if (!qy.hasAsterisks(key)) {
           createDiagnosticForOptionPaths(true, key, qd.Pattern_0_can_have_at_most_one_Asterisk_character, key);
         }
-        if (isArray(opts.paths[key])) {
+        if (qf.is.array(opts.paths[key])) {
           const len = opts.paths[key].length;
           if (len === 0) {
             createDiagnosticForOptionPaths(false, key, qd.Substitutions_for_pattern_0_shouldn_t_be_an_empty_array, key);
@@ -2228,9 +2228,9 @@ export function createProgram(
     }
     const languageVersion = opts.target || qt.ScriptTarget.ES2020;
     const outFile = opts.outFile || opts.out;
-    const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qf.is.externalModule(f) && !f.isDeclarationFile);
+    const firstNonAmbientExternalModuleSourceFile = qf.find.up(files, (f) => qf.is.externalModule(f) && !f.isDeclarationFile);
     if (opts.isolatedModules) {
-      const firstNonExternalModuleSourceFile = find(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = qf.find.up(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.create.fileDiag(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
@@ -2323,7 +2323,7 @@ export function createProgram(
     }
   }
   function qf.create.fileDiagAtReference(refPathToReportErrorOn: qnr.RefFile, message: qd.Message, ...args: (string | number | undefined)[]) {
-    const refFile = Debug.checkDefined(getSourceFileByPath(refPathToReportErrorOn.file));
+    const refFile = qf.check.defined(getSourceFileByPath(refPathToReportErrorOn.file));
     const { kind, index } = refPathToReportErrorOn;
     let pos: number, end: number;
     switch (kind) {
@@ -2386,7 +2386,7 @@ export function createProgram(
       if (pathProp.initer.kind === Syntax.ObjectLiteralExpression) {
         for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
-          if (isArrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
+          if (qf.is.arrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
             programqd.add(qf.create.diagForNodeInSourceFile(opts.configFile!, initer.elems[valueIndex], message, arg0, arg1, arg2));
             needCompilerDiagnostic = false;
           }
@@ -2424,7 +2424,7 @@ export function createProgram(
     createDiagnosticForOption(undefined, message, arg0);
   }
   function createDiagnosticForReference(sourceFile: qt.JsonSourceFile | undefined, index: number, message: qd.Message, arg0?: string | number, arg1?: string | number) {
-    const referencesSyntax = firstDefined(qf.get.tsConfigPropArray(sourceFile || opts.configFile, 'references'), (property) =>
+    const referencesSyntax = qf.find.defined(qf.get.tsConfigPropArray(sourceFile || opts.configFile, 'references'), (property) =>
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
     if (referencesSyntax && referencesSyntax.elems.length > index) {
@@ -2566,7 +2566,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
   }
   function fileExistsIfProjectReferenceDts(file: string) {
     const source = host.getSourceOfProjectReferenceRedirect(file);
-    return source !== undefined ? (isString(source) ? originalFileExists.call(host.compilerHost, source) : true) : undefined;
+    return source !== undefined ? (qf.is.string(source) ? originalFileExists.call(host.compilerHost, source) : true) : undefined;
   }
   function directoryExistsIfProjectReferenceDeclDir(dir: string) {
     const dirPath = host.toPath(dir);
@@ -2602,7 +2602,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     if (!qu.stringContains(fileOrDirectoryPath, nodeModulesPathPart)) return false;
     if (isFile && symlinkedFiles && symlinkedFiles.has(fileOrDirectoryPath)) return true;
     return (
-      firstDefinedIterator(symlinkedDirectories.entries(), ([directoryPath, symlinkedDirectory]) => {
+      qf.find.definedIterator(symlinkedDirectories.entries(), ([directoryPath, symlinkedDirectory]) => {
         if (!symlinkedDirectory || !startsWith(fileOrDirectoryPath, directoryPath)) return;
         const result = fileOrDirectoryExistsUsingSource(fileOrDirectoryPath.replace(directoryPath, symlinkedDirectory.realPath));
         if (isFile && result) {
@@ -2643,7 +2643,7 @@ export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, dire
   return {
     fileExists: (f) => directoryStructureHost.fileExists(f),
     readDirectory(root, extensions, excludes, includes, depth) {
-      Debug.assertIsDefined(directoryStructureHost.readDirectory, "'CompilerHost.readDirectory' must be implemented to correctly process 'projectReferences'");
+      qf.assert.defined(directoryStructureHost.readDirectory, "'CompilerHost.readDirectory' must be implemented to correctly process 'projectReferences'");
       return directoryStructureHost.readDirectory(root, extensions, excludes, includes, depth);
     },
     readFile: (f) => directoryStructureHost.readFile(f),

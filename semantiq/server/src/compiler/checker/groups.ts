@@ -528,7 +528,7 @@ export function newIs(f: qt.Frame) {
       if (n.initer) {
         const signature = qf.get.signatureFromDeclaration(n.parent);
         const paramIndex = n.parent.params.indexOf(n);
-        qu.assert(paramIndex >= 0);
+        qf.assert.true(paramIndex >= 0);
         return paramIndex >= getMinArgCount(signature, true);
       }
       const iife = qf.get.immediatelyInvokedFunctionExpression(n.parent);
@@ -689,7 +689,7 @@ export function newIs(f: qt.Frame) {
       return true;
     }
     contextSensitive(n: qt.Expression | qt.MethodDeclaration | qt.ObjectLiteralElemLike | qt.JsxAttributeLike | qt.JsxChild): boolean {
-      qu.assert(n.kind !== Syntax.MethodDeclaration || this.objectLiteralMethod(n));
+      qf.assert.true(n.kind !== Syntax.MethodDeclaration || this.objectLiteralMethod(n));
       switch (n.kind) {
         case Syntax.FunctionExpression:
         case Syntax.ArrowFunction:
@@ -2039,7 +2039,7 @@ export function newHas(f: qt.Frame) {
           callIsIncomplete = qf.is.missing(lastSpan.literal) || !!lastSpan.literal.isUnterminated;
         } else {
           const templateLiteral = <qt.LiteralExpression>n.template;
-          qu.assert(templateLiteral.kind === Syntax.NoSubstitutionLiteral);
+          qf.assert.true(templateLiteral.kind === Syntax.NoSubstitutionLiteral);
           callIsIncomplete = !!templateLiteral.isUnterminated;
         }
       } else if (n.kind === Syntax.Decorator) {
@@ -2052,7 +2052,7 @@ export function newHas(f: qt.Frame) {
         effectiveMinimumArgs = Math.min(effectiveMinimumArgs, 1);
       } else {
         if (!n.args) {
-          qu.assert(n.kind === Syntax.NewExpression);
+          qf.assert.true(n.kind === Syntax.NewExpression);
           return getMinArgCount(signature) === 0;
         }
         argCount = signatureHelpTrailingComma ? args.length + 1 : args.length;

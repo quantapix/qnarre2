@@ -952,7 +952,7 @@ function create() {
           return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
         case Context.HeritageClauseElem:
           const isHeritageClauseObjectLiteral = () => {
-            qu.assert(tok() === Syntax.OpenBraceToken);
+            qf.assert.true(tok() === Syntax.OpenBraceToken);
             if (next.tok() === Syntax.CloseBraceToken) {
               const t = next.tok();
               return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
@@ -1141,7 +1141,7 @@ function create() {
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
       source.statements = ctx.parseList(Context.SourceElems, parse.statement);
-      qu.assert(tok() === Syntax.EndOfFileToken);
+      qf.assert.true(tok() === Syntax.EndOfFileToken);
       source.endOfFileToken = addDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
         const isImportMeta = (n: Node): boolean => {
@@ -1330,11 +1330,11 @@ function create() {
       const templateHead = (): qc.TemplateHead => {
         if (tagged) reScanHeadOrNoSubstTemplate();
         const n2 = this.literalLikeNode(tok());
-        qu.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+        qf.assert.true(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
         return n2 as qc.TemplateHead;
       };
       n.head = templateHead();
-      qu.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+      qf.assert.true(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
       const ss = [];
       const p = getNodePos();
       do {
@@ -1351,7 +1351,7 @@ function create() {
         reScanTemplateToken(tagged);
         const middleOrTail = (): qc.TemplateMiddle | qc.TemplateTail => {
           const n2 = this.literalLikeNode(tok());
-          qu.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
+          qf.assert.true(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
           return n2 as qc.TemplateMiddle | qc.TemplateTail;
         };
         l = middleOrTail();
@@ -1911,7 +1911,7 @@ function create() {
                 }
                 return Tristate.False;
               } else {
-                qu.assert(first === Syntax.LessThanToken);
+                qf.assert.true(first === Syntax.LessThanToken);
                 if (!is.identifier()) return Tristate.False;
                 if (source.languageVariant === LanguageVariant.JSX) {
                   const isArrowFunctionInJsx = lookAhead(() => {
@@ -1986,7 +1986,7 @@ function create() {
       return finishNode(n);
     }
     simpleArrowFunctionExpression(identifier: qc.Identifier, asyncModifier?: Nodes<Modifier> | undefined): qc.ArrowFunction {
-      qu.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
+      qf.assert.true(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
       let n: qc.ArrowFunction;
       if (asyncModifier) {
         n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
@@ -2167,7 +2167,7 @@ function create() {
         return parseJsx.elemOrSelfClosingElemOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
-      qu.assert(qf.is.leftHandSideExpression(expression));
+      qf.assert.true(qf.is.leftHandSideExpression(expression));
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
@@ -2498,7 +2498,7 @@ function create() {
         expression = this.memberExpressionRest(expression, false);
         typeArgs = tryParse(this.typeArgsInExpression);
         if (is.templateStartOfTaggedTemplate()) {
-          qu.assert(!!typeArgs, "Expected a type arg list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
+          qf.assert.true(!!typeArgs, "Expected a type arg list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
           expression = this.taggedTemplateRest(expression, undefined, typeArgs);
           typeArgs = undefined;
         }
@@ -3095,7 +3095,7 @@ function create() {
     }
     heritageClause(): qc.HeritageClause {
       const t = tok();
-      qu.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
+      qf.assert.true(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
       const n = create.node(Syntax.HeritageClause);
       n.token = t;
       next.tok();
@@ -3404,7 +3404,7 @@ function create() {
         n.closingFragment = this.closingFragment(inExpressionContext);
         r = finishNode(n);
       } else {
-        qu.assert(opening.kind === Syntax.JsxSelfClosingElem);
+        qf.assert.true(opening.kind === Syntax.JsxSelfClosingElem);
         r = opening;
       }
       if (inExpressionContext && tok() === Syntax.LessThanToken) {
@@ -3587,9 +3587,9 @@ function create() {
       const content = sourceText;
       const end = length === undefined ? content.length : start + length;
       length = end - start;
-      qu.assert(start >= 0);
-      qu.assert(start <= end);
-      qu.assert(end <= content.length);
+      qf.assert.true(start >= 0);
+      qf.assert.true(start <= end);
+      qf.assert.true(end <= content.length);
       if (!qy.is.docLike(content, start)) return;
       return scanner.scanRange(start + 3, length - 5, () => {
         let state = State.SawAsterisk;
@@ -3780,7 +3780,7 @@ function create() {
       return docTypeExpression ? { docTypeExpression, diagnostics } : undefined;
     }
     tag(margin: number) {
-      qu.assert(tok() === Syntax.AtToken);
+      qf.assert.true(tok() === Syntax.AtToken);
       const start = scanner.getTokenPos();
       next.tokDoc();
       const tagName = this.identifierName(undefined);
@@ -4221,7 +4221,7 @@ function create() {
       }
     }
     tryChildTag(target: PropertyLike, indent: number): qt.DocTypeTag | qt.DocPropertyTag | qt.DocParamTag | false {
-      qu.assert(tok() === Syntax.AtToken);
+      qf.assert.true(tok() === Syntax.AtToken);
       const start = scanner.getStartPos();
       next.tokDoc();
       const tagName = this.identifierName();
@@ -4412,7 +4412,7 @@ function create() {
     const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
     const saveContextFlags = flags.value;
     const r = isLookAhead ? scanner.lookAhead(cb) : scanner.tryScan(cb);
-    qu.assert(saveContextFlags === flags.value);
+    qf.assert.true(saveContextFlags === flags.value);
     if (!r || isLookAhead) {
       currentToken = saveToken;
       diags.length = saveParseDiagnosticsLength;
@@ -4442,7 +4442,7 @@ function create() {
     return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
   }
   function addDocComment<T extends qt.HasDoc>(n: T): T {
-    qu.assert(!n.doc);
+    qf.assert.true(!n.doc);
     const doc = mapDefined(qf.get.doc.commentRanges(n, source.text), (comment) => parseDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (doc.length) n.doc = doc;
     return n;
@@ -4537,15 +4537,15 @@ namespace IncrementalParser {
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
     if (source.statements.length === 0) return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
     const incrementalSourceFile = <IncrementalNode>(<Node>source);
-    qu.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
+    qf.assert.true(!incrementalSourceFile.hasBeenIncrementallyParsed);
     incrementalSourceFile.hasBeenIncrementallyParsed = true;
     const oldText = source.text;
     const syntaxCursor = createSyntaxCursor(source);
     const changeRange = extendToAffectedRange(source, textChangeRange);
     checkChangeRange(source, newText, changeRange, aggressiveChecks);
-    qu.assert(changeRange.span.start <= textChangeRange.span.start);
-    qu.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
-    qu.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
+    qf.assert.true(changeRange.span.start <= textChangeRange.span.start);
+    qf.assert.true(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
+    qf.assert.true(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
     const delta = textChangeRangeNewSpan(changeRange).length - changeRange.span.length;
     updateTokenPositionsAndMarkElems(
       incrementalSourceFile,
@@ -4586,7 +4586,7 @@ namespace IncrementalParser {
         };
         commentDirectives = append(commentDirectives, updatedDirective);
         if (aggressiveChecks) {
-          qu.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
+          qf.assert.true(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
         }
       }
     }
@@ -4626,7 +4626,7 @@ namespace IncrementalParser {
       if (n._children) n._children = undefined;
       n.pos += delta;
       n.end += delta;
-      if (aggressiveChecks && shouldCheck(n)) qu.assert(text === newText.substring(n.pos, n.end));
+      if (aggressiveChecks && shouldCheck(n)) qf.assert.true(text === newText.substring(n.pos, n.end));
       qf.each.child(n, visitNode, visitArray);
       if (qf.is.withDocNodes(n)) {
         for (const d of n.doc!) {
@@ -4635,22 +4635,22 @@ namespace IncrementalParser {
       }
       checkNodePositions(n, aggressiveChecks);
     };
-    if (isArray) visitArray(<IncrementalNodes>elem);
+    if (qf.is.array) visitArray(<IncrementalNodes>elem);
     else qf.visit.node(<IncrementalNode>elem);
     return;
   }
   function adjustIntersectingElem(elem: IncrementalElem, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
-    qu.assert(elem.end >= changeStart, 'Adjusting an elem that was entirely before the change range');
-    qu.assert(elem.pos <= changeRangeOldEnd, 'Adjusting an elem that was entirely after the change range');
-    qu.assert(elem.pos <= elem.end);
+    qf.assert.true(elem.end >= changeStart, 'Adjusting an elem that was entirely before the change range');
+    qf.assert.true(elem.pos <= changeRangeOldEnd, 'Adjusting an elem that was entirely after the change range');
+    qf.assert.true(elem.pos <= elem.end);
     elem.pos = Math.min(elem.pos, changeRangeNewEnd);
     if (elem.end >= changeRangeOldEnd) {
       elem.end += delta;
     } else elem.end = Math.min(elem.end, changeRangeNewEnd);
-    qu.assert(elem.pos <= elem.end);
+    qf.assert.true(elem.pos <= elem.end);
     if (elem.parent) {
-      qu.assert(elem.pos >= elem.parent.pos);
-      qu.assert(elem.end <= elem.parent.end);
+      qf.assert.true(elem.pos >= elem.parent.pos);
+      qf.assert.true(elem.end <= elem.parent.end);
     }
   }
   function updateTokenPositionsAndMarkElems(
@@ -4664,7 +4664,7 @@ namespace IncrementalParser {
     aggressiveChecks: boolean
   ): void {
     const visitArray = (ns: IncrementalNodes) => {
-      qu.assert(ns.pos <= ns.end);
+      qf.assert.true(ns.pos <= ns.end);
       if (ns.pos > changeRangeOldEnd) {
         moveElemEntirelyPastChangeRange(ns, true, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4679,13 +4679,13 @@ namespace IncrementalParser {
         }
         return;
       }
-      qu.assert(fullEnd < changeStart);
+      qf.assert.true(fullEnd < changeStart);
     };
 
     qf.visit.node(source);
     return;
     function qf.visit.node(child: IncrementalNode) {
-      qu.assert(child.pos <= child.end);
+      qf.assert.true(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
         moveElemEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4704,14 +4704,14 @@ namespace IncrementalParser {
         checkNodePositions(child, aggressiveChecks);
         return;
       }
-      qu.assert(fullEnd < changeStart);
+      qf.assert.true(fullEnd < changeStart);
     }
   }
   function checkNodePositions(n: Node, aggressive: boolean) {
     if (aggressive) {
       let pos = n.pos;
       const visitNode = (c: Node) => {
-        qu.assert(c.pos >= pos);
+        qf.assert.true(c.pos >= pos);
         pos = c.end;
       };
       if (qf.is.withDocNodes(n)) {
@@ -4720,7 +4720,7 @@ namespace IncrementalParser {
         }
       }
       qf.each.child(n, visitNode);
-      qu.assert(pos <= n.end);
+      qf.assert.true(pos <= n.end);
     }
   }
   function extendToAffectedRange(source: qt.SourceFile, changeRange: qu.TextChange): qu.TextChange {
@@ -4728,7 +4728,7 @@ namespace IncrementalParser {
     let start = changeRange.span.start;
     for (let i = 0; start > 0 && i <= maxLookahead; i++) {
       const nearestNode = findNearestNodeStartingBeforeOrAtPosition(source, start);
-      qu.assert(nearestNode.pos <= start);
+      qf.assert.true(nearestNode.pos <= start);
       const position = nearestNode.pos;
       start = Math.max(0, position - 1);
     }
@@ -4762,11 +4762,11 @@ namespace IncrementalParser {
           qf.each.child(child, visit);
           return true;
         } else {
-          qu.assert(child.end <= position);
+          qf.assert.true(child.end <= position);
           lastNodeEntirelyBeforePosition = child;
         }
       } else {
-        qu.assert(child.pos > position);
+        qf.assert.true(child.pos > position);
         return true;
       }
       return;
@@ -4775,14 +4775,14 @@ namespace IncrementalParser {
   function checkChangeRange(source: qt.SourceFile, newText: string, textChangeRange: qu.TextChange, aggressiveChecks: boolean) {
     const oldText = source.text;
     if (textChangeRange) {
-      qu.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
+      qf.assert.true(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
       if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
         const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
         const newTextPrefix = newText.substr(0, textChangeRange.span.start);
-        qu.assert(oldTextPrefix === newTextPrefix);
+        qf.assert.true(oldTextPrefix === newTextPrefix);
         const oldTextSuffix = oldText.substring(textSpanEnd(textChangeRange.span), oldText.length);
         const newTextSuffix = newText.substring(textSpanEnd(textChangeRangeNewSpan(textChangeRange)), newText.length);
-        qu.assert(oldTextSuffix === newTextSuffix);
+        qf.assert.true(oldTextSuffix === newTextSuffix);
       }
     }
   }
@@ -4804,7 +4804,7 @@ namespace IncrementalParser {
   function createSyntaxCursor(source: qt.SourceFile): SyntaxCursor {
     let currentArray: Nodes<Node> = source.statements;
     let currentArrayIndex = 0;
-    qu.assert(currentArrayIndex < currentArray.length);
+    qf.assert.true(currentArrayIndex < currentArray.length);
     let current = currentArray[currentArrayIndex];
     let lastQueriedPosition = InvalidPosition.Value;
     return {
@@ -4817,7 +4817,7 @@ namespace IncrementalParser {
           if (!current || current.pos !== position) findHighestListElemThatStartsAtPosition(position);
         }
         lastQueriedPosition = position;
-        qu.assert(!current || current.pos === position);
+        qf.assert.true(!current || current.pos === position);
         return <IncrementalNode>current;
       },
     };

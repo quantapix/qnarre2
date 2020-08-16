@@ -106,7 +106,7 @@ export function enableDebugInfo() {
         },
         __debugGetText: {
           value(this: Node, includeTrivia?: boolean) {
-            if (isSynthesized(this)) return '';
+            if (qf.is.synthesized(this)) return '';
             const parseNode = qf.get.parseTreeOf(this);
             const sourceFile = parseNode && parseNode.sourceFile;
             return sourceFile ? qf.get.sourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';

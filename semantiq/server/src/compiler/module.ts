@@ -73,12 +73,14 @@ export function getModuleSpecifier(
 export function getNodeModulesPackageName(compilerOpts: qt.CompilerOpts, importingSourceFileName: qt.Path, nodeModulesFileName: string, host: qt.ModuleSpecifierResolutionHost): string | undefined {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
-  return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts, true));
+  return qf.find.defined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts, true));
 }
 function getModuleSpecifierWorker(compilerOpts: qt.CompilerOpts, importingSourceFileName: qt.Path, toFileName: string, host: qt.ModuleSpecifierResolutionHost, preferences: Preferences): string {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
-  return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts)) || getLocalModuleSpecifier(toFileName, info, compilerOpts, preferences);
+  return (
+    qf.find.defined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOpts)) || getLocalModuleSpecifier(toFileName, info, compilerOpts, preferences)
+  );
 }
 export function getModuleSpecifiers(
   moduleSymbol: qt.Symbol,
@@ -128,7 +130,7 @@ export function countPathComponents(path: string): number {
   return count;
 }
 function usesJsExtensionOnImports({ imports }: qt.SourceFile): boolean {
-  return firstDefined(imports, ({ text }) => (pathIsRelative(text) ? hasJSFileExtension(text) : undefined)) || false;
+  return qf.find.defined(imports, ({ text }) => (pathIsRelative(text) ? hasJSFileExtension(text) : undefined)) || false;
 }
 function numberOfDirectorySeparators(str: string) {
   const match = str.match(/\//);
@@ -160,7 +162,7 @@ export function forEachFileNameOfModule<T>(
     if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
       return;
     }
-    const target = find(targets, (t) => compareStrings(t.slice(0, resolved.length + 1), resolved + '/') === Comparison.EqualTo);
+    const target = qf.find.up(targets, (t) => compareStrings(t.slice(0, resolved.length + 1), resolved + '/') === Comparison.EqualTo);
     if (target === undefined) return;
     const relative = getRelativePathFromDirectory(resolved, target, getCanonicalFileName);
     const option = resolvePath(path, relative);
@@ -210,7 +212,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
   return sortedPaths;
 }
 function tryGetModuleNameFromAmbientModule(moduleSymbol: qt.Symbol): string | undefined {
-  const decl = find(
+  const decl = qf.find.up(
     moduleSymbol.declarations,
     (d) => qf.is.nonGlobalAmbientModule(d) && (!qf.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(d.name)))
   ) as (ModuleDeclaration & { name: qt.StringLiteral }) | undefined;
@@ -309,7 +311,7 @@ function tryGetModuleNameAsNodeModule(
         }
       }
       const mainFileRelative = packageJsonContent.typings || packageJsonContent.types || packageJsonContent.main;
-      if (isString(mainFileRelative)) {
+      if (qf.is.string(mainFileRelative)) {
         const mainExportFile = toPath(mainFileRelative, packageRootPath, getCanonicalFileName);
         if (removeFileExtension(mainExportFile) === removeFileExtension(getCanonicalFileName(moduleFileToTry))) return { packageRootPath, moduleFileToTry };
       }
@@ -391,7 +393,7 @@ function getNodeModulePathParts(fullPath: string): NodeModulePathParts | undefin
   return state > States.NodeModules ? { topLevelNodeModulesIndex, topLevelPackageNameIndex, packageRootIndex, fileNameIndex } : undefined;
 }
 function getPathRelativeToRootDirs(path: string, rootDirs: readonly string[], getCanonicalFileName: GetCanonicalFileName): string | undefined {
-  return firstDefined(rootDirs, (rootDir) => {
+  return qf.find.defined(rootDirs, (rootDir) => {
     const relativePath = getRelativePathIfInDirectory(path, rootDir, getCanonicalFileName)!;
     return isPathRelativeToParent(relativePath) ? undefined : relativePath;
   });
@@ -461,7 +463,7 @@ function noPackageId(r: PathAndExtension | undefined): Resolved | undefined {
 }
 function removeIgnoredPackageId(r: Resolved | undefined): PathAndExtension | undefined {
   if (r) {
-    assert(r.packageId === undefined);
+    qf.assert.true(r.packageId === undefined);
     return { path: r.path, ext: r.extension };
   }
 }
@@ -490,7 +492,7 @@ function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageI
   if (!resolved) {
     return;
   }
-  assert(extensionIsTS(resolved.extension));
+  qf.assert.true(extensionIsTS(resolved.extension));
   return { fileName: resolved.path, packageId: resolved.packageId };
 }
 function createResolvedModuleWithFailedLookupLocations(
@@ -731,7 +733,7 @@ export function resolveTypeReferenceDirective(
       if (traceEnabled) {
         trace(host, qd.Resolving_with_primary_search_path_0, typeRoots.join(', '));
       }
-      return firstDefined(typeRoots, (typeRoot) => {
+      return qf.find.defined(typeRoots, (typeRoot) => {
         const candidate = combinePaths(typeRoot, typeReferenceDirectiveName);
         const candidateDirectory = getDirectoryPath(candidate);
         const directoryExists = directoryProbablyExists(candidateDirectory, host);
@@ -876,7 +878,7 @@ export function createModuleResolutionCacheWithMaps(
     return getOrCreateCache<Map<qt.ResolvedModuleWithFailedLookupLocations>>(directoryToModuleNameMap, redirectedReference, path, createMap);
   }
   function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: qt.ResolvedProjectReference): PerModuleNameCache {
-    assert(!isExternalModuleNameRelative(nonRelativeModuleName));
+    qf.assert.true(!isExternalModuleNameRelative(nonRelativeModuleName));
     return getOrCreateCache(moduleNameToDirectoryMap, redirectedReference, nonRelativeModuleName, createPerModuleNameCache);
   }
   function getOrCreateCache<T>(cacheWithRedirects: CacheWithRedirects<T>, redirectedReference: qt.ResolvedProjectReference | undefined, key: string, create: () => T): T {
@@ -1197,7 +1199,7 @@ function realPath(path: string, host: qt.ModuleResolutionHost, traceEnabled: boo
   if (traceEnabled) {
     trace(host, qd.Resolving_real_path_for_0_result_1, path, real);
   }
-  assert(host.fileExists(real), `${path} linked to nonexistent file ${real}`);
+  qf.assert.true(host.fileExists(real), `${path} linked to nonexistent file ${real}`);
   return real;
 }
 function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState, considerPackageJson: boolean): Resolved | undefined {
@@ -1517,8 +1519,8 @@ function tryLoadModuleUsingPaths(
 ): SearchResult<Resolved> {
   const matchedPattern = matchPatternOrExact(getOwnKeys(paths), moduleName);
   if (matchedPattern) {
-    const matchedStar = isString(matchedPattern) ? undefined : matchedText(matchedPattern, moduleName);
-    const matchedPatternText = isString(matchedPattern) ? matchedPattern : patternText(matchedPattern);
+    const matchedStar = qf.is.string(matchedPattern) ? undefined : matchedText(matchedPattern, moduleName);
+    const matchedPatternText = qf.is.string(matchedPattern) ? matchedPattern : patternText(matchedPattern);
     if (state.traceEnabled) {
       trace(state.host, qd.Module_name_0_matched_pattern_1, moduleName, matchedPatternText);
     }
@@ -1647,7 +1649,7 @@ export function tryGetImportFromModuleSpecifier(node: qt.StringLiteralLike): qt.
     case Syntax.CallExpression:
       return qf.is.importCall(node.parent) || qf.is.requireCall(node.parent, false) ? (node.parent as qt.RequireOrImportCall) : undefined;
     case Syntax.LiteralTyping:
-      assert(node.kind === Syntax.StringLiteral);
+      qf.assert.true(node.kind === Syntax.StringLiteral);
       return qu.tryCast(node.parent.parent, qt.ImportTyping.kind) as qt.ValidImportTyping | undefined;
     default:
       return;

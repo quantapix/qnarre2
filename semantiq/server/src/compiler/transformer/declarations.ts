@@ -162,7 +162,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
     }
   }
   function reportNonlocalAugmentation(containingFile: qt.SourceFile, parentSymbol: qt.Symbol, symbol: qt.Symbol) {
-    const primaryDeclaration = find(parentSymbol.declarations, (d) => d.sourceFile === containingFile)!;
+    const primaryDeclaration = qf.find.up(parentSymbol.declarations, (d) => d.sourceFile === containingFile)!;
     const augmentingDeclarations = filter(symbol.declarations, (d) => d.sourceFile !== containingFile);
     for (const augmentations of augmentingDeclarations) {
       context.addDiagnostic(
@@ -596,8 +596,8 @@ export function transformDeclarations(context: qt.TrafoContext) {
           const result = lateStatementReplacementMap.get(key);
           lateStatementReplacementMap.delete(key);
           if (result) {
-            if (isArray(result) ? some(result, qf.stmt.is.scopeMarkerNeeded) : qf.stmt.is.scopeMarkerNeeded(result)) needsScopeFixMarker = true;
-            if (statement.parent.kind === Syntax.SourceFile && (isArray(result) ? some(result, isExternalModuleIndicator) : qp_qf.is.externalModuleIndicator(result)))
+            if (qf.is.array(result) ? some(result, qf.stmt.is.scopeMarkerNeeded) : qf.stmt.is.scopeMarkerNeeded(result)) needsScopeFixMarker = true;
+            if (statement.parent.kind === Syntax.SourceFile && (qf.is.array(result) ? some(result, isExternalModuleIndicator) : qp_qf.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
           return result;
@@ -1032,7 +1032,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
     }
     errorNameNode = (node as qt.NamedDecl).name;
-    assert(resolver.isLateBound(qf.get.parseTreeOf(node) as qt.Declaration));
+    qf.assert.true(resolver.isLateBound(qf.get.parseTreeOf(node) as qt.Declaration));
     const decl = (node as qt.NamedDecl) as qt.LateBoundDecl;
     const entityName = decl.name.expression;
     checkEntityNameVisibility(entityName, enclosingDeclaration);

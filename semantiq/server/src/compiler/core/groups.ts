@@ -2,7 +2,7 @@ import { EmitFlags, FunctionFlags, ModifierFlags, Nodes, NodeFlags, ObjectFlags,
 import { Node } from '../types';
 import { qf, Fcreate, Fget, Fhas, Fis } from './frame';
 import { Syntax } from '../syntax';
-import { Fvisit, visitNode, VisitResult } from './visit';
+import { Fvisit } from './visit';
 import * as qb from './bases';
 import * as qc from './classes';
 import * as qt from '../types';
@@ -15,7 +15,7 @@ export function newAssert(f: qt.Frame) {
     format: Fformat;
   }
   const qf = f as Frame;
-  return (qf.assert = new (class {
+  return (qf.assert = new (class extends qu.Fassert {
     level = qu.AssertionLevel.None;
     cache: Partial<Record<AssertionKeys, { level: qu.AssertionLevel; assertion: qu.AnyFunction }>> = {};
     setLevel(l: qu.AssertionLevel) {
@@ -51,14 +51,14 @@ export function newAssert(f: qt.Frame) {
     eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
     eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.eachNode')) {
-        qu.assert(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || this.eachNode);
+        this.true(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || this.eachNode);
       }
     }
     node<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
     node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
     node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.node')) {
-        qu.assert(
+        this.true(
           n !== undefined && (test === undefined || test(n)),
           msg || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
@@ -70,7 +70,7 @@ export function newAssert(f: qt.Frame) {
     notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
     notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.notNode')) {
-        qu.assert(
+        this.true(
           n === undefined || test === undefined || !test(n),
           msg || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
@@ -83,7 +83,7 @@ export function newAssert(f: qt.Frame) {
     optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
     optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalNode')) {
-        qu.assert(
+        this.true(
           test === undefined || n === undefined || test(n),
           msg || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
@@ -96,7 +96,7 @@ export function newAssert(f: qt.Frame) {
     optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction): void;
     optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalToken')) {
-        qu.assert(
+        this.true(
           k === undefined || n === undefined || n.kind === k,
           msg || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} was not a '${qf.format.syntax(k)}' token.`,
@@ -107,7 +107,7 @@ export function newAssert(f: qt.Frame) {
     missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction): asserts n is undefined;
     missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.missingNode')) {
-        qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${qf.format.syntax(n!.kind)} was unexpected'.`, mark || this.missingNode);
+        this.true(n === undefined, msg || 'Unexpected node.', () => `Node ${qf.format.syntax(n!.kind)} was unexpected'.`, mark || this.missingNode);
       }
     }
   })());
@@ -345,10 +345,10 @@ export function newDecl(f: qt.Frame) {
     typeParamFromDoc(n: qt.TypeParamDeclaration & { parent: qt.DocTemplateTag }): qt.TypeParamDeclaration | undefined {
       const { typeParams } = n.parent?.parent?.parent as qt.SignatureDeclaration | qt.InterfaceDeclaration | qt.ClassDeclaration;
       const t = n.name.escapedText;
-      return typeParams && qu.find(typeParams, (p) => p.name.escapedText === t);
+      return typeParams && qf.find.up(typeParams, (p) => p.name.escapedText === t);
     }
     firstConstructorWithBody(n: qt.ClassLikeDeclaration): (qt.ConstructorDeclaration & { body: qt.FunctionBody }) | undefined {
-      return qu.find(n.members, (m): m is qt.ConstructorDeclaration & { body: qt.FunctionBody } => {
+      return qf.find.up(n.members, (m): m is qt.ConstructorDeclaration & { body: qt.FunctionBody } => {
         const n = m as Node;
         return n.kind === Syntax.Constructor && qf.is.present(n.body);
       });
@@ -475,7 +475,7 @@ export function newDecl(f: qt.Frame) {
     effectiveTypeParamDeclarations(n: qt.DeclarationWithTypeParams): readonly qc.TypeParamDeclaration[] {
       if (n.kind === Syntax.DocSignature) return qu.empty;
       if (qf.is.doc.typeAlias(n)) {
-        qu.assert(n.parent?.kind === Syntax.DocComment);
+        qf.assert.true(n.parent?.kind === Syntax.DocComment);
         return qu.flatMap(n.parent.tags, (t) => (t.kind === Syntax.DocTemplateTag ? t.typeParams : undefined));
       }
       if (n.typeParams) return n.typeParams;
@@ -507,7 +507,7 @@ export function newDecl(f: qt.Frame) {
           return qf.get.doc.tagsWorker(p, noCache).filter((t): t is qt.DocParamTag => t.kind === Syntax.DocParamTag && t.name.kind === Syntax.Identifier && t.name.escapedText === name);
         } else {
           const i = p?.params.indexOf(d);
-          qu.assert(i > -1, "Params should always be in their parents' param list");
+          qf.assert.true(i > -1, "Params should always be in their parents' param list");
           const ts = qf.get.doc.tagsWorker(p, noCache).filter(qf.is.doc.paramTag);
           if (i < ts.length) return [ts[i]];
         }
@@ -1175,7 +1175,7 @@ export function newStmt(f: qt.Frame) {
       return this.insertAfterPrologue(to, s, qf.is.anyPrologueDirective);
     }
     addStandardPrologue(to: qt.Statement[], from: readonly qt.Statement[], strict?: boolean) {
-      qu.assert(to.length === 0);
+      qf.assert.true(to.length === 0);
       let useStrict = false;
       let i = 0;
       const l = from.length;
@@ -1666,7 +1666,7 @@ export function newEmit(f: qt.Frame) {
 }
 export interface Femit extends ReturnType<typeof newEmit> {}
 export namespace fixme {
-  let qt.SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => qt.SourceMapSource;
+  let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => qt.SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): qt.SourceMapSource {
     return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
@@ -1771,7 +1771,9 @@ export namespace fixme {
         return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOpts);
       }
       return (
-        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) || tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) || qf.create.synthesizedClone(<qt.StringLiteral>moduleName)
+        tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) ||
+        tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) ||
+        qf.create.synthesizedClone(<qt.StringLiteral>moduleName)
       );
     }
     return;

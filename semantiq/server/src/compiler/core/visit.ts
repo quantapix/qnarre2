@@ -486,10 +486,10 @@ export function newVisit(f: qt.Frame) {
       if (y === n) return n;
       let n2: T | undefined;
       const extractSingle = (ns: readonly T[]) => {
-        qu.assert(ns.length <= 1);
+        qf.assert.true(ns.length <= 1);
         return qu.singleOrUndefined(ns);
       };
-      if (qu.isArray(y)) n2 = (lift || extractSingle)(y);
+      if (qf.is.array(y)) n2 = (lift || extractSingle)(y);
       else n2 = y as T;
       qf.assert.node(n2, test);
       qf.calc.aggregate(n2!);
@@ -511,7 +511,7 @@ export function newVisit(f: qt.Frame) {
         if (r !== undefined || y === undefined || y !== n) {
           if (r === undefined) r = new qb.Nodes(ns.slice(0, i), ns.trailingComma).setRange(ns);
           if (y) {
-            if (qu.isArray(y)) {
+            if (qf.is.array(y)) {
               for (const n2 of y) {
                 qf.assert.node(n2, test);
                 qf.calc.aggregate(n2);

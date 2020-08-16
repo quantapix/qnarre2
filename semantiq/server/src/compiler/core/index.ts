@@ -13,7 +13,7 @@ export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
   return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
 }
 export function liftToBlock(ns?: readonly Node[]): qt.Statement {
-  qu.assert(qu.every(ns, qf.is.statement));
+  qf.assert.true(qu.every(ns, qf.is.statement));
   return (qu.singleOrUndefined(ns) as qt.Statement) || new qc.Block(ns as qt.Statement[]);
 }
 export function mergeLexicalEnv(ss: Nodes<qt.Statement>, ds?: readonly qt.Statement[]): Nodes<qt.Statement>;
@@ -34,7 +34,7 @@ export function mergeLexicalEnv(ss: qt.Statement[] | Nodes<qt.Statement>, ds?: r
   const rf = findEnd(ds, qf.stmt.is.hoistedFunction, rs);
   const rv = findEnd(ds, qf.stmt.is.hoistedVariableStatement, rf);
   const rc = findEnd(ds, qf.stmt.is.customPrologue, rv);
-  qu.assert(rc === ds.length);
+  qf.assert.true(rc === ds.length);
   const left = qb.Nodes.is(ss) ? ss.slice() : ss;
   if (rc > rv) left.splice(lv, 0, ...ds.slice(rv, rc));
   if (rv > rf) left.splice(lf, 0, ...ds.slice(rf, rv));
@@ -167,7 +167,7 @@ export namespace BindingOrAssignmentElem {
   }
   export function getPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElem(e);
-    qu.assert(!!propertyName || e.kind === Syntax.SpreadAssignment);
+    qf.assert.true(!!propertyName || e.kind === Syntax.SpreadAssignment);
     return propertyName;
   }
   export function tryGetPropertyNameOfBindingOrAssignmentElem(e: qt.BindingOrAssignmentElem): Exclude<qc.PropertyName, qt.PrivateIdentifier> | undefined {

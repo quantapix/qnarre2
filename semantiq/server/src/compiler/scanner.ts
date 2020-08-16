@@ -124,7 +124,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     setTextPos(start ?? 0);
   }
   function setTextPos(p: number) {
-    qu.assert(p >= 0);
+    qf.assert.true(p >= 0);
     pos = p;
     startPos = p;
     tokPos = p;
@@ -561,12 +561,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     return token;
   }
   function reScanQuestionToken(): Syntax {
-    qu.assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+    qf.assert.true(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
     pos = tokPos + 1;
     return (token = Syntax.QuestionToken);
   }
   function reScanTemplateToken(tagged: boolean): Syntax {
-    qu.assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+    qf.assert.true(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
     pos = tokPos;
     return (token = scanTemplateAndSetTokenValue(tagged));
   }
@@ -1031,7 +1031,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       }
       pos++;
     }
-    qu.assert(r !== undefined);
+    qf.assert.true(r !== undefined);
     tokValue = v;
     return r;
   }

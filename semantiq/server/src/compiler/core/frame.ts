@@ -265,11 +265,11 @@ export function newCreate(f: qt.Frame) {
       return { file: s, start: r.pos, length: r.end - r.pos, code: m.code, cat: m.cat, text: m.text };
     }
     fileDiag(file: qt.SourceFile, start: number, length: number, m: qd.Message, ...args: (string | number | undefined)[]): qd.DiagnosticWithLocation {
-      qu.assertGreaterThanOrEqual(start, 0);
-      qu.assertGreaterThanOrEqual(length, 0);
+      qf.assert.greaterThanOrEqual(start, 0);
+      qf.assert.greaterThanOrEqual(length, 0);
       if (file) {
-        qu.assertLessThanOrEqual(start, file.text.length);
-        qu.assertLessThanOrEqual(start + length, file.text.length);
+        qu.qf.assert.lessThanOrEqual(start, file.text.length);
+        qu.qf.assert.lessThanOrEqual(start + length, file.text.length);
       }
       let text = qd.getLocaleSpecificMessage(m);
       if (args.length > 4) text = qu.formatStringFromArgs(text, args, 4);
@@ -310,7 +310,7 @@ export function newCreate(f: qt.Frame) {
       isData = tryAddPropertyAssignment(ps, 'value', a.value) || isData;
       let isAccessor = tryAddPropertyAssignment(ps, 'get', a.get);
       isAccessor = tryAddPropertyAssignment(ps, 'set', a.set) || isAccessor;
-      qu.assert(!(isData && isAccessor));
+      qf.assert.true(!(isData && isAccessor));
       return new qc.ObjectLiteralExpression(ps, !singleLine);
     }
     tokenRange(pos: number, k: Syntax): qu.TextRange {
@@ -425,14 +425,14 @@ export function newCreate(f: qt.Frame) {
     mathPow(left: qt.Expression, right: qt.Expression, r?: qu.TextRange) {
       return new qc.CallExpression(new qc.PropertyAccessExpression(new qc.Identifier('Math'), 'pow'), undefined, [left, right]).setRange(r);
     }
-    tempVariable(cb?: (i: qt.Identifier) => void): qt.Identifier;
-    tempVariable(cb: ((i: qt.Identifier) => void) | undefined, reserved: boolean): qt.GeneratedIdentifier;
-    tempVariable(cb?: (i: qt.Identifier) => void, reserved?: boolean): qt.GeneratedIdentifier {
+    tempVariable(v?: (i: qt.Identifier) => void): qt.Identifier;
+    tempVariable(v: ((i: qt.Identifier) => void) | undefined, reserved: boolean): qt.GeneratedIdentifier;
+    tempVariable(v?: (i: qt.Identifier) => void, reserved?: boolean): qt.GeneratedIdentifier {
       const n = new qc.Identifier('') as qt.GeneratedIdentifier;
       n.autoGenFlags = qt.GeneratedIdentifierFlags.Auto;
       n.autoGenId = this.nextAutoGenId;
       this.nextAutoGenId++;
-      if (cb) cb(n);
+      if (v) v(n);
       if (reserved) n.autoGenFlags |= qt.GeneratedIdentifierFlags.ReservedInNestedScopes;
       return n;
     }
@@ -520,9 +520,9 @@ export function newEach(f: qt.Frame) {
       };
       traverse(n);
     }
-    ancestor<T>(n: Node | undefined, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
+    ancestor<T>(n: Node | undefined, v: (n: Node) => T | undefined | 'quit'): T | undefined {
       while (n) {
-        const r = cb(n);
+        const r = v(n);
         if (r === 'quit') return;
         if (r) return r;
         if (n.kind === Syntax.SourceFile) return;
@@ -530,45 +530,43 @@ export function newEach(f: qt.Frame) {
       }
       return;
     }
-    child<T>(n: Node, cb: (n?: Node) => T | undefined, cbs?: (ns?: Nodes) => T | undefined): T | undefined {
+    child<T>(n: Node, v: (n?: Node) => T | undefined, vs?: (ns?: Nodes) => T | undefined): T | undefined {
       if (n.kind <= Syntax.LastToken) return;
       switch (n.kind) {
         case Syntax.QualifiedName:
-          return n.left.visit(cb) || n.right.visit(cb);
+          return n.left.visit(v) || n.right.visit(v);
         case Syntax.TypeParam:
-          return n.name.visit(cb) || n.constraint?.visit(cb) || n.default?.visit(cb) || n.expression?.visit(cb);
+          return n.name.visit(v) || n.constraint?.visit(v) || n.default?.visit(v) || n.expression?.visit(v);
         case Syntax.ShorthandPropertyAssignment:
           return (
-            n.decorators?.visit(cb, cbs) ||
-            n.modifiers?.visit(cb, cbs) ||
-            n.name.visit(cb) ||
-            n.questionToken?.visit(cb) ||
-            n.exclamationToken?.visit(cb) ||
-            n.equalsToken?.visit(cb) ||
-            n.objectAssignmentIniter?.visit(cb)
+            n.decorators?.visit(v, vs) ||
+            n.modifiers?.visit(v, vs) ||
+            n.name.visit(v) ||
+            n.questionToken?.visit(v) ||
+            n.exclamationToken?.visit(v) ||
+            n.equalsToken?.visit(v) ||
+            n.objectAssignmentIniter?.visit(v)
           );
         case Syntax.SpreadAssignment:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.Param:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.dot3Token?.visit(cb) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.type?.visit(cb) || n.initer?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.dot3Token?.visit(v) || n.name.visit(v) || n.questionToken?.visit(v) || n.type?.visit(v) || n.initer?.visit(v);
         case Syntax.PropertyDeclaration:
-          return (
-            n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.exclamationToken?.visit(cb) || n.type?.visit(cb) || n.initer?.visit(cb)
-          );
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.questionToken?.visit(v) || n.exclamationToken?.visit(v) || n.type?.visit(v) || n.initer?.visit(v);
         case Syntax.PropertySignature:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.type?.visit(cb) || n.initer?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.questionToken?.visit(v) || n.type?.visit(v) || n.initer?.visit(v);
         case Syntax.PropertyAssignment:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.initer.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.questionToken?.visit(v) || n.initer.visit(v);
         case Syntax.VariableDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.exclamationToken?.visit(cb) || n.type?.visit(cb) || n.initer?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.exclamationToken?.visit(v) || n.type?.visit(v) || n.initer?.visit(v);
         case Syntax.BindingElem:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.dot3Token?.visit(cb) || n.propertyName?.visit(cb) || n.name.visit(cb) || n.initer?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.dot3Token?.visit(v) || n.propertyName?.visit(v) || n.name.visit(v) || n.initer?.visit(v);
         case Syntax.CallSignature:
         case Syntax.ConstructorTyping:
         case Syntax.ConstructSignature:
         case Syntax.FunctionTyping:
         case Syntax.IndexSignature:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.typeParams?.visit(cb, cbs) || n.params.visit(cb, cbs) || n.type?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.typeParams?.visit(v, vs) || n.params.visit(v, vs) || n.type?.visit(v);
         case Syntax.ArrowFunction:
         case Syntax.Constructor:
         case Syntax.FunctionDeclaration:
@@ -578,212 +576,212 @@ export function newEach(f: qt.Frame) {
         case Syntax.MethodSignature:
         case Syntax.SetAccessor:
           return (
-            n.decorators?.visit(cb, cbs) ||
-            n.modifiers?.visit(cb, cbs) ||
-            n.asteriskToken?.visit(cb) ||
-            n.name?.visit(cb) ||
-            n.questionToken?.visit(cb) ||
-            n.exclamationToken?.visit(cb) ||
-            n.typeParams?.visit(cb, cbs) ||
-            n.params.visit(cb, cbs) ||
-            n.type?.visit(cb) ||
-            (n as qt.ArrowFunction).equalsGreaterThanToken.visit(cb) ||
-            n.body?.visit(cb)
+            n.decorators?.visit(v, vs) ||
+            n.modifiers?.visit(v, vs) ||
+            n.asteriskToken?.visit(v) ||
+            n.name?.visit(v) ||
+            n.questionToken?.visit(v) ||
+            n.exclamationToken?.visit(v) ||
+            n.typeParams?.visit(v, vs) ||
+            n.params.visit(v, vs) ||
+            n.type?.visit(v) ||
+            (n as qt.ArrowFunction).equalsGreaterThanToken.visit(v) ||
+            n.body?.visit(v)
           );
         case Syntax.TypingReference:
-          return n.typeName.visit(cb) || n.typeArgs?.visit(cb, cbs);
+          return n.typeName.visit(v) || n.typeArgs?.visit(v, vs);
         case Syntax.TypingPredicate:
-          return n.assertsModifier?.visit(cb) || n.paramName.visit(cb) || n.type?.visit(cb);
+          return n.assertsModifier?.visit(v) || n.paramName.visit(v) || n.type?.visit(v);
         case Syntax.TypingQuery:
-          return n.exprName.visit(cb);
+          return n.exprName.visit(v);
         case Syntax.TypingLiteral:
-          return n.members.visit(cb, cbs);
+          return n.members.visit(v, vs);
         case Syntax.ArrayTyping:
-          return n.elemType.visit(cb);
+          return n.elemType.visit(v);
         case Syntax.TupleTyping:
-          return n.elems.visit(cb, cbs);
+          return n.elems.visit(v, vs);
         case Syntax.UnionTyping:
         case Syntax.IntersectionTyping:
-          return n.types.visit(cb, cbs);
+          return n.types.visit(v, vs);
         case Syntax.ConditionalTyping:
-          return n.checkType.visit(cb) || n.extendsType.visit(cb) || n.trueType.visit(cb) || n.falseType.visit(cb);
+          return n.checkType.visit(v) || n.extendsType.visit(v) || n.trueType.visit(v) || n.falseType.visit(v);
         case Syntax.InferTyping:
-          return n.typeParam.visit(cb);
+          return n.typeParam.visit(v);
         case Syntax.ImportTyping:
-          return n.arg.visit(cb) || n.qualifier?.visit(cb) || n.typeArgs?.visit(cb, cbs);
+          return n.arg.visit(v) || n.qualifier?.visit(v) || n.typeArgs?.visit(v, vs);
         case Syntax.ParenthesizedTyping:
         case Syntax.TypingOperator:
-          return n.type.visit(cb);
+          return n.type.visit(v);
         case Syntax.IndexedAccessTyping:
-          return n.objectType.visit(cb) || n.indexType.visit(cb);
+          return n.objectType.visit(v) || n.indexType.visit(v);
         case Syntax.MappedTyping:
-          return n.readonlyToken?.visit(cb) || n.typeParam.visit(cb) || n.questionToken?.visit(cb) || n.type?.visit(cb);
+          return n.readonlyToken?.visit(v) || n.typeParam.visit(v) || n.questionToken?.visit(v) || n.type?.visit(v);
         case Syntax.LiteralTyping:
-          return n.literal.visit(cb);
+          return n.literal.visit(v);
         case Syntax.NamedTupleMember:
-          return n.dot3Token?.visit(cb) || n.name.visit(cb) || n.questionToken?.visit(cb) || n.type.visit(cb);
+          return n.dot3Token?.visit(v) || n.name.visit(v) || n.questionToken?.visit(v) || n.type.visit(v);
         case Syntax.ArrayBindingPattern:
         case Syntax.ObjectBindingPattern:
-          return n.elems.visit(cb, cbs);
+          return n.elems.visit(v, vs);
         case Syntax.ArrayLiteralExpression:
-          return n.elems.visit(cb, cbs);
+          return n.elems.visit(v, vs);
         case Syntax.ObjectLiteralExpression:
-          return n.properties.visit(cb, cbs);
+          return n.properties.visit(v, vs);
         case Syntax.PropertyAccessExpression:
-          return n.expression.visit(cb) || n.questionDotToken?.visit(cb) || n.name.visit(cb);
+          return n.expression.visit(v) || n.questionDotToken?.visit(v) || n.name.visit(v);
         case Syntax.ElemAccessExpression:
-          return n.expression.visit(cb) || n.questionDotToken?.visit(cb) || n.argExpression.visit(cb);
+          return n.expression.visit(v) || n.questionDotToken?.visit(v) || n.argExpression.visit(v);
         case Syntax.CallExpression:
         case Syntax.NewExpression:
-          return n.expression.visit(cb) || n.questionDotToken?.visit(cb) || n.typeArgs?.visit(cb, cbs) || n.args?.visit(cb, cbs);
+          return n.expression.visit(v) || n.questionDotToken?.visit(v) || n.typeArgs?.visit(v, vs) || n.args?.visit(v, vs);
         case Syntax.TaggedTemplateExpression:
-          return n.tag.visit(cb) || n.questionDotToken?.visit(cb) || n.typeArgs?.visit(cb, cbs) || n.template.visit(cb);
+          return n.tag.visit(v) || n.questionDotToken?.visit(v) || n.typeArgs?.visit(v, vs) || n.template.visit(v);
         case Syntax.TypeAssertionExpression:
-          return n.type.visit(cb) || n.expression.visit(cb);
+          return n.type.visit(v) || n.expression.visit(v);
         case Syntax.ParenthesizedExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.DeleteExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.TypeOfExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.VoidExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.PrefixUnaryExpression:
-          return n.operand.visit(cb);
+          return n.operand.visit(v);
         case Syntax.YieldExpression:
-          return n.asteriskToken?.visit(cb) || n.expression?.visit(cb);
+          return n.asteriskToken?.visit(v) || n.expression?.visit(v);
         case Syntax.AwaitExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.PostfixUnaryExpression:
-          return n.operand.visit(cb);
+          return n.operand.visit(v);
         case Syntax.BinaryExpression:
-          return n.left.visit(cb) || n.operatorToken.visit(cb) || n.right.visit(cb);
+          return n.left.visit(v) || n.operatorToken.visit(v) || n.right.visit(v);
         case Syntax.AsExpression:
-          return n.expression.visit(cb) || n.type.visit(cb);
+          return n.expression.visit(v) || n.type.visit(v);
         case Syntax.NonNullExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.MetaProperty:
-          return n.name.visit(cb);
+          return n.name.visit(v);
         case Syntax.ConditionalExpression:
-          return n.condition.visit(cb) || n.questionToken.visit(cb) || n.whenTrue.visit(cb) || n.colonToken.visit(cb) || n.whenFalse.visit(cb);
+          return n.condition.visit(v) || n.questionToken.visit(v) || n.whenTrue.visit(v) || n.colonToken.visit(v) || n.whenFalse.visit(v);
         case Syntax.SpreadElem:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.Block:
         case Syntax.ModuleBlock:
-          return n.statements.visit(cb, cbs);
+          return n.statements.visit(v, vs);
         case Syntax.SourceFile:
-          return n.statements.visit(cb, cbs) || n.endOfFileToken.visit(cb);
+          return n.statements.visit(v, vs) || n.endOfFileToken.visit(v);
         case Syntax.VariableStatement:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.declarationList.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.declarationList.visit(v);
         case Syntax.VariableDeclarationList:
-          return n.declarations.visit(cb, cbs);
+          return n.declarations.visit(v, vs);
         case Syntax.ExpressionStatement:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.IfStatement:
-          return n.expression.visit(cb) || n.thenStatement.visit(cb) || n.elseStatement?.visit(cb);
+          return n.expression.visit(v) || n.thenStatement.visit(v) || n.elseStatement?.visit(v);
         case Syntax.DoStatement:
-          return n.statement.visit(cb) || n.expression.visit(cb);
+          return n.statement.visit(v) || n.expression.visit(v);
         case Syntax.WhileStatement:
-          return n.expression.visit(cb) || n.statement.visit(cb);
+          return n.expression.visit(v) || n.statement.visit(v);
         case Syntax.ForStatement:
-          return n.initer?.visit(cb) || n.condition?.visit(cb) || n.incrementor?.visit(cb) || n.statement.visit(cb);
+          return n.initer?.visit(v) || n.condition?.visit(v) || n.incrementor?.visit(v) || n.statement.visit(v);
         case Syntax.ForInStatement:
-          return n.initer.visit(cb) || n.expression.visit(cb) || n.statement.visit(cb);
+          return n.initer.visit(v) || n.expression.visit(v) || n.statement.visit(v);
         case Syntax.ForOfStatement:
-          return n.awaitModifier?.visit(cb) || n.initer.visit(cb) || n.expression.visit(cb) || n.statement.visit(cb);
+          return n.awaitModifier?.visit(v) || n.initer.visit(v) || n.expression.visit(v) || n.statement.visit(v);
         case Syntax.BreakStatement:
         case Syntax.ContinueStatement:
-          return n.label?.visit(cb);
+          return n.label?.visit(v);
         case Syntax.ReturnStatement:
-          return n.expression?.visit(cb);
+          return n.expression?.visit(v);
         case Syntax.WithStatement:
-          return n.expression.visit(cb) || n.statement.visit(cb);
+          return n.expression.visit(v) || n.statement.visit(v);
         case Syntax.SwitchStatement:
-          return n.expression.visit(cb) || n.caseBlock.visit(cb);
+          return n.expression.visit(v) || n.caseBlock.visit(v);
         case Syntax.CaseBlock:
-          return n.clauses.visit(cb, cbs);
+          return n.clauses.visit(v, vs);
         case Syntax.CaseClause:
-          return n.expression.visit(cb) || n.statements.visit(cb, cbs);
+          return n.expression.visit(v) || n.statements.visit(v, vs);
         case Syntax.DefaultClause:
-          return n.statements.visit(cb, cbs);
+          return n.statements.visit(v, vs);
         case Syntax.LabeledStatement:
-          return n.label.visit(cb) || n.statement.visit(cb);
+          return n.label.visit(v) || n.statement.visit(v);
         case Syntax.ThrowStatement:
-          return n.expression?.visit(cb);
+          return n.expression?.visit(v);
         case Syntax.TryStatement:
-          return n.tryBlock.visit(cb) || n.catchClause?.visit(cb) || n.finallyBlock?.visit(cb);
+          return n.tryBlock.visit(v) || n.catchClause?.visit(v) || n.finallyBlock?.visit(v);
         case Syntax.CatchClause:
-          return n.variableDeclaration?.visit(cb) || n.block.visit(cb);
+          return n.variableDeclaration?.visit(v) || n.block.visit(v);
         case Syntax.Decorator:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name?.visit(cb) || n.typeParams?.visit(cb, cbs) || n.heritageClauses?.visit(cb, cbs) || n.members.visit(cb, cbs);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name?.visit(v) || n.typeParams?.visit(v, vs) || n.heritageClauses?.visit(v, vs) || n.members.visit(v, vs);
         case Syntax.InterfaceDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.typeParams?.visit(cb, cbs) || n.heritageClauses?.visit(cb, cbs) || n.members.visit(cb, cbs);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.typeParams?.visit(v, vs) || n.heritageClauses?.visit(v, vs) || n.members.visit(v, vs);
         case Syntax.TypeAliasDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.typeParams?.visit(cb, cbs) || n.type.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.typeParams?.visit(v, vs) || n.type.visit(v);
         case Syntax.EnumDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.members.visit(cb, cbs);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.members.visit(v, vs);
         case Syntax.EnumMember:
-          return n.name.visit(cb) || n.initer?.visit(cb);
+          return n.name.visit(v) || n.initer?.visit(v);
         case Syntax.ModuleDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.body?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.body?.visit(v);
         case Syntax.ImportEqualsDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.name.visit(cb) || n.moduleReference.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.name.visit(v) || n.moduleReference.visit(v);
         case Syntax.ImportDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.importClause?.visit(cb) || n.moduleSpecifier.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.importClause?.visit(v) || n.moduleSpecifier.visit(v);
         case Syntax.ImportClause:
-          return n.name?.visit(cb) || n.namedBindings?.visit(cb);
+          return n.name?.visit(v) || n.namedBindings?.visit(v);
         case Syntax.NamespaceExportDeclaration:
-          return n.name.visit(cb);
+          return n.name.visit(v);
         case Syntax.NamespaceImport:
-          return n.name.visit(cb);
+          return n.name.visit(v);
         case Syntax.NamespaceExport:
-          return n.name.visit(cb);
+          return n.name.visit(v);
         case Syntax.NamedImports:
         case Syntax.NamedExports:
-          return n.elems.visit(cb, cbs);
+          return n.elems.visit(v, vs);
         case Syntax.ExportDeclaration:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.exportClause?.visit(cb) || n.moduleSpecifier?.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.exportClause?.visit(v) || n.moduleSpecifier?.visit(v);
         case Syntax.ExportSpecifier:
         case Syntax.ImportSpecifier:
-          return n.propertyName?.visit(cb) || n.name.visit(cb);
+          return n.propertyName?.visit(v) || n.name.visit(v);
         case Syntax.ExportAssignment:
-          return n.decorators?.visit(cb, cbs) || n.modifiers?.visit(cb, cbs) || n.expression.visit(cb);
+          return n.decorators?.visit(v, vs) || n.modifiers?.visit(v, vs) || n.expression.visit(v);
         case Syntax.TemplateExpression:
-          return n.head.visit(cb) || n.templateSpans.visit(cb, cbs);
+          return n.head.visit(v) || n.templateSpans.visit(v, vs);
         case Syntax.TemplateSpan:
-          return n.expression.visit(cb) || n.literal.visit(cb);
+          return n.expression.visit(v) || n.literal.visit(v);
         case Syntax.ComputedPropertyName:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.HeritageClause:
-          return n.types.visit(cb, cbs);
+          return n.types.visit(v, vs);
         case Syntax.ExpressionWithTypings:
-          return n.expression.visit(cb) || n.typeArgs?.visit(cb, cbs);
+          return n.expression.visit(v) || n.typeArgs?.visit(v, vs);
         case Syntax.ExternalModuleReference:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.MissingDeclaration:
-          return n.decorators?.visit(cb, cbs);
+          return n.decorators?.visit(v, vs);
         case Syntax.CommaListExpression:
-          return n.elems.visit(cb, cbs);
+          return n.elems.visit(v, vs);
         case Syntax.JsxElem:
-          return n.opening.visit(cb) || n.children.visit(cb, cbs) || n.closing.visit(cb);
+          return n.opening.visit(v) || n.children.visit(v, vs) || n.closing.visit(v);
         case Syntax.JsxFragment:
-          return n.openingFragment.visit(cb) || n.children.visit(cb, cbs) || n.closingFragment.visit(cb);
+          return n.openingFragment.visit(v) || n.children.visit(v, vs) || n.closingFragment.visit(v);
         case Syntax.JsxSelfClosingElem:
         case Syntax.JsxOpeningElem:
-          return n.tagName.visit(cb) || n.typeArgs?.visit(cb, cbs) || n.attributes.visit(cb);
+          return n.tagName.visit(v) || n.typeArgs?.visit(v, vs) || n.attributes.visit(v);
         case Syntax.JsxAttributes:
-          return n.properties.visit(cb, cbs);
+          return n.properties.visit(v, vs);
         case Syntax.JsxAttribute:
-          return n.name.visit(cb) || n.initer?.visit(cb);
+          return n.name.visit(v) || n.initer?.visit(v);
         case Syntax.JsxSpreadAttribute:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
         case Syntax.JsxExpression:
-          return n.dot3Token?.visit(cb) || n.expression?.visit(cb);
+          return n.dot3Token?.visit(v) || n.expression?.visit(v);
         case Syntax.JsxClosingElem:
-          return n.tagName.visit(cb);
+          return n.tagName.visit(v);
         case Syntax.DocNonNullableTyping:
         case Syntax.DocNullableTyping:
         case Syntax.DocOptionalTyping:
@@ -791,53 +789,53 @@ export function newEach(f: qt.Frame) {
         case Syntax.DocVariadicTyping:
         case Syntax.OptionalTyping:
         case Syntax.RestTyping:
-          return n.type.visit(cb);
+          return n.type.visit(v);
         case Syntax.DocFunctionTyping:
-          return n.params.visit(cb, cbs) || n.type?.visit(cb);
+          return n.params.visit(v, vs) || n.type?.visit(v);
         case Syntax.DocComment:
-          return n.tags?.visit(cb, cbs);
+          return n.tags?.visit(v, vs);
         case Syntax.DocParamTag:
         case Syntax.DocPropertyTag:
-          return n.tagName.visit(cb) || (n.isNameFirst ? n.name.visit(cb) || n.typeExpression?.visit(cb) : n.typeExpression?.visit(cb) || n.name.visit(cb));
+          return n.tagName.visit(v) || (n.isNameFirst ? n.name.visit(v) || n.typeExpression?.visit(v) : n.typeExpression?.visit(v) || n.name.visit(v));
         case Syntax.DocAuthorTag:
-          return n.tagName.visit(cb);
+          return n.tagName.visit(v);
         case Syntax.DocImplementsTag:
-          return n.tagName.visit(cb) || n.class.visit(cb);
+          return n.tagName.visit(v) || n.class.visit(v);
         case Syntax.DocAugmentsTag:
-          return n.tagName.visit(cb) || n.class.visit(cb);
+          return n.tagName.visit(v) || n.class.visit(v);
         case Syntax.DocTemplateTag:
-          return n.tagName.visit(cb) || n.constraint?.visit(cb) || n.typeParams?.visit(cb, cbs);
+          return n.tagName.visit(v) || n.constraint?.visit(v) || n.typeParams?.visit(v, vs);
         case Syntax.DocTypedefTag:
           return (
-            n.tagName.visit(cb) ||
-            (n.typeExpression && n.typeExpression!.kind === Syntax.DocTypingExpression ? n.typeExpression.visit(cb) || n.fullName?.visit(cb) : n.fullName?.visit(cb) || n.typeExpression?.visit(cb))
+            n.tagName.visit(v) ||
+            (n.typeExpression && n.typeExpression!.kind === Syntax.DocTypingExpression ? n.typeExpression.visit(v) || n.fullName?.visit(v) : n.fullName?.visit(v) || n.typeExpression?.visit(v))
           );
         case Syntax.DocCallbackTag:
           const n2 = n as qt.DocCallbackTag;
-          return n2.tagName.visit(cb) || n2.fullName?.visit(cb) || n2.typeExpression?.visit(cb);
+          return n2.tagName.visit(v) || n2.fullName?.visit(v) || n2.typeExpression?.visit(v);
         case Syntax.DocEnumTag:
         case Syntax.DocReturnTag:
         case Syntax.DocThisTag:
         case Syntax.DocTypeTag:
           const n3 = n as qt.DocReturnTag | qt.DocTypeTag | qt.DocThisTag | qt.DocEnumTag;
-          return n3.tagName.visit(cb) || n3.typeExpression?.visit(cb);
+          return n3.tagName.visit(v) || n3.typeExpression?.visit(v);
         case Syntax.DocSignature:
-          return this.up(n.typeParams, cb) || this.up(n.params, cb) || n.type?.visit(cb);
+          return this.up(n.typeParams, v) || this.up(n.params, v) || n.type?.visit(v);
         case Syntax.DocTypingLiteral:
-          return this.up(n.docPropertyTags, cb);
+          return this.up(n.docPropertyTags, v);
         case Syntax.DocClassTag:
         case Syntax.DocPrivateTag:
         case Syntax.DocProtectedTag:
         case Syntax.DocPublicTag:
         case Syntax.DocReadonlyTag:
         case Syntax.DocUnknownTag:
-          return n.tagName.visit(cb);
+          return n.tagName.visit(v);
         case Syntax.PartiallyEmittedExpression:
-          return n.expression.visit(cb);
+          return n.expression.visit(v);
       }
       return;
     }
-    childRecursively<T>(root: Node, cb: (n: Node, parent: Node) => T | 'skip' | undefined, cbs?: (ns: Nodes, parent: Node) => T | 'skip' | undefined): T | undefined {
+    childRecursively<T>(root: Node, v: (n: Node, parent: Node) => T | 'skip' | undefined, vs?: (ns: Nodes, parent: Node) => T | 'skip' | undefined): T | undefined {
       const ns: Node[] = [root];
       const children = (n: Node) => {
         const cs: (Node | Nodes)[] = [];
@@ -849,9 +847,9 @@ export function newEach(f: qt.Frame) {
       };
       const visitAll = (parent: Node, cs: readonly (Node | Nodes)[]) => {
         for (const c of cs) {
-          if (qu.isArray(c)) {
-            if (cbs) {
-              const r = cbs(c, parent);
+          if (qf.is.array(c)) {
+            if (vs) {
+              const r = vs(c, parent);
               if (r) {
                 if (r === 'skip') continue;
                 return r;
@@ -859,7 +857,7 @@ export function newEach(f: qt.Frame) {
             }
             for (let i = c.length - 1; i >= 0; i--) {
               const real = c[i] as Node;
-              const r = cb(real, parent);
+              const r = v(real, parent);
               if (r) {
                 if (r === 'skip') continue;
                 return r;
@@ -868,7 +866,7 @@ export function newEach(f: qt.Frame) {
             }
           } else {
             ns.push(c);
-            const r = cb(c, parent);
+            const r = v(c, parent);
             if (r) {
               if (r === 'skip') continue;
               return r;
@@ -884,14 +882,14 @@ export function newEach(f: qt.Frame) {
       }
       return;
     }
-    importClause<T>(n: qt.ImportClause, cb: (d: qt.ImportClause | qt.NamespaceImport | qt.ImportSpecifier) => T | undefined): T | undefined {
+    importClause<T>(n: qt.ImportClause, v: (d: qt.ImportClause | qt.NamespaceImport | qt.ImportSpecifier) => T | undefined): T | undefined {
       if (n.name) {
-        const r = cb(n);
+        const r = v(n);
         if (r) return r;
       }
       const b = n.namedBindings;
       if (b) {
-        const r = b.kind === Syntax.NamespaceImport ? cb(b) : this.up(b.elems, cb);
+        const r = b.kind === Syntax.NamespaceImport ? v(b) : this.up(b.elems, v);
         if (r) return r;
       }
       return;
@@ -907,7 +905,7 @@ export function newIs(f: qt.Frame) {
     skip: qg.Fskip;
   }
   const qf = f as Frame;
-  return (qf.is = new (class {
+  return (qf.is = new (class extends qu.Fis {
     setAccessor(n: Node): n is qt.SetAccessorDeclaration {
       return n.kind === Syntax.SetAccessor;
     }
@@ -1123,9 +1121,9 @@ export function newIs(f: qt.Frame) {
     ignorableParen(n: qt.Expression) {
       return (
         n.kind === Syntax.ParenthesizedExpression &&
-        qu.isSynthesized(n) &&
-        qu.isSynthesized(qf.emit.sourceMapRange(n)) &&
-        qu.isSynthesized(qf.emit.commentRange(n)) &&
+        this.synthesized(n) &&
+        this.synthesized(qf.emit.sourceMapRange(n)) &&
+        this.synthesized(qf.emit.commentRange(n)) &&
         !qu.some(qf.emit.syntheticLeadingComments(n)) &&
         !qu.some(qf.emit.syntheticTrailingComments(n))
       );
@@ -1343,7 +1341,7 @@ export function newIs(f: qt.Frame) {
           if (p?.kind === Syntax.QualifiedName && p.right === n) n = p;
           else if (p?.kind === Syntax.PropertyAccessExpression && p.name === n) n = p;
           const k = n.kind;
-          qu.assert(k === Syntax.Identifier || k === Syntax.QualifiedName || k === Syntax.PropertyAccessExpression);
+          qf.assert.true(k === Syntax.Identifier || k === Syntax.QualifiedName || k === Syntax.PropertyAccessExpression);
         case Syntax.PropertyAccessExpression:
         case Syntax.QualifiedName:
         case Syntax.ThisKeyword: {
@@ -2517,9 +2515,9 @@ export function newGet(f: qt.Frame) {
           return qc.assert.never(k);
       }
     }
-    unwrapInnermostStatementOfLabel(n: qt.LabeledStatement, cb?: (n: qt.LabeledStatement) => void): qt.Statement {
+    unwrapInnermostStatementOfLabel(n: qt.LabeledStatement, v?: (n: qt.LabeledStatement) => void): qt.Statement {
       while (true) {
-        if (cb) cb(n);
+        if (v) v(n);
         if (n.statement.kind !== Syntax.LabeledStatement) return n.statement;
         n = n.statement as qt.LabeledStatement;
       }
@@ -2624,11 +2622,11 @@ export function newGet(f: qt.Frame) {
     }
     nameOfAccessExpression(n: qt.AccessExpression) {
       if (n.kind === Syntax.PropertyAccessExpression) return n.name;
-      qu.assert(n.kind === Syntax.ElemAccessExpression);
+      qf.assert.true(n.kind === Syntax.ElemAccessExpression);
       return n.argExpression;
     }
     namespaceMemberName(ns: qt.Identifier, i: qt.Identifier, comments?: boolean, sourceMaps?: boolean): qc.PropertyAccessExpression {
-      const n = new qc.PropertyAccessExpression(ns, qu.isSynthesized(i) ? i : qf.create.synthesizedClone(i));
+      const n = new qc.PropertyAccessExpression(ns, qf.is.synthesized(i) ? i : qf.create.synthesizedClone(i));
       n.setRange(i);
       let f: EmitFlags = 0;
       if (!sourceMaps) f |= EmitFlags.NoSourceMap;
@@ -2649,7 +2647,7 @@ export function newGet(f: qt.Frame) {
       const d = this.hostSignatureFromDoc(n);
       if (!d) return;
       const t = n.name.escapedText;
-      const p = qu.find(d.params, (p) => p.name.kind === Syntax.Identifier && p.name.escapedText === t);
+      const p = qf.find.up(d.params, (p) => p.name.kind === Syntax.Identifier && p.name.escapedText === t);
       return p?.symbol;
     }
     aliasDeclarationFromName(n: qt.EntityName): qt.Declaration | undefined {
@@ -2781,15 +2779,15 @@ export function newGet(f: qt.Frame) {
           return qu.TextSpan.from(start, end);
       }
       if (e === undefined) return s.spanOfTokenAtPos(n.pos);
-      qu.assert(e.kind !== Syntax.DocComment);
+      qf.assert.true(e.kind !== Syntax.DocComment);
       const isMissing = qf.is.missing(e);
       const pos = isMissing || n.kind === Syntax.JsxText ? e.pos : qy.skipTrivia(s.text, e.pos);
       if (isMissing) {
-        qu.assert(pos === e.pos);
-        qu.assert(pos === e.end);
+        qf.assert.true(pos === e.pos);
+        qf.assert.true(pos === e.end);
       } else {
-        qu.assert(pos >= e.pos);
-        qu.assert(pos <= e.end);
+        qf.assert.true(pos >= e.pos);
+        qf.assert.true(pos <= e.end);
       }
       return qu.TextSpan.from(pos, e.end);
     }
@@ -2902,8 +2900,8 @@ export function newGet(f: qt.Frame) {
       }
     }
     tsConfigPropArrayElemValue(s: qt.TsConfigSourceFile | undefined, k: string, v: string): qt.StringLiteral | undefined {
-      return qu.firstDefined(this.tsConfigPropArray(s, k), (p) =>
-        isArrayLiteralExpression(p.initer) ? qu.find(p.initer.elems, (e): e is qt.StringLiteral => e.kind === Syntax.StringLiteral && e.text === v) : undefined
+      return qf.find.defined(this.tsConfigPropArray(s, k), (p) =>
+        isArrayLiteralExpression(p.initer) ? qf.find.up(p.initer.elems, (e): e is qt.StringLiteral => e.kind === Syntax.StringLiteral && e.text === v) : undefined
       );
     }
     tsConfigPropArray(s: qt.TsConfigSourceFile | undefined, k: string): readonly qt.PropertyAssignment[] {
@@ -2976,7 +2974,7 @@ export function newGet(f: qt.Frame) {
       return qb.findAncestor(n.parent, qf.is.classLike);
     }
     thisContainer(n: Node | undefined, arrowFunctions: boolean): Node {
-      qu.assert(n?.kind !== Syntax.SourceFile);
+      qf.assert.true(n?.kind !== Syntax.SourceFile);
       while (true) {
         n = n?.parent;
         if (!n) return qu.fail();
@@ -3072,7 +3070,7 @@ export function newGet(f: qt.Frame) {
       return (e && e.flags) || 0;
     }
     literalText(n: qt.LiteralLikeNode, s: qt.SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-      if (!qu.isSynthesized(n) && n.parent && !((n.kind === Syntax.NumericLiteral && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || n.kind === Syntax.BigIntLiteral))
+      if (!qf.is.synthesized(n) && n.parent && !((n.kind === Syntax.NumericLiteral && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || n.kind === Syntax.BigIntLiteral))
         return this.sourceTextOfNodeFromSourceFile(s, n);
       switch (n.kind) {
         case Syntax.StringLiteral: {
@@ -3105,38 +3103,38 @@ export function newGet(f: qt.Frame) {
       }
       return qu.fail(`Literal kind '${n.kind}' not accounted for.`);
     }
-    combinedFlags(n: Node | undefined, cb: (n?: Node) => number): number {
+    combinedFlags(n: Node | undefined, v: (n?: Node) => number): number {
       if (n?.kind === Syntax.BindingElem) n = qb.walkUpBindingElemsAndPatterns(n);
-      let flags = cb(n);
+      let flags = v(n);
       if (n?.kind === Syntax.VariableDeclaration) n = n.parent;
       if (n?.kind === Syntax.VariableDeclarationList) {
-        flags |= cb(n);
+        flags |= v(n);
         n = n.parent;
       }
-      if (n?.kind === Syntax.VariableStatement) flags |= cb(n);
+      if (n?.kind === Syntax.VariableStatement) flags |= v(n);
       return flags;
     }
     combinedFlagsOf(n: Node): NodeFlags {
       return this.combinedFlags(n, (n) => n?.flags);
     }
     originalOf(n: Node): Node;
-    originalOf<T extends Node>(n: Node, cb: (n?: Node) => n is T): T;
+    originalOf<T extends Node>(n: Node, v: (n?: Node) => n is T): T;
     originalOf(n: Node | undefined): Node | undefined;
-    originalOf<T extends Node>(n: Node | undefined, cb: (n?: Node) => n is T): T | undefined;
-    originalOf(n: Node | undefined, cb?: (n?: Node) => boolean): Node | undefined {
+    originalOf<T extends Node>(n: Node | undefined, v: (n?: Node) => n is T): T | undefined;
+    originalOf(n: Node | undefined, v?: (n?: Node) => boolean): Node | undefined {
       if (n) {
         while (n?.original !== undefined) {
           n = n?.original;
         }
       }
-      return !cb || cb(n) ? n : undefined;
+      return !v || v(n) ? n : undefined;
     }
     parseTreeOf(n: Node): Node;
-    parseTreeOf<T extends Node>(n: Node | undefined, cb?: (n: Node) => n is T): T | undefined;
-    parseTreeOf(n: Node | undefined, cb?: (n: Node) => boolean): Node | undefined {
+    parseTreeOf<T extends Node>(n: Node | undefined, v?: (n: Node) => n is T): T | undefined;
+    parseTreeOf(n: Node | undefined, v?: (n: Node) => boolean): Node | undefined {
       if (n === undefined || qf.is.parseTreeNode(n)) return n;
       n = this.originalOf(n);
-      if (qf.is.parseTreeNode(n) && (!cb || cb(n))) return n;
+      if (qf.is.parseTreeNode(n) && (!v || v(n))) return n;
       return;
     }
     assignedName(n: Node): qt.DeclarationName | undefined {
@@ -3314,7 +3312,7 @@ export function newGet(f: qt.Frame) {
         : qu.empty;
     }
     externalModuleImportEqualsDeclarationExpression(n: Node) {
-      qu.assert(qf.is.externalModuleImportEqualsDeclaration(n));
+      qf.assert.true(qf.is.externalModuleImportEqualsDeclaration(n));
       return n.moduleReference.expression;
     }
     declarationOfExpando(n: Node): Node | undefined {
@@ -3460,7 +3458,7 @@ export function newGet(f: qt.Frame) {
       }
       type(n: Node): qt.Typing | undefined {
         let tag: qt.DocTypeTag | qt.DocParamTag | undefined = this.firstTag(n, qf.is.doc.typeTag);
-        if (!tag && n.kind === Syntax.Param) tag = qu.find(this.paramTags(n), (tag) => !!tag.typeExpression);
+        if (!tag && n.kind === Syntax.Param) tag = qf.find.up(this.paramTags(n), (tag) => !!tag.typeExpression);
         return tag && tag.typeExpression && tag.typeExpression.type;
       }
       returnType(n: Node): qt.Typing | undefined {
@@ -3470,7 +3468,7 @@ export function newGet(f: qt.Frame) {
         if (typeTag && typeTag.typeExpression) {
           const type = typeTag.typeExpression.type;
           if (type.kind === Syntax.TypingLiteral) {
-            const sig = qu.find(type.members, qt.CallSignature.kind);
+            const sig = qf.find.up(type.members, qt.CallSignature.kind);
             return sig && sig.type;
           }
           if (type.kind === Syntax.FunctionTyping || type.kind === Syntax.DocFunctionTyping) return type.type;
@@ -3481,7 +3479,7 @@ export function newGet(f: qt.Frame) {
         let tags = (n as qt.DocContainer).cache;
         if (tags === undefined || noCache) {
           const comments = this.commentsAndTags(n, noCache);
-          qu.assert(comments.length < 2 || comments[0] !== comments[1]);
+          qf.assert.true(comments.length < 2 || comments[0] !== comments[1]);
           tags = qu.flatMap(comments, (j) => (j.kind === Syntax.Doc ? j.tags : j));
           if (!noCache) (n as qt.DocContainer).cache = tags;
         }
@@ -3493,11 +3491,11 @@ export function newGet(f: qt.Frame) {
       tagsNoCache(n: Node): readonly qt.DocTag[] {
         return this.tagsWorker(n, true);
       }
-      firstTag<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T, noCache?: boolean): T | undefined {
-        return qu.find(this.tagsWorker(n, noCache), cb);
+      firstTag<T extends qt.DocTag>(n: Node, v: (t: qt.DocTag) => t is T, noCache?: boolean): T | undefined {
+        return qf.find.up(this.tagsWorker(n, noCache), v);
       }
-      allTags<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T): readonly T[] {
-        return this.tags(n).filter(cb);
+      allTags<T extends qt.DocTag>(n: Node, v: (t: qt.DocTag) => t is T): readonly T[] {
+        return this.tags(n).filter(v);
       }
       allTagsOfKind(n: Node, k: Syntax): readonly qt.DocTag[] {
         return this.tags(n).filter((t) => t.kind === k);
@@ -3556,7 +3554,7 @@ export function newGet(f: qt.Frame) {
         return;
       }
       host(n: Node): qt.HasDoc | undefined {
-        return qu.checkDefined(qb.findAncestor(n.parent, isDoc)).parent;
+        return qf.check.defined(qb.findAncestor(n.parent, isDoc)).parent;
       }
       modifierFlagsNoCache(n: Node): ModifierFlags {
         let flags = ModifierFlags.None;

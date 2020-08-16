@@ -337,7 +337,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
       if (!ls.referenced) {
         ls.referenced = true;
         const d = this.getDeclarationOfAliasSymbol();
-        qu.assert(d);
+        qf.assert.true(d);
         if (qf.is.internalModuleImportEqualsDeclaration(d)) {
           const t = this.resolveSymbol();
           if (t === unknownSymbol || (t && t.flags & SymbolFlags.Value)) qf.check.expressionCached(d.moduleReference);

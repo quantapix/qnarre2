@@ -938,17 +938,14 @@ export interface ForStatement extends IterationStmt {
   condition?: Expression;
   incrementor?: Expression;
 }
-export interface Frame {
-  assert: unknown;
+export interface Frame extends qu.Frame {
   calc: unknown;
   create: unknown;
   decl: unknown;
-  each: unknown;
   emit: unknown;
   format: unknown;
   get: unknown;
   has: unknown;
-  is: unknown;
   nest: unknown;
   skip: unknown;
   stmt: unknown;
@@ -1466,7 +1463,7 @@ export interface Nobj extends qu.Range {
   sourceFile: SourceFile;
   symbol: Symbol;
   trafoFlags: qt.TrafoFlags;
-  visit<T>(cb?: (n?: Node) => T | undefined): T | undefined;
+  visit<T>(v?: (n?: Node) => T | undefined): T | undefined;
 }
 export interface NodeLinks {
   capturedBlockScopeBindings?: Symbol[];
@@ -1498,7 +1495,7 @@ export interface NodeLinks {
 export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range {
   trailingComma?: boolean;
   trafoFlags: qt.TrafoFlags;
-  visit<T>(cb?: (n?: Node) => T | undefined, cbs?: (ns?: Nodes) => T | undefined): T | undefined;
+  visit<T>(v?: (n?: Node) => T | undefined, vs?: (ns?: Nodes) => T | undefined): T | undefined;
 }
 export interface WithArgsTobj extends Tobj {
   typeArgs?: Nodes<Typing>;
@@ -2137,7 +2134,7 @@ export interface Symbol {
   members?: SymbolTable;
   mergeId?: number;
   parent?: Symbol;
-  referenced?: qt.SymbolFlags;
+  referred?: qt.SymbolFlags;
   replaceable?: boolean;
   valueDeclaration?: Declaration;
 }
