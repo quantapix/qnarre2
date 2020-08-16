@@ -258,28 +258,6 @@ export function newIs(f: qt.Frame) {
       }
       return;
     }
-    symbolAccessible(s: qt.Symbol | undefined, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags, compute: boolean): qt.SymbolAccessibilityResult {
-      if (s && enclosingDeclaration) {
-        const result = this.anySymbolAccessible([s], enclosingDeclaration, s, meaning, compute);
-        if (result) return result;
-        const symbolExternalModule = forEach(s.declarations, qf.get.externalModuleContainer);
-        if (symbolExternalModule) {
-          const enclosingExternalModule = qf.get.externalModuleContainer(enclosingDeclaration);
-          if (symbolExternalModule !== enclosingExternalModule) {
-            return {
-              accessibility: qt.SymbolAccessibility.CannotBeNamed,
-              errorSymbolName: s.symbolToString(enclosingDeclaration, meaning),
-              errorModuleName: symbolExternalModule.symbolToString(),
-            };
-          }
-        }
-        return {
-          accessibility: qt.SymbolAccessibility.NotAccessible,
-          errorSymbolName: s.symbolToString(enclosingDeclaration, meaning),
-        };
-      }
-      return { accessibility: qt.SymbolAccessibility.Accessible };
-    }
     entityNameVisible(entityName: qt.EntityNameOrEntityNameExpression, enclosingDeclaration: Node): qt.SymbolVisibilityResult {
       let meaning: qt.SymbolFlags;
       if (entityName.parent.kind === Syntax.TypingQuery || this.expressionWithTypeArgsInClassExtendsClause(entityName.parent) || entityName.parent.kind === Syntax.ComputedPropertyName)
@@ -380,11 +358,11 @@ export function newIs(f: qt.Frame) {
     nodewithType(t: qt.TypeSystemEntity, propertyName: qt.TypeSystemPropertyName): boolean {
       switch (propertyName) {
         case qt.TypeSystemPropertyName.Type:
-          return !!s.getLinks(t).type;
+          return !!t.links.type;
         case qt.TypeSystemPropertyName.EnumTagType:
           return !!qf.get.nodeLinks(t as qt.DocEnumTag).resolvedEnumType;
         case qt.TypeSystemPropertyName.DeclaredType:
-          return !!s.getLinks(t).declaredType;
+          return !!t.links.declaredType;
         case qt.TypeSystemPropertyName.ResolvedBaseConstructorType:
           return !!t.resolvedBaseConstructorType;
         case qt.TypeSystemPropertyName.ResolvedReturnType:
@@ -1913,8 +1891,8 @@ export function newIs(f: qt.Frame) {
     referencedAliasDeclaration(n: Node, checkChildren?: boolean): boolean {
       if (qf.is.aliasSymbolDeclaration(n)) {
         const s = qf.get.symbolOfNode(n);
-        if (s && s.getLinks(s).referenced) return true;
-        const t = s.getLinks(s!).t;
+        if (s && s.links.referenced) return true;
+        const t = s.links.t;
         if (t && qf.get.effectiveModifierFlags(n) & ModifierFlags.Export && t.flags & qt.SymbolFlags.Value && (compilerOpts.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(t))) return true;
       }
       if (checkChildren) return !!qf.each.child(n, (n) => referencedAliasDeclaration(n, checkChildren));

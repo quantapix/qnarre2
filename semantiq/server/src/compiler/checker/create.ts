@@ -168,7 +168,7 @@ export function newCreate(f: qt.Frame) {
         const type = prop.typeOfSymbol();
         if (!firstType) {
           firstType = type;
-          nameType = s.getLinks(prop).nameType;
+          nameType = prop.links.nameType;
         } else if (type !== firstType) {
           checkFlags |= qt.CheckFlags.HasNonUniformType;
         }
@@ -354,7 +354,7 @@ export function newCreate(f: qt.Frame) {
       symbol.type = type;
       symbol.target = source;
       if (source.valueDeclaration) symbol.valueDeclaration = source.valueDeclaration;
-      const nameType = s.getLinks(source).nameType;
+      const nameType = source.links.nameType;
       if (nameType) symbol.nameType = nameType;
       return symbol;
     }
@@ -707,7 +707,6 @@ export function newCreate(f: qt.Frame) {
         //this.returnTypeOfSignatureDeclaration,
         //this.typeOfExpression,
         //this.literalConstValue,
-        isSymbolAccessible,
         isEntityNameVisible,
         getConstantValue: (nodeIn) => {
           const node = qf.get.parseTreeOf(nodeIn, canHaveConstantValue);
@@ -871,7 +870,7 @@ export function newInstantiate(f: qt.Frame) {
       return result;
     }
     symbol(symbol: qt.Symbol, mapper: qt.TypeMapper): qt.Symbol {
-      const links = s.getLinks(symbol);
+      const links = symbol.links;
       if (links.type && !couldContainTypeVariables(links.type)) return symbol;
       if (this.checkFlags() & qt.CheckFlags.Instantiated) {
         symbol = links.target!;
@@ -1791,7 +1790,7 @@ export function newResolve(f: qt.Frame) {
         const f = qt.CheckFlags.ReverseMapped | (readonlyMask && isReadonlySymbol(prop) ? qt.CheckFlags.Readonly : 0);
         const inferredProp = new qc.Symbol(SymbolFlags.Property | (prop.flags & optionalMask), prop.escName, f) as qt.ReverseMappedSymbol;
         inferredProp.declarations = prop.declarations;
-        inferredProp.nameType = s.getLinks(prop).nameType;
+        inferredProp.nameType = prop.links.nameType;
         inferredProp.propertyType = prop.typeOfSymbol();
         inferredProp.mappedType = type.mappedType;
         inferredProp.constraintType = type.constraintType;

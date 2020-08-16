@@ -768,7 +768,6 @@ export interface EmitResolver {
   createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
   createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: qt.NodeBuilderFlags, tracker: SymbolTracker): Typing | undefined;
   createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParamDeclaration, tracker: SymbolTracker): Expression;
-  isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: qt.SymbolFlags | undefined, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
   isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult;
   getConstantValue(node: EnumMember | PropertyAccessExpression | ElemAccessExpression): string | number | undefined;
   getReferencedValueDeclaration(reference: Identifier): Declaration | undefined;
@@ -2131,7 +2130,8 @@ export interface Symbol {
   exportSymbol?: Symbol;
   flags: qt.SymbolFlags;
   globalExports?: SymbolTable;
-  id?: number;
+  id: number;
+  links: SymbolLinks;
   members?: SymbolTable;
   mergeId?: number;
   parent?: Symbol;

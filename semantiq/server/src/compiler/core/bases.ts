@@ -457,14 +457,13 @@ export abstract class Symbol implements qt.Symbol {
   constEnumOnlyModule?: boolean;
   declarations?: qt.Declaration[];
   docComment?: qt.SymbolDisplayPart[];
-  exports?: SymbolTable;
-  exportSymbol?: Symbol;
+  exports?: qt.SymbolTable;
+  exportSymbol?: qt.Symbol;
   getComment?: qt.SymbolDisplayPart[];
-  globalExports?: SymbolTable;
-  id?: number;
-  members?: SymbolTable;
+  globalExports?: qt.SymbolTable;
+  members?: qt.SymbolTable;
   mergeId?: number;
-  parent?: Symbol;
+  parent?: qt.Symbol;
   referenced?: SymbolFlags;
   replaceable?: boolean;
   setComment?: qt.SymbolDisplayPart[];
@@ -476,7 +475,8 @@ export abstract class Symbol implements qt.Symbol {
     if (qf.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
     return qy.get.unescUnderscores(this.escName);
   }
-  abstract getId(): number;
+  abstract get id(): number;
+  abstract get links(): qt.SymbolLinks;
   isKnown() {
     return qu.startsWith(this.escName as string, '__@');
   }
@@ -509,10 +509,10 @@ export abstract class Symbol implements qt.Symbol {
     return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
   }
   propertyNameForUnique(): qu.__String {
-    return `__@${this.getId()}@${this.escName}` as qu.__String;
+    return `__@${this.id}@${this.escName}` as qu.__String;
   }
   nameForPrivateIdentifier(s: qu.__String): qu.__String {
-    return `__#${this.getId()}@${s}` as qu.__String;
+    return `__#${this.id}@${s}` as qu.__String;
   }
   localForExportDefault() {
     return this.isExportDefault() ? this.declarations![0].localSymbol : undefined;
@@ -546,6 +546,23 @@ export abstract class Symbol implements qt.Symbol {
       }
     }
     return;
+  }
+  isPropertyOrMethodDeclaration() {
+    if (this.declarations && this.declarations.length) {
+      for (const d of this.declarations) {
+        switch (d.kind) {
+          case Syntax.PropertyDeclaration:
+          case Syntax.MethodDeclaration:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
+            continue;
+          default:
+            return false;
+        }
+      }
+      return true;
+    }
+    return false;
   }
   comment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {

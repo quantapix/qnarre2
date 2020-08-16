@@ -129,7 +129,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
   }
   function trackSymbol(symbol: qt.Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
     if (symbol.flags & SymbolFlags.TypeParam) return;
-    handleSymbolAccessibilityError(resolver.isSymbolAccessible(symbol, enclosingDeclaration, meaning, true));
+    handleSymbolAccessibilityError(symbol.isAccessible(enclosingDeclaration, meaning, true));
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
   function reportPrivateInBaseOfClassExpression(propertyName: string) {

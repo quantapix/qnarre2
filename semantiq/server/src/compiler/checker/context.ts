@@ -97,7 +97,7 @@ export class QContext {
     }
     if (type.flags & TypeFlags.UniqueESSymbol) {
       if (!(this.flags & NodeBuilderFlags.AllowUniqueESSymbolType)) {
-        if (isValueSymbolAccessible(type.symbol, this.enclosingDeclaration)) {
+        if (type.symbol?.isValueAccessible(this.enclosingDeclaration)) {
           this.approximateLength += 6;
           return this.symbolToTypeNode(type.symbol, SymbolFlags.Value);
         }
@@ -144,7 +144,7 @@ export class QContext {
       this.approximateLength += 4;
       return new qc.ThisExpression();
     }
-    if (!inTypeAlias && type.aliasSymbol && (this.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, this.enclosingDeclaration))) {
+    if (!inTypeAlias && type.aliasSymbol && (this.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || type.aliasSymbol.isTypeAccessible(this.enclosingDeclaration))) {
       const typeArgNodes = this.mapToTypeNodes(type.aliasTypeArgs);
       if (qy.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return new qc.TypingReference(new qc.Identifier(''), typeArgNodes);
       return this.symbolToTypeNode(type.aliasSymbol, SymbolFlags.Type, typeArgNodes);
@@ -159,7 +159,7 @@ export class QContext {
         this.approximateLength += type.symbol.name.length + 6;
         return new qc.InferTyping(this.typeParamToDeclarationWithConstraint(type as qt.TypeParam, undefined));
       }
-      if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParam && !isTypeSymbolAccessible(type.symbol, this.enclosingDeclaration)) {
+      if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParam && !type.symbol.isTypeAccessible(this.enclosingDeclaration)) {
         const name = this.typeParamToName(type);
         this.approximateLength += idText(name).length;
         return new qc.TypingReference(new qc.Identifier(idText(name)), undefined);
@@ -292,7 +292,7 @@ export class QContext {
       return s.nonAugmentationDeclaration()!.sourceFile.fileName;
     }
     const contextFile = qf.get.originalOf(this.enclosingDeclaration).sourceFile;
-    const ls = s.getLinks();
+    const ls = s.links;
     let spec = ls.specCache && ls.specCache.get(contextFile.path);
     if (!spec) {
       const isBundle = compilerOpts.out || compilerOpts.outFile;
@@ -541,7 +541,7 @@ export class QContext {
     return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
   }
   getPropertyNameNodeForSymbolFromNameType(s: qt.Symbol, singleQuote?: boolean) {
-    const nameType = s.getLinks(symbol).nameType;
+    const nameType = s.links.nameType;
     if (nameType) {
       if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
         const name = '' + (<qt.StringLiteralType | qt.NumberLiteralType>nameType).value;
@@ -954,7 +954,7 @@ export class QContext {
       }
       const sym = resolveEntityName(leftmost, SymbolFlags.All, true, true);
       if (sym) {
-        if (isSymbolAccessible(sym, this.enclosingDeclaration, SymbolFlags.All, false).accessibility !== qt.SymbolAccessibility.Accessible) {
+        if (sym.isAccessible(this.enclosingDeclaration, SymbolFlags.All, false).accessibility !== qt.SymbolAccessibility.Accessible) {
           hadError = true;
         } else {
           this.tracker?.trackSymbol?.(sym, this.enclosingDeclaration, SymbolFlags.All);
@@ -1250,7 +1250,7 @@ export class QContext {
         if (isStaticMethodSymbol || isNonLocalFunctionSymbol) {
           return (
             (!!(this.flags & NodeBuilderFlags.UseTypeOfFunction) || (this.visitedTypes && this.visitedTypes.has(typeId))) &&
-            (!(this.flags & NodeBuilderFlags.UseStructuralFallback) || isValueSymbolAccessible(symbol, this.enclosingDeclaration))
+            (!(this.flags & NodeBuilderFlags.UseStructuralFallback) || symbol.isValueAccessible(this.enclosingDeclaration))
           );
         }
       };
@@ -1318,7 +1318,7 @@ export class QContext {
       this.flags & NodeBuilderFlags.WriteClassExpressionAsTypeLiteral &&
       type.symbol.valueDeclaration &&
       qf.is.classLike(type.symbol.valueDeclaration) &&
-      !isValueSymbolAccessible(type.symbol, this.enclosingDeclaration)
+      !type.symbol.isValueAccessible(this.enclosingDeclaration)
     ) {
       return this.createAnonymousTypeNode(type);
     } else {
@@ -1522,7 +1522,7 @@ export class QContext {
       tracker: {
         ...oldthis.tracker,
         trackSymbol: (sym, decl, meaning) => {
-          const accessibleResult = isSymbolAccessible(sym, decl, meaning, false);
+          const accessibleResult = sym.isAccessible(decl, meaning, false);
           if (accessibleResult.accessibility === qt.SymbolAccessibility.Accessible) {
             const chain = context.lookupSymbolChainWorker(sym, meaning);
             if (!(sym.flags & SymbolFlags.Property)) includePrivateSymbol(chain[0]);

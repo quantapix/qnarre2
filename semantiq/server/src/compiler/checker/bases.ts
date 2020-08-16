@@ -778,34 +778,17 @@ export class Signature extends qc.Signature {
     }
   }
 }
-export class Symbol extends qc.Symbol implements qt.TransientSymbol {
-  static nextId = 1;
-  static count = 0;
+export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   _checkFlags: CheckFlags;
   constructor(f: SymbolFlags, name: qu.__String, c?: CheckFlags) {
     super(f | SymbolFlags.Transient, name);
-    Symbol.count++;
     this._checkFlags = c || 0;
   }
   get checkFlags(): CheckFlags {
     return this.isTransient() ? this._checkFlags : 0;
   }
-  getId() {
-    if (!this.id) {
-      this.id = Symbol.nextId;
-      Symbol.nextId++;
-    }
-    return this.id;
-  }
-  private recordMerged(s: Symbol) {
-    if (!this.mergeId) {
-      this.mergeId = nextMergeId;
-      nextMergeId++;
-    }
-    mergedSymbols[this.mergeId] = s;
-  }
   typeOfSymbolWithDeferredType() {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.type) {
       qu.assertIsDefined(ls.deferralParent);
       qu.assertIsDefined(ls.deferralConstituents);
@@ -845,17 +828,6 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const d = this.valueDeclaration;
     return qf.is.privateIdentifierPropertyDeclaration(d) && qf.has.syntacticModifier(d, ModifierFlags.Static);
   }
-  clone() {
-    const r = new Symbol(this.flags, this.escName);
-    r.declarations = this.declarations ? this.declarations.slice() : [];
-    r.parent = this.parent;
-    if (this.valueDeclaration) r.valueDeclaration = this.valueDeclaration;
-    if (this.constEnumOnlyModule) r.constEnumOnlyModule = true;
-    if (this.members) r.members = qc.cloneMap(this.members);
-    if (this.exports) r.exports = qc.cloneMap(this.exports);
-    this.recordMerged(r);
-    return r;
-  }
   addDuplicates(ds: qt.Declaration[]) {
     if (this.declarations) {
       for (const d of this.declarations) {
@@ -868,7 +840,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return (f & (SymbolFlags.Alias | exclude)) === SymbolFlags.Alias || !!(f & SymbolFlags.Alias && f & SymbolFlags.Assignment);
   }
   tryResolveAlias() {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (ls.target !== resolvingSymbol) return this.resolveAlias();
     return;
   }
@@ -878,9 +850,8 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getTypeOnlyAliasDeclaration(): qt.TypeOnlyCompatibleAliasDeclaration | undefined {
     if (!(this.flags & SymbolFlags.Alias)) return;
-    return this.getLinks().typeOnlyDeclaration || undefined;
+    return this.links.typeOnlyDeclaration || undefined;
   }
-
   forEachProperty<T>(cb: (p: Symbol) => T): T | undefined {
     if (this.checkFlags & qt.CheckFlags.Synthetic) {
       for (const t of this.containingType!.types) {
@@ -905,12 +876,6 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (isReadonlySymbol(this) !== isReadonlySymbol(targetProp)) return Ternary.False;
     return compareTypes(this.typeOfSymbol(), targetProp.typeOfSymbol());
   }
-  markAliasReferenced(n: Node) {
-    if (this.isNonLocalAlias(SymbolFlags.Value) && !qf.is.inTypeQuery(n) && !this.getTypeOnlyAliasDeclaration()) {
-      if ((compilerOpts.preserveConstEnums && isExportOrExportExpression(n)) || !isConstEnumOrConstEnumOnlyModule(this.resolveAlias())) thus.markAliasSymbolAsReferenced();
-      else this.markConstEnumAliasAsReferenced();
-    }
-  }
   merge(t: Symbol, unidir = false): this {
     if (!(t.flags & qf.get.excluded(this.flags)) || (this.flags | t.flags) & SymbolFlags.Assignment) {
       if (this === t) return this;
@@ -933,7 +898,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       }
       if (!unidir) this.recordMerged(t);
     } else if (t.flags & SymbolFlags.NamespaceModule) {
-      if (t !== globalThisSymbol) error(qf.decl.nameOf(this.declarations[0]), qd.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
+      if (t !== globalThisSymbol) error(qf.decl.nameOf(this.declarations[0]), qd.msgs.Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity, t.symbolToString());
     } else {
       const isEitherEnum = !!(t.flags & SymbolFlags.Enum || this.flags & SymbolFlags.Enum);
       const isEitherBlockScoped = !!(t.flags & SymbolFlags.BlockScopedVariable || this.flags & SymbolFlags.BlockScopedVariable);
@@ -946,7 +911,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       const targetSymbolFile = t.declarations && t.declarations[0].sourceFile;
       const symbolName = this.symbolToString();
       if (sourceSymbolFile && targetSymbolFile && amalgamatedDuplicates && !isEitherEnum && sourceSymbolFile !== targetSymbolFile) {
-        const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
+        const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === qu.Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
         const secondFile = firstFile === sourceSymbolFile ? targetSymbolFile : sourceSymbolFile;
         const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({
           firstFile,
@@ -991,14 +956,9 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   resolveSymbol(noAlias?: boolean) {
     return !noAlias && this.isNonLocalAlias() ? this.resolveAlias() : this;
   }
-  getLinks(): qt.SymbolLinks {
-    if (this.flags & SymbolFlags.Transient) return this;
-    const i = this.getId();
-    return symbolLinks[i] || (symbolLinks[i] = new (<any>SymbolLinks)());
-  }
   resolveAlias() {
     qu.assert((this.flags & SymbolFlags.Alias) !== 0);
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.target) {
       ls.target = resolvingSymbol;
       const n = this.getDeclarationOfAliasSymbol();
@@ -1010,7 +970,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return ls.target as Symbol;
   }
   markAliasSymbolAsReferenced(): void {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.referenced) {
       ls.referenced = true;
       const d = this.getDeclarationOfAliasSymbol();
@@ -1022,7 +982,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
   }
   markConstEnumAliasAsReferenced() {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.constEnumReferenced) ls.constEnumReferenced = true;
   }
   getDeclarationOfJSPrototypeContainer() {
@@ -1049,7 +1009,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       : this.exports || emptySymbols;
   }
   getExportsOfModule(): SymbolTable {
-    const ls = this.getLinks();
+    const ls = this.links;
     const worker = (): SymbolTable => {
       const ss = [] as Symbol[];
       const s = resolveExternalModuleSymbol(this);
@@ -1092,7 +1052,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   getAlternativeContainingModules(enclosingDeclaration: Node): Symbol[] {
     const containingFile = enclosingDeclaration.sourceFile;
     const id = '' + containingFile.qf.get.nodeId();
-    const ls = this.getLinks();
+    const ls = this.links;
     let results: Symbol[] | undefined;
     if (ls.extendedContainersByFile && (results = ls.extendedContainersByFile.get(id))) return results;
     if (containingFile && containingFile.imports) {
@@ -1158,32 +1118,15 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   symbolIsValue() {
     return !!(this.flags & SymbolFlags.Value || (this.flags & SymbolFlags.Alias && this.resolveAlias().flags & SymbolFlags.Value && !this.getTypeOnlyAliasDeclaration()));
   }
-  isPropertyOrMethodDeclarationSymbol() {
-    if (this.declarations && this.declarations.length) {
-      for (const d of this.declarations) {
-        switch (d.kind) {
-          case Syntax.PropertyDeclaration:
-          case Syntax.MethodDeclaration:
-          case Syntax.GetAccessor:
-          case Syntax.SetAccessor:
-            continue;
-          default:
-            return false;
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-  needsQualification(enclosingDeclaration: Node | undefined, meaning: SymbolFlags) {
+  needsQualification(n: Node | undefined, f: SymbolFlags) {
     let qualify = false;
-    forEachSymbolTableInScope(enclosingDeclaration, (symbolTable) => {
+    forEachSymbolTableInScope(n, (symbolTable) => {
       let symbolFromSymbolTable = symbolTable.get(this.escName)?.qf.get.mergedSymbol();
       if (!symbolFromSymbolTable) return false;
       if (symbolFromSymbolTable === this) return true;
       symbolFromSymbolTable =
         symbolFromSymbolTable.flags & SymbolFlags.Alias && !symbolFromSymbolTable.declarationOfKind(Syntax.ExportSpecifier) ? symbolFromSymbolTable.resolveAlias() : symbolFromSymbolTable;
-      if (symbolFromSymbolTable.flags & meaning) {
+      if (symbolFromSymbolTable.flags & f) {
         qualify = true;
         return true;
       }
@@ -1191,12 +1134,34 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     });
     return qualify;
   }
-  isTypeSymbolAccessible(n?: Node) {
-    const a = this.isSymbolAccessible(n, SymbolFlags.Type, false);
+  isAccessible(n: Node | undefined, f: qt.SymbolFlags, compute: boolean): qt.SymbolAccessibilityResult {
+    if (n) {
+      const r = qf.is.anySymbolAccessible([this], n, this, f, compute);
+      if (r) return r;
+      const m = qf.each.up(this.declarations, qf.get.externalModuleContainer);
+      if (m) {
+        const c = qf.get.externalModuleContainer(n);
+        if (m !== c) {
+          return {
+            accessibility: qt.SymbolAccessibility.CannotBeNamed,
+            errorSymbolName: this.symbolToString(n, f),
+            errorModuleName: m.symbolToString(),
+          };
+        }
+      }
+      return {
+        accessibility: qt.SymbolAccessibility.NotAccessible,
+        errorSymbolName: this.symbolToString(n, f),
+      };
+    }
+    return { accessibility: qt.SymbolAccessibility.Accessible };
+  }
+  isTypeAccessible(n?: Node) {
+    const a = this.isAccessible(n, SymbolFlags.Type, false);
     return a.accessibility === qt.SymbolAccessibility.Accessible;
   }
-  isValueSymbolAccessible(n?: Node) {
-    const a = this.isSymbolAccessible(n, SymbolFlags.Value, false);
+  isValueAccessible(n?: Node) {
+    const a = this.isAccessible(n, SymbolFlags.Value, false);
     return a.accessibility === qt.SymbolAccessibility.Accessible;
   }
   symbolValueDeclarationIsContextSensitive() {
@@ -1205,8 +1170,8 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   serializeSymbol(isPrivate: boolean, propertyAsAlias: boolean) {
     const s = qf.get.mergedSymbol();
-    if (visitedSymbols.has('' + s.getId())) return;
-    visitedSymbols.set('' + s.getId(), true);
+    if (visitedSymbols.has('' + s.id)) return;
+    visitedSymbols.set('' + s.id, true);
     const skip = !isPrivate;
     if (skip || (!!qu.length(this.declarations) && qu.some(this.declarations, (d) => !!qc.findAncestor(d, (n) => n === enclosingDeclaration)))) {
       const o = context;
@@ -1270,11 +1235,11 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (qu.some(this.declarations, qf.is.paramDeclaration)) return;
     qu.assertIsDefined(deferredPrivates);
     getUnusedName(qy.get.unescUnderscores(this.escName), this);
-    deferredPrivates.set('' + this.getId(), this);
+    deferredPrivates.set('' + this.id, this);
   }
   serializeTypeAlias(symbolName: string, modifierFlags: ModifierFlags) {
     const aliasType = this.getDeclaredTypeOfTypeAlias();
-    const typeParams = this.getLinks().typeParams;
+    const typeParams = this.links.typeParams;
     const typeParamDecls = map(typeParams, (p) => typeParamToDeclaration(p, context));
     const jsdocAliasDecl = find(this.declarations, isDocTypeAlias);
     const commentText = jsdocAliasDecl ? jsdocAliasDecl.comment || jsdocAliasDecl.parent.comment : undefined;
@@ -1538,7 +1503,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   isConstructorDeclaredProperty() {
     if (this.valueDeclaration && this.valueDeclaration.kind === Syntax.BinaryExpression) {
-      const ls = this.getLinks();
+      const ls = this.links;
       if (ls.qf.is.constructorDeclaredProperty === undefined) {
         ls.qf.is.constructorDeclaredProperty =
           !!getDeclaringConstructor(this) &&
@@ -1569,7 +1534,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
   }
   getTypeOfVariableOrParamOrProperty(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.type) {
       const worker = () => {
         if (this.flags & SymbolFlags.Prototype) return getTypeOfPrototypeProperty(this);
@@ -1642,7 +1607,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return ls.type;
   }
   getTypeOfAccessors(): qt.Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     const worker = (): Type => {
       if (!pushTypeResolution(this, TypeSystemPropertyName.Type)) return errorType;
       let t = resolveTypeOfAccessors(this);
@@ -1692,7 +1657,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       : undefined;
   }
   getTypeOfFuncClassEnumModule(): Type {
-    let ls = this.getLinks();
+    let ls = this.links;
     const originalLinks = ls;
     if (!ls.type) {
       const jsDeclaration = this.valueDeclaration && qf.get.declarationOfExpando(this.valueDeclaration);
@@ -1727,11 +1692,11 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return strictNullChecks && this.flags & SymbolFlags.Optional ? qf.get.optionalType(type) : type;
   }
   getTypeOfEnumMember(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     return ls.type || (ls.type = getDeclaredTypeOfEnumMember(this));
   }
   getTypeOfAlias(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.type) {
       const targetSymbol = this.resolveAlias();
       ls.type = targetSymbol.flags & SymbolFlags.Value ? targetSymbol.typeOfSymbol() : errorType;
@@ -1739,7 +1704,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return ls.type;
   }
   getTypeOfInstantiatedSymbol(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.type) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.Type)) return (ls.type = errorType);
       let type = instantiateType(ls.target!.typeOfSymbol(), ls.mapper);
@@ -1798,7 +1763,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return true;
   }
   getDeclaredTypeOfClassOrInterface(): qt.InterfaceType {
-    let ls = this.getLinks();
+    let ls = this.links;
     const originalLinks = ls;
     if (!ls.declaredType) {
       const kind = this.flags & SymbolFlags.Class ? ObjectFlags.Class : ObjectFlags.Interface;
@@ -1824,7 +1789,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return <qt.InterfaceType>ls.declaredType;
   }
   getDeclaredTypeOfTypeAlias(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.declaredType) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.DeclaredType)) return errorType;
       const d = Debug.check.defined(find(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
@@ -1846,7 +1811,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return ls.declaredType;
   }
   getEnumKind(): qt.EnumKind {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (ls.enumKind !== undefined) return ls.enumKind;
     let hasNonLiteralMember = false;
     for (const d of this.declarations ?? []) {
@@ -1860,7 +1825,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return (ls.enumKind = hasNonLiteralMember ? qt.EnumKind.Numeric : qt.EnumKind.Literal);
   }
   getDeclaredTypeOfEnum(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (ls.declaredType) return ls.declaredType;
     if (this.getEnumKind() === qt.EnumKind.Literal) {
       enumCount++;
@@ -1870,7 +1835,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
           for (const m of (<qt.EnumDeclaration>d).members) {
             const v = getEnumMemberValue(m);
             const t = getFreshTypeOfLiteralType(qf.get.literalType(v !== undefined ? v : 0, enumCount, qf.get.symbolOfNode(m)));
-            qf.get.symbolOfNode(m).getLinks().declaredType = t;
+            qf.get.symbolOfNode(m).links.declaredType = t;
             memberTypeList.push(getRegularTypeOfLiteralType(t));
           }
         }
@@ -1889,7 +1854,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return (ls.declaredType = e);
   }
   getDeclaredTypeOfEnumMember(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.declaredType) {
       const e = this.getParentOfSymbol()!.getDeclaredTypeOfEnum();
       if (!ls.declaredType) ls.declaredType = e;
@@ -1897,11 +1862,11 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return ls.declaredType;
   }
   getDeclaredTypeOfTypeParam(): qt.TypeParam {
-    const ls = this.getLinks();
+    const ls = this.links;
     return ls.declaredType || (ls.declaredType = createTypeParam(this));
   }
   getDeclaredTypeOfAlias(): Type {
-    const ls = this.getLinks();
+    const ls = this.links;
     return ls.declaredType || (ls.declaredType = this.resolveAlias().getDeclaredTypeOfSymbol());
   }
   getDeclaredTypeOfSymbol(): Type {
@@ -1940,7 +1905,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getLateBoundSymbol(): Symbol {
     if (this.flags & SymbolFlags.ClassMember && this.escName === InternalSymbol.Computed) {
-      const ls = this.getLinks();
+      const ls = this.links;
       if (!ls.lateSymbol && qu.some(this.declarations, hasLateBindableName)) {
         const parent = this.parent?.qf.get.mergedSymbol()!;
         if (qu.some(this.declarations, hasStaticModifier)) parent.getExportsOfSymbol();
@@ -1975,11 +1940,11 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   createUniqueESSymbolType() {
     const type = <qt.UniqueESSymbolType>createType(TypeFlags.UniqueESSymbol);
     type.symbol = this;
-    type.escName = `__@${this.escName}@${this.getId()}` as qu.__String;
+    type.escName = `__@${this.escName}@${this.id}` as qu.__String;
     return type;
   }
   getAliasVariances() {
-    const ls = this.getLinks();
+    const ls = this.links;
     return getVariancesWorker(ls.typeParams, ls, (_links, param, marker) => {
       const type = qf.get.typeAliasInstantiation(this, instantiateTypes(ls.typeParams!, makeUnaryTypeMapper(param, marker)));
       type.aliasTypeArgsContainsMarker = true;
@@ -2003,7 +1968,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getImmediateAliasedSymbol(): Symbol | undefined {
     qu.assert((this.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.immediateTarget) {
       const node = this.getDeclarationOfAliasSymbol();
       if (!node) return qu.fail();
@@ -2209,7 +2174,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   checkTypeParamListsIdentical() {
     if (this.declarations?.length === 1) return;
-    const ls = this.getLinks();
+    const ls = this.links;
     if (!ls.typeParamsChecked) {
       ls.typeParamsChecked = true;
       const ds = this.getClassOrInterfaceDeclarationsOfSymbol();
@@ -2240,7 +2205,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return rs ? flatMap(rs, this.getRootSymbols) : [this];
   }
   getImmediateRootSymbols(): readonly Symbol[] | undefined {
-    if (this.checkFlags() & CheckFlags.Synthetic) return mapDefined(this.getLinks().containingType!.types, (t) => qf.get.propertyOfType(t, this.escName));
+    if (this.checkFlags() & CheckFlags.Synthetic) return mapDefined(this.links.containingType!.types, (t) => qf.get.propertyOfType(t, this.escName));
     if (this.flags & SymbolFlags.Transient) {
       const { leftSpread, rightSpread, syntheticOrigin } = this as qt.TransientSymbol;
       return leftSpread ? [leftSpread, rightSpread!] : syntheticOrigin ? [syntheticOrigin] : singleElemArray(this.tryGetAliasTarget());
@@ -2250,7 +2215,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   tryGetAliasTarget(): Symbol | undefined {
     let target: Symbol | undefined;
     let next: Symbol | undefined = this;
-    while ((next = next.getLinks().target)) {
+    while ((next = next.links.target)) {
       target = next;
     }
     return target;
@@ -2260,7 +2225,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   isSymbolOfDeclarationWithCollidingName() {
     if (this.flags & SymbolFlags.BlockScoped && this.valueDeclaration.kind !== Syntax.SourceFile) {
-      const ls = this.getLinks();
+      const ls = this.links;
       if (ls.isDeclarationWithCollidingName === undefined) {
         const container = qf.get.enclosingBlockScopeContainer(this.valueDeclaration);
         if (qf.is.statementWithLocals(container) || this.isSymbolOfDestructuredElemOfCatchBinding()) {
@@ -2412,7 +2377,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return this.declarations && find(this.declarations, (s) => !!get.effectiveTypeAnnotationNode(s) && (!enclosingDeclaration || !!qc.findAncestor(s, (n) => n === enclosingDeclaration)));
   }
   getNameOfSymbolFromNameType(c?: QContext) {
-    const nameType = this.getLinks().nameType;
+    const nameType = this.links.nameType;
     if (nameType) {
       if (nameType.flags & qt.TypeFlags.StringOrNumberLiteral) {
         const name = '' + (<qt.StringLiteralType | qt.NumberLiteralType>nameType).value;
@@ -2440,7 +2405,7 @@ export class Symbol extends qc.Symbol implements qt.TransientSymbol {
       if (d && name) {
         if (d.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
         if (name.kind === Syntax.ComputedPropertyName && !(this.checkFlags() & CheckFlags.Late)) {
-          const nameType = this.getLinks().nameType;
+          const nameType = this.links.nameType;
           if (nameType && nameType.flags & qt.TypeFlags.StringOrNumberLiteral) {
             const result = getNameOfSymbolFromNameType(this, c);
             if (result !== undefined) return result;

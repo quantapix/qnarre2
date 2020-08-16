@@ -253,7 +253,7 @@ export function newCheck(f: qt.Frame) {
         }
         let relatedInformation: qd.DiagnosticRelatedInformation[] | undefined;
         if (headMessage && errorNode && !result && source.symbol) {
-          const links = s.getLinks(source.symbol);
+          const links = source.symbol.links;
           if (links.originatingImport && !qf.is.importCall(links.originatingImport)) {
             const helpfulRetry = this.typeRelatedTo(links.target!.typeOfSymbol(), target, relation, undefined);
             if (helpfulRetry) {
@@ -1144,8 +1144,8 @@ export function newCheck(f: qt.Frame) {
       ): qt.Ternary {
         const targetIsOptional = strictNullChecks && !!(targetProp.checkFlags() & qt.CheckFlags.Partial);
         const source = getTypeOfSourceProperty(sourceProp);
-        if (targetProp.checkFlags() & qt.CheckFlags.DeferredType && !s.getLinks(targetProp).type) {
-          const links = s.getLinks(targetProp);
+        if (targetProp.checkFlags() & qt.CheckFlags.DeferredType && !targetProp.links.type) {
+          const links = targetProp.links;
           qg.assertIsDefined(links.deferralParent);
           qg.assertIsDefined(links.deferralConstituents);
           const unionParent = !!(links.deferralParent.flags & TypeFlags.Union);
@@ -1432,7 +1432,7 @@ export function newCheck(f: qt.Frame) {
         const props = source.flags & TypeFlags.Intersection ? getPropertiesOfqt.UnionOrIntersectionType(<qt.IntersectionType>source) : getPropertiesOfObjectType(source);
         for (const prop of props) {
           if (isIgnoredJsxProperty(source, prop)) continue;
-          const nameType = s.getLinks(prop).nameType;
+          const nameType = prop.links.nameType;
           if (nameType && nameType.flags & TypeFlags.UniqueESSymbol) continue;
           if (kind === IndexKind.String || qt.NumericLiteral.name(prop.escName)) {
             const related = isRelatedTo(prop.typeOfSymbol(), target, reportErrors);
@@ -5601,7 +5601,7 @@ export function newCheck(f: qt.Frame) {
     }
     externalModuleExports(n: qc.SourceFile | qt.ModuleDeclaration) {
       const moduleSymbol = qf.get.symbolOfNode(n);
-      const links = s.getLinks(moduleSymbol);
+      const links = moduleSymbol.links;
       if (!links.exportsChecked) {
         const exportEqualsSymbol = moduleSymbol.exports!.get('export=' as qu.__String);
         if (exportEqualsSymbol && hasExportedMembers(moduleSymbol)) {

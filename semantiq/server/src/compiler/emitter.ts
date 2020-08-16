@@ -561,7 +561,6 @@ export const notImplementedResolver: qt.EmitResolver = {
   createReturnTypeOfSignatureDeclaration: notImplemented,
   createTypeOfExpression: notImplemented,
   createLiteralConstValue: notImplemented,
-  isSymbolAccessible: notImplemented,
   isEntityNameVisible: notImplemented,
   getConstantValue: notImplemented,
   getReferencedValueDeclaration: notImplemented,

@@ -2,13 +2,13 @@ import { newCheck, Fcheck } from './check';
 import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
 import { newGet, Fget } from './get';
 import { newHas, Fhas, newIs, Fis } from './groups';
-import { ObjectFlags, SignatureFlags, SymbolFlags, TypeFlags } from './types';
+import { Node, ObjectFlags, SignatureFlags, SymbolFlags, TypeFlags } from './types';
 import * as qb from './bases';
 import * as qc from '../core';
 import * as qd from '../diags';
 import * as qt from './types';
 import * as qu from '../utils';
-export interface Frame extends qc.Frame, qt.TypeChecker {
+export interface Frame extends qc.Frame {
   check: Fcheck;
   create: Fcreate;
   get: Fget;
@@ -30,7 +30,7 @@ export function newFrame() {
 }
 export const qf = newFrame();
 
-export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): qt.TypeChecker {
+export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean): Frame & qt.TypeChecker {
   const compilerOpts = host.getCompilerOpts();
   const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOpts);
   const emptySymbols = new qb.SymbolTable();
@@ -106,6 +106,48 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const unreachableNeverType = qf.create.intrinsicType(TypeFlags.Never, 'never');
   const voidType = qf.create.intrinsicType(TypeFlags.Void, 'void');
   const wildcardType = qf.create.intrinsicType(TypeFlags.Any, 'any');
+  const tupleTypes = new qu.QMap<qt.GenericType>();
+  const unionTypes = new qu.QMap<qt.UnionType>();
+  const intersectionTypes = new qu.QMap<qt.Type>();
+  const literalTypes = new qu.QMap<qt.LiteralType>();
+  const indexedAccessTypes = new qu.QMap<qt.IndexedAccessType>();
+  const substitutionTypes = new qu.QMap<qt.SubstitutionType>();
+  const evolvingArrayTypes: qt.EvolvingArrayType[] = [];
+  const undefinedProperties = new qu.QMap<qt.Symbol>() as EscapedMap<qt.Symbol>;
+  const reverseMappedCache = new qu.QMap<qt.Type | undefined>();
+  const emptyStringType = qf.get.literalType('');
+  const zeroType = qf.get.literalType(0);
+  const zeroBigIntType = qf.get.literalType({ negative: false, base10Value: '0' });
+  const resolutionTargets: TypeSystemEntity[] = [];
+  const resolutionResults: boolean[] = [];
+  const resolutionPropertyNames: TypeSystemPropertyName[] = [];
+  const maximumSuggestionCount = 10;
+  const mergedSymbols: qt.Symbol[] = [];
+  const symbolLinks: qt.SymbolLinks[] = [];
+  const flowLoopCaches: qu.QMap<qt.Type>[] = [];
+  const flowLoopNodes: qt.FlowNode[] = [];
+  const flowLoopKeys: string[] = [];
+  const flowLoopTypes: qt.Type[][] = [];
+  const sharedFlowNodes: qt.FlowNode[] = [];
+  const sharedFlowTypes: qt.FlowType[] = [];
+  const flowNodeReachable: (boolean | undefined)[] = [];
+  const flowNodePostSuper: (boolean | undefined)[] = [];
+  const potentialThisCollisions: Node[] = [];
+  const potentialNewTargetCollisions: Node[] = [];
+  const potentialWeakMapCollisions: Node[] = [];
+  const awaitedTypeStack: number[] = [];
+  const diagnostics = createDiagnosticCollection();
+  const suggestionDiagnostics = createDiagnosticCollection();
+  const allPotentiallyUnusedIdentifiers = new qu.QMap<PotentiallyUnusedIdentifier[]>();
+  const typeofType = createTypeofType();
+  const subtypeRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const strictSubtypeRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const assignableRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const comparableRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const identityRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const enumRelation = new qu.QMap<qt.RelationComparisonResult>();
+  const builtinGlobals = new qc.SymbolTable();
+
   qf.create.booleanType([falseType, regularTrueType]);
   qf.create.booleanType([falseType, trueType]);
   qf.create.booleanType([regularFalseType, trueType]);
@@ -126,6 +168,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   trueType.freshType = trueType;
   trueType.regularType = regularTrueType;
   undefinedSymbol.declarations = [];
+
   const noIterationTypes: qt.IterationTypes = {
     get yieldType(): qt.Type {
       return qu.fail('Not supported');
@@ -163,4 +206,132 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     mustBeAMethodDiagnostic: qd.msgs.The_0_property_of_an_iterator_must_be_a_method,
     mustHaveAValueDiagnostic: qd.msgs.The_type_returned_by_the_0_method_of_an_iterator_must_have_a_value_property,
   };
+  const typeofTypesByName: qu.QReadonlyMap<qt.Type> = new qu.QMap<qt.Type>({
+    string: stringType,
+    number: numberType,
+    bigint: bigintType,
+    boolean: booleanType,
+    symbol: esSymbolType,
+    undefined: undefinedType,
+  });
+  let _jsxNamespace: qu.__String;
+  let _jsxFactoryEntity: qt.EntityName | undefined;
+  let nextMergeId = 1;
+  let nextFlowId = 1;
+  let cancellationToken: qt.CancellationToken | undefined;
+  let requestedExternalEmitHelpers: qt.ExternalEmitHelpers;
+  let externalHelpersModule: qt.Symbol;
+  let enumCount = 0;
+  let totalInstantiationCount = 0;
+  let instantiationCount = 0;
+  let instantiationDepth = 0;
+  let constraintDepth = 0;
+  let currentNode: Node | undefined;
+  let apparentArgCount: number | undefined;
+  let amalgamatedDuplicates: qu.QMap<DuplicateInfoForFiles> | undefined;
+  let inInferTypeForHomomorphicMappedType = false;
+  let ambientModulesCache: qt.Symbol[] | undefined;
+  let patternAmbientModules: qt.PatternAmbientModule[];
+  let patternAmbientModuleAugmentations: qu.QMap<qt.Symbol> | undefined;
+  let globalObjectType: qt.ObjectType;
+  let globalFunctionType: qt.ObjectType;
+  let globalCallableFunctionType: qt.ObjectType;
+  let globalNewableFunctionType: qt.ObjectType;
+  let globalArrayType: qt.GenericType;
+  let globalReadonlyArrayType: qt.GenericType;
+  let globalStringType: qt.ObjectType;
+  let globalNumberType: qt.ObjectType;
+  let globalBooleanType: qt.ObjectType;
+  let globalRegExpType: qt.ObjectType;
+  let globalThisType: qt.GenericType;
+  let anyArrayType: qt.Type;
+  let autoArrayType: qt.Type;
+  let anyReadonlyArrayType: qt.Type;
+  let deferredGlobalNonNullableTypeAlias: qt.Symbol;
+  let deferredGlobalESSymbolConstructorSymbol: qt.Symbol | undefined;
+  let deferredGlobalESSymbolType: qt.ObjectType;
+  let deferredGlobalTypedPropertyDescriptorType: qt.GenericType;
+  let deferredGlobalPromiseType: qt.GenericType;
+  let deferredGlobalPromiseLikeType: qt.GenericType;
+  let deferredGlobalPromiseConstructorSymbol: qt.Symbol | undefined;
+  let deferredGlobalPromiseConstructorLikeType: qt.ObjectType;
+  let deferredGlobalIterableType: qt.GenericType;
+  let deferredGlobalIteratorType: qt.GenericType;
+  let deferredGlobalIterableIteratorType: qt.GenericType;
+  let deferredGlobalGeneratorType: qt.GenericType;
+  let deferredGlobalIteratorYieldResultType: qt.GenericType;
+  let deferredGlobalIteratorReturnResultType: qt.GenericType;
+  let deferredGlobalAsyncIterableType: qt.GenericType;
+  let deferredGlobalAsyncIteratorType: qt.GenericType;
+  let deferredGlobalAsyncIterableIteratorType: qt.GenericType;
+  let deferredGlobalAsyncGeneratorType: qt.GenericType;
+  let deferredGlobalTemplateStringsArrayType: qt.ObjectType;
+  let deferredGlobalImportMetaType: qt.ObjectType;
+  let deferredGlobalExtractSymbol: qt.Symbol;
+  let deferredGlobalOmitSymbol: qt.Symbol;
+  let deferredGlobalBigIntType: qt.ObjectType;
+  let flowLoopStart = 0;
+  let flowLoopCount = 0;
+  let sharedFlowCount = 0;
+  let flowAnalysisDisabled = false;
+  let flowInvocationCount = 0;
+  let lastFlowNode: qt.FlowNode | undefined;
+  let lastFlowNodeReachable: boolean;
+  let flowTypeCache: qt.Type[] | undefined;
+  let suggestionCount = 0;
+
+  const checker = qc.newFrame() as Frame;
+  newCheck(checker);
+  newCreate(checker);
+  newGet(checker);
+  newHas(checker);
+  newInstantiate(checker);
+  newIs(checker);
+  newResolve(checker);
+  class Symbol extends qb.Symbol {
+    static nextId = 1;
+    static count = 0;
+    _id?: number;
+    constructor(f: SymbolFlags, n: qu.__String, c?: qt.CheckFlags) {
+      super(f, n, c);
+      Symbol.count++;
+    }
+    get id() {
+      if (!this._id) {
+        this._id = Symbol.nextId;
+        Symbol.nextId++;
+      }
+      return this._id;
+    }
+    get links(): qt.SymbolLinks {
+      if (this.isTransient()) return this;
+      const i = this.id;
+      return symbolLinks[i] || (symbolLinks[i] = {} as qt.SymbolLinks);
+    }
+    clone() {
+      const r = new Symbol(this.flags, this.escName);
+      r.declarations = this.declarations ? this.declarations.slice() : [];
+      r.parent = this.parent;
+      if (this.valueDeclaration) r.valueDeclaration = this.valueDeclaration;
+      if (this.constEnumOnlyModule) r.constEnumOnlyModule = true;
+      if (this.members) r.members = qc.cloneMap(this.members);
+      if (this.exports) r.exports = qc.cloneMap(this.exports);
+      this.recordMerged(r);
+      return r;
+    }
+    private recordMerged(s: Symbol) {
+      if (!this.mergeId) {
+        this.mergeId = nextMergeId;
+        nextMergeId++;
+      }
+      mergedSymbols[this.mergeId] = s;
+    }
+    markAliasReferenced(n: Node) {
+      if (this.isNonLocalAlias(SymbolFlags.Value) && !qf.is.inTypeQuery(n) && !this.getTypeOnlyAliasDeclaration()) {
+        if ((compilerOpts.preserveConstEnums && isExportOrExportExpression(n)) || !isConstEnumOrConstEnumOnlyModule(this.resolveAlias())) this.markAliasSymbolAsReferenced();
+        else this.markConstEnumAliasAsReferenced();
+      }
+    }
+  }
+  return checker;
 }
