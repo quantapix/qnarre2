@@ -530,7 +530,7 @@ export function newEach(f: qt.Frame) {
       }
       return;
     }
-    child<T>(n: Node, cb: (n?: Node) => T | undefined, cbs?: (ns: Nodes) => T | undefined): T | undefined {
+    child<T>(n: Node, cb: (n?: Node) => T | undefined, cbs?: (ns?: Nodes) => T | undefined): T | undefined {
       if (n.kind <= Syntax.LastToken) return;
       switch (n.kind) {
         case Syntax.QualifiedName:

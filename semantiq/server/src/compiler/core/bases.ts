@@ -86,6 +86,14 @@ export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Node
     }
     return this;
   }
+  visit<T>(cb?: (n?: Node) => T | undefined, cbs?: (ns?: qt.Nodes) => T | undefined): T | undefined {
+    if (cbs) return cbs(this);
+    for (const n of this) {
+      const r = cb?.(n as Node);
+      if (r) return r;
+    }
+    return;
+  }
 }
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
 export abstract class Nobj extends qu.TextRange implements qt.Nobj {
@@ -123,6 +131,9 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
       n = n.parent;
     }
     qu.fail();
+  }
+  visit<T>(cb?: (n?: Node) => T | undefined): T | undefined {
+    return cb?.(this as Node);
   }
   posToString(): string {
     const s = this.sourceFile as SourceFile;
@@ -667,6 +678,22 @@ export class Type implements qt.Type {
   get objectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
   }
+  isUnitType() {
+    return !!(this.flags & TypeFlags.Unit);
+  }
+  isNeitherUnitTypeNorNever() {
+    return !(this.flags & (TypeFlags.Unit | TypeFlags.Never));
+  }
+  isObjectLiteralType() {
+    return !!(this.objectFlags & ObjectFlags.ObjectLiteral);
+  }
+  isObjectOrArrayLiteralType() {
+    return !!(this.objectFlags & (ObjectFlags.ObjectLiteral | ObjectFlags.ArrayLiteral));
+  }
+  isTupleType(): this is qt.TupleTypeReference {
+    return !!(this.objectFlags & ObjectFlags.Reference && this.target.objectFlags & ObjectFlags.Tuple);
+  }
+
   isNullableType() {
     return this.checker.is.nullableType(this);
   }

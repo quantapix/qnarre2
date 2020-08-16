@@ -1466,6 +1466,7 @@ export interface Nobj extends qu.Range {
   sourceFile: SourceFile;
   symbol: Symbol;
   trafoFlags: qt.TrafoFlags;
+  visit<T>(cb?: (n?: Node) => T | undefined): T | undefined;
 }
 export interface NodeLinks {
   capturedBlockScopeBindings?: Symbol[];
@@ -1497,6 +1498,7 @@ export interface NodeLinks {
 export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range {
   trailingComma?: boolean;
   trafoFlags: qt.TrafoFlags;
+  visit<T>(cb?: (n?: Node) => T | undefined, cbs?: (ns?: Nodes) => T | undefined): T | undefined;
 }
 export interface WithArgsTobj extends Tobj {
   typeArgs?: Nodes<Typing>;
@@ -3313,6 +3315,9 @@ export type VariableLikeDeclaration =
   | PropertySignature
   | ShorthandPropertyAssignment
   | VariableDeclaration;
+export type Visitor<T extends Node = Node> = (n?: Node) => VisitResult<T>;
+export type Visitors<T extends Node = Node> = (ns?: Nodes) => VisitResult<T>;
+export type VisitResult<T extends Node> = T | T[] | undefined;
 export type WriteFileCallback = (fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void, sourceFiles?: readonly SourceFile[]) => void;
 export type xJsFileExtensionInfo = FileExtensionInfo;
 interface PragmaArgSpecification<TName extends string> {

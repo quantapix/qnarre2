@@ -996,17 +996,8 @@ export function newIs(f: qt.Frame) {
     arrayOrTupleLikeType(t: qt.Type): boolean {
       return this.arrayLikeType(t) || this.tupleLikeType(t);
     }
-    neitherUnitTypeNorNever(t: qt.Type): boolean {
-      return !(t.flags & (TypeFlags.Unit | TypeFlags.Never));
-    }
-    unitType(t: qt.Type): boolean {
-      return !!(t.flags & TypeFlags.Unit);
-    }
     literalType(t: qt.Type): boolean {
       return t.flags & TypeFlags.Boolean ? true : t.flags & TypeFlags.Union ? (t.flags & TypeFlags.EnumLiteral ? true : qu.every(t.types, isUnitType)) : isUnitType(t);
-    }
-    tupleType(t: qt.Type): t is qt.TupleTypeReference {
-      return !!(getObjectFlags(t) & ObjectFlags.Reference && t.target.objectFlags & ObjectFlags.Tuple);
     }
     zeroBigInt({ value }: qt.BigIntLiteralType) {
       return value.base10Value === '0';
@@ -1052,12 +1043,6 @@ export function newIs(f: qt.Frame) {
     }
     typeCloselyMatchedBy(s: qt.Type, t: qt.Type) {
       return !!((s.flags & TypeFlags.Object && t.flags & TypeFlags.Object && s.symbol && s.symbol === t.symbol) || (s.aliasSymbol && s.aliasTypeArgs && s.aliasSymbol === t.aliasSymbol));
-    }
-    objectLiteralType(t: qt.Type) {
-      return !!(getObjectFlags(t) & ObjectFlags.ObjectLiteral);
-    }
-    objectOrArrayLiteralType(t: qt.Type) {
-      return !!(getObjectFlags(t) & (ObjectFlags.ObjectLiteral | ObjectFlags.ArrayLiteral));
     }
     inTypeQuery(n: Node): boolean {
       return !!qc.findAncestor(n, (n) => (n.kind === Syntax.TypingQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
@@ -1264,8 +1249,8 @@ export function newIs(f: qt.Frame) {
         (p?.kind === Syntax.BindingElem && p.name === n && !!p.initer)
       );
     }
-    exportOrExportExpression(location: Node) {
-      return !!qc.findAncestor(location, (e) => e.parent?.kind === Syntax.ExportAssignment && e.parent.expression === e && this.entityNameExpression(e));
+    exportOrExportExpression(n: Node) {
+      return !!qc.findAncestor(n, (a) => a.parent?.kind === Syntax.ExportAssignment && a.parent.expression === a && this.entityNameExpression(a));
     }
     insideFunction(n: Node, threshold: Node): boolean {
       return !!qc.findAncestor(n, (n) => (n === threshold ? 'quit' : this.functionLike(n)));

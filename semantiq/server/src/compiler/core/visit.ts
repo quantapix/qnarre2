@@ -1,4 +1,4 @@
-import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, TypeFlags } from '../types';
+import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, TypeFlags, Visitor, Visitors, VisitResult } from '../types';
 import { qf, Fis } from './frame';
 import { Syntax } from '../syntax';
 import * as qb from './bases';
@@ -7,9 +7,6 @@ import * as qg from './groups';
 import * as qi from './index';
 import * as qt from '../types';
 import * as qu from '../utils';
-export type VisitResult<T extends Node> = T | T[] | undefined;
-export type Visitor = (n?: Node) => VisitResult<Node>;
-export type Visitors = (ns?: Nodes) => VisitResult<Node>;
 type Tester = (n: Node) => boolean;
 type Lifter<T extends Node> = ((ns?: Nodes) => T) | ((ns?: readonly Node[]) => T);
 export function newVisit(f: qt.Frame) {
@@ -479,16 +476,6 @@ export function newVisit(f: qt.Frame) {
       }
       return qi.mergeLexicalEnv(ss, c.endLexicalEnv());
     }
-    many<T extends Node>(ns?: Nodes<T>, v?: Visitor, vs?: Visitors) {
-      if (vs) return vs(ns) as VisitResult<T>;
-      if (ns) {
-        for (const n of ns) {
-          const r = v?.(n as Node);
-          if (r) return r as VisitResult<T>;
-        }
-      }
-      return;
-    }
     node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T;
     node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined;
     node<T extends Node>(n?: T, v?: Visitor, test?: Tester, lift?: Lifter<T>): T | undefined {
@@ -539,9 +526,6 @@ export function newVisit(f: qt.Frame) {
         }
       }
       return r || ns;
-    }
-    one<T extends Node>(n?: T, v?: Visitor) {
-      return v?.(n as Node) as VisitResult<T>;
     }
     params<T extends Node>(ns: Nodes<T>, v: Visitor, c: qt.TrafoContext, vs?: (ns?: Nodes<T>, v?: Visitor, test?: Tester, start?: number, count?: number) => Nodes<T>): Nodes<T>;
     params<T extends Node>(
