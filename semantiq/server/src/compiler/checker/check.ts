@@ -6,7 +6,7 @@ import * as qt from './types';
 import * as qu from '../utils';
 import { Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { qt.Symbol } from './bases';
+import { Symbol } from './bases';
 import { Fget } from './get';
 import { Fhas, Fis } from './groups';
 export function newCheck(f: qt.Frame) {
@@ -16,7 +16,7 @@ export function newCheck(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.check = new (class {
+  return (qf.check = new (class extends qu.Fcheck {
     andReportErrorForMissingPrefix(n: Node, name: qu.__String, nameArg: qu.__String | qc.Identifier): boolean {
       if (!n.kind === Syntax.Identifier || n.escapedText !== name || isTypeReferenceIdentifier(n) || qf.is.inTypeQuery(n)) return false;
       const container = qf.get.thisContainer(n, false);

@@ -151,7 +151,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return (node && getTypeOfAssignmentPattern(node)) || errorType;
     }
     getPropertySymbolOfDestructuringAssignment(locationIn) {
-      const location = qf.get.parseTreeOf(locationIn, isIdentifier);
+      const location = qf.get.parseTreeOf(locationIn, qf.is.identifier);
       return location ? getPropertySymbolOfDestructuringAssignment(location) : undefined;
     }
     signatureToString(signature, enclosingDeclaration, flags, kind) {

@@ -1,36 +1,100 @@
 import { newCheck, Fcheck } from './check';
 import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
 import { newGet, Fget } from './get';
-import { newHas, Fhas, newIs, Fis } from './groups';
 import { Node, ObjectFlags, SignatureFlags, SymbolFlags, TypeFlags } from './types';
 import * as qb from './bases';
 import * as qc from '../core';
 import * as qd from '../diags';
+import * as qg from './groups';
 import * as qt from './types';
 import * as qu from '../utils';
-export interface Frame extends qc.Frame {
+interface Frame extends qc.Frame {
   check: Fcheck;
   create: Fcreate;
   get: Fget;
-  has: Fhas;
+  has: qg.Fhas;
   instantiate: Finstantiate;
-  is: Fis;
+  is: qg.Fis;
   resolve: Fresolve;
+  signature: qg.Fsignature;
+  symbol: qg.Fsymbol;
+  type: qg.Ftype;
 }
-export function newFrame() {
-  const f = qc.newFrame() as Frame;
-  newCheck(f);
-  newCreate(f);
-  newGet(f);
-  newHas(f);
-  newInstantiate(f);
-  newIs(f);
-  newResolve(f);
-  return f;
-}
-export const qf = newFrame();
+const qf = qc.newFrame() as Frame;
+newCheck(qf);
+newCreate(qf);
+newGet(qf);
+qg.newHas(qf);
+newInstantiate(qf);
+qg.newIs(qf);
+newResolve(qf);
+qg.newType(qf);
+qg.newSymbol(qf);
+qg.newSignature(qf);
 
-export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean): Frame & qt.TypeChecker {
+export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean): qt.TypeChecker {
+  class Signature extends qb.Signature {}
+  class Symbol extends qb.Symbol {
+    static nextId = 1;
+    static count = 0;
+    _id?: number;
+    constructor(f: SymbolFlags, n: qu.__String, c?: qt.CheckFlags) {
+      super(f, n, c);
+      Symbol.count++;
+    }
+    get id() {
+      if (!this._id) {
+        this._id = Symbol.nextId;
+        Symbol.nextId++;
+      }
+      return this._id;
+    }
+    get links(): qt.SymbolLinks {
+      if (this.isTransient()) return this;
+      const i = this.id;
+      return symbolLinks[i] || (symbolLinks[i] = {} as qt.SymbolLinks);
+    }
+    clone() {
+      const r = new Symbol(this.flags, this.escName);
+      r.declarations = this.declarations ? this.declarations.slice() : [];
+      r.parent = this.parent;
+      if (this.valueDeclaration) r.valueDeclaration = this.valueDeclaration;
+      if (this.constEnumOnlyModule) r.constEnumOnlyModule = true;
+      if (this.members) r.members = qc.cloneMap(this.members);
+      if (this.exports) r.exports = qc.cloneMap(this.exports);
+      this.recordMerged(r);
+      return r;
+    }
+    private recordMerged(s: Symbol) {
+      if (!this.mergeId) {
+        this.mergeId = nextMergeId;
+        nextMergeId++;
+      }
+      mergedSymbols[this.mergeId] = s;
+    }
+    markAliasReferenced(n: Node) {
+      if (this.isNonLocalAlias(SymbolFlags.Value) && !qf.is.inTypeQuery(n) && !this.getTypeOnlyAliasDeclaration()) {
+        if ((compilerOpts.preserveConstEnums && isExportOrExportExpression(n)) || !isConstEnumOrConstEnumOnlyModule(this.resolveAlias())) this.markAliasSymbolAsReferenced();
+        else this.markConstEnumAliasAsReferenced();
+      }
+    }
+    markAliasSymbolAsReferenced() {
+      const ls = this.links;
+      if (!ls.referenced) {
+        ls.referenced = true;
+        const d = this.getDeclarationOfAliasSymbol();
+        qf.assert.true(d);
+        if (qf.is.internalModuleImportEqualsDeclaration(d)) {
+          const t = this.resolveSymbol();
+          if (t === unknownSymbol || (t && t.flags & SymbolFlags.Value)) qf.check.expressionCached(d.moduleReference);
+        }
+      }
+    }
+  }
+  class Type extends qb.Type {}
+  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
+  const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
+
   const compilerOpts = host.getCompilerOpts();
   const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOpts);
   const emptySymbols = new qb.SymbolTable();
@@ -40,7 +104,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const unknownType = qf.create.intrinsicType(TypeFlags.Unknown, 'unknown');
   const anyIterationTypesExceptNext = qf.create.iterationTypes(anyType, anyType, unknownType);
   const anySignature = qf.create.signature(undefined, undefined, undefined, qu.empty, anyType, undefined, 0, SignatureFlags.None);
-  const argsSymbol = new qb.Symbol(SymbolFlags.Property, 'args' as qu.__String);
+  const argsSymbol = new Symbol(SymbolFlags.Property, 'args' as qu.__String);
   const arrayVariances = [qt.VarianceFlags.Covariant];
   const autoType = qf.create.intrinsicType(TypeFlags.Any, 'any');
   const bigintType = qf.create.intrinsicType(TypeFlags.BigInt, 'bigint');
@@ -55,7 +119,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const emptyGenericType = <qt.GenericType>(<qt.ObjectType>qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined));
   const emptyJsxObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
   const emptyObjectType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
-  const emptyTypeLiteralSymbol = new qb.Symbol(SymbolFlags.TypeLiteral, qt.InternalSymbol.Type);
+  const emptyTypeLiteralSymbol = new Symbol(SymbolFlags.TypeLiteral, qt.InternalSymbol.Type);
   const emptyTypeLiteralType = qf.create.anonymousType(emptyTypeLiteralSymbol, emptySymbols, qu.empty, qu.empty, undefined, undefined);
   const stringType = qf.create.intrinsicType(TypeFlags.String, 'string');
   const enumNumberIndexInfo = qf.create.indexInfo(stringType, true);
@@ -64,7 +128,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const falseType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'false') as qt.FreshableIntrinsicType;
   const freshObjectLiteralFlag = compilerOpts.suppressExcessPropertyErrors ? 0 : ObjectFlags.FreshLiteral;
   const globals = new qb.SymbolTable();
-  const globalThisSymbol = new qb.Symbol(SymbolFlags.Module, 'globalThis' as qu.__String, qt.CheckFlags.Readonly);
+  const globalThisSymbol = new Symbol(SymbolFlags.Module, 'globalThis' as qu.__String, qt.CheckFlags.Readonly);
   const implicitNeverType = qf.create.intrinsicType(TypeFlags.Never, 'never');
   const iterationTypesCache = new qu.QMap<qt.IterationTypes>();
   const numberType = qf.create.intrinsicType(TypeFlags.Number, 'number');
@@ -90,7 +154,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const numberOrBigIntType = qf.get.unionType([numberType, bigintType]);
   const optionalType = qf.create.intrinsicType(TypeFlags.Undefined, 'undefined');
   const permissiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? wildcardType : t));
-  const requireSymbol = new qb.Symbol(SymbolFlags.Property, 'require' as qu.__String);
+  const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qu.__String);
   const resolvingDefaultType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
   const resolvingSignature = qf.create.signature(undefined, undefined, undefined, qu.empty, anyType, undefined, 0, SignatureFlags.None);
   const restrictiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? getRestrictiveTypeParam(<qt.TypeParam>t) : t));
@@ -100,7 +164,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const strictFunctionTypes = getStrictOptionValue(compilerOpts, 'strictFunctionTypes');
   const strictPropertyInitialization = getStrictOptionValue(compilerOpts, 'strictPropertyInitialization');
   const trueType = qf.create.intrinsicType(TypeFlags.BooleanLiteral, 'true') as qt.FreshableIntrinsicType;
-  const undefinedSymbol = new qb.Symbol(SymbolFlags.Property, 'undefined' as qu.__String);
+  const undefinedSymbol = new Symbol(SymbolFlags.Property, 'undefined' as qu.__String);
   const undefinedWideningType = strictNullChecks ? undefinedType : qf.create.intrinsicType(TypeFlags.Undefined, 'undefined', ObjectFlags.ContainsWideningType);
   const unknownSignature = qf.create.signature(undefined, undefined, undefined, qu.empty, errorType, undefined, 0, SignatureFlags.None);
   const unreachableNeverType = qf.create.intrinsicType(TypeFlags.Never, 'never');
@@ -113,7 +177,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const indexedAccessTypes = new qu.QMap<qt.IndexedAccessType>();
   const substitutionTypes = new qu.QMap<qt.SubstitutionType>();
   const evolvingArrayTypes: qt.EvolvingArrayType[] = [];
-  const undefinedProperties = new qu.QMap<qt.Symbol>() as EscapedMap<qt.Symbol>;
+  const undefinedProperties = new qu.QMap<qt.Symbol>() as qu.EscapedMap<qt.Symbol>;
   const reverseMappedCache = new qu.QMap<qt.Type | undefined>();
   const emptyStringType = qf.get.literalType('');
   const zeroType = qf.get.literalType(0);
@@ -280,73 +344,64 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   let flowTypeCache: qt.Type[] | undefined;
   let suggestionCount = 0;
 
-  const checker = qc.newFrame() as Frame;
-  newCheck(checker);
-  newCreate(checker);
-  newGet(checker);
-  newHas(checker);
-  newInstantiate(checker);
-  newIs(checker);
-  newResolve(checker);
-  class Symbol extends qb.Symbol {
-    static nextId = 1;
-    static count = 0;
-    _id?: number;
-    constructor(f: SymbolFlags, n: qu.__String, c?: qt.CheckFlags) {
-      super(f, n, c);
-      Symbol.count++;
+  function newType(f: qt.Frame) {
+    interface Frame extends qt.Frame {
+      check: Fcheck;
+      get: Fget;
+      has: qg.Fhas;
     }
-    get id() {
-      if (!this._id) {
-        this._id = Symbol.nextId;
-        Symbol.nextId++;
-      }
-      return this._id;
-    }
-    get links(): qt.SymbolLinks {
-      if (this.isTransient()) return this;
-      const i = this.id;
-      return symbolLinks[i] || (symbolLinks[i] = {} as qt.SymbolLinks);
-    }
-    clone() {
-      const r = new Symbol(this.flags, this.escName);
-      r.declarations = this.declarations ? this.declarations.slice() : [];
-      r.parent = this.parent;
-      if (this.valueDeclaration) r.valueDeclaration = this.valueDeclaration;
-      if (this.constEnumOnlyModule) r.constEnumOnlyModule = true;
-      if (this.members) r.members = qc.cloneMap(this.members);
-      if (this.exports) r.exports = qc.cloneMap(this.exports);
-      this.recordMerged(r);
-      return r;
-    }
-    private recordMerged(s: Symbol) {
-      if (!this.mergeId) {
-        this.mergeId = nextMergeId;
-        nextMergeId++;
-      }
-      mergedSymbols[this.mergeId] = s;
-    }
-    markAliasReferenced(n: Node) {
-      if (this.isNonLocalAlias(SymbolFlags.Value) && !qf.is.inTypeQuery(n) && !this.getTypeOnlyAliasDeclaration()) {
-        if ((compilerOpts.preserveConstEnums && isExportOrExportExpression(n)) || !isConstEnumOrConstEnumOnlyModule(this.resolveAlias())) this.markAliasSymbolAsReferenced();
-        else this.markConstEnumAliasAsReferenced();
-      }
-    }
-    markAliasSymbolAsReferenced() {
-      const ls = this.links;
-      if (!ls.referenced) {
-        ls.referenced = true;
-        const d = this.getDeclarationOfAliasSymbol();
-        qf.assert.true(d);
-        if (qf.is.internalModuleImportEqualsDeclaration(d)) {
-          const t = this.resolveSymbol();
-          if (t === unknownSymbol || (t && t.flags & SymbolFlags.Value)) qf.check.expressionCached(d.moduleReference);
-        }
-      }
-    }
+    const qf = f as Frame;
+    interface Ftype extends qg.Ftype {}
+    class Ftype {}
+    return (qf.type = new Ftype());
   }
-  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
-  const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
-
-  return checker;
+  interface Ftype extends ReturnType<typeof newType> {}
+  function newSymbol(f: qt.Frame) {
+    interface Frame extends qt.Frame {
+      check: Fcheck;
+      get: Fget;
+      has: qg.Fhas;
+    }
+    const qf = f as Frame;
+    interface Fsymbol extends qc.Fsymbol {}
+    class Fsymbol {}
+    return (qf.type = new Fsymbol());
+  }
+  interface Fsymbol extends ReturnType<typeof newSymbol> {}
+  function newSignature(f: qt.Frame) {
+    interface Frame extends qt.Frame {
+      check: Fcheck;
+      get: Fget;
+      has: qg.Fhas;
+    }
+    const qf = f as Frame;
+    interface Fsignature extends qc.Fsignature {}
+    class Fsignature {}
+    return (qf.type = new Fsignature());
+  }
+  interface Fsignature extends ReturnType<typeof newSignature> {}
+  interface Frame extends qc.Frame {
+    check: Fcheck;
+    create: Fcreate;
+    get: Fget;
+    has: qg.Fhas;
+    instantiate: Finstantiate;
+    is: qg.Fis;
+    resolve: Fresolve;
+    signature: Fsignature;
+    symbol: Fsymbol;
+    type: Ftype;
+  }
+  const f = qc.newFrame() as Frame;
+  newCheck(f);
+  newCreate(f);
+  newGet(f);
+  qg.newHas(f);
+  newInstantiate(f);
+  qg.newIs(f);
+  newResolve(f);
+  newType(f);
+  newSymbol(f);
+  newSignature(f);
+  return f;
 }

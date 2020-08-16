@@ -1235,7 +1235,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return true;
   }
   function declaredNameInScope(node: qt.FunctionDeclaration | qt.ClassDeclaration | qt.ModuleDeclaration | qt.EnumDeclaration): __String {
-    qc.assert.node(node.name, isIdentifier);
+    qc.assert.node(node.name, qf.is.identifier);
     return node.name.escapedText;
   }
   function addVarForEnumOrModuleDeclaration(statements: qt.Statement[], node: qt.ModuleDeclaration | qt.EnumDeclaration) {
@@ -1264,7 +1264,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   }
   function visitModuleDeclaration(node: qt.ModuleDeclaration): VisitResult<qt.Statement> {
     if (!shouldEmitModuleDeclaration(node)) return new qc.NotEmittedStatement(node);
-    qc.assert.node(node.name, isIdentifier, 'A TypeScript namespace should have an qt.Identifier name.');
+    qc.assert.node(node.name, qf.is.identifier, 'A TypeScript namespace should have an qt.Identifier name.');
     enableSubstitutionForNamespaceExports();
     const statements: qt.Statement[] = [];
     let emitFlags = EmitFlags.AdviseOnEmitNode;
@@ -1377,7 +1377,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
   function visitNamedImportBindings(node: qt.NamedImportBindings): VisitResult<qt.NamedImportBindings> {
     if (node.kind === Syntax.NamespaceImport) return resolver.referencedAliasDeclaration(node) ? node : undefined;
     else {
-      const elems = Nodes.visit(node.elems, visitImportSpecifier, isImportSpecifier);
+      const elems = Nodes.visit(node.elems, visitImportSpecifier, qf.is.importSpecifier);
       return some(elems) ? node.update(elems) : undefined;
     }
   }
@@ -1403,7 +1403,7 @@ export function transformTypeScript(context: qt.TrafoContext) {
     return some(elems) ? node.update(elems) : undefined;
   }
   function visitNamespaceExports(node: qt.NamespaceExport): VisitResult<qt.NamespaceExport> {
-    return node.update(qf.visit.node(node.name, visitor, isIdentifier));
+    return node.update(qf.visit.node(node.name, visitor, qf.is.identifier));
   }
   function visitNamedExportBindings(node: qt.NamedExportBindings): VisitResult<qt.NamedExportBindings> {
     return node.kind === Syntax.NamespaceExport ? visitNamespaceExports(node) : visitNamedExports(node);

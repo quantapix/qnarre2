@@ -72,7 +72,7 @@ export function transformES2020(context: qt.TrafoContext) {
     }
     expression =
       node.kind === Syntax.PropertyAccessExpression
-        ? node.update(expression, qf.visit.node(node.name, visitor, isIdentifier))
+        ? node.update(expression, qf.visit.node(node.name, visitor, qf.is.identifier))
         : node.update(expression, qf.visit.node(node.argExpression, visitor, isExpression));
     return thisArg ? new qc.SyntheticReferenceExpression(expression, thisArg) : expression;
   }
@@ -122,7 +122,7 @@ export function transformES2020(context: qt.TrafoContext) {
           }
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
-              ? new qc.PropertyAccessExpression(rightExpression, qf.visit.node(segment.name, visitor, isIdentifier))
+              ? new qc.PropertyAccessExpression(rightExpression, qf.visit.node(segment.name, visitor, qf.is.identifier))
               : new qc.ElemAccessExpression(rightExpression, qf.visit.node(segment.argExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:

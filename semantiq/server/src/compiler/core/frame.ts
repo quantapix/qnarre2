@@ -933,30 +933,6 @@ export function newIs(f: qt.Frame) {
     decorator(n: Node): n is qt.Decorator {
       return n.kind === Syntax.Decorator;
     }
-    intersection(n: qt.Type): n is qt.IntersectionType {
-      return !!(n.flags & TypeFlags.Intersection);
-    }
-    unionOrIntersection(n: qt.Type): n is qt.UnionOrIntersectionType {
-      return !!(n.flags & TypeFlags.UnionOrIntersection);
-    }
-    literal(n: qt.Type): n is qt.LiteralType {
-      return !!(n.flags & TypeFlags.StringOrNumberLiteral);
-    }
-    stringLiteral(n: qt.Type): n is qt.StringLiteralType {
-      return !!(n.flags & TypeFlags.StringLiteral);
-    }
-    numberLiteral(n: qt.Type): n is qt.NumberLiteralType {
-      return !!(n.flags & TypeFlags.NumberLiteral);
-    }
-    typeParam(n: qt.Type): n is qt.TypeParam {
-      return !!(n.flags & TypeFlags.TypeParam);
-    }
-    classOrInterface(n: qt.Type): n is qt.InterfaceType {
-      return !!(n.objectFlags & ObjectFlags.ClassOrInterface);
-    }
-    class(n: qt.Type): n is qt.InterfaceType {
-      return !!(n.objectFlags & ObjectFlags.Class);
-    }
     templateMiddleOrTailKind(n: Node): n is qt.TemplateMiddle | qt.TemplateTail {
       const k = n.kind;
       return k === Syntax.TemplateMiddle || k === Syntax.TemplateTail;

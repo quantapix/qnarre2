@@ -5,10 +5,11 @@ import * as qb from './bases';
 import * as qc from './classes';
 import * as qt from '../types';
 import * as qu from '../utils';
-export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export { cloneMap, findAncestor } from './bases';
-export * from './classes';
+export { Ftype, Fsymbol, Fsignature } from './groups';
+export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
 export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
+export * from './classes';
 export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
   return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
 }
@@ -206,7 +207,7 @@ export namespace BindingOrAssignmentElem {
   export function convertToArrayAssignmentElem(e: qt.BindingOrAssignmentElem) {
     if (e.kind === Syntax.BindingElem) {
       if (e.dot3Token) {
-        qf.assert.node(e.name, isIdentifier);
+        qf.assert.node(e.name, qf.is.identifier);
         return new qc.SpreadElem(e.name).setRange(e).setOriginal(e);
       }
       const e2 = convertToAssignmentElemTarget(e.name);
@@ -218,14 +219,14 @@ export namespace BindingOrAssignmentElem {
   export function convertToObjectAssignmentElem(e: qt.BindingOrAssignmentElem) {
     if (e.kind === Syntax.BindingElem) {
       if (e.dot3Token) {
-        qf.assert.node(e.name, isIdentifier);
+        qf.assert.node(e.name, qf.is.identifier);
         return new qc.SpreadAssignment(e.name).setRange(e).setOriginal(e);
       }
       if (e.propertyName) {
         const e2 = convertToAssignmentElemTarget(e.name);
         return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
-      qf.assert.node(e.name, isIdentifier);
+      qf.assert.node(e.name, qf.is.identifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);
     }
     qf.assert.node(e, isObjectLiteralElemLike);

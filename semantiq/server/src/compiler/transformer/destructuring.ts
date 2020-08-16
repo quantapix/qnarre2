@@ -77,7 +77,7 @@ export function flattenDestructuringAssignment(
     expressions = append(expressions, expression);
   }
   function emitBindingOrAssignment(target: qt.BindingOrAssignmentElemTarget, value: qt.Expression, location: TextRange, original: Node) {
-    qf.assert.node(target, qf.create.assignmentCallback ? isIdentifier : isExpression);
+    qf.assert.node(target, qf.create.assignmentCallback ? qf.is.identifier : isExpression);
     const expression = qf.create.assignmentCallback
       ? qf.create.assignmentCallback(<qt.Identifier>target, value, location)
       : qf.create.assignment(qf.visit.node(<qt.Expression>target, visitor, isExpression), value).setRange(location);

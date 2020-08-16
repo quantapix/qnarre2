@@ -2412,7 +2412,7 @@ export class PropertyAccessExpression extends qb.MemberExpr implements qt.Proper
     this.qf.emit.setFlags(EmitFlags.NoIndentation);
   }
   update(e: qt.Expression, n: qt.Identifier | qt.PrivateIdentifier): PropertyAccessExpression {
-    if (qf.is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
+    if (qf.is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, qf.is.identifier));
     return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).qf.emit.setFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _declarationBrand: any;

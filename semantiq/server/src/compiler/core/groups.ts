@@ -31,7 +31,7 @@ export function newAssert(f: qt.Frame) {
         }
       }
     }
-    shouldAssert(l: qu.AssertionLevel): boolean {
+    shouldAssert(l: qu.AssertionLevel) {
       return this.level >= l;
     }
     shouldAssertFunction<K extends AssertionKeys>(l: qu.AssertionLevel, name: K): boolean {
@@ -42,77 +42,109 @@ export function newAssert(f: qt.Frame) {
       }
       return true;
     }
-    never(x: never, msg = 'Illegal value:', mark?: qu.AnyFunction): never {
+    never(x: never, m = 'Illegal value:', f?: qu.AnyFunction): never {
       const v = typeof x === 'object' && qu.hasProperty(x, 'kind') && qu.hasProperty(x, 'pos') && qf.format.syntax ? 'SyntaxKind: ' + qf.format.syntax((x as Node).kind) : JSON.stringify(x);
-      return qu.fail(`${msg} ${v}`, mark || this.never);
+      return qu.fail(`${m} ${v}`, f || this.never);
     }
-    eachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is Nodes<U>;
-    eachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is readonly U[];
-    eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-    eachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    eachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts ns is Nodes<U>;
+    eachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts ns is readonly U[];
+    eachNode(ns: readonly Node[], test: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
+    eachNode(ns: readonly Node[], test: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.eachNode')) {
-        this.true(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || this.eachNode);
+        this.true(test === undefined || qu.every(ns, test), m || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, f || this.eachNode);
       }
     }
-    node<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
-    node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-    node(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    node<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U;
+    node(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
+    node(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.node')) {
         this.true(
           n !== undefined && (test === undefined || test(n)),
-          msg || 'Unexpected node.',
+          m || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-          mark || this.node
+          f || this.node
         );
       }
     }
-    notNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is Exclude<T, U>;
-    notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-    notNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    notNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, m?: string, f?: qu.AnyFunction): asserts n is Exclude<T, U>;
+    notNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
+    notNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.notNode')) {
         this.true(
           n === undefined || test === undefined || !test(n),
-          msg || 'Unexpected node.',
+          m || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
-          mark || this.notNode
+          f || this.notNode
         );
       }
     }
-    optionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
-    optionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U | undefined;
-    optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
-    optionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+    optionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U;
+    optionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U | undefined;
+    optionalNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
+    optionalNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalNode')) {
         this.true(
           test === undefined || n === undefined || test(n),
-          msg || 'Unexpected node.',
+          m || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-          mark || this.optionalNode
+          f || this.optionalNode
         );
       }
     }
-    optionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
-    optionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
-    optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction): void;
-    optionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction) {
+    optionalToken<T extends Node, K extends Syntax>(n: T, k: K, m?: string, f?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
+    optionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, m?: string, f?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
+    optionalToken(n?: Node, k?: Syntax, m?: string, f?: qu.AnyFunction): void;
+    optionalToken(n?: Node, k?: Syntax, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalToken')) {
         this.true(
           k === undefined || n === undefined || n.kind === k,
-          msg || 'Unexpected node.',
+          m || 'Unexpected node.',
           () => `Node ${qf.format.syntax(n!.kind)} was not a '${qf.format.syntax(k)}' token.`,
-          mark || this.optionalToken
+          f || this.optionalToken
         );
       }
     }
-    missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction): asserts n is undefined;
-    missingNode(n?: Node, msg?: string, mark?: qu.AnyFunction) {
+    missingNode(n?: Node, m?: string, f?: qu.AnyFunction): asserts n is undefined;
+    missingNode(n?: Node, m?: string, f?: qu.AnyFunction) {
       if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.missingNode')) {
-        this.true(n === undefined, msg || 'Unexpected node.', () => `Node ${qf.format.syntax(n!.kind)} was unexpected'.`, mark || this.missingNode);
+        this.true(n === undefined, m || 'Unexpected node.', () => `Node ${qf.format.syntax(n!.kind)} was unexpected'.`, f || this.missingNode);
       }
     }
   })());
 }
 export interface Fassert extends ReturnType<typeof newAssert> {}
+
+export function newType(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    get: Fget;
+    has: Fhas;
+    is: Fis;
+  }
+  const qf = f as Frame;
+  return (qf.type = new (class {})());
+}
+export interface Ftype extends ReturnType<typeof newType> {}
+export function newSymbol(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    get: Fget;
+    has: Fhas;
+    is: Fis;
+  }
+  const qf = f as Frame;
+  return (qf.symbol = new (class {})());
+}
+export interface Fsymbol extends ReturnType<typeof newSymbol> {}
+export function newSignature(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    get: Fget;
+    has: Fhas;
+    is: Fis;
+  }
+  const qf = f as Frame;
+  return (qf.signature = new (class {})());
+}
+export interface Fsignature extends ReturnType<typeof newSignature> {}
+
 export function newDecl(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: Fcalc;

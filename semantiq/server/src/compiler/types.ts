@@ -947,8 +947,11 @@ export interface Frame extends qu.Frame {
   get: unknown;
   has: unknown;
   nest: unknown;
+  signature: unknown;
   skip: unknown;
   stmt: unknown;
+  symbol: unknown;
+  type: unknown;
   visit: unknown;
 }
 export interface FreshableIntrinsicType extends IntrinsicType {

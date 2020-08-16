@@ -4532,7 +4532,7 @@ export function qp_parseJsonText(fileName: string, t: string): qt.JsonSourceFile
 }
 namespace IncrementalParser {
   export function updateSource(source: qt.SourceFile, newText: string, textChangeRange: qu.TextChange, aggressiveChecks: boolean): qt.SourceFile {
-    aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
+    aggressiveChecks = aggressiveChecks || qf.assert.shouldAssert(AssertionLevel.Aggressive);
     checkChangeRange(source, newText, textChangeRange, aggressiveChecks);
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
     if (source.statements.length === 0) return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
@@ -4776,7 +4776,7 @@ namespace IncrementalParser {
     const oldText = source.text;
     if (textChangeRange) {
       qf.assert.true(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
-      if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
+      if (aggressiveChecks || qf.assert.shouldAssert(AssertionLevel.VeryAggressive)) {
         const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
         const newTextPrefix = newText.substr(0, textChangeRange.span.start);
         qf.assert.true(oldTextPrefix === newTextPrefix);

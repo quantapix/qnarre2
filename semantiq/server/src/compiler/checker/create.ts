@@ -1913,7 +1913,7 @@ export function newResolve(f: qt.Frame) {
       fallbackError?: qd.Message
     ): qt.Signature {
       const isTaggedTemplate = node.kind === Syntax.TaggedTemplateExpression;
-      const isDecorator = node.kind === Syntax.Decorator;
+      const isDecorator = qf.is.decorator(node);
       const isJsxOpeningOrSelfClosingElem = qf.is.jsx.openingLikeElem(node);
       const reportErrors = !candidatesOutArray;
       let typeArgs: Nodes<qt.Typing> | undefined;

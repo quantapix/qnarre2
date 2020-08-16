@@ -678,6 +678,254 @@ export class Type implements qt.Type {
   get objectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
   }
+  is = new (class extends Type {
+    notOptionalTypeMarker(t: qt.Type) {
+      return t !== optionalType;
+    }
+    coercibleUnderDoubleEquals(s: qt.Type, t: qt.Type): boolean {
+      return (s.flags & (TypeFlags.Number | TypeFlags.String | TypeFlags.BooleanLiteral)) !== 0 && (t.flags & (TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean)) !== 0;
+    }
+    objectTypeWithInferableIndex(t: qt.Type): boolean {
+      return t.flags & TypeFlags.Intersection
+        ? qu.every(t.types, this.objectTypeWithInferableIndex)
+        : !!(
+            t.symbol &&
+            (t.symbol.flags & (SymbolFlags.ObjectLiteral | qt.SymbolFlags.TypeLiteral | qt.SymbolFlags.Enum | qt.SymbolFlags.ValueModule)) !== 0 &&
+            !typeHasCallOrConstructSignatures(t)
+          ) || !!(getObjectFlags(t) & ObjectFlags.ReverseMapped && this.objectTypeWithInferableIndex((t as qt.ReverseMappedType).source));
+    }
+    nonGenericTopLevelType(t: qt.Type) {
+      if (t.aliasSymbol && !t.aliasTypeArgs) {
+        const d = t.aliasSymbol.declarationOfKind(Syntax.TypeAliasDeclaration);
+        return !!(d && qc.findAncestor(d.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
+      }
+      return false;
+    }
+    typeParamAtTopLevel(t: qt.Type, p: qt.TypeParam): boolean {
+      return !!(
+        t === p ||
+        (t.flags & TypeFlags.UnionOrIntersection && qu.some(t.types, (t) => this.typeParamAtTopLevel(t, p))) ||
+        (t.flags & TypeFlags.Conditional &&
+          (this.typeParamAtTopLevel(getTrueTypeFromConditionalType(<qt.ConditionalType>t), p) || this.typeParamAtTopLevel(getFalseTypeFromConditionalType(<qt.ConditionalType>t), p)))
+      );
+    }
+    partiallyInferableType(t: qt.Type): boolean {
+      return !(getObjectFlags(t) & ObjectFlags.NonInferrableType) || (this.objectLiteralType(t) && qu.some(qf.get.propertiesOfType(t), (s) => this.partiallyInferableType(s.typeOfSymbol())));
+    }
+    fromInferenceBlockedSource(t: qt.Type) {
+      return !!(t.symbol && qu.some(t.symbol.declarations, hasSkipDirectInferenceFlag));
+    }
+    typeOrBaseIdenticalTo(s: qt.Type, t: qt.Type) {
+      return this.typeIdenticalTo(s, t) || !!((t.flags & TypeFlags.String && s.flags & TypeFlags.StringLiteral) || (t.flags & TypeFlags.Number && s.flags & TypeFlags.NumberLiteral));
+    }
+    typeCloselyMatchedBy(s: qt.Type, t: qt.Type) {
+      return !!((s.flags & TypeFlags.Object && t.flags & TypeFlags.Object && s.symbol && s.symbol === t.symbol) || (s.aliasSymbol && s.aliasTypeArgs && s.aliasSymbol === t.aliasSymbol));
+    }
+
+    arrayType(t: qt.Type): boolean {
+      return !!(getObjectFlags(t) & ObjectFlags.Reference) && (t.target === globalArrayType || t.target === globalReadonlyArrayType);
+    }
+    readonlyArrayType(t: qt.Type): boolean {
+      return !!(getObjectFlags(t) & ObjectFlags.Reference) && t.target === globalReadonlyArrayType;
+    }
+    mutableArrayOrTuple(t: qt.Type): boolean {
+      return (this.arrayType(t) && !this.readonlyArrayType(t)) || (this.tupleType(t) && !t.target.readonly);
+    }
+    arrayLikeType(t: qt.Type): boolean {
+      return this.arrayType(t) || (!(t.flags & TypeFlags.Nullable) && this.typeAssignableTo(t, anyReadonlyArrayType));
+    }
+    emptyArrayLiteralType(t: qt.Type): boolean {
+      const elemType = this.arrayType(t) ? getTypeArgs(t)[0] : undefined;
+      return elemType === undefinedWideningType || elemType === implicitNeverType;
+    }
+    tupleLikeType(t: qt.Type): boolean {
+      return this.tupleType(t) || !!qf.get.propertyOfType(t, '0' as qu.__String);
+    }
+    arrayOrTupleLikeType(t: qt.Type): boolean {
+      return this.arrayLikeType(t) || this.tupleLikeType(t);
+    }
+    literalType(t: qt.Type): boolean {
+      return t.flags & TypeFlags.Boolean ? true : t.flags & TypeFlags.Union ? (t.flags & TypeFlags.EnumLiteral ? true : qu.every(t.types, isUnitType)) : t.isUnitType();
+    }
+
+    deeplyNestedType(t: qt.Type, stack: qt.Type[], depth: number): boolean {
+      if (depth >= 5 && t.flags & TypeFlags.Object && !this.objectOrArrayLiteralType(t)) {
+        const s = t.symbol;
+        if (s) {
+          let count = 0;
+          for (let i = 0; i < depth; i++) {
+            const t = stack[i];
+            if (t.flags & TypeFlags.Object && t.symbol === s) {
+              count++;
+              if (count >= 5) return true;
+            }
+          }
+        }
+      }
+      if (depth >= 5 && t.flags & TypeFlags.IndexedAccess) {
+        const root = getRootObjectTypeFromIndexedAccessChain(t);
+        let count = 0;
+        for (let i = 0; i < depth; i++) {
+          const t = stack[i];
+          if (getRootObjectTypeFromIndexedAccessChain(t) === root) {
+            count++;
+            if (count >= 5) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    freshLiteralType(t: qt.Type) {
+      return !!(t.flags & TypeFlags.Literal) && (t as qt.LiteralType).freshType === t;
+    }
+    typeIdenticalTo(s: qt.Type, t: qt.Type): boolean {
+      return this.typeRelatedTo(s, t, identityRelation);
+    }
+    typeSubtypeOf(s: qt.Type, t: qt.Type): boolean {
+      return this.typeRelatedTo(s, t, subtypeRelation);
+    }
+    typeAssignableTo(s: qt.Type, t: qt.Type): boolean {
+      return this.typeRelatedTo(s, t, assignableRelation);
+    }
+    typeDerivedFrom(s: qt.Type, t: qt.Type): boolean {
+      return s.flags & TypeFlags.Union
+        ? qu.every(s.types, (t) => this.typeDerivedFrom(t, t))
+        : t.flags & TypeFlags.Union
+        ? qu.some(t.types, (t) => this.typeDerivedFrom(s, t))
+        : s.flags & TypeFlags.InstantiableNonPrimitive
+        ? this.typeDerivedFrom(qf.get.baseConstraintOfType(s) || unknownType, t)
+        : t === globalObjectType
+        ? !!(s.flags & (TypeFlags.Object | TypeFlags.NonPrimitive))
+        : t === globalFunctionType
+        ? !!(s.flags & TypeFlags.Object) && this.functionObjectType(s as qt.ObjectType)
+        : hasBaseType(s, getTargetType(t));
+    }
+    typeComparableTo(s: qt.Type, t: qt.Type): boolean {
+      return this.typeRelatedTo(s, t, comparableRelation);
+    }
+    orHasGenericConditional(t: qt.Type): boolean {
+      return !!(t.flags & TypeFlags.Conditional || (t.flags & TypeFlags.Intersection && qu.some((t as qt.IntersectionType).types, isOrHasGenericConditional)));
+    }
+    emptyObjectType(t: qt.Type): boolean {
+      return t.flags & TypeFlags.Object
+        ? !this.genericMappedType(t) && this.emptyResolvedType(resolveStructuredTypeMembers(<qt.ObjectType>t))
+        : t.flags & TypeFlags.NonPrimitive
+        ? true
+        : t.flags & TypeFlags.Union
+        ? qu.some(t.types, this.emptyObjectType)
+        : t.flags & TypeFlags.Intersection
+        ? qu.every(t.types, this.emptyObjectType)
+        : false;
+    }
+    emptyAnonymousObjectType(t: qt.Type) {
+      return !!(
+        getObjectFlags(t) & ObjectFlags.Anonymous &&
+        ((t.members && this.emptyResolvedType(t)) || (t.symbol && t.symbol.flags & qt.SymbolFlags.TypeLiteral && qf.get.membersOfSymbol(t.symbol).size === 0))
+      );
+    }
+    stringIndexSignatureOnlyType(t: qt.Type): boolean {
+      return (
+        (t.flags & TypeFlags.Object &&
+          !this.genericMappedType(t) &&
+          qf.get.propertiesOfType(t).length === 0 &&
+          qf.get.indexInfoOfType(t, IndexKind.String) &&
+          !qf.get.indexInfoOfType(t, IndexKind.Number)) ||
+        (t.flags & TypeFlags.UnionOrIntersection && qu.every(t.types, isStringIndexSignatureOnlyType)) ||
+        false
+      );
+    }
+    simpleTypeRelatedTo(st: qt.Type, tt: qt.Type, relation: qu.QMap<qt.RelationComparisonResult>, errorReporter?: qt.ErrorReporter) {
+      const s = st.flags;
+      const t = tt.flags;
+      if (t & TypeFlags.AnyOrUnknown || s & TypeFlags.Never || s === wildcardType) return true;
+      if (t & TypeFlags.Never) return false;
+      if (s & TypeFlags.StringLike && t & TypeFlags.String) return true;
+      if (
+        s & TypeFlags.StringLiteral &&
+        s & TypeFlags.EnumLiteral &&
+        t & TypeFlags.StringLiteral &&
+        !(t & TypeFlags.EnumLiteral) &&
+        (<qt.StringLiteralType>s).value === (<qt.StringLiteralType>target).value
+      )
+        return true;
+      if (s & TypeFlags.NumberLike && t & TypeFlags.Number) return true;
+      if (
+        s & TypeFlags.NumberLiteral &&
+        s & TypeFlags.EnumLiteral &&
+        t & TypeFlags.NumberLiteral &&
+        !(t & TypeFlags.EnumLiteral) &&
+        (<qt.NumberLiteralType>s).value === (<qt.NumberLiteralType>target).value
+      )
+        return true;
+      if (s & TypeFlags.BigIntLike && t & TypeFlags.BigInt) return true;
+      if (s & TypeFlags.BooleanLike && t & TypeFlags.Boolean) return true;
+      if (s & TypeFlags.ESSymbolLike && t & TypeFlags.ESSymbol) return true;
+      if (s & TypeFlags.Enum && t & TypeFlags.Enum && this.enumTypeRelatedTo(st.symbol, tt.symbol, errorReporter)) return true;
+      if (s & TypeFlags.EnumLiteral && t & TypeFlags.EnumLiteral) {
+        if (s & TypeFlags.Union && t & TypeFlags.Union && this.enumTypeRelatedTo(st.symbol, tt.symbol, errorReporter)) return true;
+        if (
+          s & TypeFlags.Literal &&
+          t & TypeFlags.Literal &&
+          (<qt.LiteralType>s).value === (<qt.LiteralType>tt).value &&
+          this.enumTypeRelatedTo(getParentOfSymbol(st.symbol)!, getParentOfSymbol(tt.symbol)!, errorReporter)
+        )
+          return true;
+      }
+      if (s & TypeFlags.Undefined && (!strictNullChecks || t & (TypeFlags.Undefined | TypeFlags.Void))) return true;
+      if (s & TypeFlags.Null && (!strictNullChecks || t & TypeFlags.Null)) return true;
+      if (s & TypeFlags.Object && t & TypeFlags.NonPrimitive) return true;
+      if (relation === assignableRelation || relation === comparableRelation) {
+        if (s & TypeFlags.Any) return true;
+        if (s & (TypeFlags.Number | TypeFlags.NumberLiteral) && !(s & TypeFlags.EnumLiteral) && (t & TypeFlags.Enum || (t & TypeFlags.NumberLiteral && t & TypeFlags.EnumLiteral))) return true;
+      }
+      return false;
+    }
+    typeRelatedTo(s: qt.Type, t: qt.Type, relation: qu.QMap<qt.RelationComparisonResult>) {
+      if (this.freshLiteralType(s)) s = (<qt.FreshableType>s).regularType;
+      if (this.freshLiteralType(t)) t = (<qt.FreshableType>t).regularType;
+      if (s === t) return true;
+      if (relation !== identityRelation) {
+        if ((relation === comparableRelation && !(t.flags & TypeFlags.Never) && this.simpleTypeRelatedTo(t, s, relation)) || this.simpleTypeRelatedTo(s, t, relation)) return true;
+      } else {
+        if (!(s.flags & TypeFlags.UnionOrIntersection) && !(t.flags & TypeFlags.UnionOrIntersection) && s.flags !== t.flags && !(s.flags & TypeFlags.Substructure)) return false;
+      }
+      if (s.flags & TypeFlags.Object && t.flags & TypeFlags.Object) {
+        const related = relation.get(getRelationKey(s, t, IntersectionState.None, relation));
+        if (related !== undefined) return !!(related & qt.RelationComparisonResult.Succeeded);
+      }
+      if (s.flags & TypeFlags.StructuredOrInstantiable || t.flags & TypeFlags.StructuredOrInstantiable) return check.typeRelatedTo(s, t, relation, undefined);
+      return false;
+    }
+    ignoredJsxProperty(s: qt.Type, sProp: qt.Symbol) {
+      return getObjectFlags(s) & ObjectFlags.JsxAttributes && !qu.unhyphenatedJsxName(sProp.escName);
+    }
+    weakType(t: qt.Type): boolean {
+      if (t.flags & TypeFlags.Object) {
+        const resolved = resolveStructuredTypeMembers(<qt.ObjectType>t);
+        return (
+          resolved.callSignatures.length === 0 &&
+          resolved.constructSignatures.length === 0 &&
+          !resolved.stringIndexInfo &&
+          !resolved.numberIndexInfo &&
+          resolved.properties.length > 0 &&
+          qu.every(resolved.properties, (p) => !!(p.flags & qt.SymbolFlags.Optional))
+        );
+      }
+      if (t.flags & TypeFlags.Intersection) return qu.every(t.types, isWeakType);
+      return false;
+    }
+    unconstrainedTypeParam(t: qt.Type) {
+      return t.flags & TypeFlags.TypeParam && !qf.get.constraintOfTypeParam(t);
+    }
+    nonDeferredTypeReference(t: qt.Type): t is qt.TypeReference {
+      return !!(getObjectFlags(t) & ObjectFlags.Reference) && !t.node;
+    }
+    typeReferenceWithGenericArgs(t: qt.Type): boolean {
+      return this.nonDeferredTypeReference(t) && qu.some(getTypeArgs(t), (t) => this.unconstrainedTypeParam(t) || this.typeReferenceWithGenericArgs(t));
+    }
+  })(this.checker, this.flags);
+
   isUnitType() {
     return !!(this.flags & TypeFlags.Unit);
   }
@@ -692,6 +940,135 @@ export class Type implements qt.Type {
   }
   isTupleType(): this is qt.TupleTypeReference {
     return !!(this.objectFlags & ObjectFlags.Reference && this.target.objectFlags & ObjectFlags.Tuple);
+  }
+  isIntersection(): this is qt.IntersectionType {
+    return !!(this.flags & TypeFlags.Intersection);
+  }
+  isUnionOrIntersection(): this is qt.UnionOrIntersectionType {
+    return !!(this.flags & TypeFlags.UnionOrIntersection);
+  }
+  isLiteral(): this is qt.LiteralType {
+    return !!(this.flags & TypeFlags.StringOrNumberLiteral);
+  }
+  isStringLiteral(): this is qt.StringLiteralType {
+    return !!(this.flags & TypeFlags.StringLiteral);
+  }
+  isNumberLiteral(): this is qt.NumberLiteralType {
+    return !!(this.flags & TypeFlags.NumberLiteral);
+  }
+  isTypeParam(): this is qt.TypeParam {
+    return !!(this.flags & TypeFlags.TypeParam);
+  }
+  isClassOrInterface(): this is qt.InterfaceType {
+    return !!(this.objectFlags & ObjectFlags.ClassOrInterface);
+  }
+  isClass(): this is qt.InterfaceType {
+    return !!(this.objectFlags & ObjectFlags.Class);
+  }
+  isTypeAny(t?: qt.Type) {
+    return t && (t.flags & TypeFlags.Any) !== 0;
+  }
+  referenceToType(t: qt.Type, t: qt.Type) {
+    return t !== undefined && t !== undefined && (getObjectFlags(t) & ObjectFlags.Reference) !== 0 && t.target === t;
+  }
+  isMixinConstructorType(t: qt.Type) {
+    const signatures = getSignaturesOfType(t, qt.SignatureKind.Construct);
+    if (signatures.length === 1) {
+      const s = signatures[0];
+      return !s.typeParams && s.params.length === 1 && s.hasRestParam() && getElemTypeOfArrayType(getTypeOfParam(s.params[0])) === anyType;
+    }
+    return false;
+  }
+  isConstructorType(t: qt.Type) {
+    if (getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0) return true;
+    if (t.flags & TypeFlags.TypeVariable) {
+      const constraint = qf.get.baseConstraintOfType(t);
+      return !!constraint && this.mixinConstructorType(constraint);
+    }
+    return false;
+  }
+  isValidBaseType(t: qt.Type): t is qt.BaseType {
+    if (t.flags & TypeFlags.TypeParam) {
+      const constraint = qf.get.baseConstraintOfType(t);
+      if (constraint) return this.validBaseType(constraint);
+    }
+    return !!((t.flags & (TypeFlags.Object | TypeFlags.NonPrimitive | TypeFlags.Any) && !this.genericMappedType(t)) || (t.flags & TypeFlags.Intersection && qu.every(t.types, this.validBaseType)));
+  }
+  isTypeUsableAsPropertyName(t: qt.Type): t is qt.StringLiteralType | qt.NumberLiteralType | qt.UniqueESSymbolType {
+    return !!(t.flags & TypeFlags.StringOrNumberLiteralOrUnique);
+  }
+  isPartialMappedType(t: qt.Type) {
+    return !!(getObjectFlags(t) & ObjectFlags.Mapped && getMappedTypeModifiers(t) & qt.MappedTypeModifiers.IncludeOptional);
+  }
+  isGenericMappedType(t: qt.Type): t is qt.MappedType {
+    return !!(getObjectFlags(t) & ObjectFlags.Mapped) && this.genericIndexType(getConstraintTypeFromMappedType(t));
+  }
+  isTypeInvalidDueToUnionDiscriminant(c: qt.Type, obj: qt.ObjectLiteralExpression | qt.JsxAttributes): boolean {
+    const list = obj.properties as Nodes<qt.ObjectLiteralElemLike | qt.JsxAttributeLike>;
+    return list.some((property) => {
+      const nameType = property.name && qf.get.literalTypeFromPropertyName(property.name);
+      const name = nameType && this.typeUsableAsPropertyName(nameType) ? getPropertyNameFromType(nameType) : undefined;
+      const expected = name === undefined ? undefined : qf.get.typeOfPropertyOfType(c, name);
+      return !!expected && this.literalType(expected) && !this.typeAssignableTo(getTypeOfNode(property), expected);
+    });
+  }
+  isJSLiteralType(t: qt.Type): boolean {
+    if (noImplicitAny) return false;
+    if (getObjectFlags(t) & ObjectFlags.JSLiteral) return true;
+    if (t.flags & TypeFlags.Union) return qu.every((t as qt.UnionType).types, this.jSLiteralType);
+    if (t.flags & TypeFlags.Intersection) return qu.some((t as qt.IntersectionType).types, this.jSLiteralType);
+    if (t.flags & TypeFlags.Instantiable) return this.jSLiteralType(getResolvedBaseConstraint(t));
+    return false;
+  }
+  isGenericObjectType(t: qt.Type): boolean {
+    if (t.flags & TypeFlags.UnionOrIntersection) {
+      if (!(t.objectFlags & ObjectFlags.IsGenericObjectTypeComputed)) {
+        t.objectFlags |= ObjectFlags.IsGenericObjectTypeComputed | (qu.some(t.types, this.genericObjectType) ? ObjectFlags.IsGenericObjectType : 0);
+      }
+      return !!(t.objectFlags & ObjectFlags.IsGenericObjectType);
+    }
+    return !!(t.flags & TypeFlags.InstantiableNonPrimitive) || this.genericMappedType(t);
+  }
+  isGenericIndexType(t: qt.Type): boolean {
+    if (t.flags & TypeFlags.UnionOrIntersection) {
+      if (!(t.objectFlags & ObjectFlags.IsGenericIndexTypeComputed))
+        t.objectFlags |= ObjectFlags.IsGenericIndexTypeComputed | (qu.some(t.types, this.genericIndexType) ? ObjectFlags.IsGenericIndexType : 0);
+      return !!(t.objectFlags & ObjectFlags.IsGenericIndexType);
+    }
+    return !!(t.flags & (TypeFlags.InstantiableNonPrimitive | TypeFlags.Index));
+  }
+  isThisTypeParam(t: qt.Type): boolean {
+    return !!(t.flags & TypeFlags.TypeParam && t.isThisType);
+  }
+  isIntersectionEmpty(t1: qt.Type, t2: qt.Type) {
+    return !!(qf.get.unionType([intersectTypes(t1, t2), neverType]).flags & TypeFlags.Never);
+  }
+  isNonGenericObjectType(t: qt.Type) {
+    return !!(t.flags & TypeFlags.Object) && !this.genericMappedType(t);
+  }
+  isEmptyObjectTypeOrSpreadsIntoEmptyObject(t: qt.Type) {
+    return (
+      this.emptyObjectType(t) ||
+      !!(
+        t.flags &
+        (TypeFlags.BigIntLike |
+          TypeFlags.BooleanLike |
+          TypeFlags.EnumLike |
+          TypeFlags.Index |
+          TypeFlags.NonPrimitive |
+          TypeFlags.Null |
+          TypeFlags.NumberLike |
+          TypeFlags.StringLike |
+          TypeFlags.Undefined)
+      )
+    );
+  }
+  isSinglePropertyAnonymousObjectType(t: qt.Type) {
+    return (
+      !!(t.flags & TypeFlags.Object) &&
+      !!(getObjectFlags(t) & ObjectFlags.Anonymous) &&
+      (qu.length(qf.get.propertiesOfType(t)) === 1 || qu.every(qf.get.propertiesOfType(t), (p) => !!(p.flags & qt.SymbolFlags.Optional)))
+    );
   }
 
   isNullableType() {

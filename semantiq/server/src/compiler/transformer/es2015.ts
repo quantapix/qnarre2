@@ -1866,7 +1866,7 @@ function visitTypeScriptClassWrapper(node: qt.CallExpression) {
     }
     statements.push(funcStatements[classBodyStart]);
     classBodyStart++;
-    statements.push(new qc.ExpressionStatement(qf.create.assignment(aliasAssignment.left, cast(variable.name, isIdentifier))));
+    statements.push(new qc.ExpressionStatement(qf.create.assignment(aliasAssignment.left, cast(variable.name, qf.is.identifier))));
   }
   while (elemAt(funcStatements, classBodyEnd)?.kind !== Syntax.ReturnStatement) {
     classBodyEnd--;
@@ -2071,7 +2071,7 @@ function onSubstituteNode(hint: qt.EmitHint, node: Node) {
 }
 function substituteIdentifier(node: qc.Identifier) {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !qf.is.internalName(node)) {
-    const original = qf.get.parseTreeOf(node, isIdentifier);
+    const original = qf.get.parseTreeOf(node, qf.is.identifier);
     if (original && isNameOfDeclarationWithCollidingName(original)) return qf.get.generatedNameForNode(original).setRange(node);
   }
   return node;

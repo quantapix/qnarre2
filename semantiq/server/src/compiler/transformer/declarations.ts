@@ -822,7 +822,7 @@ export function transformDeclarations(context: qt.TrafoContext) {
             undefined,
             ensureModifiers(input),
             input.name,
-            Nodes.visit(input.typeParams, visitDeclarationSubtree, isTypeParamDeclaration),
+            Nodes.visit(input.typeParams, visitDeclarationSubtree, qf.is.typeParamDeclaration),
             qf.visit.node(input.type, visitDeclarationSubtree, isTypeNode)
           )
         );

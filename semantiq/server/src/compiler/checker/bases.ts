@@ -1698,7 +1698,7 @@ export class Type extends qc.Type {
       const constraint = getConstraintOfType(type);
       if (constraint) return typeCouldHaveTopLevelSingletonTypes(constraint);
     }
-    return isUnitType(type);
+    return type.isUnitType();
   }
   unwrapReturnType(returnType: Type, functionFlags: FunctionFlags) {
     const isGenerator = !!(functionFlags & FunctionFlags.Generator);
@@ -1761,7 +1761,7 @@ export class Type extends qc.Type {
           bestMatch = target;
           matchingCount = len;
         }
-      } else if (isUnitType(overlap) && 1 >= matchingCount) {
+      } else if (overlap.isUnitType() && 1 >= matchingCount) {
         bestMatch = target;
         matchingCount = 1;
       }

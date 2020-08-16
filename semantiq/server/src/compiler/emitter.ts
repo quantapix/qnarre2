@@ -1063,9 +1063,9 @@ export function createPrinter(printerOpts: qt.PrinterOpts = {}, handlers: qt.Pri
   function pipelineEmitWithHint(hint: EmitHint, node: Node): void {
     qf.assert.true(lastNode === node || lastSubstitution === node);
     if (hint === EmitHint.SourceFile) return emitSourceFile(cast(node, isSourceFile));
-    if (hint === EmitHint.IdentifierName) return emitIdentifier(cast(node, isIdentifier));
-    if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, isStringLiteral), true);
-    if (hint === EmitHint.MappedTypeParam) return emitMappedTypeParam(cast(node, isTypeParamDeclaration));
+    if (hint === EmitHint.IdentifierName) return emitIdentifier(cast(node, qf.is.identifier));
+    if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, qf.is.stringLiteral), true);
+    if (hint === EmitHint.MappedTypeParam) return emitMappedTypeParam(cast(node, qf.is.typeParamDeclaration));
     if (hint === EmitHint.EmbeddedStatement) {
       qc.assert.node(node, isEmptyStatement);
       return emitEmptyStatement(true);

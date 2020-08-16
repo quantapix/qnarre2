@@ -1769,7 +1769,7 @@ export function newGet(f: qt.Frame) {
       return signature.isolatedSignatureType;
     }
     constraintDeclaration(t: qt.TypeParam): qt.Typing | undefined {
-      return mapDefined(filter(t.symbol && t.symbol.declarations, isTypeParamDeclaration), getEffectiveConstraintOfTypeParam)[0];
+      return mapDefined(filter(t.symbol && t.symbol.declarations, qf.is.typeParamDeclaration), getEffectiveConstraintOfTypeParam)[0];
     }
     inferredTypeParamConstraint(t: qt.TypeParam) {
       let inferences: qt.Type[] | undefined;
@@ -7111,7 +7111,7 @@ export function newGet(f: qt.Frame) {
       return this.namedMembers(propsByName);
     }
     referencedExportContainer(nIn: qt.Identifier, prefixLocals?: boolean): qt.SourceFile | qt.ModuleDeclaration | qt.EnumDeclaration | undefined {
-      const n = this.parseTreeOf(nIn, isIdentifier);
+      const n = this.parseTreeOf(nIn, qf.is.identifier);
       if (n) {
         let symbol = this.referencedValueSymbol(n, qf.is.nameOfModuleOrEnumDeclaration(n));
         if (symbol) {
@@ -7134,7 +7134,7 @@ export function newGet(f: qt.Frame) {
       }
     }
     referencedImportDeclaration(i: qt.Identifier): qt.Declaration | undefined {
-      const n = this.parseTreeOf(i, isIdentifier);
+      const n = this.parseTreeOf(i, qf.is.identifier);
       if (n) {
         const s = this.referencedValueSymbol(n);
         if (symbol.qf.is.nonLocalAlias(SymbolFlags.Value) && !this.this.typeOnlyAliasDeclaration()) return symbol.this.declarationOfAliasSymbol();
@@ -7143,7 +7143,7 @@ export function newGet(f: qt.Frame) {
     }
     referencedDeclarationWithCollidingName(i: qt.Identifier): qt.Declaration | undefined {
       if (!qf.is.generatedIdentifier(i)) {
-        const n = this.parseTreeOf(i, isIdentifier);
+        const n = this.parseTreeOf(i, qf.is.identifier);
         if (n) {
           const s = this.referencedValueSymbol(n);
           if (s && qf.is.symbolOfDeclarationWithCollidingName(s)) return s.valueDeclaration;
@@ -7215,7 +7215,7 @@ export function newGet(f: qt.Frame) {
     }
     referencedValueDeclaration(n: qt.Identifier): qt.Declaration | undefined {
       if (!qf.is.generatedIdentifier(n)) {
-        const r = this.parseTreeOf(n, isIdentifier);
+        const r = this.parseTreeOf(n, qf.is.identifier);
         if (r) {
           const s = this.referencedValueSymbol(r);
           if (s) return this.exportSymbolOfValueSymbolIfExported(s).valueDeclaration;
@@ -7227,7 +7227,7 @@ export function newGet(f: qt.Frame) {
       return n ? (this.jsxNamespace(n), n.sourceFile.localJsxFactory || _jsxFactoryEntity) : _jsxFactoryEntity;
     }
     externalModuleFileFromDeclaration(d: qt.AnyImportOrReExport | qt.ModuleDeclaration | qt.ImportTyping): qt.SourceFile | undefined {
-      const spec = d.kind === Syntax.ModuleDeclaration ? qu.tryCast(d.name, isStringLiteral) : this.externalModuleName(d);
+      const spec = d.kind === Syntax.ModuleDeclaration ? qu.tryCast(d.name, qf.is.stringLiteral) : this.externalModuleName(d);
       const s = resolveExternalModuleNameWorker(spec!, spec!, undefined);
       if (!s) return;
       return s.declarationOfKind(Syntax.SourceFile);
