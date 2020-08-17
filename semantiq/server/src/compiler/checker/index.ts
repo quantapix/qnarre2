@@ -1233,7 +1233,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     if (!node || qf.type.is.orHasGenericConditional(target)) return false;
-    if (!check.typeRelatedTo(source, target, relation, undefined) && elaborateDidYouMeanToCallOrConstruct(node, source, target, relation, headMessage, containingMessageChain, errorOutputContainer))
+    if (!qf.type.check.relatedTo(source, target, relation, undefined) && elaborateDidYouMeanToCallOrConstruct(node, source, target, relation, headMessage, containingMessageChain, errorOutputContainer))
       return true;
     switch (node.kind) {
       case Syntax.JsxExpression:
@@ -1272,11 +1272,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (
         some(signatures, (s) => {
           const returnType = qf.get.returnTypeOfSignature(s);
-          return !(returnType.flags & (TypeFlags.Any | qt.TypeFlags.Never)) && check.typeRelatedTo(returnType, target, relation, undefined);
+          return !(returnType.flags & (TypeFlags.Any | qt.TypeFlags.Never)) && qf.type.check.relatedTo(returnType, target, relation, undefined);
         })
       ) {
         const resultObj: { errors?: qd.Diagnostic[] } = errorOutputContainer || {};
-        check.typeAssignableTo(source, target, node, headMessage, containingMessageChain, resultObj);
+        qf.type.check.assignableTo(source, target, node, headMessage, containingMessageChain, resultObj);
         const diagnostic = resultObj.errors![resultObj.errors!.length - 1];
         addRelatedInfo(
           diagnostic,
@@ -1304,11 +1304,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const returnExpression = node.body;
     const sourceReturn = qf.get.returnTypeOfSignature(sourceSig);
     const targetReturn = qf.get.unionType(map(targetSignatures, qf.get.returnTypeOfSignature));
-    if (!check.typeRelatedTo(sourceReturn, targetReturn, relation, undefined)) {
+    if (!qf.type.check.relatedTo(sourceReturn, targetReturn, relation, undefined)) {
       const elaborated = returnExpression && elaborateError(returnExpression, sourceReturn, targetReturn, relation, undefined, containingMessageChain, errorOutputContainer);
       if (elaborated) return elaborated;
       const resultObj: { errors?: qd.Diagnostic[] } = errorOutputContainer || {};
-      check.typeRelatedTo(sourceReturn, targetReturn, relation, returnExpression, undefined, containingMessageChain, resultObj);
+      qf.type.check.relatedTo(sourceReturn, targetReturn, relation, returnExpression, undefined, containingMessageChain, resultObj);
       if (resultObj.errors) {
         if (target.symbol && length(target.symbol.declarations)) {
           addRelatedInfo(
@@ -1319,7 +1319,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (
           (qf.get.functionFlags(node) & FunctionFlags.Async) === 0 &&
           !qf.get.typeOfPropertyOfType(sourceReturn, 'then' as qu.__String) &&
-          check.typeRelatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
+          qf.type.check.relatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {
           addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], qf.create.diagForNode(node, qd.msgs.Did_you_mean_to_mark_this_function_as_async));
         }
@@ -1348,14 +1348,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const targetPropType = getBestMatchIndexedAccessTypeOrUndefined(source, target, nameType);
       if (!targetPropType || targetPropType.flags & qt.TypeFlags.IndexedAccess) continue;
       const sourcePropType = qf.get.indexedAccessTypeOrUndefined(source, nameType);
-      if (sourcePropType && !check.typeRelatedTo(sourcePropType, targetPropType, relation, undefined)) {
+      if (sourcePropType && !qf.type.check.relatedTo(sourcePropType, targetPropType, relation, undefined)) {
         const elaborated = next && elaborateError(next, sourcePropType, targetPropType, relation, undefined, containingMessageChain, errorOutputContainer);
         if (elaborated) reportedError = true;
         else {
           const resultObj: { errors?: qd.Diagnostic[] } = errorOutputContainer || {};
           const specificSource = next ? check.expressionForMutableLocationWithContextualType(next, sourcePropType) : sourcePropType;
-          const result = check.typeRelatedTo(specificSource, targetPropType, relation, prop, errorMessage, containingMessageChain, resultObj);
-          if (result && specificSource !== sourcePropType) check.typeRelatedTo(sourcePropType, targetPropType, relation, prop, errorMessage, containingMessageChain, resultObj);
+          const result = qf.type.check.relatedTo(specificSource, targetPropType, relation, prop, errorMessage, containingMessageChain, resultObj);
+          if (result && specificSource !== sourcePropType) qf.type.check.relatedTo(sourcePropType, targetPropType, relation, prop, errorMessage, containingMessageChain, resultObj);
           if (resultObj.errors) {
             const reportedDiag = resultObj.errors[resultObj.errors.length - 1];
             const propertyName = qf.type.is.usableAsPropertyName(nameType) ? getPropertyNameFromType(nameType) : undefined;
@@ -2658,11 +2658,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
               typeToString(typeWithThis),
               typeToString(baseWithThis)
             );
-          if (!check.typeAssignableTo(prop.typeOfSymbol(), baseProp.typeOfSymbol(), member.name || member, undefined, rootChain)) issuedMemberError = true;
+          if (!qf.type.check.assignableTo(prop.typeOfSymbol(), baseProp.typeOfSymbol(), member.name || member, undefined, rootChain)) issuedMemberError = true;
         }
       }
     }
-    if (!issuedMemberError) check.typeAssignableTo(typeWithThis, baseWithThis, node.name || node, broadDiag);
+    if (!issuedMemberError) qf.type.check.assignableTo(typeWithThis, baseWithThis, node.name || node, broadDiag);
   }
   function computeExhaustiveSwitchStatement(node: qt.SwitchStatement): boolean {
     if (node.expression.kind === Syntax.TypeOfExpression) {
@@ -2955,7 +2955,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           typeToString(source)
         );
       } else {
-        check.typeAssignableTo(source, getDeclaredTypeOfSymbol(qf.get.symbolOfNode(member.parent)), initer, undefined);
+        qf.type.check.assignableTo(source, getDeclaredTypeOfSymbol(qf.get.symbolOfNode(member.parent)), initer, undefined);
       }
     }
     return value;

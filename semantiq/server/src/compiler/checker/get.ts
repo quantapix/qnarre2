@@ -3161,7 +3161,7 @@ export function newGet(f: qt.Frame) {
         let funcType: qt.Type | undefined;
         if (n.parent?.kind === Syntax.ExpressionStatement) funcType = this.typeOfDottedName(n.expression, undefined);
         else if (n.expression.kind !== Syntax.SuperKeyword) {
-          if (qf.is.optionalChain(n)) funcType = qf.check.nonNullType(this.optionalExpressionType(qf.check.expression(n.expression), n.expression), n.expression);
+          if (qf.is.optionalChain(n)) funcType = qf.type.check.nonNull(this.optionalExpressionType(qf.check.expression(n.expression), n.expression), n.expression);
           else {
             funcType = qf.check.nonNullExpression(n.expression);
           }
@@ -4682,7 +4682,7 @@ export function newGet(f: qt.Frame) {
         }
         const errorNode = reportErrors ? thisArgNode || n : undefined;
         const headMessage = qd.msgs.The_this_context_of_type_0_is_not_assignable_to_method_s_this_of_type_1;
-        if (!qf.check.typeRelatedTo(thisArgType, thisType, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer)) {
+        if (!qf.type.check.relatedTo(thisArgType, thisType, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer)) {
           qf.assert.true(!reportErrors || !!errorOutputContainer.errors, 'this param should have errors when reporting errors');
           return errorOutputContainer.errors || qu.empty;
         }
@@ -4696,7 +4696,7 @@ export function newGet(f: qt.Frame) {
           const paramType = this.typeAtPosition(signature, i);
           const argType = qf.check.expressionWithContextualType(arg, paramType, undefined, checkMode);
           const checkArgType = checkMode & CheckMode.SkipContextSensitive ? this.regularTypeOfObjectLiteral(argType) : argType;
-          if (!qf.check.typeRelatedToAndOptionallyElaborate(checkArgType, paramType, relation, reportErrors ? arg : undefined, arg, headMessage, containingMessageChain, errorOutputContainer)) {
+          if (!qf.type.check.relatedToAndOptionallyElaborate(checkArgType, paramType, relation, reportErrors ? arg : undefined, arg, headMessage, containingMessageChain, errorOutputContainer)) {
             qf.assert.true(!reportErrors || !!errorOutputContainer.errors, 'param should have errors when reporting errors');
             maybeAddMissingAwaitInfo(arg, checkArgType, paramType);
             return errorOutputContainer.errors || qu.empty;
@@ -4706,7 +4706,7 @@ export function newGet(f: qt.Frame) {
       if (restType) {
         const spreadType = this.spreadArgType(args, argCount, args.length, restType, undefined);
         const errorNode = reportErrors ? (argCount < args.length ? args[argCount] : n) : undefined;
-        if (!qf.check.typeRelatedTo(spreadType, restType, relation, errorNode, headMessage, undefined, errorOutputContainer)) {
+        if (!qf.type.check.relatedTo(spreadType, restType, relation, errorNode, headMessage, undefined, errorOutputContainer)) {
           qf.assert.true(!reportErrors || !!errorOutputContainer.errors, 'rest param should have errors when reporting errors');
           maybeAddMissingAwaitInfo(errorNode, spreadType, restType);
           return errorOutputContainer.errors || qu.empty;
@@ -5008,7 +5008,7 @@ export function newGet(f: qt.Frame) {
       let fallbackReturnType: qt.Type = voidType;
       if (func.body.kind !== Syntax.Block) {
         returnType = qf.check.expressionCached(func.body, checkMode && checkMode & ~CheckMode.SkipGenericFunctions);
-        if (isAsync) returnType = qf.check.awaitedType(returnType, func, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
+        if (isAsync) returnType = qf.type.check.awaited(returnType, func, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
       } else if (isGenerator) {
         const returnTypes = qf.check.andAggregateReturnExpressionTypes(func, checkMode);
         if (!returnTypes) fallbackReturnType = neverType;
@@ -5287,7 +5287,7 @@ export function newGet(f: qt.Frame) {
                 : use & IterationUse.YieldStarFlag
                 ? qd.msgs.Cannot_delegate_iteration_to_value_because_the_next_method_of_its_iterator_expects_type_1_but_the_containing_generator_will_always_send_0
                 : undefined;
-            if (diagnostic) qf.check.typeAssignableTo(sentType, iterationTypes.nextType, errorNode, diagnostic);
+            if (diagnostic) qf.type.check.assignableTo(sentType, iterationTypes.nextType, errorNode, diagnostic);
           }
         }
         if (iterationTypes || uplevelIteration) return iterationTypes && iterationTypes.yieldType;

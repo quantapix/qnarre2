@@ -1,5 +1,5 @@
-import { EmitFlags, FunctionFlags, ModifierFlags, Nodes, NodeFlags, ObjectFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../types';
-import { Node, Signature, Symbol, Type, TypeParam, TypeReference } from '../types';
+import { CheckFlags, EmitFlags, FunctionFlags, ModifierFlags, NodeFlags, ObjectFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../types';
+import { Node, Nodes, Signature, Symbol, Type, TypeParam, TypeReference } from '../types';
 import { qf, Fcreate, Fget, Fhas, Fis } from './frame';
 import { Syntax } from '../syntax';
 import { Fvisit } from './visit';
@@ -20,24 +20,24 @@ export function newType(f: qt.Frame) {
       union(n: Type): n is qt.UnionType {
         return !!(n.flags & TypeFlags.Union);
       }
-      setOfLiteralsFromSameEnum(ts: readonly Type[]): boolean {
+      setOfLiteralsFromSameEnum(ts: readonly Type[]) {
         const first = ts[0];
         if (first.flags & TypeFlags.EnumLiteral) {
-          const firstEnum = getParentOfSymbol(first.symbol);
+          const e = getParentOfSymbol(first.symbol);
           for (let i = 1; i < ts.length; i++) {
-            const other = ts[i];
-            if (!(other.flags & TypeFlags.EnumLiteral) || firstEnum !== getParentOfSymbol(other.symbol)) return false;
+            const t = ts[i];
+            if (!(t.flags & TypeFlags.EnumLiteral) || e !== getParentOfSymbol(t.symbol)) return false;
           }
           return true;
         }
         return false;
       }
-      functionType(t: Type): boolean {
+      functionType(t: Type) {
         return !!(t.flags & TypeFlags.Object) && getSignaturesOfType(t, qt.SignatureKind.Call).length > 0;
       }
-      iteratorResult(t: Type, kind: qt.IterationTypeKind.Yield | qt.IterationTypeKind.Return) {
-        const doneType = qf.get.typeOfPropertyOfType(t, 'done' as qu.__String) || falseType;
-        return this.typeAssignableTo(kind === qt.IterationTypeKind.Yield ? falseType : trueType, doneType);
+      iteratorResult(t: Type, k: qt.IterationTypeKind.Yield | qt.IterationTypeKind.Return) {
+        const d = qf.get.typeOfPropertyOfType(t, 'done' as qu.__String) || falseType;
+        return qf.type.check.assignableTo(k === qt.IterationTypeKind.Yield ? falseType : trueType, d);
       }
       yieldIteratorResult(t: Type) {
         return isIteratorResult(t, qt.IterationTypeKind.Yield);
@@ -45,20 +45,17 @@ export function newType(f: qt.Frame) {
       returnIteratorResult(t: Type) {
         return isIteratorResult(t, qt.IterationTypeKind.Return);
       }
-      literalOfContextualType(t: Type, c?: Type): boolean {
+      literalOfContextualType(t: Type, c?: Type) {
         if (c) {
-          if (c.flags & TypeFlags.UnionOrIntersection) {
-            const types = c.types;
-            return qu.some(types, (t) => isLiteralOfContextualType(t, t));
-          }
+          if (c.flags & TypeFlags.UnionOrIntersection) return qu.some(c.types, (t) => isLiteralOfContextualType(t, t));
           if (c.flags & TypeFlags.InstantiableNonPrimitive) {
-            const constraint = qf.get.baseConstraintOfType(c) || unknownType;
+            const b = qf.get.baseConstraintOfType(c) || unknownType;
             return (
-              (maybeTypeOfKind(constraint, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
-              (maybeTypeOfKind(constraint, TypeFlags.Number) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
-              (maybeTypeOfKind(constraint, TypeFlags.BigInt) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
-              (maybeTypeOfKind(constraint, TypeFlags.ESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol)) ||
-              isLiteralOfContextualType(t, constraint)
+              (maybeTypeOfKind(b, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
+              (maybeTypeOfKind(b, TypeFlags.Number) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
+              (maybeTypeOfKind(b, TypeFlags.BigInt) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
+              (maybeTypeOfKind(b, TypeFlags.ESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol)) ||
+              isLiteralOfContextualType(t, b)
             );
           }
           return !!(
@@ -71,68 +68,63 @@ export function newType(f: qt.Frame) {
         }
         return false;
       }
-      typeEqualityComparableTo(s: Type, t: Type) {
-        return (t.flags & TypeFlags.Nullable) !== 0 || qf.type.is.comparableTo(s, t);
+      typeEqualityComparableTo(t: Type, to: Type) {
+        return (to.flags & TypeFlags.Nullable) !== 0 || qf.type.is.comparableTo(t, to);
       }
-      typeAssignableToKind(s: Type, kind: TypeFlags, strict?: boolean): boolean {
-        if (s.flags & kind) return true;
-        if (strict && s.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void | TypeFlags.Undefined | TypeFlags.Null)) return false;
+      assignableToKind(t: Type, k: TypeFlags, strict?: boolean) {
+        if (t.flags & k) return true;
+        if (strict && t.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void | TypeFlags.Undefined | TypeFlags.Null)) return false;
         return (
-          (!!(kind & TypeFlags.NumberLike) && this.typeAssignableTo(s, numberType)) ||
-          (!!(kind & TypeFlags.BigIntLike) && this.typeAssignableTo(s, bigintType)) ||
-          (!!(kind & TypeFlags.StringLike) && this.typeAssignableTo(s, stringType)) ||
-          (!!(kind & TypeFlags.BooleanLike) && this.typeAssignableTo(s, booleanType)) ||
-          (!!(kind & TypeFlags.Void) && this.typeAssignableTo(s, voidType)) ||
-          (!!(kind & TypeFlags.Never) && this.typeAssignableTo(s, neverType)) ||
-          (!!(kind & TypeFlags.Null) && this.typeAssignableTo(s, nullType)) ||
-          (!!(kind & TypeFlags.Undefined) && this.typeAssignableTo(s, undefinedType)) ||
-          (!!(kind & TypeFlags.ESSymbol) && this.typeAssignableTo(s, esSymbolType)) ||
-          (!!(kind & TypeFlags.NonPrimitive) && this.typeAssignableTo(s, nonPrimitiveType))
+          (!!(k & TypeFlags.NumberLike) && qf.type.check.assignableTo(t, numberType)) ||
+          (!!(k & TypeFlags.BigIntLike) && qf.type.check.assignableTo(t, bigintType)) ||
+          (!!(k & TypeFlags.StringLike) && qf.type.check.assignableTo(t, stringType)) ||
+          (!!(k & TypeFlags.BooleanLike) && qf.type.check.assignableTo(t, booleanType)) ||
+          (!!(k & TypeFlags.Void) && qf.type.check.assignableTo(t, voidType)) ||
+          (!!(k & TypeFlags.Never) && qf.type.check.assignableTo(t, neverType)) ||
+          (!!(k & TypeFlags.Null) && qf.type.check.assignableTo(t, nullType)) ||
+          (!!(k & TypeFlags.Undefined) && qf.type.check.assignableTo(t, undefinedType)) ||
+          (!!(k & TypeFlags.ESSymbol) && qf.type.check.assignableTo(t, esSymbolType)) ||
+          (!!(k & TypeFlags.NonPrimitive) && qf.type.check.assignableTo(t, nonPrimitiveType))
         );
       }
-      constEnumObjectType(t: Type): boolean {
-        return !!(getObjectFlags(t) & ObjectFlags.Anonymous) && !!t.symbol && isConstEnumSymbol(t.symbol);
+      constEnumObjectType(t: Type) {
+        return !!(t.objectFlags & ObjectFlags.Anonymous) && !!t.symbol && isConstEnumSymbol(t.symbol);
       }
       untypedFunctionCall(t: Type, apparentFuncType: Type, numCallSignatures: number, numConstructSignatures: number): boolean {
         return (
           this.any(t) ||
           (this.any(apparentFuncType) && !!(t.flags & TypeFlags.TypeParam)) ||
-          (!numCallSignatures && !numConstructSignatures && !(apparentFuncType.flags & (TypeFlags.Union | TypeFlags.Never)) && this.typeAssignableTo(t, globalFunctionType))
+          (!numCallSignatures && !numConstructSignatures && !(apparentFuncType.flags & (TypeFlags.Union | TypeFlags.Never)) && qf.type.check.assignableTo(t, globalFunctionType))
         );
       }
       nullableType(t: Type) {
         return !!((strictNullChecks ? getFalsyFlags(t) : t.flags) & TypeFlags.Nullable);
       }
-      knownProperty(tType: Type, name: qu.__String, isComparingJsxAttributes: boolean): boolean {
-        if (tType.flags & TypeFlags.Object) {
-          const resolved = resolveStructuredTypeMembers(tType as qt.ObjectType);
-          if (
-            resolved.stringIndexInfo ||
-            (resolved.numberIndexInfo && qt.NumericLiteral.name(name)) ||
-            getPropertyOfObjectType(tType, name) ||
-            (isComparingJsxAttributes && !qu.unhyphenatedJsxName(name))
-          ) {
+      knownProperty(t: Type, n: qu.__String, isComparingJsxAttributes: boolean) {
+        if (t.flags & TypeFlags.Object) {
+          const r = resolveStructuredTypeMembers(t as qt.ObjectType);
+          if (r.stringIndexInfo || (r.numberIndexInfo && qt.NumericLiteral.name(n)) || getPropertyOfObjectType(t, n) || (isComparingJsxAttributes && !qu.unhyphenatedJsxName(n))) {
             return true;
           }
-        } else if (tType.flags & TypeFlags.UnionOrIntersection && this.excessPropertyCheckTarget(tType)) {
-          for (const t of (tType as qt.UnionOrIntersectionType).types) {
-            if (this.knownProperty(t, name, isComparingJsxAttributes)) return true;
+        } else if (t.flags & TypeFlags.UnionOrIntersection && this.excessPropertyCheckTarget(t)) {
+          for (const u of (t as qt.UnionOrIntersectionType).types) {
+            if (this.knownProperty(u, n, isComparingJsxAttributes)) return true;
           }
         }
         return false;
       }
-      excessPropertyCheckTarget(t: Type): boolean {
+      excessPropertyCheckTarget(t: Type) {
         return !!(
-          (t.flags & TypeFlags.Object && !(getObjectFlags(t) & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) ||
+          (t.flags & TypeFlags.Object && !(t.objectFlags & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) ||
           t.flags & TypeFlags.NonPrimitive ||
           (t.flags & TypeFlags.Union && qu.some(t.types, this.excessPropertyCheckTarget)) ||
           (t.flags & TypeFlags.Intersection && qu.every(t.types, this.excessPropertyCheckTarget))
         );
       }
-      validSpreadType(t: Type): boolean {
+      validSpreadType(t: Type) {
         if (t.flags & TypeFlags.Instantiable) {
-          const constraint = qf.get.baseConstraintOfType(t);
-          if (constraint !== undefined) return this.validSpreadType(constraint);
+          const c = qf.get.baseConstraintOfType(t);
+          if (c !== undefined) return this.validSpreadType(c);
         }
         return !!(
           t.flags & (TypeFlags.Any | TypeFlags.NonPrimitive | TypeFlags.Object | TypeFlags.InstantiableNonPrimitive) ||
@@ -140,32 +132,32 @@ export function newType(f: qt.Frame) {
           (t.flags & TypeFlags.UnionOrIntersection && qu.every(t.types, this.validSpreadType))
         );
       }
-      evolvingArrayTypeList(types: Type[]) {
-        let hasEvolvingArrayType = false;
-        for (const t of types) {
+      evolvingArrayTypeList(ts: Type[]) {
+        let has = false;
+        for (const t of ts) {
           if (!(t.flags & TypeFlags.Never)) {
-            if (!(getObjectFlags(t) & ObjectFlags.EvolvingArray)) return false;
-            hasEvolvingArrayType = true;
+            if (!(t.objectFlags & ObjectFlags.EvolvingArray)) return false;
+            has = true;
           }
         }
-        return hasEvolvingArrayType;
+        return has;
       }
-      typeSubsetOf(s: Type, t: Type) {
-        return s === t || (t.flags & TypeFlags.Union && this.typeSubsetOfUnion(s, t));
+      typeSubsetOf(t: Type, to: Type) {
+        return t === to || (to.flags & TypeFlags.Union && this.typeSubsetOfUnion(t, to));
       }
-      typeSubsetOfUnion(s: Type, t: qt.UnionType) {
-        if (s.flags & TypeFlags.Union) {
-          for (const t of s.types) {
-            if (!containsType(t.types, t)) return false;
+      typeSubsetOfUnion(t: Type, to: qt.UnionType) {
+        if (t.flags & TypeFlags.Union) {
+          for (const u of t.types) {
+            if (!containsType(u.types, u)) return false;
           }
           return true;
         }
-        if (s.flags & TypeFlags.EnumLiteral && getBaseTypeOfEnumLiteralType(<qt.LiteralType>s) === t) return true;
-        return containsType(t.types, s);
+        if (t.flags & TypeFlags.EnumLiteral && getBaseTypeOfEnumLiteralType(<qt.LiteralType>t) === to) return true;
+        return containsType(to.types, t);
       }
-      discriminantProperty(t: Type | undefined, name: qu.__String) {
+      discriminantProperty(t: Type | undefined, n: qu.__String) {
         if (t && t.flags & TypeFlags.Union) {
-          const s = getUnionOrIntersectionProperty(t, name);
+          const s = getUnionOrIntersectionProperty(t, n);
           if (s && s.checkFlags() & CheckFlags.SyntheticProperty) {
             if ((<qt.TransientSymbol>s).isDiscriminantProperty === undefined) {
               (<qt.TransientSymbol>s).isDiscriminantProperty =
@@ -546,7 +538,7 @@ export function newType(f: qt.Frame) {
           const related = r.get(getRelationKey(t, to, IntersectionState.None, r));
           if (related !== undefined) return !!(related & qt.RelationComparisonResult.Succeeded);
         }
-        if (t.flags & TypeFlags.StructuredOrInstantiable || to.flags & TypeFlags.StructuredOrInstantiable) return check.typeRelatedTo(t, to, r, undefined);
+        if (t.flags & TypeFlags.StructuredOrInstantiable || to.flags & TypeFlags.StructuredOrInstantiable) return qf.type.check.relatedTo(t, to, r, undefined);
         return false;
       }
       ignoredJsxProperty(t: Type, s: Symbol) {
@@ -581,7 +573,7 @@ export function newType(f: qt.Frame) {
       baseType(t: Type, checkBase: Type | undefined) {
         return check(t);
         function check(t: Type): boolean {
-          if (getObjectFlags(t) & (ObjectFlags.ClassOrInterface | ObjectFlags.Reference)) {
+          if (t.objectFlags & (ObjectFlags.ClassOrInterface | ObjectFlags.Reference)) {
             const target = getTargetType(t);
             return target === checkBase || qu.some(getBaseTypes(target), check);
           } else if (t.flags & TypeFlags.Intersection) {
@@ -2287,7 +2279,11 @@ export function newSignature(f: qt.Frame) {
         const erasedTarget = getErasedSignature(overload);
         const sourceReturnType = qf.get.returnTypeOfSignature(erasedSource);
         const targetReturnType = qf.get.returnTypeOfSignature(erasedTarget);
-        if (targetReturnType === voidType || this.typeRelatedTo(targetReturnType, sourceReturnType, assignableRelation) || this.typeRelatedTo(sourceReturnType, targetReturnType, assignableRelation))
+        if (
+          targetReturnType === voidType ||
+          qf.type.check.relatedTo(targetReturnType, sourceReturnType, assignableRelation) ||
+          qf.type.check.relatedTo(sourceReturnType, targetReturnType, assignableRelation)
+        )
           return this.signatureAssignableTo(erasedSource, erasedTarget, true);
         return false;
       }

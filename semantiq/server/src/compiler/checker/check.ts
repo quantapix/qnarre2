@@ -505,10 +505,10 @@ export function newCheck(f: qt.Frame) {
           if (isInJavascript) {
             const docType = getTypeForDeclarationFromDocComment(memberDecl);
             if (docType) {
-              this.typeAssignableTo(type, docType, memberDecl);
+              qf.type.check.assignableTo(type, docType, memberDecl);
               type = docType;
             } else if (enumTag && enumTag.typeExpression) {
-              this.typeAssignableTo(type, qf.get.typeFromTypeNode(enumTag.typeExpression), memberDecl);
+              qf.type.check.assignableTo(type, qf.get.typeFromTypeNode(enumTag.typeExpression), memberDecl);
             }
           }
           objectFlags |= getObjectFlags(type) & ObjectFlags.PropagatingFlags;
@@ -548,7 +548,7 @@ export function newCheck(f: qt.Frame) {
             error(memberDecl, qd.msgs.Spread_types_may_only_be_created_from_object_types);
             return errorType;
           }
-          if (allPropertiesTable) this.spreadPropOverrides(type, allPropertiesTable, memberDecl);
+          if (allPropertiesTable) qf.type.check.spreadPropOverrides(type, allPropertiesTable, memberDecl);
           spread = getSpreadType(spread, type, n.symbol, objectFlags, inConstContext);
           offset = i + 1;
           continue;
@@ -650,17 +650,17 @@ export function newCheck(f: qt.Frame) {
         if (refKind === qt.JsxReferenceKind.Function) {
           const sfcReturnConstraint = getJsxStatelessElemTypeAt(openingLikeElem);
           if (sfcReturnConstraint)
-            this.typeRelatedTo(elemInstanceType, sfcReturnConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_return_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
+            qf.type.check.relatedTo(elemInstanceType, sfcReturnConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_return_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
         } else if (refKind === qt.JsxReferenceKind.Component) {
           const classConstraint = getJsxElemClassTypeAt(openingLikeElem);
           if (classConstraint)
-            this.typeRelatedTo(elemInstanceType, classConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_instance_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
+            qf.type.check.relatedTo(elemInstanceType, classConstraint, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_instance_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
         } else {
           const sfcReturnConstraint = getJsxStatelessElemTypeAt(openingLikeElem);
           const classConstraint = getJsxElemClassTypeAt(openingLikeElem);
           if (!sfcReturnConstraint || !classConstraint) return;
           const combined = qf.get.unionType([sfcReturnConstraint, classConstraint]);
-          this.typeRelatedTo(elemInstanceType, combined, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_elem_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
+          qf.type.check.relatedTo(elemInstanceType, combined, assignableRelation, openingLikeElem.tagName, qd.msgs.Its_elem_type_0_is_not_a_valid_JSX_elem, generateInitialErrorChain);
         }
         function generateInitialErrorChain(): qd.MessageChain {
           const componentName = qf.get.textOf(openingLikeElem.tagName);
@@ -770,7 +770,7 @@ export function newCheck(f: qt.Frame) {
       return true;
     }
     nonNullExpression(n: qt.Expression | qt.QualifiedName) {
-      return this.nonNullType(this.expression(n), n);
+      return qf.type.check.nonNull(this.expression(n), n);
     }
     propertyAccessExpression(n: qt.PropertyAccessExpression) {
       return n.flags & NodeFlags.OptionalChain
@@ -780,7 +780,7 @@ export function newCheck(f: qt.Frame) {
     propertyAccessChain(n: qt.PropertyAccessChain) {
       const leftType = this.expression(n.expression);
       const nonOptionalType = getOptionalExpressionType(leftType, n.expression);
-      return propagateOptionalTypeMarker(this.propertyAccessExpressionOrQualifiedName(n, n.expression, this.nonNullType(nonOptionalType, n.expression), n.name), n, nonOptionalType !== leftType);
+      return propagateOptionalTypeMarker(this.propertyAccessExpressionOrQualifiedName(n, n.expression, qf.type.check.nonNull(nonOptionalType, n.expression), n.name), n, nonOptionalType !== leftType);
     }
     qualifiedName(n: qt.QualifiedName) {
       return this.propertyAccessExpressionOrQualifiedName(n, n.left, this.nonNullExpression(n.left), n.right);
@@ -802,7 +802,7 @@ export function newCheck(f: qt.Frame) {
           }
         }
         prop = lexicallyScopedSymbol ? getPrivateIdentifierPropertyOfType(leftType, lexicallyScopedSymbol) : undefined;
-        if (!prop && this.privateIdentifierPropertyAccess(leftType, right, lexicallyScopedSymbol)) return errorType;
+        if (!prop && qf.type.check.privateIdentifierPropAccess(leftType, right, lexicallyScopedSymbol)) return errorType;
       } else {
         if (isAnyLike) {
           if (left.kind === Syntax.Identifier && parentSymbol) markAliasReferenced(parentSymbol, n);
@@ -851,7 +851,7 @@ export function newCheck(f: qt.Frame) {
     elemAccessChain(n: qt.ElemAccessChain) {
       const exprType = this.expression(n.expression);
       const nonOptionalType = getOptionalExpressionType(exprType, n.expression);
-      return propagateOptionalTypeMarker(this.elemAccessExpression(n, this.nonNullType(nonOptionalType, n.expression)), n, nonOptionalType !== exprType);
+      return propagateOptionalTypeMarker(this.elemAccessExpression(n, qf.type.check.nonNull(nonOptionalType, n.expression)), n, nonOptionalType !== exprType);
     }
     elemAccessExpression(n: qt.ElemAccessExpression, exprType: qt.Type): qt.Type {
       const objectType = qf.get.assignmentTargetKind(n) !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(exprType) : exprType;
@@ -867,7 +867,7 @@ export function newCheck(f: qt.Frame) {
         ? AccessFlags.Writing | (qf.type.is.genericObject(objectType) && !qf.type.is.thisParam(objectType) ? AccessFlags.NoIndexSignatures : 0)
         : AccessFlags.None;
       const indexedAccessType = qf.get.indexedAccessTypeOrUndefined(objectType, effectiveIndexType, n, accessFlags) || errorType;
-      return this.indexedAccessIndexType(getFlowTypeOfAccessExpression(n, indexedAccessType.symbol, indexedAccessType, indexExpression), n);
+      return qf.type.check.indexedAccessIndex(getFlowTypeOfAccessExpression(n, indexedAccessType.symbol, indexedAccessType, indexExpression), n);
     }
     thatExpressionIsProperSymbolReference(expression: qt.Expression, expressionType: qt.Type, reportError: boolean): boolean {
       if (expressionType === errorType) return false;
@@ -900,7 +900,7 @@ export function newCheck(f: qt.Frame) {
       const attributesType = this.expressionWithContextualType(n.attributes, paramType, undefined, checkMode);
       return (
         this.tagNameDoesNotExpectTooManyArgs() &&
-        this.typeRelatedToAndOptionallyElaborate(attributesType, paramType, relation, reportErrors ? n.tagName : undefined, n.attributes, undefined, containingMessageChain, errorOutputContainer)
+        qf.type.check.relatedToAndOptionallyElaborate(attributesType, paramType, relation, reportErrors ? n.tagName : undefined, n.attributes, undefined, containingMessageChain, errorOutputContainer)
       );
       function checkTagNameDoesNotExpectTooManyArgs(): boolean {
         const tagType = n.kind === Syntax.JsxOpeningElem || (n.kind === Syntax.JsxSelfClosingElem && !isJsxIntrinsicIdentifier(n.tagName)) ? this.expression(n.tagName) : undefined;
@@ -1029,7 +1029,7 @@ export function newCheck(f: qt.Frame) {
       if (produceDiagnostics && targetType !== errorType) {
         const widenedType = qf.get.widenedType(exprType);
         if (!qf.type.is.comparableTo(targetType, widenedType)) {
-          this.typeComparableTo(
+          qf.type.check.comparableTo(
             exprType,
             targetType,
             errNode,
@@ -1099,7 +1099,7 @@ export function newCheck(f: qt.Frame) {
         if (expr) {
           let type = this.expressionCached(expr, checkMode && checkMode & ~CheckMode.SkipGenericFunctions);
           if (functionFlags & FunctionFlags.Async)
-            type = this.awaitedType(type, func, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
+            type = qf.type.check.awaited(type, func, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
           if (type.flags & TypeFlags.Never) hasReturnOfTypeNever = true;
           qu.pushIfUnique(aggregatedTypes, type);
         } else {
@@ -1168,10 +1168,10 @@ export function newCheck(f: qt.Frame) {
           const returnOrPromisedType = returnType && unwrapReturnType(returnType, functionFlags);
           if (returnOrPromisedType) {
             if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.Async) {
-              const awaitedType = this.awaitedType(exprType, n.body, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
-              this.typeAssignableToAndOptionallyElaborate(awaitedType, returnOrPromisedType, n.body, n.body);
+              const awaitedType = qf.type.check.awaited(exprType, n.body, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
+              qf.type.check.assignableToAndOptionallyElaborate(awaitedType, returnOrPromisedType, n.body, n.body);
             } else {
-              this.typeAssignableToAndOptionallyElaborate(exprType, returnOrPromisedType, n.body, n.body);
+              qf.type.check.assignableToAndOptionallyElaborate(exprType, returnOrPromisedType, n.body, n.body);
             }
           }
         }
@@ -1270,7 +1270,7 @@ export function newCheck(f: qt.Frame) {
         if (isInParamIniterBeforeContainingFunction(n)) error(n, qd.await_expressions_cannot_be_used_in_a_param_initer);
       }
       const operandType = this.expression(n.expression);
-      const awaitedType = this.awaitedType(operandType, n, qd.msgs.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
+      const awaitedType = qf.type.check.awaited(operandType, n, qd.msgs.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
       if (awaitedType === operandType && awaitedType !== errorType && !(operandType.flags & TypeFlags.AnyOrUnknown))
         addErrorOrSuggestion(false, qf.create.diagForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
       return awaitedType;
@@ -1301,7 +1301,7 @@ export function newCheck(f: qt.Frame) {
         case Syntax.PlusToken:
         case Syntax.MinusToken:
         case Syntax.TildeToken:
-          this.nonNullType(operandType, n.operand);
+          qf.type.check.nonNull(operandType, n.operand);
           if (maybeTypeOfKind(operandType, TypeFlags.ESSymbolLike)) error(n.operand, qd.msgs.The_0_operator_cannot_be_applied_to_type_symbol, qt.Token.toString(n.operator));
           if (n.operator === Syntax.PlusToken) {
             if (maybeTypeOfKind(operandType, TypeFlags.BigIntLike))
@@ -1315,7 +1315,7 @@ export function newCheck(f: qt.Frame) {
           return facts === TypeFacts.Truthy ? falseType : facts === TypeFacts.Falsy ? trueType : booleanType;
         case Syntax.Plus2Token:
         case Syntax.Minus2Token:
-          const ok = this.arithmeticOperandType(n.operand, this.nonNullType(operandType, n.operand), qd.msgs.An_arithmetic_operand_must_be_of_type_any_number_bigint_or_an_enum_type);
+          const ok = this.arithmeticOperandType(n.operand, qf.type.check.nonNull(operandType, n.operand), qd.msgs.An_arithmetic_operand_must_be_of_type_any_number_bigint_or_an_enum_type);
           if (ok) {
             this.referenceExpression(
               n.operand,
@@ -1330,7 +1330,7 @@ export function newCheck(f: qt.Frame) {
     postfixUnaryExpression(n: qt.PostfixUnaryExpression): qt.Type {
       const operandType = this.expression(n.operand);
       if (operandType === silentNeverType) return silentNeverType;
-      const ok = this.arithmeticOperandType(n.operand, this.nonNullType(operandType, n.operand), qd.msgs.An_arithmetic_operand_must_be_of_type_any_number_bigint_or_an_enum_type);
+      const ok = this.arithmeticOperandType(n.operand, qf.type.check.nonNull(operandType, n.operand), qd.msgs.An_arithmetic_operand_must_be_of_type_any_number_bigint_or_an_enum_type);
       if (ok) {
         this.referenceExpression(
           n.operand,
@@ -1350,8 +1350,8 @@ export function newCheck(f: qt.Frame) {
     }
     inExpression(left: qt.Expression, right: qt.Expression, leftType: qt.Type, rightType: qt.Type): qt.Type {
       if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
-      leftType = this.nonNullType(leftType, left);
-      rightType = this.nonNullType(rightType, right);
+      leftType = qf.type.check.nonNull(leftType, left);
+      rightType = qf.type.check.nonNull(rightType, right);
       if (!(allTypesAssignableToKind(leftType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) || qf.type.is.assignableToKind(leftType, TypeFlags.Index | TypeFlags.TypeParam)))
         error(left, qd.msgs.The_left_hand_side_of_an_in_expression_must_be_of_type_any_string_number_or_symbol);
       if (!allTypesAssignableToKind(rightType, TypeFlags.NonPrimitive | TypeFlags.InstantiableNonPrimitive))
@@ -1360,7 +1360,7 @@ export function newCheck(f: qt.Frame) {
     }
     objectLiteralAssignment(n: qt.ObjectLiteralExpression, sourceType: qt.Type, rightIsThis?: boolean): qt.Type {
       const properties = n.properties;
-      if (strictNullChecks && properties.length === 0) return this.nonNullType(sourceType, n);
+      if (strictNullChecks && properties.length === 0) return qf.type.check.nonNull(sourceType, n);
       for (let i = 0; i < properties.length; i++) {
         this.objectLiteralDestructuringPropertyAssignment(n, sourceType, i, properties, rightIsThis);
       }
@@ -1468,7 +1468,7 @@ export function newCheck(f: qt.Frame) {
         target.parent.kind === Syntax.SpreadAssignment
           ? qd.msgs.The_target_of_an_object_rest_assignment_may_not_be_an_optional_property_access
           : qd.msgs.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access;
-      if (this.referenceExpression(target, error, optionalError)) this.typeAssignableToAndOptionallyElaborate(sourceType, targetType, target, target);
+      if (this.referenceExpression(target, error, optionalError)) qf.type.check.assignableToAndOptionallyElaborate(sourceType, targetType, target, target);
       if (qf.is.privateIdentifierPropertyAccessExpression(target)) this.externalEmitHelpers(target.parent, ExternalEmitHelpers.ClassPrivateFieldSet);
       return sourceType;
     }
@@ -1506,7 +1506,7 @@ export function newCheck(f: qt.Frame) {
             const leftType = lastResult!;
             workStacks.leftType[stackIndex] = leftType;
             const operator = n.operatorToken.kind;
-            if (operator === Syntax.Ampersand2Token || operator === Syntax.Bar2Token || operator === Syntax.Question2Token) this.truthinessOfType(leftType, n.left);
+            if (operator === Syntax.Ampersand2Token || operator === Syntax.Bar2Token || operator === Syntax.Question2Token) qf.type.check.truthinessOf(leftType, n.left);
             advanceState(CheckBinaryExpressionState.FinishCheck);
             maybeCheckExpression(n.right);
             break;
@@ -1578,8 +1578,8 @@ export function newCheck(f: qt.Frame) {
         case Syntax.AmpersandToken:
         case Syntax.AmpersandEqualsToken:
           if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
-          leftType = this.nonNullType(leftType, left);
-          rightType = this.nonNullType(rightType, right);
+          leftType = qf.type.check.nonNull(leftType, left);
+          rightType = qf.type.check.nonNull(rightType, right);
           let suggestedOperator: Syntax | undefined;
           if (leftType.flags & TypeFlags.BooleanLike && rightType.flags & TypeFlags.BooleanLike && (suggestedOperator = getSuggestedBooleanOperator(operatorToken.kind)) !== undefined) {
             error(
@@ -1619,8 +1619,8 @@ export function newCheck(f: qt.Frame) {
         case Syntax.PlusEqualsToken:
           if (leftType === silentNeverType || rightType === silentNeverType) return silentNeverType;
           if (!qf.type.is.assignableToKind(leftType, TypeFlags.StringLike) && !qf.type.is.assignableToKind(rightType, TypeFlags.StringLike)) {
-            leftType = this.nonNullType(leftType, left);
-            rightType = this.nonNullType(rightType, right);
+            leftType = qf.type.check.nonNull(leftType, left);
+            rightType = qf.type.check.nonNull(rightType, right);
           }
           let resultType: qt.Type | undefined;
           if (qf.type.is.assignableToKind(leftType, TypeFlags.NumberLike, true)) resultType = numberType;
@@ -1644,8 +1644,8 @@ export function newCheck(f: qt.Frame) {
         case Syntax.LessThanEqualsToken:
         case Syntax.GreaterThanEqualsToken:
           if (this.forDisallowedESSymbolOperand(operator)) {
-            leftType = getBaseTypeOfLiteralType(this.nonNullType(leftType, left));
-            rightType = getBaseTypeOfLiteralType(this.nonNullType(rightType, right));
+            leftType = getBaseTypeOfLiteralType(qf.type.check.nonNull(leftType, left));
+            rightType = getBaseTypeOfLiteralType(qf.type.check.nonNull(rightType, right));
             reportOperatorErrorUnless(
               (left, right) =>
                 qf.type.is.comparableTo(left, right) ||
@@ -1749,7 +1749,7 @@ export function newCheck(f: qt.Frame) {
             ) &&
             (!left.kind === Syntax.Identifier || qy.get.unescUnderscores(left.escapedText) !== 'exports')
           ) {
-            this.typeAssignableToAndOptionallyElaborate(valueType, leftType, left, right);
+            qf.type.check.assignableToAndOptionallyElaborate(valueType, leftType, left, right);
           }
         }
       }
@@ -1826,7 +1826,7 @@ export function newCheck(f: qt.Frame) {
       const resolvedSignatureNextType = isAsync ? getAwaitedType(signatureNextType) || anyType : signatureNextType;
       const yieldExpressionType = n.expression ? this.expression(n.expression) : undefinedWideningType;
       const yieldedType = getYieldedTypeOfYieldExpression(n, yieldExpressionType, resolvedSignatureNextType, isAsync);
-      if (returnType && yieldedType) this.typeAssignableToAndOptionallyElaborate(yieldedType, signatureYieldType, n.expression || n, n.expression);
+      if (returnType && yieldedType) qf.type.check.assignableToAndOptionallyElaborate(yieldedType, signatureYieldType, n.expression || n, n.expression);
       if (n.asteriskToken) {
         const use = isAsync ? IterationUse.AsyncYieldStar : IterationUse.YieldStar;
         return getIterationTypeOfIterable(use, IterationTypeKind.Return, yieldExpressionType, n.expression) || anyType;
@@ -2051,7 +2051,7 @@ export function newCheck(f: qt.Frame) {
       const constraintType = qf.get.constraintOfTypeParam(typeParam);
       const defaultType = getDefaultFromTypeParam(typeParam);
       if (constraintType && defaultType) {
-        this.typeAssignableTo(
+        qf.type.check.assignableTo(
           defaultType,
           qf.get.typeWithThisArg(instantiateType(constraintType, makeUnaryTypeMapper(typeParam, defaultType)), defaultType),
           n.default,
@@ -2097,7 +2097,7 @@ export function newCheck(f: qt.Frame) {
           else {
             if (typePredicate.type) {
               const leadingError = () => chainqd.Messages(undefined, qd.msgs.A_type_predicate_s_type_must_be_assignable_to_its_param_s_type);
-              this.typeAssignableTo(typePredicate.type, signature.params[typePredicate.paramIndex].typeOfSymbol(), n.type, undefined, leadingError);
+              qf.type.check.assignableTo(typePredicate.type, signature.params[typePredicate.paramIndex].typeOfSymbol(), n.type, undefined, leadingError);
             }
           }
         } else if (paramName) {
@@ -2167,7 +2167,7 @@ export function newCheck(f: qt.Frame) {
               const generatorReturnType = getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Return, returnType, (functionFlags & FunctionFlags.Async) !== 0) || generatorYieldType;
               const generatorNextType = getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Next, returnType, (functionFlags & FunctionFlags.Async) !== 0) || unknownType;
               const generatorInstantiation = createGeneratorReturnType(generatorYieldType, generatorReturnType, generatorNextType, !!(functionFlags & FunctionFlags.Async));
-              this.typeAssignableTo(generatorInstantiation, returnType, returnTypeNode);
+              qf.type.check.assignableTo(generatorInstantiation, returnType, returnTypeNode);
             }
           } else if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.Async) {
             this.asyncFunctionReturnType(<qt.FunctionLikeDeclaration>n, returnTypeNode);
@@ -2410,7 +2410,7 @@ export function newCheck(f: qt.Frame) {
             typeArgs = getEffectiveTypeArgs(n, typeParams);
             mapper = createTypeMapper(typeParams, typeArgs);
           }
-          result = result && this.typeAssignableTo(typeArgs[i], instantiateType(constraint, mapper), n.typeArgs![i], qd.msgs.Type_0_does_not_satisfy_the_constraint_1);
+          result = result && qf.type.check.assignableTo(typeArgs[i], instantiateType(constraint, mapper), n.typeArgs![i], qd.msgs.Type_0_does_not_satisfy_the_constraint_1);
         }
       }
       return result;
@@ -2437,7 +2437,7 @@ export function newCheck(f: qt.Frame) {
       forEach(n.members, checkSourceElem);
       if (produceDiagnostics) {
         const type = getTypeFromTypeLiteralOrFunctionOrConstructorTyping(n);
-        this.indexConstraints(type);
+        qf.type.check.qf.type.check.indexConstraints(type);
         this.typeForDuplicateIndexSignatures(n);
         this.objectTypeForDuplicateDeclarations(n);
       }
@@ -2477,7 +2477,7 @@ export function newCheck(f: qt.Frame) {
     indexedAccessType(n: qt.IndexedAccessTyping) {
       this.sourceElem(n.objectType);
       this.sourceElem(n.indexType);
-      this.indexedAccessIndexType(getTypeFromIndexedAccessTyping(n), n);
+      qf.type.check.indexedAccessIndex(getTypeFromIndexedAccessTyping(n), n);
     }
     mappedType(n: qt.MappedTyping) {
       this.sourceElem(n.typeParam);
@@ -2485,7 +2485,7 @@ export function newCheck(f: qt.Frame) {
       if (!n.type) reportImplicitAny(n, anyType);
       const type = <qt.MappedType>getTypeFromMappedTyping(n);
       const constraintType = getConstraintTypeFromMappedType(type);
-      this.typeAssignableTo(constraintType, keyofConstraintType, qf.get.effectiveConstraintOfTypeParam(n.typeParam));
+      qf.type.check.assignableTo(constraintType, keyofConstraintType, qf.get.effectiveConstraintOfTypeParam(n.typeParam));
     }
     thisType(n: qt.ThisTyping) {
       getTypeFromThisNodeTypeNode(n);
@@ -2606,7 +2606,7 @@ export function newCheck(f: qt.Frame) {
         );
         return;
       }
-      this.awaitedType(returnType, n, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
+      qf.type.check.awaited(returnType, n, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
     }
     decorator(n: qt.Decorator): void {
       const signature = getResolvedSignature(n);
@@ -2639,7 +2639,7 @@ export function newCheck(f: qt.Frame) {
         default:
           return qu.fail();
       }
-      this.typeAssignableTo(returnType, expectedReturnType, n, headMessage, () => errorInfo);
+      qf.type.check.assignableTo(returnType, expectedReturnType, n, headMessage, () => errorInfo);
     }
     decorators(n: Node): void {
       if (!n.decorators) return;
@@ -3089,7 +3089,7 @@ export function newCheck(f: qt.Frame) {
             const initerType = this.expressionCached(n.initer!);
             if (strictNullChecks && needCheckWidenedType) this.nonNullNonVoidType(initerType, n);
             else {
-              this.typeAssignableToAndOptionallyElaborate(initerType, qf.get.widenedTypeForVariableLikeDeclaration(n), n, n.initer);
+              qf.type.check.assignableToAndOptionallyElaborate(initerType, qf.get.widenedTypeForVariableLikeDeclaration(n), n, n.initer);
             }
           }
           if (needCheckWidenedType) {
@@ -3108,7 +3108,7 @@ export function newCheck(f: qt.Frame) {
         if (initer) {
           const isJSObjectLiteralIniter =
             qf.is.inJSFile(n) && initer.kind === Syntax.ObjectLiteralExpression && (initer.properties.length === 0 || qf.is.prototypeAccess(n.name)) && qu.hasEntries(symbol.exports);
-          if (!isJSObjectLiteralIniter && n.parent.parent.kind !== Syntax.ForInStatement) this.typeAssignableToAndOptionallyElaborate(this.expressionCached(initer), type, n, initer, undefined);
+          if (!isJSObjectLiteralIniter && n.parent.parent.kind !== Syntax.ForInStatement) qf.type.check.assignableToAndOptionallyElaborate(this.expressionCached(initer), type, n, initer, undefined);
         }
         if (symbol.declarations.length > 1) {
           if (qu.some(symbol.declarations, (d) => d !== n && qf.is.variableLike(d) && !areDeclarationFlagsIdentical(d, n)))
@@ -3118,7 +3118,7 @@ export function newCheck(f: qt.Frame) {
         const declarationType = convertAutoToAny(qf.get.widenedTypeForVariableLikeDeclaration(n));
         if (type !== errorType && declarationType !== errorType && !qf.type.is.identicalTo(type, declarationType) && !(symbol.flags & qt.SymbolFlags.Assignment))
           errorNextVariableOrPropertyDeclarationMustHaveSameType(symbol.valueDeclaration, type, n, declarationType);
-        if (n.initer) this.typeAssignableToAndOptionallyElaborate(this.expressionCached(n.initer), declarationType, n, n.initer, undefined);
+        if (n.initer) qf.type.check.assignableToAndOptionallyElaborate(this.expressionCached(n.initer), declarationType, n, n.initer, undefined);
         if (!areDeclarationFlagsIdentical(n, symbol.valueDeclaration)) error(n.name, qd.msgs.All_declarations_of_0_must_have_identical_modifiers, declarationNameToString(n.name));
       }
       if (n.kind !== Syntax.PropertyDeclaration && n.kind !== Syntax.PropertySignature) {
@@ -3201,7 +3201,7 @@ export function newCheck(f: qt.Frame) {
       this.sourceElem(n.statement);
     }
     truthinessExpression(n: qt.Expression, checkMode?: CheckMode) {
-      return this.truthinessOfType(this.expression(n, checkMode), n);
+      return qf.type.check.truthinessOf(this.expression(n, checkMode), n);
     }
     forStatement(n: qt.ForStatement) {
       if (!checkGrammar.statementInAmbientContext(n)) {
@@ -3237,7 +3237,7 @@ export function newCheck(f: qt.Frame) {
             qd.msgs.The_left_hand_side_of_a_for_of_statement_must_be_a_variable_or_a_property_access,
             qd.msgs.The_left_hand_side_of_a_for_of_statement_may_not_be_an_optional_property_access
           );
-          if (iteratedType) this.typeAssignableToAndOptionallyElaborate(iteratedType, leftType, varExpr, n.expression);
+          if (iteratedType) qf.type.check.assignableToAndOptionallyElaborate(iteratedType, leftType, varExpr, n.expression);
         }
       }
       this.sourceElem(n.statement);
@@ -3303,15 +3303,15 @@ export function newCheck(f: qt.Frame) {
         if (func.kind === Syntax.SetAccessor) {
           if (n.expression) error(n, qd.msgs.Setters_cannot_return_a_value);
         } else if (func.kind === Syntax.Constructor) {
-          if (n.expression && !this.typeAssignableToAndOptionallyElaborate(exprType, returnType, n, n.expression))
+          if (n.expression && !qf.type.check.assignableToAndOptionallyElaborate(exprType, returnType, n, n.expression))
             error(n, qd.msgs.Return_type_of_constructor_signature_must_be_assignable_to_the_instance_type_of_the_class);
         } else if (getReturnTypeFromAnnotation(func)) {
           const unwrappedReturnType = unwrapReturnType(returnType, functionFlags) ?? returnType;
           const unwrappedExprType =
             functionFlags & FunctionFlags.Async
-              ? this.awaitedType(exprType, n, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member)
+              ? qf.type.check.awaited(exprType, n, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member)
               : exprType;
-          if (unwrappedReturnType) this.typeAssignableToAndOptionallyElaborate(unwrappedExprType, unwrappedReturnType, n, n.expression);
+          if (unwrappedReturnType) qf.type.check.assignableToAndOptionallyElaborate(unwrappedExprType, unwrappedReturnType, n, n.expression);
         }
       } else if (func.kind !== Syntax.Constructor && compilerOpts.noImplicitReturns && !isUnwrappedReturnTypeVoidOrAny(func, returnType)) {
         error(n, qd.msgs.Not_all_code_paths_return_a_value);
@@ -3351,7 +3351,7 @@ export function newCheck(f: qt.Frame) {
             caseType = caseIsLiteral ? getBaseTypeOfLiteralType(caseType) : caseType;
             comparedExpressionType = getBaseTypeOfLiteralType(expressionType);
           }
-          if (!isTypeEqualityComparableTo(comparedExpressionType, caseType)) this.typeComparableTo(caseType, comparedExpressionType, clause.expression, undefined);
+          if (!isTypeEqualityComparableTo(comparedExpressionType, caseType)) qf.type.check.comparableTo(caseType, comparedExpressionType, clause.expression, undefined);
         }
         forEach(clause.statements, checkSourceElem);
         if (compilerOpts.noFallthroughCasesInSwitch && clause.fallthroughFlowNode && isReachableFlowNode(clause.fallthroughFlowNode)) error(clause, qd.msgs.Fallthrough_case_in_switch);
@@ -3493,7 +3493,7 @@ export function newCheck(f: qt.Frame) {
           const baseType = baseTypes[0];
           const baseConstructorType = getBaseConstructorTypeOfClass(type);
           const staticBaseType = getApparentType(baseConstructorType);
-          this.baseTypeAccessibility(staticBaseType, baseTypeNode);
+          qf.type.check.baseAccessibility(staticBaseType, baseTypeNode);
           this.sourceElem(baseTypeNode.expression);
           if (qu.some(baseTypeNode.typeArgs)) {
             forEach(baseTypeNode.typeArgs, checkSourceElem);
@@ -3502,9 +3502,9 @@ export function newCheck(f: qt.Frame) {
             }
           }
           const baseWithThis = qf.get.typeWithThisArg(baseType, type.thisType);
-          if (!this.typeAssignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, qd.msgs.Class_0_incorrectly_extends_base_class_1);
+          if (!qf.type.check.assignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, qd.msgs.Class_0_incorrectly_extends_base_class_1);
           else {
-            this.typeAssignableTo(staticType, getTypeWithoutSignatures(staticBaseType), n.name || n, qd.msgs.Class_static_side_0_incorrectly_extends_base_class_static_side_1);
+            qf.type.check.assignableTo(staticType, getTypeWithoutSignatures(staticBaseType), n.name || n, qd.msgs.Class_static_side_0_incorrectly_extends_base_class_static_side_1);
           }
           if (baseConstructorType.flags & TypeFlags.TypeVariable && !qf.type.is.mixinConstructor(staticType))
             error(n.name || n, qd.msgs.A_mixin_class_must_have_a_constructor_with_a_single_rest_param_of_type_any);
@@ -3530,7 +3530,7 @@ export function newCheck(f: qt.Frame) {
                     ? qd.msgs.Class_0_incorrectly_implements_class_1_Did_you_mean_to_extend_1_and_inherit_its_members_as_a_subclass
                     : qd.msgs.Class_0_incorrectly_implements_interface_1;
                 const baseWithThis = qf.get.typeWithThisArg(t, type.thisType);
-                if (!this.typeAssignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, genericDiag);
+                if (!qf.type.check.assignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, genericDiag);
               } else {
                 error(typeRefNode, qd.msgs.A_class_can_only_implement_an_object_type_or_intersection_of_object_types_with_statically_known_members);
               }
@@ -3539,7 +3539,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       if (produceDiagnostics) {
-        this.indexConstraints(type);
+        qf.type.check.qf.type.check.indexConstraints(type);
         this.typeForDuplicateIndexSignatures(n);
         this.propertyInitialization(n);
       }
@@ -3699,9 +3699,9 @@ export function newCheck(f: qt.Frame) {
           const typeWithThis = qf.get.typeWithThisArg(type);
           if (this.inheritedPropertiesAreIdentical(type, n.name)) {
             for (const baseType of getBaseTypes(type)) {
-              this.typeAssignableTo(typeWithThis, qf.get.typeWithThisArg(baseType, type.thisType), n.name, qd.msgs.Interface_0_incorrectly_extends_interface_1);
+              qf.type.check.assignableTo(typeWithThis, qf.get.typeWithThisArg(baseType, type.thisType), n.name, qd.msgs.Interface_0_incorrectly_extends_interface_1);
             }
-            this.indexConstraints(type);
+            qf.type.check.qf.type.check.indexConstraints(type);
           }
         }
         this.objectTypeForDuplicateDeclarations(n);
@@ -4412,7 +4412,7 @@ export function newCheck(f: qt.Frame) {
           const typeArgHeadMessage = headMessage || qd.msgs.Type_0_does_not_satisfy_the_constraint_1;
           if (!mapper) mapper = createTypeMapper(typeParams, typeArgTypes);
           const typeArg = typeArgTypes[i];
-          if (!this.typeAssignableTo(typeArg, qf.get.typeWithThisArg(instantiateType(constraint, mapper), typeArg), reportErrors ? typeArgNodes[i] : undefined, typeArgHeadMessage, errorInfo)) {
+          if (!qf.type.check.assignableTo(typeArg, qf.get.typeWithThisArg(instantiateType(constraint, mapper), typeArg), reportErrors ? typeArgNodes[i] : undefined, typeArgHeadMessage, errorInfo)) {
             return;
           }
         }

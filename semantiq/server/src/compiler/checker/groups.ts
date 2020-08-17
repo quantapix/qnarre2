@@ -607,7 +607,7 @@ export function newIs(f: qt.Frame) {
         p.parent.operatorToken.kind === Syntax.EqualsToken &&
         p.parent.left === p &&
         !this.assignmentTarget(p.parent) &&
-        this.typeAssignableToKind(qf.get.typeOfExpression(p.argExpression), TypeFlags.NumberLike);
+        qf.type.is.assignableToKind(qf.get.typeOfExpression(p.argExpression), TypeFlags.NumberLike);
       return isLengthPushOrUnshift || isElemAssignment;
     }
     declarationWithExplicitTypeAnnotation(d: qt.Declaration) {
@@ -787,7 +787,7 @@ export function newIs(f: qt.Frame) {
       }
     }
     numericComputedName(n: qt.ComputedPropertyName): boolean {
-      return this.typeAssignableToKind(qf.check.computedPropertyName(n), TypeFlags.NumberLike);
+      return qf.type.is.assignableToKind(qf.check.computedPropertyName(n), TypeFlags.NumberLike);
     }
     jsxIntrinsicIdentifier(tagName: qt.JsxTagNameExpression): boolean {
       return tagName.kind === Syntax.Identifier && qy.is.intrinsicJsxName(tagName.escapedText);

@@ -29,20 +29,20 @@ export function newType(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.type = new (class Ftype {
     check = new (class extends Ftype {
-      typeAssignableTo(t: Type, to: Type, err?: Node, m?: qd.Message, c?: () => qd.MessageChain | undefined, e?: { errors?: qd.Diagnostic[] }) {
-        return this.typeRelatedTo(t, to, assignableRelation, err, m, c, e);
+      assignableTo(t: Type, to: Type, err?: Node, m?: qd.Message, c?: () => qd.MessageChain | undefined, o?: { errors?: qd.Diagnostic[] }) {
+        return this.relatedTo(t, to, assignableRelation, err, m, c, o);
       }
-      typeComparableTo(t: Type, to: Type, err: Node, m?: qd.Message, c?: () => qd.MessageChain | undefined) {
-        return this.typeRelatedTo(t, to, comparableRelation, err, m, c);
+      comparableTo(t: Type, to: Type, err: Node, m?: qd.Message, c?: () => qd.MessageChain | undefined) {
+        return this.relatedTo(t, to, comparableRelation, err, m, c);
       }
-      typeRelatedTo(
+      relatedTo(
         t: Type,
         to: Type,
         relation: qu.QMap<qt.RelationComparisonResult>,
         err: Node,
         m?: qd.Message,
         c?: () => qd.MessageChain | undefined,
-        e?: { errors?: qd.Diagnostic[]; skipLogging?: boolean }
+        o?: { errors?: qd.Diagnostic[]; skipLogging?: boolean }
       ) {
         let errorInfo: qd.MessageChain | undefined;
         let relatedInfo: [qd.DiagnosticRelatedInformation, ...qd.DiagnosticRelatedInformation[]] | undefined;
@@ -62,7 +62,7 @@ export function newType(f: qt.Frame) {
         if (incompatibleStack.length) reportIncompatibleStack();
         if (overflow) {
           const diag = error(err || currentNode, qd.msgs.Excessive_stack_depth_comparing_types_0_and_1, typeToString(t), typeToString(to));
-          if (e) (e.errors || (e.errors = [])).push(diag);
+          if (o) (o.errors || (o.errors = [])).push(diag);
         } else if (errorInfo) {
           if (c) {
             const chain = c();
@@ -75,7 +75,7 @@ export function newType(f: qt.Frame) {
           if (m && err && !result && t.symbol) {
             const ls = t.symbol.links;
             if (ls.originatingImport && !qf.is.importCall(ls.originatingImport)) {
-              const helpfulRetry = this.typeRelatedTo(ls.target!.typeOfSymbol(), to, relation, undefined);
+              const helpfulRetry = qf.type.check.relatedTo(ls.target!.typeOfSymbol(), to, relation, undefined);
               if (helpfulRetry) {
                 const diag = qf.create.diagForNode(
                   ls.originatingImport,
@@ -88,10 +88,10 @@ export function newType(f: qt.Frame) {
           }
           const diag = qf.create.diagForNodeFromMessageChain(err!, errorInfo, relatedInformation);
           if (relatedInfo) addRelatedInfo(diag, ...relatedInfo);
-          if (e) (e.errors || (e.errors = [])).push(diag);
-          if (!e || !e.skipLogging) diagnostics.add(diag);
+          if (o) (o.errors || (o.errors = [])).push(diag);
+          if (!o || !o.skipLogging) diagnostics.add(diag);
         }
-        if (err && e && e.skipLogging && result === qt.Ternary.False) qf.assert.true(!!e.errors, 'missed opportunity to interact with error.');
+        if (err && o && o.skipLogging && result === qt.Ternary.False) qf.assert.true(!!o.errors, 'missed opportunity to interact with error.');
         return result !== qt.Ternary.False;
         function resetErrorInfo(saved: ReturnType<typeof captureErrorCalculationState>) {
           errorInfo = saved.errorInfo;
@@ -321,13 +321,13 @@ export function newType(f: qt.Frame) {
                 : eachTypeRelatedToType(source as qt.UnionType, target, reportErrors && !(source.flags & TypeFlags.Primitive), intersectionState);
           } else {
             if (target.flags & TypeFlags.Union)
-              result = typeRelatedToSomeType(
+              result = qf.type.check.relatedToSomeType(
                 getRegularTypeOfObjectLiteral(source),
                 <qt.UnionType>target,
                 reportErrors && !(source.flags & TypeFlags.Primitive) && !(target.flags & TypeFlags.Primitive)
               );
             else if (target.flags & TypeFlags.Intersection) {
-              result = typeRelatedToEachType(getRegularTypeOfObjectLiteral(source), target as qt.IntersectionType, reportErrors, IntersectionState.Target);
+              result = qf.type.check.relatedToEachType(getRegularTypeOfObjectLiteral(source), target as qt.IntersectionType, reportErrors, IntersectionState.Target);
             } else if (source.flags & TypeFlags.Intersection) {
               result = someTypeRelatedToType(<qt.IntersectionType>source, target, false, IntersectionState.Source);
             }
@@ -470,13 +470,13 @@ export function newType(f: qt.Frame) {
           let result = qt.Ternary.True;
           const sourceTypes = source.types;
           for (const sourceType of sourceTypes) {
-            const related = typeRelatedToSomeType(sourceType, target, false);
+            const related = qf.type.check.relatedToSomeType(sourceType, target, false);
             if (!related) return qt.Ternary.False;
             result &= related;
           }
           return result;
         }
-        function typeRelatedToSomeType(source: Type, target: qt.UnionOrIntersectionType, reportErrors: boolean): qt.Ternary {
+        function relatedToSomeType(source: Type, target: qt.UnionOrIntersectionType, reportErrors: boolean): qt.Ternary {
           const targetTypes = target.types;
           if (target.flags & TypeFlags.Union && containsType(targetTypes, source)) return qt.Ternary.True;
           for (const type of targetTypes) {
@@ -489,7 +489,7 @@ export function newType(f: qt.Frame) {
           }
           return qt.Ternary.False;
         }
-        function typeRelatedToEachType(source: Type, target: qt.IntersectionType, reportErrors: boolean, intersectionState: IntersectionState): qt.Ternary {
+        function relatedToEachType(source: Type, target: qt.IntersectionType, reportErrors: boolean, intersectionState: IntersectionState): qt.Ternary {
           let result = qt.Ternary.True;
           const targetTypes = target.types;
           for (const targetType of targetTypes) {
@@ -845,7 +845,7 @@ export function newType(f: qt.Frame) {
             if (source.flags & (TypeFlags.Object | TypeFlags.Intersection) && target.flags & TypeFlags.Union) {
               const objectOnlyTarget = extractTypesOfKind(target, TypeFlags.Object | TypeFlags.Intersection | TypeFlags.Substitution);
               if (objectOnlyTarget.flags & TypeFlags.Union) {
-                const result = typeRelatedToDiscriminatedType(source, objectOnlyTarget as qt.UnionType);
+                const result = qf.type.check.relatedToDiscriminatedType(source, objectOnlyTarget as qt.UnionType);
                 if (result) return result;
               }
             }
@@ -893,7 +893,7 @@ export function newType(f: qt.Frame) {
           }
           return qt.Ternary.False;
         }
-        function typeRelatedToDiscriminatedType(source: Type, target: qt.UnionType) {
+        function relatedToDiscriminatedType(source: Type, target: qt.UnionType) {
           const sourceProperties = qf.get.propertiesOfType(source);
           const sourcePropertiesFiltered = findDiscriminantProperties(sourceProperties, target);
           if (!sourcePropertiesFiltered) return qt.Ternary.False;
@@ -1317,185 +1317,146 @@ export function newType(f: qt.Frame) {
           return false;
         }
       }
-      typeAssignableToAndOptionallyElaborate(
-        source: Type,
-        target: Type,
-        errorNode: Node | undefined,
-        expr: qt.Expression | undefined,
-        headMessage?: qd.Message,
-        containingMessageChain?: () => qd.MessageChain | undefined
-      ): boolean {
-        return this.typeRelatedToAndOptionallyElaborate(source, target, assignableRelation, errorNode, expr, headMessage, containingMessageChain, undefined);
+      assignableToAndOptionallyElaborate(t: Type, to: Type, err?: Node, e?: qt.Expression, m?: qd.Message, c?: () => qd.MessageChain | undefined) {
+        return this.relatedToAndOptionallyElaborate(t, to, assignableRelation, err, e, m, c, undefined);
       }
-      typeRelatedToAndOptionallyElaborate(
-        source: Type,
-        target: Type,
+      relatedToAndOptionallyElaborate(
+        t: Type,
+        to: Type,
         relation: qu.QMap<qt.RelationComparisonResult>,
-        errorNode: Node | undefined,
-        expr: qt.Expression | undefined,
-        headMessage: qd.Message | undefined,
-        containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
-        errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
-      ): boolean {
-        if (qf.type.is.relatedTo(source, target, relation)) return true;
-        if (!errorNode || !elaborateError(expr, source, target, relation, headMessage, containingMessageChain, errorOutputContainer))
-          return this.typeRelatedTo(source, target, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer);
+        err?: Node,
+        e?: qt.Expression,
+        m?: qd.Message,
+        c?: () => qd.MessageChain | undefined,
+        o?: { errors?: qd.Diagnostic[]; skipLogging?: boolean }
+      ) {
+        if (qf.type.is.relatedTo(t, to, relation)) return true;
+        if (!err || !elaborateError(e, t, to, relation, m, c, o)) return qf.type.check.relatedTo(t, to, relation, err, m, c, o);
         return false;
       }
-      spreadPropOverrides(type: Type, props: qt.SymbolTable, spread: qt.SpreadAssignment | qt.JsxSpreadAttribute) {
-        for (const right of qf.get.propertiesOfType(type)) {
-          const left = props.get(right.escName);
-          const rightType = right.typeOfSymbol();
-          if (left && !maybeTypeOfKind(rightType, TypeFlags.Nullable) && !(maybeTypeOfKind(rightType, TypeFlags.AnyOrUnknown) && right.flags & qt.SymbolFlags.Optional)) {
-            const diagnostic = error(left.valueDeclaration, qd.msgs._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, qy.get.unescUnderscores(left.escName));
-            addRelatedInfo(diagnostic, qf.create.diagForNode(spread, qd.msgs.This_spread_always_overwrites_this_property));
+      spreadPropOverrides(t: Type, ps: qt.SymbolTable, s: qt.SpreadAssignment | qt.JsxSpreadAttribute) {
+        for (const right of qf.get.propertiesOfType(t)) {
+          const left = ps.get(right.escName);
+          const r = right.typeOfSymbol();
+          if (left && !maybeTypeOfKind(r, TypeFlags.Nullable) && !(maybeTypeOfKind(r, TypeFlags.AnyOrUnknown) && right.flags & qt.SymbolFlags.Optional)) {
+            const d = error(left.valueDeclaration, qd.msgs._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, qy.get.unescUnderscores(left.escName));
+            addRelatedInfo(d, qf.create.diagForNode(s, qd.msgs.This_spread_always_overwrites_this_property));
           }
         }
       }
-      nonNullTypeWithReporter(type: Type, n: Node, reportError: (n: Node, kind: TypeFlags) => void): Type {
-        if (strictNullChecks && type.flags & TypeFlags.Unknown) {
+      nonNullWithReporter(t: Type, n: Node, cb: (n: Node, k: TypeFlags) => void): Type {
+        if (strictNullChecks && t.flags & TypeFlags.Unknown) {
           error(n, qd.msgs.Object_is_of_type_unknown);
           return errorType;
         }
-        const kind = (strictNullChecks ? getFalsyFlags(type) : type.flags) & TypeFlags.Nullable;
-        if (kind) {
-          reportError(n, kind);
-          const t = getNonNullableType(type);
-          return t.flags & (TypeFlags.Nullable | TypeFlags.Never) ? errorType : t;
+        const k = (strictNullChecks ? getFalsyFlags(t) : t.flags) & TypeFlags.Nullable;
+        if (k) {
+          cb(n, k);
+          const u = getNonNullableType(t);
+          return u.flags & (TypeFlags.Nullable | TypeFlags.Never) ? errorType : u;
         }
-        return type;
+        return t;
       }
-      nonNullType(type: Type, n: Node) {
-        return this.nonNullTypeWithReporter(type, n, reportObjectPossiblyNullOrUndefinedError);
+      nonNull(t: Type, n: Node) {
+        return this.nonNullWithReporter(t, n, reportObjectPossiblyNullOrUndefinedError);
       }
-      nonNullNonVoidType(type: Type, n: Node): Type {
-        const nonNullType = this.nonNullType(type, n);
-        if (nonNullType !== errorType && nonNullType.flags & TypeFlags.Void) error(n, qd.msgs.Object_is_possibly_undefined);
-        return nonNullType;
+      nonNullNonVoidType(t: Type, n: Node): Type {
+        const r = this.nonNull(t, n);
+        if (r !== errorType && r.flags & TypeFlags.Void) error(n, qd.msgs.Object_is_possibly_undefined);
+        return r;
       }
-      privateIdentifierPropertyAccess(leftType: Type, right: qt.PrivateIdentifier, lexicallyScopedIdentifier: qt.Symbol | undefined): boolean {
+      privateIdentifierPropAccess(left: Type, right: qt.PrivateIdentifier, s?: qt.Symbol) {
         let propertyOnType: qt.Symbol | undefined;
-        const properties = qf.get.propertiesOfType(leftType);
-        if (properties) {
-          forEach(properties, (symbol: qt.Symbol) => {
-            const decl = symbol.valueDeclaration;
-            if (decl && qf.is.namedDeclaration(decl) && decl.name.kind === Syntax.PrivateIdentifier && decl.name.escapedText === right.escapedText) {
-              propertyOnType = symbol;
+        const ps = qf.get.propertiesOfType(left);
+        if (ps) {
+          forEach(ps, (p: qt.Symbol) => {
+            const v = p.valueDeclaration;
+            if (v && qf.is.namedDeclaration(v) && v.name.kind === Syntax.PrivateIdentifier && v.name.escapedText === right.escapedText) {
+              propertyOnType = p;
               return true;
             }
           });
         }
-        const diagName = diagnosticName(right);
+        const n = diagnosticName(right);
         if (propertyOnType) {
           const typeValueDecl = propertyOnType.valueDeclaration;
           const typeClass = qf.get.containingClass(typeValueDecl);
           qf.assert.true(!!typeClass);
-          if (lexicallyScopedIdentifier) {
-            const lexicalValueDecl = lexicallyScopedIdentifier.valueDeclaration;
-            const lexicalClass = qf.get.containingClass(lexicalValueDecl);
-            qf.assert.true(!!lexicalClass);
-            if (qc.findAncestor(lexicalClass, (x) => typeClass === x)) {
-              const diagnostic = error(
+          if (s) {
+            const v = s.valueDeclaration;
+            const c = qf.get.containingClass(v);
+            qf.assert.true(!!c);
+            if (qc.findAncestor(c, (x) => typeClass === x)) {
+              const d = error(
                 right,
                 qd.msgs.The_property_0_cannot_be_accessed_on_type_1_within_this_class_because_it_is_shadowed_by_another_private_identifier_with_the_same_spelling,
-                diagName,
-                typeToString(leftType)
+                n,
+                typeToString(left)
               );
               addRelatedInfo(
-                diagnostic,
-                qf.create.diagForNode(lexicalValueDecl, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, diagName),
-                qf.create.diagForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, diagName)
+                d,
+                qf.create.diagForNode(v, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, n),
+                qf.create.diagForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, n)
               );
               return true;
             }
           }
-          error(right, qd.msgs.Property_0_is_not_accessible_outside_class_1_because_it_has_a_private_identifier, diagName, diagnosticName(typeClass.name || anon));
+          error(right, qd.msgs.Property_0_is_not_accessible_outside_class_1_because_it_has_a_private_identifier, n, diagnosticName(typeClass.name || anon));
           return true;
         }
         return false;
       }
-      indexedAccessIndexType(type: Type, accessNode: qt.IndexedAccessTyping | qt.ElemAccessExpression) {
-        if (!(type.flags & TypeFlags.IndexedAccess)) return type;
-        const objectType = (<qt.IndexedAccessType>type).objectType;
-        const indexType = (<qt.IndexedAccessType>type).indexType;
+      indexedAccessIndex(t: Type, n: qt.IndexedAccessTyping | qt.ElemAccessExpression) {
+        if (!(t.flags & TypeFlags.IndexedAccess)) return t;
+        const objectType = (<qt.IndexedAccessType>t).objectType;
+        const indexType = (<qt.IndexedAccessType>t).indexType;
         if (qf.type.is.assignableTo(indexType, qf.get.indexType(objectType, false))) {
           if (
-            accessNode.kind === Syntax.ElemAccessExpression &&
-            qf.is.assignmentTarget(accessNode) &&
+            n.kind === Syntax.ElemAccessExpression &&
+            qf.is.assignmentTarget(n) &&
             getObjectFlags(objectType) & ObjectFlags.Mapped &&
             getMappedTypeModifiers(<qt.MappedType>objectType) & MappedTypeModifiers.IncludeReadonly
           ) {
-            error(accessNode, qd.msgs.Index_signature_in_type_0_only_permits_reading, typeToString(objectType));
+            error(n, qd.msgs.Index_signature_in_type_0_only_permits_reading, typeToString(objectType));
           }
-          return type;
+          return t;
         }
         const apparentObjectType = getApparentType(objectType);
-        if (qf.get.indexInfoOfType(apparentObjectType, IndexKind.Number) && qf.type.is.assignableToKind(indexType, TypeFlags.NumberLike)) return type;
+        if (qf.get.indexInfoOfType(apparentObjectType, IndexKind.Number) && qf.type.is.assignableToKind(indexType, TypeFlags.NumberLike)) return t;
         if (qf.type.is.genericObject(objectType)) {
-          const propertyName = getPropertyNameFromIndex(indexType, accessNode);
+          const propertyName = getPropertyNameFromIndex(indexType, n);
           if (propertyName) {
             const propertySymbol = forEachType(apparentObjectType, (t) => qf.get.propertyOfType(t, propertyName));
             if (propertySymbol && propertySymbol.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier) {
-              error(accessNode, qd.msgs.Private_or_protected_member_0_cannot_be_accessed_on_a_type_param, qy.get.unescUnderscores(propertyName));
+              error(n, qd.msgs.Private_or_protected_member_0_cannot_be_accessed_on_a_type_param, qy.get.unescUnderscores(propertyName));
               return errorType;
             }
           }
         }
-        error(accessNode, qd.msgs.Type_0_cannot_be_used_to_index_type_1, typeToString(indexType), typeToString(objectType));
+        error(n, qd.msgs.Type_0_cannot_be_used_to_index_type_1, typeToString(indexType), typeToString(objectType));
         return errorType;
       }
-      awaitedType(type: Type, errorNode: Node, diagnosticMessage: qd.Message, arg0?: string | number): Type {
-        const awaitedType = getAwaitedType(type, errorNode, diagnosticMessage, arg0);
-        return awaitedType || errorType;
+      awaited(t: Type, err: Node, m: qd.Message, arg0?: string | number): Type {
+        const r = getAwaitedType(t, err, m, arg0);
+        return r || errorType;
       }
-      truthinessOfType(type: Type, n: Node) {
-        if (type.flags & TypeFlags.Void) error(n, qd.msgs.An_expression_of_type_void_cannot_be_tested_for_truthiness);
-        return type;
+      truthinessOf(t: Type, n: Node) {
+        if (t.flags & TypeFlags.Void) error(n, qd.msgs.An_expression_of_type_void_cannot_be_tested_for_truthiness);
+        return t;
       }
-      indexConstraints(type: Type) {
-        const declaredNumberIndexer = getIndexDeclarationOfSymbol(type.symbol, IndexKind.Number);
-        const declaredStringIndexer = getIndexDeclarationOfSymbol(type.symbol, IndexKind.String);
-        const stringIndexType = qf.get.indexTypeOfType(type, IndexKind.String);
-        const numberIndexType = qf.get.indexTypeOfType(type, IndexKind.Number);
-        if (stringIndexType || numberIndexType) {
-          forEach(getPropertiesOfObjectType(type), (prop) => {
-            const propType = prop.typeOfSymbol();
-            this.indexConstraintForProperty(prop, propType, type, declaredStringIndexer, stringIndexType, IndexKind.String);
-            this.indexConstraintForProperty(prop, propType, type, declaredNumberIndexer, numberIndexType, IndexKind.Number);
-          });
-          const classDeclaration = type.symbol.valueDeclaration;
-          if (getObjectFlags(type) & ObjectFlags.Class && qf.is.classLike(classDeclaration)) {
-            for (const member of classDeclaration.members) {
-              if (!qf.has.syntacticModifier(member, ModifierFlags.Static) && hasNonBindableDynamicName(member)) {
-                const symbol = qf.get.symbolOfNode(member);
-                const propType = this.typeOfSymbol();
-                this.indexConstraintForProperty(symbol, propType, type, declaredStringIndexer, stringIndexType, IndexKind.String);
-                this.indexConstraintForProperty(symbol, propType, type, declaredNumberIndexer, numberIndexType, IndexKind.Number);
-              }
-            }
-          }
-        }
-        let errorNode: Node | undefined;
-        if (stringIndexType && numberIndexType) {
-          errorNode = declaredNumberIndexer || declaredStringIndexer;
-          if (!errorNode && getObjectFlags(type) & ObjectFlags.Interface) {
-            const someBaseTypeHasBothIndexers = forEach(
-              getBaseTypes(<qt.InterfaceType>type),
-              (base) => qf.get.indexTypeOfType(base, IndexKind.String) && qf.get.indexTypeOfType(base, IndexKind.Number)
-            );
-            errorNode = someBaseTypeHasBothIndexers ? undefined : type.symbol.declarations[0];
-          }
-        }
-        if (errorNode && !qf.type.is.assignableTo(numberIndexType!, stringIndexType!))
-          error(errorNode, qd.msgs.Numeric_index_type_0_is_not_assignable_to_string_index_type_1, typeToString(numberIndexType!), typeToString(stringIndexType!));
-        function checkIndexConstraintForProperty(
+      indexConstraints(t: Type) {
+        const declaredNumberIndexer = getIndexDeclarationOfSymbol(t.symbol, IndexKind.Number);
+        const declaredStringIndexer = getIndexDeclarationOfSymbol(t.symbol, IndexKind.String);
+        const stringIndexType = qf.get.indexTypeOfType(t, IndexKind.String);
+        const numberIndexType = qf.get.indexTypeOfType(t, IndexKind.Number);
+        const checkIndexConstraintForProperty = (
           s: qt.Symbol,
           propertyType: Type,
           containingType: Type,
           indexDeclaration: qt.Declaration | undefined,
           indexType: Type | undefined,
           indexKind: IndexKind
-        ): void {
+        ) => {
           if (!indexType || s.isKnown()) return;
           const propDeclaration = s.valueDeclaration;
           const name = propDeclaration && qf.decl.nameOf(propDeclaration);
@@ -1509,7 +1470,7 @@ export function newType(f: qt.Frame) {
           } else if (getObjectFlags(containingType) & ObjectFlags.Interface) {
             const someBaseClassHasBothPropertyAndIndexer = forEach(
               getBaseTypes(<qt.InterfaceType>containingType),
-              (base) => getPropertyOfObjectType(base, s.escName) && qf.get.indexTypeOfType(base, indexKind)
+              (b) => getPropertyOfObjectType(b, s.escName) && qf.get.indexTypeOfType(b, indexKind)
             );
             errorNode = someBaseClassHasBothPropertyAndIndexer ? undefined : containingType.symbol.declarations[0];
           }
@@ -1518,15 +1479,43 @@ export function newType(f: qt.Frame) {
               indexKind === IndexKind.String ? qd.msgs.Property_0_of_type_1_is_not_assignable_to_string_index_type_2 : qd.msgs.Property_0_of_type_1_is_not_assignable_to_numeric_index_type_2;
             error(errorNode, errorMessage, s.symbolToString(), typeToString(propertyType), typeToString(indexType));
           }
+        };
+        if (stringIndexType || numberIndexType) {
+          forEach(getPropertiesOfObjectType(t), (p) => {
+            const propType = p.typeOfSymbol();
+            checkIndexConstraintForProperty(p, propType, t, declaredStringIndexer, stringIndexType, IndexKind.String);
+            checkIndexConstraintForProperty(p, propType, t, declaredNumberIndexer, numberIndexType, IndexKind.Number);
+          });
+          const v = t.symbol.valueDeclaration;
+          if (getObjectFlags(t) & ObjectFlags.Class && qf.is.classLike(v)) {
+            for (const m of v.members) {
+              if (!qf.has.syntacticModifier(m, ModifierFlags.Static) && hasNonBindableDynamicName(m)) {
+                const s = qf.get.symbolOfNode(m);
+                const propType = this.typeOfSymbol();
+                checkIndexConstraintForProperty(s, propType, t, declaredStringIndexer, stringIndexType, IndexKind.String);
+                checkIndexConstraintForProperty(s, propType, t, declaredNumberIndexer, numberIndexType, IndexKind.Number);
+              }
+            }
+          }
         }
+        let errorNode: Node | undefined;
+        if (stringIndexType && numberIndexType) {
+          errorNode = declaredNumberIndexer || declaredStringIndexer;
+          if (!errorNode && getObjectFlags(t) & ObjectFlags.Interface) {
+            const someBaseTypeHasBothIndexers = forEach(getBaseTypes(<qt.InterfaceType>t), (b) => qf.get.indexTypeOfType(b, IndexKind.String) && qf.get.indexTypeOfType(b, IndexKind.Number));
+            errorNode = someBaseTypeHasBothIndexers ? undefined : t.symbol.declarations[0];
+          }
+        }
+        if (errorNode && !qf.type.is.assignableTo(numberIndexType!, stringIndexType!))
+          error(errorNode, qd.msgs.Numeric_index_type_0_is_not_assignable_to_string_index_type_1, typeToString(numberIndexType!), typeToString(stringIndexType!));
       }
-      baseTypeAccessibility(type: Type, n: qt.ExpressionWithTypings) {
-        const signatures = getSignaturesOfType(type, SignatureKind.Construct);
-        if (signatures.length) {
-          const declaration = signatures[0].declaration;
-          if (declaration && qf.has.effectiveModifier(declaration, ModifierFlags.Private)) {
-            const typeClassDeclaration = type.symbol.classLikeDeclaration()!;
-            if (!isNodeWithinClass(n, typeClassDeclaration)) error(n, qd.msgs.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, qf.get.fullyQualifiedName(type.symbol));
+      baseAccessibility(s: Type, n: qt.ExpressionWithTypings) {
+        const ss = getSignaturesOfType(s, SignatureKind.Construct);
+        if (ss.length) {
+          const d = ss[0].declaration;
+          if (d && qf.has.effectiveModifier(d, ModifierFlags.Private)) {
+            const c = s.symbol.classLikeDeclaration()!;
+            if (!isNodeWithinClass(n, c)) error(n, qd.msgs.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, qf.get.fullyQualifiedName(s.symbol));
           }
         }
       }

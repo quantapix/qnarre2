@@ -472,7 +472,7 @@ export function newCreate(f: qt.Frame) {
           if (qf.type.is.any(exprType)) hasSpreadAnyType = true;
           if (qf.is.validSpreadType(exprType)) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
-            if (allAttributesTable) check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
+            if (allAttributesTable) qf.type.check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
           } else {
             typeToIntersect = typeToIntersect ? qf.get.intersectionType([typeToIntersect, exprType]) : exprType;
           }
@@ -2097,7 +2097,7 @@ export function newResolve(f: qt.Frame) {
       } else {
         callChainFlags = SignatureFlags.None;
       }
-      funcType = check.nonNullTypeWithReporter(funcType, node.expression, reportCannotInvokePossiblyNullOrUndefinedError);
+      funcType = qf.type.check.nonNullWithReporter(funcType, node.expression, reportCannotInvokePossiblyNullOrUndefinedError);
       if (funcType === silentNeverType) return silentNeverSignature;
       const apparentType = getApparentType(funcType);
       if (apparentType === errorType) return this.errorCall(node);
@@ -2203,7 +2203,7 @@ export function newResolve(f: qt.Frame) {
       if (isJsxIntrinsicIdentifier(node.tagName)) {
         const result = getIntrinsicAttributesTypeFromJsxOpeningLikeElem(node);
         const fakeSignature = qf.create.signatureForJSXIntrinsic(node, result);
-        check.typeAssignableToAndOptionallyElaborate(
+        qf.type.check.assignableToAndOptionallyElaborate(
           check.expressionWithContextualType(node.attributes, getEffectiveFirstArgForJsxSignature(fakeSignature, node), undefined, CheckMode.Normal),
           result,
           node.tagName,
