@@ -918,9 +918,6 @@ export function newIs(f: qt.Frame) {
     importSpecifier(n: Node): n is qt.ImportSpecifier {
       return n.kind === Syntax.ImportSpecifier;
     }
-    union(n: qt.Type): n is qt.UnionType {
-      return !!(n.flags & TypeFlags.Union);
-    }
     identifier(n: Node): n is qt.Identifier {
       return n.kind === Syntax.Identifier;
     }
@@ -2295,7 +2292,6 @@ export function newIs(f: qt.Frame) {
     templateSpan(n: Node): n is qt.TemplateSpan {
       return n.kind === Syntax.TemplateSpan;
     }
-
     doc = new (class {
       constructSignature(n: Node) {
         const p = n.kind === Syntax.DocFunctionTyping ? qu.firstOrUndefined(n.params) : undefined;

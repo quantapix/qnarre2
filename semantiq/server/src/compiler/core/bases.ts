@@ -488,55 +488,8 @@ export abstract class Symbol implements qt.Symbol {
   }
   abstract get id(): number;
   abstract get links(): qt.SymbolLinks;
-  isKnown() {
-    return qu.startsWith(this.escName as string, '__@');
-  }
-  isExportDefault() {
-    const ds = this.declarations;
-    return qu.length(ds) > 0 && qf.has.syntacticModifier(ds![0] as Node, ModifierFlags.Default);
-  }
-  isTransient(): this is qt.TransientSymbol {
-    return (this.flags & SymbolFlags.Transient) !== 0;
-  }
-  isAbstractConstructor() {
-    if (this.flags & SymbolFlags.Class) {
-      const d = this.classLikeDeclaration();
-      return !!d && qf.has.syntacticModifier(d, ModifierFlags.Abstract);
-    }
-    return false;
-  }
-  isShorthandAmbientModule() {
-    return qf.is.shorthandAmbientModule(this.valueDeclaration);
-  }
-  isFunction() {
-    if (!this.valueDeclaration) return false;
-    const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (v.kind === Syntax.VariableDeclaration && v.initer && qf.is.functionLike(v.initer));
-  }
-  isUMDExport() {
-    return this.declarations?.[0] && this.declarations[0].kind === Syntax.NamespaceExportDeclaration;
-  }
-  isNamespaceMember() {
-    return !(this.flags & SymbolFlags.Prototype || this.escName === 'prototype' || (this.valueDeclaration?.parent && qf.is.classLike(this.valueDeclaration.parent)));
-  }
-  isConstEnumSymbol() {
-    return (this.flags & SymbolFlags.ConstEnum) !== 0;
-  }
   skipAlias(c: qt.TypeChecker) {
     return this.flags & SymbolFlags.Alias ? c.get.aliasedSymbol(this) : this;
-  }
-  propertyNameForUnique(): qu.__String {
-    return `__@${this.id}@${this.escName}` as qu.__String;
-  }
-  nameForPrivateIdentifier(s: qu.__String): qu.__String {
-    return `__#${this.id}@${s}` as qu.__String;
-  }
-  localForExportDefault() {
-    return this.isExportDefault() ? this.declarations![0].localSymbol : undefined;
-  }
-  nonAugmentationDeclaration() {
-    const ds = this.declarations;
-    return ds && qf.find.up(ds, (d) => !qf.is.externalModuleAugmentation(d as Node) && !(d.kind === Syntax.ModuleDeclaration && qf.is.globalScopeAugmentation(d as Node)));
   }
   setValueDeclaration(d: qt.Declaration) {
     const v = this.valueDeclaration;
@@ -547,39 +500,6 @@ export abstract class Symbol implements qt.Symbol {
     ) {
       this.valueDeclaration = d;
     }
-  }
-  classLikeDeclaration(): qt.ClassLikeDeclaration | undefined {
-    const ds = this.declarations;
-    return ds && qf.find.up(ds, qf.is.classLike);
-  }
-  combinedLocalAndExportSymbolFlags(): SymbolFlags {
-    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
-  }
-  declarationOfKind<T extends qt.Declaration>(k: T['kind']): T | undefined {
-    const ds = this.declarations;
-    if (ds) {
-      for (const d of ds) {
-        if (d.kind === k) return d as T;
-      }
-    }
-    return;
-  }
-  isPropertyOrMethodDeclaration() {
-    if (this.declarations && this.declarations.length) {
-      for (const d of this.declarations) {
-        switch (d.kind) {
-          case Syntax.PropertyDeclaration:
-          case Syntax.MethodDeclaration:
-          case Syntax.GetAccessor:
-          case Syntax.SetAccessor:
-            continue;
-          default:
-            return false;
-        }
-      }
-      return true;
-    }
-    return false;
   }
   comment(c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
@@ -678,42 +598,6 @@ export class Type implements qt.Type {
   get objectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
   }
-  properties(): qt.Symbol[] {
-    return this.checker.get.propertiesOfType(this);
-  }
-  property(n: string): qt.Symbol | undefined {
-    return this.checker.get.propertyOfType(this, n);
-  }
-  apparentProperties(): qt.Symbol[] {
-    return this.checker.get.augmentedPropertiesOfType(this);
-  }
-  callSignatures(): readonly qt.Signature[] {
-    return this.checker.get.signaturesOfType(this, qt.SignatureKind.Call);
-  }
-  constructSignatures(): readonly qt.Signature[] {
-    return this.checker.get.signaturesOfType(this, qt.SignatureKind.Construct);
-  }
-  stringIndexType(): qt.Type | undefined {
-    return this.checker.get.indexTypeOfType(this, qt.IndexKind.String);
-  }
-  numberIndexType(): qt.Type | undefined {
-    return this.checker.get.indexTypeOfType(this, qt.IndexKind.Number);
-  }
-  baseTypes(): qt.BaseType[] | undefined {
-    return qf.type.is.classOrInterface(this) ? this.checker.get.baseTypes(this) : undefined;
-  }
-  nonNullableType(): qt.Type {
-    return this.checker.get.nonNullableType(this);
-  }
-  nonOptionalType(): qt.Type {
-    return this.checker.get.nonOptionalType(this);
-  }
-  constraint(): qt.Type | undefined {
-    return this.checker.get.baseConstraintOfType(this);
-  }
-  default(): qt.Type | undefined {
-    return this.checker.get.defaultFromTypeParam(this);
-  }
 }
 export class Signature implements qt.Signature {
   canonicalCache?: Signature;
@@ -735,12 +619,6 @@ export class Signature implements qt.Signature {
   typeParams?: readonly qt.TypeParam[];
   unions?: Signature[];
   constructor(public checker: qt.TypeChecker, public flags: SignatureFlags) {}
-  hasRestParam() {
-    return !!(this.flags & SignatureFlags.HasRestParam);
-  }
-  hasLiteralTypes() {
-    return !!(this.flags & SignatureFlags.HasLiteralTypes);
-  }
   getReturnType(): qt.Type {
     return this.checker.get.returnTypeOfSignature(this);
   }
