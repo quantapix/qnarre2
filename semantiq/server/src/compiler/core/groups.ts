@@ -8,112 +8,6 @@ import * as qc from './classes';
 import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-const Debug = { f() {} };
-type AssertionKeys = qt.MatchingKeys<typeof Debug, qu.AnyFunction>;
-export function newAssert(f: qt.Frame) {
-  interface Frame extends qt.Frame {
-    format: Fformat;
-  }
-  const qf = f as Frame;
-  return (qf.assert = new (class extends qu.Fassert {
-    level = qu.AssertionLevel.None;
-    cache: Partial<Record<AssertionKeys, { level: qu.AssertionLevel; assertion: qu.AnyFunction }>> = {};
-    setLevel(l: qu.AssertionLevel) {
-      const old = this.level;
-      this.level = l;
-      if (l > old) {
-        for (const k of qu.getOwnKeys(this.cache) as AssertionKeys[]) {
-          const f = this.cache[k];
-          if (f !== undefined && Debug[k] !== f.assertion && l >= f.level) {
-            (Debug as any)[k] = f;
-            this.cache[k] = undefined;
-          }
-        }
-      }
-    }
-    shouldAssert(l: qu.AssertionLevel) {
-      return this.level >= l;
-    }
-    shouldAssertFunction<K extends AssertionKeys>(l: qu.AssertionLevel, name: K): boolean {
-      if (!this.shouldAssert(l)) {
-        this.cache[name] = { level: l, assertion: Debug[name] };
-        (Debug as any)[name] = qu.noop;
-        return false;
-      }
-      return true;
-    }
-    never(x: never, m = 'Illegal value:', f?: qu.AnyFunction): never {
-      const v = typeof x === 'object' && qu.hasProperty(x, 'kind') && qu.hasProperty(x, 'pos') && qf.format.syntax ? 'SyntaxKind: ' + qf.format.syntax((x as Node).kind) : JSON.stringify(x);
-      return qu.fail(`${m} ${v}`, f || this.never);
-    }
-    eachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts ns is Nodes<U>;
-    eachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts ns is readonly U[];
-    eachNode(ns: readonly Node[], test: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
-    eachNode(ns: readonly Node[], test: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.eachNode')) {
-        this.true(test === undefined || qu.every(ns, test), m || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, f || this.eachNode);
-      }
-    }
-    node<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U;
-    node(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
-    node(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.node')) {
-        this.true(
-          n !== undefined && (test === undefined || test(n)),
-          m || 'Unexpected node.',
-          () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-          f || this.node
-        );
-      }
-    }
-    notNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, m?: string, f?: qu.AnyFunction): asserts n is Exclude<T, U>;
-    notNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
-    notNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.notNode')) {
-        this.true(
-          n === undefined || test === undefined || !test(n),
-          m || 'Unexpected node.',
-          () => `Node ${qf.format.syntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
-          f || this.notNode
-        );
-      }
-    }
-    optionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U;
-    optionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, m?: string, f?: qu.AnyFunction): asserts n is U | undefined;
-    optionalNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction): void;
-    optionalNode(n?: Node, test?: (n: Node) => boolean, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalNode')) {
-        this.true(
-          test === undefined || n === undefined || test(n),
-          m || 'Unexpected node.',
-          () => `Node ${qf.format.syntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
-          f || this.optionalNode
-        );
-      }
-    }
-    optionalToken<T extends Node, K extends Syntax>(n: T, k: K, m?: string, f?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
-    optionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, m?: string, f?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
-    optionalToken(n?: Node, k?: Syntax, m?: string, f?: qu.AnyFunction): void;
-    optionalToken(n?: Node, k?: Syntax, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.optionalToken')) {
-        this.true(
-          k === undefined || n === undefined || n.kind === k,
-          m || 'Unexpected node.',
-          () => `Node ${qf.format.syntax(n!.kind)} was not a '${qf.format.syntax(k)}' token.`,
-          f || this.optionalToken
-        );
-      }
-    }
-    missingNode(n?: Node, m?: string, f?: qu.AnyFunction): asserts n is undefined;
-    missingNode(n?: Node, m?: string, f?: qu.AnyFunction) {
-      if (this.shouldAssertFunction(qu.AssertionLevel.Normal, 'assert.missingNode')) {
-        this.true(n === undefined, m || 'Unexpected node.', () => `Node ${qf.format.syntax(n!.kind)} was unexpected'.`, f || this.missingNode);
-      }
-    }
-  })());
-}
-export interface Fassert extends ReturnType<typeof newAssert> {}
-
 export function newType(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -1754,9 +1648,7 @@ export function newType(f: qt.Frame) {
         return t.objectFlags & ObjectFlags.EvolvingArray ? (<qt.EvolvingArrayType>t).elemType : neverType;
       }
       unionOrEvolvingArrayType(ts: Type[], r: qt.UnionReduction) {
-        return qf.is.evolvingArrayTypeList(ts)
-          ? this.evolvingArrayType(this.unionType(qu.map(ts, getElemTypeOfEvolvingArrayType)))
-          : this.unionType(sameMap(ts, finalizeEvolvingArrayType), r);
+        return qf.is.evolvingArrayTypeList(ts) ? this.evolvingArrayType(this.unionType(qu.map(ts, getElemTypeOfEvolvingArrayType))) : this.unionType(sameMap(ts, finalizeEvolvingArrayType), r);
       }
       constraintForLocation(t: Type, n: Node): Type;
       constraintForLocation(t: Type | undefined, n: Node): Type | undefined;
@@ -1847,8 +1739,7 @@ export function newType(f: qt.Frame) {
           : qf.create.arrayType(this.indexedAccessType(t, numberType));
       }
       unaryResultType(t: Type): Type {
-        if (maybeTypeOfKind(t, TypeFlags.BigIntLike))
-          return qf.type.is.assignableToKind(t, TypeFlags.AnyOrUnknown) || maybeTypeOfKind(t, TypeFlags.NumberLike) ? numberOrBigIntType : bigintType;
+        if (maybeTypeOfKind(t, TypeFlags.BigIntLike)) return qf.type.is.assignableToKind(t, TypeFlags.AnyOrUnknown) || maybeTypeOfKind(t, TypeFlags.NumberLike) ? numberOrBigIntType : bigintType;
         return numberType;
       }
       baseTypesIfUnrelated(leftType: Type, rightType: Type, isRelated: (left: Type, right: Type) => boolean): [Type, Type] {
@@ -2159,7 +2050,6 @@ export function newType(f: qt.Frame) {
   })());
 }
 export interface Ftype extends ReturnType<typeof newType> {}
-
 export function newSymbol(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -2897,72 +2787,6 @@ export function newDecl(f: qt.Frame) {
   })());
 }
 export interface Fdecl extends ReturnType<typeof newDecl> {}
-export function newFormat(f: qt.Frame) {
-  interface Frame extends qt.Frame {}
-  const qf = f as Frame;
-  return (qf.format = new (class {
-    emitFlags(f?: qt.EmitFlags): string {
-      return qu.formatEnum(f, (qt as any).EmitFlags, true);
-    }
-    modifierFlags(f?: ModifierFlags): string {
-      return qu.formatEnum(f, (qt as any).ModifierFlags, true);
-    }
-    nodeFlags(f?: NodeFlags): string {
-      return qu.formatEnum(f, (qt as any).NodeFlags, true);
-    }
-    objectFlags(f?: ObjectFlags): string {
-      return qu.formatEnum(f, (qt as any).ObjectFlags, true);
-    }
-    symbol(s: Symbol): string {
-      return `{ name: ${qy.get.unescUnderscores(s.escName)}; flags: ${this.symbolFlags(s.flags)}; declarations: ${qu.map(s.declarations, (n) => this.syntax(n.kind))} }`;
-    }
-    symbolFlags(f?: SymbolFlags): string {
-      return qu.formatEnum(f, (qt as any).SymbolFlags, true);
-    }
-    syntax(k?: Syntax): string {
-      return qu.formatEnum(k, (qt as any).SyntaxKind, false);
-    }
-    trafoFlags(f?: TrafoFlags): string {
-      return qu.formatEnum(f, (qt as any).TrafoFlags, true);
-    }
-    typeFlags(f?: TypeFlags): string {
-      return qu.formatEnum(f, (qt as any).TypeFlags, true);
-    }
-  })());
-}
-export interface Fformat extends ReturnType<typeof newFormat> {}
-export function newSkip(f: qt.Frame) {
-  interface Frame extends qt.Frame {
-    is: Fis;
-  }
-  const qf = f as Frame;
-  return (qf.skip = new (class {
-    outerExpressions(n: qt.Expression, ks?: qt.OuterExpressionKinds): qt.Expression;
-    outerExpressions(n: Node, ks?: qt.OuterExpressionKinds): Node;
-    outerExpressions(n: Node | qt.Expression, ks = qt.OuterExpressionKinds.All): Node | qt.Expression {
-      while (qf.is.outerExpression(n, ks)) {
-        n = n.expression;
-      }
-      return n;
-    }
-    assertions(n: qt.Expression): qt.Expression;
-    assertions(n: Node): Node;
-    assertions(n: Node | qt.Expression) {
-      return this.outerExpressions(n, qt.OuterExpressionKinds.Assertions);
-    }
-    parentheses(n: qt.Expression): qt.Expression;
-    parentheses(n: Node): Node;
-    parentheses(n: Node | qt.Expression) {
-      return this.outerExpressions(n, qt.OuterExpressionKinds.Parentheses);
-    }
-    partiallyEmittedExpressions(n: qt.Expression): qt.Expression;
-    partiallyEmittedExpressions(n: Node): Node;
-    partiallyEmittedExpressions(n: Node | qt.Expression) {
-      return this.outerExpressions(n, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
-    }
-  })());
-}
-export interface Fskip extends ReturnType<typeof newSkip> {}
 export function newCalc(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
