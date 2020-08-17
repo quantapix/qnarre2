@@ -3574,7 +3574,7 @@ export function newFrame() {
   qv.newVisit(f);
   return f;
 }
-export const qf = newFrame();
+export const qf: Frame = newFrame();
 export namespace access {
   export const enum Kind {
     Read,

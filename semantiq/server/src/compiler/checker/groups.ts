@@ -18,7 +18,7 @@ export function newIs(f: qt.Frame) {
   }
   const qf = f as Frame;
   interface Fis extends qc.Fis {}
-  class Fis implements qt.CheckerIs {
+  class Fis {
     deferredContext(n: Node, last?: Node) {
       if (n.kind !== Syntax.ArrowFunction && n.kind !== Syntax.FunctionExpression) {
         return (
@@ -65,7 +65,7 @@ export function newIs(f: qt.Frame) {
     decorated(n: Node, p?: Node, grandp?: Node) {
       return n.decorators !== undefined && this.decoratable(n, p!, grandp!);
     }
-    blockScopedNameDeclaredBeforeUse(d: qt.Declaration, usage: Node) {
+    blockScopedNameDeclaredBeforeUse(d: qt.Declaration, usage: Node): boolean {
       const dFile = d.sourceFile;
       const useFile = usage.sourceFile;
       const declContainer = qf.get.enclosingBlockScopeContainer(d);
@@ -213,51 +213,6 @@ export function newIs(f: qt.Frame) {
     }
     syntacticDefault(n: Node) {
       return (n.kind === Syntax.ExportAssignment && !n.isExportEquals) || qf.has.syntacticModifier(n, ModifierFlags.Default) || n.kind === Syntax.ExportSpecifier;
-    }
-    anySymbolAccessible(
-      ss: qt.Symbol[] | undefined,
-      enclosingDeclaration: Node | undefined,
-      initialSymbol: qt.Symbol,
-      meaning: qt.SymbolFlags,
-      compute: boolean
-    ): qt.SymbolAccessibilityResult | undefined {
-      if (!qu.length(ss)) return;
-      let hadAccessibleChain: qt.Symbol | undefined;
-      let earlyModuleBail = false;
-      for (const s of ss!) {
-        const c = qf.get.accessibleSymbolChain(s, enclosingDeclaration, meaning, false);
-        if (c) {
-          hadAccessibleChain = s;
-          const hasAccessibleDeclarations = hasVisibleDeclarations(c[0], compute);
-          if (hasAccessibleDeclarations) return hasAccessibleDeclarations;
-        } else {
-          if (qu.some(s.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) {
-            if (compute) {
-              earlyModuleBail = true;
-              continue;
-            }
-            return { accessibility: qt.SymbolAccessibility.Accessible };
-          }
-        }
-        let cs = getContainersOfSymbol(s, enclosingDeclaration);
-        const firstDecl: Node | false = !!qu.length(s.declarations) && first(s.declarations);
-        if (!qu.length(cs) && meaning & qt.SymbolFlags.Value && firstDecl && firstDecl.kind === Syntax.ObjectLiteralExpression) {
-          if (firstDecl.parent && firstDecl.parent.kind === Syntax.VariableDeclaration && firstDecl === firstDecl.parent.initer) containers = [qf.get.symbolOfNode(firstDecl.parent)];
-        }
-        const parentResult = this.anySymbolAccessible(cs, enclosingDeclaration, initialSymbol, initialSymbol === s ? getQualifiedLeftMeaning(meaning) : meaning, compute);
-        if (parentResult) return parentResult;
-      }
-      if (earlyModuleBail) {
-        return { accessibility: qt.SymbolAccessibility.Accessible };
-      }
-      if (hadAccessibleChain) {
-        return {
-          accessibility: qt.SymbolAccessibility.NotAccessible,
-          errorSymbolName: initialSymbol.symbolToString(enclosingDeclaration, meaning),
-          errorModuleName: hadAccessibleChain !== initialSymbol ? hadAccessibleChain.symbolToString(enclosingDeclaration, qt.SymbolFlags.Namespace) : undefined,
-        };
-      }
-      return;
     }
     entityNameVisible(entityName: qt.EntityNameOrEntityNameExpression, enclosingDeclaration: Node): qt.SymbolVisibilityResult {
       let meaning: qt.SymbolFlags;
@@ -508,7 +463,7 @@ export function newIs(f: qt.Frame) {
             : hasDefaultTypeArgs || qu.some(n.typeArgs, mayResolveTypeAlias)))
       );
     }
-    resolvedByTypeAlias(n: Node) {
+    resolvedByTypeAlias(n: Node): boolean {
       const p = n.parent;
       switch (p?.kind) {
         case Syntax.ArrayTyping:
@@ -1294,26 +1249,11 @@ export function newHas(f: qt.Frame) {
   const qf = f as Frame;
   interface Fhas extends qc.Fhas {}
   class Fhas {
-    exportAssignmentSymbol(moduleSymbol: qt.Symbol): boolean {
-      return moduleSymbol.exports!.get(InternalSymbol.ExportEquals) !== undefined;
-    }
     externalModuleSymbol(d: Node) {
       return this.ambientModule(d) || (d.kind === Syntax.SourceFile && this.externalOrCommonJsModule(<qt.SourceFile>d));
     }
     nonGlobalAugmentationExternalModuleSymbol(d: Node) {
       return qf.is.moduleWithStringLiteralName(d) || (d.kind === Syntax.SourceFile && qf.is.externalOrCommonJsModule(<qt.SourceFile>d));
-    }
-    baseType(t: qt.Type, checkBase: qt.Type | undefined) {
-      return check(t);
-      function check(t: qt.Type): boolean {
-        if (getObjectFlags(t) & (ObjectFlags.ClassOrInterface | ObjectFlags.Reference)) {
-          const target = getTargetType(t);
-          return target === checkBase || qu.some(getBaseTypes(target), check);
-        } else if (t.flags & TypeFlags.Intersection) {
-          return qu.some(t.types, check);
-        }
-        return false;
-      }
     }
     lateBindableName(n: qt.Declaration): n is qt.LateBoundDecl | qt.LateBoundBinaryExpressionDeclaration {
       const name = qf.decl.nameOf(n);
@@ -1324,12 +1264,6 @@ export function newHas(f: qt.Frame) {
     }
     nonCircularBaseConstraint(t: qt.InstantiableType): boolean {
       return getResolvedBaseConstraint(t) !== circularConstraintType;
-    }
-    nonCircularTypeParamDefault(typeParam: qt.TypeParam) {
-      return qf.get.resolvedTypeParamDefault(typeParam) !== circularConstraintType;
-    }
-    typeParamDefault(typeParam: qt.TypeParam): boolean {
-      return !!(typeParam.symbol && forEach(typeParam.symbol.declarations, (decl) => decl.kind === Syntax.TypeParamDeclaration && decl.default));
     }
     contextSensitiveParams(n: qt.FunctionLikeDeclaration) {
       if (!n.typeParams) {
@@ -1344,12 +1278,6 @@ export function newHas(f: qt.Frame) {
     contextSensitiveReturnExpression(n: qt.FunctionLikeDeclaration) {
       return !n.typeParams && !qf.get.effectiveReturnTypeNode(n) && !!n.body && n.body.kind !== Syntax.Block && this.contextSensitive(n.body);
     }
-    commonProperties(s: qt.Type, t: qt.Type, isComparingJsxAttributes: boolean) {
-      for (const prop of qf.get.propertiesOfType(s)) {
-        if (qf.is.knownProperty(t, prop.escName, isComparingJsxAttributes)) return true;
-      }
-      return false;
-    }
     covariantVoidArg(typeArgs: readonly qt.Type[], variances: VarianceFlags[]): boolean {
       for (let i = 0; i < variances.length; i++) {
         if ((variances[i] & VarianceFlags.VarianceMask) === VarianceFlags.Covariant && typeArgs[i].flags & TypeFlags.Void) return true;
@@ -1358,13 +1286,6 @@ export function newHas(f: qt.Frame) {
     }
     skipDirectInferenceFlag(n: Node) {
       return !!qf.get.nodeLinks(n).skipDirectInference;
-    }
-    primitiveConstraint(t: qt.TypeParam): boolean {
-      const constraint = qf.get.constraintOfTypeParam(t);
-      return (
-        !!constraint &&
-        maybeTypeOfKind(constraint.flags & TypeFlags.Conditional ? getDefaultConstraintOfConditionalType(constraint as qt.ConditionalType) : constraint, TypeFlags.Primitive | TypeFlags.Index)
-      );
     }
     matchingArg(callExpression: qt.CallExpression, reference: Node) {
       if (callExpression.args) {
@@ -1376,17 +1297,11 @@ export function newHas(f: qt.Frame) {
         return true;
       return false;
     }
-    typePredicateOrNeverReturnType(signature: qt.Signature) {
-      return !!(getTypePredicateOfSignature(signature) || (signature.declaration && (getReturnTypeFromAnnotation(signature.declaration) || unknownType).flags & TypeFlags.Never));
-    }
     parentWithAssignmentsMarked(n: Node) {
       return !!qc.findAncestor(n.parent, (n) => qf.is.functionLike(n) && !!(qf.get.nodeLinks(n).flags & NodeCheckFlags.AssignmentsMarked));
     }
     defaultValue(n: qt.BindingElem | qt.Expression): boolean {
       return (n.kind === Syntax.BindingElem && !!(<qt.BindingElem>n).initer) || (n.kind === Syntax.BinaryExpression && n.operatorToken.kind === Syntax.EqualsToken);
-    }
-    numericPropertyNames(t: qt.Type) {
-      return qf.get.indexTypeOfType(t, IndexKind.Number) && !qf.get.indexTypeOfType(t, IndexKind.String);
     }
     correctArity(n: qt.CallLikeExpression, args: readonly qt.Expression[], signature: qt.Signature, signatureHelpTrailingComma = false) {
       let argCount: number;
@@ -1429,18 +1344,6 @@ export function newHas(f: qt.Frame) {
       }
       return true;
     }
-    correctTypeArgArity(signature: qt.Signature, typeArgs: Nodes<qt.Typing> | undefined) {
-      const numTypeParams = length(signature.typeParams);
-      const minTypeArgCount = getMinTypeArgCount(signature.typeParams);
-      return !qu.some(typeArgs) || (typeArgs.length >= minTypeArgCount && typeArgs.length <= numTypeParams);
-    }
-    effectiveRestParam(s: qt.Signature) {
-      if (s.hasRestParam()) {
-        const restType = s.params[s.params.length - 1].typeOfSymbol();
-        return !this.tupleType(restType) || restType.target.hasRestElem;
-      }
-      return false;
-    }
     inferenceCandidates(info: qt.InferenceInfo) {
       return !!(info.candidates || info.contraCandidates);
     }
@@ -1452,9 +1355,6 @@ export function newHas(f: qt.Frame) {
     }
     typeParamByName(typeParams: readonly qt.TypeParam[] | undefined, name: qu.__String) {
       return qu.some(typeParams, (tp) => tp.symbol.escName === name);
-    }
-    exportedMembers(moduleSymbol: qt.Symbol) {
-      return forEachEntry(moduleSymbol.exports!, (_, id) => id !== 'export=');
     }
     globalName(name: string): boolean {
       return globals.has(qy.get.escUnderscores(name));
@@ -1493,9 +1393,6 @@ export function newHas(f: qt.Frame) {
         }
       }
     }
-    type(types: readonly qt.Type[], t: qt.Type): boolean {
-      return binarySearch(types, t, getTypeId, compareNumbers) >= 0;
-    }
     truthyCheck(s: Node, t: Node) {
       return (
         this.matchingReference(s, t) || (t.kind === Syntax.BinaryExpression && t.operatorToken.kind === Syntax.Ampersand2Token && (containsTruthyCheck(s, t.left) || containsTruthyCheck(s, t.right)))
@@ -1509,7 +1406,7 @@ export function newHas(f: qt.Frame) {
       return false;
     }
   }
-  return (qf.is = new Fhas());
+  return (qf.has = new Fhas());
 }
 export interface Fhas extends ReturnType<typeof newHas> {}
 
@@ -1534,7 +1431,7 @@ export function newSymbol(f: qt.Frame) {
   const qf = f as Frame;
   interface Fsymbol extends qc.Fsymbol {}
   class Fsymbol {}
-  return (qf.type = new Fsymbol());
+  return (qf.symbol = new Fsymbol());
 }
 export interface Fsymbol extends ReturnType<typeof newSymbol> {}
 export function newSignature(f: qt.Frame) {
@@ -1546,6 +1443,6 @@ export function newSignature(f: qt.Frame) {
   const qf = f as Frame;
   interface Fsignature extends qc.Fsignature {}
   class Fsignature {}
-  return (qf.type = new Fsignature());
+  return (qf.signature = new Fsignature());
 }
 export interface Fsignature extends ReturnType<typeof newSignature> {}
