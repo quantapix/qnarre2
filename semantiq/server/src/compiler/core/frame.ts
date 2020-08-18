@@ -1007,7 +1007,7 @@ export function newIs(f: qt.Frame) {
     emit: qg.Femit;
     get: Fget;
     has: Fhas;
-    skip: qg.Fskip;
+    skip: Fskip;
   }
   const qf = f as Frame;
   return (qf.is = new (class extends qu.Fis {
@@ -2059,22 +2059,28 @@ export function newIs(f: qt.Frame) {
       return this.declarationName(n);
     }
     aliasSymbolDeclaration(n: Node) {
-      const k = n.kind;
-      const p = n.parent as Node | undefined;
-      return (
-        k === Syntax.ImportEqualsDeclaration ||
-        k === Syntax.NamespaceExportDeclaration ||
-        (n.kind === Syntax.ImportClause && !!n.name) ||
-        k === Syntax.NamespaceImport ||
-        k === Syntax.NamespaceExport ||
-        k === Syntax.ImportSpecifier ||
-        k === Syntax.ExportSpecifier ||
-        (n.kind === Syntax.ExportAssignment && this.exportAssignmentAlias(n)) ||
-        (n.kind === Syntax.BinaryExpression && qf.get.assignmentDeclarationKind(n) === qt.AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(n)) ||
-        (n.kind === Syntax.PropertyAccessExpression && p?.kind === Syntax.BinaryExpression && p.left === n && p.operatorToken.kind === Syntax.EqualsToken && this.aliasableExpression(p.right)) ||
-        k === Syntax.ShorthandPropertyAssignment ||
-        (n.kind === Syntax.PropertyAssignment && this.aliasableExpression(n.initer))
-      );
+      switch (n.kind) {
+        case Syntax.ExportSpecifier:
+        case Syntax.ImportEqualsDeclaration:
+        case Syntax.ImportSpecifier:
+        case Syntax.NamespaceExport:
+        case Syntax.NamespaceExportDeclaration:
+        case Syntax.NamespaceImport:
+        case Syntax.ShorthandPropertyAssignment:
+          return true;
+        case Syntax.ImportClause:
+          return !!n.name;
+        case Syntax.ExportAssignment:
+          return this.exportAssignmentAlias(n);
+        case Syntax.BinaryExpression:
+          return qf.get.assignmentDeclarationKind(n) === qt.AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(n);
+        case Syntax.PropertyAccessExpression:
+          const p = n.parent;
+          return p?.kind === Syntax.BinaryExpression && p.left === n && p.operatorToken.kind === Syntax.EqualsToken && this.aliasableExpression(p.right);
+        case Syntax.PropertyAssignment:
+          return this.aliasableExpression(n.initer);
+      }
+      return false;
     }
     aliasableExpression(n: qt.Expression) {
       return this.entityNameExpression(n as Node) || n.kind === Syntax.ClassExpression;
@@ -2498,7 +2504,7 @@ export function newHas(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.has = new (class {
+  return (qf.has = new (class extends qu.Fhas {
     dynamicName(n: qt.DeclarationName) {
       if (!(n.kind === Syntax.ComputedPropertyName || n.kind === Syntax.ElemAccessExpression)) return false;
       const e = (n.kind === Syntax.ElemAccessExpression ? n.argExpression : n.expression) as Node;
@@ -2603,7 +2609,7 @@ export function newGet(f: qt.Frame) {
     skip: qg.Fskip;
   }
   const qf = f as Frame;
-  return (qf.get = new (class Fget {
+  return (qf.get = new (class Fget extends qu.Fget {
     nextNodeId = 1;
     static nextAutoGenId = 1;
     mapBundleFileSectionKindToSyntax(k: qt.BundleFileSectionKind): Syntax {

@@ -1530,7 +1530,7 @@ export function newSymbol(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.symbol = new (class Fsymbol {
+  return (qf.symb = new (class Fsymbol {
     check = new (class extends Fsymbol {
       resolvedBlockScopedVariable(result: qt.Symbol, n: Node): void {
         qf.assert.true(!!(result.flags & qt.SymbolFlags.BlockScopedVariable || result.flags & qt.SymbolFlags.Class || result.flags & qt.SymbolFlags.Enum));
@@ -1585,7 +1585,7 @@ export function newSignature(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.signature = new (class Fsignature {
+  return (qf.sign = new (class Fsignature {
     check = new (class extends Fsignature {})();
   })());
 }

@@ -3,7 +3,6 @@ import * as qt from '../types';
 import * as qu from '../utils';
 export * from '../types';
 export interface Frame extends qt.Frame {
-  check: unknown;
   instantiate: unknown;
   resolve: unknown;
 }

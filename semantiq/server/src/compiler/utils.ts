@@ -18,6 +18,8 @@ export interface Frame {
   check: Fcheck;
   each: Feach;
   find: Ffind;
+  get: Fget;
+  has: Fhas;
   is: Fis;
 }
 export class Fassert {
@@ -176,6 +178,8 @@ export class Ffind {
     return r;
   }
 }
+export class Fget {}
+export class Fhas {}
 export class Fis {
   patternMatch({ prefix, suffix }: Pattern, s: string) {
     return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
@@ -206,8 +210,7 @@ export class Fis {
     return s === '*' || s === 'x' || s === 'X';
   }
 }
-const qf: Frame = { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), is: new Fis() };
-
+const qf: Frame = { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), get: new Fget(), has: new Fhas(), is: new Fis() };
 export function getFunctionName(f: AnyFunction) {
   if (typeof f !== 'function') return '';
   if (f.hasOwnProperty('name')) return (f as any).name;

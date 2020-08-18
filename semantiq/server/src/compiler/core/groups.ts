@@ -2042,14 +2042,14 @@ export function newType(f: qt.Frame) {
   })());
 }
 export interface Ftype extends ReturnType<typeof newType> {}
-export function newSymbol(f: qt.Frame) {
+export function newSymb(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     has: Fhas;
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.symbol = new (class Fsymbol {
+  return (qf.symb = new (class Fsymbol {
     is = new (class extends Fsymbol {
       anySymbolAccessible(ss: Symbol[] | undefined, enclosingDeclaration: Node | undefined, initialSymbol: Symbol, meaning: SymbolFlags, compute: boolean): SymbolAccessibilityResult | undefined {
         if (!qu.length(ss)) return;
@@ -2248,15 +2248,15 @@ export function newSymbol(f: qt.Frame) {
     check = new (class extends Fsymbol {})();
   })());
 }
-export interface Fsymbol extends ReturnType<typeof newSymbol> {}
-export function newSignature(f: qt.Frame) {
+export interface Fsymb extends ReturnType<typeof newSymb> {}
+export function newSign(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     has: Fhas;
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.signature = new (class Fsignature {
+  return (qf.sign = new (class Fsignature {
     is = new (class extends Fsignature {
       resolvingReturnTypeOfSignature(signature: Signature) {
         return !signature.resolvedReturn && findResolutionCycleStartIndex(signature, TypeSystemPropertyName.ResolvedReturnType) >= 0;
@@ -2358,8 +2358,7 @@ export function newSignature(f: qt.Frame) {
     check = new (class extends Fsignature {})();
   })());
 }
-export interface Fsignature extends ReturnType<typeof newSignature> {}
-
+export interface Fsign extends ReturnType<typeof newSign> {}
 export function newDecl(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: Fcalc;

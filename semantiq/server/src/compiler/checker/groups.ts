@@ -10,15 +10,19 @@ import * as qt from './types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
 
+export interface Fis extends qc.Fis {}
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     check: Fcheck;
     get: Fget;
     has: Fhas;
+    skip: qc.Fskip;
   }
   const qf = f as Frame;
-  interface Fis extends qc.Fis {}
-  class Fis {
+  interface _Fis extends qc.Fis {}
+  class _Fis extends qu.Fis {}
+  qu.addMixins(_Fis, [qc.newIs(qf)]);
+  return (qf.is = new (class extends _Fis {
     deferredContext(n: Node, last?: Node) {
       if (n.kind !== Syntax.ArrowFunction && n.kind !== Syntax.FunctionExpression) {
         return (
@@ -188,26 +192,6 @@ export function newIs(f: qt.Frame) {
     sameScopeDescendentOf(n: Node, p: Node | undefined, stopAt: Node) {
       return !!p && !!qc.findAncestor(n, (n) => (n === stopAt || this.functionLike(n) ? 'quit' : n === p));
     }
-    aliasSymbolDeclaration(n: Node) {
-      return (
-        n.kind === Syntax.ImportEqualsDeclaration ||
-        n.kind === Syntax.NamespaceExportDeclaration ||
-        (n.kind === Syntax.ImportClause && !!n.name) ||
-        n.kind === Syntax.NamespaceImport ||
-        n.kind === Syntax.NamespaceExport ||
-        n.kind === Syntax.ImportSpecifier ||
-        n.kind === Syntax.ExportSpecifier ||
-        (n.kind === Syntax.ExportAssignment && this.exportAssignmentAlias(n)) ||
-        (n.kind === Syntax.BinaryExpression && qf.get.assignmentDeclarationKind(n) === qt.AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(n)) ||
-        (n.kind === Syntax.PropertyAccessExpression &&
-          n.parent?.kind === Syntax.BinaryExpression &&
-          n.parent.left === n &&
-          n.parent.operatorToken.kind === Syntax.EqualsToken &&
-          this.aliasableOrJsExpression(n.parent.right)) ||
-        n.kind === Syntax.ShorthandPropertyAssignment ||
-        (n.kind === Syntax.PropertyAssignment && this.aliasableOrJsExpression(n.initer))
-      );
-    }
     aliasableOrJsExpression(e: qt.Expression) {
       return this.aliasableExpression(e) || (e.kind === Syntax.FunctionExpression && this.jsConstructor(e));
     }
@@ -334,7 +318,7 @@ export function newIs(f: qt.Frame) {
       const e = qf.skip.parentheses(n);
       return e.kind === Syntax.NullKeyword || (e.kind === Syntax.Identifier && getResolvedSymbol(e) === undefinedSymbol);
     }
-    emptyArrayLiteral(n: qt.Expression) {
+    emptyArrayLiteral(n: qt.Expression | Node) {
       const e = qf.skip.parentheses(n);
       return e.kind === Syntax.ArrayLiteralExpression && e.elems.length === 0;
     }
@@ -1237,18 +1221,21 @@ export function newIs(f: qt.Frame) {
       }
       return;
     }
-  }
-  return (qf.is = new Fis());
+  })());
 }
 export interface Fis extends ReturnType<typeof newIs> {}
+
+export interface Fhas extends qc.Fhas {}
 export function newHas(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     is: Fis;
   }
   const qf = f as Frame;
-  interface Fhas extends qc.Fhas {}
-  class Fhas {
+  interface _Fhas extends qc.Fhas {}
+  class _Fhas extends qu.Fhas {}
+  qu.addMixins(_Fhas, [qc.newHas(qf)]);
+  return (qf.has = new (class extends _Fhas {
     externalModuleSymbol(d: Node) {
       return this.ambientModule(d) || (d.kind === Syntax.SourceFile && this.externalOrCommonJsModule(<qt.SourceFile>d));
     }
@@ -1405,11 +1392,41 @@ export function newHas(f: qt.Frame) {
       }
       return false;
     }
-  }
-  return (qf.has = new Fhas());
+  })());
 }
 export interface Fhas extends ReturnType<typeof newHas> {}
 
+export interface Fsign extends qc.Fsign {}
+export function newSign(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    check: Fcheck;
+    get: Fget;
+    has: Fhas;
+  }
+  const qf = f as Frame;
+  interface _Fsign extends qc.Fsign {}
+  class _Fsign {}
+  qu.addMixins(_Fsign, [qc.newSign(qf)]);
+  return (qf.sign = new (class extends _Fsign {})());
+}
+export interface Fsign extends ReturnType<typeof newSign> {}
+
+export interface Fsymb extends qc.Fsymb {}
+export function newSymb(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    check: Fcheck;
+    get: Fget;
+    has: Fhas;
+  }
+  const qf = f as Frame;
+  interface _Fsymb extends qc.Fsymb {}
+  class _Fsymb {}
+  qu.addMixins(_Fsymb, [qc.newSymb(qf)]);
+  return (qf.symb = new (class extends _Fsymb {})());
+}
+export interface Fsymb extends ReturnType<typeof newSymb> {}
+
+export interface Ftype extends qc.Ftype {}
 export function newType(f: qt.Frame) {
   interface Frame extends qt.Frame {
     check: Fcheck;
@@ -1417,32 +1434,9 @@ export function newType(f: qt.Frame) {
     has: Fhas;
   }
   const qf = f as Frame;
-  interface Ftype extends qc.Ftype {}
-  class Ftype {}
-  return (qf.type = new Ftype());
+  interface _Ftype extends qc.Ftype {}
+  class _Ftype {}
+  qu.addMixins(_Ftype, [qc.newType(qf)]);
+  return (qf.type = new (class extends _Ftype {})());
 }
 export interface Ftype extends ReturnType<typeof newType> {}
-export function newSymbol(f: qt.Frame) {
-  interface Frame extends qt.Frame {
-    check: Fcheck;
-    get: Fget;
-    has: Fhas;
-  }
-  const qf = f as Frame;
-  interface Fsymbol extends qc.Fsymbol {}
-  class Fsymbol {}
-  return (qf.symbol = new Fsymbol());
-}
-export interface Fsymbol extends ReturnType<typeof newSymbol> {}
-export function newSignature(f: qt.Frame) {
-  interface Frame extends qt.Frame {
-    check: Fcheck;
-    get: Fget;
-    has: Fhas;
-  }
-  const qf = f as Frame;
-  interface Fsignature extends qc.Fsignature {}
-  class Fsignature {}
-  return (qf.signature = new Fsignature());
-}
-export interface Fsignature extends ReturnType<typeof newSignature> {}

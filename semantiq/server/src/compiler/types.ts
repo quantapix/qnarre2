@@ -944,13 +944,11 @@ export interface Frame extends qu.Frame {
   decl: unknown;
   emit: unknown;
   format: unknown;
-  get: unknown;
-  has: unknown;
   nest: unknown;
-  signature: unknown;
+  sign: unknown;
   skip: unknown;
   stmt: unknown;
-  symbol: unknown;
+  symb: unknown;
   type: unknown;
   visit: unknown;
 }

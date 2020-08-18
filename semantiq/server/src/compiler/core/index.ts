@@ -6,9 +6,9 @@ import * as qc from './classes';
 import * as qt from '../types';
 import * as qu from '../utils';
 export { cloneMap, findAncestor } from './bases';
-export { Ftype, Fsymbol, Fsignature } from './groups';
+export { Fsign, Fsymb, Ftype, newSign, newSymb, newType } from './groups';
 export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
-export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, newFrame } from './frame';
+export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, Fskip, newFrame, newIs, newHas } from './frame';
 export * from './classes';
 export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
   return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
