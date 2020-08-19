@@ -1519,6 +1519,131 @@ export function newType(f: qt.Frame) {
           }
         }
       }
+      kindsOfPropertyMemberOverrides(type: qt.InterfaceType, baseType: qt.BaseType): void {
+        const baseProperties = qf.get.propertiesOfType(baseType);
+        basePropertyCheck: for (const baseProperty of baseProperties) {
+          const base = getTargetSymbol(baseProperty);
+          if (base.flags & qt.SymbolFlags.Prototype) continue;
+          const baseSymbol = getPropertyOfObjectType(type, base.escName);
+          if (!baseSymbol) continue;
+          const derived = getTargetSymbol(baseSymbol);
+          const baseDeclarationFlags = base.declarationModifierFlags();
+          qf.assert.true(!!derived, "derived should point to something, even if it is the base class' declaration.");
+          if (derived === base) {
+            const derivedClassDecl = type.symbol.classLikeDeclaration()!;
+            if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !qf.has.syntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
+              for (const otherBaseType of getBaseTypes(type)) {
+                if (otherBaseType === baseType) continue;
+                const baseSymbol = getPropertyOfObjectType(otherBaseType, base.escName);
+                const derivedElsewhere = baseSymbol && getTargetSymbol(baseSymbol);
+                if (derivedElsewhere && derivedElsewhere !== base) continue basePropertyCheck;
+              }
+              if (derivedClassDecl.kind === Syntax.ClassExpression)
+                error(derivedClassDecl, qd.msgs.Non_abstract_class_expression_does_not_implement_inherited_abstract_member_0_from_class_1, baseProperty.symbolToString(), typeToString(baseType));
+              else {
+                error(
+                  derivedClassDecl,
+                  qd.msgs.Non_abstract_class_0_does_not_implement_inherited_abstract_member_1_from_class_2,
+                  typeToString(type),
+                  baseProperty.symbolToString(),
+                  typeToString(baseType)
+                );
+              }
+            }
+          } else {
+            const derivedDeclarationFlags = derived.declarationModifierFlags();
+            if (baseDeclarationFlags & ModifierFlags.Private || derivedDeclarationFlags & ModifierFlags.Private) continue;
+            let errorMessage: qd.Message;
+            const basePropertyFlags = base.flags & qt.SymbolFlags.PropertyOrAccessor;
+            const derivedPropertyFlags = derived.flags & qt.SymbolFlags.PropertyOrAccessor;
+            if (basePropertyFlags && derivedPropertyFlags) {
+              if (
+                (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && base.valueDeclaration.kind === Syntax.PropertyDeclaration && base.valueDeclaration.initer)) ||
+                (base.valueDeclaration && base.valueDeclaration.parent.kind === Syntax.InterfaceDeclaration) ||
+                (derived.valueDeclaration && derived.valueDeclaration.kind === Syntax.BinaryExpression)
+              ) {
+                continue;
+              }
+              const overriddenInstanceProperty = basePropertyFlags !== qt.SymbolFlags.Property && derivedPropertyFlags === qt.SymbolFlags.Property;
+              const overriddenInstanceAccessor = basePropertyFlags === qt.SymbolFlags.Property && derivedPropertyFlags !== qt.SymbolFlags.Property;
+              if (overriddenInstanceProperty || overriddenInstanceAccessor) {
+                const errorMessage = overriddenInstanceProperty
+                  ? qd.msgs._0_is_defined_as_an_accessor_in_class_1_but_is_overridden_here_in_2_as_an_instance_property
+                  : qd.msgs._0_is_defined_as_a_property_in_class_1_but_is_overridden_here_in_2_as_an_accessor;
+                error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType), typeToString(type));
+              } else if (compilerOpts.useDefineForClassFields) {
+                const uninitialized = qf.find.up(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as qt.PropertyDeclaration).initer);
+                if (
+                  uninitialized &&
+                  !(derived.flags & qt.SymbolFlags.Transient) &&
+                  !(baseDeclarationFlags & ModifierFlags.Abstract) &&
+                  !(derivedDeclarationFlags & ModifierFlags.Abstract) &&
+                  !derived.declarations.some((d) => !!(d.flags & NodeFlags.Ambient))
+                ) {
+                  const constructor = findConstructorDeclaration(type.symbol.classLikeDeclaration()!);
+                  const propName = (uninitialized as qt.PropertyDeclaration).name;
+                  if (
+                    (uninitialized as qt.PropertyDeclaration).exclamationToken ||
+                    !constructor ||
+                    !propName.kind === Syntax.Identifier ||
+                    !strictNullChecks ||
+                    !isPropertyInitializedInConstructor(propName, type, constructor)
+                  ) {
+                    const errorMessage =
+                      qd.msgs.Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration;
+                    error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType));
+                  }
+                }
+              }
+              continue;
+            } else if (isPrototypeProperty(base)) {
+              if (isPrototypeProperty(derived) || derived.flags & qt.SymbolFlags.Property) continue;
+              else {
+                qf.assert.true(!!(derived.flags & qt.SymbolFlags.Accessor));
+                errorMessage = qd.msgs.Class_0_defines_instance_member_function_1_but_extended_class_2_defines_it_as_instance_member_accessor;
+              }
+            } else if (base.flags & qt.SymbolFlags.Accessor) {
+              errorMessage = qd.msgs.Class_0_defines_instance_member_accessor_1_but_extended_class_2_defines_it_as_instance_member_function;
+            } else {
+              errorMessage = qd.msgs.Class_0_defines_instance_member_property_1_but_extended_class_2_defines_it_as_instance_member_function;
+            }
+            error(qf.decl.nameOf(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, typeToString(baseType), base.symbolToString(), typeToString(type));
+          }
+        }
+      }
+      inheritedPropertiesAreIdentical(type: qt.InterfaceType, typeNode: Node): boolean {
+        const baseTypes = getBaseTypes(type);
+        if (baseTypes.length < 2) return true;
+        interface InheritanceInfoMap {
+          prop: qt.Symbol;
+          containingType: qt.Type;
+        }
+        const seen = qu.createEscapedMap<InheritanceInfoMap>();
+        forEach(resolveDeclaredMembers(type).declaredProperties, (p) => {
+          seen.set(p.escName, { prop: p, containingType: type });
+        });
+        let ok = true;
+        for (const base of baseTypes) {
+          const properties = qf.get.propertiesOfType(qf.get.typeWithThisArg(base, type.thisType));
+          for (const prop of properties) {
+            const existing = seen.get(prop.escName);
+            if (!existing) seen.set(prop.escName, { prop, containingType: base });
+            else {
+              const isInheritedProperty = existing.containingType !== type;
+              if (isInheritedProperty && !isPropertyIdenticalTo(existing.prop, prop)) {
+                ok = false;
+                const typeName1 = typeToString(existing.containingType);
+                const typeName2 = typeToString(base);
+                let errorInfo = chainqd.Messages(undefined, qd.msgs.Named_property_0_of_types_1_and_2_are_not_identical, prop.symbolToString(), typeName1, typeName2);
+                errorInfo = chainqd.Messages(errorInfo, qd.msgs.Interface_0_cannot_simultaneously_extend_types_1_and_2, typeToString(type), typeName1, typeName2);
+                diagnostics.add(qf.make.diagForNodeFromMessageChain(typeNode, errorInfo));
+              }
+            }
+          }
+        }
+        return ok;
+      }
+  
     })();
   })());
 }
@@ -1578,15 +1703,37 @@ export function newSymbol(f: qt.Frame) {
   })());
 }
 export interface Fsymbol extends ReturnType<typeof newSymbol> {}
-export function newSignature(f: qt.Frame) {
+export function newSign(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     has: Fhas;
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.sign = new (class Fsignature {
-    check = new (class extends Fsignature {})();
+  return (qf.sign = new (class Fsign {
+    check = new (class extends Fsignature {
+      typeArgs(signature: qt.Signature, typeArgNodes: readonly qt.Typing[], reportErrors: boolean, headMessage?: qd.Message): qt.Type[] | undefined {
+        const isJavascript = qf.is.inJSFile(signature.declaration);
+        const typeParams = signature.typeParams!;
+        const typeArgTypes = fillMissingTypeArgs(map(typeArgNodes, qf.get.typeFromTypeNode), typeParams, getMinTypeArgCount(typeParams), isJavascript);
+        let mapper: qt.TypeMapper | undefined;
+        for (let i = 0; i < typeArgNodes.length; i++) {
+          qf.assert.true(typeParams[i] !== undefined, 'Should not call checkTypeArgs with too many type args');
+          const constraint = qf.get.constraintOfTypeParam(typeParams[i]);
+          if (constraint) {
+            const errorInfo = reportErrors && headMessage ? () => chainqd.Messages(undefined, qd.msgs.Type_0_does_not_satisfy_the_constraint_1) : undefined;
+            const typeArgHeadMessage = headMessage || qd.msgs.Type_0_does_not_satisfy_the_constraint_1;
+            if (!mapper) mapper = createTypeMapper(typeParams, typeArgTypes);
+            const typeArg = typeArgTypes[i];
+            if (!qf.type.check.assignableTo(typeArg, qf.get.typeWithThisArg(instantiateType(constraint, mapper), typeArg), reportErrors ? typeArgNodes[i] : undefined, typeArgHeadMessage, errorInfo)) {
+              return;
+            }
+          }
+        }
+        return typeArgTypes;
+      }
+  
+    })();
   })());
 }
-export interface Fsignature extends ReturnType<typeof newSignature> {}
+export interface Fsign extends ReturnType<typeof newSign> {}

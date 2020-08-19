@@ -447,46 +447,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       } else error(moduleName, qd.msgs.Cannot_augment_module_0_because_it_resolves_to_a_non_module_entity, (moduleName as qt.StringLiteral).text);
     }
   }
-  function useOuterVariableScopeInParam(result: qt.Symbol, location: Node, lastLocation: Node) {
-    const target = getEmitScriptTarget(compilerOpts);
-    const functionLocation = <qt.FunctionLikeDeclaration>location;
-    if (
-      lastLocation.kind === Syntax.ParamDeclaration &&
-      functionLocation.body &&
-      result.valueDeclaration.pos >= functionLocation.body.pos &&
-      result.valueDeclaration.end <= functionLocation.body.end
-    ) {
-      const ls = qf.get.nodeLinks(functionLocation);
-      if (ls.declarationRequiresScopeChange === undefined) ls.declarationRequiresScopeChange = forEach(functionLocation.params, requiresScopeChange) || false;
-      return !ls.declarationRequiresScopeChange;
-    }
-    return false;
-    function requiresScopeChange(node: qt.ParamDeclaration): boolean {
-      return requiresScopeChangeWorker(node.name) || (!!node.initer && requiresScopeChangeWorker(node.initer));
-    }
-    function requiresScopeChangeWorker(node: Node): boolean {
-      switch (node.kind) {
-        case Syntax.ArrowFunction:
-        case Syntax.FunctionExpression:
-        case Syntax.FunctionDeclaration:
-        case Syntax.Constructor:
-          return false;
-        case Syntax.MethodDeclaration:
-        case Syntax.GetAccessor:
-        case Syntax.SetAccessor:
-        case Syntax.PropertyAssignment:
-          return requiresScopeChangeWorker((node as qt.MethodDeclaration | qt.AccessorDeclaration | qt.PropertyAssignment).name);
-        case Syntax.PropertyDeclaration:
-          if (qf.has.staticModifier(node)) return target < qt.ScriptTarget.ESNext || !compilerOpts.useDefineForClassFields;
-          return requiresScopeChangeWorker((node as qt.PropertyDeclaration).name);
-        default:
-          if (qf.is.nullishCoalesce(node) || qf.is.optionalChain(node)) return false;
-          if (node.kind === Syntax.BindingElem && node.dot3Token && node.parent.kind === Syntax.ObjectBindingPattern) return false;
-          if (qf.is.typeNode(node)) return false;
-          return qf.each.child(node, requiresScopeChangeWorker) || false;
-      }
-    }
-  }
   function diagnosticName(nameArg: qu.__String | qc.Identifier | qc.PrivateIdentifier) {
     return qf.is.string(nameArg) ? qy.get.unescUnderscores(nameArg as qu.__String) : declarationNameToString(nameArg as qt.Identifier);
   }
@@ -500,32 +460,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     if (!file.isJS()) return hasExportAssignmentSymbol(moduleSymbol);
     return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, qy.get.escUnderscores('__esModule'), undefined, dontResolveAlias);
-  }
-  function reportNonDefaultExport(moduleSymbol: qt.Symbol, node: qt.ImportClause) {
-    if (moduleSymbol.exports?.has(node.symbol.escName))
-      error(node.name, qd.msgs.Module_0_has_no_default_export_Did_you_mean_to_use_import_1_from_0_instead, moduleSymbol.symbolToString(), node.symbol.symbolToString());
-    else {
-      const diagnostic = error(node.name, qd.msgs.Module_0_has_no_default_export, moduleSymbol.symbolToString());
-      const exportStar = moduleSymbol.exports?.get(InternalSymbol.ExportStar);
-      if (exportStar) {
-        const defaultExport = qf.find.up(
-          exportStar.declarations,
-          (decl) => !!(decl.kind === Syntax.ExportDeclaration && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
-        );
-        if (defaultExport) addRelatedInfo(diagnostic, qf.make.diagForNode(defaultExport, qd.msgs.export_Asterisk_does_not_re_export_a_default));
-      }
-    }
-  }
-  function combineValueAndTypeSymbols(valueSymbol: qt.Symbol, typeSymbol: qt.Symbol): qt.Symbol {
-    if (valueSymbol === unknownSymbol && typeSymbol === unknownSymbol) return unknownSymbol;
-    if (valueSymbol.flags & (SymbolFlags.Type | qt.SymbolFlags.Namespace)) return valueSymbol;
-    const result = new qc.Symbol(valueSymbol.flags | typeSymbol.flags, valueSymbol.escName);
-    result.declarations = deduplicate(concatenate(valueSymbol.declarations, typeSymbol.declarations), equateValues);
-    result.parent = valueSymbol.parent || typeSymbol.parent;
-    if (valueSymbol.valueDeclaration) result.valueDeclaration = valueSymbol.valueDeclaration;
-    if (typeSymbol.members) result.members = cloneMap(typeSymbol.members);
-    if (valueSymbol.exports) result.exports = cloneMap(valueSymbol.exports);
-    return result;
   }
   function reportNonExportedMember(node: qt.ImportDeclaration | qt.ExportDeclaration, name: qt.Identifier, declarationName: string, moduleSymbol: qt.Symbol, moduleName: string): void {
     const localSymbol = moduleSymbol.valueDeclaration.locals?.get(name.escapedText);
@@ -616,18 +550,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function typesPackageExists(packageName: string): boolean {
     return getPackagesSet().has(getTypesPackageName(packageName));
-  }
-  function tryGetMemberInModuleExports(memberName: qu.__String, moduleSymbol: qt.Symbol): qt.Symbol | undefined {
-    const symbolTable = qf.get.exportsOfModule(moduleSymbol);
-    if (symbolTable) return symbolTable.get(memberName);
-  }
-  function tryGetMemberInModuleExportsAndProperties(memberName: qu.__String, moduleSymbol: qt.Symbol): qt.Symbol | undefined {
-    const symbol = tryGetMemberInModuleExports(memberName, moduleSymbol);
-    if (symbol) return symbol;
-    const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
-    if (exportEquals === moduleSymbol) return;
-    const type = exportEquals.typeOfSymbol();
-    return type.flags & qt.TypeFlags.Primitive || getObjectFlags(type) & ObjectFlags.Class || qf.type.is.arrayOrTupleLike(type) ? undefined : qf.get.propertyOfType(type, memberName);
   }
   interface ExportCollisionTracker {
     specText: string;
@@ -831,75 +753,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     return typeParams;
   }
-  function addDeclarationToLateBoundSymbol(symbol: qt.Symbol, member: qt.LateBoundDecl | qt.BinaryExpression, symbolFlags: qt.SymbolFlags) {
-    qf.assert.true(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
-    symbol.flags |= symbolFlags;
-    member.symbol.links.lateSymbol = symbol;
-    if (!symbol.declarations) symbol.declarations = [member];
-    else {
-      symbol.declarations.push(member);
-    }
-    if (symbolFlags & qt.SymbolFlags.Value) {
-      if (!symbol.valueDeclaration || symbol.valueDeclaration.kind !== member.kind) symbol.valueDeclaration = member;
-    }
-  }
-  function lateBindMember(parent: qt.Symbol, earlySymbols: qt.SymbolTable | undefined, lateSymbols: EscapedMap<qt.TransientSymbol>, decl: qt.LateBoundDecl | qt.LateBoundBinaryExpressionDeclaration) {
-    qf.assert.true(!!decl.symbol, 'The member is expected to have a symbol.');
-    const ls = qf.get.nodeLinks(decl);
-    if (!ls.resolvedSymbol) {
-      ls.resolvedSymbol = decl.symbol;
-      const declName = decl.kind === Syntax.BinaryExpression ? decl.left : decl.name;
-      const type = declName.kind === Syntax.ElemAccessExpression ? check.expressionCached(declName.argExpression) : check.computedPropertyName(declName);
-      if (qf.type.is.usableAsPropertyName(type)) {
-        const memberName = getPropertyNameFromType(type);
-        const symbolFlags = decl.symbol.flags;
-        let lateSymbol = lateSymbols.get(memberName);
-        if (!lateSymbol) lateSymbols.set(memberName, (lateSymbol = new qc.Symbol(SymbolFlags.None, memberName, qt.CheckFlags.Late)));
-        const earlySymbol = earlySymbols && earlySymbols.get(memberName);
-        if (lateSymbol.flags & qf.get.excluded(symbolFlags) || earlySymbol) {
-          const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
-          const name = (!(type.flags & qt.TypeFlags.UniqueESSymbol) && qy.get.unescUnderscores(memberName)) || declarationNameToString(declName);
-          forEach(declarations, (declaration) => error(qf.decl.nameOf(declaration) || declaration, qd.msgs.Property_0_was_also_declared_here, name));
-          error(declName || decl, qd.msgs.Duplicate_property_0, name);
-          lateSymbol = new qc.Symbol(SymbolFlags.None, memberName, qt.CheckFlags.Late);
-        }
-        lateSymbol.nameType = type;
-        addDeclarationToLateBoundSymbol(lateSymbol, decl, symbolFlags);
-        if (lateSymbol.parent) qf.assert.true(lateSymbol.parent === parent, 'Existing symbol parent should match new one');
-        else {
-          lateSymbol.parent = parent;
-        }
-        return (ls.resolvedSymbol = lateSymbol);
-      }
-    }
-    return ls.resolvedSymbol;
-  }
-  function findMatchingSignature(signatureList: readonly qt.Signature[], signature: qt.Signature, partialMatch: boolean, ignoreThisTypes: boolean, ignoreReturnTypes: boolean): qt.Signature | undefined {
-    for (const s of signatureList) {
-      if (compareSignaturesIdentical(s, signature, partialMatch, ignoreThisTypes, ignoreReturnTypes, partialMatch ? compareTypesSubtypeOf : compareTypesIdentical)) return s;
-    }
-  }
-  function findMatchingSignatures(signatureLists: readonly (readonly qt.Signature[])[], signature: qt.Signature, listIndex: number): qt.Signature[] | undefined {
-    if (signature.typeParams) {
-      if (listIndex > 0) return;
-      for (let i = 1; i < signatureLists.length; i++) {
-        if (!findMatchingSignature(signatureLists[i], signature, false)) return;
-      }
-      return [signature];
-    }
-    let result: qt.Signature[] | undefined;
-    for (let i = 0; i < signatureLists.length; i++) {
-      const match = i === listIndex ? signature : findMatchingSignature(signatureLists[i], signature, true);
-      if (!match) return;
-      result = appendIfUnique(result, match);
-    }
-    return result;
-  }
-  function combineUnionThisParam(left: qt.Symbol | undefined, right: qt.Symbol | undefined): qt.Symbol | undefined {
-    if (!left || !right) return left || right;
-    const thisType = qf.get.intersectionType([left.typeOfSymbol(), right.typeOfSymbol()]);
-    return createSymbolWithType(left, thisType);
-  }
   function intersectIndexInfos(info1: qt.IndexInfo | undefined, info2: qt.IndexInfo | undefined): qt.IndexInfo | undefined {
     return !info1 ? info2 : !info2 ? info1 : qf.make.indexInfo(qf.get.intersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
   }
@@ -914,12 +767,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       mixinFlags[firstMixinIndex] = false;
     }
     return mixinFlags;
-  }
-  function appendSignatures(signatures: qt.Signature[] | undefined, newSignatures: readonly qt.Signature[]) {
-    for (const sig of newSignatures) {
-      if (!signatures || every(signatures, (s) => !compareSignaturesIdentical(s, sig, false, compareTypesIdentical))) signatures = append(signatures, sig);
-    }
-    return signatures;
   }
   function elaborateNeverIntersection(errorInfo: qd.MessageChain | undefined, type: qt.Type) {
     if (getObjectFlags(type) & ObjectFlags.IsNeverIntersection) {
@@ -1042,56 +889,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       tuple.labeledElemDeclarations && tuple.labeledElemDeclarations.slice(index)
     );
   }
-  function addTypesToUnion(typeSet: qt.Type[], includes: qt.TypeFlags, types: readonly qt.Type[]): qt.TypeFlags {
-    for (const type of types) {
-      includes = addTypeToUnion(typeSet, includes, type);
-    }
-    return includes;
-  }
-  function removeSubtypes(types: qt.Type[], primitivesOnly: boolean): boolean {
-    const len = types.length;
-    if (len === 0 || isSetOfLiteralsFromSameEnum(types)) return true;
-    let i = len;
-    let count = 0;
-    while (i > 0) {
-      i--;
-      const source = types[i];
-      for (const target of types) {
-        if (source !== target) {
-          if (count === 100000) {
-            const estimatedCount = (count / (len - i)) * len;
-            if (estimatedCount > (primitivesOnly ? 25000000 : 1000000)) {
-              error(currentNode, qd.msgs.Expression_produces_a_union_type_that_is_too_complex_to_represent);
-              return false;
-            }
-          }
-          count++;
-          if (
-            qf.type.is.relatedTo(source, target, strictSubtypeRelation) &&
-            (!(getObjectFlags(getTargetType(source)) & ObjectFlags.Class) || !(getObjectFlags(getTargetType(target)) & ObjectFlags.Class) || qf.type.is.derivedFrom(source, target))
-          ) {
-            orderedRemoveItemAt(types, i);
-            break;
-          }
-        }
-      }
-    }
-    return true;
-  }
-  function removeRedundantLiteralTypes(types: qt.Type[], includes: qt.TypeFlags) {
-    let i = types.length;
-    while (i > 0) {
-      i--;
-      const t = types[i];
-      const remove =
-        (t.flags & qt.TypeFlags.StringLiteral && includes & qt.TypeFlags.String) ||
-        (t.flags & qt.TypeFlags.NumberLiteral && includes & qt.TypeFlags.Number) ||
-        (t.flags & qt.TypeFlags.BigIntLiteral && includes & qt.TypeFlags.BigInt) ||
-        (t.flags & qt.TypeFlags.UniqueESSymbol && includes & qt.TypeFlags.ESSymbol) ||
-        (qf.type.is.freshLiteral(t) && containsType(types, (<qt.LiteralType>t).regularType));
-      if (remove) orderedRemoveItemAt(types, i);
-    }
-  }
   function typePredicateKindsMatch(a: qt.TypePredicate, b: qt.TypePredicate): boolean {
     return a.kind === b.kind && a.paramIndex === b.paramIndex;
   }
@@ -1119,88 +916,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
     }
     return includes;
-  }
-  function removeRedundantPrimitiveTypes(types: qt.Type[], includes: qt.TypeFlags) {
-    let i = types.length;
-    while (i > 0) {
-      i--;
-      const t = types[i];
-      const remove =
-        (t.flags & qt.TypeFlags.String && includes & qt.TypeFlags.StringLiteral) ||
-        (t.flags & qt.TypeFlags.Number && includes & qt.TypeFlags.NumberLiteral) ||
-        (t.flags & qt.TypeFlags.BigInt && includes & qt.TypeFlags.BigIntLiteral) ||
-        (t.flags & qt.TypeFlags.ESSymbol && includes & qt.TypeFlags.UniqueESSymbol);
-      if (remove) orderedRemoveItemAt(types, i);
-    }
-  }
-  function extractIrreducible(types: qt.Type[], flag: qt.TypeFlags) {
-    if (every(types, (t) => !!(t.flags & qt.TypeFlags.Union) && some((t as qt.UnionType).types, (tt) => !!(tt.flags & flag)))) {
-      for (let i = 0; i < types.length; i++) {
-        types[i] = filterType(types[i], (t) => !(t.flags & flag));
-      }
-      return true;
-    }
-    return false;
-  }
-  function intersectUnionsOfPrimitiveTypes(types: qt.Type[]) {
-    let unionTypes: qt.UnionType[] | undefined;
-    const index = qf.find.index(types, (t) => !!(getObjectFlags(t) & ObjectFlags.PrimitiveUnion));
-    if (index < 0) return false;
-    let i = index + 1;
-    while (i < types.length) {
-      const t = types[i];
-      if (getObjectFlags(t) & ObjectFlags.PrimitiveUnion) {
-        (unionTypes || (unionTypes = [<qt.UnionType>types[index]])).push(<qt.UnionType>t);
-        orderedRemoveItemAt(types, i);
-      } else {
-        i++;
-      }
-    }
-    if (!unionTypes) return false;
-    const checked: qt.Type[] = [];
-    const result: qt.Type[] = [];
-    for (const u of unionTypes) {
-      for (const t of u.types) {
-        if (insertType(checked, t)) {
-          if (eachUnionContains(unionTypes, t)) insertType(result, t);
-        }
-      }
-    }
-    types[index] = qf.get.unionTypeFromSortedList(result, ObjectFlags.PrimitiveUnion);
-    return true;
-  }
-  function substituteIndexedMappedType(objectType: qt.MappedType, index: qt.Type) {
-    const mapper = createTypeMapper([getTypeParamFromMappedType(objectType)], [index]);
-    const templateMapper = combineTypeMappers(objectType.mapper, mapper);
-    return instantiateType(getTemplateTypeFromMappedType(objectType), templateMapper);
-  }
-  function tryMergeUnionOfObjectTypeAndEmptyObject(type: qt.UnionType, readonly: boolean): qt.Type | undefined {
-    if (type.types.length === 2) {
-      const firstType = type.types[0];
-      const secondType = type.types[1];
-      if (every(type.types, qf.type.is.emptyObjOrSpreadsIntoEmptyObj)) return qf.type.is.emptyObject(firstType) ? firstType : qf.type.is.emptyObject(secondType) ? secondType : emptyObjectType;
-      if (qf.type.is.emptyObjOrSpreadsIntoEmptyObj(firstType) && qf.type.is.singlePropertyAnonymousObject(secondType)) return getAnonymousPartialType(secondType);
-      if (qf.type.is.emptyObjOrSpreadsIntoEmptyObj(secondType) && qf.type.is.singlePropertyAnonymousObject(firstType)) return getAnonymousPartialType(firstType);
-    }
-    function getAnonymousPartialType(type: qt.Type) {
-      const members = new qc.SymbolTable();
-      for (const prop of qf.get.propertiesOfType(type)) {
-        if (prop.declarationModifierFlags() & (ModifierFlags.Private | ModifierFlags.Protected)) {
-        } else if (isSpreadableProperty(prop)) {
-          const isSetonlyAccessor = prop.flags & qt.SymbolFlags.SetAccessor && !(prop.flags & qt.SymbolFlags.GetAccessor);
-          const flags = qt.SymbolFlags.Property | qt.SymbolFlags.Optional;
-          const result = new qc.Symbol(flags, prop.escName, readonly ? qt.CheckFlags.Readonly : 0);
-          result.type = isSetonlyAccessor ? undefinedType : prop.typeOfSymbol();
-          result.declarations = prop.declarations;
-          result.nameType = prop.links.nameType;
-          result.syntheticOrigin = prop;
-          members.set(prop.escName, result);
-        }
-      }
-      const spread = qf.make.anonymousType(type.symbol, members, qu.empty, qu.empty, qf.get.indexInfoOfType(type, IndexKind.String), qf.get.indexInfoOfType(type, IndexKind.Number));
-      spread.objectFlags |= ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
-      return spread;
-    }
   }
   function combineTypeMappers(mapper1: qt.TypeMapper | undefined, mapper2: qt.TypeMapper): qt.TypeMapper {
     return mapper1 ? makeCompositeTypeMapper(TypeMapKind.Composite, mapper1, mapper2) : mapper2;
@@ -1635,15 +1350,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       : source.type && target.type
       ? compareTypes(source.type, target.type)
       : qt.Ternary.False;
-  }
-  function literalTypesWithSameBaseType(types: qt.Type[]): boolean {
-    let commonBaseType: qt.Type | undefined;
-    for (const t of types) {
-      const baseType = getBaseTypeOfLiteralType(t);
-      if (!commonBaseType) commonBaseType = baseType;
-      if (baseType === t || baseType !== commonBaseType) return false;
-    }
-    return true;
   }
   function reportImplicitAny(declaration: qt.Declaration, type: qt.Type, wideningKind?: WideningKind) {
     const typeAsString = typeToString(qf.get.widenedType(type));
@@ -2179,45 +1885,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
   }
-  function unionObjectAndArrayLiteralCandidates(candidates: qt.Type[]): qt.Type[] {
-    if (candidates.length > 1) {
-      const objectLiterals = filter(candidates, qf.type.is.objectOrArrayLiteral);
-      if (objectLiterals.length) {
-        const literalsType = qf.get.unionType(objectLiterals, qt.UnionReduction.Subtype);
-        return concatenate(
-          filter(candidates, (t) => !qf.type.is.objectOrArrayLiteral(t)),
-          [literalsType]
-        );
-      }
-    }
-    return candidates;
-  }
   function optionalChainContainsReference(source: Node, target: Node) {
     while (qf.is.optionalChain(source)) {
       source = source.expression;
       if (qf.is.matchingReference(source, target)) return true;
     }
     return false;
-  }
-  function findDiscriminantProperties(sourceProperties: qt.Symbol[], target: qt.Type): qt.Symbol[] | undefined {
-    let result: qt.Symbol[] | undefined;
-    for (const sourceProperty of sourceProperties) {
-      if (isDiscriminantProperty(target, sourceProperty.escName)) {
-        if (result) {
-          result.push(sourceProperty);
-          continue;
-        }
-        result = [sourceProperty];
-      }
-    }
-    return result;
-  }
-  function addEvolvingArrayElemType(evolvingArrayType: qt.EvolvingArrayType, node: qt.Expression): qt.EvolvingArrayType {
-    const elemType = getBaseTypeOfLiteralType(getContextFreeTypeOfExpression(node));
-    return isTypeSubsetOf(elemType, evolvingArrayType.elemType) ? evolvingArrayType : getEvolvingArrayType(qf.get.unionType([evolvingArrayType.elemType, elemType]));
-  }
-  function finalizeEvolvingArrayType(type: qt.Type): qt.Type {
-    return getObjectFlags(type) & ObjectFlags.EvolvingArray ? getFinalArrayType(<qt.EvolvingArrayType>type) : type;
   }
   function reportFlowControlError(node: Node) {
     const block = <qt.Block | qt.ModuleBlock | qt.SourceFile>qc.findAncestor(node, isFunctionOrModuleBlock);
@@ -2233,21 +1906,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     } else {
       qf.each.child(node, markParamAssignments);
-    }
-  }
-  function removeOptionalityFromDeclaredType(declaredType: qt.Type, declaration: qt.VariableLikeDeclaration): qt.Type {
-    if (pushTypeResolution(declaration.symbol, TypeSystemPropertyName.DeclaredType)) {
-      const annotationIncludesUndefined =
-        strictNullChecks &&
-        declaration.kind === Syntax.Param &&
-        declaration.initer &&
-        getFalsyFlags(declaredType) & qt.TypeFlags.Undefined &&
-        !(getFalsyFlags(check.expression(declaration.initer)) & qt.TypeFlags.Undefined);
-      popTypeResolution();
-      return annotationIncludesUndefined ? getTypeWithFacts(declaredType, TypeFacts.NEUndefined) : declaredType;
-    } else {
-      reportCircularityError(declaration.symbol);
-      return declaredType;
     }
   }
   function captureLexicalThis(node: Node, container: Node): void {
@@ -2393,53 +2051,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const prop = containingType.symbol && qf.get.propertyOfType(containingType.symbol.typeOfSymbol(), propName);
     return prop !== undefined && prop.valueDeclaration && qf.has.syntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
   }
-  function markPropertyAsReferenced(prop: qt.Symbol, nodeForCheckWriteOnly: Node | undefined, isThisAccess: boolean) {
-    const valueDeclaration = prop && prop.flags & qt.SymbolFlags.ClassMember && prop.valueDeclaration;
-    if (!valueDeclaration) return;
-    const hasPrivateModifier = qf.has.effectiveModifier(valueDeclaration, ModifierFlags.Private);
-    const hasPrivateIdentifier = qf.is.namedDeclaration(prop.valueDeclaration) && prop.valueDeclaration.name.kind === Syntax.PrivateIdentifier;
-    if (!hasPrivateModifier && !hasPrivateIdentifier) return;
-    if (nodeForCheckWriteOnly && qf.is.writeOnlyAccess(nodeForCheckWriteOnly) && !(prop.flags & qt.SymbolFlags.SetAccessor)) return;
-    if (isThisAccess) {
-      const containingMethod = qc.findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
-      if (containingMethod && containingMethod.symbol === prop) return;
-    }
-    (prop.checkFlags() & qt.CheckFlags.Instantiated ? prop.links.target : prop)!.referenced = qt.SymbolFlags.All;
-  }
   function callLikeExpressionMayHaveTypeArgs(node: qt.CallLikeExpression): node is qt.CallExpression | qt.NewExpression | qt.TaggedTemplateExpression | qt.JsxOpeningElem {
     return qf.is.callOrNewExpression(node) || node.kind === Syntax.TaggedTemplateExpression || qf.is.jsx.openingLikeElem(node);
-  }
-  function reorderCandidates(signatures: readonly qt.Signature[], result: qt.Signature[], callChainFlags: SignatureFlags): void {
-    let lastParent: Node | undefined;
-    let lastSymbol: qt.Symbol | undefined;
-    let cutoffIndex = 0;
-    let index: number | undefined;
-    let specializedIndex = -1;
-    let spliceIndex: number;
-    qf.assert.true(!result.length);
-    for (const signature of signatures) {
-      const symbol = signature.declaration && qf.get.symbolOfNode(signature.declaration);
-      const parent = signature.declaration && signature.declaration.parent;
-      if (!lastSymbol || symbol === lastSymbol) {
-        if (lastParent && parent === lastParent) index = index! + 1;
-        else {
-          lastParent = parent;
-          index = cutoffIndex;
-        }
-      } else {
-        index = cutoffIndex = result.length;
-        lastParent = parent;
-      }
-      lastSymbol = symbol;
-      if (signature.hasLiteralTypes()) {
-        specializedIndex++;
-        spliceIndex = specializedIndex;
-        cutoffIndex++;
-      } else {
-        spliceIndex = index;
-      }
-      result.splice(spliceIndex, 0, callChainFlags ? getOptionalCallSignature(signature, callChainFlags) : signature);
-    }
   }
   function inferJsxTypeArgs(node: qt.JsxOpeningLikeElem, signature: qt.Signature, checkMode: CheckMode, context: qt.InferenceContext): qt.Type[] {
     const paramType = getEffectiveFirstArgForJsxSignature(signature, node);
@@ -2506,28 +2119,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const inferenceContext = createInferenceContext(typeParams, candidate, qf.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
     const typeArgTypes = inferTypeArgs(node, candidate, args, CheckMode.SkipContextSensitive | CheckMode.SkipGenericFunctions, inferenceContext);
     return qf.make.signatureInstantiation(candidate, typeArgTypes);
-  }
-  function typeHasProtectedAccessibleBase(target: qt.Symbol, type: qt.InterfaceType): boolean {
-    const baseTypes = getBaseTypes(type);
-    if (!length(baseTypes)) return false;
-    const firstBase = baseTypes[0];
-    if (firstBase.flags & qt.TypeFlags.Intersection) {
-      const types = (firstBase as qt.IntersectionType).types;
-      const mixinFlags = findMixins(types);
-      let i = 0;
-      for (const intersectionMember of (firstBase as qt.IntersectionType).types) {
-        if (!mixinFlags[i]) {
-          if (getObjectFlags(intersectionMember) & (ObjectFlags.Class | ObjectFlags.Interface)) {
-            if (intersectionMember.symbol === target) return true;
-            if (typeHasProtectedAccessibleBase(target, intersectionMember as qt.InterfaceType)) return true;
-          }
-        }
-        i++;
-      }
-      return false;
-    }
-    if (firstBase.symbol === target) return true;
-    return typeHasProtectedAccessibleBase(target, firstBase as qt.InterfaceType);
   }
   function invocationErrorDetails(errorTarget: Node, apparentType: qt.Type, kind: qt.SignatureKind): { messageChain: qd.MessageChain; relatedMessage: qd.Message | undefined } {
     let errorInfo: qd.MessageChain | undefined;
@@ -2604,33 +2195,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             .Type_originates_at_this_import_A_namespace_style_import_cannot_be_called_or_constructed_and_will_cause_a_failure_at_runtime_Consider_using_a_default_import_or_import_require_here_instead
         )
       );
-    }
-  }
-  function mergeJSSymbols(target: qt.Symbol, source: qt.Symbol | undefined) {
-    if (source) {
-      const links = source.links;
-      if (!links.inferredClassSymbol || !links.inferredClassSymbol.has('' + target.getId())) {
-        const inferred = target.isTransient() ? target : (target.clone() as qt.TransientSymbol);
-        inferred.exports = inferred.exports || new qc.SymbolTable();
-        inferred.members = inferred.members || new qc.SymbolTable();
-        inferred.flags |= source.flags & qt.SymbolFlags.Class;
-        if (qu.hasEntries(source.exports)) inferred.exports.merge(source.exports);
-        if (qu.hasEntries(source.members)) inferred.members.merge(source.members);
-        (links.inferredClassSymbol || (links.inferredClassSymbol = new qu.QMap<qt.TransientSymbol>())).set('' + inferred.getId(), inferred);
-        return inferred;
-      }
-      return links.inferredClassSymbol.get('' + target.getId());
-    }
-  }
-  function assignParamType(param: qt.Symbol, type?: qt.Type) {
-    const links = param.links;
-    if (!links.type) {
-      const declaration = param.valueDeclaration as qt.ParamDeclaration;
-      links.type = type || qf.get.widenedTypeForVariableLikeDeclaration(declaration, true);
-      if (declaration.name.kind !== Syntax.Identifier) {
-        if (links.type === unknownType) links.type = qf.get.typeFromBindingPattern(declaration.name);
-        assignBindingElemTypes(declaration.name);
-      }
     }
   }
   function assignBindingElemTypes(pattern: qt.BindingPattern) {
@@ -3114,15 +2678,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     return false;
   }
-  function literalTypeToNode(type: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
-    const enumResult =
-      type.flags & qt.TypeFlags.EnumLiteral
-        ? nodeBuilder.symbolToExpression(type.symbol, qt.SymbolFlags.Value, enclosing, undefined, tracker)
-        : type === trueType
-        ? new qc.BooleanLiteral(true)
-        : type === falseType && new qc.BooleanLiteral(false);
-    return enumResult || qc.asLiteral((type as qt.LiteralType).value);
-  }
   function initializeTypeChecker() {
     for (const file of host.getSourceFiles()) {
       bindSourceFile(file, compilerOpts);
@@ -3276,47 +2831,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         return allowLetAndConstDeclarations(parent.parent);
     }
     return true;
-  }
-  function grammarErrorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const f = node.sourceFile;
-    if (!hasParseDiagnostics(f)) {
-      const s = f.spanOfTokenAtPos(node.pos);
-      diagnostics.add(qf.make.fileDiag(f, s.start, s.length, message, arg0, arg1, arg2));
-      return true;
-    }
-    return false;
-  }
-  function grammarErrorAtPos(nodeForSourceFile: Node, start: number, length: number, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = nodeForSourceFile.sourceFile;
-    if (!hasParseDiagnostics(sourceFile)) {
-      diagnostics.add(qf.make.fileDiag(sourceFile, start, length, message, arg0, arg1, arg2));
-      return true;
-    }
-    return false;
-  }
-  function grammarErrorOnNode(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const sourceFile = node.sourceFile;
-    if (!hasParseDiagnostics(sourceFile)) {
-      diagnostics.add(qf.make.diagForNode(node, message, arg0, arg1, arg2));
-      return true;
-    }
-    return false;
-  }
-  function grammarErrorAfterFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
-    const f = node.sourceFile;
-    if (!hasParseDiagnostics(f)) {
-      const s = f.spanOfTokenAtPos(node.pos);
-      diagnostics.add(qf.make.fileDiag(f, textSpanEnd(s), 0, message, arg0, arg1, arg2));
-      return true;
-    }
-    return false;
-  }
-  function filterPrimitivesIfContainsNonPrimitive(type: qt.UnionType) {
-    if (maybeTypeOfKind(type, qt.TypeFlags.NonPrimitive)) {
-      const result = filterType(type, (t) => !(t.flags & qt.TypeFlags.Primitive));
-      if (!(result.flags & qt.TypeFlags.Never)) return result;
-    }
-    return type;
   }
 }
 namespace JsxNames {
