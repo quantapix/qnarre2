@@ -39,16 +39,6 @@ type:
     UnionType
   UniqueESSymbolType
 
-sign: (SignatureDecl, TypeElem)
-  CallSignatureDeclaration
-  ConstructSignatureDeclaration
-  FunctionLikeDecl
-  IndexSignatureDeclaration
-  MethodSignature
-
-symb:
-  TransientSymbol
-
 decl:
   BinaryExpression
   CallExpression
@@ -103,6 +93,40 @@ decl:
     VariableDeclaration
       RequireVariableDeclaration
   SourceFile
+  | ConstructorTyping
+  | DocCallbackTag
+  | DocEnumTag
+  | DocFunctionTyping
+  | DocParamTag
+  | DocPropertyTag
+  | DocSignature
+  | DocTypedefTag
+  | FunctionExpression
+  | FunctionTyping
+  | Identifier
+  | JsxAttributes
+  | MappedTyping
+  | NamedTupleMember
+  | NewExpression
+  | NoSubstitutionLiteral
+  | NumericLiteral
+  | ObjectLiteralExpression
+  | PropertyDeclaration
+  | PropertySignature
+  | StringLiteral
+  | TypingLiteral
+
+sign: (SignatureDecl, TypeElem)
+  CallSignatureDeclaration
+  ConstructSignatureDeclaration
+  FunctionLikeDecl
+  IndexSignatureDeclaration
+  MethodSignature
+
+symb:
+  TransientSymbol
+
+
 
 stmt:
   Block
