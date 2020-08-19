@@ -445,7 +445,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     operations = undefined;
     operationArgs = undefined;
     operationLocations = undefined;
-    state = qf.create.tempVariable(undefined);
+    state = qf.make.tempVariable(undefined);
     // Build the generator
     resumeLexicalEnv();
     const statementOffset = addPrologue(statements, body.statements, false, visitor);
@@ -542,7 +542,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       const operator = node.operatorToken.kind;
       if (isCompoundAssignment(operator)) {
         return setRange(
-          qf.create.assignment(
+          qf.make.assignment(
             target,
             setRange(new qc.BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), qf.visit.node(right, visitor, isExpression)), node)
           ),
@@ -565,7 +565,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       //      _a = a();
       //  .yield resumeLabel
       //      _a + %sent% + c()
-      const clone = qf.create.mutableClone(node);
+      const clone = qf.make.mutableClone(node);
       clone.left = cacheExpression(qf.visit.node(node.left, visitor, isExpression));
       clone.right = qf.visit.node(node.right, visitor, isExpression);
       return clone;
@@ -715,7 +715,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     }
     const expressions = reduceLeft(elems, reduceElem, <qt.Expression[]>[], numInitialElems);
     return temp
-      ? qf.create.arrayConcat(temp, [new qc.ArrayLiteralExpression(expressions, multiLine)])
+      ? qf.make.arrayConcat(temp, [new qc.ArrayLiteralExpression(expressions, multiLine)])
       : setRange(new qc.ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine), location);
     function reduceElem(expressions: qt.Expression[], elem: qt.Expression) {
       if (containsYield(elem) && expressions.length > 0) {
@@ -726,7 +726,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         emitAssignment(
           temp,
           hasAssignedTemp
-            ? qf.create.arrayConcat(temp, [new qc.ArrayLiteralExpression(expressions, multiLine)])
+            ? qf.make.arrayConcat(temp, [new qc.ArrayLiteralExpression(expressions, multiLine)])
             : new qc.ArrayLiteralExpression(leadingElem ? [leadingElem, ...expressions] : expressions, multiLine)
         );
         leadingElem = undefined;
@@ -760,14 +760,14 @@ export function transformGenerators(context: qt.TrafoContext) {
     const temp = declareLocal();
     emitAssignment(temp, new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElemLike, 0, numInitialProperties), multiLine));
     const expressions = reduceLeft(properties, reduceProperty, <qt.Expression[]>[], numInitialProperties);
-    expressions.push(multiLine ? qf.emit.setStartsOnNewLine(qf.create.mutableClone(temp)) : temp);
+    expressions.push(multiLine ? qf.emit.setStartsOnNewLine(qf.make.mutableClone(temp)) : temp);
     return inlineExpressions(expressions);
     function reduceProperty(expressions: qt.Expression[], property: qt.ObjectLiteralElemLike) {
       if (containsYield(property) && expressions.length > 0) {
         emitStatement(new qc.ExpressionStatement(inlineExpressions(expressions)));
         expressions = [];
       }
-      const expression = qf.create.expressionForObjectLiteralElemLike(node, property, temp);
+      const expression = qf.make.expressionForObjectLiteralElemLike(node, property, temp);
       const visited = qf.visit.node(expression, visitor, isExpression);
       if (visited) {
         if (multiLine) {
@@ -789,7 +789,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      a = _a[%sent%]
-      const clone = qf.create.mutableClone(node);
+      const clone = qf.make.mutableClone(node);
       clone.expression = cacheExpression(qf.visit.node(node.expression, visitor, isLeftExpression));
       clone.argExpression = qf.visit.node(node.argExpression, visitor, isExpression);
       return clone;
@@ -808,8 +808,8 @@ export function transformGenerators(context: qt.TrafoContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
-      const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
-      return qf.create.functionApply(cacheExpression(qf.visit.node(target, visitor, isLeftExpression)), thisArg, visitElems(node.args), node).setOriginal(node);
+      const { target, thisArg } = qf.make.callBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
+      return qf.make.functionApply(cacheExpression(qf.visit.node(target, visitor, isLeftExpression)), thisArg, visitElems(node.args), node).setOriginal(node);
     }
     return qf.visit.children(node, visitor, context);
   }
@@ -825,9 +825,9 @@ export function transformGenerators(context: qt.TrafoContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      new (_b.apply(_a, _c.concat([%sent%, 2])));
-      const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
+      const { target, thisArg } = qf.make.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
-        setRange(new qc.NewExpression(qf.create.functionApply(cacheExpression(qf.visit.node(target, visitor, isExpression)), thisArg, visitElems(node.args!, qc.VoidExpression.zero())), undefined, []), node),
+        setRange(new qc.NewExpression(qf.make.functionApply(cacheExpression(qf.visit.node(target, visitor, isExpression)), thisArg, visitElems(node.args!, qc.VoidExpression.zero())), undefined, []), node),
         node
       );
     }
@@ -902,7 +902,7 @@ export function transformGenerators(context: qt.TrafoContext) {
   }
   function transformAndEmitVariableDeclarationList(node: qt.VariableDeclarationList): qt.VariableDeclarationList | undefined {
     for (const variable of node.declarations) {
-      const name = qf.create.synthesizedClone(<qt.Identifier>variable.name);
+      const name = qf.make.synthesizedClone(<qt.Identifier>variable.name);
       qf.emit.setCommentRange(name, variable.name);
       hoistVariableDeclaration(name);
     }
@@ -927,7 +927,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     return;
   }
   function transformInitializedVariable(node: qt.VariableDeclaration) {
-    return qf.emit.setSourceMapRange(qf.create.assignment(qf.emit.setSourceMapRange(<qt.Identifier>qf.create.synthesizedClone(node.name), node.name), qf.visit.node(node.initer, visitor, isExpression)), node);
+    return qf.emit.setSourceMapRange(qf.make.assignment(qf.emit.setSourceMapRange(<qt.Identifier>qf.make.synthesizedClone(node.name), node.name), qf.visit.node(node.initer, visitor, isExpression)), node);
   }
   function transformAndEmitIfStatement(node: qt.IfStatement) {
     if (containsYield(node)) {
@@ -1129,7 +1129,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       //  .mark endLoopLabel
       const keysArray = declareLocal(); // _a
       const key = declareLocal(); // _b
-      const keysIndex = qf.create.loopVariable(); // _i
+      const keysIndex = qf.make.loopVariable(); // _i
       const initer = node.initer;
       hoistVariableDeclaration(keysIndex);
       emitAssignment(keysArray, new qc.ArrayLiteralExpression());
@@ -1145,13 +1145,13 @@ export function transformGenerators(context: qt.TrafoContext) {
       const incrementLabel = defineLabel();
       const endLabel = beginLoopBlock(incrementLabel);
       markLabel(conditionLabel);
-      emitBreakWhenFalse(endLabel, qf.create.lessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
+      emitBreakWhenFalse(endLabel, qf.make.lessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: qt.Expression;
       if (initer.kind === Syntax.VariableDeclarationList) {
         for (const variable of initer.declarations) {
           hoistVariableDeclaration(<qt.Identifier>variable.name);
         }
-        variable = <qt.Identifier>qf.create.synthesizedClone(initer.declarations[0].name);
+        variable = <qt.Identifier>qf.make.synthesizedClone(initer.declarations[0].name);
       } else {
         variable = qf.visit.node(initer, visitor, isExpression);
         qf.assert.true(qf.is.leftHandSideExpression(variable));
@@ -1159,7 +1159,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       emitAssignment(variable, new qc.ElemAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
       markLabel(incrementLabel);
-      emitStatement(new qc.ExpressionStatement(qf.create.increment(keysIndex)));
+      emitStatement(new qc.ExpressionStatement(qf.make.increment(keysIndex)));
       emitBreak(conditionLabel);
       endLoopBlock();
     } else {
@@ -1456,7 +1456,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         if (declaration) {
           const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
           if (name) {
-            const clone = qf.create.mutableClone(name);
+            const clone = qf.make.mutableClone(name);
             qf.emit.setSourceMapRange(clone, node);
             qf.emit.setCommentRange(clone, node);
             return clone;
@@ -1468,12 +1468,12 @@ export function transformGenerators(context: qt.TrafoContext) {
   }
   function cacheExpression(node: qt.Expression): qt.Identifier {
     if (qf.is.generatedIdentifier(node) || qf.get.emitFlags(node) & EmitFlags.HelperName) return <qt.Identifier>node;
-    const temp = qf.create.tempVariable(hoistVariableDeclaration);
+    const temp = qf.make.tempVariable(hoistVariableDeclaration);
     emitAssignment(temp, node, node);
     return temp;
   }
   function declareLocal(name?: string): qt.Identifier {
-    const temp = name ? qf.create.uniqueName(name) : qf.create.tempVariable(undefined);
+    const temp = name ? qf.make.uniqueName(name) : qf.make.tempVariable(undefined);
     hoistVariableDeclaration(temp);
     return temp;
   }
@@ -1914,7 +1914,7 @@ export function transformGenerators(context: qt.TrafoContext) {
       if (markLabelEnd) {
         // The case clause for the last label falls through to this label, so we
         // add an assignment statement to reflect the change in labels.
-        statements.push(new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(state, 'label'), qc.asLiteral(labelNumber + 1))));
+        statements.push(new qc.ExpressionStatement(qf.make.assignment(new qc.PropertyAccessExpression(state, 'label'), qc.asLiteral(labelNumber + 1))));
       }
     }
     clauses.push(new qc.CaseClause(qc.asLiteral(labelNumber), statements || []));
@@ -2037,7 +2037,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     }
   }
   function writeAssign(left: qt.Expression, right: qt.Expression, operationLocation: TextRange | undefined): void {
-    writeStatement(setRange(new qc.ExpressionStatement(qf.create.assignment(left, right)), operationLocation));
+    writeStatement(setRange(new qc.ExpressionStatement(qf.make.assignment(left, right)), operationLocation));
   }
   function writeThrow(expression: qt.Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
@@ -2075,7 +2075,7 @@ export function transformGenerators(context: qt.TrafoContext) {
     writeStatement(
       qf.emit.setFlags(
         new qc.IfStatement(
-          qf.create.logicalNot(condition),
+          qf.make.logicalNot(condition),
           qf.emit.setFlags(setRange(new qc.ReturnStatement(new qc.ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine

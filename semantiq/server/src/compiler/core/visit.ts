@@ -13,7 +13,7 @@ export function newVisit(f: qt.Frame) {
   interface Frame extends qt.Frame {
     assert: qg.Fassert;
     calc: qg.Fcalc;
-    //create: Fcreate;
+    //make: Fmake;
     emit: qg.Femit;
     //get: Fget;
     //has: Fhas;
@@ -959,7 +959,7 @@ function addValueAssignments(ps: Nodes<qt.ParamDeclaration>, c: qt.TrafoContext)
             p.name,
             p.type,
             p.initer
-              ? new qc.ConditionalExpression(qf.create.strictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
+              ? new qc.ConditionalExpression(qf.make.strictEquality(qf.get.generatedNameForNode(p), qc.VoidExpression.zero()), p.initer, qf.get.generatedNameForNode(p))
               : qf.get.generatedNameForNode(p)
           ),
         ])
@@ -970,13 +970,13 @@ function addValueAssignments(ps: Nodes<qt.ParamDeclaration>, c: qt.TrafoContext)
   const forIniter = (p: qc.ParamDeclaration, name: qt.Identifier, init: qt.Expression) => {
     c.addInitializationStatement(
       new qc.IfStatement(
-        qf.create.typeCheck(qf.create.synthesizedClone(name), 'undefined'),
+        qf.make.typeCheck(qf.make.synthesizedClone(name), 'undefined'),
         qf.emit.setFlags(
           new qc.Block([
             new qc.ExpressionStatement(
               qf.emit.setFlags(
                 qf.create
-                  .assignment(qf.emit.setFlags(qf.create.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
+                  .assignment(qf.emit.setFlags(qf.make.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(init, EmitFlags.NoSourceMap | qf.get.emitFlags(init) | EmitFlags.NoComments))
                   .setRange(p),
                 EmitFlags.NoComments
               )

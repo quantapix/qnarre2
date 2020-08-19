@@ -733,7 +733,7 @@ export class QContext {
     const paramTypeNode = this.serializeTypeForDeclaration(paramType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
       !(this.flags & NodeBuilderFlags.OmitParamModifiers) && preserveModifierFlags && paramDeclaration && paramDeclaration.modifiers
-        ? paramDeclaration.modifiers.map(qf.create.synthesizedClone)
+        ? paramDeclaration.modifiers.map(qf.make.synthesizedClone)
         : undefined;
     const isRest = (paramDeclaration && qf.is.restParam(paramDeclaration)) || s.checkFlags() & CheckFlags.RestParam;
     const dot3Token = isRest ? new qc.Token(Syntax.Dot3Token) : undefined;
@@ -743,7 +743,7 @@ export class QContext {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
         const visited = qf.visit.children(node, elideIniterAndSetEmitFlags, nullTrafoContext, undefined, elideIniterAndSetEmitFlags)!;
-        const clone = qf.is.synthesized(visited) ? visited : qf.create.synthesizedClone(visited);
+        const clone = qf.is.synthesized(visited) ? visited : qf.make.synthesizedClone(visited);
         if (clone.kind === Syntax.BindingElem) (<qt.BindingElem>clone).initer = undefined;
         return qf.emit.setFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
@@ -752,9 +752,9 @@ export class QContext {
     const name = paramDeclaration
       ? paramDeclaration.name
         ? paramDeclaration.name.kind === Syntax.Identifier
-          ? qf.emit.setFlags(qf.create.synthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(qf.make.synthesizedClone(paramDeclaration.name), EmitFlags.NoAsciiEscaping)
           : paramDeclaration.name.kind === Syntax.QualifiedName
-          ? qf.emit.setFlags(qf.create.synthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
+          ? qf.emit.setFlags(qf.make.synthesizedClone(paramDeclaration.name.right), EmitFlags.NoAsciiEscaping)
           : cloneBindingName(paramDeclaration.name)
         : s.name
       : s.name;
@@ -827,7 +827,7 @@ export class QContext {
     const file = existing.sourceFile;
     const transformed = qf.visit.node(existing, this.visitExistingNodeTreeSymbols);
     if (hadError) return;
-    return transformed === existing ? qf.create.mutableClone(existing) : transformed;
+    return transformed === existing ? qf.make.mutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
     if (node.kind === Syntax.DocAllTyping || node.kind === Syntax.DocNamepathTyping) return new qc.KeywordTyping(Syntax.AnyKeyword);
@@ -961,7 +961,7 @@ export class QContext {
           includePrivateSymbol?.(sym);
         }
         if (node.kind === Syntax.Identifier) {
-          const name = sym.flags & SymbolFlags.TypeParam ? this.typeParamToName(getDeclaredTypeOfSymbol(sym)) : qf.create.mutableClone(node);
+          const name = sym.flags & SymbolFlags.TypeParam ? this.typeParamToName(getDeclaredTypeOfSymbol(sym)) : qf.make.mutableClone(node);
           name.symbol = sym;
           return qf.emit.setFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
         }
@@ -994,7 +994,7 @@ export class QContext {
       for (const s of signatures) {
         if (s.declaration) privateProtected |= qf.get.selectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
       }
-      if (privateProtected) return [new qc.ConstructorDeclaration(undefined, qf.create.modifiersFromFlags(privateProtected), [], undefined).setRange(signatures[0].declaration)];
+      if (privateProtected) return [new qc.ConstructorDeclaration(undefined, qf.make.modifiersFromFlags(privateProtected), [], undefined).setRange(signatures[0].declaration)];
     }
     const results = [];
     for (const sig of signatures) {
@@ -1086,7 +1086,7 @@ export class QContext {
     );
     const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, qt.SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
-      ? [new qc.ConstructorDeclaration(undefined, qf.create.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
+      ? [new qc.ConstructorDeclaration(undefined, qf.make.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as qt.ConstructorDeclaration[]);
     for (const c of constructors) {
       c.type = undefined;
@@ -1440,7 +1440,7 @@ export class QContext {
           result.push(
             new qc.SetAccessorDeclaration(
               undefined,
-              qf.create.modifiersFromFlags(flag),
+              qf.make.modifiersFromFlags(flag),
               name,
               [
                 new qc.ParamDeclaration(
@@ -1461,7 +1461,7 @@ export class QContext {
           result.push(
             new qc.GetAccessorDeclaration(
               undefined,
-              qf.create.modifiersFromFlags(flag),
+              qf.make.modifiersFromFlags(flag),
               name,
               [],
               isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
@@ -1473,7 +1473,7 @@ export class QContext {
       } else if (p.flags & (SymbolFlags.Property | SymbolFlags.Variable)) {
         return createProperty(
           undefined,
-          qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+          qf.make.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
           name,
           p.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined,
           isPrivate ? undefined : this.serializeTypeForDeclaration(p.typeOfSymbol(), p, enclosingDeclaration, includePrivateSymbol, bundled),
@@ -1486,7 +1486,7 @@ export class QContext {
         if (flag & ModifierFlags.Private) {
           return createProperty(
             undefined,
-            qf.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+            qf.make.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
             name,
             p.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined,
             undefined,
@@ -1497,7 +1497,7 @@ export class QContext {
         for (const sig of signatures) {
           const decl = this.signatureToSignatureDeclarationHelper(sig, methodKind) as qt.MethodDeclaration;
           decl.name = name;
-          if (flag) decl.modifiers = new Nodes(qf.create.modifiersFromFlags(flag));
+          if (flag) decl.modifiers = new Nodes(qf.make.modifiersFromFlags(flag));
           if (p.flags & SymbolFlags.Optional) decl.questionToken = new qc.Token(Syntax.QuestionToken);
           results.push(decl.setRange(sig.declaration));
         }
@@ -1627,7 +1627,7 @@ export class QContext {
             if (length(associated) && every(associated, canHaveExportModifier)) {
               const addExportModifier = (s: qt.Statement) => {
                 const f = (qf.get.effectiveModifierFlags(s) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
-                s.modifiers = new Nodes(qf.create.modifiersFromFlags(f));
+                s.modifiers = new Nodes(qf.make.modifiersFromFlags(f));
                 s.modifierFlagsCache = 0;
               };
               forEach(associated, addExportModifier);
@@ -1650,7 +1650,7 @@ export class QContext {
         ((enclosingDeclaration.kind === Syntax.SourceFile && qf.is.externalOrCommonJsModule(enclosingDeclaration)) || enclosingDeclaration.kind === Syntax.ModuleDeclaration) &&
         (!some(ss, isExternalModuleIndicator) || (!qf.has.scopeMarker(ss) && some(ss, qf.stmt.is.scopeMarkerNeeded)))
       ) {
-        ss.push(qf.create.emptyExports());
+        ss.push(qf.make.emptyExports());
       }
       return ss;
     };
@@ -1675,7 +1675,7 @@ export class QContext {
         f |= ModifierFlags.Default;
       }
       if (f) {
-        n.modifiers = new Nodes(qf.create.modifiersFromFlags(f | qf.get.effectiveModifierFlags(n)));
+        n.modifiers = new Nodes(qf.make.modifiersFromFlags(f | qf.get.effectiveModifierFlags(n)));
         n.modifierFlagsCache = 0;
       }
       results.push(n);

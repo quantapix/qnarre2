@@ -1229,12 +1229,12 @@ export function createProgram(
     if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     const { diagnostics, directives } = getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics);
     for (const errorExpectation of directives.getUnusedExpectations()) {
-      diagnostics.push(qf.create.diagForRange(sourceFile, errorExpectation.range, qd.Unused_ts_expect_error_directive));
+      diagnostics.push(qf.make.diagForRange(sourceFile, errorExpectation.range, qd.Unused_ts_expect_error_directive));
     }
     return diagnostics;
   }
   function getDiagnosticsWithPrecedingDirectives(sourceFile: qt.SourceFile, commentDirectives: qt.CommentDirective[], flatDiagnostics: Diagnostic[]) {
-    const directives = qf.create.commentDirectivesMap(sourceFile, commentDirectives);
+    const directives = qf.make.commentDirectivesMap(sourceFile, commentDirectives);
     const diagnostics = flatqd.filter((diagnostic) => markPrecedingCommentDirectiveLine(diagnostic, directives) === -1);
     return { diagnostics, directives };
   }
@@ -1268,7 +1268,7 @@ export function createProgram(
           case Syntax.PropertyDeclaration:
           case Syntax.MethodDeclaration:
             if ((<qt.ParamDeclaration | qt.PropertyDeclaration | qt.MethodDeclaration>parent).questionToken === node) {
-              diagnostics.push(qf.create.diagForNode(node, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+              diagnostics.push(qf.make.diagForNode(node, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
               return 'skip';
             }
           case Syntax.MethodSignature:
@@ -1280,61 +1280,61 @@ export function createProgram(
           case Syntax.ArrowFunction:
           case Syntax.VariableDeclaration:
             if ((<qt.FunctionLikeDeclaration | qt.VariableDeclaration | qt.ParamDeclaration | qt.PropertyDeclaration>parent).type === node) {
-              diagnostics.push(qf.create.diagForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
         }
         switch (node.kind) {
           case Syntax.ImportClause:
             if ((node as qt.ImportClause).isTypeOnly) {
-              diagnostics.push(qf.create.diagForNode(node.parent, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
+              diagnostics.push(qf.make.diagForNode(node.parent, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
               return 'skip';
             }
             break;
           case Syntax.ExportDeclaration:
             if ((node as qt.ExportDeclaration).isTypeOnly) {
-              diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
+              diagnostics.push(qf.make.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
               return 'skip';
             }
             break;
           case Syntax.ImportEqualsDeclaration:
-            diagnostics.push(qf.create.diagForNode(node, qd.import_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(qf.make.diagForNode(node, qd.import_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.ExportAssignment:
             if ((<qt.ExportAssignment>node).isExportEquals) {
-              diagnostics.push(qf.create.diagForNode(node, qd.export_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNode(node, qd.export_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.HeritageClause:
             const heritageClause = <qt.HeritageClause>node;
             if (heritageClause.token === Syntax.ImplementsKeyword) {
-              diagnostics.push(qf.create.diagForNode(node, qd.implements_clauses_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNode(node, qd.implements_clauses_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.InterfaceDeclaration:
             const interfaceKeyword = qt.Token.toString(Syntax.InterfaceKeyword);
             qf.assert.defined(interfaceKeyword);
-            diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
+            diagnostics.push(qf.make.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
           case Syntax.ModuleDeclaration:
             const moduleKeyword = node.flags & NodeFlags.Namespace ? qt.Token.toString(Syntax.NamespaceKeyword) : qt.Token.toString(Syntax.ModuleKeyword);
             qf.assert.defined(moduleKeyword);
-            diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
+            diagnostics.push(qf.make.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
           case Syntax.TypeAliasDeclaration:
-            diagnostics.push(qf.create.diagForNode(node, qd.Type_aliases_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(qf.make.diagForNode(node, qd.Type_aliases_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.EnumDeclaration:
             const enumKeyword = qf.check.defined(Token.toString(Syntax.EnumKeyword));
-            diagnostics.push(qf.create.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
+            diagnostics.push(qf.make.diagForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
             return 'skip';
           case Syntax.NonNullExpression:
-            diagnostics.push(qf.create.diagForNode(node, qd.Non_null_assertions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(qf.make.diagForNode(node, qd.Non_null_assertions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.AsExpression:
-            diagnostics.push(qf.create.diagForNode((node as qt.AsExpression).type, qd.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(qf.make.diagForNode((node as qt.AsExpression).type, qd.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.TypeAssertionExpression:
             fail();
@@ -1343,7 +1343,7 @@ export function createProgram(
       function walkArray(nodes: Nodes<Node>, parent: Node) {
         if (parent.decorators === nodes && !opts.experimentalDecorators) {
           diagnostics.push(
-            qf.create.diagForNode(
+            qf.make.diagForNode(
               parent,
               qd.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning
             )
@@ -1360,7 +1360,7 @@ export function createProgram(
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
             if (nodes === (<qt.DeclarationWithTypeParamChildren>parent).typeParams) {
-              diagnostics.push(qf.create.diagForNodes(nodes, qd.Type_param_declarations_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNodes(nodes, qd.Type_param_declarations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
           case Syntax.VariableStatement:
@@ -1373,7 +1373,7 @@ export function createProgram(
             if (nodes === (<qt.PropertyDeclaration>parent).modifiers) {
               for (const modifier of <Nodes<Modifier>>nodes) {
                 if (modifier.kind !== Syntax.StaticKeyword) {
-                  diagnostics.push(qf.create.diagForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
+                  diagnostics.push(qf.make.diagForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
                 }
               }
               return 'skip';
@@ -1381,7 +1381,7 @@ export function createProgram(
             break;
           case Syntax.Param:
             if (nodes === (<qt.ParamDeclaration>parent).modifiers) {
-              diagnostics.push(qf.create.diagForNodes(nodes, qd.Param_modifiers_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNodes(nodes, qd.Param_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
@@ -1392,7 +1392,7 @@ export function createProgram(
           case Syntax.JsxOpeningElem:
           case Syntax.TaggedTemplateExpression:
             if (nodes === (<qt.WithArgsTobj>parent).typeArgs) {
-              diagnostics.push(qf.create.diagForNodes(nodes, qd.Type_args_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(qf.make.diagForNodes(nodes, qd.Type_args_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
@@ -1411,7 +1411,7 @@ export function createProgram(
             case Syntax.ReadonlyKeyword:
             case Syntax.DeclareKeyword:
             case Syntax.AbstractKeyword:
-              diagnostics.push(qf.create.diagForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
+              diagnostics.push(qf.make.diagForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, qt.Token.toString(modifier.kind)));
               break;
             case Syntax.StaticKeyword:
             case Syntax.ExportKeyword:
@@ -1419,12 +1419,12 @@ export function createProgram(
           }
         }
       }
-      function qf.create.diagForNodes(nodes: Nodes<Node>, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+      function qf.make.diagForNodes(nodes: Nodes<Node>, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
         const start = nodes.pos;
-        return qf.create.fileDiag(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
+        return qf.make.fileDiag(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
       }
-      function qf.create.diagForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
-        return qf.create.diagForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2);
+      function qf.make.diagForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+        return qf.make.diagForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2);
       }
     });
   }
@@ -1629,7 +1629,7 @@ export function createProgram(
     const refToReportErrorOn = refs && qf.find.up(refs, (ref) => ref.referencedFileName === existingFile.fileName);
     fileProcessingqd.add(
       refToReportErrorOn
-        ? qf.create.fileDiagAtReference(refToReportErrorOn, qd.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
+        ? qf.make.fileDiagAtReference(refToReportErrorOn, qd.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
         : createRefFileDiagnostic(refFile, qd.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
     );
   }
@@ -1942,7 +1942,7 @@ export function createProgram(
               const refToReportErrorOn = refs && qf.find.up(refs, (ref) => ref.referencedFileName === existingFile.fileName);
               fileProcessingqd.add(
                 refToReportErrorOn
-                  ? qf.create.fileDiagAtReference(
+                  ? qf.make.fileDiagAtReference(
                       refToReportErrorOn,
                       qd.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
                       typeReferenceDirective,
@@ -1982,13 +1982,13 @@ export function createProgram(
         const unqualifiedLibName = removeSuffix(removePrefix(libName, 'lib.'), '.d.ts');
         const suggestion = getSpellingSuggestion(unqualifiedLibName, libs, identity);
         const message = suggestion ? qd.Cannot_find_lib_definition_for_0_Did_you_mean_1 : qd.Cannot_find_lib_definition_for_0;
-        fileProcessingqd.add(qf.create.fileDiag(file, libReference.pos, libReference.end - libReference.pos, message, libName, suggestion));
+        fileProcessingqd.add(qf.make.fileDiag(file, libReference.pos, libReference.end - libReference.pos, message, libName, suggestion));
       }
     });
   }
   function createRefFileDiagnostic(refFile: qt.RefFile | undefined, message: qd.Message, ...args: any[]): Diagnostic {
     if (!refFile) return createCompilerDiagnostic(message, ...args);
-    return qf.create.fileDiag(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
+    return qf.make.fileDiag(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
   }
   function getCanonicalFileName(fileName: string): string {
     return host.getCanonicalFileName(fileName);
@@ -2233,7 +2233,7 @@ export function createProgram(
       const firstNonExternalModuleSourceFile = qf.find.up(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
-        programqd.add(qf.create.fileDiag(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
+        programqd.add(qf.make.fileDiag(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
     }
     if (outFile && !opts.emitDeclarationOnly) {
@@ -2242,7 +2242,7 @@ export function createProgram(
       } else if (opts.module === undefined && firstNonAmbientExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
         programqd.add(
-          qf.create.fileDiag(
+          qf.make.fileDiag(
             firstNonAmbientExternalModuleSourceFile,
             span.start,
             span.length,
@@ -2322,7 +2322,7 @@ export function createProgram(
       }
     }
   }
-  function qf.create.fileDiagAtReference(refPathToReportErrorOn: qnr.RefFile, message: qd.Message, ...args: (string | number | undefined)[]) {
+  function qf.make.fileDiagAtReference(refPathToReportErrorOn: qnr.RefFile, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refFile = qf.check.defined(getSourceFileByPath(refPathToReportErrorOn.file));
     const { kind, index } = refPathToReportErrorOn;
     let pos: number, end: number;
@@ -2340,12 +2340,12 @@ export function createProgram(
       default:
         return qc.assert.never(kind);
     }
-    return qf.create.fileDiag(refFile, pos, end - pos, message, ...args);
+    return qf.make.fileDiag(refFile, pos, end - pos, message, ...args);
   }
   function addProgramDiagnosticAtRefPath(file: qt.SourceFile, rootPaths: Map<true>, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elemAt(refPaths, 0);
-    programqd.add(refPathToReportErrorOn ? qf.create.fileDiagAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
+    programqd.add(refPathToReportErrorOn ? qf.make.fileDiagAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
   }
   function verifyProjectReferences() {
     const buildInfoPath = !opts.noEmit && !opts.suppressOutputPathCheck ? getTsBuildInfoEmitOutputFilePath(opts) : undefined;
@@ -2387,7 +2387,7 @@ export function createProgram(
         for (const keyProps of qf.get.propertyAssignment(pathProp.initer, key)) {
           const initer = keyProps.initer;
           if (qf.is.arrayLiteralExpression(initer) && initer.elems.length > valueIndex) {
-            programqd.add(qf.create.diagForNodeInSourceFile(opts.configFile!, initer.elems[valueIndex], message, arg0, arg1, arg2));
+            programqd.add(qf.make.diagForNodeInSourceFile(opts.configFile!, initer.elems[valueIndex], message, arg0, arg1, arg2));
             needCompilerDiagnostic = false;
           }
         }
@@ -2428,7 +2428,7 @@ export function createProgram(
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
     if (referencesSyntax && referencesSyntax.elems.length > index) {
-      programqd.add(qf.create.diagForNodeInSourceFile(sourceFile || opts.configFile!, referencesSyntax.elems[index], message, arg0, arg1));
+      programqd.add(qf.make.diagForNodeInSourceFile(sourceFile || opts.configFile!, referencesSyntax.elems[index], message, arg0, arg1));
     } else {
       programqd.add(createCompilerDiagnostic(message, arg0, arg1));
     }
@@ -2468,7 +2468,7 @@ export function createProgram(
   ): boolean {
     const props = qf.get.propertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
-      programqd.add(qf.create.diagForNodeInSourceFile(opts.configFile!, onKey ? prop.name : prop.initer, message, arg0, arg1, arg2));
+      programqd.add(qf.make.diagForNodeInSourceFile(opts.configFile!, onKey ? prop.name : prop.initer, message, arg0, arg1, arg2));
     }
     return !!props.length;
   }

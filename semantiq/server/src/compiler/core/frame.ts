@@ -114,7 +114,7 @@ export function newAssert(f: qt.Frame) {
   })());
 }
 export interface Fassert extends ReturnType<typeof newAssert> {}
-export function newCreate(f: qt.Frame) {
+export function newMake(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: qg.Fcalc;
     get: Fget;
@@ -124,7 +124,7 @@ export function newCreate(f: qt.Frame) {
     skip: qg.Fskip;
   }
   const qf = f as Frame;
-  return (qf.create = new (class {
+  return (qf.make = new (class {
     nextAutoGenId = 0;
     node<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
       const n =
@@ -329,7 +329,7 @@ export function newCreate(f: qt.Frame) {
     lessThan(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.LessThanToken, r);
     }
-    //qf.create.assignment(l: qt.ObjectLiteralExpression | qt.ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
+    //qf.make.assignment(l: qt.ObjectLiteralExpression | qt.ArrayLiteralExpression, r: qt.Expression): qt.DestructuringAssignment;
     assignment(l: qt.Expression, r: qt.Expression): qc.BinaryExpression;
     assignment(l: qt.Expression, r: qt.Expression) {
       return new qc.BinaryExpression(l, Syntax.EqualsToken, r);
@@ -571,7 +571,7 @@ export function newCreate(f: qt.Frame) {
     }
   })());
 }
-export interface Fcreate extends ReturnType<typeof newCreate> {}
+export interface Fmake extends ReturnType<typeof newMake> {}
 export function newEach(f: qt.Frame) {
   interface Frame extends qt.Frame {
     is: Fis;
@@ -2601,7 +2601,7 @@ export function newFormat(f: qt.Frame) {
 export interface Fformat extends ReturnType<typeof newFormat> {}
 export function newGet(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    create: Fcreate;
+    make: Fmake;
     each: Feach;
     emit: qg.Femit;
     has: Fhas;
@@ -2743,7 +2743,7 @@ export function newGet(f: qt.Frame) {
       return n.argExpression;
     }
     namespaceMemberName(ns: qt.Identifier, i: qt.Identifier, comments?: boolean, sourceMaps?: boolean): qc.PropertyAccessExpression {
-      const n = new qc.PropertyAccessExpression(ns, qf.is.synthesized(i) ? i : qf.create.synthesizedClone(i));
+      const n = new qc.PropertyAccessExpression(ns, qf.is.synthesized(i) ? i : qf.make.synthesizedClone(i));
       n.setRange(i);
       let f: EmitFlags = 0;
       if (!sourceMaps) f |= EmitFlags.NoSourceMap;
@@ -3722,7 +3722,7 @@ export interface Fskip extends ReturnType<typeof newSkip> {}
 export interface Frame extends qt.Frame {
   assert: Fassert;
   calc: qg.Fcalc;
-  create: Fcreate;
+  make: Fmake;
   decl: qg.Fdecl;
   each: Feach;
   emit: qg.Femit;
@@ -3738,7 +3738,7 @@ export interface Frame extends qt.Frame {
 export function newFrame() {
   const f = {} as Frame;
   newAssert(f);
-  newCreate(f);
+  newMake(f);
   newEach(f);
   newFormat(f);
   newGet(f);

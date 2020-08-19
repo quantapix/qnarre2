@@ -1,6 +1,6 @@
 import { CheckFlags, EmitFlags, FunctionFlags, ModifierFlags, NodeFlags, ObjectFlags, SymbolFlags, TrafoFlags, TypeFlags } from '../types';
 import { Node, Nodes, Signature, Symbol, Type, TypeParam, TypeReference } from '../types';
-import { qf, Fcreate, Fget, Fhas, Fis } from './frame';
+import { qf, Fmake, Fget, Fhas, Fis } from './frame';
 import { Syntax } from '../syntax';
 import { Fvisit } from './visit';
 import * as qb from './bases';
@@ -742,7 +742,7 @@ export function newType(f: qt.Frame) {
           const target = (<TypeReference>t).target;
           const typeArgs = this.typeArgs(<TypeReference>t);
           if (qu.length(target.typeParams) === qu.length(typeArgs)) {
-            const ref = qf.create.typeReference(target, concatenate(typeArgs, [thisArg || target.thisType!]));
+            const ref = qf.make.typeReference(target, concatenate(typeArgs, [thisArg || target.thisType!]));
             return needApparent ? this.apparentType(ref) : ref;
           }
         } else if (t.flags & TypeFlags.Intersection) {
@@ -932,14 +932,14 @@ export function newType(f: qt.Frame) {
                   if (index < ps.length) {
                     const declaredConstraint = this.constraintOfTypeParam(ps[index]);
                     if (declaredConstraint) {
-                      const mapper = qf.create.typeMapper(ps, this.effectiveTypeArgs(typeReference, ps));
+                      const mapper = qf.make.typeMapper(ps, this.effectiveTypeArgs(typeReference, ps));
                       const constraint = instantiateType(declaredConstraint, mapper);
                       if (constraint !== t) inferences = qu.append(inferences, constraint);
                     }
                   }
                 }
               } else if (gp?.kind === Syntax.Param && (<qt.ParamDeclaration>gp).dot3Token) {
-                inferences = qu.append(inferences, qf.create.arrayType(unknownType));
+                inferences = qu.append(inferences, qf.make.arrayType(unknownType));
               }
             }
           }
@@ -999,7 +999,7 @@ export function newType(f: qt.Frame) {
         const id = `${this.typeId(t)}>${this.typeId(substitute)}`;
         const cached = substitutionTypes.get(id);
         if (cached) return cached;
-        const r = <qt.SubstitutionType>qf.create.type(TypeFlags.Substitution);
+        const r = <qt.SubstitutionType>qf.make.type(TypeFlags.Substitution);
         r.baseType = t;
         r.substitute = substitute;
         substitutionTypes.set(id, r);
@@ -1063,7 +1063,7 @@ export function newType(f: qt.Frame) {
         const id = this.typeListId(ts);
         let t = unionTypes.get(id);
         if (!t) {
-          t = <qt.UnionType>qf.create.type(TypeFlags.Union);
+          t = <qt.UnionType>qf.make.type(TypeFlags.Union);
           unionTypes.set(id, t);
           t.objectFlags = f | this.propagatingFlagsOfTypes(ts, TypeFlags.Nullable);
           t.types = ts;
@@ -1157,7 +1157,7 @@ export function newType(f: qt.Frame) {
           return this.intersectionType([left, right]);
         }
         const members = new qc.SymbolTable();
-        const skippedPrivateMembers = qu.qf.create.escapedMap<boolean>();
+        const skippedPrivateMembers = qu.qf.make.escapedMap<boolean>();
         let stringIndexInfo: qt.IndexInfo | undefined;
         let numberIndexInfo: qt.IndexInfo | undefined;
         if (left === qu.emptyObjectType) {
@@ -1193,14 +1193,14 @@ export function newType(f: qt.Frame) {
             members.set(leftProp.escName, this.spreadSymbol(leftProp, readonly));
           }
         }
-        const spread = qf.create.anonymousType(s, members, qu.empty, qu.empty, this.indexInfoWithReadonly(stringIndexInfo, readonly), this.indexInfoWithReadonly(numberIndexInfo, readonly));
+        const spread = qf.make.anonymousType(s, members, qu.empty, qu.empty, this.indexInfoWithReadonly(stringIndexInfo, readonly), this.indexInfoWithReadonly(numberIndexInfo, readonly));
         spread.objectFlags |= ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral | ObjectFlags.ContainsSpread | f;
         return spread;
       }
       freshTypeOfLiteralType(t: Type): Type {
         if (t.flags & TypeFlags.Literal) {
           if (!(<qt.LiteralType>t).freshType) {
-            const freshType = qf.create.literalType(t.flags, (<qt.LiteralType>t).value, (<qt.LiteralType>t).symbol);
+            const freshType = qf.make.literalType(t.flags, (<qt.LiteralType>t).value, (<qt.LiteralType>t).symbol);
             freshType.regularType = <qt.LiteralType>t;
             freshType.freshType = freshType;
             (<qt.LiteralType>t).freshType = freshType;
@@ -1249,7 +1249,7 @@ export function newType(f: qt.Frame) {
         if (t.flags & TypeFlags.Object) {
           const resolved = resolveStructuredTypeMembers(<qt.ObjectType>t);
           if (resolved.constructSignatures.length || resolved.callSignatures.length) {
-            const r = qf.create.objectType(ObjectFlags.Anonymous, t.symbol);
+            const r = qf.make.objectType(ObjectFlags.Anonymous, t.symbol);
             r.members = resolved.members;
             r.properties = resolved.properties;
             r.callSignatures = qu.empty;
@@ -1274,7 +1274,7 @@ export function newType(f: qt.Frame) {
           const t = this.is.freshLiteral(type)
             ? (<qt.FreshableType>type).regularType
             : t.objectFlags & ObjectFlags.Reference && (<TypeReference>type).node
-            ? qf.create.typeReference((<TypeReference>type).target, this.typeArgs(<TypeReference>type))
+            ? qf.make.typeReference((<TypeReference>type).target, this.typeArgs(<TypeReference>type))
             : t.flags & TypeFlags.UnionOrIntersection
             ? this.reducedType(t)
             : t.flags & TypeFlags.Substitution
@@ -1464,7 +1464,7 @@ export function newType(f: qt.Frame) {
         if (regularType) return regularType;
         const resolved = <qt.ResolvedType>t;
         const members = transformTypeOfMembers(t, getRegularTypeOfObjectLiteral);
-        const regularNew = qf.create.anonymousType(resolved.symbol, members, resolved.callSignatures, resolved.constructSignatures, resolved.stringIndexInfo, resolved.numberIndexInfo);
+        const regularNew = qf.make.anonymousType(resolved.symbol, members, resolved.callSignatures, resolved.constructSignatures, resolved.stringIndexInfo, resolved.numberIndexInfo);
         regularNew.flags = resolved.flags;
         regularNew.objectFlags |= resolved.objectFlags & ~ObjectFlags.FreshLiteral;
         (<qt.FreshObjectLiteralType>t).regularType = regularNew;
@@ -1482,13 +1482,13 @@ export function newType(f: qt.Frame) {
         }
         const stringIndexInfo = this.indexInfoOfType(t, qt.IndexKind.String);
         const numberIndexInfo = this.indexInfoOfType(t, qt.IndexKind.Number);
-        const result = qf.create.anonymousType(
+        const result = qf.make.anonymousType(
           t.symbol,
           members,
           qu.empty,
           qu.empty,
-          stringIndexInfo && qf.create.indexInfo(this.widenedType(stringIndexInfo.type), stringIndexInfo.isReadonly),
-          numberIndexInfo && qf.create.indexInfo(this.widenedType(numberIndexInfo.type), numberIndexInfo.isReadonly)
+          stringIndexInfo && qf.make.indexInfo(this.widenedType(stringIndexInfo.type), stringIndexInfo.isReadonly),
+          numberIndexInfo && qf.make.indexInfo(this.widenedType(numberIndexInfo.type), numberIndexInfo.isReadonly)
         );
         result.objectFlags |= t.objectFlags & (ObjectFlags.JSLiteral | ObjectFlags.NonInferrableType);
         return result;
@@ -1504,13 +1504,13 @@ export function newType(f: qt.Frame) {
           else if (qf.type.is.objectLiteral(t)) {
             result = this.widenedTypeOfObjectLiteral(t, context);
           } else if (t.flags & TypeFlags.Union) {
-            const unionContext = context || qf.create.wideningContext(undefined, (<qt.UnionType>type).types);
+            const unionContext = context || qf.make.wideningContext(undefined, (<qt.UnionType>type).types);
             const widenedTypes = sameMap((<qt.UnionType>type).types, (t) => (t.flags & TypeFlags.Nullable ? t : this.widenedTypeWithContext(t, unionContext)));
             result = this.unionType(widenedTypes, qu.some(widenedTypes, qf.type.is.emptyObject) ? qt.UnionReduction.Subtype : qt.UnionReduction.Literal);
           } else if (t.flags & TypeFlags.Intersection) {
             result = this.intersectionType(sameMap((<qt.IntersectionType>type).types, this.widenedType));
           } else if (qf.type.is.array(t) || qf.type.is.tuple(t)) {
-            result = qf.create.typeReference((<TypeReference>type).target, sameMap(this.typeArgs(<TypeReference>type), this.widenedType));
+            result = qf.make.typeReference((<TypeReference>type).target, sameMap(this.typeArgs(<TypeReference>type), this.widenedType));
           }
           if (result && context === undefined) t.widened = result;
           return result || type;
@@ -1625,16 +1625,16 @@ export function newType(f: qt.Frame) {
         return (everyType(t, qf.type.is.tupleLike) && this.tupleElemType(t, i)) || qf.check.iteratedTypeOrElemType(IterationUse.Destructuring, t, undefinedType, undefined) || errorType;
       }
       typeOfDestructuredSpreadExpression(t: Type) {
-        return qf.create.arrayType(qf.check.iteratedTypeOrElemType(IterationUse.Destructuring, t, undefinedType, undefined) || errorType);
+        return qf.make.arrayType(qf.check.iteratedTypeOrElemType(IterationUse.Destructuring, t, undefinedType, undefined) || errorType);
       }
       typeFromFlowType(t: qt.FlowType) {
         return t.flags === 0 ? (<qt.IncompleteType>t).type : <Type>t;
       }
       evolvingArrayType(t: Type): qt.EvolvingArrayType {
-        return evolvingArrayTypes[t.id] || (evolvingArrayTypes[t.id] = qf.create.evolvingArrayType(t));
+        return evolvingArrayTypes[t.id] || (evolvingArrayTypes[t.id] = qf.make.evolvingArrayType(t));
       }
       finalArrayType(t: qt.EvolvingArrayType): Type {
-        return t.finalArrayType || (t.finalArrayType = qf.create.finalArrayType(t.elemType));
+        return t.finalArrayType || (t.finalArrayType = qf.make.finalArrayType(t.elemType));
       }
       elemTypeOfEvolvingArrayType(t: Type) {
         return t.objectFlags & ObjectFlags.EvolvingArray ? (<qt.EvolvingArrayType>t).elemType : neverType;
@@ -1727,8 +1727,8 @@ export function newType(f: qt.Frame) {
           : t.flags & (TypeFlags.Any | TypeFlags.Instantiable) || qf.type.is.mutableArrayOrTuple(t)
           ? t
           : qf.type.is.tuple(t)
-          ? qf.create.tupleType(this.typeArgs(t), t.target.minLength, t.target.hasRestElem, false, t.target.labeledElemDeclarations)
-          : qf.create.arrayType(this.indexedAccessType(t, numberType));
+          ? qf.make.tupleType(this.typeArgs(t), t.target.minLength, t.target.hasRestElem, false, t.target.labeledElemDeclarations)
+          : qf.make.arrayType(this.indexedAccessType(t, numberType));
       }
       unaryResultType(t: Type): Type {
         if (maybeTypeOfKind(t, TypeFlags.BigIntLike)) return qf.type.is.assignableToKind(t, TypeFlags.AnyOrUnknown) || maybeTypeOfKind(t, TypeFlags.NumberLike) ? numberOrBigIntType : bigintType;
@@ -1758,7 +1758,7 @@ export function newType(f: qt.Frame) {
               newSymbol.target = symbol.resolveSymbol();
               memberTable.set(InternalSymbol.Default, newSymbol);
               const anonymousSymbol = new qc.Symbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
-              const defaultContainingObject = qf.create.anonymousType(anonymousSymbol, memberTable, qu.empty, qu.empty, undefined);
+              const defaultContainingObject = qf.make.anonymousType(anonymousSymbol, memberTable, qu.empty, qu.empty, undefined);
               anonymousSymbol.type = defaultContainingObject;
               synthType.syntheticType = qf.is.validSpreadType(t) ? this.spreadType(t, defaultContainingObject, anonymousSymbol, false) : defaultContainingObject;
             } else {
@@ -1880,11 +1880,11 @@ export function newType(f: qt.Frame) {
         if (qf.type.is.referenceTo(t, (globalType = resolver.this.globalIterableType(false))) || qf.type.is.referenceTo(t, (globalType = resolver.this.globalIterableIteratorType(false)))) {
           const [yieldType] = this.typeArgs(type as qt.GenericType);
           const { returnType, nextType } = this.iterationTypesOfGlobalIterableType(globalType, resolver);
-          return setCachedIterationTypes(t, resolver.iterableCacheKey, qf.create.iterationTypes(yieldType, returnType, nextType));
+          return setCachedIterationTypes(t, resolver.iterableCacheKey, qf.make.iterationTypes(yieldType, returnType, nextType));
         }
         if (qf.type.is.referenceTo(t, resolver.this.globalGeneratorType(false))) {
           const [yieldType, returnType, nextType] = this.typeArgs(type as qt.GenericType);
-          return setCachedIterationTypes(t, resolver.iterableCacheKey, qf.create.iterationTypes(yieldType, returnType, nextType));
+          return setCachedIterationTypes(t, resolver.iterableCacheKey, qf.make.iterationTypes(yieldType, returnType, nextType));
         }
       }
       iterationTypesOfIterableSlow(t: Type, resolver: IterationTypesResolver, errorNode: Node | undefined) {
@@ -1911,11 +1911,11 @@ export function newType(f: qt.Frame) {
           const [yieldType] = this.typeArgs(type as qt.GenericType);
           const globalIterationTypes = this.iterationTypesOfIteratorCached(globalType, resolver) || this.iterationTypesOfIteratorSlow(globalType, resolver, undefined);
           const { returnType, nextType } = globalIterationTypes === noIterationTypes ? defaultIterationTypes : globalIterationTypes;
-          return setCachedIterationTypes(t, resolver.iteratorCacheKey, qf.create.iterationTypes(yieldType, returnType, nextType));
+          return setCachedIterationTypes(t, resolver.iteratorCacheKey, qf.make.iterationTypes(yieldType, returnType, nextType));
         }
         if (qf.type.is.referenceTo(t, resolver.this.globalIteratorType(false)) || qf.type.is.referenceTo(t, resolver.this.globalGeneratorType(false))) {
           const [yieldType, returnType, nextType] = this.typeArgs(type as qt.GenericType);
-          return setCachedIterationTypes(t, resolver.iteratorCacheKey, qf.create.iterationTypes(yieldType, returnType, nextType));
+          return setCachedIterationTypes(t, resolver.iteratorCacheKey, qf.make.iterationTypes(yieldType, returnType, nextType));
         }
       }
       iterationTypesOfIteratorResult(t: Type) {
@@ -1924,18 +1924,18 @@ export function newType(f: qt.Frame) {
         if (cachedTypes) return cachedTypes;
         if (qf.type.is.referenceTo(t, this.globalIteratorYieldResultType(false))) {
           const yieldType = this.typeArgs(type as qt.GenericType)[0];
-          return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.create.iterationTypes(yieldType, undefined));
+          return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.make.iterationTypes(yieldType, undefined));
         }
         if (qf.type.is.referenceTo(t, this.globalIteratorReturnResultType(false))) {
           const returnType = this.typeArgs(type as qt.GenericType)[0];
-          return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.create.iterationTypes(undefined));
+          return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.make.iterationTypes(undefined));
         }
         const yieldIteratorResult = filterType(t, isYieldIteratorResult);
         const yieldType = yieldIteratorResult !== neverType ? this.typeOfPropertyOfType(yieldIteratorResult, 'value' as qu.__String) : undefined;
         const returnIteratorResult = filterType(t, isReturnIteratorResult);
         const returnType = returnIteratorResult !== neverType ? this.typeOfPropertyOfType(returnIteratorResult, 'value' as qu.__String) : undefined;
         if (!yieldType && !returnType) return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', noIterationTypes);
-        return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.create.iterationTypes(yieldType, returnType || voidType, undefined));
+        return setCachedIterationTypes(t, 'iterationTypesOfIteratorResult', qf.make.iterationTypes(yieldType, returnType || voidType, undefined));
       }
       iterationTypesOfMethod(t: Type, resolver: IterationTypesResolver, methodName: 'next' | 'return' | 'throw', errorNode: Node | undefined): qt.IterationTypes | undefined {
         const method = this.propertyOfType(t, methodName as qu.__String);
@@ -1983,7 +1983,7 @@ export function newType(f: qt.Frame) {
           yieldType = iterationTypes.yieldType;
           returnTypes = qu.append(returnTypes, iterationTypes.returnType);
         }
-        return qf.create.iterationTypes(yieldType, this.unionType(returnTypes), nextType);
+        return qf.make.iterationTypes(yieldType, this.unionType(returnTypes), nextType);
       }
       iterationTypesOfIteratorSlow(t: Type, resolver: IterationTypesResolver, errorNode: Node | undefined) {
         const iterationTypes = combineIterationTypes([
@@ -2362,7 +2362,7 @@ export interface Fsign extends ReturnType<typeof newSign> {}
 export function newDecl(f: qt.Frame) {
   interface Frame extends qt.Frame {
     calc: Fcalc;
-    create: Fcreate;
+    make: Fmake;
     emit: Femit;
     get: Fget;
     has: Fhas;
@@ -2457,7 +2457,7 @@ export function newDecl(f: qt.Frame) {
     getName(d: qt.Declaration, comments?: boolean, sourceMaps?: boolean, f: EmitFlags = 0) {
       const n = this.nameOf(d);
       if (n && n.kind === Syntax.Identifier && !qf.is.generatedIdentifier(n)) {
-        const c = qf.create.qf.create.mutableClone(n);
+        const c = qf.make.qf.make.mutableClone(n);
         f |= d.emitFlags(n);
         if (!sourceMaps) f |= EmitFlags.NoSourceMap;
         if (!comments) f |= EmitFlags.NoComments;
@@ -3293,7 +3293,7 @@ export function newCalc(f: qt.Frame) {
 export interface Fcalc extends ReturnType<typeof newCalc> {}
 export function newStmt(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    create: Fcreate;
+    make: Fmake;
     decl: Fdecl;
     emit: Femit;
     get: Fget;
@@ -3404,7 +3404,7 @@ export function newStmt(f: qt.Frame) {
         const d2 = d.update(d.name, undefined, e);
         return new qc.VariableStatement(undefined, (n as qc.VariableDeclarationList).update([d2])).setRange(n);
       } else {
-        const e2 = qf.create.assignment(n, e).setRange(n);
+        const e2 = qf.make.assignment(n, e).setRange(n);
         return new qc.ExpressionStatement(e2).setRange(n);
       }
     }
@@ -3579,7 +3579,7 @@ export function newNest(f: qt.Frame) {
         const callee = n.expression;
         const k = qf.skip.partiallyEmittedExpressions(callee).kind;
         if (k === Syntax.FunctionExpression || k === Syntax.ArrowFunction) {
-          const c = qf.create.mutableClone(e2);
+          const c = qf.make.mutableClone(e2);
           c.expression = new qc.ParenthesizedExpression(callee).setRange(callee);
           return recreateOuterExpressions(e, c, qt.OuterExpressionKinds.PartiallyEmittedExpressions);
         }
@@ -3854,7 +3854,7 @@ export namespace fixme {
     return qf.emit.setFlags(new qc.Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qt.Expression[]) {
-    return expressions.length > 10 ? new qc.CommaListExpression(expressions) : reduceLeft(expressions, qf.create.comma)!;
+    return expressions.length > 10 ? new qc.CommaListExpression(expressions) : reduceLeft(expressions, qf.make.comma)!;
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
     sourceFile: qt.SourceFile,
@@ -3924,7 +3924,7 @@ export namespace fixme {
       if (create) {
         const parseNode = qf.get.originalOf(node, isSourceFile);
         const emitNode = this.getOrCreate(parseNode);
-        return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = qf.create.uniqueName(externalHelpersModuleNameText));
+        return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = qf.make.uniqueName(externalHelpersModuleNameText));
       }
     }
     return;
@@ -3953,7 +3953,7 @@ export namespace fixme {
       return (
         tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOpts) ||
         tryRenameExternalModule(<qt.StringLiteral>moduleName, sourceFile) ||
-        qf.create.synthesizedClone(<qt.StringLiteral>moduleName)
+        qf.make.synthesizedClone(<qt.StringLiteral>moduleName)
       );
     }
     return;

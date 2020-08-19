@@ -325,7 +325,7 @@ export function transformES2018(context: qt.TrafoContext) {
     if (initerWithoutParens.kind === Syntax.VariableDeclarationList || initerWithoutParens.kind === Syntax.AssignmentPattern) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
-      const temp = qf.create.tempVariable(undefined);
+      const temp = qf.make.tempVariable(undefined);
       const statements: qt.Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
       if (node.statement.kind === Syntax.Block) {
         qu.addRange(statements, node.statement.statements);
@@ -366,19 +366,19 @@ export function transformES2018(context: qt.TrafoContext) {
   }
   function transformForAwaitOfStatement(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = qf.visit.node(node.expression, visitor, isExpression);
-    const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.create.tempVariable(undefined);
-    const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : qf.create.tempVariable(undefined);
-    const errorRecord = qf.create.uniqueName('e');
+    const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.make.tempVariable(undefined);
+    const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : qf.make.tempVariable(undefined);
+    const errorRecord = qf.make.uniqueName('e');
     const catchVariable = qf.get.generatedNameForNode(errorRecord);
-    const returnMethod = qf.create.tempVariable(undefined);
+    const returnMethod = qf.make.tempVariable(undefined);
     const callValues = createAsyncValuesHelper(context, expression, node.expression);
     const callNext = new qc.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
     const getDone = new qc.PropertyAccessExpression(result, 'done');
     const getValue = new qc.PropertyAccessExpression(result, 'value');
-    const callReturn = qf.create.functionCall(returnMethod, iterator, []);
+    const callReturn = qf.make.functionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
-    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qc.VoidExpression.zero()), callValues]) : callValues;
+    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.make.assignment(errorRecord, qc.VoidExpression.zero()), callValues]) : callValues;
     const forStatement = qf.emit.setFlags(
       setRange(
         new qc.ForStatement(
@@ -386,7 +386,7 @@ export function transformES2018(context: qt.TrafoContext) {
             setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
           ),
-          qf.create.comma(qf.create.assignment(result, createDownlevelAwait(callNext)), qf.create.logicalNot(getDone)),
+          qf.make.comma(qf.make.assignment(result, createDownlevelAwait(callNext)), qf.make.logicalNot(getDone)),
           undefined,
           convertForOfStatementHead(node, getValue)
         ),
@@ -399,7 +399,7 @@ export function transformES2018(context: qt.TrafoContext) {
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
         qf.emit.setFlags(
-          new qc.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
+          new qc.Block([new qc.ExpressionStatement(qf.make.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
           EmitFlags.SingleLine
         )
       ),
@@ -408,7 +408,7 @@ export function transformES2018(context: qt.TrafoContext) {
           new qc.Block([
             qf.emit.setFlags(
               new qc.IfStatement(
-                qf.create.logicalAnd(qf.create.logicalAnd(result, qf.create.logicalNot(getDone)), qf.create.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
+                qf.make.logicalAnd(qf.make.logicalAnd(result, qf.make.logicalNot(getDone)), qf.make.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
                 new qc.ExpressionStatement(createDownlevelAwait(callReturn))
               ),
               EmitFlags.SingleLine
@@ -640,7 +640,7 @@ export function transformES2018(context: qt.TrafoContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: qt.PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(qf.create.fileLevelUniqueName('_super'), node.name), node);
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(qf.make.fileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElemAccessExpression(node: qt.ElemAccessExpression) {

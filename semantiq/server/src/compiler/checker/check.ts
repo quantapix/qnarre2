@@ -67,7 +67,7 @@ export function newCheck(f: qt.Frame) {
             : qd.msgs.An_import_alias_cannot_reference_a_declaration_that_was_imported_using_import_type;
           const relatedMessage = isExport ? qd.msgs._0_was_exported_here : qd.msgs._0_was_imported_here;
           const name = qy.get.unescUnderscores(typeOnlyDeclaration.name!.escapedText);
-          addRelatedInfo(error(n.moduleReference, message), qf.create.diagForNode(typeOnlyDeclaration, relatedMessage, name));
+          addRelatedInfo(error(n.moduleReference, message), qf.make.diagForNode(typeOnlyDeclaration, relatedMessage, name));
         }
       }
       andReportErrorForUsingTypeAsNamespace(n: Node, name: qu.__String, meaning: qt.SymbolFlags): boolean {
@@ -312,7 +312,7 @@ export function newCheck(f: qt.Frame) {
           const diag = error(n, qd.this_implicitly_has_type_any_because_it_does_not_have_a_type_annotation);
           if (!container.kind === Syntax.SourceFile) {
             const outsideThis = tryGetThisTypeAt(container);
-            if (outsideThis && outsideThis !== globalThisType) addRelatedInfo(diag, qf.create.diagForNode(container, qd.msgs.An_outer_value_of_this_is_shadowed_by_this_container));
+            if (outsideThis && outsideThis !== globalThisType) addRelatedInfo(diag, qf.make.diagForNode(container, qd.msgs.An_outer_value_of_this_is_shadowed_by_this_container));
           }
         }
       }
@@ -935,7 +935,7 @@ export function newCheck(f: qt.Frame) {
         }
         if (absoluteMinArgCount <= maxParamCount) return true;
         if (reportErrors) {
-          const diag = qf.create.diagForNode(
+          const diag = qf.make.diagForNode(
             n.tagName,
             qd.msgs.Tag_0_expects_at_least_1_args_but_the_JSX_factory_2_provides_at_most_3,
             entityNameToString(n.tagName),
@@ -944,7 +944,7 @@ export function newCheck(f: qt.Frame) {
             maxParamCount
           );
           const tagNameDeclaration = getSymbolAtLocation(n.tagName)?.valueDeclaration;
-          if (tagNameDeclaration) addRelatedInfo(diag, qf.create.diagForNode(tagNameDeclaration, qd.msgs._0_is_declared_here, entityNameToString(n.tagName)));
+          if (tagNameDeclaration) addRelatedInfo(diag, qf.make.diagForNode(tagNameDeclaration, qd.msgs._0_is_declared_here, entityNameToString(n.tagName)));
           if (errorOutputContainer && errorOutputContainer.skipLogging) (errorOutputContainer.errors || (errorOutputContainer.errors = [])).push(diag);
           if (!errorOutputContainer.skipLogging) diagnostics.add(diag);
         }
@@ -1234,7 +1234,7 @@ export function newCheck(f: qt.Frame) {
               let span: TextSpan | undefined;
               if (!sourceFile.isEffectiveExternalModule(compilerOpts)) {
                 if (!span) span = sourceFile.spanOfTokenAtPos(n.pos);
-                const diagnostic = qf.create.fileDiag(
+                const diagnostic = qf.make.fileDiag(
                   sourceFile,
                   span.start,
                   span.length,
@@ -1244,7 +1244,7 @@ export function newCheck(f: qt.Frame) {
               }
               if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) {
                 span = sourceFile.spanOfTokenAtPos(n.pos);
-                const diagnostic = qf.create.fileDiag(
+                const diagnostic = qf.make.fileDiag(
                   sourceFile,
                   span.start,
                   span.length,
@@ -1257,10 +1257,10 @@ export function newCheck(f: qt.Frame) {
             const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
               const span = sourceFile.spanOfTokenAtPos(n.pos);
-              const diagnostic = qf.create.fileDiag(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
+              const diagnostic = qf.make.fileDiag(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
               const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor && (qf.get.functionFlags(func) & FunctionFlags.Async) === 0) {
-                const relatedInfo = qf.create.diagForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
+                const relatedInfo = qf.make.diagForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }
               diagnostics.add(diagnostic);
@@ -1272,7 +1272,7 @@ export function newCheck(f: qt.Frame) {
       const operandType = this.expression(n.expression);
       const awaitedType = qf.type.check.awaited(operandType, n, qd.msgs.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
       if (awaitedType === operandType && awaitedType !== errorType && !(operandType.flags & TypeFlags.AnyOrUnknown))
-        addErrorOrSuggestion(false, qf.create.diagForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
+        addErrorOrSuggestion(false, qf.make.diagForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
       return awaitedType;
     }
     prefixUnaryExpression(n: qt.PrefixUnaryExpression): qt.Type {
@@ -2848,13 +2848,13 @@ export function newCheck(f: qt.Frame) {
               (qf.has.effectiveModifier(member, ModifierFlags.Private) || (qf.is.namedDeclaration(member) && member.name.kind === Syntax.PrivateIdentifier)) &&
               !(member.flags & NodeFlags.Ambient)
             ) {
-              addDiagnostic(member, UnusedKind.Local, qf.create.diagForNode(member.name!, qd.msgs._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
+              addDiagnostic(member, UnusedKind.Local, qf.make.diagForNode(member.name!, qd.msgs._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
             }
             break;
           case Syntax.Constructor:
             for (const param of (<qt.ConstructorDeclaration>member).params) {
               if (!param.symbol.referenced && qf.has.syntacticModifier(param, ModifierFlags.Private))
-                addDiagnostic(param, UnusedKind.Local, qf.create.diagForNode(param.name, qd.msgs.Property_0_is_declared_but_its_value_is_never_read, param.symbol.name));
+                addDiagnostic(param, UnusedKind.Local, qf.make.diagForNode(param.name, qd.msgs.Property_0_is_declared_but_its_value_is_never_read, param.symbol.name));
             }
             break;
           case Syntax.IndexSignature:
@@ -2867,7 +2867,7 @@ export function newCheck(f: qt.Frame) {
     }
     unusedInferTypeParam(n: qt.InferTyping, addDiagnostic: AddUnusedDiagnostic): void {
       const { typeParam } = n;
-      if (isTypeParamUnused(typeParam)) addDiagnostic(n, UnusedKind.Param, qf.create.diagForNode(n, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(typeParam.name)));
+      if (isTypeParamUnused(typeParam)) addDiagnostic(n, UnusedKind.Param, qf.make.diagForNode(n, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(typeParam.name)));
     }
     unusedTypeParams(n: qt.ClassLikeDeclaration | qt.SignatureDeclaration | qt.InterfaceDeclaration | qt.TypeAliasDeclaration, addDiagnostic: AddUnusedDiagnostic): void {
       if (last(qf.get.symbolOfNode(n).declarations) !== n) return;
@@ -2883,10 +2883,10 @@ export function newCheck(f: qt.Frame) {
             const only = parent.typeParams!.length === 1;
             const message = only ? qd.msgs._0_is_declared_but_its_value_is_never_read : qd.msgs.All_type_params_are_unused;
             const arg0 = only ? name : undefined;
-            addDiagnostic(typeParam, UnusedKind.Param, qf.create.fileDiag(parent.sourceFile, range.pos, range.end - range.pos, message, arg0));
+            addDiagnostic(typeParam, UnusedKind.Param, qf.make.fileDiag(parent.sourceFile, range.pos, range.end - range.pos, message, arg0));
           }
         } else {
-          addDiagnostic(typeParam, UnusedKind.Param, qf.create.diagForNode(typeParam, qd.msgs._0_is_declared_but_its_value_is_never_read, name));
+          addDiagnostic(typeParam, UnusedKind.Param, qf.make.diagForNode(typeParam, qd.msgs._0_is_declared_but_its_value_is_never_read, name));
         }
       }
     }
@@ -2909,7 +2909,7 @@ export function newCheck(f: qt.Frame) {
             const name = local.valueDeclaration && qf.decl.nameOf(local.valueDeclaration);
             if (param && name) {
               if (!qf.is.paramPropertyDeclaration(param, param.parent) && !paramIsThqy.is.keyword(param) && !qf.is.identifierThatStartsWithUnderscore(name))
-                addDiagnostic(param, UnusedKind.Param, qf.create.diagForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
+                addDiagnostic(param, UnusedKind.Param, qf.make.diagForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
             } else {
               errorUnusedLocal(declaration, local.name, addDiagnostic);
             }
@@ -2925,8 +2925,8 @@ export function newCheck(f: qt.Frame) {
             importDecl,
             UnusedKind.Local,
             unuseds.length === 1
-              ? qf.create.diagForNode(importDecl, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(first(unuseds).name!))
-              : qf.create.diagForNode(importDecl, qd.msgs.All_imports_in_import_declaration_are_unused)
+              ? qf.make.diagForNode(importDecl, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(first(unuseds).name!))
+              : qf.make.diagForNode(importDecl, qd.msgs.All_imports_in_import_declaration_are_unused)
           );
         } else {
           for (const unused of unuseds) errorUnusedLocal(unused, idText(unused.name!), addDiagnostic);
@@ -2942,13 +2942,13 @@ export function newCheck(f: qt.Frame) {
               bindingPattern,
               kind,
               bindingElems.length === 1
-                ? qf.create.diagForNode(bindingPattern, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(bindingElems).name))
-                : qf.create.diagForNode(bindingPattern, qd.msgs.All_destructured_elems_are_unused)
+                ? qf.make.diagForNode(bindingPattern, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(bindingElems).name))
+                : qf.make.diagForNode(bindingPattern, qd.msgs.All_destructured_elems_are_unused)
             );
           }
         } else {
           for (const e of bindingElems) {
-            addDiagnostic(e, kind, qf.create.diagForNode(e, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(e.name)));
+            addDiagnostic(e, kind, qf.make.diagForNode(e, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(e.name)));
           }
         }
       });
@@ -2958,12 +2958,12 @@ export function newCheck(f: qt.Frame) {
             declarationList,
             UnusedKind.Local,
             declarations.length === 1
-              ? qf.create.diagForNode(first(declarations).name, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(declarations).name))
-              : qf.create.diagForNode(declarationList.parent.kind === Syntax.VariableStatement ? declarationList.parent : declarationList, qd.msgs.All_variables_are_unused)
+              ? qf.make.diagForNode(first(declarations).name, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(declarations).name))
+              : qf.make.diagForNode(declarationList.parent.kind === Syntax.VariableStatement ? declarationList.parent : declarationList, qd.msgs.All_variables_are_unused)
           );
         } else {
           for (const decl of declarations) {
-            addDiagnostic(decl, UnusedKind.Local, qf.create.diagForNode(decl, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(decl.name)));
+            addDiagnostic(decl, UnusedKind.Local, qf.make.diagForNode(decl, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(decl.name)));
           }
         }
       });
@@ -3661,7 +3661,7 @@ export function newCheck(f: qt.Frame) {
               const typeName2 = typeToString(base);
               let errorInfo = chainqd.Messages(undefined, qd.msgs.Named_property_0_of_types_1_and_2_are_not_identical, prop.symbolToString(), typeName1, typeName2);
               errorInfo = chainqd.Messages(errorInfo, qd.msgs.Interface_0_cannot_simultaneously_extend_types_1_and_2, typeToString(type), typeName1, typeName2);
-              diagnostics.add(qf.create.diagForNodeFromMessageChain(typeNode, errorInfo));
+              diagnostics.add(qf.make.diagForNodeFromMessageChain(typeNode, errorInfo));
             }
           }
         }
@@ -4049,7 +4049,7 @@ export function newCheck(f: qt.Frame) {
             if (flags & qt.SymbolFlags.TypeAlias && exportedDeclarationsCount <= 2) return;
             if (exportedDeclarationsCount > 1) {
               for (const declaration of declarations) {
-                if (isNotOverload(declaration)) diagnostics.add(qf.create.diagForNode(declaration, qd.msgs.Cannot_redeclare_exported_variable_0, qy.get.unescUnderscores(id)));
+                if (isNotOverload(declaration)) diagnostics.add(qf.make.diagForNode(declaration, qd.msgs.Cannot_redeclare_exported_variable_0, qy.get.unescUnderscores(id)));
               }
             }
           });
@@ -4397,7 +4397,7 @@ export function newCheck(f: qt.Frame) {
       if (n.numericLiteralFlags & TokenFlags.Scientific || n.text.length <= 15 || n.text.indexOf('.') !== -1) return;
       const apparentValue = +qf.get.textOf(n);
       if (apparentValue <= 2 ** 53 - 1 && apparentValue + 1 > apparentValue) return;
-      addErrorOrSuggestion(false, qf.create.diagForNode(n, qd.msgs.Numeric_literals_with_absolute_values_equal_to_2_53_or_greater_are_too_large_to_be_represented_accurately_as_integers));
+      addErrorOrSuggestion(false, qf.make.diagForNode(n, qd.msgs.Numeric_literals_with_absolute_values_equal_to_2_53_or_greater_are_too_large_to_be_represented_accurately_as_integers));
     }
     typeArgs(signature: qt.Signature, typeArgNodes: readonly qt.Typing[], reportErrors: boolean, headMessage?: qd.Message): qt.Type[] | undefined {
       const isJavascript = qf.is.inJSFile(signature.declaration);
@@ -4608,11 +4608,12 @@ export function newCheck(f: qt.Frame) {
           const nonSimpleParams = getNonSimpleParams(n.params);
           if (length(nonSimpleParams)) {
             forEach(nonSimpleParams, (param) => {
-              addRelatedInfo(error(param, qd.msgs.This_param_is_not_allowed_with_use_strict_directive), qf.create.diagForNode(useStrictDirective, qd.use_strict_directive_used_here));
+              addRelatedInfo(error(param, qd.msgs.This_param_is_not_allowed_with_use_strict_directive), qf.make.diagForNode(useStrictDirective, qd.use_strict_directive_used_here));
             });
-            const diagnostics = nonSimpleParams.map((param, index) =>
-              index === 0 ? qf.create.diagForNode(param, qd.msgs.Non_simple_param_declared_here) : qf.create.diagForNode(param, qd.and_here)
-            ) as [qd.msgs.DiagnosticWithLocation, ...qd.msgs.DiagnosticWithLocation[]];
+            const diagnostics = nonSimpleParams.map((param, index) => (index === 0 ? qf.make.diagForNode(param, qd.msgs.Non_simple_param_declared_here) : qf.make.diagForNode(param, qd.and_here))) as [
+              qd.msgs.DiagnosticWithLocation,
+              ...qd.msgs.DiagnosticWithLocation[]
+            ];
             addRelatedInfo(error(useStrictDirective, qd.use_strict_directive_cannot_be_used_with_non_simple_param_list), ...diagnostics);
             return true;
           }
@@ -4846,11 +4847,11 @@ export function newCheck(f: qt.Frame) {
           if ((n.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
             const sourceFile = n.sourceFile;
             if (!hasParseDiagnostics(sourceFile)) {
-              const diagnostic = qf.create.diagForNode(n.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
+              const diagnostic = qf.make.diagForNode(n.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
               const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor) {
                 qf.assert.true((qf.get.functionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
-                const relatedInfo = qf.create.diagForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
+                const relatedInfo = qf.make.diagForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }
               diagnostics.add(diagnostic);

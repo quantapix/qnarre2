@@ -63,8 +63,8 @@ export function transformES2020(context: qt.TrafoContext) {
     let thisArg: qt.Expression | undefined;
     if (captureThisArg) {
       if (shouldCaptureInTempVariable(expression)) {
-        thisArg = qf.create.tempVariable(hoistVariableDeclaration);
-        expression = qf.create.assignment(thisArg, expression);
+        thisArg = qf.make.tempVariable(hoistVariableDeclaration);
+        expression = qf.make.assignment(thisArg, expression);
         // if (inParamIniter) tempVariableInParam = true;
       } else {
         thisArg = expression;
@@ -100,8 +100,8 @@ export function transformES2020(context: qt.TrafoContext) {
     let leftExpression = left.kind === Syntax.SyntheticReferenceExpression ? left.expression : left;
     let capturedLeft: qt.Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
-      capturedLeft = qf.create.tempVariable(hoistVariableDeclaration);
-      leftExpression = qf.create.assignment(capturedLeft, leftExpression);
+      capturedLeft = qf.make.tempVariable(hoistVariableDeclaration);
+      leftExpression = qf.make.assignment(capturedLeft, leftExpression);
       // if (inParamIniter) tempVariableInParam = true;
     }
     let rightExpression = capturedLeft;
@@ -113,8 +113,8 @@ export function transformES2020(context: qt.TrafoContext) {
         case Syntax.ElemAccessExpression:
           if (i === chain.length - 1 && captureThisArg) {
             if (shouldCaptureInTempVariable(rightExpression)) {
-              thisArg = qf.create.tempVariable(hoistVariableDeclaration);
-              rightExpression = qf.create.assignment(thisArg, rightExpression);
+              thisArg = qf.make.tempVariable(hoistVariableDeclaration);
+              rightExpression = qf.make.assignment(thisArg, rightExpression);
               // if (inParamIniter) tempVariableInParam = true;
             } else {
               thisArg = rightExpression;
@@ -127,11 +127,7 @@ export function transformES2020(context: qt.TrafoContext) {
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {
-            rightExpression = qf.create.functionCall(
-              rightExpression,
-              leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg,
-              Nodes.visit(segment.args, visitor, isExpression)
-            );
+            rightExpression = qf.make.functionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg, Nodes.visit(segment.args, visitor, isExpression));
           } else {
             rightExpression = new qc.CallExpression(rightExpression, undefined, Nodes.visit(segment.args, visitor, isExpression));
           }
@@ -155,8 +151,8 @@ export function transformES2020(context: qt.TrafoContext) {
     let left = qf.visit.node(node.left, visitor, isExpression);
     let right = left;
     if (shouldCaptureInTempVariable(left)) {
-      right = qf.create.tempVariable(hoistVariableDeclaration);
-      left = qf.create.assignment(right, left);
+      right = qf.make.tempVariable(hoistVariableDeclaration);
+      left = qf.make.assignment(right, left);
       // if (inParamIniter) tempVariableInParam = true;
     }
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, qf.visit.node(node.right, visitor, isExpression));

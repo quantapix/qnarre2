@@ -3156,7 +3156,7 @@ export function asLiteral(v: string | number | qt.PseudoBigInt | boolean | Strin
     if (singleQuote) r.singleQuote = true;
     return r;
   }
-  return qf.create.from(v);
+  return qf.make.from(v);
 }
 export function asExpression<T extends qt.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;

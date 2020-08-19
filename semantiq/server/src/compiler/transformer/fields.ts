@@ -136,7 +136,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     receiver = qf.visit.node(receiver, visitor, isExpression);
     switch (info.placement) {
       case PrivateIdentifierPlacement.InstanceField:
-        return createClassPrivateFieldGetHelper(context, qf.is.synthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver), info.weakMapName);
+        return createClassPrivateFieldGetHelper(context, qf.is.synthesized(receiver) ? receiver : qf.make.synthesizedClone(receiver), info.weakMapName);
       default:
         return fail('Unexpected private identifier placement');
     }
@@ -172,14 +172,14 @@ export function transformClassFields(context: qt.TrafoContext) {
         const receiver = qf.visit.node(node.operand.expression, visitor, isExpression);
         const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
         const existingValue = new qc.PrefixUnaryExpression(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
-        const returnValue = valueIsDiscarded ? undefined : qf.create.tempVariable(hoistVariableDeclaration);
+        const returnValue = valueIsDiscarded ? undefined : qf.make.tempVariable(hoistVariableDeclaration);
         return setOriginalNode(
           inlineExpressions(
             compact<qt.Expression>([
               createPrivateIdentifierAssignment(
                 info,
                 initializeExpression || readExpression,
-                new qc.BinaryExpression(returnValue ? qf.create.assignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
+                new qc.BinaryExpression(returnValue ? qf.make.assignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
                 Syntax.EqualsToken
               ),
               returnValue,
@@ -208,15 +208,15 @@ export function transformClassFields(context: qt.TrafoContext) {
     return qf.visit.children(node, visitor, context);
   }
   function createCopiableReceiverExpr(receiver: qt.Expression): { readExpression: qt.Expression; initializeExpression: qt.Expression | undefined } {
-    const clone = qf.is.synthesized(receiver) ? receiver : qf.create.synthesizedClone(receiver);
+    const clone = qf.is.synthesized(receiver) ? receiver : qf.make.synthesizedClone(receiver);
     if (isSimpleInlineableExpression(receiver)) return { readExpression: clone, initializeExpression: undefined };
-    const readExpression = qf.create.tempVariable(hoistVariableDeclaration);
-    const initializeExpression = qf.create.assignment(readExpression, clone);
+    const readExpression = qf.make.tempVariable(hoistVariableDeclaration);
+    const initializeExpression = qf.make.assignment(readExpression, clone);
     return { readExpression, initializeExpression };
   }
   function visitCallExpression(node: qt.CallExpression) {
     if (shouldTransformPrivateFields && qf.is.privateIdentifierPropertyAccessExpression(node.expression)) {
-      const { thisArg, target } = qf.create.callBinding(node.expression, hoistVariableDeclaration, languageVersion);
+      const { thisArg, target } = qf.make.callBinding(node.expression, hoistVariableDeclaration, languageVersion);
       return node.update(new qc.PropertyAccessExpression(qf.visit.node(target, visitor), 'call'), undefined, [
         qf.visit.node(thisArg, visitor, isExpression),
         ...Nodes.visit(node.args, visitor, isExpression),
@@ -226,7 +226,7 @@ export function transformClassFields(context: qt.TrafoContext) {
   }
   function visitTaggedTemplateExpression(node: qt.TaggedTemplateExpression) {
     if (shouldTransformPrivateFields && qf.is.privateIdentifierPropertyAccessExpression(node.tag)) {
-      const { thisArg, target } = qf.create.callBinding(node.tag, hoistVariableDeclaration, languageVersion);
+      const { thisArg, target } = qf.make.callBinding(node.tag, hoistVariableDeclaration, languageVersion);
       return node.update(
         new qc.CallExpression(new qc.PropertyAccessExpression(qf.visit.node(target, visitor), 'bind'), undefined, [qf.visit.node(thisArg, visitor, isExpression)]),
         qf.visit.node(node.template, visitor, isTemplateLiteral)
@@ -326,15 +326,15 @@ export function transformClassFields(context: qt.TrafoContext) {
       } else {
         const expressions: qt.Expression[] = [];
         const isClassWithConstructorReference = resolver.getNodeCheckFlags(node) & NodeCheckFlags.ClassWithConstructorReference;
-        const temp = qf.create.tempVariable(hoistVariableDeclaration, !!isClassWithConstructorReference);
+        const temp = qf.make.tempVariable(hoistVariableDeclaration, !!isClassWithConstructorReference);
         if (isClassWithConstructorReference) {
           enableSubstitutionForClassAliases();
-          const alias = qf.create.synthesizedClone(temp);
+          const alias = qf.make.synthesizedClone(temp);
           alias.autoGenFlags &= ~GeneratedIdentifierFlags.ReservedInNestedScopes;
           classAliases[getOriginalNodeId(node)] = alias;
         }
         qf.emit.setFlags(classExpression, EmitFlags.Indented | qf.get.emitFlags(classExpression));
-        expressions.push(qf.emit.setStartsOnNewLine(qf.create.assignment(temp, classExpression)));
+        expressions.push(qf.emit.setStartsOnNewLine(qf.make.assignment(temp, classExpression)));
         qu.addRange(expressions, map(pendingExpressions, qf.emit.setStartsOnNewLine));
         qu.addRange(expressions, generateInitializedPropertyExpressions(staticProperties, temp));
         expressions.push(qf.emit.setStartsOnNewLine(temp));
@@ -460,8 +460,8 @@ export function transformClassFields(context: qt.TrafoContext) {
         ? propertyName
         : qc.VoidExpression.zero();
     if (emitAssignment || propertyName.kind === Syntax.PrivateIdentifier) {
-      const memberAccess = qf.create.memberAccessForPropertyName(receiver, propertyName, propertyName);
-      return qf.create.assignment(memberAccess, initer);
+      const memberAccess = qf.make.memberAccessForPropertyName(receiver, propertyName, propertyName);
+      return qf.make.assignment(memberAccess, initer);
     } else {
       const name =
         propertyName.kind === Syntax.ComputedPropertyName
@@ -469,8 +469,8 @@ export function transformClassFields(context: qt.TrafoContext) {
           : propertyName.kind === Syntax.Identifier
           ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
           : propertyName;
-      const descriptor = qf.create.propertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
-      return qf.create.objectDefinePropertyCall(receiver, name, descriptor);
+      const descriptor = qf.make.propertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
+      return qf.make.objectDefinePropertyCall(receiver, name, descriptor);
     }
   }
   function enableSubstitutionForClassAliases() {
@@ -502,7 +502,7 @@ export function transformClassFields(context: qt.TrafoContext) {
         if (declaration) {
           const classAlias = classAliases[declaration.id!];
           if (classAlias) {
-            const clone = qf.create.synthesizedClone(classAlias);
+            const clone = qf.make.synthesizedClone(classAlias);
             qf.emit.setSourceMapRange(clone, node);
             qf.emit.setCommentRange(clone, node);
             return clone;
@@ -521,7 +521,7 @@ export function transformClassFields(context: qt.TrafoContext) {
       if (!alreadyTransformed && !inlinable && shouldHoist) {
         const generatedName = qf.get.generatedNameForNode(name);
         hoistVariableDeclaration(generatedName);
-        return qf.create.assignment(generatedName, expression);
+        return qf.make.assignment(generatedName, expression);
       }
       return inlinable || innerExpression.kind === Syntax.Identifier ? undefined : expression;
     }
@@ -535,14 +535,14 @@ export function transformClassFields(context: qt.TrafoContext) {
   }
   function addPrivateIdentifierToEnvironment(name: qt.PrivateIdentifier) {
     const text = qf.get.textOfPropertyName(name) as string;
-    const weakMapName = qf.create.optimisticUniqueName('_' + text.substring(1));
+    const weakMapName = qf.make.optimisticUniqueName('_' + text.substring(1));
     weakMapName.autoGenFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
     hoistVariableDeclaration(weakMapName);
     (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = qc.createEscapedMap())).set(name.escapedText, {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });
-    (pendingExpressions || (pendingExpressions = [])).push(qf.create.assignment(weakMapName, new qc.NewExpression(new qc.Identifier('WeakMap'), undefined, [])));
+    (pendingExpressions || (pendingExpressions = [])).push(qf.make.assignment(weakMapName, new qc.NewExpression(new qc.Identifier('WeakMap'), undefined, [])));
   }
   function accessPrivateIdentifier(name: qt.PrivateIdentifier) {
     if (currentPrivateIdentifierEnvironment) {
@@ -565,7 +565,7 @@ export function transformClassFields(context: qt.TrafoContext) {
     if (!info) return qf.visit.children(node, visitor, context);
     let receiver = node.expression;
     if (qf.is.thisProperty(node) || qf.is.superProperty(node) || !isSimpleCopiableExpression(node.expression)) {
-      receiver = qf.create.tempVariable(hoistVariableDeclaration);
+      receiver = qf.make.tempVariable(hoistVariableDeclaration);
       (receiver as qt.Identifier).autoGenFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
       (pendingExpressions || (pendingExpressions = [])).push(new qc.BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
     }
@@ -600,7 +600,7 @@ export function transformClassFields(context: qt.TrafoContext) {
       if (target && qf.is.privateIdentifierPropertyAccessExpression(target)) {
         const initer = getIniterOfBindingOrAssignmentElem(node);
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
-        return node.update(qf.visit.node(node.name, visitor), initer ? qf.create.assignment(wrapped, qf.visit.node(initer, visitor)) : wrapped);
+        return node.update(qf.visit.node(node.name, visitor), initer ? qf.make.assignment(wrapped, qf.visit.node(initer, visitor)) : wrapped);
       }
       return node.update(qf.visit.node(node.name, visitor), qf.visit.node(node.initer, visitorDestructuringTarget));
     }

@@ -80,7 +80,7 @@ export function transformJsx(context: qt.TrafoContext) {
         objectProperties = createAssignHelper(context, segments);
       }
     }
-    const elem = qc.JsxElem.qf.create.expression(
+    const elem = qc.JsxElem.qf.make.expression(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOpts.reactNamespace!,
       tagName,
@@ -95,7 +95,7 @@ export function transformJsx(context: qt.TrafoContext) {
     return elem;
   }
   function visitJsxOpeningFragment(node: qt.JsxOpeningFragment, children: readonly qt.JsxChild[], isChild: boolean, location: TextRange) {
-    const elem = qf.create.expressionForJsxFragment(
+    const elem = qf.make.expressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOpts.reactNamespace!,
       mapDefined(children, transformJsxChildToExpression),
@@ -172,7 +172,7 @@ export function transformJsx(context: qt.TrafoContext) {
     else {
       const name = node.tagName;
       if (name.kind === Syntax.Identifier && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
-      return qf.create.expressionFromEntityName(name);
+      return qf.make.expressionFromEntityName(name);
     }
   }
   function getAttributeName(node: qt.JsxAttribute): qt.StringLiteral | qt.Identifier {

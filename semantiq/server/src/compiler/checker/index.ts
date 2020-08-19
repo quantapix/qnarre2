@@ -1,6 +1,6 @@
 import { ModifierFlags, Node, ObjectFlags, SymbolFlags, TypeFlags } from './types';
 import { newCheck, Fcheck } from './check';
-import { newCreate, Fcreate, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
+import { newMake, Fmake, newInstantiate, Finstantiate, newResolve, Fresolve } from './create';
 import { newGet, Fget } from './get';
 import { newHas, Fhas, newIs, Fis } from './groups';
 import { Syntax } from '../syntax';
@@ -15,7 +15,7 @@ export class TypeChecker implements Frame {
   totalInstantiationCount: number;
   mergedSymbols: qt.Symbol[];
   check: Fcheck;
-  create: Fcreate;
+  make: Fmake;
   get: Fget;
   has: Fhas;
   instantiate: Finstantiate;
@@ -274,10 +274,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getApparentType;
     qf.get.unionType;
     qf.type.is.assignableTo,
-    qf.create.anonymousType,
-    qf.create.signature,
+    qf.make.anonymousType,
+    qf.make.signature,
     createSymbol,
-    qf.create.indexInfo,
+    qf.make.indexInfo,
     getAnyType: () => anyType,
     getStringType: () => stringType,
     getNumberType: () => numberType,
@@ -355,7 +355,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   return checker;
 
   function lookupOrIssueError(location: Node | undefined, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qd.Diagnostic {
-    const diagnostic = location ? qf.create.diagForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
+    const diagnostic = location ? qf.make.diagForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
     const existing = diagnostics.lookup(diagnostic);
     if (existing) return existing;
     else {
@@ -364,7 +364,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   function error(location: Node | undefined, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qd.Diagnostic {
-    const diagnostic = location ? qf.create.diagForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
+    const diagnostic = location ? qf.make.diagForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
     diagnostics.add(diagnostic);
     return diagnostic;
   }
@@ -383,7 +383,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     arg2?: string | number,
     arg3?: string | number
   ): void {
-    addErrorOrSuggestion(isError, 'message' in message ? qf.create.diagForNode(location, message, arg0, arg1, arg2, arg3) : qf.create.diagForNodeFromMessageChain(location, message));
+    addErrorOrSuggestion(isError, 'message' in message ? qf.make.diagForNode(location, message, arg0, arg1, arg2, arg3) : qf.make.diagForNodeFromMessageChain(location, message));
   }
   function errorAndMaybeSuggestAwait(
     location: Node,
@@ -396,7 +396,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   ): qd.Diagnostic {
     const diagnostic = error(location, message, arg0, arg1, arg2, arg3);
     if (maybeMissingAwait) {
-      const related = qf.create.diagForNode(location, qd.msgs.Did_you_forget_to_use_await);
+      const related = qf.make.diagForNode(location, qd.msgs.Did_you_forget_to_use_await);
       addRelatedInfo(diagnostic, related);
     }
     return diagnostic;
@@ -408,8 +408,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const adjustedNode = (qf.get.expandoIniter(relatedNode, false) ? qf.decl.nameOfExpando(relatedNode) : qf.decl.nameOf(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
-      const leadingMessage = qf.create.diagForNode(adjustedNode, qd.msgs._0_was_also_declared_here, symbolName);
-      const followOnMessage = qf.create.diagForNode(adjustedNode, qd.msgs.and_here);
+      const leadingMessage = qf.make.diagForNode(adjustedNode, qd.msgs._0_was_also_declared_here, symbolName);
+      const followOnMessage = qf.make.diagForNode(adjustedNode, qd.msgs.and_here);
       if (
         length(err.relatedInformation) >= 5 ||
         some(err.relatedInformation, (r) => compareDiagnostics(r, followOnMessage) === Comparison.EqualTo || compareDiagnostics(r, leadingMessage) === Comparison.EqualTo)
@@ -512,7 +512,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           exportStar.declarations,
           (decl) => !!(decl.kind === Syntax.ExportDeclaration && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
         );
-        if (defaultExport) addRelatedInfo(diagnostic, qf.create.diagForNode(defaultExport, qd.msgs.export_Asterisk_does_not_re_export_a_default));
+        if (defaultExport) addRelatedInfo(diagnostic, qf.make.diagForNode(defaultExport, qd.msgs.export_Asterisk_does_not_re_export_a_default));
       }
     }
   }
@@ -541,7 +541,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const diagnostic = exportedSymbol
           ? error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_exported_as_2, moduleName, declarationName, exportedSymbol.symbolToString())
           : error(name, qd.msgs.Module_0_declares_1_locally_but_it_is_not_exported, moduleName, declarationName);
-        addRelatedInfo(diagnostic, ...map(localSymbol.declarations, (decl, index) => qf.create.diagForNode(decl, index === 0 ? qd.msgs._0_is_declared_here : qd.msgs.and_here, declarationName)));
+        addRelatedInfo(diagnostic, ...map(localSymbol.declarations, (decl, index) => qf.make.diagForNode(decl, index === 0 ? qd.msgs._0_is_declared_here : qd.msgs.and_here, declarationName)));
       }
     } else {
       error(name, qd.msgs.Module_0_has_no_exported_member_1, moduleName, declarationName);
@@ -901,10 +901,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return createSymbolWithType(left, thisType);
   }
   function intersectIndexInfos(info1: qt.IndexInfo | undefined, info2: qt.IndexInfo | undefined): qt.IndexInfo | undefined {
-    return !info1 ? info2 : !info2 ? info1 : qf.create.indexInfo(qf.get.intersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
+    return !info1 ? info2 : !info2 ? info1 : qf.make.indexInfo(qf.get.intersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
   }
   function unionSpreadIndexInfos(info1: qt.IndexInfo | undefined, info2: qt.IndexInfo | undefined): qt.IndexInfo | undefined {
-    return info1 && info2 && qf.create.indexInfo(qf.get.unionType([info1.type, info2.type]), info1.isReadonly || info2.isReadonly);
+    return info1 && info2 && qf.make.indexInfo(qf.get.unionType([info1.type, info2.type]), info1.isReadonly || info2.isReadonly);
   }
   function findMixins(types: readonly qt.Type[]): readonly boolean[] {
     const constructorTypeCount = countWhere(types, (t) => getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0);
@@ -1197,7 +1197,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           members.set(prop.escName, result);
         }
       }
-      const spread = qf.create.anonymousType(type.symbol, members, qu.empty, qu.empty, qf.get.indexInfoOfType(type, IndexKind.String), qf.get.indexInfoOfType(type, IndexKind.Number));
+      const spread = qf.make.anonymousType(type.symbol, members, qu.empty, qu.empty, qf.get.indexInfoOfType(type, IndexKind.String), qf.get.indexInfoOfType(type, IndexKind.Number));
       spread.objectFlags |= ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       return spread;
     }
@@ -1212,7 +1212,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return !mapper ? makeUnaryTypeMapper(source, target) : makeCompositeTypeMapper(TypeMapKind.Merged, mapper, makeUnaryTypeMapper(source, target));
   }
   function cloneTypeParam(typeParam: qt.TypeParam): qt.TypeParam {
-    const result = qf.create.typeParam(typeParam.symbol);
+    const result = qf.make.typeParam(typeParam.symbol);
     result.target = typeParam;
     return result;
   }
@@ -1280,7 +1280,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const diagnostic = resultObj.errors![resultObj.errors!.length - 1];
         addRelatedInfo(
           diagnostic,
-          qf.create.diagForNode(node, signatures === constructSignatures ? qd.msgs.Did_you_mean_to_use_new_with_this_expression : qd.msgs.Did_you_mean_to_call_this_expression)
+          qf.make.diagForNode(node, signatures === constructSignatures ? qd.msgs.Did_you_mean_to_use_new_with_this_expression : qd.msgs.Did_you_mean_to_call_this_expression)
         );
         return true;
       }
@@ -1313,7 +1313,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (target.symbol && length(target.symbol.declarations)) {
           addRelatedInfo(
             resultObj.errors[resultObj.errors.length - 1],
-            qf.create.diagForNode(target.symbol.declarations[0], qd.msgs.The_expected_type_comes_from_the_return_type_of_this_signature)
+            qf.make.diagForNode(target.symbol.declarations[0], qd.msgs.The_expected_type_comes_from_the_return_type_of_this_signature)
           );
         }
         if (
@@ -1321,7 +1321,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           !qf.get.typeOfPropertyOfType(sourceReturn, 'then' as qu.__String) &&
           qf.type.check.relatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {
-          addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], qf.create.diagForNode(node, qd.msgs.Did_you_mean_to_mark_this_function_as_async));
+          addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], qf.make.diagForNode(node, qd.msgs.Did_you_mean_to_mark_this_function_as_async));
         }
         return true;
       }
@@ -1366,7 +1366,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
                 (qf.type.is.assignableToKind(nameType, qt.TypeFlags.NumberLike) && qf.get.indexInfoOfType(target, IndexKind.Number)) || qf.get.indexInfoOfType(target, IndexKind.String) || undefined;
               if (indexInfo && indexInfo.declaration && !indexInfo.declaration.sourceFile.hasNoDefaultLib) {
                 issuedElaboration = true;
-                addRelatedInfo(reportedDiag, qf.create.diagForNode(indexInfo.declaration, qd.msgs.The_expected_type_comes_from_this_index_signature));
+                addRelatedInfo(reportedDiag, qf.make.diagForNode(indexInfo.declaration, qd.msgs.The_expected_type_comes_from_this_index_signature));
               }
             }
             if (!issuedElaboration && ((targetProp && length(targetProp.declarations)) || (target.symbol && length(target.symbol.declarations)))) {
@@ -1374,7 +1374,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
               if (!targetNode.sourceFile.hasNoDefaultLib) {
                 addRelatedInfo(
                   reportedDiag,
-                  qf.create.diagForNode(
+                  qf.make.diagForNode(
                     targetNode,
                     qd.msgs.The_expected_type_comes_from_property_0_which_is_declared_here_on_type_1,
                     propertyName && !(nameType.flags & qt.TypeFlags.UniqueESSymbol) ? qy.get.unescUnderscores(propertyName) : typeToString(nameType),
@@ -2223,7 +2223,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const block = <qt.Block | qt.ModuleBlock | qt.SourceFile>qc.findAncestor(node, isFunctionOrModuleBlock);
     const sourceFile = node.sourceFile;
     const span = sourceFile.spanOfTokenAtPos(block.statements.pos);
-    diagnostics.add(qf.create.fileDiag(sourceFile, span.start, span.length, qd.msgs.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
+    diagnostics.add(qf.make.fileDiag(sourceFile, span.start, span.length, qd.msgs.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
   }
   function markParamAssignments(node: Node) {
     if (node.kind === Syntax.Identifier) {
@@ -2368,13 +2368,13 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const promisedType = getPromisedTypeOfPromise(containingType);
       if (promisedType && qf.get.propertyOfType(promisedType, propNode.escapedText)) {
         errorInfo = chainqd.Messages(errorInfo, qd.msgs.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
-        relatedInfo = qf.create.diagForNode(propNode, qd.msgs.Did_you_forget_to_use_await);
+        relatedInfo = qf.make.diagForNode(propNode, qd.msgs.Did_you_forget_to_use_await);
       } else {
         const suggestion = getSuggestedSymbolForNonexistentProperty(propNode, containingType);
         if (suggestion !== undefined) {
           const suggestedName = suggestion.name;
           errorInfo = chainqd.Messages(errorInfo, qd.msgs.Property_0_does_not_exist_on_type_1_Did_you_mean_2, declarationNameToString(propNode), typeToString(containingType), suggestedName);
-          relatedInfo = suggestion.valueDeclaration && qf.create.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestedName);
+          relatedInfo = suggestion.valueDeclaration && qf.make.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestedName);
         } else {
           errorInfo = chainqd.Messages(
             elaborateNeverIntersection(errorInfo, containingType),
@@ -2385,7 +2385,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
       }
     }
-    const resultDiagnostic = qf.create.diagForNodeFromMessageChain(propNode, errorInfo);
+    const resultDiagnostic = qf.make.diagForNodeFromMessageChain(propNode, errorInfo);
     if (relatedInfo) addRelatedInfo(resultDiagnostic, relatedInfo);
     diagnostics.add(resultDiagnostic);
   }
@@ -2497,7 +2497,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (!typeParams) return candidate;
     const typeArgNodes: readonly qt.Typing[] | undefined = callLikeExpressionMayHaveTypeArgs(node) ? node.typeArgs : undefined;
     const instantiated = typeArgNodes
-      ? qf.create.signatureInstantiation(candidate, getTypeArgsFromNodes(typeArgNodes, typeParams, qf.is.inJSFile(node)))
+      ? qf.make.signatureInstantiation(candidate, getTypeArgsFromNodes(typeArgNodes, typeParams, qf.is.inJSFile(node)))
       : inferSignatureInstantiationForOverloadFailure(node, typeParams, candidate, args);
     candidates[bestIndex] = instantiated;
     return instantiated;
@@ -2505,7 +2505,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function inferSignatureInstantiationForOverloadFailure(node: qt.CallLikeExpression, typeParams: readonly qt.TypeParam[], candidate: qt.Signature, args: readonly qt.Expression[]): qt.Signature {
     const inferenceContext = createInferenceContext(typeParams, candidate, qf.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
     const typeArgTypes = inferTypeArgs(node, candidate, args, CheckMode.SkipContextSensitive | CheckMode.SkipGenericFunctions, inferenceContext);
-    return qf.create.signatureInstantiation(candidate, typeArgTypes);
+    return qf.make.signatureInstantiation(candidate, typeArgTypes);
   }
   function typeHasProtectedAccessibleBase(target: qt.Symbol, type: qt.InterfaceType): boolean {
     const baseTypes = getBaseTypes(type);
@@ -2580,8 +2580,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function invocationError(errorTarget: Node, apparentType: qt.Type, kind: qt.SignatureKind, relatedInformation?: qd.DiagnosticRelatedInformation) {
     const { messageChain, relatedMessage: relatedInfo } = invocationErrorDetails(errorTarget, apparentType, kind);
-    const diagnostic = qf.create.diagForNodeFromMessageChain(errorTarget, messageChain);
-    if (relatedInfo) addRelatedInfo(diagnostic, qf.create.diagForNode(errorTarget, relatedInfo));
+    const diagnostic = qf.make.diagForNodeFromMessageChain(errorTarget, messageChain);
+    if (relatedInfo) addRelatedInfo(diagnostic, qf.make.diagForNode(errorTarget, relatedInfo));
     if (errorTarget.parent.kind === Syntax.CallExpression) {
       const { start, length } = getDiagnosticSpanForCallNode(errorTarget.parent, true);
       diagnostic.start = start;
@@ -2598,7 +2598,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (!sigs || !sigs.length) return;
       addRelatedInfo(
         diagnostic,
-        qf.create.diagForNode(
+        qf.make.diagForNode(
           importNode,
           qd.msgs
             .Type_originates_at_this_import_A_namespace_style_import_cannot_be_called_or_constructed_and_will_cause_a_failure_at_runtime_Consider_using_a_default_import_or_import_require_here_instead
@@ -2802,7 +2802,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function errorUnusedLocal(declaration: qt.Declaration, name: string, addDiagnostic: AddUnusedDiagnostic) {
     const node = qf.decl.nameOf(declaration) || declaration;
     const message = qf.is.typeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;
-    addDiagnostic(declaration, UnusedKind.Local, qf.create.diagForNode(node, message, name));
+    addDiagnostic(declaration, UnusedKind.Local, qf.make.diagForNode(node, message, name));
   }
   function addToGroup<K, V>(map: qu.QMap<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
     const keyString = String(getKey(key));
@@ -2855,7 +2855,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         : qd.msgs.Subsequent_variable_declarations_must_have_the_same_type_Variable_0_must_be_of_type_1_but_here_has_type_2;
     const declName = declarationNameToString(nextDeclarationName);
     const err = error(nextDeclarationName, message, declName, typeToString(firstType), typeToString(nextType));
-    if (firstDeclaration) addRelatedInfo(err, qf.create.diagForNode(firstDeclaration, qd.msgs._0_was_also_declared_here, declName));
+    if (firstDeclaration) addRelatedInfo(err, qf.make.diagForNode(firstDeclaration, qd.msgs._0_was_also_declared_here, declName));
   }
   function areDeclarationFlagsIdentical(left: qt.Declaration, right: qt.Declaration) {
     if ((left.kind === Syntax.Param && right.kind === Syntax.VariableDeclaration) || (left.kind === Syntax.VariableDeclaration && right.kind === Syntax.Param)) return true;
@@ -2875,7 +2875,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       nextTypes = append(nextTypes, iterationTypes.nextType);
     }
     if (yieldTypes || returnTypes || nextTypes)
-      return qf.create.iterationTypes(yieldTypes && qf.get.unionType(yieldTypes), returnTypes && qf.get.unionType(returnTypes), nextTypes && qf.get.intersectionType(nextTypes));
+      return qf.make.iterationTypes(yieldTypes && qf.get.unionType(yieldTypes), returnTypes && qf.get.unionType(returnTypes), nextTypes && qf.get.intersectionType(nextTypes));
     return noIterationTypes;
   }
   function reportTypeNotIterableError(errorNode: Node, type: qt.Type, allowAsyncIterables: boolean): void {
@@ -3135,7 +3135,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const fileGlobalThisSymbol = file.locals!.get('globalThis' as qu.__String);
         if (fileGlobalThisSymbol) {
           for (const declaration of fileGlobalThisSymbol.declarations) {
-            diagnostics.add(qf.create.diagForNode(declaration, qd.msgs.Declaration_name_conflicts_with_built_in_global_identifier_0, 'globalThis'));
+            diagnostics.add(qf.make.diagForNode(declaration, qd.msgs.Declaration_name_conflicts_with_built_in_global_identifier_0, 'globalThis'));
           }
         }
         globals.merge(file.locals!);
@@ -3174,7 +3174,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     globalRegExpType = getGlobalType('RegExp' as qu.__String, 0, true);
     anyArrayType = createArrayType(anyType);
     autoArrayType = createArrayType(autoType);
-    if (autoArrayType === emptyObjectType) autoArrayType = qf.create.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
+    if (autoArrayType === emptyObjectType) autoArrayType = qf.make.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
     globalReadonlyArrayType = <qt.GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as qu.__String, 1) || globalArrayType;
     anyReadonlyArrayType = globalReadonlyArrayType ? createTypeFromGenericGlobalType(globalReadonlyArrayType, [anyType]) : anyArrayType;
     globalThisType = <qt.GenericType>getGlobalTypeOrUndefined('ThisType' as qu.__String, 1);
@@ -3201,14 +3201,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const list = arrayFrom(conflictingSymbols.keys()).join(', ');
         diagnostics.add(
           addRelatedInfo(
-            qf.create.diagForNode(firstFile, qd.msgs.Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0, list),
-            qf.create.diagForNode(secondFile, qd.msgs.Conflicts_are_in_this_file)
+            qf.make.diagForNode(firstFile, qd.msgs.Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0, list),
+            qf.make.diagForNode(secondFile, qd.msgs.Conflicts_are_in_this_file)
           )
         );
         diagnostics.add(
           addRelatedInfo(
-            qf.create.diagForNode(secondFile, qd.msgs.Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0, list),
-            qf.create.diagForNode(firstFile, qd.msgs.Conflicts_are_in_this_file)
+            qf.make.diagForNode(secondFile, qd.msgs.Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0, list),
+            qf.make.diagForNode(firstFile, qd.msgs.Conflicts_are_in_this_file)
           )
         );
       }
@@ -3281,7 +3281,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const f = node.sourceFile;
     if (!hasParseDiagnostics(f)) {
       const s = f.spanOfTokenAtPos(node.pos);
-      diagnostics.add(qf.create.fileDiag(f, s.start, s.length, message, arg0, arg1, arg2));
+      diagnostics.add(qf.make.fileDiag(f, s.start, s.length, message, arg0, arg1, arg2));
       return true;
     }
     return false;
@@ -3289,7 +3289,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function grammarErrorAtPos(nodeForSourceFile: Node, start: number, length: number, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = nodeForSourceFile.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
-      diagnostics.add(qf.create.fileDiag(sourceFile, start, length, message, arg0, arg1, arg2));
+      diagnostics.add(qf.make.fileDiag(sourceFile, start, length, message, arg0, arg1, arg2));
       return true;
     }
     return false;
@@ -3297,7 +3297,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function grammarErrorOnNode(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = node.sourceFile;
     if (!hasParseDiagnostics(sourceFile)) {
-      diagnostics.add(qf.create.diagForNode(node, message, arg0, arg1, arg2));
+      diagnostics.add(qf.make.diagForNode(node, message, arg0, arg1, arg2));
       return true;
     }
     return false;
@@ -3306,7 +3306,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const f = node.sourceFile;
     if (!hasParseDiagnostics(f)) {
       const s = f.spanOfTokenAtPos(node.pos);
-      diagnostics.add(qf.create.fileDiag(f, textSpanEnd(s), 0, message, arg0, arg1, arg2));
+      diagnostics.add(qf.make.fileDiag(f, textSpanEnd(s), 0, message, arg0, arg1, arg2));
       return true;
     }
     return false;
@@ -3450,7 +3450,7 @@ export interface TypeCheckerOld {
   getElemTypeOfArrayType(arrayType: qt.Type): qt.Type | undefined;
   createPromiseType(type: qt.Type): qt.Type;
   qf.type.is.assignableTo(source: qt.Type, target: qt.Type): boolean;
-  qf.create.anonymousType(
+  qf.make.anonymousType(
     symbol: qt.Symbol | undefined,
     members: qt.SymbolTable,
     callSignatures: qt.Signature[],
@@ -3458,7 +3458,7 @@ export interface TypeCheckerOld {
     stringIndexInfo: qt.IndexInfo | undefined,
     numberIndexInfo: qt.IndexInfo | undefined
   ): qt.Type;
-  qf.create.signature(
+  qf.make.signature(
     declaration: qt.SignatureDeclaration,
     typeParams: qt.TypeParam[] | undefined,
     thisParam: qt.Symbol | undefined,
@@ -3468,7 +3468,7 @@ export interface TypeCheckerOld {
     minArgCount: number,
     flags: qt.SignatureFlags
   ): qt.Signature;
-  qf.create.indexInfo(type: qt.Type, isReadonly: boolean, declaration?: qt.SignatureDeclaration): qt.IndexInfo;
+  qf.make.indexInfo(type: qt.Type, isReadonly: boolean, declaration?: qt.SignatureDeclaration): qt.IndexInfo;
   tryFindAmbientModuleWithoutAugmentations(moduleName: string): qt.Symbol | undefined;
   getSymbolWalker(accept?: (symbol: qt.Symbol) => boolean): qt.SymbolWalker;
   getDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): qd.Diagnostic[];

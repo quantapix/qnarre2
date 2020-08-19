@@ -190,14 +190,14 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
         const e = scanner.getTextPos();
         if (e <= end) {
           qf.assert.true(t !== Syntax.Identifier);
-          ns.push(qf.create.node(t, pos, e, this as Node));
+          ns.push(qf.make.node(t, pos, e, this as Node));
         }
         pos = e;
         if (t === Syntax.EndOfFileToken) break;
       }
     };
     const createList = (ns: qt.Nodes) => {
-      const r = qf.create.node(Syntax.SyntaxList, ns.pos, ns.end, this as Node);
+      const r = qf.make.node(Syntax.SyntaxList, ns.pos, ns.end, this as Node);
       r.children = [];
       let p = ns.pos;
       for (const n of ns) {
@@ -552,7 +552,7 @@ export class SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S> 
   }
   add(ss: SymbolTable<S>, m: qd.Message) {
     const addDiagnostic = (n: string, m: qd.Message) => {
-      return (d: qt.Declaration) => diagnostics.add(qf.create.diagForNode(d, m, n));
+      return (d: qt.Declaration) => diagnostics.add(qf.make.diagForNode(d, m, n));
     };
     ss.forEach((s, n) => {
       const t = this.get(n);
@@ -632,17 +632,17 @@ export class Signature implements qt.Signature {
     return this.docTags;
   }
   erased(): this {
-    return this.typeParams ? this.erasedCache || (this.erasedCache = qf.create.erasedSignature(this)) : this;
+    return this.typeParams ? this.erasedCache || (this.erasedCache = qf.make.erasedSignature(this)) : this;
   }
   canonicalSignature(): this {
-    return this.typeParams ? this.canonicalCache || (this.canonicalCache = qf.create.canonicalSignature(this)) : this;
+    return this.typeParams ? this.canonicalCache || (this.canonicalCache = qf.make.canonicalSignature(this)) : this;
   }
   baseSignature(): this {
     const ps = this.typeParams;
     if (ps) {
-      const typeEraser = qf.create.typeEraser(ps);
+      const typeEraser = qf.make.typeEraser(ps);
       const baseConstraints = qu.map(ps, (p) => instantiateType(this.baseConstraintOfType(p), typeEraser) || unknownType);
-      return instantiateSignature(this, qf.create.typeMapper(ps, baseConstraints), true);
+      return instantiateSignature(this, qf.make.typeMapper(ps, baseConstraints), true);
     }
     return this;
   }
@@ -668,7 +668,7 @@ export class Signature implements qt.Signature {
           const jsdocSignature = this.thisOfTypeTag(this.declaration!);
           if (jsdocSignature && this !== jsdocSignature) jsdocPredicate = this.typePredicateOfSignature(jsdocSignature);
         }
-        this.resolvedPredicate = type && t.kind === Syntax.TypingPredicate ? qf.create.typePredicateFromTypingPredicate(t, this) : jsdocPredicate || noTypePredicate;
+        this.resolvedPredicate = type && t.kind === Syntax.TypingPredicate ? qf.make.typePredicateFromTypingPredicate(t, this) : jsdocPredicate || noTypePredicate;
       }
       qf.assert.true(!!this.resolvedPredicate);
     }
@@ -718,7 +718,7 @@ export class Signature implements qt.Signature {
     if ((this.flags & qt.SignatureFlags.CallChainFlags) === f) return this;
     if (!this.optionalCallCache) this.optionalCallCache = {};
     const key = f === qt.SignatureFlags.IsInnerCallChain ? 'inner' : 'outer';
-    return this.optionalCallCache[key] || (this.optionalCallCache[key] = qf.create.optionalCallSignature(this, f));
+    return this.optionalCallCache[key] || (this.optionalCallCache[key] = qf.make.optionalCallSignature(this, f));
   }
   expandedParams(skipUnionExpanding?: boolean): readonly (readonly Symbol[])[] {
     if (this.hasRestParam()) {
@@ -734,7 +734,7 @@ export class Signature implements qt.Signature {
           const name = tupleLabelName || this.paramNameAtPosition(sig, restIndex + i);
           const f = i === tupleRestIndex ? qt.CheckFlags.RestParam : i >= minLength ? qt.CheckFlags.OptionalParam : 0;
           const symbol = new Symbol(SymbolFlags.FunctionScopedVariable, name, f);
-          symbol.type = i === tupleRestIndex ? qf.create.arrayType(t) : t;
+          symbol.type = i === tupleRestIndex ? qf.make.arrayType(t) : t;
           return symbol;
         });
         return concatenate(this.params.slice(0, restIndex), restParams);
@@ -796,7 +796,7 @@ export class Signature implements qt.Signature {
     }
     const minArgCount = this.minArgCount(source);
     const minLength = minArgCount < pos ? 0 : minArgCount - pos;
-    return qf.create.tupleType(types, minLength, !!restType, false, names);
+    return qf.make.tupleType(types, minLength, !!restType, false, names);
   }
   paramCount() {
     const length = s.params.length;
@@ -1112,7 +1112,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
       (libReferences !== undefined && n.libReferenceDirectives !== libReferences) ||
       (hasNoDefaultLib !== undefined && n.hasNoDefaultLib !== hasNoDefaultLib)
     ) {
-      const updated = qf.create.synthesized(Syntax.SourceFile);
+      const updated = qf.make.synthesized(Syntax.SourceFile);
       updated.flags |= n.flags;
       updated.statements = new Nodes(statements);
       updated.endOfFileToken = n.endOfFileToken;
@@ -1271,7 +1271,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     for (const section of bundleFileInfo ? bundleFileInfo.sections : qu.empty) {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Prologue:
-          (prologues || (prologues = [])).push(qf.create.unparsedNode(section, this) as qt.UnparsedPrologue);
+          (prologues || (prologues = [])).push(qf.make.unparsedNode(section, this) as qt.UnparsedPrologue);
           break;
         case qt.BundleFileSectionKind.EmitHelpers:
           (helpers || (helpers = [])).push(getAllUnscopedEmitHelpers().get(section.data)!);
@@ -1289,11 +1289,11 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
           (libReferenceDirectives || (libReferenceDirectives = [])).push({ pos: -1, end: -1, fileName: section.data });
           break;
         case qt.BundleFileSectionKind.Prepend:
-          const prependNode = qf.create.unparsedNode(section, this) as qt.UnparsedPrepend;
+          const prependNode = qf.make.unparsedNode(section, this) as qt.UnparsedPrepend;
           let prependTexts: qt.UnparsedTextLike[] | undefined;
           for (const text of section.texts) {
             if (!stripInternal || text.kind !== qt.BundleFileSectionKind.Internal) {
-              (prependTexts || (prependTexts = [])).push(qf.create.unparsedNode(text, this) as qt.UnparsedTextLike);
+              (prependTexts || (prependTexts = [])).push(qf.make.unparsedNode(text, this) as qt.UnparsedTextLike);
             }
           }
           prependNode.texts = prependTexts || qu.empty;
@@ -1305,7 +1305,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
             break;
           }
         case qt.BundleFileSectionKind.Text:
-          (texts || (texts = [])).push(qf.create.unparsedNode(section, this) as qt.UnparsedTextLike);
+          (texts || (texts = [])).push(qf.make.unparsedNode(section, this) as qt.UnparsedTextLike);
           break;
         default:
           qc.assert.never(section);
@@ -1316,7 +1316,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     this.referencedFiles = referencedFiles || qu.empty;
     this.typeReferenceDirectives = typeReferenceDirectives;
     this.libReferenceDirectives = libReferenceDirectives || qu.empty;
-    this.texts = texts || [<qt.UnparsedTextLike>qf.create.unparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
+    this.texts = texts || [<qt.UnparsedTextLike>qf.make.unparsedNode({ kind: qt.BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
   parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: qt.BundleFileInfo) {
     qf.assert.true(!!this.oldFileOfCurrentEmit);
@@ -1326,7 +1326,7 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
       switch (section.kind) {
         case qt.BundleFileSectionKind.Internal:
         case qt.BundleFileSectionKind.Text:
-          (texts || (texts = [])).push(qf.create.unparsedNode(section, this) as qt.UnparsedTextLike);
+          (texts || (texts = [])).push(qf.make.unparsedNode(section, this) as qt.UnparsedTextLike);
           break;
         case qt.BundleFileSectionKind.NoDefaultLib:
         case qt.BundleFileSectionKind.Reference:

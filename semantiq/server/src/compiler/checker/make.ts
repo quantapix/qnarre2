@@ -9,15 +9,15 @@ import * as qg from '../debug';
 import * as qt from './types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
-export function newCreate(f: qt.Frame) {
+export function newMake(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
     has: Fhas;
     is: Fis;
   }
   const qf = f as Frame;
-  interface Fcreate extends qc.Fcreate {}
-  class Fcreate {
+  interface Fmake extends qc.Fmake {}
+  class Fmake {
     intrinsicType(k: qt.TypeFlags, n: string, f: ObjectFlags = 0): qt.IntrinsicType {
       const r = this.type(k);
       r.intrinsicName = n;
@@ -810,9 +810,9 @@ export function newCreate(f: qt.Frame) {
       return { kind, mapper1, mapper2 };
     }
   }
-  return (qf.create = new Fcreate());
+  return (qf.make = new Fmake());
 }
-export interface Fcreate extends ReturnType<typeof newCreate> {}
+export interface Fmake extends ReturnType<typeof newMake> {}
 export function newInstantiate(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.instantiate = new (class {
@@ -844,18 +844,18 @@ export function newInstantiate(f: qt.Frame) {
       return this.list<qt.Signature>(signatures, mapper, this.signature);
     }
     typePredicate(predicate: qt.TypePredicate, mapper: qt.TypeMapper): qt.TypePredicate {
-      return qf.create.typePredicate(predicate.kind, predicate.paramName, predicate.paramIndex, this.type(predicate.type, mapper));
+      return qf.make.typePredicate(predicate.kind, predicate.paramName, predicate.paramIndex, this.type(predicate.type, mapper));
     }
     signature(signature: qt.Signature, mapper: qt.TypeMapper, eraseTypeParams?: boolean): qt.Signature {
       let freshTypeParams: qt.TypeParam[] | undefined;
       if (signature.typeParams && !eraseTypeParams) {
         freshTypeParams = map(signature.typeParams, cloneTypeParam);
-        mapper = combineTypeMappers(qf.create.typeMapper(signature.typeParams, freshTypeParams), mapper);
+        mapper = combineTypeMappers(qf.make.typeMapper(signature.typeParams, freshTypeParams), mapper);
         for (const tp of freshTypeParams) {
           tp.mapper = mapper;
         }
       }
-      const result = qf.create.signature(
+      const result = qf.make.signature(
         signature.declaration,
         freshTypeParams,
         signature.thisParam && this.symbol(signature.thisParam, mapper),
@@ -911,7 +911,7 @@ export function newInstantiate(f: qt.Frame) {
     }
     mappedArrayType(arrayType: qt.Type, mappedType: qt.MappedType, mapper: qt.TypeMapper) {
       const elemType = this.mappedTypeTemplate(mappedType, numberType, true, mapper);
-      return elemType === errorType ? errorType : qf.create.arrayType(elemType, getModifiedReadonlyState(qf.type.is.readonlyArray(arrayType), getMappedTypeModifiers(mappedType)));
+      return elemType === errorType ? errorType : qf.make.arrayType(elemType, getModifiedReadonlyState(qf.type.is.readonlyArray(arrayType), getMappedTypeModifiers(mappedType)));
     }
     mappedTupleType(tupleType: qt.TupleTypeReference, mappedType: qt.MappedType, mapper: qt.TypeMapper) {
       const minLength = tupleType.target.minLength;
@@ -920,7 +920,7 @@ export function newInstantiate(f: qt.Frame) {
       const newMinLength =
         modifiers & MappedTypeModifiers.IncludeOptional ? 0 : modifiers & MappedTypeModifiers.ExcludeOptional ? getTypeReferenceArity(tupleType) - (tupleType.target.hasRestElem ? 1 : 0) : minLength;
       const newReadonly = getModifiedReadonlyState(tupleType.target.readonly, modifiers);
-      return contains(elemTypes, errorType) ? errorType : qf.create.tupleType(elemTypes, newMinLength, tupleType.target.hasRestElem, newReadonly, tupleType.target.labeledElemDeclarations);
+      return contains(elemTypes, errorType) ? errorType : qf.make.tupleType(elemTypes, newMinLength, tupleType.target.hasRestElem, newReadonly, tupleType.target.labeledElemDeclarations);
     }
     mappedTypeTemplate(type: qt.MappedType, key: qt.Type, isOptional: boolean, mapper: qt.TypeMapper) {
       const templateMapper = appendTypeMapping(mapper, getTypeParamFromMappedType(type), key);
@@ -933,7 +933,7 @@ export function newInstantiate(f: qt.Frame) {
         : propType;
     }
     anonymousType(type: qt.AnonymousType, mapper: qt.TypeMapper): qt.AnonymousType {
-      const result = <qt.AnonymousType>qf.create.objectType(type.objectFlags | ObjectFlags.Instantiated, type.symbol);
+      const result = <qt.AnonymousType>qf.make.objectType(type.objectFlags | ObjectFlags.Instantiated, type.symbol);
       if (type.objectFlags & ObjectFlags.Mapped) {
         (<qt.MappedType>result).declaration = (<qt.MappedType>type).declaration;
         const origTypeParam = getTypeParamFromMappedType(<qt.MappedType>type);
@@ -987,7 +987,7 @@ export function newInstantiate(f: qt.Frame) {
           if (objectFlags & ObjectFlags.Reference && !(<qt.TypeReference>type).node) {
             const resolvedTypeArgs = (<qt.TypeReference>type).resolvedTypeArgs;
             const newTypeArgs = this.types(resolvedTypeArgs, mapper);
-            return newTypeArgs !== resolvedTypeArgs ? qf.create.typeReference((<qt.TypeReference>type).target, newTypeArgs) : type;
+            return newTypeArgs !== resolvedTypeArgs ? qf.make.typeReference((<qt.TypeReference>type).target, newTypeArgs) : type;
           }
           return getObjectTypeInstantiation(<qt.TypeReference | qt.AnonymousType | qt.MappedType>type, mapper);
         }
@@ -1017,7 +1017,7 @@ export function newInstantiate(f: qt.Frame) {
       return type;
     }
     indexInfo(info: qt.IndexInfo | undefined, mapper: qt.TypeMapper): qt.IndexInfo | undefined {
-      return info && qf.create.indexInfo(this.type(info.type, mapper), info.isReadonly, info.declaration);
+      return info && qf.make.indexInfo(this.type(info.type, mapper), info.isReadonly, info.declaration);
     }
     contextualType(contextualType: qt.Type | undefined, node: Node, contextFlags?: ContextFlags): qt.Type | undefined {
       if (contextualType && maybeTypeOfKind(contextualType, qt.TypeFlags.Instantiable)) {
@@ -1041,7 +1041,7 @@ export function newInstantiate(f: qt.Frame) {
       return type;
     }
     signatureInContextOf(signature: qt.Signature, contextualSignature: qt.Signature, inferenceContext?: qt.InferenceContext, compareTypes?: qt.TypeComparer): qt.Signature {
-      const context = qf.create.inferenceContext(signature.typeParams!, signature, InferenceFlags.None, compareTypes);
+      const context = qf.make.inferenceContext(signature.typeParams!, signature, InferenceFlags.None, compareTypes);
       const restType = getEffectiveRestType(contextualSignature);
       const mapper = inferenceContext && (restType && restType.flags & qt.TypeFlags.TypeParam ? inferenceContext.nonFixingMapper : inferenceContext.mapper);
       const sourceSignature = mapper ? this.signature(contextualSignature, mapper) : contextualSignature;
@@ -1075,7 +1075,7 @@ export function newInstantiate(f: qt.Frame) {
               if (returnSignature && !returnSignature.typeParams && !every(context.inferences, hasInferenceCandidates)) {
                 const uniqueTypeParams = getUniqueTypeParams(context, signature.typeParams);
                 const instantiatedSignature = getSignatureInstantiationWithoutFillingInTypeArgs(signature, uniqueTypeParams);
-                const inferences = map(context.inferences, (info) => qf.create.inferenceInfo(info.typeParam));
+                const inferences = map(context.inferences, (info) => qf.make.inferenceInfo(info.typeParam));
                 applyToParamTypes(instantiatedSignature, contextualSignature, (source, target) => {
                   inferTypes(inferences, source, target, true);
                 });
@@ -1324,7 +1324,7 @@ export function newResolve(f: qt.Frame) {
               if (suggestion) {
                 const suggestionName = suggestion.symbolToString();
                 const diagnostic = error(errorLocation, suggestedNameNotFoundMessage, diagnosticName(nameArg!), suggestionName);
-                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.create.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
+                if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, qf.make.diagForNode(suggestion.valueDeclaration, qd.msgs._0_is_declared_here, suggestionName));
               }
             }
             if (!suggestion) error(errorLocation, nameNotFoundMessage, diagnosticName(nameArg!));
@@ -1548,7 +1548,7 @@ export function newResolve(f: qt.Frame) {
               if (symbol.members) result.members = cloneMap(symbol.members);
               if (symbol.exports) result.exports = cloneMap(symbol.exports);
               const resolvedModuleType = this.structuredTypeMembers(moduleType as qt.StructuredType);
-              result.type = qf.create.anonymousType(result, resolvedModuleType.members, empty, empty, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
+              result.type = qf.make.anonymousType(result, resolvedModuleType.members, empty, empty, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
               return result;
             }
           }
@@ -1584,7 +1584,7 @@ export function newResolve(f: qt.Frame) {
           qd.msgs.Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members,
           typeToString(reducedBaseType)
         );
-        diagnostics.add(qf.create.diagForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
+        diagnostics.add(qf.make.diagForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
         return (type.resolvedBaseTypes = empty);
       }
       if (type === reducedBaseType || hasBaseType(reducedBaseType, type)) {
@@ -1646,8 +1646,8 @@ export function newResolve(f: qt.Frame) {
         stringIndexInfo = source.declaredStringIndexInfo;
         numberIndexInfo = source.declaredNumberIndexInfo;
       } else {
-        mapper = qf.create.typeMapper(typeParams, typeArgs);
-        members = qf.create.instantiatedSymbolTable(source.declaredProperties, mapper, typeParams.length === 1);
+        mapper = qf.make.typeMapper(typeParams, typeArgs);
+        members = qf.make.instantiatedSymbolTable(source.declaredProperties, mapper, typeParams.length === 1);
         callSignatures = qf.instantiate.signatures(source.declaredCallSignatures, mapper);
         constructSignatures = qf.instantiate.signatures(source.declaredConstructSignatures, mapper);
         stringIndexInfo = qf.instantiate.indexInfo(source.declaredStringIndexInfo, mapper);
@@ -1663,7 +1663,7 @@ export function newResolve(f: qt.Frame) {
           addInheritedMembers(members, qf.get.propertiesOfType(instantiatedBaseType));
           callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
           constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));
-          if (!stringIndexInfo) stringIndexInfo = instantiatedBaseType === anyType ? qf.create.indexInfo(anyType, false) : qf.get.indexInfoOfType(instantiatedBaseType, IndexKind.String);
+          if (!stringIndexInfo) stringIndexInfo = instantiatedBaseType === anyType ? qf.make.indexInfo(anyType, false) : qf.get.indexInfoOfType(instantiatedBaseType, IndexKind.String);
           numberIndexInfo = numberIndexInfo || qf.get.indexInfoOfType(instantiatedBaseType, IndexKind.Number);
         }
       }
@@ -1717,7 +1717,7 @@ export function newResolve(f: qt.Frame) {
       const symbol = qf.get.mergedSymbol(type.symbol);
       if (type.target) {
         setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
-        const members = qf.create.instantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, false);
+        const members = qf.make.instantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, false);
         const callSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Call), type.mapper!);
         const constructSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Construct), type.mapper!);
         const stringIndexInfo = qf.instantiate.indexInfo(qf.get.indexInfoOfType(type.target, IndexKind.String), type.mapper!);
@@ -1752,7 +1752,7 @@ export function newResolve(f: qt.Frame) {
             members = new qc.SymbolTable(getNamedMembers(members));
             addInheritedMembers(members, qf.get.propertiesOfType(baseConstructorType));
           } else if (baseConstructorType === anyType) {
-            stringIndexInfo = qf.create.indexInfo(anyType, false);
+            stringIndexInfo = qf.make.indexInfo(anyType, false);
           }
         }
         const numberIndexInfo =
@@ -1769,7 +1769,7 @@ export function newResolve(f: qt.Frame) {
               constructSignatures.slice(),
               mapDefined(type.callSignatures, (sig) =>
                 qf.is.jsConstructor(sig.declaration)
-                  ? qf.create.signature(sig.declaration, sig.typeParams, sig.thisParam, sig.params, classType, undefined, sig.minArgCount, sig.flags & SignatureFlags.PropagatingFlags)
+                  ? qf.make.signature(sig.declaration, sig.typeParams, sig.thisParam, sig.params, classType, undefined, sig.minArgCount, sig.flags & SignatureFlags.PropagatingFlags)
                   : undefined
               )
             );
@@ -1784,7 +1784,7 @@ export function newResolve(f: qt.Frame) {
       const modifiers = getMappedTypeModifiers(type.mappedType);
       const readonlyMask = modifiers & MappedTypeModifiers.IncludeReadonly ? false : true;
       const optionalMask = modifiers & MappedTypeModifiers.IncludeOptional ? 0 : qt.SymbolFlags.Optional;
-      const stringIndexInfo = indexInfo && qf.create.indexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
+      const stringIndexInfo = indexInfo && qf.make.indexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
       const members = new qc.SymbolTable();
       for (const prop of qf.get.propertiesOfType(type.source)) {
         const f = qt.CheckFlags.ReverseMapped | (readonlyMask && isReadonlySymbol(prop) ? qt.CheckFlags.Readonly : 0);
@@ -1850,9 +1850,9 @@ export function newResolve(f: qt.Frame) {
           members.set(propName, prop);
         } else if (t.flags & (TypeFlags.Any | qt.TypeFlags.String | qt.TypeFlags.Number | qt.TypeFlags.Enum)) {
           const propType = qf.instantiate.type(templateType, templateMapper);
-          if (t.flags & (TypeFlags.Any | qt.TypeFlags.String)) stringIndexInfo = qf.create.indexInfo(propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
+          if (t.flags & (TypeFlags.Any | qt.TypeFlags.String)) stringIndexInfo = qf.make.indexInfo(propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
           else {
-            numberIndexInfo = qf.create.indexInfo(numberIndexInfo ? qf.get.unionType([numberIndexInfo.type, propType]) : propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
+            numberIndexInfo = qf.make.indexInfo(numberIndexInfo ? qf.get.unionType([numberIndexInfo.type, propType]) : propType, !!(templateModifiers & MappedTypeModifiers.IncludeReadonly));
           }
         }
       }
@@ -1950,7 +1950,7 @@ export function newResolve(f: qt.Frame) {
             const diags = getSignatureApplicabilityError(node, args, last, assignableRelation, CheckMode.Normal, true, () => chain);
             if (diags) {
               for (const d of diags) {
-                if (last.declaration && candidatesForArgError.length > 3) addRelatedInfo(d, qf.create.diagForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
+                if (last.declaration && candidatesForArgError.length > 3) addRelatedInfo(d, qf.make.diagForNode(last.declaration, qd.msgs.The_last_overload_is_declared_here));
                 diagnostics.add(d);
               }
             } else {
@@ -1988,7 +1988,7 @@ export function newResolve(f: qt.Frame) {
               const { file, start, length } = diags[0];
               diagnostics.add({ file, start, length, code: chain.code, category: chain.category, messageText: chain, relatedInformation: related });
             } else {
-              diagnostics.add(qf.create.diagForNodeFromMessageChain(node, chain, related));
+              diagnostics.add(qf.make.diagForNodeFromMessageChain(node, chain, related));
             }
           }
         } else if (candidateForArgArityError) {
@@ -2033,7 +2033,7 @@ export function newResolve(f: qt.Frame) {
                 continue;
               }
             } else {
-              inferenceContext = qf.create.inferenceContext(candidate.typeParams, candidate, qf.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
+              inferenceContext = qf.make.inferenceContext(candidate.typeParams, candidate, qf.is.inJSFile(node) ? InferenceFlags.AnyDefault : InferenceFlags.None);
               typeArgTypes = inferTypeArgs(node, candidate, args, argCheckMode | CheckMode.SkipGenericFunctions, inferenceContext);
               argCheckMode |= inferenceContext.flags & InferenceFlags.SkippedGenericFunction ? CheckMode.SkipGenericFunctions : CheckMode.Normal;
             }
@@ -2114,7 +2114,7 @@ export function newResolve(f: qt.Frame) {
           if (node.args.length === 1) {
             const text = node.sourceFile.text;
             if (qy.is.lineBreak(text.charCodeAt(qy.skipTrivia(text, node.expression.end, true) - 1)))
-              relatedInformation = qf.create.diagForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
+              relatedInformation = qf.make.diagForNode(node.expression, qd.msgs.Are_you_missing_a_semicolon);
           }
           invocationError(node.expression, apparentType, SignatureKind.Call, relatedInformation);
         }
@@ -2191,8 +2191,8 @@ export function newResolve(f: qt.Frame) {
       if (!callSignatures.length) {
         const errorDetails = invocationErrorDetails(node.expression, apparentType, SignatureKind.Call);
         const messageChain = chainqd.Messages(errorDetails.messageChain, headMessage);
-        const diag = qf.create.diagForNodeFromMessageChain(node.expression, messageChain);
-        if (errorDetails.relatedMessage) addRelatedInfo(diag, qf.create.diagForNode(node.expression, errorDetails.relatedMessage));
+        const diag = qf.make.diagForNodeFromMessageChain(node.expression, messageChain);
+        if (errorDetails.relatedMessage) addRelatedInfo(diag, qf.make.diagForNode(node.expression, errorDetails.relatedMessage));
         diagnostics.add(diag);
         invocationErrorRecovery(apparentType, SignatureKind.Call, diag);
         return this.errorCall(node);
@@ -2202,7 +2202,7 @@ export function newResolve(f: qt.Frame) {
     jsxOpeningLikeElem(node: qt.JsxOpeningLikeElem, candidatesOutArray: qt.Signature[] | undefined, checkMode: CheckMode): qt.Signature {
       if (isJsxIntrinsicIdentifier(node.tagName)) {
         const result = getIntrinsicAttributesTypeFromJsxOpeningLikeElem(node);
-        const fakeSignature = qf.create.signatureForJSXIntrinsic(node, result);
+        const fakeSignature = qf.make.signatureForJSXIntrinsic(node, result);
         qf.type.check.assignableToAndOptionallyElaborate(
           check.expressionWithContextualType(node.attributes, getEffectiveFirstArgForJsxSignature(fakeSignature, node), undefined, CheckMode.Normal),
           result,

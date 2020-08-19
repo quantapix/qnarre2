@@ -77,7 +77,7 @@ export function newType(f: qt.Frame) {
             if (ls.originatingImport && !qf.is.importCall(ls.originatingImport)) {
               const helpfulRetry = qf.type.check.relatedTo(ls.target!.typeOfSymbol(), to, relation, undefined);
               if (helpfulRetry) {
-                const diag = qf.create.diagForNode(
+                const diag = qf.make.diagForNode(
                   ls.originatingImport,
                   qd.msgs
                     .Type_originates_at_this_import_A_namespace_style_import_cannot_be_called_or_constructed_and_will_cause_a_failure_at_runtime_Consider_using_a_default_import_or_import_require_here_instead
@@ -86,7 +86,7 @@ export function newType(f: qt.Frame) {
               }
             }
           }
-          const diag = qf.create.diagForNodeFromMessageChain(err!, errorInfo, relatedInformation);
+          const diag = qf.make.diagForNodeFromMessageChain(err!, errorInfo, relatedInformation);
           if (relatedInfo) addRelatedInfo(diag, ...relatedInfo);
           if (o) (o.errors || (o.errors = [])).push(diag);
           if (!o || !o.skipLogging) diagnostics.add(diag);
@@ -1086,7 +1086,7 @@ export function newType(f: qt.Frame) {
           if (props.length === 1) {
             const propName = unmatchedProperty.symbolToString();
             reportError(qd.msgs.Property_0_is_missing_in_type_1_but_required_in_type_2, propName, ...getTypeNamesForErrorDisplay(source, target));
-            if (length(unmatchedProperty.declarations)) associateRelatedInfo(qf.create.diagForNode(unmatchedProperty.declarations[0], qd.msgs._0_is_declared_here, propName));
+            if (length(unmatchedProperty.declarations)) associateRelatedInfo(qf.make.diagForNode(unmatchedProperty.declarations[0], qd.msgs._0_is_declared_here, propName));
             if (shouldSkipElaboration && errorInfo) overrideNextErrorInfo++;
           } else if (tryElaborateArrayLikeErrors(source, target, false)) {
             if (props.length > 5) {
@@ -1340,7 +1340,7 @@ export function newType(f: qt.Frame) {
           const r = right.typeOfSymbol();
           if (left && !maybeTypeOfKind(r, TypeFlags.Nullable) && !(maybeTypeOfKind(r, TypeFlags.AnyOrUnknown) && right.flags & qt.SymbolFlags.Optional)) {
             const d = error(left.valueDeclaration, qd.msgs._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, qy.get.unescUnderscores(left.escName));
-            addRelatedInfo(d, qf.create.diagForNode(s, qd.msgs.This_spread_always_overwrites_this_property));
+            addRelatedInfo(d, qf.make.diagForNode(s, qd.msgs.This_spread_always_overwrites_this_property));
           }
         }
       }
@@ -1395,8 +1395,8 @@ export function newType(f: qt.Frame) {
               );
               addRelatedInfo(
                 d,
-                qf.create.diagForNode(v, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, n),
-                qf.create.diagForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, n)
+                qf.make.diagForNode(v, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, n),
+                qf.make.diagForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, n)
               );
               return true;
             }
@@ -1549,7 +1549,7 @@ export function newSymbol(f: qt.Frame) {
             qf.assert.true(!!(result.flags & qt.SymbolFlags.ConstEnum));
             if (compilerOpts.preserveConstEnums) diagnosticMessage = error(n, qd.msgs.Enum_0_used_before_its_declaration, declarationName);
           }
-          if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.create.diagForNode(declaration, qd.msgs._0_is_declared_here, declarationName));
+          if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.make.diagForNode(declaration, qd.msgs._0_is_declared_here, declarationName));
         }
       }
       propertyNotUsedBeforeDeclaration(prop: qt.Symbol, n: qt.PropertyAccessExpression | qt.QualifiedName, right: qt.Identifier | qt.PrivateIdentifier): void {
@@ -1572,7 +1572,7 @@ export function newSymbol(f: qt.Frame) {
         ) {
           diagnosticMessage = error(right, qd.msgs.Class_0_used_before_its_declaration, declarationName);
         }
-        if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.create.diagForNode(valueDeclaration, qd.msgs._0_is_declared_here, declarationName));
+        if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.make.diagForNode(valueDeclaration, qd.msgs._0_is_declared_here, declarationName));
       }
     })();
   })());

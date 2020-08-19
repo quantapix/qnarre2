@@ -282,7 +282,7 @@ export function transformES2015(context: qt.TrafoContext) {
     return updated;
   }
   function returnCapturedThis(node: Node): qt.ReturnStatement {
-    return new qc.ReturnStatement(qf.create.fileLevelUniqueName('_this')).setOriginal(node);
+    return new qc.ReturnStatement(qf.make.fileLevelUniqueName('_this')).setOriginal(node);
   }
   function visitReturnStatement(node: qt.ReturnStatement): qc.Statement {
     if (convertedLoopState) {
@@ -307,7 +307,7 @@ export function transformES2015(context: qt.TrafoContext) {
         convertedLoopState.containsLexicalThis = true;
         return node;
       }
-      return convertedLoopState.thisName || (convertedLoopState.thisName = qf.create.uniqueName('this'));
+      return convertedLoopState.thisName || (convertedLoopState.thisName = qf.make.uniqueName('this'));
     }
     return node;
   }
@@ -315,7 +315,7 @@ export function transformES2015(context: qt.TrafoContext) {
     if (!convertedLoopState) return node;
     if (qf.is.generatedIdentifier(node)) return node;
     if (node.escapedText !== 'args' || !resolver.isArgsLocalBinding(node)) return node;
-    return convertedLoopState.argsName || (convertedLoopState.argsName = qf.create.uniqueName('args'));
+    return convertedLoopState.argsName || (convertedLoopState.argsName = qf.make.uniqueName('args'));
   }
   function visitBreakOrContinueStatement(node: qt.BreakOrContinueStatement): qc.Statement {
     if (convertedLoopState) {
@@ -371,7 +371,7 @@ export function transformES2015(context: qt.TrafoContext) {
     qf.emit.setStartsOnNewLine(statement);
     statements.push(statement);
     if (qf.has.syntacticModifier(node, ModifierFlags.Export)) {
-      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default) ? qf.create.exportDefault(qf.decl.localName(node)) : qf.create.externalModuleExport(qf.decl.localName(node));
+      const exportStatement = qf.has.syntacticModifier(node, ModifierFlags.Default) ? qf.make.exportDefault(qf.decl.localName(node)) : qf.make.externalModuleExport(qf.decl.localName(node));
       exportStatement.setOriginal(statement);
       statements.push(exportStatement);
     }
@@ -395,7 +395,7 @@ export function transformES2015(context: qt.TrafoContext) {
       undefined,
       undefined,
       undefined,
-      extendsClauseElem ? [new qc.ParamDeclaration(undefined, undefined, qf.create.fileLevelUniqueName('_super'))] : [],
+      extendsClauseElem ? [new qc.ParamDeclaration(undefined, undefined, qf.make.fileLevelUniqueName('_super'))] : [],
       undefined,
       transformClassBody(node, extendsClauseElem)
     );
@@ -416,7 +416,7 @@ export function transformES2015(context: qt.TrafoContext) {
     addExtendsHelperIfNeeded(statements, node, extendsClauseElem);
     addConstructor(statements, node, extendsClauseElem);
     addClassMembers(statements, node);
-    const closingBraceLocation = qf.create.tokenRange(qy.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
+    const closingBraceLocation = qf.make.tokenRange(qy.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
     const localName = qf.decl.internalName(node);
     const outer = new qc.PartiallyEmittedExpression(localName);
     outer.end = closingBraceLocation.end;
@@ -518,7 +518,7 @@ export function transformES2015(context: qt.TrafoContext) {
       } else {
         insertCaptureThisForNode(statements, constructor, superCallExpression || createActualThis());
         if (!isSufficientlyCoveredByReturnStatements(constructor.body)) {
-          statements.push(new qc.ReturnStatement(qf.create.fileLevelUniqueName('_this')));
+          statements.push(new qc.ReturnStatement(qf.make.fileLevelUniqueName('_this')));
         }
       }
     } else {
@@ -543,10 +543,10 @@ export function transformES2015(context: qt.TrafoContext) {
     return qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution);
   }
   function createDefaultSuperCallOrThis() {
-    return qf.create.logicalOr(
-      qf.create.logicalAnd(
-        qf.create.strictInequality(qf.create.fileLevelUniqueName('_super'), new qc.NullLiteral()),
-        qf.create.functionApply(qf.create.fileLevelUniqueName('_super'), createActualThis(), new qc.Identifier('args'))
+    return qf.make.logicalOr(
+      qf.make.logicalAnd(
+        qf.make.strictInequality(qf.make.fileLevelUniqueName('_super'), new qc.NullLiteral()),
+        qf.make.functionApply(qf.make.fileLevelUniqueName('_super'), createActualThis(), new qc.Identifier('args'))
       ),
       createActualThis()
     );
@@ -594,7 +594,7 @@ export function transformES2015(context: qt.TrafoContext) {
     } else if (initer) {
       insertStatementAfterCustomPrologue(
         statements,
-        qf.emit.setFlags(new qc.ExpressionStatement(qf.create.assignment(qf.get.generatedNameForNode(param), qf.visit.node(initer, visitor, isExpression))), EmitFlags.CustomPrologue)
+        qf.emit.setFlags(new qc.ExpressionStatement(qf.make.assignment(qf.get.generatedNameForNode(param), qf.visit.node(initer, visitor, isExpression))), EmitFlags.CustomPrologue)
       );
       return true;
     }
@@ -603,13 +603,13 @@ export function transformES2015(context: qt.TrafoContext) {
   function insertDefaultValueAssignmentForIniter(statements: qc.Statement[], param: qt.ParamDeclaration, name: qc.Identifier, initer: qc.Expression): void {
     initer = qf.visit.node(initer, visitor, isExpression);
     const statement = new qc.IfStatement(
-      qf.create.typeCheck(qf.create.synthesizedClone(name), 'undefined'),
+      qf.make.typeCheck(qf.make.synthesizedClone(name), 'undefined'),
       qf.emit.setFlags(
         new qc.Block([
           new qc.ExpressionStatement(
             qf.emit.setFlags(
               qf.create
-                .assignment(qf.emit.setFlags(qf.create.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(initer, EmitFlags.NoSourceMap | qf.get.emitFlags(initer) | EmitFlags.NoComments))
+                .assignment(qf.emit.setFlags(qf.make.mutableClone(name), EmitFlags.NoSourceMap), qf.emit.setFlags(initer, EmitFlags.NoSourceMap | qf.get.emitFlags(initer) | EmitFlags.NoComments))
                 .setRange(param),
               EmitFlags.NoComments
             )
@@ -630,11 +630,11 @@ export function transformES2015(context: qt.TrafoContext) {
     const prologueStatements: qc.Statement[] = [];
     const param = lastOrUndefined(node.params);
     if (!shouldAddRestParam(param, inConstructorWithSynthesizedSuper)) return false;
-    const declarationName = param.name.kind === Syntax.Identifier ? qf.create.mutableClone(param.name) : qf.create.tempVariable(undefined);
+    const declarationName = param.name.kind === Syntax.Identifier ? qf.make.mutableClone(param.name) : qf.make.tempVariable(undefined);
     qf.emit.setFlags(declarationName, EmitFlags.NoSourceMap);
-    const expressionName = param.name.kind === Syntax.Identifier ? qf.create.synthesizedClone(param.name) : declarationName;
+    const expressionName = param.name.kind === Syntax.Identifier ? qf.make.synthesizedClone(param.name) : declarationName;
     const restIndex = node.params.length - 1;
-    const temp = qf.create.loopVariable();
+    const temp = qf.make.loopVariable();
     prologueStatements.push(
       qf.emit.setFlags(
         new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(declarationName, undefined, new qc.ArrayLiteralExpression([]))])).setRange(param),
@@ -643,13 +643,13 @@ export function transformES2015(context: qt.TrafoContext) {
     );
     const forStatement = new qc.ForStatement(
       new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, qc.asLiteral(restIndex))]).setRange(param),
-      qf.create.lessThan(temp, new qc.PropertyAccessExpression(new qc.Identifier('args'), 'length')).setRange(param),
-      qf.create.increment(temp).setRange(param),
+      qf.make.lessThan(temp, new qc.PropertyAccessExpression(new qc.Identifier('args'), 'length')).setRange(param),
+      qf.make.increment(temp).setRange(param),
       new qc.Block([
         qf.emit.setStartsOnNewLine(
           new qc.ExpressionStatement(
-            qf.create.assignment(
-              new qc.ElemAccessExpression(expressionName, restIndex === 0 ? temp : qf.create.subtract(temp, qc.asLiteral(restIndex))),
+            qf.make.assignment(
+              new qc.ElemAccessExpression(expressionName, restIndex === 0 ? temp : qf.make.subtract(temp, qc.asLiteral(restIndex))),
               new qc.ElemAccessExpression(new qc.Identifier('args'), temp)
             )
           ).setRange(param)
@@ -679,7 +679,7 @@ export function transformES2015(context: qt.TrafoContext) {
   }
   function insertCaptureThisForNode(statements: qc.Statement[], node: Node, initer: qc.Expression | undefined): void {
     enableSubstitutionsForCapturedThis();
-    const captureThisStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.create.fileLevelUniqueName('_this'), undefined, initer)]));
+    const captureThisStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.make.fileLevelUniqueName('_this'), undefined, initer)]));
     qf.emit.setFlags(captureThisStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
     qf.emit.setSourceMapRange(captureThisStatement, node);
     insertStatementAfterCustomPrologue(statements, captureThisStatement);
@@ -701,7 +701,7 @@ export function transformES2015(context: qt.TrafoContext) {
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
           newTarget = new qc.ConditionalExpression(
-            qf.create.logicalAnd(
+            qf.make.logicalAnd(
               qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
               new qc.BinaryExpression(qf.emit.setFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, qf.decl.localName(node))
             ),
@@ -714,7 +714,7 @@ export function transformES2015(context: qt.TrafoContext) {
       }
       const captureNewTargetStatement = new qc.VariableStatement(
         undefined,
-        new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.create.fileLevelUniqueName('_newTarget'), undefined, newTarget)])
+        new qc.VariableDeclarationList([new qc.VariableDeclaration(qf.make.fileLevelUniqueName('_newTarget'), undefined, newTarget)])
       );
       qf.emit.setFlags(captureNewTargetStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
       if (copyOnWrite) {
@@ -764,10 +764,10 @@ export function transformES2015(context: qt.TrafoContext) {
           : propertyName.kind === Syntax.Identifier
           ? new qc.StringLiteral(qy.get.unescUnderscores(propertyName.escapedText))
           : propertyName;
-      e = qf.create.objectDefinePropertyCall(receiver, name, qf.create.propertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
+      e = qf.make.objectDefinePropertyCall(receiver, name, qf.make.propertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
     } else {
-      const memberName = qf.create.memberAccessForPropertyName(receiver, propertyName, member.name);
-      e = qf.create.assignment(memberName, memberFunction);
+      const memberName = qf.make.memberAccessForPropertyName(receiver, propertyName, member.name);
+      e = qf.make.assignment(memberName, memberFunction);
     }
     qf.emit.setFlags(memberFunction, EmitFlags.NoComments);
     qf.emit.setSourceMapRange(memberFunction, sourceMapRange);
@@ -784,12 +784,12 @@ export function transformES2015(context: qt.TrafoContext) {
     return statement;
   }
   function transformAccessorsToExpression(receiver: qt.LeftExpression, { firstAccessor, getAccessor, setAccessor }: qt.AllAccessorDeclarations, container: Node, startsOnNewLine: boolean): qc.Expression {
-    const target = qf.create.mutableClone(receiver);
+    const target = qf.make.mutableClone(receiver);
     qf.emit.setFlags(target, EmitFlags.NoComments | EmitFlags.NoTrailingSourceMap);
     qf.emit.setSourceMapRange(target, firstAccessor.name);
     const visitedAccessorName = qf.visit.node(firstAccessor.name, visitor, qf.is.propertyName);
     if (visitedAccessorName.kind === Syntax.PrivateIdentifier) return qu.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
-    const propertyName = qf.create.expressionForPropertyName(visitedAccessorName);
+    const propertyName = qf.make.expressionForPropertyName(visitedAccessorName);
     qf.emit.setFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoLeadingSourceMap);
     qf.emit.setSourceMapRange(propertyName, firstAccessor.name);
     const properties: qt.ObjectLiteralElemLike[] = [];
@@ -1055,7 +1055,7 @@ export function transformES2015(context: qt.TrafoContext) {
     const name = node.name;
     if (name.kind === Syntax.BindingPattern) return visitVariableDeclaration(node);
     if (!node.initer && shouldEmitExplicitIniterForLetDeclaration(node)) {
-      const clone = qf.create.mutableClone(node);
+      const clone = qf.make.mutableClone(node);
       clone.initer = qc.VoidExpression.zero();
       return clone;
     }
@@ -1149,7 +1149,7 @@ export function transformES2015(context: qt.TrafoContext) {
           new qc.VariableStatement(
             undefined,
             setOriginalNode(
-              new qc.VariableDeclarationList([new qc.VariableDeclaration(firstOriginalDeclaration ? firstOriginalDeclaration.name : qf.create.tempVariable(undefined), undefined, boundValue)]).setRange(
+              new qc.VariableDeclarationList([new qc.VariableDeclaration(firstOriginalDeclaration ? firstOriginalDeclaration.name : qf.make.tempVariable(undefined), undefined, boundValue)]).setRange(
                 moveRangePos(initer, -1)
               ),
               initer
@@ -1158,7 +1158,7 @@ export function transformES2015(context: qt.TrafoContext) {
         );
       }
     } else {
-      const assignment = qf.create.assignment(initer, boundValue);
+      const assignment = qf.make.assignment(initer, boundValue);
       if (qf.is.destructuringAssignment(assignment)) {
         qf.calc.aggregate(assignment);
         statements.push(new qc.ExpressionStatement(visitBinaryExpression(assignment, false)));
@@ -1181,8 +1181,8 @@ function createSyntheticBlockForConvertedStatements(statements: qc.Statement[]) 
 }
 function convertForOfStatementForArray(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement, convertedLoopBodyStatements: qc.Statement[]): qc.Statement {
   const expression = qf.visit.node(node.expression, visitor, isExpression);
-  const counter = qf.create.loopVariable();
-  const rhsReference = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.create.tempVariable(undefined);
+  const counter = qf.make.loopVariable();
+  const rhsReference = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.make.tempVariable(undefined);
   qf.emit.setFlags(expression, EmitFlags.NoSourceMap | qf.get.emitFlags(expression));
   const forStatement = new qc.ForStatement(
     qf.emit.setFlags(
@@ -1192,8 +1192,8 @@ function convertForOfStatementForArray(node: qt.ForOfStatement, outermostLabeled
       ]).setRange(node.expression),
       EmitFlags.NoHoisting
     ),
-    qf.create.lessThan(counter, new qc.PropertyAccessExpression(rhsReference, 'length')).setRange(node.expression),
-    qf.create.increment(counter).setRange(node.expression),
+    qf.make.lessThan(counter, new qc.PropertyAccessExpression(rhsReference, 'length')).setRange(node.expression),
+    qf.make.increment(counter).setRange(node.expression),
     convertForOfStatementHead(node, new qc.ElemAccessExpression(rhsReference, counter), convertedLoopBodyStatements)
   ).setRange(node);
   qf.emit.setFlags(forStatement, EmitFlags.NoTokenTrailingSourceMaps);
@@ -1202,16 +1202,16 @@ function convertForOfStatementForArray(node: qt.ForOfStatement, outermostLabeled
 }
 function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabeledStatement: qt.LabeledStatement, convertedLoopBodyStatements: qc.Statement[], ancestorFacts: HierarchyFacts): qc.Statement {
   const expression = qf.visit.node(node.expression, visitor, isExpression);
-  const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.create.tempVariable(undefined);
-  const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : qf.create.tempVariable(undefined);
-  const errorRecord = qf.create.uniqueName('e');
+  const iterator = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(expression) : qf.make.tempVariable(undefined);
+  const result = expression.kind === Syntax.Identifier ? qf.get.generatedNameForNode(iterator) : qf.make.tempVariable(undefined);
+  const errorRecord = qf.make.uniqueName('e');
   const catchVariable = qf.get.generatedNameForNode(errorRecord);
-  const returnMethod = qf.create.tempVariable(undefined);
+  const returnMethod = qf.make.tempVariable(undefined);
   const values = createValuesHelper(context, expression, node.expression);
   const next = new qc.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
   hoistVariableDeclaration(errorRecord);
   hoistVariableDeclaration(returnMethod);
-  const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.create.assignment(errorRecord, qc.VoidExpression.zero()), values]) : values;
+  const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([qf.make.assignment(errorRecord, qc.VoidExpression.zero()), values]) : values;
   const forStatement = qf.emit.setFlags(
     new qc.ForStatement(
       qf.emit.setFlags(
@@ -1220,8 +1220,8 @@ function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabe
         ),
         EmitFlags.NoHoisting
       ),
-      qf.create.logicalNot(new qc.PropertyAccessExpression(result, 'done')),
-      qf.create.assignment(result, next),
+      qf.make.logicalNot(new qc.PropertyAccessExpression(result, 'done')),
+      qf.make.assignment(result, next),
       convertForOfStatementHead(node, new qc.PropertyAccessExpression(result, 'value'), convertedLoopBodyStatements)
     ).setRange(node),
     EmitFlags.NoTokenTrailingSourceMaps
@@ -1231,7 +1231,7 @@ function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabe
     new qc.CatchClause(
       new qc.VariableDeclaration(catchVariable),
       qf.emit.setFlags(
-        new qc.Block([new qc.ExpressionStatement(qf.create.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
+        new qc.Block([new qc.ExpressionStatement(qf.make.assignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]),
         EmitFlags.SingleLine
       )
     ),
@@ -1240,11 +1240,11 @@ function convertForOfStatementForIterable(node: qt.ForOfStatement, outermostLabe
         new qc.Block([
           qf.emit.setFlags(
             new qc.IfStatement(
-              qf.create.logicalAnd(
-                qf.create.logicalAnd(result, qf.create.logicalNot(new qc.PropertyAccessExpression(result, 'done'))),
-                qf.create.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))
+              qf.make.logicalAnd(
+                qf.make.logicalAnd(result, qf.make.logicalNot(new qc.PropertyAccessExpression(result, 'done'))),
+                qf.make.assignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))
               ),
-              new qc.ExpressionStatement(qf.create.functionCall(returnMethod, iterator, []))
+              new qc.ExpressionStatement(qf.make.functionCall(returnMethod, iterator, []))
             ),
             EmitFlags.SingleLine
           ),
@@ -1277,9 +1277,9 @@ function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression): qc.Expr
     if (numInitialPropertiesWithoutYield < numInitialProperties) {
       numInitialProperties = numInitialPropertiesWithoutYield;
     }
-    const temp = qf.create.tempVariable(hoistVariableDeclaration);
+    const temp = qf.make.tempVariable(hoistVariableDeclaration);
     const expressions: qc.Expression[] = [];
-    const assignment = qf.create.assignment(
+    const assignment = qf.make.assignment(
       temp,
       qf.emit.setFlags(new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElemLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
     );
@@ -1288,7 +1288,7 @@ function visitObjectLiteralExpression(node: qt.ObjectLiteralExpression): qc.Expr
     }
     expressions.push(assignment);
     addObjectLiteralMembers(expressions, node, temp, numInitialProperties);
-    expressions.push(node.multiLine ? qf.emit.setStartsOnNewLine(qf.create.mutableClone(temp)) : temp);
+    expressions.push(node.multiLine ? qf.emit.setStartsOnNewLine(qf.make.mutableClone(temp)) : temp);
     return inlineExpressions(expressions);
   }
   return qf.visit.children(node, visitor, context);
@@ -1516,7 +1516,7 @@ function createOutVariable(p: LoopOutParam) {
   return new qc.VariableDeclaration(p.originalName, undefined, p.outParamName);
 }
 function createFunctionForIniterOfForStatement(node: ForStatementWithConvertibleIniter, currentState: ConvertedLoopState): IterationStmtPartFunction<qt.VariableDeclarationList> {
-  const functionName = qf.create.uniqueName('_loop_init');
+  const functionName = qf.make.uniqueName('_loop_init');
   const containsYield = (node.initer.trafoFlags & TrafoFlags.ContainsYield) !== 0;
   let emitFlags = EmitFlags.None;
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
@@ -1552,18 +1552,18 @@ function createFunctionForIniterOfForStatement(node: ForStatementWithConvertible
   return { functionName, containsYield, functionDeclaration, part };
 }
 function createFunctionForBodyOfIterationStmt(node: qt.IterationStmt, currentState: ConvertedLoopState, outerState: ConvertedLoopState | undefined): IterationStmtPartFunction<qt.Statement[]> {
-  const functionName = qf.create.uniqueName('_loop');
+  const functionName = qf.make.uniqueName('_loop');
   startLexicalEnv();
   const statement = qf.visit.node(node.statement, visitor, qf.is.statement, qc.liftToBlock);
   const lexicalEnvironment = endLexicalEnv();
   const statements: qc.Statement[] = [];
   if (shouldConvertConditionOfForStatement(node) || shouldConvertIncrementorOfForStatement(node)) {
-    currentState.conditionVariable = qf.create.uniqueName('inc');
+    currentState.conditionVariable = qf.make.uniqueName('inc');
     statements.push(
       new qc.IfStatement(
         currentState.conditionVariable,
         new qc.ExpressionStatement(qf.visit.node(node.incrementor, visitor, isExpression)),
-        new qc.ExpressionStatement(qf.create.assignment(currentState.conditionVariable, new qc.BooleanLiteral(true)))
+        new qc.ExpressionStatement(qf.make.assignment(currentState.conditionVariable, new qc.BooleanLiteral(true)))
       )
     );
     if (shouldConvertConditionOfForStatement(node)) {
@@ -1634,7 +1634,7 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: qc.Identifier, 
     statements.push(new qc.ExpressionStatement(callResult));
     copyOutParams(state.loopOutParams, LoopOutParamFlags.Body, CopyDirection.ToOriginal, statements);
   } else {
-    const loopResultName = qf.create.uniqueName('state');
+    const loopResultName = qf.make.uniqueName('state');
     const stateVariable = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(loopResultName, undefined, callResult)]));
     statements.push(stateVariable);
     copyOutParams(state.loopOutParams, LoopOutParamFlags.Body, CopyDirection.ToOriginal, statements);
@@ -1707,7 +1707,7 @@ function processLoopVariableDeclaration(
     loopParams.push(new qc.ParamDeclaration(undefined, undefined, name));
     const checkFlags = resolver.getNodeCheckFlags(decl);
     if (checkFlags & NodeCheckFlags.NeedsLoopOutParam || hasCapturedBindingsInForIniter) {
-      const outParamName = qf.create.uniqueName('out_' + idText(name));
+      const outParamName = qf.make.uniqueName('out_' + idText(name));
       let flags: LoopOutParamFlags = 0;
       if (checkFlags & NodeCheckFlags.NeedsLoopOutParam) {
         flags |= LoopOutParamFlags.Body;
@@ -1748,7 +1748,7 @@ function addObjectLiteralMembers(expressions: qc.Expression[], node: qt.ObjectLi
   }
 }
 function transformPropertyAssignmentToExpression(property: qt.PropertyAssignment, receiver: qc.Expression, startsOnNewLine: boolean) {
-  const expression = qf.create.assignment(qf.create.memberAccessForPropertyName(receiver, qf.visit.node(property.name, visitor, qf.is.propertyName)), qf.visit.node(property.initer, visitor, isExpression));
+  const expression = qf.make.assignment(qf.make.memberAccessForPropertyName(receiver, qf.visit.node(property.name, visitor, qf.is.propertyName)), qf.visit.node(property.initer, visitor, isExpression));
   expression.setRange(property);
   if (startsOnNewLine) {
     qf.emit.setStartsOnNewLine(expression);
@@ -1756,7 +1756,7 @@ function transformPropertyAssignmentToExpression(property: qt.PropertyAssignment
   return expression;
 }
 function transformShorthandPropertyAssignmentToExpression(property: qt.ShorthandPropertyAssignment, receiver: qc.Expression, startsOnNewLine: boolean) {
-  const expression = qf.create.assignment(qf.create.memberAccessForPropertyName(receiver, qf.visit.node(property.name, visitor, qf.is.propertyName)), qf.create.synthesizedClone(property.name));
+  const expression = qf.make.assignment(qf.make.memberAccessForPropertyName(receiver, qf.visit.node(property.name, visitor, qf.is.propertyName)), qf.make.synthesizedClone(property.name));
   expression.setRange(property);
   if (startsOnNewLine) {
     qf.emit.setStartsOnNewLine(expression);
@@ -1764,8 +1764,8 @@ function transformShorthandPropertyAssignmentToExpression(property: qt.Shorthand
   return expression;
 }
 function transformObjectLiteralMethodDeclarationToExpression(method: qt.MethodDeclaration, receiver: qc.Expression, container: Node, startsOnNewLine: boolean) {
-  const expression = qf.create.assignment(
-    qf.create.memberAccessForPropertyName(receiver, qf.visit.node(method.name, visitor, qf.is.propertyName)),
+  const expression = qf.make.assignment(
+    qf.make.memberAccessForPropertyName(receiver, qf.visit.node(method.name, visitor, qf.is.propertyName)),
     transformFunctionLikeToExpression(method, undefined, container)
   );
   expression.setRange(method);
@@ -1779,7 +1779,7 @@ function visitCatchClause(node: qt.CatchClause): qt.CatchClause {
   let updated: qt.CatchClause;
   qf.assert.true(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
   if (node.variableDeclaration.name.kind === Syntax.BindingPattern) {
-    const temp = qf.create.tempVariable(undefined);
+    const temp = qf.make.tempVariable(undefined);
     const newVariableDeclaration = new qc.VariableDeclaration(temp);
     newVariableDeclaration.setRange(node.variableDeclaration);
     const vars = flattenDestructuringBinding(node.variableDeclaration, visitor, context, FlattenLevel.All, temp);
@@ -1821,7 +1821,7 @@ function visitAccessorDeclaration(node: qt.AccessorDeclaration): qt.AccessorDecl
   return updated;
 }
 function visitShorthandPropertyAssignment(node: qt.ShorthandPropertyAssignment): qt.ObjectLiteralElemLike {
-  return new qc.PropertyAssignment(node.name, qf.create.synthesizedClone(node.name)).setRange(node);
+  return new qc.PropertyAssignment(node.name, qf.make.synthesizedClone(node.name)).setRange(node);
 }
 function visitComputedPropertyName(node: qt.ComputedPropertyName) {
   return qf.visit.children(node, visitor, context);
@@ -1866,7 +1866,7 @@ function visitTypeScriptClassWrapper(node: qt.CallExpression) {
     }
     statements.push(funcStatements[classBodyStart]);
     classBodyStart++;
-    statements.push(new qc.ExpressionStatement(qf.create.assignment(aliasAssignment.left, cast(variable.name, qf.is.identifier))));
+    statements.push(new qc.ExpressionStatement(qf.make.assignment(aliasAssignment.left, cast(variable.name, qf.is.identifier))));
   }
   while (elemAt(funcStatements, classBodyEnd)?.kind !== Syntax.ReturnStatement) {
     classBodyEnd--;
@@ -1893,19 +1893,19 @@ function visitImmediateSuperCallInBody(node: qt.CallExpression) {
 }
 function visitCallExpressionWithPotentialCapturedThisAssignment(node: qt.CallExpression, assignToCapturedThis: boolean): qt.CallExpression | qt.BinaryExpression {
   if (node.trafoFlags & TrafoFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qf.is.superProperty(qf.skip.outerExpressions(node.expression))) {
-    const { target, thisArg } = qf.create.callBinding(node.expression, hoistVariableDeclaration);
+    const { target, thisArg } = qf.make.callBinding(node.expression, hoistVariableDeclaration);
     if (node.expression.kind === Syntax.SuperKeyword) {
       qf.emit.setFlags(thisArg, EmitFlags.NoSubstitution);
     }
     let resultingCall: qt.CallExpression | qt.BinaryExpression;
     if (node.trafoFlags & TrafoFlags.ContainsRestOrSpread) {
-      resultingCall = qf.create.functionApply(
+      resultingCall = qf.make.functionApply(
         qf.visit.node(target, callExpressionVisitor, isExpression),
         node.expression.kind === Syntax.SuperKeyword ? thisArg : qf.visit.node(thisArg, visitor, isExpression),
         transformAndSpreadElems(node.args, false)
       );
     } else {
-      resultingCall = qf.create.functionCall(
+      resultingCall = qf.make.functionCall(
         qf.visit.node(target, callExpressionVisitor, isExpression),
         node.expression.kind === Syntax.SuperKeyword ? thisArg : qf.visit.node(thisArg, visitor, isExpression),
         Nodes.visit(node.args, visitor, isExpression),
@@ -1913,8 +1913,8 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: qt.CallExp
       );
     }
     if (node.expression.kind === Syntax.SuperKeyword) {
-      const initer = qf.create.logicalOr(resultingCall, createActualThis());
-      resultingCall = assignToCapturedThis ? qf.create.assignment(qf.create.fileLevelUniqueName('_this'), initer) : initer;
+      const initer = qf.make.logicalOr(resultingCall, createActualThis());
+      resultingCall = assignToCapturedThis ? qf.make.assignment(qf.make.fileLevelUniqueName('_this'), initer) : initer;
     }
     return resultingCall.setOriginal(node);
   }
@@ -1922,9 +1922,9 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: qt.CallExp
 }
 function visitNewExpression(node: qt.NewExpression): qt.LeftExpression {
   if (some(node.args, isSpreadElem)) {
-    const { target, thisArg } = qf.create.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
+    const { target, thisArg } = qf.make.callBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
     return new qc.NewExpression(
-      qf.create.functionApply(qf.visit.node(target, visitor, isExpression), thisArg, transformAndSpreadElems(new Nodes([qc.VoidExpression.zero(), ...node.args!]), false)),
+      qf.make.functionApply(qf.visit.node(target, visitor, isExpression), thisArg, transformAndSpreadElems(new Nodes([qc.VoidExpression.zero(), ...node.args!]), false)),
       undefined,
       []
     );
@@ -1995,7 +1995,7 @@ function visitTemplateExpression(node: qt.TemplateExpression): qc.Expression {
   const expressions: qc.Expression[] = [];
   addTemplateHead(expressions, node);
   addTemplateSpans(expressions, node);
-  const expression = reduceLeft(expressions, qf.create.add)!;
+  const expression = reduceLeft(expressions, qf.make.add)!;
   if (qf.is.synthesized(expression)) {
     expression.pos = node.pos;
     expression.end = node.end;
@@ -2022,13 +2022,13 @@ function addTemplateSpans(expressions: qc.Expression[], node: qt.TemplateExpress
 }
 function visitSuperKeyword(isExpressionOfCall: boolean): qt.LeftExpression {
   return hierarchyFacts & HierarchyFacts.NonStaticClassElem && !isExpressionOfCall
-    ? new qc.PropertyAccessExpression(qf.create.fileLevelUniqueName('_super'), 'prototype')
-    : qf.create.fileLevelUniqueName('_super');
+    ? new qc.PropertyAccessExpression(qf.make.fileLevelUniqueName('_super'), 'prototype')
+    : qf.make.fileLevelUniqueName('_super');
 }
 function visitMetaProperty(node: qt.MetaProperty) {
   if (node.keywordToken === Syntax.NewKeyword && node.name.escapedText === 'target') {
     hierarchyFacts |= HierarchyFacts.NewTarget;
-    return qf.create.fileLevelUniqueName('_newTarget');
+    return qf.make.fileLevelUniqueName('_newTarget');
   }
   return node;
 }
@@ -2114,7 +2114,7 @@ function isPartOfClassBody(declaration: qt.ClassLikeDeclaration, node: qc.Identi
   return false;
 }
 function substituteThisKeyword(node: qt.PrimaryExpression): qt.PrimaryExpression {
-  if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) return qf.create.fileLevelUniqueName('_this').setRange(node);
+  if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) return qf.make.fileLevelUniqueName('_this').setRange(node);
   return node;
 }
 function getClassMemberPrefix(node: qt.ClassExpression | qt.ClassDeclaration, member: qt.ClassElem) {
@@ -2136,7 +2136,7 @@ function hasSynthesizedDefaultSuperCall(constructor: qt.ConstructorDeclaration |
 }
 function createExtendsHelper(context: qt.TrafoContext, name: qc.Identifier) {
   context.requestEmitHelper(extendsHelper);
-  return new qc.CallExpression(getUnscopedHelperName('__extends'), undefined, [name, qf.create.fileLevelUniqueName('_super')]);
+  return new qc.CallExpression(getUnscopedHelperName('__extends'), undefined, [name, qf.make.fileLevelUniqueName('_super')]);
 }
 export const extendsHelper: qt.UnscopedEmitHelper = {
   name: 'typescript:extends',

@@ -245,7 +245,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
             if (n === 'export=' || !(exportsWithDuplicate && exportsWithDuplicate.length) || symbols.has(n)) return;
             for (const n of exportsWithDuplicate) {
               diagnostics.add(
-                qf.create.diagForNode(
+                qf.make.diagForNode(
                   n,
                   qd.msgs.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
                   lookupTable.get(n)!.specText,
@@ -555,7 +555,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     addResult(
       new qc.EnumDeclaration(
         undefined,
-        qf.create.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
+        qf.make.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
         this.getInternalSymbol(symbolName),
         map(
           qu.filter(qf.get.propertiesOfType(this.typeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
@@ -1371,7 +1371,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
           if (!isImplementationCompatibleWithOverload(bs, s)) {
             addRelatedInfo(
               error(s.declaration, qd.This_overload_signature_is_not_compatible_with_its_implementation_signature),
-              qf.create.diagForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
+              qf.make.diagForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
             );
             break;
           }
@@ -1497,7 +1497,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         const message = isExport ? qd._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type : qd._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
         const relatedMessage = isExport ? qd._0_was_exported_here : qd._0_was_imported_here;
         const unescName = qy.get.unescUnderscores(name);
-        addRelatedInfo(error(useSite, message, unescName), qf.create.diagForNode(typeOnlyDeclaration, relatedMessage, unescName));
+        addRelatedInfo(error(useSite, message, unescName), qf.make.diagForNode(typeOnlyDeclaration, relatedMessage, unescName));
       }
     }
   }
@@ -2115,7 +2115,7 @@ export class Signature extends qc.Signature {
     const params = combineUnionParams(left, right);
     const thisParam = combineUnionThisParam(left.thisParam, right.thisParam);
     const minArgCount = Math.max(left.minArgCount, right.minArgCount);
-    const result = qf.create.signature(d, left.typeParams || right.typeParams, thisParam, params, undefined, undefined, minArgCount, (left.flags | right.flags) & SignatureFlags.PropagatingFlags);
+    const result = qf.make.signature(d, left.typeParams || right.typeParams, thisParam, params, undefined, undefined, minArgCount, (left.flags | right.flags) & SignatureFlags.PropagatingFlags);
     result.unions = concatenate(left.unions || [left], [right]);
     return result;
   }
@@ -2367,7 +2367,7 @@ export class Signature extends qc.Signature {
     return;
   }
   cloneSignature(sig: Signature): Signature {
-    const result = qf.create.signature(sig.declaration, sig.typeParams, sig.thisParam, sig.params, undefined, undefined, sig.minArgCount, sig.flags & SignatureFlags.PropagatingFlags);
+    const result = qf.make.signature(sig.declaration, sig.typeParams, sig.thisParam, sig.params, undefined, undefined, sig.minArgCount, sig.flags & SignatureFlags.PropagatingFlags);
     result.target = sig.target;
     result.mapper = sig.mapper;
     result.unions = sig.unions;

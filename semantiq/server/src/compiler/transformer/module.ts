@@ -84,7 +84,7 @@ export function transformModule(context: qt.TrafoContext) {
         new qc.ExpressionStatement(
           reduceLeft(
             currentModuleInfo.exportedNames,
-            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), new qc.Identifier(idText(nextId))), prev),
+            (prev, nextId) => qf.make.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), new qc.Identifier(idText(nextId))), prev),
             qc.VoidExpression.zero() as qt.Expression
           )
         )
@@ -143,21 +143,21 @@ export function transformModule(context: qt.TrafoContext) {
       new qc.Block(
         [
           new qc.IfStatement(
-            qf.create.logicalAnd(qf.create.typeCheck(new qc.Identifier('module'), 'object'), qf.create.typeCheck(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), 'object')),
+            qf.make.logicalAnd(qf.make.typeCheck(new qc.Identifier('module'), 'object'), qf.make.typeCheck(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), 'object')),
             new qc.Block([
               new qc.VariableStatement(undefined, [
                 new qc.VariableDeclaration('v', undefined, new qc.CallExpression(new qc.Identifier('factory'), undefined, [new qc.Identifier('require'), new qc.Identifier('exports')])),
               ]),
               qf.emit.setFlags(
                 new qc.IfStatement(
-                  qf.create.strictInequality(new qc.Identifier('v'), new qc.Identifier('undefined')),
-                  new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), new qc.Identifier('v')))
+                  qf.make.strictInequality(new qc.Identifier('v'), new qc.Identifier('undefined')),
+                  new qc.ExpressionStatement(qf.make.assignment(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), new qc.Identifier('v')))
                 ),
                 EmitFlags.SingleLine
               ),
             ]),
             new qc.IfStatement(
-              qf.create.logicalAnd(qf.create.typeCheck(new qc.Identifier('define'), 'function'), new qc.PropertyAccessExpression(new qc.Identifier('define'), 'amd')),
+              qf.make.logicalAnd(qf.make.typeCheck(new qc.Identifier('define'), 'function'), new qc.PropertyAccessExpression(new qc.Identifier('define'), 'amd')),
               new qc.Block([
                 new qc.ExpressionStatement(
                   new qc.CallExpression(new qc.Identifier('define'), undefined, [
@@ -230,7 +230,7 @@ export function transformModule(context: qt.TrafoContext) {
     if (expr === name) {
       return;
     }
-    return new qc.ExpressionStatement(qf.create.assignment(name, expr));
+    return new qc.ExpressionStatement(qf.make.assignment(name, expr));
   }
   function transformAsynchronousModuleBody(node: qt.SourceFile) {
     startLexicalEnv();
@@ -245,7 +245,7 @@ export function transformModule(context: qt.TrafoContext) {
         new qc.ExpressionStatement(
           reduceLeft(
             currentModuleInfo.exportedNames,
-            (prev, nextId) => qf.create.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), new qc.Identifier(idText(nextId))), prev),
+            (prev, nextId) => qf.make.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), new qc.Identifier(idText(nextId))), prev),
             qc.VoidExpression.zero() as qt.Expression
           )
         )
@@ -274,7 +274,7 @@ export function transformModule(context: qt.TrafoContext) {
           qf.emit.setFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
           statements.push(statement);
         } else {
-          const statement = new qc.ExpressionStatement(qf.create.assignment(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), expressionResult));
+          const statement = new qc.ExpressionStatement(qf.make.assignment(new qc.PropertyAccessExpression(new qc.Identifier('module'), 'exports'), expressionResult));
           statement.setRange(currentModuleInfo.exportEquals);
           qf.emit.setFlags(statement, EmitFlags.NoComments);
           statements.push(statement);
@@ -368,23 +368,23 @@ export function transformModule(context: qt.TrafoContext) {
         ? arg
         : arg.kind === Syntax.StringLiteral
         ? qc.asLiteral(arg)
-        : qf.emit.setFlags(setRange(qf.create.synthesizedClone(arg), arg), EmitFlags.NoComments);
+        : qf.emit.setFlags(setRange(qf.make.synthesizedClone(arg), arg), EmitFlags.NoComments);
       return new qc.ConditionalExpression(
         new qc.Identifier('__syncRequire'),
         createImportCallExpressionCommonJS(arg, containsLexicalThis),
         createImportCallExpressionAMD(argClone, containsLexicalThis)
       );
     } else {
-      const temp = qf.create.tempVariable(hoistVariableDeclaration);
-      return qf.create.comma(
-        qf.create.assignment(temp, arg),
+      const temp = qf.make.tempVariable(hoistVariableDeclaration);
+      return qf.make.comma(
+        qf.make.assignment(temp, arg),
         new qc.ConditionalExpression(new qc.Identifier('__syncRequire'), createImportCallExpressionCommonJS(temp, containsLexicalThis), createImportCallExpressionAMD(temp, containsLexicalThis))
       );
     }
   }
   function createImportCallExpressionAMD(arg: qt.Expression | undefined, containsLexicalThis: boolean): qt.Expression {
-    const resolve = qf.create.uniqueName('resolve');
-    const reject = qf.create.uniqueName('reject');
+    const resolve = qf.make.uniqueName('resolve');
+    const reject = qf.make.uniqueName('reject');
     const params = [new qc.ParamDeclaration(resolve), new qc.ParamDeclaration(reject)];
     const body = new qc.Block([
       new qc.ExpressionStatement(new qc.CallExpression(new qc.Identifier('require'), undefined, [new qc.ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
@@ -451,11 +451,11 @@ export function transformModule(context: qt.TrafoContext) {
       else {
         const variables: qt.VariableDeclaration[] = [];
         if (namespaceDeclaration && !qf.is.defaultImport(node)) {
-          variables.push(new qc.VariableDeclaration(qf.create.synthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
+          variables.push(new qc.VariableDeclaration(qf.make.synthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
         } else {
           variables.push(new qc.VariableDeclaration(qf.get.generatedNameForNode(node), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
           if (namespaceDeclaration && qf.is.defaultImport(node)) {
-            variables.push(new qc.VariableDeclaration(qf.create.synthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)));
+            variables.push(new qc.VariableDeclaration(qf.make.synthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)));
           }
         }
         statements = append(
@@ -472,7 +472,7 @@ export function transformModule(context: qt.TrafoContext) {
         new qc.VariableStatement(
           undefined,
           new qc.VariableDeclarationList(
-            [setRange(new qc.VariableDeclaration(qf.create.synthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)).setOriginal(node))],
+            [setRange(new qc.VariableDeclaration(qf.make.synthesizedClone(namespaceDeclaration.name), undefined, qf.get.generatedNameForNode(node)).setOriginal(node))],
             languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
           )
         )
@@ -507,7 +507,7 @@ export function transformModule(context: qt.TrafoContext) {
             new qc.VariableStatement(
               undefined,
               new qc.VariableDeclarationList(
-                [new qc.VariableDeclaration(qf.create.synthesizedClone(node.name), undefined, createRequireCall(node))],
+                [new qc.VariableDeclaration(qf.make.synthesizedClone(node.name), undefined, createRequireCall(node))],
                 languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
               )
             ).setRange(node),
@@ -562,7 +562,7 @@ export function transformModule(context: qt.TrafoContext) {
         setOriginalNode(
           new qc.ExpressionStatement(
             createExportExpression(
-              qf.create.synthesizedClone(node.exportClause.name),
+              qf.make.synthesizedClone(node.exportClause.name),
               moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : new qc.Identifier(idText(node.exportClause.name))
             )
           ).setRange(node),
@@ -681,19 +681,19 @@ export function transformModule(context: qt.TrafoContext) {
   function createAllExportExpressions(name: qt.Identifier, value: qt.Expression, location?: TextRange) {
     const exportedNames = getExports(name);
     if (exportedNames) {
-      let expression: qt.Expression = qf.is.exportName(name) ? value : qf.create.assignment(name, value);
+      let expression: qt.Expression = qf.is.exportName(name) ? value : qf.make.assignment(name, value);
       for (const exportName of exportedNames) {
         qf.emit.setFlags(expression, EmitFlags.NoSubstitution);
         expression = createExportExpression(exportName, expression, location);
       }
       return expression;
     }
-    return qf.create.assignment(name, value);
+    return qf.make.assignment(name, value);
   }
   function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
     if (node.name.kind === Syntax.BindingPattern) return flattenDestructuringAssignment(qf.visit.node(node, moduleExpressionElemVisitor), false, createAllExportExpressions);
     else {
-      return qf.create.assignment(
+      return qf.make.assignment(
         setRange(new qc.PropertyAccessExpression(new qc.Identifier('exports'), node.name), node.name),
         node.initer ? qf.visit.node(node.initer, moduleExpressionElemVisitor) : qc.VoidExpression.zero()
       );
@@ -831,7 +831,7 @@ export function transformModule(context: qt.TrafoContext) {
               new qc.PropertyAssignment('get', new qc.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new qc.Block([new qc.ReturnStatement(value)]))),
             ]),
           ])
-        : qf.create.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), qf.create.synthesizedClone(name)), value),
+        : qf.make.assignment(new qc.PropertyAccessExpression(new qc.Identifier('exports'), qf.make.synthesizedClone(name)), value),
       location
     );
   }
@@ -868,7 +868,7 @@ export function transformModule(context: qt.TrafoContext) {
     const exportedOrImportedName = substituteExpressionIdentifier(name);
     if (exportedOrImportedName !== name) {
       if (node.objectAssignmentIniter) {
-        const initer = qf.create.assignment(exportedOrImportedName, node.objectAssignmentIniter);
+        const initer = qf.make.assignment(exportedOrImportedName, node.objectAssignmentIniter);
         return setRange(new qc.PropertyAssignment(name, initer), node);
       }
       return setRange(new qc.PropertyAssignment(name, exportedOrImportedName), node);
@@ -895,13 +895,13 @@ export function transformModule(context: qt.TrafoContext) {
     }
     if (!qf.is.generatedIdentifier(node) && !qf.is.localName(node)) {
       const exportContainer = resolver.getReferencedExportContainer(node, qf.is.exportName(node));
-      if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new qc.Identifier('exports'), qf.create.synthesizedClone(node)), node);
+      if (exportContainer && exportContainer.kind === Syntax.SourceFile) return setRange(new qc.PropertyAccessExpression(new qc.Identifier('exports'), qf.make.synthesizedClone(node)), node);
       const importDeclaration = resolver.getReferencedImportDeclaration(node);
       if (importDeclaration) {
         if (importDeclaration.kind === Syntax.ImportClause) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
         else if (importDeclaration.kind === Syntax.ImportSpecifier) {
           const name = importDeclaration.propertyName || importDeclaration.name;
-          return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.create.synthesizedClone(name)), node);
+          return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.make.synthesizedClone(name)), node);
         }
       }
     }
@@ -1047,7 +1047,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
     if (qf.is.externalModule(node) || compilerOpts.isolatedModules) {
       const result = updateExternalModule(node);
       if (!qf.is.externalModule(node) || some(result.statements, isExternalModuleIndicator)) return result;
-      return qp_updateSourceNode(result, setRange(new Nodes([...result.statements, qf.create.emptyExports()]), result.statements));
+      return qp_updateSourceNode(result, setRange(new Nodes([...result.statements, qf.make.emptyExports()]), result.statements));
     }
     return node;
   }
@@ -1108,7 +1108,7 @@ export function transformECMAScriptModule(context: qt.TrafoContext) {
     const name = idText(node);
     let substitution = helperNameSubstitutions!.get(name);
     if (!substitution) {
-      helperNameSubstitutions!.set(name, (substitution = qf.create.fileLevelUniqueName(name)));
+      helperNameSubstitutions!.set(name, (substitution = qf.make.fileLevelUniqueName(name)));
     }
     return substitution;
   }
@@ -1152,9 +1152,9 @@ export function transformSystemModule(context: qt.TrafoContext) {
     currentSourceFile = node;
     enclosingBlockScopedContainer = node;
     moduleInfo = moduleInfoMap[id] = collectExternalModuleInfo(node, resolver, compilerOpts);
-    exportFunction = qf.create.uniqueName('exports');
+    exportFunction = qf.make.uniqueName('exports');
     exportFunctionsMap[id] = exportFunction;
-    contextObject = contextObjectMap[id] = qf.create.uniqueName('context');
+    contextObject = contextObjectMap[id] = qf.make.uniqueName('context');
     const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
     const moduleBodyFunction = new qc.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParamDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
@@ -1219,7 +1219,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     statements.push(
       new qc.VariableStatement(
         undefined,
-        new qc.VariableDeclarationList([new qc.VariableDeclaration('__moduleName', undefined, qf.create.logicalAnd(contextObject, new qc.PropertyAccessExpression(contextObject, 'id')))])
+        new qc.VariableDeclarationList([new qc.VariableDeclaration('__moduleName', undefined, qf.make.logicalAnd(contextObject, new qc.PropertyAccessExpression(contextObject, 'id')))])
       )
     );
     qf.visit.node(moduleInfo.externalHelpersImportDeclaration, sourceElemVisitor, qf.is.statement);
@@ -1227,7 +1227,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     qu.addRange(statements, hoistedStatements);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnv());
     const exportStarFunction = addExportStarIfNeeded(statements)!;
-    const modifiers = node.trafoFlags & TrafoFlags.ContainsAwait ? qf.create.modifiersFromFlags(ModifierFlags.Async) : undefined;
+    const modifiers = node.trafoFlags & TrafoFlags.ContainsAwait ? qf.make.modifiersFromFlags(ModifierFlags.Async) : undefined;
     const moduleObject = new qc.ObjectLiteralExpression([
       new qc.PropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
       new qc.PropertyAssignment('execute', new qc.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new qc.Block(executeStatements, true))),
@@ -1278,7 +1278,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
         exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(externalImport.exportClause.name)), new qc.BooleanLiteral(true)));
       }
     }
-    const exportedNamesStorageRef = qf.create.uniqueName('exportedNames');
+    const exportedNamesStorageRef = qf.make.uniqueName('exportedNames');
     statements.push(
       new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, new qc.ObjectLiteralExpression(exportedNames, true))]))
     );
@@ -1287,13 +1287,13 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return exportStarFunction.name;
   }
   function createExportStarFunction(localNames: qt.Identifier | undefined) {
-    const exportStarFunction = qf.create.uniqueName('exportStar');
+    const exportStarFunction = qf.make.uniqueName('exportStar');
     const m = new qc.Identifier('m');
     const n = new qc.Identifier('n');
     const exports = new qc.Identifier('exports');
-    let condition: qt.Expression = qf.create.strictInequality(n, qc.asLiteral('default'));
+    let condition: qt.Expression = qf.make.strictInequality(n, qc.asLiteral('default'));
     if (localNames) {
-      condition = qf.create.logicalAnd(condition, qf.create.logicalNot(new qc.CallExpression(new qc.PropertyAccessExpression(localNames, 'hasOwnProperty'), undefined, [n])));
+      condition = qf.make.logicalAnd(condition, qf.make.logicalNot(new qc.CallExpression(new qc.PropertyAccessExpression(localNames, 'hasOwnProperty'), undefined, [n])));
     }
     return new qc.FunctionDeclaration(
       undefined,
@@ -1311,7 +1311,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
             m,
             new qc.Block([
               qf.emit.setFlags(
-                new qc.IfStatement(condition, new qc.ExpressionStatement(qf.create.assignment(new qc.ElemAccessExpression(exports, n), new qc.ElemAccessExpression(m, n)))),
+                new qc.IfStatement(condition, new qc.ExpressionStatement(qf.make.assignment(new qc.ElemAccessExpression(exports, n), new qc.ElemAccessExpression(m, n)))),
                 EmitFlags.SingleLine
               ),
             ])
@@ -1326,7 +1326,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     const setters: qt.Expression[] = [];
     for (const group of dependencyGroups) {
       const localName = forEach(group.externalImports, (i) => qf.decl.localNameForExternalImport(i, currentSourceFile));
-      const paramName = localName ? qf.get.generatedNameForNode(localName) : qf.create.uniqueName('');
+      const paramName = localName ? qf.get.generatedNameForNode(localName) : qf.make.uniqueName('');
       const statements: qt.Statement[] = [];
       for (const entry of group.externalImports) {
         const importVariableName = qf.decl.localNameForExternalImport(entry, currentSourceFile)!;
@@ -1337,7 +1337,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
             }
           case Syntax.ImportEqualsDeclaration:
             qf.assert.true(importVariableName !== undefined);
-            statements.push(new qc.ExpressionStatement(qf.create.assignment(importVariableName, paramName)));
+            statements.push(new qc.ExpressionStatement(qf.make.assignment(importVariableName, paramName)));
             break;
           case Syntax.ExportDeclaration:
             qf.assert.true(importVariableName !== undefined);
@@ -1449,7 +1449,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
     statements = append(
       statements,
       new qc.ExpressionStatement(
-        qf.create.assignment(
+        qf.make.assignment(
           name,
           new qc.ClassExpression(
             undefined,
@@ -1501,7 +1501,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
         }
       }
     } else {
-      hoistVariableDeclaration(qf.create.synthesizedClone(node.name));
+      hoistVariableDeclaration(qf.make.synthesizedClone(node.name));
     }
   }
   function shouldHoistVariableDeclarationList(node: qt.VariableDeclarationList) {
@@ -1510,9 +1510,9 @@ export function transformSystemModule(context: qt.TrafoContext) {
   function transformInitializedVariable(node: qt.VariableDeclaration, isExportedDeclaration: boolean): qt.Expression {
     const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
     return node.name.kind === Syntax.BindingPattern
-      ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, false, qf.create.assignment)
+      ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, false, qf.make.assignment)
       : node.initer
-      ? qf.create.assignment(node.name, qf.visit.node(node.initer, destructuringAndImportCallVisitor, isExpression))
+      ? qf.make.assignment(node.name, qf.visit.node(node.initer, destructuringAndImportCallVisitor, isExpression))
       : node.name;
   }
   function createExportedVariableAssignment(name: qt.Identifier, value: qt.Expression, location?: TextRange) {
@@ -1522,10 +1522,10 @@ export function transformSystemModule(context: qt.TrafoContext) {
     return createVariableAssignment(name, value, location, false);
   }
   function createVariableAssignment(name: qt.Identifier, value: qt.Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
-    hoistVariableDeclaration(qf.create.synthesizedClone(name));
+    hoistVariableDeclaration(qf.make.synthesizedClone(name));
     return isExportedDeclaration
-      ? createExportExpression(name, preventSubstitution(setRange(qf.create.assignment(name, value), location)))
-      : preventSubstitution(setRange(qf.create.assignment(name, value), location));
+      ? createExportExpression(name, preventSubstitution(setRange(qf.make.assignment(name, value), location)))
+      : preventSubstitution(setRange(qf.make.assignment(name, value), location));
   }
   function visitMergeDeclarationMarker(node: qt.MergeDeclarationMarker): VisitResult<qt.Statement> {
     if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === Syntax.VariableStatement) {
@@ -1870,14 +1870,14 @@ export function transformSystemModule(context: qt.TrafoContext) {
       if (importDeclaration) {
         if (importDeclaration.kind === Syntax.ImportClause)
           return setRange(
-            new qc.PropertyAssignment(qf.create.synthesizedClone(name), new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default'))),
+            new qc.PropertyAssignment(qf.make.synthesizedClone(name), new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default'))),
             node
           );
         else if (importDeclaration.kind === Syntax.ImportSpecifier) {
           return setRange(
             new qc.PropertyAssignment(
-              qf.create.synthesizedClone(name),
-              new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.create.synthesizedClone(importDeclaration.propertyName || importDeclaration.name))
+              qf.make.synthesizedClone(name),
+              new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.make.synthesizedClone(importDeclaration.propertyName || importDeclaration.name))
             ),
             node
           );
@@ -1912,7 +1912,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
         if (importDeclaration.kind === Syntax.ImportClause) return setRange(new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent), new qc.Identifier('default')), node);
         else if (importDeclaration.kind === Syntax.ImportSpecifier)
           return setRange(
-            new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.create.synthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
+            new qc.PropertyAccessExpression(qf.get.generatedNameForNode(importDeclaration.parent.parent.parent), qf.make.synthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
             node
           );
       }
@@ -1953,7 +1953,7 @@ export function transformSystemModule(context: qt.TrafoContext) {
           expression = createExportExpression(exportName, preventSubstitution(expression));
         }
         if (node.kind === Syntax.PostfixUnaryExpression) {
-          expression = node.operator === Syntax.Plus2Token ? qf.create.subtract(preventSubstitution(expression), qc.asLiteral(1)) : qf.create.add(preventSubstitution(expression), qc.asLiteral(1));
+          expression = node.operator === Syntax.Plus2Token ? qf.make.subtract(preventSubstitution(expression), qc.asLiteral(1)) : qf.make.add(preventSubstitution(expression), qc.asLiteral(1));
         }
         return expression;
       }

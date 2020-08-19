@@ -940,10 +940,10 @@ export interface ForStatement extends IterationStmt {
 }
 export interface Frame extends qu.Frame {
   calc: unknown;
-  create: unknown;
   decl: unknown;
   emit: unknown;
   format: unknown;
+  make: unknown;
   nest: unknown;
   sign: unknown;
   skip: unknown;

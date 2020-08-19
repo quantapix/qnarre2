@@ -1137,7 +1137,7 @@ function create() {
       next.tok();
       processCommentPragmas((source as {}) as PragmaContext, t);
       const reportPragmaDiagnostic = (pos: number, end: number, diagnostic: qd.Message) => {
-        diags.push(qf.create.fileDiag(source, pos, end, diagnostic));
+        diags.push(qf.make.fileDiag(source, pos, end, diagnostic));
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
       source.statements = ctx.parseList(Context.SourceElems, parse.statement);
@@ -2453,7 +2453,7 @@ function create() {
       if (!this.expected(Syntax.CloseBraceToken)) {
         const e = lastOrUndefined(diags);
         if (e && e.code === qd.msgs._0_expected.code) {
-          addRelatedInfo(e, qf.create.fileDiag(source, p, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
+          addRelatedInfo(e, qf.make.fileDiag(source, p, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
         }
       }
       return finishNode(n);
@@ -2520,7 +2520,7 @@ function create() {
         if (!this.expected(Syntax.CloseBraceToken)) {
           const e = lastOrUndefined(diags);
           if (e && e.code === qd.msgs._0_expected.code) {
-            addRelatedInfo(e, qf.create.fileDiag(source, openBracePosition, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
+            addRelatedInfo(e, qf.make.fileDiag(source, openBracePosition, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
           }
         }
       } else n.statements = create.missingList<qt.Statement>();
@@ -3333,7 +3333,7 @@ function create() {
     }
     errorAtPosition(start: number, length: number, m: qd.Message, arg0?: any) {
       const l = lastOrUndefined(diags);
-      if (!l || start !== l.start) diags.push(qf.create.fileDiag(source, start, length, m, arg0));
+      if (!l || start !== l.start) diags.push(qf.make.fileDiag(source, start, length, m, arg0));
       parseErrorBeforeNextFinishedNode = true;
     }
     errorAt(start: number, end: number, m: qd.Message, arg0?: any) {
@@ -4119,7 +4119,7 @@ function create() {
             if (childTypeTag) {
               parse.errorAtToken(qd.msgs.A_Doc_typedef_comment_may_not_contain_multiple_type_tags);
               const e = lastOrUndefined(diags);
-              if (e) addRelatedInfo(e, qf.create.diagForNode(source, qd.msgs.The_tag_was_first_specified_here));
+              if (e) addRelatedInfo(e, qf.make.diagForNode(source, qd.msgs.The_tag_was_first_specified_here));
               break;
             } else childTypeTag = child;
           } else n2.docPropertyTags = append(n2.docPropertyTags as MutableNodes<qt.DocPropertyTag>, child);

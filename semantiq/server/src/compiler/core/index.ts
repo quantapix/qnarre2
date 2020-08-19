@@ -8,7 +8,7 @@ import * as qu from '../utils';
 export { cloneMap, findAncestor } from './bases';
 export { Fsign, Fsymb, Ftype, newSign, newSymb, newType } from './groups';
 export { MutableNodes, Nodes, Signature, Symbol, SymbolTable, Type } from './bases';
-export { qf, Fcreate, Feach, Frame, Fget, Fhas, Fis, Fskip, newFrame, newIs, newHas } from './frame';
+export { qf, Fmake, Feach, Frame, Fget, Fhas, Fis, Fskip, newFrame, newIs, newHas } from './frame';
 export * from './classes';
 export function convertToFunctionBody(n: qt.ConciseBody, multiLine?: boolean) {
   return n.kind === Syntax.Block ? (n as qc.Block) : new qc.Block([new qc.ReturnStatement(n).setRange(n)], multiLine).setRange(n);
@@ -211,7 +211,7 @@ export namespace BindingOrAssignmentElem {
         return new qc.SpreadElem(e.name).setRange(e).setOriginal(e);
       }
       const e2 = convertToAssignmentElemTarget(e.name);
-      return e.initer ? qf.create.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
+      return e.initer ? qf.make.assignment(e2, e.initer).setRange(e).setOriginal(e) : e2;
     }
     qf.assert.node(e, isExpression);
     return <qt.Expression>e;
@@ -224,7 +224,7 @@ export namespace BindingOrAssignmentElem {
       }
       if (e.propertyName) {
         const e2 = convertToAssignmentElemTarget(e.name);
-        return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.create.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
+        return new qc.PropertyAssignment(e.propertyName, e.initer ? qf.make.assignment(e2, e.initer) : e2).setRange(e).setOriginal(e);
       }
       qf.assert.node(e.name, qf.is.identifier);
       return new qc.ShorthandPropertyAssignment(e.name, e.initer).setRange(e).setOriginal(e);
