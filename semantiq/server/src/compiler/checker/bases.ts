@@ -3,9 +3,18 @@ import { qf } from './frame';
 import { Syntax } from '../syntax';
 import * as qc from '../core';
 import * as qd from '../diags';
-import * as qt from '../types';
+import * as qt from './types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
+export class Type extends qc.Type {}
+export interface Ftype extends qc.Ftype {}
+export class Ftype {
+  unwrapReturnType(t: qt.Type, f: qt.FunctionFlags) {
+    const isGenerator = !!(f & qt.FunctionFlags.Generator);
+    const isAsync = !!(f & qt.FunctionFlags.Async);
+    return isGenerator ? getIterationTypeOfGeneratorFunctionReturnType(qt.IterationTypeKind.Return, t, isAsync) ?? errorType : isAsync ? getAwaitedType(t) ?? errorType : t;
+  }
+}
 export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   _checkFlags: CheckFlags;
   constructor(f: SymbolFlags, name: qu.__String, c?: CheckFlags) {
@@ -91,7 +100,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return cb(this);
   }
-  compareProperties(this: Symbol, targetProp: Symbol, compareTypes: (source: Type, target: Type) => Ternary): Ternary {
+  compareProperties(this: Symbol, targetProp: Symbol, compareTypes: (source: qt.Type, target: qt.Type) => Ternary): Ternary {
     if (this === targetProp) return Ternary.True;
     const sourcePropAccessibility = this.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier;
     const targetPropAccessibility = targetProp.declarationModifierFlags() & ModifierFlags.NonPublicAccessibilityModifier;
@@ -748,7 +757,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return;
   }
-  getTypeOfVariableOrParamOrProperty(): Type {
+  getTypeOfVariableOrParamOrProperty(): qt.Type {
     const ls = this.links;
     if (!ls.type) {
       const worker = () => {
@@ -823,7 +832,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getTypeOfAccessors(): qt.Type {
     const ls = this.links;
-    const worker = (): Type => {
+    const worker = (): qt.Type => {
       if (!pushTypeResolution(this, TypeSystemPropertyName.Type)) return errorType;
       let t = resolveTypeOfAccessors(this);
       if (!popTypeResolution()) {
@@ -867,7 +876,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const t = getBaseConstructorTypeOfClass(this.getDeclaredTypeOfClassOrInterface());
     return t.flags & qt.TypeFlags.TypeVariable ? t : t.flags & qt.TypeFlags.Intersection ? qf.find.up((t as qt.IntersectionType).types, (t) => !!(t.flags & qt.TypeFlags.TypeVariable)) : undefined;
   }
-  getTypeOfFuncClassEnumModule(): Type {
+  getTypeOfFuncClassEnumModule(): qt.Type {
     let ls = this.links;
     const originalLinks = ls;
     if (!ls.type) {
@@ -880,7 +889,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return ls.type;
   }
-  getTypeOfFuncClassEnumModuleWorker(): Type {
+  getTypeOfFuncClassEnumModuleWorker(): qt.Type {
     const d = this.valueDeclaration;
     if (this.flags & SymbolFlags.Module && this.isShorthandAmbientModule()) return anyType;
     else if (d && (d.kind === Syntax.BinaryExpression || (qf.is.accessExpression(d) && d.parent.kind === Syntax.BinaryExpression))) return qf.get.widenedTypeForAssignmentDeclaration(this);
@@ -901,11 +910,11 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return strictNullChecks && this.flags & SymbolFlags.Optional ? qf.get.optionalType(type) : type;
   }
-  getTypeOfEnumMember(): Type {
+  getTypeOfEnumMember(): qt.Type {
     const ls = this.links;
     return ls.type || (ls.type = getDeclaredTypeOfEnumMember(this));
   }
-  getTypeOfAlias(): Type {
+  getTypeOfAlias(): qt.Type {
     const ls = this.links;
     if (!ls.type) {
       const targetSymbol = this.resolveAlias();
@@ -913,7 +922,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return ls.type;
   }
-  getTypeOfInstantiatedSymbol(): Type {
+  getTypeOfInstantiatedSymbol(): qt.Type {
     const ls = this.links;
     if (!ls.type) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.Type)) return (ls.type = errorType);
@@ -998,7 +1007,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return <qt.InterfaceType>ls.declaredType;
   }
-  getDeclaredTypeOfTypeAlias(): Type {
+  getDeclaredTypeOfTypeAlias(): qt.Type {
     const ls = this.links;
     if (!ls.declaredType) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.DeclaredType)) return errorType;
@@ -1034,12 +1043,12 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     return (ls.enumKind = hasNonLiteralMember ? qt.EnumKind.Numeric : qt.EnumKind.Literal);
   }
-  getDeclaredTypeOfEnum(): Type {
+  getDeclaredTypeOfEnum(): qt.Type {
     const ls = this.links;
     if (ls.declaredType) return ls.declaredType;
     if (this.getEnumKind() === qt.EnumKind.Literal) {
       enumCount++;
-      const memberTypeList: Type[] = [];
+      const memberTypeList: qt.Type[] = [];
       for (const d of this.declarations ?? []) {
         if (d.kind === Syntax.EnumDeclaration) {
           for (const m of (<qt.EnumDeclaration>d).members) {
@@ -1063,7 +1072,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     e.symbol = this;
     return (ls.declaredType = e);
   }
-  getDeclaredTypeOfEnumMember(): Type {
+  getDeclaredTypeOfEnumMember(): qt.Type {
     const ls = this.links;
     if (!ls.declaredType) {
       const e = this.getParentOfSymbol()!.getDeclaredTypeOfEnum();
@@ -1075,14 +1084,14 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const ls = this.links;
     return ls.declaredType || (ls.declaredType = createTypeParam(this));
   }
-  getDeclaredTypeOfAlias(): Type {
+  getDeclaredTypeOfAlias(): qt.Type {
     const ls = this.links;
     return ls.declaredType || (ls.declaredType = this.resolveAlias().getDeclaredTypeOfSymbol());
   }
-  getDeclaredTypeOfSymbol(): Type {
+  getDeclaredTypeOfSymbol(): qt.Type {
     return this.tryGetDeclaredTypeOfSymbol() || errorType;
   }
-  tryGetDeclaredTypeOfSymbol(): Type | undefined {
+  tryGetDeclaredTypeOfSymbol(): qt.Type | undefined {
     if (this.flags & (SymbolFlags.Class | SymbolFlags.Interface)) return this.getDeclaredTypeOfClassOrInterface();
     if (this.flags & SymbolFlags.TypeAlias) return this.getDeclaredTypeOfTypeAlias();
     if (this.flags & SymbolFlags.TypeParam) return this.getDeclaredTypeOfTypeParam();
@@ -1678,409 +1687,6 @@ export class SymbolTable extends qc.SymbolTable<Symbol> {
     return r;
   }
 }
-export class Type extends qc.Type {}
-export interface Ftype extends qc.Ftype {}
-export class Ftype {
-  includeMixinType(type: Type, types: readonly Type[], mixinFlags: readonly boolean[], index: number): Type {
-    const mixedTypes: Type[] = [];
-    for (let i = 0; i < types.length; i++) {
-      if (i === index) mixedTypes.push(type);
-      else if (mixinFlags[i]) {
-        mixedTypes.push(qf.get.returnTypeOfSignature(getSignaturesOfType(types[i], qt.SignatureKind.Construct)[0]));
-      }
-    }
-    return qf.get.intersectionType(mixedTypes);
-  }
-  prependTypeMapping(source: Type, target: Type, mapper: qt.TypeMapper | undefined) {
-    return !mapper ? makeUnaryTypeMapper(source, target) : makeCompositeTypeMapper(TypeMapKind.Merged, makeUnaryTypeMapper(source, target), mapper);
-  }
-  typeCouldHaveTopLevelSingletonTypes(t: Type): boolean {
-    if (t.flags & qt.TypeFlags.UnionOrIntersection) return !!forEach((t as qt.IntersectionType).types, typeCouldHaveTopLevelSingletonTypes);
-    if (t.flags & qt.TypeFlags.Instantiable) {
-      const c = getConstraintOfType(t);
-      if (c) return typeCouldHaveTopLevelSingletonTypes(c);
-    }
-    return this.unit(t);
-  }
-  unwrapReturnType(returnType: Type, functionFlags: FunctionFlags) {
-    const isGenerator = !!(functionFlags & FunctionFlags.Generator);
-    const isAsync = !!(functionFlags & FunctionFlags.Async);
-    return isGenerator ? getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Return, returnType, isAsync) ?? errorType : isAsync ? getAwaitedType(returnType) ?? errorType : returnType;
-  }
-  findMatchingDiscriminantType(source: Type, target: Type, isRelatedTo: (source: Type, target: Type) => Ternary, skipPartial?: boolean) {
-    if (target.flags & qt.TypeFlags.Union && source.flags & (TypeFlags.Intersection | qt.TypeFlags.Object)) {
-      const sourceProperties = qf.get.propertiesOfType(source);
-      if (sourceProperties) {
-        const sourcePropertiesFiltered = findDiscriminantProperties(sourceProperties, target);
-        if (sourcePropertiesFiltered) {
-          return discriminateTypeByDiscriminableItems(
-            <qt.UnionType>target,
-            map(sourcePropertiesFiltered, (p) => [() => p.typeOfSymbol(), p.escName] as [() => Type, qu.__String]),
-            isRelatedTo,
-            undefined,
-            skipPartial
-          );
-        }
-      }
-    }
-    return;
-  }
-  findMatchingTypeReferenceOrTypeAliasReference(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    const sourceObjectFlags = getObjectFlags(source);
-    if (sourceObjectFlags & (ObjectFlags.Reference | ObjectFlags.Anonymous) && unionTarget.flags & qt.TypeFlags.Union) {
-      return qf.find.up(unionTarget.types, (target) => {
-        if (target.flags & qt.TypeFlags.Object) {
-          const overlapObjFlags = sourceObjectFlags & getObjectFlags(target);
-          if (overlapObjFlags & ObjectFlags.Reference) return (source as qt.TypeReference).target === (target as qt.TypeReference).target;
-          if (overlapObjFlags & ObjectFlags.Anonymous) return !!(source as qt.AnonymousType).aliasSymbol && (source as qt.AnonymousType).aliasSymbol === (target as qt.AnonymousType).aliasSymbol;
-        }
-        return false;
-      });
-    }
-  }
-  findBestTypeForObjectLiteral(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    if (getObjectFlags(source) & ObjectFlags.ObjectLiteral && forEachType(unionTarget, qf.type.is.arrayLike)) return qf.find.up(unionTarget.types, (t) => !qf.type.is.arrayLike(t));
-  }
-  findBestTypeForInvokable(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    let signatureKind = qt.SignatureKind.Call;
-    const hasSignatures = getSignaturesOfType(source, signatureKind).length > 0 || ((signatureKind = qt.SignatureKind.Construct), getSignaturesOfType(source, signatureKind).length > 0);
-    if (hasSignatures) return qf.find.up(unionTarget.types, (t) => getSignaturesOfType(t, signatureKind).length > 0);
-  }
-  findMostOverlappyType(source: Type, unionTarget: qt.UnionOrIntersectionType) {
-    let bestMatch: Type | undefined;
-    let matchingCount = 0;
-    for (const target of unionTarget.types) {
-      const overlap = qf.get.intersectionType([qf.get.indexType(source), qf.get.indexType(target)]);
-      if (overlap.flags & qt.TypeFlags.Index) {
-        bestMatch = target;
-        matchingCount = Infinity;
-      } else if (overlap.flags & qt.TypeFlags.Union) {
-        const len = length(filter((overlap as qt.UnionType).types, isUnitType));
-        if (len >= matchingCount) {
-          bestMatch = target;
-          matchingCount = len;
-        }
-      } else if (qf.type.is.unit(overlap) && 1 >= matchingCount) {
-        bestMatch = target;
-        matchingCount = 1;
-      }
-    }
-    return bestMatch;
-  }
-  setCachedIterationTypes(type: Type, cacheKey: qt.MatchingKeys<qt.IterableOrIteratorType, qt.IterationTypes | undefined>, cachedTypes: qt.IterationTypes) {
-    return ((type as qt.IterableOrIteratorType)[cacheKey] = cachedTypes);
-  }
-  convertAutoToAny(type: Type) {
-    return type === autoType ? anyType : type === autoArrayType ? anyArrayType : type;
-  }
-  maybeTypeOfKind(type: Type, kind: qt.TypeFlags): boolean {
-    if (type.flags & kind) return true;
-    if (type.flags & qt.TypeFlags.UnionOrIntersection) {
-      const types = (<qt.UnionOrIntersectionType>type).types;
-      for (const t of types) {
-        if (maybeTypeOfKind(t, kind)) return true;
-      }
-    }
-    return false;
-  }
-  allTypesAssignableToKind(source: Type, kind: qt.TypeFlags, strict?: boolean): boolean {
-    return source.flags & qt.TypeFlags.Union ? every((source as qt.UnionType).types, (subType) => allTypesAssignableToKind(subType, kind, strict)) : qf.type.is.assignableToKind(source, kind, strict);
-  }
-  typeMaybeAssignableTo(source: Type, target: Type) {
-    if (!(source.flags & qt.TypeFlags.Union)) return qf.type.is.assignableTo(source, target);
-    for (const t of (<qt.UnionType>source).types) {
-      if (qf.type.is.assignableTo(t, target)) return true;
-    }
-    return false;
-  }
-  eachTypeContainedIn(source: Type, types: Type[]) {
-    return source.flags & qt.TypeFlags.Union ? !forEach((<qt.UnionType>source).types, (t) => !contains(types, t)) : contains(types, source);
-  }
-  forEachType<T>(type: Type, f: (t: Type) => T | undefined): T | undefined {
-    return type.flags & qt.TypeFlags.Union ? forEach((<qt.UnionType>type).types, f) : f(type);
-  }
-  everyType(type: Type, f: (t: Type) => boolean): boolean {
-    return type.flags & qt.TypeFlags.Union ? every((<qt.UnionType>type).types, f) : f(type);
-  }
-  filterType(type: Type, f: (t: Type) => boolean): Type {
-    if (type.flags & qt.TypeFlags.Union) {
-      const types = (<qt.UnionType>type).types;
-      const filtered = filter(types, f);
-      return filtered === types ? type : qf.get.unionTypeFromSortedList(filtered, (<qt.UnionType>type).objectFlags);
-    }
-    return type.flags & qt.TypeFlags.Never || f(type) ? type : neverType;
-  }
-  countTypes(type: Type) {
-    return type.flags & qt.TypeFlags.Union ? (type as qt.UnionType).types.length : 1;
-  }
-  mapType(type: Type, mapper: (t: Type) => Type, noReductions?: boolean): Type;
-  mapType(type: Type, mapper: (t: Type) => Type | undefined, noReductions?: boolean): Type | undefined;
-  mapType(type: Type, mapper: (t: Type) => Type | undefined, noReductions?: boolean): Type | undefined {
-    if (type.flags & qt.TypeFlags.Never) return type;
-    if (!(type.flags & qt.TypeFlags.Union)) return mapper(type);
-    let mappedTypes: Type[] | undefined;
-    for (const t of (<qt.UnionType>type).types) {
-      const mapped = mapper(t);
-      if (mapped) {
-        if (!mappedTypes) mappedTypes = [mapped];
-        else {
-          mappedTypes.push(mapped);
-        }
-      }
-    }
-    return mappedTypes && qf.get.unionType(mappedTypes, noReductions ? qt.UnionReduction.None : qt.UnionReduction.Literal);
-  }
-  acceptsVoid(t: Type): boolean {
-    return !!(t.flags & qt.TypeFlags.Void);
-  }
-  typeHasNullableConstraint(type: Type) {
-    return type.flags & qt.TypeFlags.InstantiableNonPrimitive && maybeTypeOfKind(qf.get.baseConstraintOfType(type) || unknownType, qt.TypeFlags.Nullable);
-  }
-  extractTypesOfKind(type: Type, kind: qt.TypeFlags) {
-    return filterType(type, (t) => (t.flags & kind) !== 0);
-  }
-  replacePrimitivesWithLiterals(typeWithPrimitives: Type, typeWithLiterals: Type) {
-    if (
-      (isTypeSubsetOf(stringType, typeWithPrimitives) && maybeTypeOfKind(typeWithLiterals, qt.TypeFlags.StringLiteral)) ||
-      (isTypeSubsetOf(numberType, typeWithPrimitives) && maybeTypeOfKind(typeWithLiterals, qt.TypeFlags.NumberLiteral)) ||
-      (isTypeSubsetOf(bigintType, typeWithPrimitives) && maybeTypeOfKind(typeWithLiterals, qt.TypeFlags.BigIntLiteral))
-    ) {
-      return mapType(typeWithPrimitives, (t) =>
-        t.flags & qt.TypeFlags.String
-          ? extractTypesOfKind(typeWithLiterals, qt.TypeFlags.String | qt.TypeFlags.StringLiteral)
-          : t.flags & qt.TypeFlags.Number
-          ? extractTypesOfKind(typeWithLiterals, qt.TypeFlags.Number | qt.TypeFlags.NumberLiteral)
-          : t.flags & qt.TypeFlags.BigInt
-          ? extractTypesOfKind(typeWithLiterals, qt.TypeFlags.BigInt | qt.TypeFlags.BigIntLiteral)
-          : t
-      );
-    }
-    return typeWithPrimitives;
-  }
-  typesDefinitelyUnrelated(source: Type, target: Type) {
-    return (
-      (qf.type.is.tuple(source) && qf.type.is.tuple(target) && tupleTypesDefinitelyUnrelated(source, target)) ||
-      (!!getUnmatchedProperty(source, target, true) && !!getUnmatchedProperty(target, source, true))
-    );
-  }
-
-  couldContainTypeVariables(type: Type): boolean {
-    const objectFlags = getObjectFlags(type);
-    if (objectFlags & ObjectFlags.CouldContainTypeVariablesComputed) return !!(objectFlags & ObjectFlags.CouldContainTypeVariables);
-    const result = !!(
-      type.flags & qt.TypeFlags.Instantiable ||
-      (type.flags & qt.TypeFlags.Object &&
-        !qf.type.is.nonGenericTopLevel(type) &&
-        ((objectFlags & ObjectFlags.Reference && ((<qt.TypeReference>type).node || forEach(getTypeArgs(<qt.TypeReference>type), couldContainTypeVariables))) ||
-          (objectFlags & ObjectFlags.Anonymous &&
-            type.symbol &&
-            type.symbol.flags & (SymbolFlags.Function | qt.SymbolFlags.Method | qt.SymbolFlags.Class | qt.SymbolFlags.TypeLiteral | qt.SymbolFlags.ObjectLiteral) &&
-            type.symbol.declarations) ||
-          objectFlags & (ObjectFlags.Mapped | ObjectFlags.ObjectRestType))) ||
-      (type.flags & qt.TypeFlags.UnionOrIntersection &&
-        !(type.flags & qt.TypeFlags.EnumLiteral) &&
-        !qf.type.is.nonGenericTopLevel(type) &&
-        some((<qt.UnionOrIntersectionType>type).types, couldContainTypeVariables))
-    );
-    if (type.flags & qt.TypeFlags.ObjectFlagsType) (<qt.ObjectFlagsType>type).objectFlags |= ObjectFlags.CouldContainTypeVariablesComputed | (result ? ObjectFlags.CouldContainTypeVariables : 0);
-    return result;
-  }
-  inferTypeForHomomorphicMappedType(source: Type, target: qt.MappedType, constraint: qt.IndexType): Type | undefined {
-    if (inInferTypeForHomomorphicMappedType) return;
-    const key = source.id + ',' + target.id + ',' + constraint.id;
-    if (reverseMappedCache.has(key)) return reverseMappedCache.get(key);
-    inInferTypeForHomomorphicMappedType = true;
-    const type = createReverseMappedType(source, target, constraint);
-    inInferTypeForHomomorphicMappedType = false;
-    reverseMappedCache.set(key, type);
-    return type;
-  }
-  inferReverseMappedType(sourceType: Type, target: qt.MappedType, constraint: qt.IndexType): Type {
-    const typeParam = <qt.TypeParam>qf.get.indexedAccessType(constraint.type, getTypeParamFromMappedType(target));
-    const templateType = getTemplateTypeFromMappedType(target);
-    const inference = createInferenceInfo(typeParam);
-    inferTypes([inference], sourceType, templateType);
-    return getTypeFromInference(inference) || unknownType;
-  }
-
-  removeDefinitelyFalsyTypes(type: Type): Type {
-    return getFalsyFlags(type) & qt.TypeFlags.DefinitelyFalsy ? filterType(type, (t) => !(getFalsyFlags(t) & qt.TypeFlags.DefinitelyFalsy)) : type;
-  }
-  extractDefinitelyFalsyTypes(type: Type): Type {
-    return mapType(type, getDefinitelyFalsyPartOfType);
-  }
-  addOptionalTypeMarker(type: Type) {
-    return strictNullChecks ? qf.get.unionType([type, optionalType]) : type;
-  }
-  removeOptionalTypeMarker(type: Type): Type {
-    return strictNullChecks ? filterType(type, qf.type.is.notOptionalMarker) : type;
-  }
-  propagateOptionalTypeMarker(type: Type, node: qt.OptionalChain, wasOptional: boolean) {
-    return wasOptional ? (qf.is.outermostOptionalChain(node) ? qf.get.optionalType(type) : addOptionalTypeMarker(type)) : type;
-  }
-  transformTypeOfMembers(type: Type, f: (propertyType: Type) => Type) {
-    const members = new SymbolTable();
-    for (const property of getPropertiesOfObjectType(type)) {
-      const original = property.typeOfSymbol();
-      const updated = f(original);
-      members.set(property.escName, updated === original ? property : createSymbolWithType(property, updated));
-    }
-    return members;
-  }
-  reportWideningErrorsInType(type: Type): boolean {
-    let errorReported = false;
-    if (getObjectFlags(type) & ObjectFlags.ContainsWideningType) {
-      if (type.flags & qt.TypeFlags.Union) {
-        if (some((<qt.UnionType>type).types, qf.type.is.emptyObject)) errorReported = true;
-        else {
-          for (const t of (<qt.UnionType>type).types) {
-            if (reportWideningErrorsInType(t)) errorReported = true;
-          }
-        }
-      }
-      if (qf.type.is.array(type) || qf.type.is.tuple(type)) {
-        for (const t of getTypeArgs(<qt.TypeReference>type)) {
-          if (reportWideningErrorsInType(t)) errorReported = true;
-        }
-      }
-      if (qf.type.is.objectLiteral(type)) {
-        for (const p of getPropertiesOfObjectType(type)) {
-          const t = p.typeOfSymbol();
-          if (getObjectFlags(t) & ObjectFlags.ContainsWideningType) {
-            if (!reportWideningErrorsInType(t)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.get.widenedType(t)));
-            errorReported = true;
-          }
-        }
-      }
-    }
-    return errorReported;
-  }
-
-  compareTypesIdentical(source: Type, target: Type): Ternary {
-    return qf.type.is.relatedTo(source, target, identityRelation) ? Ternary.True : Ternary.False;
-  }
-  compareTypesAssignable(source: Type, target: Type): Ternary {
-    return qf.type.is.relatedTo(source, target, assignableRelation) ? Ternary.True : Ternary.False;
-  }
-  compareTypesSubtypeOf(source: Type, target: Type): Ternary {
-    return qf.type.is.relatedTo(source, target, subtypeRelation) ? Ternary.True : Ternary.False;
-  }
-  areTypesComparable(type1: Type, type2: Type): boolean {
-    return qf.type.is.comparableTo(type1, type2) || qf.type.is.comparableTo(type2, type1);
-  }
-
-  distributeIndexOverObjectType(objectType: Type, indexType: Type, writing: boolean) {
-    if (objectType.flags & qt.TypeFlags.UnionOrIntersection) {
-      const types = map((objectType as qt.UnionOrIntersectionType).types, (t) => getSimplifiedType(qf.get.indexedAccessType(t, indexType), writing));
-      return objectType.flags & qt.TypeFlags.Intersection || writing ? qf.get.intersectionType(types) : qf.get.unionType(types);
-    }
-    return;
-  }
-  distributeObjectOverIndexType(objectType: Type, indexType: Type, writing: boolean) {
-    if (indexType.flags & qt.TypeFlags.Union) {
-      const types = map((indexType as qt.UnionType).types, (t) => getSimplifiedType(qf.get.indexedAccessType(objectType, t), writing));
-      return writing ? qf.get.intersectionType(types) : qf.get.unionType(types);
-    }
-    return;
-  }
-  unwrapSubstitution(type: Type): Type {
-    if (type.flags & qt.TypeFlags.Substitution) return (type as qt.SubstitutionType).substitute;
-    return type;
-  }
-  eachUnionContains(unionTypes: qt.UnionType[], type: Type) {
-    for (const u of unionTypes) {
-      if (!containsType(u.types, type)) {
-        const primitive =
-          type.flags & qt.TypeFlags.StringLiteral
-            ? stringType
-            : type.flags & qt.TypeFlags.NumberLiteral
-            ? numberType
-            : type.flags & qt.TypeFlags.BigIntLiteral
-            ? bigintType
-            : type.flags & qt.TypeFlags.UniqueESSymbol
-            ? esSymbolType
-            : undefined;
-        if (!primitive || !containsType(u.types, primitive)) return false;
-      }
-    }
-    return true;
-  }
-  insertType(types: Type[], type: Type): boolean {
-    const index = binarySearch(types, type, getTypeId, compareNumbers);
-    if (index < 0) {
-      types.splice(~index, 0, type);
-      return true;
-    }
-    return false;
-  }
-  addTypeToUnion(typeSet: Type[], includes: qt.TypeFlags, type: Type) {
-    const flags = type.flags;
-    if (flags & qt.TypeFlags.Union) return addTypesToUnion(typeSet, includes, (<qt.UnionType>type).types);
-    if (!(flags & qt.TypeFlags.Never)) {
-      includes |= flags & qt.TypeFlags.IncludesMask;
-      if (flags & qt.TypeFlags.StructuredOrInstantiable) includes |= qt.TypeFlags.IncludesStructuredOrInstantiable;
-      if (type === wildcardType) includes |= qt.TypeFlags.IncludesWildcard;
-      if (!strictNullChecks && flags & qt.TypeFlags.Nullable)
-        if (!(getObjectFlags(type) & ObjectFlags.ContainsWideningType)) includes |= qt.TypeFlags.IncludesNonWideningType;
-        else {
-          const len = typeSet.length;
-          const index = len && type.id > typeSet[len - 1].id ? ~len : binarySearch(typeSet, type, getTypeId, compareNumbers);
-          if (index < 0) typeSet.splice(~index, 0, type);
-        }
-    }
-    return includes;
-  }
-
-  intersectTypes(type1: Type, type2: Type): Type;
-  intersectTypes(type1: Type | undefined, type2: Type | undefined): Type | undefined;
-  intersectTypes(type1: Type | undefined, type2: Type | undefined): Type | undefined {
-    return !type1 ? type2 : !type2 ? type1 : qf.get.intersectionType([type1, type2]);
-  }
-  addOptionality(type: Type, optional = true): Type {
-    return strictNullChecks && optional ? qf.get.optionalType(type) : type;
-  }
-  areAllOuterTypeParamsApplied(type: Type): boolean {
-    const outerTypeParams = (<qt.InterfaceType>type).outerTypeParams;
-    if (outerTypeParams) {
-      const last = outerTypeParams.length - 1;
-      const typeArgs = getTypeArgs(<qt.TypeReference>type);
-      return outerTypeParams[last].symbol !== typeArgs[last].symbol;
-    }
-    return true;
-  }
-
-  widenTypeForVariableLikeDeclaration(type: Type | undefined, d: any, reportErrors?: boolean) {
-    if (type) {
-      if (reportErrors) reportErrorsFromWidening(d, type);
-      if (type.flags & qt.TypeFlags.UniqueESSymbol && (d.kind === Syntax.BindingElem || !d.type) && type.symbol !== qf.get.symbolOfNode(d)) type = esSymbolType;
-      return qf.get.widenedType(type);
-    }
-    type = d.kind === Syntax.ParamDeclaration && d.dot3Token ? anyArrayType : anyType;
-    if (reportErrors) {
-      if (!declarationBelongsToPrivateAmbientMember(d)) reportImplicitAny(d, type);
-    }
-    return type;
-  }
-
-  typeToString(
-    type: Type,
-    enclosingDeclaration?: Node,
-    flags: TypeFormatFlags = TypeFormatFlags.AllowUniqueESSymbolType | TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
-    writer: qt.EmitTextWriter = createTextWriter('')
-  ): string {
-    const noTruncation = compilerOpts.noErrorTruncation || flags & TypeFormatFlags.NoTruncation;
-    const typeNode = nodeBuilder.typeToTypeNode(type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | (noTruncation ? NodeBuilderFlags.NoTruncation : 0), writer);
-    if (typeNode === undefined) return qu.fail('should always get typenode');
-    const opts = { removeComments: true };
-    const printer = createPrinter(opts);
-    const sourceFile = enclosingDeclaration && enclosingDeclaration.sourceFile;
-    printer.writeNode(qt.EmitHint.Unspecified, typeNode, sourceFile, writer);
-    const result = writer.getText();
-    const maxLength = noTruncation ? qt.noTruncationMaximumTruncationLength * 2 : qt.defaultMaximumTruncationLength * 2;
-    if (maxLength && result && result.length >= maxLength) return result.substr(0, maxLength - '...'.length) + '...';
-    return result;
-  }
-}
 export class Signature extends qc.Signature {
   combineUnionParams(left: Signature, right: Signature) {
     const leftCount = getParamCount(left);
@@ -2126,7 +1732,7 @@ export class Signature extends qc.Signature {
     checkMode: SignatureCheckMode,
     reportErrors: boolean,
     errorReporter: ErrorReporter | undefined,
-    incompatibleErrorReporter: ((source: Type, target: Type) => void) | undefined,
+    incompatibleErrorReporter: ((source: qt.Type, target: qt.Type) => void) | undefined,
     compareTypes: qt.TypeComparer,
     reportUnreliableMarkers: qt.TypeMapper | undefined
   ): Ternary {
@@ -2221,7 +1827,14 @@ export class Signature extends qc.Signature {
     }
     return result;
   }
-  compareSignaturesIdentical(source: Signature, target: Signature, partialMatch: boolean, ignoreThisTypes: boolean, ignoreReturnTypes: boolean, compareTypes: (s: Type, t: Type) => Ternary): Ternary {
+  compareSignaturesIdentical(
+    source: Signature,
+    target: Signature,
+    partialMatch: boolean,
+    ignoreThisTypes: boolean,
+    ignoreReturnTypes: boolean,
+    compareTypes: (s: qt.Type, t: qt.Type) => Ternary
+  ): Ternary {
     if (source === target) return Ternary.True;
     if (!isMatchingSignature(source, target, partialMatch)) return Ternary.False;
     if (length(source.typeParams) !== length(target.typeParams)) return Ternary.False;
@@ -2272,7 +1885,7 @@ export class Signature extends qc.Signature {
     }
     return result;
   }
-  tryGetTypeAtPosition(signature: Signature, pos: number): Type | undefined {
+  tryGetTypeAtPosition(signature: Signature, pos: number): qt.Type | undefined {
     const paramCount = signature.params.length - (signature.hasRestParam() ? 1 : 0);
     if (pos < paramCount) return getTypeOfParam(signature.params[pos]);
     if (signature.hasRestParam()) {
@@ -2330,7 +1943,7 @@ export class Signature extends qc.Signature {
       assignParamType(param);
     }
   }
-  applyToParamTypes(source: Signature, target: Signature, callback: (s: Type, t: Type) => void) {
+  applyToParamTypes(source: Signature, target: Signature, callback: (s: qt.Type, t: qt.Type) => void) {
     const sourceCount = getParamCount(source);
     const targetCount = getParamCount(target);
     const sourceRestType = getEffectiveRestType(source);
@@ -2347,7 +1960,7 @@ export class Signature extends qc.Signature {
     }
     if (targetRestType) callback(getRestTypeAtPosition(source, paramCount), targetRestType);
   }
-  applyToReturnTypes(source: Signature, target: Signature, callback: (s: Type, t: Type) => void) {
+  applyToReturnTypes(source: Signature, target: Signature, callback: (s: qt.Type, t: qt.Type) => void) {
     const sourceTypePredicate = getTypePredicateOfSignature(source);
     const targetTypePredicate = getTypePredicateOfSignature(target);
     if (sourceTypePredicate && targetTypePredicate && typePredicateKindsMatch(sourceTypePredicate, targetTypePredicate) && sourceTypePredicate.type && targetTypePredicate.type)
@@ -2359,7 +1972,7 @@ export class Signature extends qc.Signature {
   restTypeOfSignature(): qt.Type {
     return this.tryRestType() || anyType;
   }
-  tryRestType(): Type | undefined {
+  tryRestType(): qt.Type | undefined {
     if (this.hasRestParam()) {
       const t = this.params[this.params.length - 1].typeOfSymbol();
       const r = qf.type.is.tuple(t) ? getRestTypeOfTupleType(t) : t;

@@ -2335,12 +2335,12 @@ export function newType(f: qt.Frame) {
     }
     intersectUnionsOfPrimitiveTypes(types: qt.Type[]) {
       let unionTypes: qt.UnionType[] | undefined;
-      const index = qf.find.index(types, (t) => !!(getObjectFlags(t) & ObjectFlags.PrimitiveUnion));
+      const index = qf.find.index(types, (t) => !!(t.objectFlags & ObjectFlags.PrimitiveUnion));
       if (index < 0) return false;
       let i = index + 1;
       while (i < types.length) {
         const t = types[i];
-        if (getObjectFlags(t) & ObjectFlags.PrimitiveUnion) {
+        if (t.objectFlags & ObjectFlags.PrimitiveUnion) {
           (unionTypes || (unionTypes = [<qt.UnionType>types[index]])).push(<qt.UnionType>t);
           orderedRemoveItemAt(types, i);
         } else {

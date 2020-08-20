@@ -1571,7 +1571,7 @@ export function newType(f: qt.Frame) {
                 !qf.type.is.tuple(target) &&
                 source.flags & TypeFlags.Intersection &&
                 getApparentType(source).flags & TypeFlags.StructuredType &&
-                !some((<qt.IntersectionType>source).types, (t) => !!(getObjectFlags(t) & ObjectFlags.NonInferrableType))))
+                !some((<qt.IntersectionType>source).types, (t) => !!(t.objectFlags & ObjectFlags.NonInferrableType))))
           ) {
             inPropertyCheck = true;
             result &= recursiveTypeRelatedTo(source, target, reportErrors, IntersectionState.PropertyCheck);
@@ -2706,7 +2706,7 @@ export function newType(f: qt.Frame) {
             checkIndexConstraintForProperty(p, propType, t, declaredNumberIndexer, numberIndexType, IndexKind.Number);
           });
           const v = t.symbol.valueDeclaration;
-          if (getObjectFlags(t) & ObjectFlags.Class && qf.is.classLike(v)) {
+          if (t.objectFlags & ObjectFlags.Class && qf.is.classLike(v)) {
             for (const m of v.members) {
               if (!qf.has.syntacticModifier(m, ModifierFlags.Static) && hasNonBindableDynamicName(m)) {
                 const s = qf.get.symbolOfNode(m);
@@ -2720,7 +2720,7 @@ export function newType(f: qt.Frame) {
         let errorNode: Node | undefined;
         if (stringIndexType && numberIndexType) {
           errorNode = declaredNumberIndexer || declaredStringIndexer;
-          if (!errorNode && getObjectFlags(t) & ObjectFlags.Interface) {
+          if (!errorNode && t.objectFlags & ObjectFlags.Interface) {
             const someBaseTypeHasBothIndexers = forEach(getBaseTypes(<qt.InterfaceType>t), (b) => qf.get.indexTypeOfType(b, IndexKind.String) && qf.get.indexTypeOfType(b, IndexKind.Number));
             errorNode = someBaseTypeHasBothIndexers ? undefined : t.symbol.declarations[0];
           }
