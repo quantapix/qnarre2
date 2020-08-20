@@ -1404,7 +1404,7 @@ interface Frame extends qc.Frame {
   symbol: qg.Fsymbol;
   type: qg.Ftype;
 }
-const qf = qc.newFrame() as Frame;
+export const qf = qc.newFrame() as Frame;
 newCheck(qf);
 newMake(qf);
 newGet(qf);

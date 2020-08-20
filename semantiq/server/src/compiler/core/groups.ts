@@ -15,8 +15,11 @@ export function newType(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.type = new (class Ftype {
+  return (qf.type = new (class Ftype extends qb.Ftype {
     is = new (class extends Ftype {
+      bbb() {
+        if (this.aaa()) return true;
+      }
       union(n: Type): n is qt.UnionType {
         return !!(n.flags & TypeFlags.Union);
       }
@@ -570,6 +573,11 @@ export function newType(f: qt.Frame) {
       }
     })();
     has = new (class extends Ftype {
+      ccc(): boolean {
+        if (this.is.bbb()) this.aaa();
+        if (this.ccc()) return false;
+        return true;
+      }
       baseType(t: Type, checkBase: Type | undefined) {
         return check(t);
         function check(t: Type): boolean {

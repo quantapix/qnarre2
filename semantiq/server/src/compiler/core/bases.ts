@@ -372,10 +372,10 @@ export abstract class FunctionOrConstructorTobj extends SignatureDecl implements
   kind!: Syntax.FunctionTyping | Syntax.ConstructorTyping;
   type!: qt.Typing;
   cache?: readonly qt.DocTag[];
+  _typingBrand: any;
   constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
     super(s, k, ts, ps, t);
   }
-  _typingBrand: any;
 }
 export abstract class Expr extends Nobj implements qt.Expr {
   _expressionBrand: any;
@@ -591,12 +591,17 @@ export class Type implements qt.Type {
   symbol?: Symbol;
   widened?: Type;
   constructor(public checker: qt.TypeChecker, public flags: TypeFlags) {}
-  get typeArgs() {
+  get typeArgs(): readonly Type[] | undefined {
     if (this.objectFlags & ObjectFlags.Reference) return this.checker.get.typeArgs((this as qt.Type) as qt.TypeReference);
     return;
   }
   get objectFlags(): ObjectFlags {
     return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
+  }
+}
+export class Ftype {
+  aaa() {
+    return true;
   }
 }
 export class Signature implements qt.Signature {

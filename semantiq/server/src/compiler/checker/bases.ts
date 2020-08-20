@@ -1678,7 +1678,9 @@ export class SymbolTable extends qc.SymbolTable<Symbol> {
     return r;
   }
 }
-export class Type extends qc.Type {
+export class Type extends qc.Type {}
+export interface Ftype extends qc.Ftype {}
+export class Ftype {
   includeMixinType(type: Type, types: readonly Type[], mixinFlags: readonly boolean[], index: number): Type {
     const mixedTypes: Type[] = [];
     for (let i = 0; i < types.length; i++) {
@@ -1784,7 +1786,6 @@ export class Type extends qc.Type {
   allTypesAssignableToKind(source: Type, kind: qt.TypeFlags, strict?: boolean): boolean {
     return source.flags & qt.TypeFlags.Union ? every((source as qt.UnionType).types, (subType) => allTypesAssignableToKind(subType, kind, strict)) : qf.type.is.assignableToKind(source, kind, strict);
   }
-
   typeMaybeAssignableTo(source: Type, target: Type) {
     if (!(source.flags & qt.TypeFlags.Union)) return qf.type.is.assignableTo(source, target);
     for (const t of (<qt.UnionType>source).types) {

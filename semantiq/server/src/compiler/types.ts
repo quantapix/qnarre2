@@ -2353,6 +2353,7 @@ export interface Type {
   permissive?: Type;
   restrictive?: Type;
   symbol?: Symbol;
+  typeArgs?: readonly Type[];
   widened?: Type;
 }
 export interface TypeAcquisition {
