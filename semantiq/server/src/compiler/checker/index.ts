@@ -769,7 +769,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return mixinFlags;
   }
   function elaborateNeverIntersection(errorInfo: qd.MessageChain | undefined, type: qt.Type) {
-    if (getObjectFlags(type) & ObjectFlags.IsNeverIntersection) {
+    if (type.objectFlags & ObjectFlags.IsNeverIntersection) {
       const neverProp = qf.find.up(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.discriminantWithNeverType);
       if (neverProp) {
         return chainqd.Messages(
@@ -1422,7 +1422,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (
       produceDiagnostics &&
       noImplicitAny &&
-      getObjectFlags(type) & ObjectFlags.ContainsWideningType &&
+      type.objectFlags & ObjectFlags.ContainsWideningType &&
       (!wideningKind || !getContextualSignatureForFunctionLikeDeclaration(declaration as qt.FunctionLikeDeclaration))
     ) {
       if (!reportWideningErrorsInType(type)) reportImplicitAny(declaration, type, wideningKind);
@@ -1524,7 +1524,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       if (target.flags & qt.TypeFlags.TypeVariable) {
         if (
-          getObjectFlags(source) & ObjectFlags.NonInferrableType ||
+          source.objectFlags & ObjectFlags.NonInferrableType ||
           source === nonInferrableAnyType ||
           source === silentNeverType ||
           (priority & InferencePriority.ReturnType && (source === autoType || source === autoArrayType)) ||
@@ -1578,8 +1578,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
       }
       if (
-        getObjectFlags(source) & ObjectFlags.Reference &&
-        getObjectFlags(target) & ObjectFlags.Reference &&
+        source.objectFlags & ObjectFlags.Reference &&
+        target.objectFlags & ObjectFlags.Reference &&
         ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target))) &&
         !((<qt.TypeReference>source).node && (<qt.TypeReference>target).node)
       ) {
@@ -1764,7 +1764,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             inferWithPriority(
               inferredType,
               inference.typeParam,
-              getObjectFlags(source) & ObjectFlags.NonInferrableType ? InferencePriority.PartialHomomorphicMappedType : InferencePriority.HomomorphicMappedType
+              source.objectFlags & ObjectFlags.NonInferrableType ? InferencePriority.PartialHomomorphicMappedType : InferencePriority.HomomorphicMappedType
             );
           }
         }
@@ -1784,7 +1784,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return false;
     }
     function inferFromObjectTypes(source: qt.Type, target: qt.Type) {
-      const isNonConstructorObject = target.flags & qt.TypeFlags.Object && !(getObjectFlags(target) & ObjectFlags.Anonymous && target.symbol && target.symbol.flags & qt.SymbolFlags.Class);
+      const isNonConstructorObject = target.flags & qt.TypeFlags.Object && !(target.objectFlags & ObjectFlags.Anonymous && target.symbol && target.symbol.flags & qt.SymbolFlags.Class);
       const symbolOrType = isNonConstructorObject ? (qf.type.is.tuple(target) ? target.target : target.symbol) : undefined;
       if (symbolOrType) {
         if (contains(symbolOrTypeStack, symbolOrType)) {
@@ -1800,8 +1800,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     function inferFromObjectTypesWorker(source: qt.Type, target: qt.Type) {
       if (
-        getObjectFlags(source) & ObjectFlags.Reference &&
-        getObjectFlags(target) & ObjectFlags.Reference &&
+        source.objectFlags & ObjectFlags.Reference &&
+        target.objectFlags & ObjectFlags.Reference &&
         ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target)))
       ) {
         inferFromTypeArgs(getTypeArgs(<qt.TypeReference>source), getTypeArgs(<qt.TypeReference>target), getVariances((<qt.TypeReference>source).target));
@@ -1811,7 +1811,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         inferFromTypes(getConstraintTypeFromMappedType(source), getConstraintTypeFromMappedType(target));
         inferFromTypes(getTemplateTypeFromMappedType(source), getTemplateTypeFromMappedType(target));
       }
-      if (getObjectFlags(target) & ObjectFlags.Mapped) {
+      if (target.objectFlags & ObjectFlags.Mapped) {
         const constraintType = getConstraintTypeFromMappedType(<qt.MappedType>target);
         if (inferToMappedType(source, <qt.MappedType>target, constraintType)) return;
       }
@@ -1857,7 +1857,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const sourceLen = sourceSignatures.length;
       const targetLen = targetSignatures.length;
       const len = sourceLen < targetLen ? sourceLen : targetLen;
-      const skipParams = !!(getObjectFlags(source) & ObjectFlags.NonInferrableType);
+      const skipParams = !!(source.objectFlags & ObjectFlags.NonInferrableType);
       for (let i = 0; i < len; i++) {
         inferFromSignature(getBaseSignature(sourceSignatures[sourceLen - len + i]), getErasedSignature(targetSignatures[targetLen - len + i]), skipParams);
       }

@@ -1735,9 +1735,21 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
       has: qg.Fhas;
     }
     const qf = f as Frame;
-    interface Ftype extends qg.Ftype {}
-    class Ftype {}
-    return (qf.type = new Ftype());
+    interface _Ftype extends qg.Ftype {}
+    class _Ftype {}
+    const t = qg.newType(qf);
+    qu.addMixins(_Ftype, [t]);
+    return (qf.type = new (class Base extends _Ftype {
+      literalTypeToNode(t: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
+        const r =
+          t.flags & qt.TypeFlags.EnumLiteral
+            ? nodeBuilder.symbolToExpression(t.symbol, qt.SymbolFlags.Value, enclosing, undefined, tracker)
+            : t === trueType
+            ? new qc.BooleanLiteral(true)
+            : t === falseType && new qc.BooleanLiteral(false);
+        return r || qc.asLiteral((t as qt.LiteralType).value);
+      }
+    })());
   }
   interface Ftype extends ReturnType<typeof newType> {}
   function newSymbol(f: qt.Frame) {

@@ -741,7 +741,7 @@ export function newSymb(f: qt.Frame) {
       const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
       if (exportEquals === moduleSymbol) return;
       const type = exportEquals.typeOfSymbol();
-      return type.flags & qt.TypeFlags.Primitive || getObjectFlags(type) & ObjectFlags.Class || qf.type.is.arrayOrTupleLike(type) ? undefined : qf.get.propertyOfType(type, memberName);
+      return type.flags & qt.TypeFlags.Primitive || type.objectFlags & ObjectFlags.Class || qf.type.is.arrayOrTupleLike(type) ? undefined : qf.get.propertyOfType(type, memberName);
     }
     addDeclarationToLateBoundSymbol(symbol: Symbol, member: qt.LateBoundDecl | qt.BinaryExpression, symbolFlags: SymbolFlags) {
       qf.assert.true(!!(this.checkFlags() & qt.CheckFlags.Late), 'Expected a late-bound symbol.');
@@ -827,7 +827,7 @@ export function newSymb(f: qt.Frame) {
         let i = 0;
         for (const intersectionMember of (firstBase as qt.IntersectionType).types) {
           if (!mixinFlags[i]) {
-            if (getObjectFlags(intersectionMember) & (ObjectFlags.Class | ObjectFlags.Interface)) {
+            if (intersectionMember.objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) {
               if (intersectionMember.symbol === target) return true;
               if (typeHasProtectedAccessibleBase(target, intersectionMember as qt.InterfaceType)) return true;
             }
@@ -925,7 +925,7 @@ export function newType(f: qt.Frame) {
         ) {
           removeRedundantPrimitiveTypes(typeSet, includes);
         }
-        if (includes & TypeFlags.IncludesEmptyObject && includes & TypeFlags.Object) orderedRemoveItemAt(typeSet, qf.find.index(typeSet, qf.type.is.emptyAnonymousObject));
+        if (includes & TypeFlags.IncludesEmptyObject && includes & TypeFlags.Object) qu.orderedRemoveItemAt(typeSet, qf.find.index(typeSet, qf.type.is.emptyAnonymousObject));
         if (typeSet.length === 0) return unknownType;
         if (typeSet.length === 1) return typeSet[0];
         const id = this.typeListId(typeSet);
@@ -2232,18 +2232,9 @@ export function newType(f: qt.Frame) {
     constructor() {
       super();
       this.get = this._get as Base['get'];
-      qu.addMixins(this.get, [this._get]);
+      qu.addMixins(this.get, [t.get]);
       this.is = this._is as Base['is'];
-      qu.addMixins(this.is, [this._is]);
-    }
-    literalTypeToNode(type: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
-      const enumResult =
-        type.flags & qt.TypeFlags.EnumLiteral
-          ? nodeBuilder.symbolToExpression(type.symbol, qt.SymbolFlags.Value, enclosing, undefined, tracker)
-          : type === trueType
-          ? new qc.BooleanLiteral(true)
-          : type === falseType && new qc.BooleanLiteral(false);
-      return enumResult || qc.asLiteral((type as qt.LiteralType).value);
+      qu.addMixins(this.is, [t.is]);
     }
     filterPrimitivesIfContainsNonPrimitive(type: qt.UnionType) {
       if (maybeTypeOfKind(type, qt.TypeFlags.NonPrimitive)) {
@@ -2271,14 +2262,14 @@ export function newType(f: qt.Frame) {
       const elemType = getBaseTypeOfLiteralType(getContextFreeTypeOfExpression(node));
       return isTypeSubsetOf(elemType, evolvingArrayType.elemType) ? evolvingArrayType : getEvolvingArrayType(qf.get.unionType([evolvingArrayType.elemType, elemType]));
     }
-    finalizeEvolvingArrayType(type: qt.Type): qt.Type {
-      return getObjectFlags(type) & ObjectFlags.EvolvingArray ? getFinalArrayType(<qt.EvolvingArrayType>type) : type;
+    finalizeEvolvingArrayType(t: qt.Type): qt.Type {
+      return t.objectFlags & ObjectFlags.EvolvingArray ? getFinalArrayType(<qt.EvolvingArrayType>t) : t;
     }
-    addTypesToUnion(typeSet: qt.Type[], includes: qt.TypeFlags, types: readonly qt.Type[]): qt.TypeFlags {
-      for (const type of types) {
-        includes = addTypeToUnion(typeSet, includes, type);
+    addTypesToUnion(to: qt.Type[], f: qt.TypeFlags, ts: readonly qt.Type[]): qt.TypeFlags {
+      for (const t of ts) {
+        f = addTypeToUnion(to, f, t);
       }
-      return includes;
+      return f;
     }
     removeSubtypes(types: qt.Type[], primitivesOnly: boolean): boolean {
       const len = types.length;
@@ -2300,9 +2291,9 @@ export function newType(f: qt.Frame) {
             count++;
             if (
               qf.type.is.relatedTo(source, target, strictSubtypeRelation) &&
-              (!(getObjectFlags(getTargetType(source)) & ObjectFlags.Class) || !(getObjectFlags(getTargetType(target)) & ObjectFlags.Class) || qf.type.is.derivedFrom(source, target))
+              (!(getTargetType(source).objectFlags & ObjectFlags.Class) || !(getTargetType(target).objectFlags & ObjectFlags.Class) || qf.type.is.derivedFrom(source, target))
             ) {
-              orderedRemoveItemAt(types, i);
+              qu.orderedRemoveItemAt(types, i);
               break;
             }
           }
@@ -2310,31 +2301,31 @@ export function newType(f: qt.Frame) {
       }
       return true;
     }
-    removeRedundantLiteralTypes(types: qt.Type[], includes: qt.TypeFlags) {
-      let i = types.length;
+    removeRedundantLiteralTypes(ts: qt.Type[], f: qt.TypeFlags) {
+      let i = ts.length;
       while (i > 0) {
         i--;
-        const t = types[i];
+        const t = ts[i];
         const remove =
-          (t.flags & qt.TypeFlags.StringLiteral && includes & qt.TypeFlags.String) ||
-          (t.flags & qt.TypeFlags.NumberLiteral && includes & qt.TypeFlags.Number) ||
-          (t.flags & qt.TypeFlags.BigIntLiteral && includes & qt.TypeFlags.BigInt) ||
-          (t.flags & qt.TypeFlags.UniqueESSymbol && includes & qt.TypeFlags.ESSymbol) ||
-          (qf.type.is.freshLiteral(t) && containsType(types, (<qt.LiteralType>t).regularType));
-        if (remove) orderedRemoveItemAt(types, i);
+          (t.flags & qt.TypeFlags.StringLiteral && f & qt.TypeFlags.String) ||
+          (t.flags & qt.TypeFlags.NumberLiteral && f & qt.TypeFlags.Number) ||
+          (t.flags & qt.TypeFlags.BigIntLiteral && f & qt.TypeFlags.BigInt) ||
+          (t.flags & qt.TypeFlags.UniqueESSymbol && f & qt.TypeFlags.ESSymbol) ||
+          (qf.type.is.freshLiteral(t) && containsType(ts, (<qt.LiteralType>t).regularType));
+        if (remove) qu.orderedRemoveItemAt(ts, i);
       }
     }
-    removeRedundantPrimitiveTypes(types: qt.Type[], includes: qt.TypeFlags) {
-      let i = types.length;
+    removeRedundantPrimitiveTypes(ts: qt.Type[], f: qt.TypeFlags) {
+      let i = ts.length;
       while (i > 0) {
         i--;
-        const t = types[i];
+        const t = ts[i];
         const remove =
-          (t.flags & qt.TypeFlags.String && includes & qt.TypeFlags.StringLiteral) ||
-          (t.flags & qt.TypeFlags.Number && includes & qt.TypeFlags.NumberLiteral) ||
-          (t.flags & qt.TypeFlags.BigInt && includes & qt.TypeFlags.BigIntLiteral) ||
-          (t.flags & qt.TypeFlags.ESSymbol && includes & qt.TypeFlags.UniqueESSymbol);
-        if (remove) orderedRemoveItemAt(types, i);
+          (t.flags & qt.TypeFlags.String && f & qt.TypeFlags.StringLiteral) ||
+          (t.flags & qt.TypeFlags.Number && f & qt.TypeFlags.NumberLiteral) ||
+          (t.flags & qt.TypeFlags.BigInt && f & qt.TypeFlags.BigIntLiteral) ||
+          (t.flags & qt.TypeFlags.ESSymbol && f & qt.TypeFlags.UniqueESSymbol);
+        if (remove) qu.orderedRemoveItemAt(ts, i);
       }
     }
     extractIrreducible(types: qt.Type[], flag: qt.TypeFlags) {
@@ -2355,7 +2346,7 @@ export function newType(f: qt.Frame) {
         const t = types[i];
         if (t.objectFlags & ObjectFlags.PrimitiveUnion) {
           (unionTypes || (unionTypes = [<qt.UnionType>types[index]])).push(<qt.UnionType>t);
-          orderedRemoveItemAt(types, i);
+          qu.orderedRemoveItemAt(types, i);
         } else {
           i++;
         }

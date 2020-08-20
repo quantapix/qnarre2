@@ -1361,7 +1361,7 @@ export function newCheck(f: qt.Frame) {
               qf.type.check.assignableTo(type, qf.get.typeFromTypeNode(enumTag.typeExpression), memberDecl);
             }
           }
-          objectFlags |= getObjectFlags(type) & ObjectFlags.PropagatingFlags;
+          objectFlags |= type.objectFlags & ObjectFlags.PropagatingFlags;
           const nameType = computedNameType && qf.type.is.usableAsPropertyName(computedNameType) ? computedNameType : undefined;
           const prop = nameType
             ? new qc.Symbol(SymbolFlags.Property | member.flags, getPropertyNameFromType(nameType), checkFlags | qt.CheckFlags.Late)
@@ -1371,7 +1371,7 @@ export function newCheck(f: qt.Frame) {
             const isOptional =
               (memberDecl.kind === Syntax.PropertyAssignment && hasDefaultValue(memberDecl.initer)) || (memberDecl.kind === Syntax.ShorthandPropertyAssignment && memberDecl.objectAssignmentIniter);
             if (isOptional) prop.flags |= SymbolFlags.Optional;
-          } else if (contextualTypeHasPattern && !(getObjectFlags(contextualType!) & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) {
+          } else if (contextualTypeHasPattern && !(contextualType!.objectFlags & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) {
             const impliedProp = qf.get.propertyOfType(contextualType!, member.escName);
             if (impliedProp) prop.flags |= impliedProp.flags & SymbolFlags.Optional;
             else if (!compilerOpts.suppressExcessPropertyErrors && !qf.get.indexInfoOfType(contextualType!, IndexKind.String)) {
@@ -2371,7 +2371,7 @@ export function newCheck(f: qt.Frame) {
                 declKind !== qt.AssignmentDeclarationKind.Prototype &&
                 !qf.type.is.emptyObject(rightType) &&
                 !qf.is.functionObjectType(rightType as qt.ObjectType) &&
-                !(getObjectFlags(rightType) & ObjectFlags.Class))
+                !(rightType.objectFlags & ObjectFlags.Class))
             ) {
               this.assignmentOperator(rightType);
             }

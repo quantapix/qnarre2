@@ -931,7 +931,7 @@ export class Ftype {
       if (f & qt.TypeFlags.StructuredOrInstantiable) includes |= qt.TypeFlags.IncludesStructuredOrInstantiable;
       if (t === wildcardType) includes |= qt.TypeFlags.IncludesWildcard;
       if (!strictNullChecks && f & qt.TypeFlags.Nullable)
-        if (!(getObjectFlags(t) & ObjectFlags.ContainsWideningType)) includes |= qt.TypeFlags.IncludesNonWideningType;
+        if (!(t.objectFlags & ObjectFlags.ContainsWideningType)) includes |= qt.TypeFlags.IncludesNonWideningType;
         else {
           const l = ts.length;
           const i = l && t.id > ts[l - 1].id ? ~l : binarySearch(ts, t, getTypeId, compareNumbers);

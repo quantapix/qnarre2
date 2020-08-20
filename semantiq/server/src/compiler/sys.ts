@@ -124,7 +124,7 @@ export function createDynamicPriorityPollingWatchFile(host: { getModifiedTime: N
     return {
       close: () => {
         file.isClosed = true;
-        unorderedRemoveItem(watchedFiles, file);
+        qu.unorderedRemoveItem(watchedFiles, file);
       },
     };
   }

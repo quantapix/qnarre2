@@ -451,7 +451,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     filePath: qt.Path,
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
   ) {
-    unorderedRemoveItem(Debug.assertDefined(resolution.files), filePath);
+    qu.unorderedRemoveItem(Debug.assertDefined(resolution.files), filePath);
     resolution.refCount!--;
     if (resolution.refCount) {
       return;
@@ -460,7 +460,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     if (resolved && resolved.resolvedFileName) {
       resolvedFileToResolution.remove(resolutionHost.toPath(resolved.resolvedFileName), resolution);
     }
-    if (!unorderedRemoveItem(resolutionsWithFailedLookups, resolution)) {
+    if (!qu.unorderedRemoveItem(resolutionsWithFailedLookups, resolution)) {
       return;
     }
     const { failedLookupLocations } = resolution;

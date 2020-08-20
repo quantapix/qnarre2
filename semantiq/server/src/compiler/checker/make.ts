@@ -430,7 +430,7 @@ export function newMake(f: qt.Frame) {
         : this.arrayType(elemType.flags & qt.TypeFlags.Union ? qf.get.unionType((<qt.UnionType>elemType).types, qt.UnionReduction.Subtype) : elemType);
     }
     arrayLiteralType(type: qt.ObjectType) {
-      if (!(getObjectFlags(type) & ObjectFlags.Reference)) return type;
+      if (!(type.objectFlags & ObjectFlags.Reference)) return type;
       let literalType = (<qt.TypeReference>type).literalType;
       if (!literalType) {
         literalType = (<qt.TypeReference>type).literalType = cloneTypeReference(<qt.TypeReference>type);
@@ -452,7 +452,7 @@ export function newMake(f: qt.Frame) {
         const member = attributeDecl.symbol;
         if (attributeDecl.kind === Syntax.JsxAttribute) {
           const exprType = check.jsxAttribute(attributeDecl, checkMode);
-          objectFlags |= getObjectFlags(exprType) & ObjectFlags.PropagatingFlags;
+          objectFlags |= exprType.objectFlags & ObjectFlags.PropagatingFlags;
           const attributeSymbol = new qc.Symbol(SymbolFlags.Property | qt.SymbolFlags.Transient | member.flags, member.escName);
           attributeSymbol.declarations = member.declarations;
           attributeSymbol.parent = member.parent;

@@ -6,7 +6,7 @@ import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgCount(existing: qt.Typing, type: qt.Type) {
-  return !(getObjectFlags(type) & ObjectFlags.Reference) || !existing.kind === Syntax.TypingReference || length(existing.typeArgs) >= getMinTypeArgCount((type as qt.TypeReference).target.typeParams);
+  return !(type.objectFlags & ObjectFlags.Reference) || !existing.kind === Syntax.TypingReference || length(existing.typeArgs) >= getMinTypeArgCount((type as qt.TypeReference).target.typeParams);
 }
 export class QContext {
   enclosingDeclaration?: Node;
@@ -149,7 +149,7 @@ export class QContext {
       if (qy.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return new qc.TypingReference(new qc.Identifier(''), typeArgNodes);
       return this.symbolToTypeNode(type.aliasSymbol, SymbolFlags.Type, typeArgNodes);
     }
-    const objectFlags = getObjectFlags(type);
+    const objectFlags = type.objectFlags;
     if (objectFlags & ObjectFlags.Reference) {
       qf.assert.true(!!(type.flags & TypeFlags.Object));
       return (<qt.TypeReference>type).node ? this.visitAndTransformType(type, this.typeReferenceToTypeNode) : this.typeReferenceToTypeNode(<qt.TypeReference>type);
@@ -1357,9 +1357,9 @@ export class QContext {
   }
   visitAndTransformType<T>(type: qt.Type, transform: (type: qt.Type) => T) {
     const typeId = '' + type.id;
-    const isConstructorObject = getObjectFlags(type) & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & SymbolFlags.Class;
+    const isConstructorObject = type.objectFlags & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & SymbolFlags.Class;
     const id =
-      getObjectFlags(type) & ObjectFlags.Reference && (<qt.TypeReference>type).node
+      type.objectFlags & ObjectFlags.Reference && (<qt.TypeReference>type).node
         ? 'N' + qf.get.nodeId((<qt.TypeReference>type).node!)
         : type.symbol
         ? (isConstructorObject ? '+' : '') + type.symbol.getId()
@@ -1715,7 +1715,7 @@ export class QContext {
     function isTypeRepresentableAsFunctionNamespaceMerge(typeToSerialize: qt.Type, hostSymbol: qt.Symbol) {
       const ctxSrc = this.enclosingDeclaration.sourceFile;
       return (
-        getObjectFlags(typeToSerialize) & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
+        typeToSerialize.objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.String) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.Number) &&
         !!(length(qf.get.propertiesOfType(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
