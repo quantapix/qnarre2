@@ -17,13 +17,6 @@ export function newType(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.type = new (class Base extends qb.Ftype {
     is = new (class extends Base {
-      bbb() {
-        if (this.aaa()) return true;
-        this.has.ccc();
-      }
-      union(n: Type): n is qt.UnionType {
-        return !!(n.flags & TypeFlags.Union);
-      }
       setOfLiteralsFromSameEnum(ts: readonly Type[]) {
         const first = ts[0];
         if (first.flags & TypeFlags.EnumLiteral) {
@@ -36,18 +29,9 @@ export function newType(f: qt.Frame) {
         }
         return false;
       }
-      functionType(t: Type) {
-        return !!(t.flags & TypeFlags.Object) && getSignaturesOfType(t, qt.SignatureKind.Call).length > 0;
-      }
       iteratorResult(t: Type, k: qt.IterationTypeKind.Yield | qt.IterationTypeKind.Return) {
         const d = qf.get.typeOfPropertyOfType(t, 'done' as qu.__String) || falseType;
         return qf.type.check.assignableTo(k === qt.IterationTypeKind.Yield ? falseType : trueType, d);
-      }
-      yieldIteratorResult(t: Type) {
-        return isIteratorResult(t, qt.IterationTypeKind.Yield);
-      }
-      returnIteratorResult(t: Type) {
-        return isIteratorResult(t, qt.IterationTypeKind.Return);
       }
       literalOfContextualType(t: Type, c?: Type) {
         if (c) {
@@ -180,6 +164,12 @@ export function newType(f: qt.Frame) {
         return forEachProperty(s, (p) => (p.declarationModifierFlags() & ModifierFlags.Protected ? !hasBaseType(checkClass, getDeclaringClass(p)) : false)) ? undefined : checkClass;
       }
       //
+      union(t: Type): t is qt.UnionType {
+        return !!(t.flags & TypeFlags.Union);
+      }
+      function(t: Type) {
+        return !!(t.flags & TypeFlags.Object) && getSignaturesOfType(t, qt.SignatureKind.Call).length > 0;
+      }
       unit(t: Type) {
         return !!(t.flags & TypeFlags.Unit);
       }
@@ -2317,7 +2307,7 @@ export function newSign(f: qt.Frame) {
         return !hasEffectiveRestParam(signature) && getParamCount(signature) < tParamCount;
       }
       genericFunctionReturningFunction(s: Signature) {
-        return !!(s.typeParams && this.functionType(qf.get.returnTypeOfSignature(s)));
+        return !!(s.typeParams && qf.type.is.function(qf.get.returnTypeOfSignature(s)));
       }
       constructorAccessible(n: qt.NewExpression, signature: Signature) {
         if (!signature || !signature.declaration) return true;

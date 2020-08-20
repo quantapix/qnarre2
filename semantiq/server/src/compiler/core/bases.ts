@@ -710,7 +710,6 @@ export class Ftype {
     }
     return false;
   }
-
   eachTypeContainedIn(t: qt.Type, ts: qt.Type[]) {
     return t.flags & qt.TypeFlags.Union ? !forEach((<qt.UnionType>t).types, (x) => !contains(ts, x)) : contains(ts, t);
   }

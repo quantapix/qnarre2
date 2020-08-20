@@ -3942,7 +3942,7 @@ export function newGet(f: qt.Frame) {
       if (qf.type.is.assignableToKind(t, qt.TypeFlags.StringLike)) return qt.TypeReferenceSerializationKind.StringLikeType;
       if (qf.type.is.tuple(t)) return qt.TypeReferenceSerializationKind.ArrayLikeType;
       if (qf.type.is.assignableToKind(t, qt.TypeFlags.ESSymbolLike)) return qt.TypeReferenceSerializationKind.ESSymbolType;
-      if (qf.is.functionType(t)) return qt.TypeReferenceSerializationKind.TypeWithCallSignature;
+      if (qf.type.is.function(t)) return qt.TypeReferenceSerializationKind.TypeWithCallSignature;
       if (qf.type.is.array(t)) return qt.TypeReferenceSerializationKind.ArrayLikeType;
       return qt.TypeReferenceSerializationKind.ObjectType;
     }

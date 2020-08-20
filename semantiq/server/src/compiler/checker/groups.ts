@@ -2115,7 +2115,7 @@ export function newType(f: qt.Frame) {
           if (assumeTrue ? operator !== Syntax.Equals2Token && operator !== Syntax.Equals3Token : operator !== Syntax.ExclamationEqualsToken && operator !== Syntax.ExclamationEquals2Token)
             return type;
           const identifierType = this.typeOfExpression(identifier);
-          if (!qf.is.functionType(identifierType) && !qf.type.is.constructr(identifierType)) return type;
+          if (!qf.type.is.function(identifierType) && !qf.type.is.constructr(identifierType)) return type;
           const prototypeProperty = this.propertyOfType(identifierType, 'prototype' as qu.__String);
           if (!prototypeProperty) return type;
           const prototypeType = this.typeOfSymbol(prototypeProperty);
@@ -2226,6 +2226,12 @@ export function newType(f: qt.Frame) {
           if (b === t || b !== c) return false;
         }
         return true;
+      }
+      yieldIteratorResult(t: Type) {
+        return isIteratorResult(t, qt.IterationTypeKind.Yield);
+      }
+      returnIteratorResult(t: Type) {
+        return isIteratorResult(t, qt.IterationTypeKind.Return);
       }
     })();
     is: Base['_is'] & _Fis;
