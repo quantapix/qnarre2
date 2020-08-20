@@ -4,6 +4,7 @@ import { Fcheck } from './check';
 import { Fget } from './get';
 import { Nodes } from '../core';
 import { Syntax } from '../syntax';
+import * as qb from './bases';
 import * as qc from '../core';
 import * as qd from '../diags';
 import * as qt from './types';
@@ -869,7 +870,6 @@ export function newSymb(f: qt.Frame) {
 }
 export interface Fsymb extends ReturnType<typeof newSymb> {}
 
-export interface Ftype extends qc.Ftype {}
 export function newType(f: qt.Frame) {
   interface Frame extends qt.Frame {
     check: Fcheck;
@@ -878,24 +878,27 @@ export function newType(f: qt.Frame) {
   }
   const qf = f as Frame;
   interface _Ftype extends qc.Ftype {}
-  class _Ftype {}
-  qu.addMixins(_Ftype, [qc.newType(qf)]);
+  class _Ftype extends qb.Ftype {}
+  const t = qc.newType(qf);
+  qu.addMixins(_Ftype, [t]);
+  type _Fget = qc.Ftype['get'];
+  type _Fis = qc.Ftype['is'];
   return (qf.type = new (class Base extends _Ftype {
-    get = new (class extends Base {
-      unionObjectAndArrayLiteralCandidates(candidates: qt.Type[]): qt.Type[] {
-        if (candidates.length > 1) {
-          const objectLiterals = filter(candidates, qf.type.is.objectOrArrayLiteral);
+    _get = new (class extends Base {
+      unionObjectAndArrayLiteralCandidates(ts: qt.Type[]): qt.Type[] {
+        if (ts.length > 1) {
+          const objectLiterals = filter(ts, qf.type.is.objectOrArrayLiteral);
           if (objectLiterals.length) {
             const literalsType = qf.get.unionType(objectLiterals, qt.UnionReduction.Subtype);
             return concatenate(
-              filter(candidates, (t) => !qf.type.is.objectOrArrayLiteral(t)),
+              filter(ts, (t) => !qf.type.is.objectOrArrayLiteral(t)),
               [literalsType]
             );
           }
         }
-        return candidates;
+        return ts;
       }
-
+      /*
       intersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArgs?: readonly Type[]): Type {
         const typeMembershipMap: qu.QMap<Type> = new qu.QMap();
         const includes = addTypesToIntersection(typeMembershipMap, 0, types);
@@ -2211,18 +2214,28 @@ export function newType(f: qt.Frame) {
           return type;
         }
       })();
+        */
     })();
-    is = new (class extends Base {
-      literalTypesWithSameBaseType(types: qt.Type[]): boolean {
-        let commonBaseType: qt.Type | undefined;
-        for (const t of types) {
-          const baseType = getBaseTypeOfLiteralType(t);
-          if (!commonBaseType) commonBaseType = baseType;
-          if (baseType === t || baseType !== commonBaseType) return false;
+    get: Base['_get'] & _Fget;
+    _is = new (class extends Base {
+      literalTypesWithSameBaseType(ts: qt.Type[]): boolean {
+        let c: qt.Type | undefined;
+        for (const t of ts) {
+          const b = getBaseTypeOfLiteralType(t);
+          if (!c) c = b;
+          if (b === t || b !== c) return false;
         }
         return true;
       }
     })();
+    is: Base['_is'] & _Fis;
+    constructor() {
+      super();
+      this.get = this._get as Base['get'];
+      qu.addMixins(this.get, [this._get]);
+      this.is = this._is as Base['is'];
+      qu.addMixins(this.is, [this._is]);
+    }
     literalTypeToNode(type: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
       const enumResult =
         type.flags & qt.TypeFlags.EnumLiteral

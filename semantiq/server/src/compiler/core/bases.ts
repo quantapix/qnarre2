@@ -866,7 +866,6 @@ export class Ftype {
     }
     return e;
   }
-
   compareTypesIdentical(trce: qt.Type, to: qt.Type): Ternary {
     return qf.type.is.relatedTo(trce, to, identityRelation) ? Ternary.True : Ternary.False;
   }
@@ -970,7 +969,6 @@ export class Ftype {
     }
     return t;
   }
-
   typeToString(
     t: qt.Type,
     d?: Node,

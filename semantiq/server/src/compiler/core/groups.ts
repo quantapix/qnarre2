@@ -15,10 +15,11 @@ export function newType(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.type = new (class Ftype extends qb.Ftype {
-    is = new (class extends Ftype {
+  return (qf.type = new (class Base extends qb.Ftype {
+    is = new (class extends Base {
       bbb() {
         if (this.aaa()) return true;
+        this.has.ccc();
       }
       union(n: Type): n is qt.UnionType {
         return !!(n.flags & TypeFlags.Union);
@@ -572,7 +573,7 @@ export function newType(f: qt.Frame) {
         return this.nonDeferredReference(t) && qu.some(getTypeArgs(t), (a) => this.unconstrainedParam(a) || this.referenceWithGenericArgs(a));
       }
     })();
-    has = new (class extends Ftype {
+    has = new (class extends Base {
       ccc(): boolean {
         if (this.is.bbb()) this.aaa();
         if (this.ccc()) return false;
@@ -616,7 +617,7 @@ export function newType(f: qt.Frame) {
         return binarySearch(types, t, getTypeId, compareNumbers) >= 0;
       }
     })();
-    get = new (class extends Ftype {
+    get = new (class extends Base {
       properties(t: Type): Symbol[] {
         return t.checker.get.propertiesOfType(t);
       }
@@ -2045,8 +2046,8 @@ export function newType(f: qt.Frame) {
         return iterationTypes === noIterationTypes ? undefined : iterationTypes;
       }
     })();
-    new = new (class extends Ftype {})();
-    check = new (class extends Ftype {})();
+    new = new (class extends Base {})();
+    check = new (class extends Base {})();
   })());
 }
 export interface Ftype extends ReturnType<typeof newType> {}
