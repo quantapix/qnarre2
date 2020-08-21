@@ -21,6 +21,7 @@ export function newIs(f: qt.Frame) {
   class _Fis extends qu.Fis {}
   qu.addMixins(_Fis, [qc.newIs(qf)]);
   return (qf.is = new (class extends _Fis {
+    /*
     deferredContext(n: Node, last?: Node) {
       if (n.kind !== Syntax.ArrowFunction && n.kind !== Syntax.FunctionExpression) {
         return (
@@ -1219,6 +1220,7 @@ export function newIs(f: qt.Frame) {
       }
       return;
     }
+    */
   })());
 }
 export interface Fis extends ReturnType<typeof newIs> {}
@@ -1233,6 +1235,7 @@ export function newHas(f: qt.Frame) {
   class _Fhas extends qu.Fhas {}
   qu.addMixins(_Fhas, [qc.newHas(qf)]);
   return (qf.has = new (class extends _Fhas {
+    /*
     externalModuleSymbol(d: Node) {
       return this.ambientModule(d) || (d.kind === Syntax.SourceFile && this.externalOrCommonJsModule(<qt.SourceFile>d));
     }
@@ -1389,6 +1392,7 @@ export function newHas(f: qt.Frame) {
       }
       return false;
     }
+    */
   })());
 }
 export interface Fhas extends ReturnType<typeof newHas> {}
@@ -1396,25 +1400,25 @@ interface Frame extends qc.Frame {
   check: Fcheck;
   make: Fmake;
   get: Fget;
-  has: qg.Fhas;
+  has: Fhas;
   instantiate: Finstantiate;
-  is: qg.Fis;
+  is: Fis;
   resolve: Fresolve;
-  signature: qg.Fsignature;
-  symbol: qg.Fsymbol;
+  signature: qg.Fsign;
+  symbol: qg.Fsymb;
   type: qg.Ftype;
 }
 export const qf = qc.newFrame() as Frame;
 newCheck(qf);
 newMake(qf);
 newGet(qf);
-qg.newHas(qf);
+newHas(qf);
 newInstantiate(qf);
-qg.newIs(qf);
+newIs(qf);
 newResolve(qf);
 qg.newType(qf);
-qg.newSymbol(qf);
-qg.newSignature(qf);
+qg.newSymb(qf);
+qg.newSign(qf);
 
 export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean): qt.TypeChecker {
   class Signature extends qb.Signature {}
@@ -1477,7 +1481,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   }
   class Type extends qb.Type {}
   const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
-  const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
+  const resolvingSymbol = new Symbol(0, qt.InternalSymbol.Resolving);
 
   const compilerOpts = host.getCompilerOpts();
   const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOpts);
@@ -1732,7 +1736,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
     interface Frame extends qt.Frame {
       check: Fcheck;
       get: Fget;
-      has: qg.Fhas;
+      has: Fhas;
     }
     const qf = f as Frame;
     interface _Ftype extends qg.Ftype {}
@@ -1742,15 +1746,69 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
     type _Fget = qg.Ftype['get'];
     type _Fis = qg.Ftype['is'];
     return (qf.type = new (class Base extends _Ftype {
-      _get = new (class extends Base {})();
-      get: Base['_get'] & _Fget;
-      _is = new (class extends Base {})();
-      is: Base['_is'] & _Fis;
+      _get2 = new (class extends Base {})();
+      get: Base['_get2'] & _Fget;
+      _is2 = new (class extends Base {
+        assignableToKind(t: Type, k: TypeFlags, strict?: boolean) {
+          if (t.flags & k) return true;
+          if (strict && t.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void | TypeFlags.Undefined | TypeFlags.Null)) return false;
+          return (
+            (!!(k & TypeFlags.NumberLike) && this.check.assignableTo(t, numberType)) ||
+            (!!(k & TypeFlags.BigIntLike) && this.check.assignableTo(t, bigintType)) ||
+            (!!(k & TypeFlags.StringLike) && this.check.assignableTo(t, stringType)) ||
+            (!!(k & TypeFlags.BooleanLike) && this.check.assignableTo(t, booleanType)) ||
+            (!!(k & TypeFlags.Void) && this.check.assignableTo(t, voidType)) ||
+            (!!(k & TypeFlags.Never) && this.check.assignableTo(t, neverType)) ||
+            (!!(k & TypeFlags.Null) && this.check.assignableTo(t, nullType)) ||
+            (!!(k & TypeFlags.Undefined) && this.check.assignableTo(t, undefinedType)) ||
+            (!!(k & TypeFlags.ESSymbol) && this.check.assignableTo(t, esSymbolType)) ||
+            (!!(k & TypeFlags.NonPrimitive) && this.check.assignableTo(t, nonPrimitiveType))
+          );
+        }
+        iteratorResult(t: Type, k: qt.IterationTypeKind.Yield | qt.IterationTypeKind.Return) {
+          const d = qf.get.typeOfPropertyOfType(t, 'done' as qu.__String) || falseType;
+          return this.check.assignableTo(k === qt.IterationTypeKind.Yield ? falseType : trueType, d);
+        }
+        literalOfContextualType(t: Type, c?: Type) {
+          if (c) {
+            if (this.unionOrIntersection(c)) return qu.some(c.types, (t) => isLiteralOfContextualType(t, t));
+            if (c.flags & TypeFlags.InstantiableNonPrimitive) {
+              const b = qf.get.baseConstraintOfType(c) || unknownType;
+              return (
+                (maybeTypeOfKind(b, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
+                (maybeTypeOfKind(b, TypeFlags.Number) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
+                (maybeTypeOfKind(b, TypeFlags.BigInt) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
+                (maybeTypeOfKind(b, TypeFlags.ESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol)) ||
+                isLiteralOfContextualType(t, b)
+              );
+            }
+            return !!(
+              (c.flags & (TypeFlags.StringLiteral | TypeFlags.Index) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
+              (c.flags & TypeFlags.NumberLiteral && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
+              (c.flags & TypeFlags.BigIntLiteral && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
+              (c.flags & TypeFlags.BooleanLiteral && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
+              (c.flags & TypeFlags.UniqueESSymbol && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
+            );
+          }
+          return false;
+        }
+        nullableType(t: Type) {
+          return !!((strictNullChecks ? getFalsyFlags(t) : t.flags) & TypeFlags.Nullable);
+        }
+        untypedFunctionCall(t: Type, f: Type, calls: number, constructs: number) {
+          return (
+            this.any(t) ||
+            (this.any(f) && !!(t.flags & TypeFlags.TypeParam)) ||
+            (!calls && !constructs && !(f.flags & (TypeFlags.Union | TypeFlags.Never)) && this.check.assignableTo(t, globalFunctionType))
+          );
+        }
+      })();
+      is: Base['_is2'] & _Fis;
       constructor() {
         super();
-        this.get = this._get as Base['get'];
+        this.get = this._get2 as Base['get'];
         qu.addMixins(this.get, [t.get]);
-        this.is = this._is as Base['is'];
+        this.is = this._is2 as Base['is'];
         qu.addMixins(this.is, [t.is]);
       }
       literalTypeToNode(t: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {

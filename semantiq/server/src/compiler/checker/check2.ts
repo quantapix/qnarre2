@@ -1610,25 +1610,24 @@ export function newType(f: qt.Frame) {
             }
           }
         }
-        function isIdenticalTo(source: Type, target: Type): qt.Ternary {
-          const flags = source.flags & target.flags;
+        function isIdenticalTo(t: Type, to: Type): qt.Ternary {
+          const flags = t.flags & to.flags;
           if (!(flags & TypeFlags.Substructure)) return qt.Ternary.False;
-          if (flags & TypeFlags.UnionOrIntersection) {
-            let result = eachTypeRelatedToSomeType(<qt.UnionOrIntersectionType>source, <qt.UnionOrIntersectionType>target);
-            if (result) result &= eachTypeRelatedToSomeType(<qt.UnionOrIntersectionType>target, <qt.UnionOrIntersectionType>source);
-            return result;
+          if (qf.type.is.unionOrIntersection(t) && qf.type.is.unionOrIntersection(to)) {
+            let r = eachTypeRelatedToSomeType(t, to);
+            if (r) r &= eachTypeRelatedToSomeType(to, t);
+            return r;
           }
-          return recursiveTypeRelatedTo(source, target, false, IntersectionState.None);
+          return recursiveTypeRelatedTo(t, to, false, IntersectionState.None);
         }
-        function getTypeOfPropertyInTypes(types: Type[], name: qu.__String) {
-          const appendPropType = (propTypes: Type[] | undefined, type: Type) => {
-            type = getApparentType(type);
-            const prop = type.flags & TypeFlags.UnionOrIntersection ? getPropertyOfqt.UnionOrIntersectionType(<qt.UnionOrIntersectionType>type, name) : getPropertyOfObjectType(type, name);
-            const propType =
-              (prop && prop.typeOfSymbol()) || (NumericLiteral.name(name) && qf.get.indexTypeOfType(type, IndexKind.Number)) || qf.get.indexTypeOfType(type, IndexKind.String) || undefinedType;
-            return qu.append(propTypes, propType);
+        function getTypeOfPropertyInTypes(ts: Type[], name: qu.__String) {
+          const appendPropType = (ps: Type[] | undefined, t: Type) => {
+            t = getApparentType(t);
+            const prop = qf.type.is.unionOrIntersection(t) ? getPropertyOfqt.UnionOrIntersectionType(t, name) : getPropertyOfObjectType(t, name);
+            const p = (prop && prop.typeOfSymbol()) || (NumericLiteral.name(name) && qf.get.indexTypeOfType(t, IndexKind.Number)) || qf.get.indexTypeOfType(t, IndexKind.String) || undefinedType;
+            return qu.append(ps, p);
           };
-          return qf.get.unionType(reduceLeft(types, appendPropType, undefined) || empty);
+          return qf.get.unionType(reduceLeft(ts, appendPropType, undefined) || empty);
         }
         function hasExcessProperties(source: qt.FreshObjectLiteralType, target: Type, reportErrors: boolean): boolean {
           if (!qf.is.excessPropertyCheckTarget(target) || (!noImplicitAny && target.objectFlags & ObjectFlags.JSLiteral)) return false;

@@ -1,5 +1,5 @@
 import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, TypeFlags, Visitor, Visitors, VisitResult } from '../types';
-import { qf, Fis } from './frame';
+import { qf, Fassert, Fis } from './frame';
 import { Syntax } from '../syntax';
 import * as qb from './bases';
 import * as qc from './classes';
@@ -11,7 +11,7 @@ type Tester = (n: Node) => boolean;
 type Lifter<T extends Node> = ((ns?: Nodes) => T) | ((ns?: readonly Node[]) => T);
 export function newVisit(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    assert: qg.Fassert;
+    assert: Fassert;
     calc: qg.Fcalc;
     //make: Fmake;
     emit: qg.Femit;
@@ -19,6 +19,7 @@ export function newVisit(f: qt.Frame) {
     //has: Fhas;
     stmt: qg.Fstmt;
     is: Fis;
+    type: qg.Ftype;
   }
   const qf = f as Frame;
   return (qf.visit = new (class {
@@ -1051,7 +1052,7 @@ export function createGetSymbolWalker(
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
       if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as qt.TypeParam);
-      if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as qt.UnionOrIntersectionType);
+      if (qf.type.is.unionOrIntersection(t)) visitUnionOrIntersectionType(t);
       if (t.flags & TypeFlags.Index) visitIndexType(t as qt.IndexType);
       if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as qt.IndexedAccessType);
     }

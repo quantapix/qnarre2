@@ -2,6 +2,7 @@ import { CheckFlags, FlowFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, Sym
 import { Signature, Symbol, Type, TypeParam, TypeReference } from './types';
 import { Fcheck } from './check';
 import { Fget } from './get';
+import { Fhas, Fis } from './frame';
 import { Nodes } from '../core';
 import { Syntax } from '../syntax';
 import * as qb from './bases';
@@ -442,7 +443,7 @@ export function newSymb(f: qt.Frame) {
                 const union = new qc.Symbol(s.flags | exportedMember.flags, name);
                 union.type = this.unionType([this.typeOfSymbol(s), this.typeOfSymbol(exportedMember)]);
                 union.valueDeclaration = exportedMember.valueDeclaration;
-                union.declarations = concatenate(exportedMember.declarations, s.declarations);
+                union.declarations = qu.concatenate(exportedMember.declarations, s.declarations);
                 members.set(name, union);
               } else {
                 members.set(name, exportedMember.merge(s));
@@ -769,7 +770,7 @@ export function newSymb(f: qt.Frame) {
           if (!lateSymbol) lateSymbols.set(memberName, (lateSymbol = new qc.Symbol(SymbolFlags.None, memberName, qt.CheckFlags.Late)));
           const earlySymbol = earlySymbols && earlySymbols.get(memberName);
           if (lateSymbol.flags & qf.get.excluded(symbolFlags) || earlySymbol) {
-            const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
+            const declarations = earlySymbol ? qu.concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
             const name = (!(type.flags & qt.TypeFlags.UniqueESSymbol) && qy.get.unescUnderscores(memberName)) || declarationNameToString(declName);
             forEach(declarations, (declaration) => error(qf.decl.nameOf(declaration) || declaration, qd.msgs.Property_0_was_also_declared_here, name));
             error(declName || decl, qd.msgs.Duplicate_property_0, name);
@@ -887,11 +888,11 @@ export function newType(f: qt.Frame) {
     _get = new (class extends Base {
       unionObjectAndArrayLiteralCandidates(ts: qt.Type[]): qt.Type[] {
         if (ts.length > 1) {
-          const objectLiterals = filter(ts, qf.type.is.objectOrArrayLiteral);
+          const objectLiterals = qu.filter(ts, qf.type.is.objectOrArrayLiteral);
           if (objectLiterals.length) {
             const literalsType = qf.get.unionType(objectLiterals, qt.UnionReduction.Subtype);
-            return concatenate(
-              filter(ts, (t) => !qf.type.is.objectOrArrayLiteral(t)),
+            return qu.concatenate(
+              qu.filter(ts, (t) => !qf.type.is.objectOrArrayLiteral(t)),
               [literalsType]
             );
           }
@@ -1246,7 +1247,7 @@ export function newType(f: qt.Frame) {
             const constraint = this.constraintFromTypeParam(<TypeParam>t);
             return (t as TypeParam).isThisType || !constraint ? constraint : this.baseConstraint(constraint);
           }
-          if (t.flags & TypeFlags.UnionOrIntersection) {
+          if (qf.type.is.unionOrIntersection(t)) {
             const types = (<qt.UnionOrIntersectionType>t).types;
             const baseTypes: Type[] = [];
             for (const type of types) {
@@ -1334,7 +1335,7 @@ export function newType(f: qt.Frame) {
           const typeArgs = !n
             ? qu.empty
             : n.kind === Syntax.TypingReference
-            ? concatenate(t.target.outerTypeParams, this.effectiveTypeArgs(n, t.target.localTypeParams!))
+            ? qu.concatenate(t.target.outerTypeParams, this.effectiveTypeArgs(n, t.target.localTypeParams!))
             : n.kind === Syntax.ArrayTyping
             ? [this.typeFromTypeNode(n.elemType)]
             : map(n.elems, this.typeFromTypeNode);
