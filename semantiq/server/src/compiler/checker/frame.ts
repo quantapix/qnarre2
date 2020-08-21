@@ -1739,7 +1739,20 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
     class _Ftype {}
     const t = qg.newType(qf);
     qu.addMixins(_Ftype, [t]);
+    type _Fget = qg.Ftype['get'];
+    type _Fis = qg.Ftype['is'];
     return (qf.type = new (class Base extends _Ftype {
+      _get = new (class extends Base {})();
+      get: Base['_get'] & _Fget;
+      _is = new (class extends Base {})();
+      is: Base['_is'] & _Fis;
+      constructor() {
+        super();
+        this.get = this._get as Base['get'];
+        qu.addMixins(this.get, [t.get]);
+        this.is = this._is as Base['is'];
+        qu.addMixins(this.is, [t.is]);
+      }
       literalTypeToNode(t: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
         const r =
           t.flags & qt.TypeFlags.EnumLiteral
