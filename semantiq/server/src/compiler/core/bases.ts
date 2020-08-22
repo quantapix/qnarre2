@@ -592,7 +592,7 @@ export class Type implements qt.Type {
   widened?: Type;
   constructor(public checker: qt.TypeChecker, public flags: TypeFlags) {}
   get typeArgs(): readonly Type[] | undefined {
-    if (this.objectFlags & ObjectFlags.Reference) return this.checker.get.typeArgs((this as qt.Type) as qt.TypeReference);
+    if (qf.type.is.reference(this)) return this.checker.get.typeArgs((this as qt.Type) as qt.TypeReference);
     return;
   }
   get objectFlags(): ObjectFlags {
@@ -654,7 +654,7 @@ export class Ftype {
     return;
   }
   findBestTypeForObjectLiteral(t: qt.Type, from: qt.UnionOrIntersectionType) {
-    if (t.objectFlags & ObjectFlags.ObjectLiteral && forEachType(from, qf.type.is.arrayLike)) return qf.find.up(from.types, (t) => !qf.type.is.arrayLike(t));
+    if (qf.type.is.objectLiteral(t) && forEachType(from, qf.type.is.arrayLike)) return qf.find.up(from.types, (t) => !qf.type.is.arrayLike(t));
     return;
   }
   findBestTypeForInvokable(t: qt.Type, from: qt.UnionOrIntersectionType) {
@@ -756,9 +756,9 @@ export class Ftype {
   }
   replacePrimitivesWithLiterals(p: qt.Type, l: qt.Type) {
     if (
-      (isTypeSubsetOf(stringType, p) && maybeTypeOfKind(l, qt.TypeFlags.StringLiteral)) ||
-      (isTypeSubsetOf(numberType, p) && maybeTypeOfKind(l, qt.TypeFlags.NumberLiteral)) ||
-      (isTypeSubsetOf(bigintType, p) && maybeTypeOfKind(l, qt.TypeFlags.BigIntLiteral))
+      (qf.type.is.subsetOf(stringType, p) && maybeTypeOfKind(l, qt.TypeFlags.StringLiteral)) ||
+      (qf.type.is.subsetOf(numberType, p) && maybeTypeOfKind(l, qt.TypeFlags.NumberLiteral)) ||
+      (qf.type.is.subsetOf(bigintType, p) && maybeTypeOfKind(l, qt.TypeFlags.BigIntLiteral))
     ) {
       return mapType(p, (t) =>
         t.flags & qt.TypeFlags.String

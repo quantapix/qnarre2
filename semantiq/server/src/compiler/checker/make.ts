@@ -430,7 +430,7 @@ export function newMake(f: qt.Frame) {
         : this.arrayType(elemType.flags & qt.TypeFlags.Union ? qf.get.unionType((<qt.UnionType>elemType).types, qt.UnionReduction.Subtype) : elemType);
     }
     arrayLiteralType(type: qt.ObjectType) {
-      if (!(type.objectFlags & ObjectFlags.Reference)) return type;
+      if (!(qf.type.is.reference(type))) return type;
       let literalType = (<qt.TypeReference>type).literalType;
       if (!literalType) {
         literalType = (<qt.TypeReference>type).literalType = cloneTypeReference(<qt.TypeReference>type);
@@ -470,7 +470,7 @@ export function newMake(f: qt.Frame) {
           }
           const exprType = getReducedType(check.expressionCached(attributeDecl.expression, checkMode));
           if (qf.type.is.any(exprType)) hasSpreadAnyType = true;
-          if (qf.is.validSpreadType(exprType)) {
+          if (qf.type.is.validSpread(exprType)) {
             spread = getSpreadType(spread, exprType, attributes.symbol, objectFlags, false);
             if (allAttributesTable) qf.type.check.spreadPropOverrides(exprType, allAttributesTable, attributeDecl);
           } else {

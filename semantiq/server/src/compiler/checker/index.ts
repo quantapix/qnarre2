@@ -1578,8 +1578,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
       }
       if (
-        source.objectFlags & ObjectFlags.Reference &&
-        target.objectFlags & ObjectFlags.Reference &&
+        qf.type.is.reference(source) &&
+        qf.type.is.reference(target) &&
         ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target))) &&
         !((<qt.TypeReference>source).node && (<qt.TypeReference>target).node)
       ) {
@@ -1784,7 +1784,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       return false;
     }
     function inferFromObjectTypes(source: qt.Type, target: qt.Type) {
-      const isNonConstructorObject = target.flags & qt.TypeFlags.Object && !(target.objectFlags & ObjectFlags.Anonymous && target.symbol && target.symbol.flags & qt.SymbolFlags.Class);
+      const isNonConstructorObject = target.flags & qt.TypeFlags.Object && !(qf.type.is.anonymous(target) && target.symbol && target.symbol.flags & qt.SymbolFlags.Class);
       const symbolOrType = isNonConstructorObject ? (qf.type.is.tuple(target) ? target.target : target.symbol) : undefined;
       if (symbolOrType) {
         if (contains(symbolOrTypeStack, symbolOrType)) {
@@ -1800,8 +1800,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     function inferFromObjectTypesWorker(source: qt.Type, target: qt.Type) {
       if (
-        source.objectFlags & ObjectFlags.Reference &&
-        target.objectFlags & ObjectFlags.Reference &&
+        qf.type.is.reference(source) &&
+        qf.type.is.reference(target) &&
         ((<qt.TypeReference>source).target === (<qt.TypeReference>target).target || (qf.type.is.array(source) && qf.type.is.array(target)))
       ) {
         inferFromTypeArgs(getTypeArgs(<qt.TypeReference>source), getTypeArgs(<qt.TypeReference>target), getVariances((<qt.TypeReference>source).target));
@@ -1967,7 +1967,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return discriminateTypeByDiscriminableItems(
       contextualType,
       map(
-        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && qf.is.possiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
+        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && qf.is.possiblyDiscriminantValue(p.initer) && qf.type.is.discriminantProp(contextualType, p.symbol.escName)),
         (prop) => [() => check.expression((prop as qt.PropertyAssignment).initer), prop.symbol.escName] as [() => qt.Type, qu.__String]
       ),
       qf.type.is.assignableTo,
@@ -1980,7 +1980,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       map(
         filter(
           node.properties,
-          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || qf.is.possiblyDiscriminantValue(p.initer))
+          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && qf.type.is.discriminantProp(contextualType, p.symbol.escName) && (!p.initer || qf.is.possiblyDiscriminantValue(p.initer))
         ),
         (prop) => [!(prop as qt.JsxAttribute).initer ? () => trueType : () => check.expression((prop as qt.JsxAttribute).initer!), prop.symbol.escName] as [() => qt.Type, qu.__String]
       ),

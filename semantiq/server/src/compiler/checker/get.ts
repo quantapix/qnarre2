@@ -411,7 +411,7 @@ export function newGet(f: qt.Frame) {
       if (pattern.kind === Syntax.ObjectBindingPattern) {
         if (declaration.dot3Token) {
           parentType = this.reducedType(parentType);
-          if (parentType.flags & qt.TypeFlags.Unknown || !qf.is.validSpreadType(parentType)) {
+          if (parentType.flags & qt.TypeFlags.Unknown || !qf.type.is.validSpread(parentType)) {
             error(declaration, qd.msgs.Rest_types_may_only_be_created_from_object_types);
             return errorType;
           }
@@ -2105,7 +2105,7 @@ export function newGet(f: qt.Frame) {
           const type = this.typeFromFlowType(flowType);
           if (type === declaredType && declaredType === initialType) return type;
           qu.pushIfUnique(antecedentTypes, type);
-          if (!qf.is.typeSubsetOf(t, declaredType)) subtypeReduction = true;
+          if (!qf.type.is.subsetOf(t, declaredType)) subtypeReduction = true;
           if (qf.is.incomplete(flowType)) seenIncomplete = true;
         }
         if (bypassFlow) {
@@ -2114,7 +2114,7 @@ export function newGet(f: qt.Frame) {
           if (!contains(antecedentTypes, type) && !qf.is.exhaustiveSwitchStatement(bypassFlow.switchStatement)) {
             if (type === declaredType && declaredType === initialType) return type;
             antecedentTypes.push(t);
-            if (!qf.is.typeSubsetOf(t, declaredType)) subtypeReduction = true;
+            if (!qf.type.is.subsetOf(t, declaredType)) subtypeReduction = true;
             if (qf.is.incomplete(flowType)) seenIncomplete = true;
           }
         }
@@ -2151,7 +2151,7 @@ export function newGet(f: qt.Frame) {
           }
           const type = this.typeFromFlowType(flowType);
           qu.pushIfUnique(antecedentTypes, type);
-          if (!qf.is.typeSubsetOf(t, declaredType)) subtypeReduction = true;
+          if (!qf.type.is.subsetOf(t, declaredType)) subtypeReduction = true;
           if (type === declaredType) break;
         }
         const result = this.unionOrEvolvingArrayType(antecedentTypes, subtypeReduction ? UnionReduction.Subtype : UnionReduction.Literal);
@@ -2164,7 +2164,7 @@ export function newGet(f: qt.Frame) {
         if (!(t.flags & qt.TypeFlags.Union) || !qf.is.accessExpression(expr)) return false;
         const name = this.accessedPropertyName(expr);
         if (name === undefined) return false;
-        return qf.is.matchingReference(reference, expr.expression) && qf.is.discriminantProperty(t, name);
+        return qf.is.matchingReference(reference, expr.expression) && qf.type.is.discriminantProp(t, name);
       }
       isMatchingConstructorReference(expr: qt.Expression) {
         return (

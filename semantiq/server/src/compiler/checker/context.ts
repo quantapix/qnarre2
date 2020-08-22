@@ -6,7 +6,7 @@ import * as qt from '../types';
 import * as qu from '../utils';
 import * as qy from '../syntax';
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgCount(existing: qt.Typing, type: qt.Type) {
-  return !(type.objectFlags & ObjectFlags.Reference) || !existing.kind === Syntax.TypingReference || length(existing.typeArgs) >= getMinTypeArgCount((type as qt.TypeReference).target.typeParams);
+  return !qf.type.is.reference(type) || !existing.kind === Syntax.TypingReference || length(existing.typeArgs) >= getMinTypeArgCount((type as qt.TypeReference).target.typeParams);
 }
 export class QContext {
   enclosingDeclaration?: Node;
@@ -70,7 +70,7 @@ export class QContext {
       this.approximateLength += 7;
       return new qc.KeywordTyping(Syntax.BooleanKeyword);
     }
-    if (type.flags & TypeFlags.EnumLiteral && !(type.flags & TypeFlags.Union)) {
+    if (qf.type.is.enumLiteral(type) && !qf.type.is.union(type)) {
       const parentSymbol = getParentOfSymbol(type.symbol)!;
       const parentName = this.symbolToTypeNode(parentSymbol, SymbolFlags.Type);
       const enumLiteralName =
@@ -78,11 +78,11 @@ export class QContext {
       return enumLiteralName;
     }
     if (type.flags & TypeFlags.EnumLike) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
-    if (type.flags & TypeFlags.StringLiteral) {
+    if (qf.type.is.stringLiteral(type)) {
       this.approximateLength += (<qt.StringLiteralType>type).value.length + 2;
       return new qc.LiteralTyping(qf.emit.setFlags(qc.asLiteral((<qt.StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
     }
-    if (type.flags & TypeFlags.NumberLiteral) {
+    if (qf.type.is.numberLiteral(type)) {
       const value = (<qt.NumberLiteralType>type).value;
       this.approximateLength += ('' + value).length;
       return new qc.LiteralTyping(value < 0 ? new qc.PrefixUnaryExpression(Syntax.MinusToken, qc.asLiteral(-value)) : qc.asLiteral(value));
@@ -151,15 +151,15 @@ export class QContext {
     }
     const objectFlags = type.objectFlags;
     if (objectFlags & ObjectFlags.Reference) {
-      qf.assert.true(!!(type.flags & TypeFlags.Object));
+      qf.assert.true(!!qf.type.is.object(type));
       return (<qt.TypeReference>type).node ? this.visitAndTransformType(type, this.typeReferenceToTypeNode) : this.typeReferenceToTypeNode(<qt.TypeReference>type);
     }
-    if (type.flags & TypeFlags.TypeParam || objectFlags & ObjectFlags.ClassOrInterface) {
-      if (type.flags & TypeFlags.TypeParam && contains(this.inferTypeParams, type)) {
+    if (qf.type.is.param(type) || objectFlags & ObjectFlags.ClassOrInterface) {
+      if (qf.type.is.param(type) && contains(this.inferTypeParams, type)) {
         this.approximateLength += type.symbol.name.length + 6;
         return new qc.InferTyping(this.typeParamToDeclarationWithConstraint(type as qt.TypeParam, undefined));
       }
-      if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParam && !type.symbol.isTypeAccessible(this.enclosingDeclaration)) {
+      if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && qf.type.is.param(type) && !type.symbol.isTypeAccessible(this.enclosingDeclaration)) {
         const name = this.typeParamToName(type);
         this.approximateLength += idText(name).length;
         return new qc.TypingReference(new qc.Identifier(idText(name)), undefined);
@@ -167,11 +167,11 @@ export class QContext {
       return type.symbol ? this.symbolToTypeNode(type.symbol, SymbolFlags.Type) : new qc.TypingReference(new qc.Identifier('?'), undefined);
     }
     if (type.flags & (TypeFlags.Union | TypeFlags.Intersection)) {
-      const types = type.flags & TypeFlags.Union ? formatUnionTypes((<qt.UnionType>type).types) : (<qt.IntersectionType>type).types;
+      const types = qf.type.is.union(type) ? formatUnionTypes((<qt.UnionType>type).types) : (<qt.IntersectionType>type).types;
       if (length(types) === 1) return this.typeToTypeNodeHelper(types[0]);
       const typeNodes = this.mapToTypeNodes(types, true);
       if (typeNodes && typeNodes.length > 0) {
-        const unionOrIntersectionTyping = new qc.UnionOrIntersectionType(type.flags & TypeFlags.Union ? Syntax.UnionTyping : Syntax.IntersectionTyping, typeNodes);
+        const unionOrIntersectionTyping = new qc.UnionOrIntersectionType(qf.type.is.union(type) ? Syntax.UnionTyping : Syntax.IntersectionTyping, typeNodes);
         return unionOrIntersectionTyping;
       } else {
         if (!this.encounteredError && !(this.flags & NodeBuilderFlags.AllowEmptyUnionOrIntersection)) this.encounteredError = true;
@@ -179,7 +179,7 @@ export class QContext {
       }
     }
     if (objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped)) {
-      qf.assert.true(!!(type.flags & TypeFlags.Object));
+      qf.assert.true(!!qf.type.is.object(type));
       return this.createAnonymousTypeNode(<qt.ObjectType>type);
     }
     if (type.flags & TypeFlags.Index) {
@@ -543,7 +543,7 @@ export class QContext {
   getPropertyNameNodeForSymbolFromNameType(s: qt.Symbol, singleQuote?: boolean) {
     const nameType = s.links.nameType;
     if (nameType) {
-      if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
+      if (qf.type.is.stringOrNumberLiteral(nameType)) {
         const name = '' + (<qt.StringLiteralType | qt.NumberLiteralType>nameType).value;
         if (!qy.is.identifierText(name) && !NumericLiteral.name(name)) return qc.asLiteral(name, !!singleQuote);
         if (NumericLiteral.name(name) && startsWith(name, '-')) return new qc.ComputedPropertyName(qc.asLiteral(+name));
@@ -1151,7 +1151,7 @@ export class QContext {
     const symbol = type.symbol;
     const createTypeNodeFromObjectType = (type: qt.ObjectType): qt.Typing => {
       const createMappedTypingFromType = (type: qt.MappedType) => {
-        qf.assert.true(!!(type.flags & TypeFlags.Object));
+        qf.assert.true(!!qf.type.is.object(type));
         const readonlyToken = type.declaration.readonlyToken ? <qt.ReadonlyToken | qt.PlusToken | qt.MinusToken>new qc.Token(type.declaration.readonlyToken.kind) : undefined;
         const questionToken = type.declaration.questionToken ? <qt.QuestionToken | qt.PlusToken | qt.MinusToken>new qc.Token(type.declaration.questionToken.kind) : undefined;
         let appropriateConstraintTypeNode: qt.Typing;
@@ -1357,9 +1357,9 @@ export class QContext {
   }
   visitAndTransformType<T>(type: qt.Type, transform: (type: qt.Type) => T) {
     const typeId = '' + type.id;
-    const isConstructorObject = type.objectFlags & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & SymbolFlags.Class;
+    const isConstructorObject = qf.type.is.anonymous(type) && type.symbol && type.symbol.flags & SymbolFlags.Class;
     const id =
-      type.objectFlags & ObjectFlags.Reference && (<qt.TypeReference>type).node
+      qf.type.is.reference(type) && (<qt.TypeReference>type).node
         ? 'N' + qf.get.nodeId((<qt.TypeReference>type).node!)
         : type.symbol
         ? (isConstructorObject ? '+' : '') + type.symbol.getId()

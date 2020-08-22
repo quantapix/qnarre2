@@ -1043,7 +1043,7 @@ export function createGetSymbolWalker(
       visitedTypes[t.id] = t;
       const shouldBail = visitSymbol(t.symbol);
       if (shouldBail) return;
-      if (t.flags & TypeFlags.Object) {
+      if (qf.type.is.object(t)) {
         const objectType = t as qt.ObjectType;
         const objectFlags = objectType.objectFlags;
         if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as qt.TypeReference);
@@ -1051,7 +1051,7 @@ export function createGetSymbolWalker(
         if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as qt.InterfaceType);
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
-      if (t.flags & TypeFlags.TypeParam) visitTypeParam(t as qt.TypeParam);
+      if (qf.type.is.param(t)) visitTypeParam(t as qt.TypeParam);
       if (qf.type.is.unionOrIntersection(t)) visitUnionOrIntersectionType(t);
       if (t.flags & TypeFlags.Index) visitIndexType(t as qt.IndexType);
       if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as qt.IndexedAccessType);

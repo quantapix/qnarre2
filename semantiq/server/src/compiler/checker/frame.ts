@@ -832,7 +832,7 @@ export function newIs(f: qt.Frame) {
         }
         return check.propertyAccessibility(n, isSuper, t, prop);
       }
-      return this.inJSFile(n) && (t.flags & TypeFlags.Union) !== 0 && t.types.some((elemType) => this.validPropertyAccessWithType(n, isSuper, propertyName, elemType));
+      return this.inJSFile(n) && (qf.type.is.union(t)) !== 0 && t.types.some((elemType) => this.validPropertyAccessWithType(n, isSuper, propertyName, elemType));
     }
     forInVariableForNumericPropertyNames(exp: qt.Expression) {
       const e = qf.skip.parentheses(exp);
@@ -1784,7 +1784,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
             }
             return !!(
               (c.flags & (TypeFlags.StringLiteral | TypeFlags.Index) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
-              (c.flags & TypeFlags.NumberLiteral && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
+              (qf.type.is.numberLiteral(c) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
               (c.flags & TypeFlags.BigIntLiteral && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
               (c.flags & TypeFlags.BooleanLiteral && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
               (c.flags & TypeFlags.UniqueESSymbol && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
@@ -1796,11 +1796,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
           return !!((strictNullChecks ? getFalsyFlags(t) : t.flags) & TypeFlags.Nullable);
         }
         untypedFunctionCall(t: Type, f: Type, calls: number, constructs: number) {
-          return (
-            this.any(t) ||
-            (this.any(f) && !!(t.flags & TypeFlags.TypeParam)) ||
-            (!calls && !constructs && !(f.flags & (TypeFlags.Union | TypeFlags.Never)) && this.check.assignableTo(t, globalFunctionType))
-          );
+          return this.any(t) || (this.any(f) && !!qf.type.is.param(t)) || (!calls && !constructs && !(f.flags & (TypeFlags.Union | TypeFlags.Never)) && this.check.assignableTo(t, globalFunctionType));
         }
       })();
       is: Base['_is2'] & _Fis;

@@ -1184,7 +1184,7 @@ export function newStmt(f: qt.Frame) {
               caseType = caseIsLiteral ? getBaseTypeOfLiteralType(caseType) : caseType;
               comparedExpressionType = getBaseTypeOfLiteralType(expressionType);
             }
-            if (!isTypeEqualityComparableTo(comparedExpressionType, caseType)) qf.type.check.comparableTo(caseType, comparedExpressionType, clause.expression, undefined);
+            if (!qf.type.is.equalityComparableTo(comparedExpressionType, caseType)) qf.type.check.comparableTo(caseType, comparedExpressionType, clause.expression, undefined);
           }
           forEach(clause.statements, checkSourceElem);
           if (compilerOpts.noFallthroughCasesInSwitch && clause.fallthroughFlowNode && isReachableFlowNode(clause.fallthroughFlowNode)) error(clause, qd.msgs.Fallthrough_case_in_switch);
@@ -1426,7 +1426,7 @@ export function newType(f: qt.Frame) {
             generalizedSource = getBaseTypeOfLiteralType(source);
             generalizedSourceType = getTypeNameForErrorDisplay(generalizedSource);
           }
-          if (target.flags & TypeFlags.TypeParam) {
+          if (qf.type.is.param(target)) {
             const constraint = qf.get.baseConstraintOfType(target);
             let needsOriginalSource;
             if (constraint && (qf.type.is.assignableTo(generalizedSource, constraint) || (needsOriginalSource = qf.type.is.assignableTo(source, constraint)))) {
@@ -1478,7 +1478,7 @@ export function newType(f: qt.Frame) {
           return true;
         }
         function isRelatedTo(originalSource: Type, originalTarget: Type, reportErrors = false, headMessage?: qd.Message, intersectionState = IntersectionState.None): qt.Ternary {
-          if (originalSource.flags & TypeFlags.Object && originalTarget.flags & TypeFlags.Primitive) {
+          if (qf.type.is.object(originalSource) && originalTarget.flags & TypeFlags.Primitive) {
             if (qf.type.is.simpleRelatedTo(originalSource, originalTarget, relation, reportErrors ? reportError : undefined)) return qt.Ternary.True;
             reportErrorResults(originalSource, originalTarget, qt.Ternary.False, !!(originalSource.objectFlags & ObjectFlags.JsxAttributes));
             return qt.Ternary.False;
@@ -1487,8 +1487,8 @@ export function newType(f: qt.Frame) {
           let target = getNormalizedType(originalTarget, true);
           if (source === target) return qt.Ternary.True;
           if (relation === identityRelation) return isIdenticalTo(source, target);
-          if (source.flags & TypeFlags.TypeParam && getConstraintOfType(source) === target) return qt.Ternary.True;
-          if (target.flags & TypeFlags.Union && source.flags & TypeFlags.Object && (target as qt.UnionType).types.length <= 3 && maybeTypeOfKind(target, TypeFlags.Nullable)) {
+          if (qf.type.is.param(source) && getConstraintOfType(source) === target) return qt.Ternary.True;
+          if (qf.type.is.union(target) && qf.type.is.object(source) && (target as qt.UnionType).types.length <= 3 && maybeTypeOfKind(target, TypeFlags.Nullable)) {
             const nullStrippedTarget = extractTypesOfKind(target, ~TypeFlags.Nullable);
             if (!(nullStrippedTarget.flags & (TypeFlags.Union | TypeFlags.Never))) {
               if (source === nullStrippedTarget) return qt.Ternary.True;
@@ -1533,21 +1533,21 @@ export function newType(f: qt.Frame) {
           }
           let result = qt.Ternary.False;
           const saveErrorInfo = captureErrorCalculationState();
-          if (source.flags & TypeFlags.Union) {
+          if (qf.type.is.union(source)) {
             result =
               relation === comparableRelation
                 ? someTypeRelatedToType(source as qt.UnionType, target, reportErrors && !(source.flags & TypeFlags.Primitive), intersectionState)
                 : eachTypeRelatedToType(source as qt.UnionType, target, reportErrors && !(source.flags & TypeFlags.Primitive), intersectionState);
           } else {
-            if (target.flags & TypeFlags.Union)
+            if (qf.type.is.union(target))
               result = qf.type.check.relatedToSomeType(
                 getRegularTypeOfObjectLiteral(source),
                 <qt.UnionType>target,
                 reportErrors && !(source.flags & TypeFlags.Primitive) && !(target.flags & TypeFlags.Primitive)
               );
-            else if (target.flags & TypeFlags.Intersection) {
+            else if (qf.type.is.intersection(target)) {
               result = qf.type.check.relatedToEachType(getRegularTypeOfObjectLiteral(source), target as qt.IntersectionType, reportErrors, IntersectionState.Target);
-            } else if (source.flags & TypeFlags.Intersection) {
+            } else if (qf.type.is.intersection(source)) {
               result = someTypeRelatedToType(<qt.IntersectionType>source, target, false, IntersectionState.Source);
             }
             if (!result && (source.flags & TypeFlags.StructuredOrInstantiable || target.flags & TypeFlags.StructuredOrInstantiable)) {
@@ -1555,8 +1555,8 @@ export function newType(f: qt.Frame) {
             }
           }
           if (!result && source.flags & (TypeFlags.Intersection | TypeFlags.TypeParam)) {
-            const constraint = getEffectiveConstraintOfIntersection(source.flags & TypeFlags.Intersection ? (<qt.IntersectionType>source).types : [source], !!(target.flags & TypeFlags.Union));
-            if (constraint && (source.flags & TypeFlags.Intersection || target.flags & TypeFlags.Union)) {
+            const constraint = getEffectiveConstraintOfIntersection(qf.type.is.intersection(source) ? (<qt.IntersectionType>source).types : [source], !!qf.type.is.union(target));
+            if (constraint && (qf.type.is.intersection(source) || qf.type.is.union(target))) {
               if (everyType(constraint, (c) => c !== source)) {
                 if ((result = isRelatedTo(constraint, target, false, undefined, intersectionState))) resetErrorInfo(saveErrorInfo);
               }
@@ -1565,11 +1565,11 @@ export function newType(f: qt.Frame) {
           if (
             result &&
             !inPropertyCheck &&
-            ((target.flags & TypeFlags.Intersection && (isPerformingExcessPropertyChecks || isPerformingCommonPropertyChecks)) ||
+            ((qf.type.is.intersection(target) && (isPerformingExcessPropertyChecks || isPerformingCommonPropertyChecks)) ||
               (qf.type.is.nonGenericObject(target) &&
                 !qf.type.is.array(target) &&
                 !qf.type.is.tuple(target) &&
-                source.flags & TypeFlags.Intersection &&
+                qf.type.is.intersection(source) &&
                 getApparentType(source).flags & TypeFlags.StructuredType &&
                 !some((<qt.IntersectionType>source).types, (t) => !!(t.objectFlags & ObjectFlags.NonInferrableType))))
           ) {
@@ -1585,15 +1585,15 @@ export function newType(f: qt.Frame) {
               target = originalTarget.aliasSymbol ? originalTarget : target;
               let maybeSuppress = overrideNextErrorInfo > 0;
               if (maybeSuppress) overrideNextErrorInfo--;
-              if (source.flags & TypeFlags.Object && target.flags & TypeFlags.Object) {
+              if (qf.type.is.object(source) && qf.type.is.object(target)) {
                 const currentError = errorInfo;
                 tryElaborateArrayLikeErrors(source, target, reportErrors);
                 if (errorInfo !== currentError) maybeSuppress = !!errorInfo;
               }
-              if (source.flags & TypeFlags.Object && target.flags & TypeFlags.Primitive) tryElaborateErrorsForPrimitivesAndObjects(source, target);
-              else if (source.symbol && source.flags & TypeFlags.Object && globalObjectType === source) {
+              if (qf.type.is.object(source) && target.flags & TypeFlags.Primitive) tryElaborateErrorsForPrimitivesAndObjects(source, target);
+              else if (source.symbol && qf.type.is.object(source) && globalObjectType === source) {
                 reportError(qd.msgs.The_Object_type_is_assignable_to_very_few_other_types_Did_you_mean_to_use_the_any_type_instead);
-              } else if (isComparingJsxAttributes && target.flags & TypeFlags.Intersection) {
+              } else if (isComparingJsxAttributes && qf.type.is.intersection(target)) {
                 const targetTypes = (target as qt.IntersectionType).types;
                 const intrinsicAttributes = getJsxType(JsxNames.IntrinsicAttributes, err);
                 const intrinsicClassAttributes = getJsxType(JsxNames.IntrinsicClassAttributes, err);
@@ -1630,21 +1630,21 @@ export function newType(f: qt.Frame) {
           return qf.get.unionType(reduceLeft(ts, appendPropType, undefined) || empty);
         }
         function hasExcessProperties(source: qt.FreshObjectLiteralType, target: Type, reportErrors: boolean): boolean {
-          if (!qf.is.excessPropertyCheckTarget(target) || (!noImplicitAny && target.objectFlags & ObjectFlags.JSLiteral)) return false;
+          if (!qf.type.is.excessPropCheckable(target) || (!noImplicitAny && target.objectFlags & ObjectFlags.JSLiteral)) return false;
           const isComparingJsxAttributes = !!(source.objectFlags & ObjectFlags.JsxAttributes);
-          if ((relation === assignableRelation || relation === comparableRelation) && (isTypeSubsetOf(globalObjectType, target) || (!isComparingJsxAttributes && qf.type.is.emptyObject(target))))
+          if ((relation === assignableRelation || relation === comparableRelation) && (qf.type.is.subsetOf(globalObjectType, target) || (!isComparingJsxAttributes && qf.type.is.emptyObject(target))))
             return false;
           let reducedTarget = target;
           let checkTypes: Type[] | undefined;
-          if (target.flags & TypeFlags.Union) {
+          if (qf.type.is.union(target)) {
             reducedTarget = findMatchingDiscriminantType(source, <qt.UnionType>target, isRelatedTo) || filterPrimitivesIfContainsNonPrimitive(<qt.UnionType>target);
-            checkTypes = reducedTarget.flags & TypeFlags.Union ? (<qt.UnionType>reducedTarget).types : [reducedTarget];
+            checkTypes = qf.type.is.union(reducedTarget) ? (<qt.UnionType>reducedTarget).types : [reducedTarget];
           }
           for (const prop of qf.get.propertiesOfType(source)) {
             if (shouldCheckAsExcessProperty(prop, source.symbol) && !qf.type.is.ignoredJsxProperty(source, prop)) {
-              if (!qf.is.knownProperty(reducedTarget, prop.escName, isComparingJsxAttributes)) {
+              if (!qf.type.is.knownProp(reducedTarget, prop.escName, isComparingJsxAttributes)) {
                 if (reportErrors) {
-                  const errorTarget = filterType(reducedTarget, qf.is.excessPropertyCheckTarget);
+                  const errorTarget = filterType(reducedTarget, qf.type.is.excessPropCheckable);
                   if (!err) return qu.fail();
                   if (err.kind === Syntax.JsxAttributes || qf.is.jsx.openingLikeElem(err) || qf.is.jsx.openingLikeElem(err.parent)) {
                     if (prop.valueDeclaration && prop.valueDeclaration.kind === Syntax.JsxAttribute && err.sourceFile === prop.valueDeclaration.name.sourceFile) err = prop.valueDeclaration.name;
@@ -1696,7 +1696,7 @@ export function newType(f: qt.Frame) {
         }
         function relatedToSomeType(source: Type, target: qt.UnionOrIntersectionType, reportErrors: boolean): qt.Ternary {
           const targetTypes = target.types;
-          if (target.flags & TypeFlags.Union && containsType(targetTypes, source)) return qt.Ternary.True;
+          if (qf.type.is.union(target) && containsType(targetTypes, source)) return qt.Ternary.True;
           for (const type of targetTypes) {
             const related = isRelatedTo(source, type, false);
             if (related) return related;
@@ -1719,7 +1719,7 @@ export function newType(f: qt.Frame) {
         }
         function someTypeRelatedToType(source: qt.UnionOrIntersectionType, target: Type, reportErrors: boolean, intersectionState: IntersectionState): qt.Ternary {
           const sourceTypes = source.types;
-          if (source.flags & TypeFlags.Union && containsType(sourceTypes, target)) return qt.Ternary.True;
+          if (qf.type.is.union(source) && containsType(sourceTypes, target)) return qt.Ternary.True;
           const len = sourceTypes.length;
           for (let i = 0; i < len; i++) {
             const related = isRelatedTo(sourceTypes[i], target, reportErrors && i === len - 1, undefined, intersectionState);
@@ -1732,7 +1732,7 @@ export function newType(f: qt.Frame) {
           const sourceTypes = source.types;
           for (let i = 0; i < sourceTypes.length; i++) {
             const sourceType = sourceTypes[i];
-            if (target.flags & TypeFlags.Union && (target as qt.UnionType).types.length === sourceTypes.length) {
+            if (qf.type.is.union(target) && (target as qt.UnionType).types.length === sourceTypes.length) {
               const related = isRelatedTo(sourceType, (target as qt.UnionType).types[i], false, undefined, intersectionState);
               if (related) {
                 result &= related;
@@ -1884,7 +1884,7 @@ export function newType(f: qt.Frame) {
             const varianceResult = relateVariances(source.aliasTypeArgs, target.aliasTypeArgs, variances, intersectionState);
             if (varianceResult !== undefined) return varianceResult;
           }
-          if (target.flags & TypeFlags.TypeParam) {
+          if (qf.type.is.param(target)) {
             if (source.objectFlags & ObjectFlags.Mapped && isRelatedTo(qf.get.indexType(target), getConstraintTypeFromMappedType(<qt.MappedType>source))) {
               if (!(getMappedTypeModifiers(<qt.MappedType>source) & MappedTypeModifiers.IncludeOptional)) {
                 const templateType = getTemplateTypeFromMappedType(<qt.MappedType>source);
@@ -1949,7 +1949,7 @@ export function newType(f: qt.Frame) {
               }
             } else {
               const constraint = getConstraintOfType(<TypeVariable>source);
-              if (!constraint || (source.flags & TypeFlags.TypeParam && constraint.flags & TypeFlags.Any)) {
+              if (!constraint || (qf.type.is.param(source) && constraint.flags & TypeFlags.Any)) {
                 if ((result = isRelatedTo(emptyObjectType, extractTypesOfKind(target, ~TypeFlags.NonPrimitive)))) {
                   resetErrorInfo(saveErrorInfo);
                   return result;
@@ -2023,8 +2023,8 @@ export function newType(f: qt.Frame) {
             if (relation !== identityRelation) source = getApparentType(source);
             else if (qf.type.is.genericMapped(source)) return qt.Ternary.False;
             if (
-              source.objectFlags & ObjectFlags.Reference &&
-              target.objectFlags & ObjectFlags.Reference &&
+              qf.type.is.reference(source) &&
+              qf.type.is.reference(target) &&
               (<TypeReference>source).target === (<TypeReference>target).target &&
               !(source.objectFlags & ObjectFlags.MarkerType || target.objectFlags & ObjectFlags.MarkerType)
             ) {
@@ -2044,7 +2044,7 @@ export function newType(f: qt.Frame) {
             ) {
               return qt.Ternary.False;
             }
-            if (source.flags & (TypeFlags.Object | TypeFlags.Intersection) && target.flags & TypeFlags.Object) {
+            if (source.flags & (TypeFlags.Object | TypeFlags.Intersection) && qf.type.is.object(target)) {
               const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo.errorInfo && !sourceIsPrimitive;
               result = propertiesRelatedTo(source, target, reportStructuralErrors, undefined, intersectionState);
               if (result) {
@@ -2060,9 +2060,9 @@ export function newType(f: qt.Frame) {
               if (varianceCheckFailed && result) errorInfo = originalErrorInfo || errorInfo || saveErrorInfo.errorInfo;
               else if (result) return result;
             }
-            if (source.flags & (TypeFlags.Object | TypeFlags.Intersection) && target.flags & TypeFlags.Union) {
+            if (source.flags & (TypeFlags.Object | TypeFlags.Intersection) && qf.type.is.union(target)) {
               const objectOnlyTarget = extractTypesOfKind(target, TypeFlags.Object | TypeFlags.Intersection | TypeFlags.Substitution);
-              if (objectOnlyTarget.flags & TypeFlags.Union) {
+              if (qf.type.is.union(objectOnlyTarget)) {
                 const result = qf.type.check.relatedToDiscriminatedType(source, objectOnlyTarget as qt.UnionType);
                 if (result) return result;
               }
@@ -2125,7 +2125,7 @@ export function newType(f: qt.Frame) {
           for (let i = 0; i < sourcePropertiesFiltered.length; i++) {
             const sourceProperty = sourcePropertiesFiltered[i];
             const sourcePropertyType = sourceProperty.typeOfSymbol();
-            sourceDiscriminantTypes[i] = sourcePropertyType.flags & TypeFlags.Union ? (sourcePropertyType as qt.UnionType).types : [sourcePropertyType];
+            sourceDiscriminantTypes[i] = qf.type.is.union(sourcePropertyType) ? (sourcePropertyType as qt.UnionType).types : [sourcePropertyType];
             excludedProperties.set(sourceProperty.escName, true);
           }
           const discriminantCombinations = cartesianProduct(sourceDiscriminantTypes);
@@ -2197,7 +2197,7 @@ export function newType(f: qt.Frame) {
             const links = targetProp.links;
             qf.assert.defined(links.deferralParent);
             qf.assert.defined(links.deferralConstituents);
-            const unionParent = !!(links.deferralParent.flags & TypeFlags.Union);
+            const unionParent = !!links.qf.type.is.union(deferralParent);
             let result = unionParent ? qt.Ternary.False : qt.Ternary.True;
             const targetTypes = links.deferralConstituents;
             for (const targetType of targetTypes) {
@@ -2380,7 +2380,7 @@ export function newType(f: qt.Frame) {
           return result;
         }
         function propertiesIdenticalTo(source: Type, target: Type, excludedProperties: EscapedMap<true> | undefined): qt.Ternary {
-          if (!(source.flags & TypeFlags.Object && target.flags & TypeFlags.Object)) return qt.Ternary.False;
+          if (!(qf.type.is.object(source) && qf.type.is.object(target))) return qt.Ternary.False;
           const sourceProperties = excludeProperties(getPropertiesOfObjectType(source), excludedProperties);
           const targetProperties = excludeProperties(getPropertiesOfObjectType(target), excludedProperties);
           if (sourceProperties.length !== targetProperties.length) return qt.Ternary.False;
@@ -2477,7 +2477,7 @@ export function newType(f: qt.Frame) {
         }
         function eachPropertyRelatedTo(source: Type, target: Type, kind: IndexKind, reportErrors: boolean): qt.Ternary {
           let result = qt.Ternary.True;
-          const props = source.flags & TypeFlags.Intersection ? getPropertiesOfqt.UnionOrIntersectionType(<qt.IntersectionType>source) : getPropertiesOfObjectType(source);
+          const props = qf.type.is.intersection(source) ? getPropertiesOfqt.UnionOrIntersectionType(<qt.IntersectionType>source) : getPropertiesOfObjectType(source);
           for (const prop of props) {
             if (qf.type.is.ignoredJsxProperty(source, prop)) continue;
             const nameType = prop.links.nameType;
@@ -2705,7 +2705,7 @@ export function newType(f: qt.Frame) {
             checkIndexConstraintForProperty(p, propType, t, declaredNumberIndexer, numberIndexType, IndexKind.Number);
           });
           const v = t.symbol.valueDeclaration;
-          if (t.objectFlags & ObjectFlags.Class && qf.is.classLike(v)) {
+          if (qf.type.is.class(t) && qf.is.classLike(v)) {
             for (const m of v.members) {
               if (!qf.has.syntacticModifier(m, ModifierFlags.Static) && hasNonBindableDynamicName(m)) {
                 const s = qf.get.symbolOfNode(m);

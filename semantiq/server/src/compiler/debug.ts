@@ -61,7 +61,7 @@ export function enableDebugInfo() {
     },
     __debugObjectFlags: {
       get(this: qt.Type) {
-        return this.flags & TypeFlags.Object ? qf.format.objectFlags((<qt.ObjectType>this).objectFlags) : '';
+        return qf.type.is.object(this) ? qf.format.objectFlags((<qt.ObjectType>this).objectFlags) : '';
       },
     },
     __debugTypeToString: {

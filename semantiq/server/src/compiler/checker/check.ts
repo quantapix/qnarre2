@@ -483,7 +483,7 @@ export function newCheck(f: qt.Frame) {
               typeToString(n.type ? qf.get.typeFromTypeNode(n.type) : anyType)
             );
           }
-          if (t.flags & TypeFlags.Union && allTypesAssignableToKind(t, TypeFlags.StringOrNumberLiteral, true))
+          if (qf.type.is.union(t) && allTypesAssignableToKind(t, TypeFlags.StringOrNumberLiteral, true))
             return errorOnNode(p.name, qd.msgs.An_index_signature_param_type_cannot_be_a_union_type_Consider_using_a_mapped_object_type_instead);
           return errorOnNode(p.name, qd.msgs.An_index_signature_param_type_must_be_either_string_or_number);
         }
@@ -1394,7 +1394,7 @@ export function newCheck(f: qt.Frame) {
             hasComputedNumberProperty = false;
           }
           const type = getReducedType(this.expression(memberDecl.expression));
-          if (!qf.is.validSpreadType(type)) {
+          if (!qf.type.is.validSpread(type)) {
             error(memberDecl, qd.msgs.Spread_types_may_only_be_created_from_object_types);
             return errorType;
           }
@@ -1500,7 +1500,7 @@ export function newCheck(f: qt.Frame) {
       if (isSuper) return true;
       let enclosingClass = forEachEnclosingClass(n, (enclosingDeclaration) => {
         const enclosingClass = <qt.InterfaceType>getDeclaredTypeOfSymbol(qf.get.symbolOfNode(enclosingDeclaration)!);
-        return isClassDerivedFromDeclaringClasses(enclosingClass, prop) ? enclosingClass : undefined;
+        return qf.type.is.derivedFromDeclaringClasses(enclosingClass, prop) ? enclosingClass : undefined;
       });
       if (!enclosingClass) {
         let thisParam: qt.ParamDeclaration | undefined;
@@ -1509,10 +1509,10 @@ export function newCheck(f: qt.Frame) {
           return false;
         }
         const thisType = qf.get.typeFromTypeNode(thisParam.type);
-        enclosingClass = ((thisType.flags & TypeFlags.TypeParam ? qf.get.constraintOfTypeParam(<TypeParam>thisType) : thisType) as TypeReference).target;
+        enclosingClass = ((qf.type.is.param(thisType) ? qf.get.constraintOfTypeParam(<TypeParam>thisType) : thisType) as TypeReference).target;
       }
       if (flags & ModifierFlags.Static) return true;
-      if (type.flags & TypeFlags.TypeParam) type = (type as TypeParam).isThisType ? qf.get.constraintOfTypeParam(<TypeParam>type)! : qf.get.baseConstraintOfType(<TypeParam>type)!;
+      if (qf.type.is.param(type)) type = (type as TypeParam).isThisType ? qf.get.constraintOfTypeParam(<TypeParam>type)! : qf.get.baseConstraintOfType(<TypeParam>type)!;
       if (!type || !hasBaseType(type, enclosingClass)) {
         error(errorNode, qd.msgs.Property_0_is_protected_and_only_accessible_through_an_instance_of_class_1, prop.symbolToString(), typeToString(enclosingClass));
         return false;
@@ -1608,7 +1608,7 @@ export function newCheck(f: qt.Frame) {
       const indexExpression = n.argExpression;
       const indexType = this.expression(indexExpression);
       if (objectType === errorType || objectType === silentNeverType) return objectType;
-      if (isConstEnumObjectType(objectType) && !qf.is.stringLiteralLike(indexExpression)) {
+      if (qf.type.is.constEnumObject(objectType) && !qf.is.stringLiteralLike(indexExpression)) {
         error(indexExpression, qd.msgs.A_const_enum_member_can_only_be_accessed_using_a_string_literal);
         return errorType;
       }
@@ -2349,7 +2349,7 @@ export function newCheck(f: qt.Frame) {
         case Syntax.ExclamationEqualsToken:
         case Syntax.Equals3Token:
         case Syntax.ExclamationEquals2Token:
-          reportOperatorErrorUnless((left, right) => isTypeEqualityComparableTo(left, right) || isTypeEqualityComparableTo(right, left));
+          reportOperatorErrorUnless((left, right) => qf.type.is.equalityComparableTo(left, right) || qf.type.is.equalityComparableTo(right, left));
           return booleanType;
         case Syntax.InstanceOfKeyword:
           return this.instanceOfExpression(left, right, leftType, rightType);
@@ -2366,12 +2366,12 @@ export function newCheck(f: qt.Frame) {
           this.assignmentDeclaration(declKind, rightType);
           if (qf.is.assignmentDeclaration(declKind)) {
             if (
-              !(rightType.flags & TypeFlags.Object) ||
+              !(qf.type.is.object(rightType)) ||
               (declKind !== qt.AssignmentDeclarationKind.ModuleExports &&
                 declKind !== qt.AssignmentDeclarationKind.Prototype &&
                 !qf.type.is.emptyObject(rightType) &&
-                !qf.is.functionObjectType(rightType as qt.ObjectType) &&
-                !(rightType.objectFlags & ObjectFlags.Class))
+                !qf.type.is.functionObject(rightType as qt.ObjectType) &&
+                !(qf.type.is.class(rightType)))
             ) {
               this.assignmentOperator(rightType);
             }
@@ -2598,7 +2598,7 @@ export function newCheck(f: qt.Frame) {
       instantiationCount = 0;
       const uninstantiatedType = this.expressionWorker(n, checkMode, forceTuple);
       const type = instantiateTypeWithSingleGenericCallSignature(n, uninstantiatedType, checkMode);
-      if (isConstEnumObjectType(type)) this.constEnumAccess(n, type);
+      if (qf.type.is.constEnumObject(type)) this.constEnumAccess(n, type);
       currentNode = saveCurrentNode;
       return type;
     }
@@ -3368,7 +3368,7 @@ export function newCheck(f: qt.Frame) {
       function visit(n: Node) {
         if (n.kind === Syntax.TypingReference) {
           const type = getTypeFromTypeReference(<qt.TypingReference>n);
-          if (type.flags & TypeFlags.TypeParam) {
+          if (qf.type.is.param(type)) {
             for (let i = index; i < typeParams.length; i++) {
               if (type.symbol === qf.get.symbolOfNode(typeParams[i])) error(n, qd.msgs.Type_param_defaults_can_only_reference_previously_declared_type_params);
             }
