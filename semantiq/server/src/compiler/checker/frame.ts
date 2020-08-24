@@ -1772,7 +1772,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
         literalOfContextualType(t: Type, c?: Type) {
           if (c) {
             if (this.unionOrIntersection(c)) return qu.some(c.types, (t) => isLiteralOfContextualType(t, t));
-            if (c.flags & TypeFlags.InstantiableNonPrimitive) {
+            if (qf.type.is.kind(c, TypeFlags.InstantiableNonPrimitive)) {
               const b = qf.get.baseConstraintOfType(c) || unknownType;
               return (
                 (maybeTypeOfKind(b, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
@@ -1785,9 +1785,9 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
             return !!(
               (c.flags & (TypeFlags.StringLiteral | TypeFlags.Index) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
               (qf.type.is.numberLiteral(c) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
-              (c.flags & TypeFlags.BigIntLiteral && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
-              (c.flags & TypeFlags.BooleanLiteral && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
-              (c.flags & TypeFlags.UniqueESSymbol && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
+              (qf.type.is.kind(c, TypeFlags.BigIntLiteral) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
+              (qf.type.is.kind(c, TypeFlags.BooleanLiteral) && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
+              (qf.type.is.kind(c, TypeFlags.UniqueESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
             );
           }
           return false;

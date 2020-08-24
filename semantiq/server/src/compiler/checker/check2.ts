@@ -125,7 +125,7 @@ export function newDecl(f: qt.Frame) {
             let type = this.expressionCached(expr, checkMode && checkMode & ~CheckMode.SkipGenericFunctions);
             if (functionFlags & FunctionFlags.Async)
               type = qf.type.check.awaited(type, func, qd.msgs.The_return_type_of_an_async_function_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
-            if (type.flags & TypeFlags.Never) hasReturnOfTypeNever = true;
+            if (qf.type.is.kind(type, TypeFlags.Never)) hasReturnOfTypeNever = true;
             qu.pushIfUnique(aggregatedTypes, type);
           } else {
             hasReturnWithNoExpression = true;
@@ -143,7 +143,7 @@ export function newDecl(f: qt.Frame) {
         if (type && maybeTypeOfKind(type, TypeFlags.Any | TypeFlags.Void)) return;
         if (func.kind === Syntax.MethodSignature || qf.is.missing(func.body) || func.body!.kind !== Syntax.Block || !functionHasImplicitReturn(func)) return;
         const hasExplicitReturn = func.flags & NodeFlags.HasExplicitReturn;
-        if (type && type.flags & TypeFlags.Never) error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_returning_never_cannot_have_a_reachable_end_point);
+        if (type && qf.type.is.kind(type, TypeFlags.Never)) error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_returning_never_cannot_have_a_reachable_end_point);
         else if (type && !hasExplicitReturn) {
           error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_whose_declared_type_is_neither_void_nor_any_must_return_a_value);
         } else if (type && strictNullChecks && !qf.type.is.assignableTo(undefinedType, type)) {
@@ -657,9 +657,9 @@ export function newDecl(f: qt.Frame) {
             else {
               qf.type.check.assignableTo(staticType, getTypeWithoutSignatures(staticBaseType), n.name || n, qd.msgs.Class_static_side_0_incorrectly_extends_base_class_static_side_1);
             }
-            if (baseConstructorType.flags & TypeFlags.TypeVariable && !qf.type.is.mixinConstructor(staticType))
+            if (qf.type.is.kind(baseConstructorType, TypeFlags.TypeVariable) && !qf.type.is.mixinConstructor(staticType))
               error(n.name || n, qd.msgs.A_mixin_class_must_have_a_constructor_with_a_single_rest_param_of_type_any);
-            if (!(staticBaseType.symbol && staticBaseType.symbol.flags & SymbolFlags.Class) && !(baseConstructorType.flags & TypeFlags.TypeVariable)) {
+            if (!(staticBaseType.symbol && staticBaseType.symbol.flags & SymbolFlags.Class) && !qf.type.is.kind(baseConstructorType, TypeFlags.TypeVariable)) {
               const constructors = getInstantiatedConstructorsForTypeArgs(staticBaseType, baseTypeNode.typeArgs, baseTypeNode);
               if (forEach(constructors, (sig) => !qf.is.jsConstructor(sig.declaration) && !qf.type.is.identicalTo(qf.get.returnTypeOfSignature(sig), baseType)))
                 error(baseTypeNode.expression, qd.msgs.Base_constructors_must_all_have_the_same_return_type);
@@ -704,7 +704,7 @@ export function newDecl(f: qt.Frame) {
             const propName = (<qt.PropertyDeclaration>member).name;
             if (propName.kind === Syntax.Identifier || propName.kind === Syntax.PrivateIdentifier) {
               const type = qf.get.symbolOfNode(member).typeOfSymbol();
-              if (!(type.flags & TypeFlags.AnyOrUnknown || getFalsyFlags(type) & TypeFlags.Undefined)) {
+              if (!(qf.type.is.kind(type, TypeFlags.AnyOrUnknown) || getFalsyFlags(type) & TypeFlags.Undefined)) {
                 if (!constructor || !isPropertyInitializedInConstructor(propName, type, constructor))
                   error(member.name, qd.msgs.Property_0_has_no_initer_and_is_not_definitely_assigned_in_the_constructor, declarationNameToString(propName));
               }
@@ -1131,7 +1131,7 @@ export function newStmt(f: qt.Frame) {
         const signature = qf.get.signatureFromDeclaration(func);
         const returnType = qf.get.returnTypeOfSignature(signature);
         const functionFlags = qf.get.functionFlags(func);
-        if (strictNullChecks || n.expression || returnType.flags & TypeFlags.Never) {
+        if (strictNullChecks || n.expression || qf.type.is.kind(returnType, TypeFlags.Never)) {
           const exprType = n.expression ? this.expressionCached(n.expression) : undefinedType;
           if (func.kind === Syntax.SetAccessor) {
             if (n.expression) error(n, qd.msgs.Setters_cannot_return_a_value);
@@ -1478,7 +1478,7 @@ export function newType(f: qt.Frame) {
           return true;
         }
         function isRelatedTo(originalSource: Type, originalTarget: Type, reportErrors = false, headMessage?: qd.Message, intersectionState = IntersectionState.None): qt.Ternary {
-          if (qf.type.is.object(originalSource) && originalTarget.flags & TypeFlags.Primitive) {
+          if (qf.type.is.object(originalSource) && qf.type.is.kind(originalTarget, TypeFlags.Primitive)) {
             if (qf.type.is.simpleRelatedTo(originalSource, originalTarget, relation, reportErrors ? reportError : undefined)) return qt.Ternary.True;
             reportErrorResults(originalSource, originalTarget, qt.Ternary.False, !!(originalSource.objectFlags & ObjectFlags.JsxAttributes));
             return qt.Ternary.False;
@@ -1496,7 +1496,7 @@ export function newType(f: qt.Frame) {
             }
           }
           if (
-            (relation === comparableRelation && !(target.flags & TypeFlags.Never) && qf.type.is.simpleRelatedTo(target, source, relation)) ||
+            (relation === comparableRelation && !qf.type.is.kind(target, TypeFlags.Never) && qf.type.is.simpleRelatedTo(target, source, relation)) ||
             qf.type.is.simpleRelatedTo(source, target, relation, reportErrors ? reportError : undefined)
           )
             return qt.Ternary.True;
@@ -1536,21 +1536,21 @@ export function newType(f: qt.Frame) {
           if (qf.type.is.union(source)) {
             result =
               relation === comparableRelation
-                ? someTypeRelatedToType(source as qt.UnionType, target, reportErrors && !(source.flags & TypeFlags.Primitive), intersectionState)
-                : eachTypeRelatedToType(source as qt.UnionType, target, reportErrors && !(source.flags & TypeFlags.Primitive), intersectionState);
+                ? someTypeRelatedToType(source as qt.UnionType, target, reportErrors && !qf.type.is.kind(source, TypeFlags.Primitive), intersectionState)
+                : eachTypeRelatedToType(source as qt.UnionType, target, reportErrors && !qf.type.is.kind(source, TypeFlags.Primitive), intersectionState);
           } else {
             if (qf.type.is.union(target))
               result = qf.type.check.relatedToSomeType(
                 getRegularTypeOfObjectLiteral(source),
                 <qt.UnionType>target,
-                reportErrors && !(source.flags & TypeFlags.Primitive) && !(target.flags & TypeFlags.Primitive)
+                reportErrors && !qf.type.is.kind(source, TypeFlags.Primitive) && !qf.type.is.kind(target, TypeFlags.Primitive)
               );
             else if (qf.type.is.intersection(target)) {
               result = qf.type.check.relatedToEachType(getRegularTypeOfObjectLiteral(source), target as qt.IntersectionType, reportErrors, IntersectionState.Target);
             } else if (qf.type.is.intersection(source)) {
               result = someTypeRelatedToType(<qt.IntersectionType>source, target, false, IntersectionState.Source);
             }
-            if (!result && (source.flags & TypeFlags.StructuredOrInstantiable || target.flags & TypeFlags.StructuredOrInstantiable)) {
+            if (!result && (qf.type.is.kind(source, TypeFlags.StructuredOrInstantiable) || qf.type.is.kind(target, TypeFlags.StructuredOrInstantiable))) {
               if ((result = recursiveTypeRelatedTo(source, target, reportErrors, intersectionState))) resetErrorInfo(saveErrorInfo);
             }
           }
@@ -1590,7 +1590,7 @@ export function newType(f: qt.Frame) {
                 tryElaborateArrayLikeErrors(source, target, reportErrors);
                 if (errorInfo !== currentError) maybeSuppress = !!errorInfo;
               }
-              if (qf.type.is.object(source) && target.flags & TypeFlags.Primitive) tryElaborateErrorsForPrimitivesAndObjects(source, target);
+              if (qf.type.is.object(source) && qf.type.is.kind(target, TypeFlags.Primitive)) tryElaborateErrorsForPrimitivesAndObjects(source, target);
               else if (source.symbol && qf.type.is.object(source) && globalObjectType === source) {
                 reportError(qd.msgs.The_Object_type_is_assignable_to_very_few_other_types_Did_you_mean_to_use_the_any_type_instead);
               } else if (isComparingJsxAttributes && qf.type.is.intersection(target)) {
@@ -1850,15 +1850,15 @@ export function newType(f: qt.Frame) {
             if (flags & TypeFlags.Index) return isRelatedTo((<qt.IndexType>source).type, (<qt.IndexType>target).type, false);
             let result = qt.Ternary.False;
             if (flags & TypeFlags.IndexedAccess) {
-              if ((result = isRelatedTo((<qt.IndexedAccessType>source).objectType, (<qt.IndexedAccessType>target).objectType, false))) {
-                if ((result &= isRelatedTo((<qt.IndexedAccessType>source).indexType, (<qt.IndexedAccessType>target).indexType, false))) return result;
+              if ((result = isRelatedTo(source.objectType, target.objectType, false))) {
+                if ((result &= isRelatedTo(source.indexType, target.indexType, false))) return result;
               }
             }
             if (flags & TypeFlags.Conditional) {
-              if ((<qt.ConditionalType>source).root.isDistributive === (<qt.ConditionalType>target).root.isDistributive) {
-                if ((result = isRelatedTo((<qt.ConditionalType>source).checkType, (<qt.ConditionalType>target).checkType, false))) {
-                  if ((result &= isRelatedTo((<qt.ConditionalType>source).extendsType, (<qt.ConditionalType>target).extendsType, false))) {
-                    if ((result &= isRelatedTo(getTrueTypeFromConditionalType(<qt.ConditionalType>source), getTrueTypeFromConditionalType(<qt.ConditionalType>target), false))) {
+              if (source.root.isDistributive === target.root.isDistributive) {
+                if ((result = isRelatedTo(source.checkType, target.checkType, false))) {
+                  if ((result &= isRelatedTo(source.extendsType, target.extendsType, false))) {
+                    if ((result &= isRelatedTo(getTrueTypeFromConditionalType(source), getTrueTypeFromConditionalType(target), false))) {
                       if ((result &= isRelatedTo(getFalseTypeFromConditionalType(<qt.ConditionalType>source), getFalseTypeFromConditionalType(<qt.ConditionalType>target), false))) return result;
                     }
                   }
@@ -1892,18 +1892,18 @@ export function newType(f: qt.Frame) {
                 if ((result = isRelatedTo(templateType, indexedAccessType, reportErrors))) return result;
               }
             }
-          } else if (target.flags & TypeFlags.Index) {
-            if (source.flags & TypeFlags.Index) {
-              if ((result = isRelatedTo((<qt.IndexType>target).type, (<qt.IndexType>source).type, false))) return result;
+          } else if (qf.type.is.index(target)) {
+            if (qf.type.is.index(source)) {
+              if ((result = isRelatedTo(target.type, source.type, false))) return result;
             }
-            const constraint = getSimplifiedTypeOrConstraint((<qt.IndexType>target).type);
+            const constraint = getSimplifiedTypeOrConstraint(target.type);
             if (constraint) {
-              if (isRelatedTo(source, qf.get.indexType(constraint, (target as qt.IndexType).stringsOnly), reportErrors) === qt.Ternary.True) return qt.Ternary.True;
+              if (isRelatedTo(source, qf.get.indexType(constraint, target.stringsOnly), reportErrors) === qt.Ternary.True) return qt.Ternary.True;
             }
-          } else if (target.flags & TypeFlags.IndexedAccess) {
+          } else if (qf.type.is.indexedAccess(target)) {
             if (relation !== identityRelation) {
-              const objectType = (<qt.IndexedAccessType>target).objectType;
-              const indexType = (<qt.IndexedAccessType>target).indexType;
+              const objectType = target.objectType;
+              const indexType = target.indexType;
               const baseObjectType = qf.get.baseConstraintOfType(objectType) || objectType;
               const baseIndexType = qf.get.baseConstraintOfType(indexType) || indexType;
               if (!qf.type.is.genericObject(baseObjectType) && !qf.type.is.genericIndex(baseIndexType)) {
@@ -1916,12 +1916,7 @@ export function newType(f: qt.Frame) {
             const template = getTemplateTypeFromMappedType(target);
             const modifiers = getMappedTypeModifiers(target);
             if (!(modifiers & MappedTypeModifiers.ExcludeOptional)) {
-              if (
-                template.flags & TypeFlags.IndexedAccess &&
-                (<qt.IndexedAccessType>template).objectType === source &&
-                (<qt.IndexedAccessType>template).indexType === getTypeParamFromMappedType(target)
-              )
-                return qt.Ternary.True;
+              if (qf.type.is.kind(template, TypeFlags.IndexedAccess) && template.objectType === source && template.indexType === getTypeParamFromMappedType(target)) return qt.Ternary.True;
               if (!qf.type.is.genericMapped(source)) {
                 const targetConstraint = getConstraintTypeFromMappedType(target);
                 const sourceKeys = qf.get.indexType(source, true);
@@ -1939,17 +1934,16 @@ export function newType(f: qt.Frame) {
               }
             }
           }
-          if (source.flags & TypeFlags.TypeVariable) {
-            if (source.flags & TypeFlags.IndexedAccess && target.flags & TypeFlags.IndexedAccess) {
-              if ((result = isRelatedTo((<qt.IndexedAccessType>source).objectType, (<qt.IndexedAccessType>target).objectType, reportErrors)))
-                result &= isRelatedTo((<qt.IndexedAccessType>source).indexType, (<qt.IndexedAccessType>target).indexType, reportErrors);
+          if (qf.type.is.variable(source)) {
+            if (qf.type.is.indexedAccess(source) && qf.type.is.indexedAccess(target)) {
+              if ((result = isRelatedTo(source.objectType, target.objectType, reportErrors))) result &= isRelatedTo(source.indexType, target.indexType, reportErrors);
               if (result) {
                 resetErrorInfo(saveErrorInfo);
                 return result;
               }
             } else {
               const constraint = getConstraintOfType(<TypeVariable>source);
-              if (!constraint || (qf.type.is.param(source) && constraint.flags & TypeFlags.Any)) {
+              if (!constraint || (qf.type.is.param(source) && qf.type.is.kind(constraint, TypeFlags.Any))) {
                 if ((result = isRelatedTo(emptyObjectType, extractTypesOfKind(target, ~TypeFlags.NonPrimitive)))) {
                   resetErrorInfo(saveErrorInfo);
                   return result;
@@ -1962,13 +1956,13 @@ export function newType(f: qt.Frame) {
                 return result;
               }
             }
-          } else if (source.flags & TypeFlags.Index) {
+          } else if (qf.type.is.index(source)) {
             if ((result = isRelatedTo(keyofConstraintType, target, reportErrors))) {
               resetErrorInfo(saveErrorInfo);
               return result;
             }
-          } else if (source.flags & TypeFlags.Conditional) {
-            if (target.flags & TypeFlags.Conditional) {
+          } else if (qf.type.is.conditional(source)) {
+            if (qf.type.is.conditional(target)) {
               const sourceParams = (source as qt.ConditionalType).root.inferTypeParams;
               let sourceExtends = (<qt.ConditionalType>source).extendsType;
               let mapper: qt.TypeMapper | undefined;
@@ -2019,7 +2013,7 @@ export function newType(f: qt.Frame) {
               }
               return qt.Ternary.False;
             }
-            const sourceIsPrimitive = !!(source.flags & TypeFlags.Primitive);
+            const sourceIsPrimitive = !!qf.type.is.kind(source, TypeFlags.Primitive);
             if (relation !== identityRelation) source = getApparentType(source);
             else if (qf.type.is.genericMapped(source)) return qt.Ternary.False;
             if (
@@ -2481,7 +2475,7 @@ export function newType(f: qt.Frame) {
           for (const prop of props) {
             if (qf.type.is.ignoredJsxProperty(source, prop)) continue;
             const nameType = prop.links.nameType;
-            if (nameType && nameType.flags & TypeFlags.UniqueESSymbol) continue;
+            if (nameType && qf.type.is.kind(nameType, TypeFlags.UniqueESSymbol)) continue;
             if (kind === IndexKind.String || qt.NumericLiteral.name(prop.escName)) {
               const related = isRelatedTo(prop.typeOfSymbol(), target, reportErrors);
               if (!related) {
@@ -2501,7 +2495,7 @@ export function newType(f: qt.Frame) {
         function indexTypesRelatedTo(source: Type, target: Type, kind: IndexKind, sourceIsPrimitive: boolean, reportErrors: boolean, intersectionState: IntersectionState): qt.Ternary {
           if (relation === identityRelation) return indexTypesIdenticalTo(source, target, kind);
           const targetType = qf.get.indexTypeOfType(target, kind);
-          if (!targetType || (targetType.flags & TypeFlags.Any && !sourceIsPrimitive)) return qt.Ternary.True;
+          if (!targetType || (qf.type.is.kind(targetType, TypeFlags.Any) && !sourceIsPrimitive)) return qt.Ternary.True;
           if (qf.type.is.genericMapped(source))
             return qf.get.indexTypeOfType(target, IndexKind.String) ? isRelatedTo(getTemplateTypeFromMappedType(source), targetType, reportErrors) : qt.Ternary.False;
           const indexType = qf.get.indexTypeOfType(source, kind) || (kind === IndexKind.Number && qf.get.indexTypeOfType(source, IndexKind.String));
@@ -2563,7 +2557,7 @@ export function newType(f: qt.Frame) {
         }
       }
       nonNullWithReporter(t: Type, n: Node, cb: (n: Node, k: TypeFlags) => void): Type {
-        if (strictNullChecks && t.flags & TypeFlags.Unknown) {
+        if (strictNullChecks && qf.type.is.kind(t, TypeFlags.Unknown)) {
           error(n, qd.msgs.Object_is_of_type_unknown);
           return errorType;
         }
@@ -2580,7 +2574,7 @@ export function newType(f: qt.Frame) {
       }
       nonNullNonVoidType(t: Type, n: Node): Type {
         const r = this.nonNull(t, n);
-        if (r !== errorType && r.flags & TypeFlags.Void) error(n, qd.msgs.Object_is_possibly_undefined);
+        if (r !== errorType && qf.type.is.kind(r, TypeFlags.Void)) error(n, qd.msgs.Object_is_possibly_undefined);
         return r;
       }
       privateIdentifierPropAccess(left: Type, right: qt.PrivateIdentifier, s?: qt.Symbol) {
@@ -2625,9 +2619,9 @@ export function newType(f: qt.Frame) {
         return false;
       }
       indexedAccessIndex(t: Type, n: qt.IndexedAccessTyping | qt.ElemAccessExpression) {
-        if (!(t.flags & TypeFlags.IndexedAccess)) return t;
-        const objectType = (<qt.IndexedAccessType>t).objectType;
-        const indexType = (<qt.IndexedAccessType>t).indexType;
+        if (!qf.type.is.kind(t, TypeFlags.IndexedAccess)) return t;
+        const objectType = t.objectType;
+        const indexType = t.indexType;
         if (qf.type.is.assignableTo(indexType, qf.get.indexType(objectType, false))) {
           if (
             n.kind === Syntax.ElemAccessExpression &&
@@ -2659,7 +2653,7 @@ export function newType(f: qt.Frame) {
         return r || errorType;
       }
       truthinessOf(t: Type, n: Node) {
-        if (t.flags & TypeFlags.Void) error(n, qd.msgs.An_expression_of_type_void_cannot_be_tested_for_truthiness);
+        if (qf.type.is.kind(t, TypeFlags.Void)) error(n, qd.msgs.An_expression_of_type_void_cannot_be_tested_for_truthiness);
         return t;
       }
       indexConstraints(t: Type) {

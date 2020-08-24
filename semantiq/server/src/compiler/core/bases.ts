@@ -596,7 +596,7 @@ export class Type implements qt.Type {
     return;
   }
   get objectFlags(): ObjectFlags {
-    return this.flags & TypeFlags.ObjectFlagsType ? this._objectFlags : 0;
+    return qf.type.is.kind(this, TypeFlags.ObjectFlagsType) ? this._objectFlags : 0;
   }
 }
 export class Ftype {
