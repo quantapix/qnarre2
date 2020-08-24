@@ -1,4 +1,4 @@
-import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, TypeFlags, Visitor, Visitors, VisitResult } from '../types';
+import { EmitFlags, Node, Nodes, NodeFlags, ObjectFlags, Visitor, Visitors, VisitResult } from '../types';
 import { qf, Fassert, Fis } from './frame';
 import { Syntax } from '../syntax';
 import * as qb from './bases';
@@ -1051,10 +1051,10 @@ export function createGetSymbolWalker(
         if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as qt.InterfaceType);
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
-      if (qf.type.is.param(t)) visitTypeParam(t as qt.TypeParam);
+      if (qf.type.is.param(t)) visitTypeParam(t);
       if (qf.type.is.unionOrIntersection(t)) visitUnionOrIntersectionType(t);
-      if (t.flags & TypeFlags.Index) visitIndexType(t as qt.IndexType);
-      if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as qt.IndexedAccessType);
+      if (qf.type.is.index(t)) visitIndexType(t);
+      if (qf.type.is.indexedAccess(t)) visitIndexedAccessType(t);
     }
     function visitTypeReference(t: qt.TypeReference) {
       visitType(t.target);

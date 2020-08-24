@@ -17,6 +17,30 @@ export function newType(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.type = new (class Base extends qb.Ftype {
     is = new (class extends Base {
+      kind(t: Type, k: TypeFlags) {
+        return !!(t.flags & k);
+      }
+      uniqueESSymbol(t: Type): t is qt.UniqueESSymbolType {
+        return !!(t.flags & TypeFlags.UniqueESSymbol);
+      }
+      conditional(t: Type): t is qt.ConditionalType {
+        return !!(t.flags & TypeFlags.Conditional);
+      }
+      substitution(t: Type): t is qt.SubstitutionType {
+        return !!(t.flags & TypeFlags.Substitution);
+      }
+      index(t: Type): t is qt.IndexType {
+        return !!(t.flags & TypeFlags.Index);
+      }
+      indexedAccess(t: Type): t is qt.IndexedAccessType {
+        return !!(t.flags & TypeFlags.IndexedAccess);
+      }
+      booleanLiteral(t: Type): t is qt.IntrinsicType {
+        return !!(t.flags & TypeFlags.BooleanLiteral);
+      }
+      bigIntLiteral(t: Type): t is qt.BigIntLiteralType {
+        return !!(t.flags & TypeFlags.BigIntLiteral);
+      }
       union(t: Type): t is qt.UnionType {
         return !!(t.flags & TypeFlags.Union);
       }
@@ -418,23 +442,9 @@ export function newType(f: qt.Frame) {
         if (fto & TypeFlags.AnyOrUnknown || f & TypeFlags.Never || f === wildcardType) return true;
         if (fto & TypeFlags.Never) return false;
         if (f & TypeFlags.StringLike && fto & TypeFlags.String) return true;
-        if (
-          f & TypeFlags.StringLiteral &&
-          f & TypeFlags.EnumLiteral &&
-          fto & TypeFlags.StringLiteral &&
-          !(fto & TypeFlags.EnumLiteral) &&
-          (<qt.StringLiteralType>f).value === (<qt.StringLiteralType>to).value
-        )
-          return true;
+        if (this.stringLiteral(t) && f & TypeFlags.EnumLiteral && this.stringLiteral(to) && !(fto & TypeFlags.EnumLiteral) && t.value === to.value) return true;
         if (f & TypeFlags.NumberLike && fto & TypeFlags.Number) return true;
-        if (
-          f & TypeFlags.NumberLiteral &&
-          f & TypeFlags.EnumLiteral &&
-          fto & TypeFlags.NumberLiteral &&
-          !(fto & TypeFlags.EnumLiteral) &&
-          (<qt.NumberLiteralType>f).value === (<qt.NumberLiteralType>to).value
-        )
-          return true;
+        if (this.numberLiteral(t) && f & TypeFlags.EnumLiteral && this.numberLiteral(to) && !(fto & TypeFlags.EnumLiteral) && t.value === to.value) return true;
         if (f & TypeFlags.BigIntLike && fto & TypeFlags.BigInt) return true;
         if (f & TypeFlags.BooleanLike && fto & TypeFlags.Boolean) return true;
         if (f & TypeFlags.ESSymbolLike && fto & TypeFlags.ESSymbol) return true;

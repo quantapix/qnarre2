@@ -474,7 +474,7 @@ export function newCheck(f: qt.Frame) {
         if (!p.type) return errorOnNode(p.name, qd.msgs.An_index_signature_param_must_have_a_type_annotation);
         if (p.type.kind !== Syntax.StringKeyword && p.type.kind !== Syntax.NumberKeyword) {
           const t = qf.get.typeFromTypeNode(p.type);
-          if (t.flags & TypeFlags.String || t.flags & TypeFlags.Number) {
+          if (qf.type.is.kind(t, TypeFlags.String) || qf.type.is.kind(t, TypeFlags.Number)) {
             return errorOnNode(
               p.name,
               qd.msgs.An_index_signature_param_type_cannot_be_a_type_alias_Consider_writing_0_Colon_1_Colon_2_instead,
@@ -1304,7 +1304,7 @@ export function newCheck(f: qt.Frame) {
       if (!ls.resolvedType) {
         ls.resolvedType = this.expression(n.expression);
         if (
-          ls.resolvedType.flags & TypeFlags.Nullable ||
+          ls.qf.type.is.kind(resolvedType, TypeFlags.Nullable) ||
           (!qf.type.is.assignableToKind(ls.resolvedType, TypeFlags.StringLike | TypeFlags.NumberLike | TypeFlags.ESSymbolLike) &&
             !qf.type.is.assignableTo(ls.resolvedType, stringNumberSymbolType))
         ) {
@@ -1406,7 +1406,7 @@ export function newCheck(f: qt.Frame) {
           qf.assert.true(memberDecl.kind === Syntax.GetAccessor || memberDecl.kind === Syntax.SetAccessor);
           this.nodeDeferred(memberDecl);
         }
-        if (computedNameType && !(computedNameType.flags & TypeFlags.StringOrNumberLiteralOrUnique)) {
+        if (computedNameType && !(qf.type.is.kind(computedNameType, TypeFlags.StringOrNumberLiteralOrUnique))) {
           if (qf.type.is.assignableTo(computedNameType, stringNumberSymbolType)) {
             if (qf.type.is.assignableTo(computedNameType, numberType)) hasComputedNumberProperty = true;
             else {
@@ -1622,7 +1622,7 @@ export function newCheck(f: qt.Frame) {
     thatExpressionIsProperSymbolReference(expression: qt.Expression, expressionType: Type, reportError: boolean): boolean {
       if (expressionType === errorType) return false;
       if (!qf.is.wellKnownSymbolSyntactically(expression)) return false;
-      if ((expressionType.flags & TypeFlags.ESSymbolLike) === 0) {
+      if ((qf.type.is.kind(expressionType, TypeFlags.ESSymbolLike)) === 0) {
         if (reportError) error(expression, qd.msgs.A_computed_property_name_of_the_form_0_must_be_of_type_symbol, qf.get.textOf(expression));
         return false;
       }
@@ -1722,8 +1722,8 @@ export function newCheck(f: qt.Frame) {
       }
       if (qf.is.inJSFile(n) && isCommonJsRequire(n)) return resolveExternalModuleTypeByLiteral(n.args![0] as qt.StringLiteral);
       const returnType = qf.get.returnTypeOfSignature(signature);
-      if (returnType.flags & TypeFlags.ESSymbolLike && isSymbolOrSymbolForCall(n)) return getESSymbolLikeTypeForNode(walkUpParenthesizedExpressions(n.parent));
-      if (n.kind === Syntax.CallExpression && n.parent?.kind === Syntax.ExpressionStatement && returnType.flags & TypeFlags.Void && getTypePredicateOfSignature(signature)) {
+      if (qf.type.is.kind(returnType, TypeFlags.ESSymbolLike) && isSymbolOrSymbolForCall(n)) return getESSymbolLikeTypeForNode(walkUpParenthesizedExpressions(n.parent));
+      if (n.kind === Syntax.CallExpression && n.parent?.kind === Syntax.ExpressionStatement && qf.type.is.kind(returnType, TypeFlags.Void) && getTypePredicateOfSignature(signature)) {
         if (!qf.is.dottedName(n.expression)) error(n.expression, qd.msgs.Assertions_require_the_call_target_to_be_an_identifier_or_qualified_name);
         else if (!getEffectsSignature(n)) {
           const diagnostic = error(n.expression, qd.msgs.Assertions_require_every_name_in_the_call_target_to_be_declared_with_an_explicit_type_annotation);
@@ -1751,7 +1751,7 @@ export function newCheck(f: qt.Frame) {
       for (let i = 1; i < n.args.length; ++i) {
         this.expressionCached(n.args[i]);
       }
-      if (specType.flags & TypeFlags.Undefined || specType.flags & TypeFlags.Null || !qf.type.is.assignableTo(specType, stringType))
+      if (qf.type.is.kind(specType, TypeFlags.Undefined) || qf.type.is.kind(specType, TypeFlags.Null) || !qf.type.is.assignableTo(specType, stringType))
         error(spec, qd.msgs.Dynamic_import_s_spec_must_be_of_type_string_but_here_has_type_0, typeToString(specType));
       const moduleSymbol = resolveExternalModuleName(n, spec);
       if (moduleSymbol) {
@@ -1962,7 +1962,7 @@ export function newCheck(f: qt.Frame) {
       }
       const operandType = this.expression(n.expression);
       const awaitedType = qf.type.check.awaited(operandType, n, qd.msgs.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
-      if (awaitedType === operandType && awaitedType !== errorType && !(operandType.flags & TypeFlags.AnyOrUnknown))
+      if (awaitedType === operandType && awaitedType !== errorType && !(qf.type.is.kind(operandType, TypeFlags.AnyOrUnknown)))
         addErrorOrSuggestion(false, qf.make.diagForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
       return awaitedType;
     }
@@ -2272,7 +2272,7 @@ export function newCheck(f: qt.Frame) {
           leftType = qf.type.check.nonNull(leftType, left);
           rightType = qf.type.check.nonNull(rightType, right);
           let suggestedOperator: Syntax | undefined;
-          if (leftType.flags & TypeFlags.BooleanLike && rightType.flags & TypeFlags.BooleanLike && (suggestedOperator = getSuggestedBooleanOperator(operatorToken.kind)) !== undefined) {
+          if (qf.type.is.kind(leftType, TypeFlags.BooleanLike) && qf.type.is.kind(rightType, TypeFlags.BooleanLike) && (suggestedOperator = getSuggestedBooleanOperator(operatorToken.kind)) !== undefined) {
             error(
               errorNode || operatorToken,
               qd.msgs.The_0_operator_is_not_allowed_for_boolean_types_Consider_using_1_instead,
@@ -2880,7 +2880,7 @@ export function newCheck(f: qt.Frame) {
           const typeParams = getTypeParamsForTypeReference(n);
           if (typeParams) this.typeArgConstraints(n, typeParams);
         }
-        if (type.flags & TypeFlags.Enum && qf.get.nodeLinks(n).resolvedSymbol!.flags & SymbolFlags.EnumMember)
+        if (qf.type.is.kind(type, TypeFlags.Enum) && qf.get.nodeLinks(n).resolvedSymbol!.flags & SymbolFlags.EnumMember)
           error(n, qd.msgs.Enum_type_0_has_members_with_initers_that_are_not_literals, typeToString(type));
       }
     }
@@ -2972,7 +2972,7 @@ export function newCheck(f: qt.Frame) {
     decorator(n: qt.Decorator): void {
       const signature = getResolvedSignature(n);
       const returnType = qf.get.returnTypeOfSignature(signature);
-      if (returnType.flags & TypeFlags.Any) return;
+      if (qf.type.is.kind(returnType, TypeFlags.Any)) return;
       let expectedReturnType: Type;
       const headMessage = getDiagnosticHeadMessageForDecoratorResolution(n);
       let errorInfo: qd.MessageChain | undefined;

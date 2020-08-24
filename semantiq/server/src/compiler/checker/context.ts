@@ -1,4 +1,4 @@
-import { ModifierFlags, Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../types';
+import { EmitFlags, ModifierFlags, Node, NodeBuilderFlags, ObjectFlags, SymbolFlags, TypeFlags } from '../types';
 import { qf } from './index';
 import { Syntax } from '../syntax';
 import * as qc from '../core';
@@ -49,24 +49,24 @@ export class QContext {
     if (!(this.flags & NodeBuilderFlags.NoTypeReduction)) {
       type = getReducedType(type);
     }
-    if (type.flags & TypeFlags.Any) {
+    if (qf.type.is.kind(type, TypeFlags.Any)) {
       this.approximateLength += 3;
       return new qc.KeywordTyping(Syntax.AnyKeyword);
     }
-    if (type.flags & TypeFlags.Unknown) return new qc.KeywordTyping(Syntax.UnknownKeyword);
-    if (type.flags & TypeFlags.String) {
+    if (qf.type.is.kind(type, TypeFlags.Unknown)) return new qc.KeywordTyping(Syntax.UnknownKeyword);
+    if (qf.type.is.kind(type, TypeFlags.String)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.StringKeyword);
     }
-    if (type.flags & TypeFlags.Number) {
+    if (qf.type.is.kind(type, TypeFlags.Number)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.NumberKeyword);
     }
-    if (type.flags & TypeFlags.BigInt) {
+    if (qf.type.is.kind(type, TypeFlags.BigInt)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.BigIntKeyword);
     }
-    if (type.flags & TypeFlags.Boolean) {
+    if (qf.type.is.kind(type, TypeFlags.Boolean)) {
       this.approximateLength += 7;
       return new qc.KeywordTyping(Syntax.BooleanKeyword);
     }
@@ -77,58 +77,56 @@ export class QContext {
         getDeclaredTypeOfSymbol(parentSymbol) === type ? parentName : appendReferenceToType(parentName as qt.TypingReference | qt.ImportTyping, new qc.TypingReference(type.symbol.name, undefined));
       return enumLiteralName;
     }
-    if (type.flags & TypeFlags.EnumLike) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
+    if (qf.type.is.kind(type, TypeFlags.EnumLike)) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
     if (qf.type.is.stringLiteral(type)) {
-      this.approximateLength += (<qt.StringLiteralType>type).value.length + 2;
-      return new qc.LiteralTyping(qf.emit.setFlags(qc.asLiteral((<qt.StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
+      this.approximateLength += type.value.length + 2;
+      return new qc.LiteralTyping(qf.emit.setFlags(qc.asLiteral(type.value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
     }
     if (qf.type.is.numberLiteral(type)) {
       const value = (<qt.NumberLiteralType>type).value;
       this.approximateLength += ('' + value).length;
       return new qc.LiteralTyping(value < 0 ? new qc.PrefixUnaryExpression(Syntax.MinusToken, qc.asLiteral(-value)) : qc.asLiteral(value));
     }
-    if (type.flags & TypeFlags.BigIntLiteral) {
-      this.approximateLength += pseudoBigIntToString((<qt.BigIntLiteralType>type).value).length + 1;
-      return new qc.LiteralTyping(qc.asLiteral((<qt.BigIntLiteralType>type).value));
+    if (qf.type.is.bigIntLiteral(type)) {
+      this.approximateLength += pseudoBigIntToString(type.value).length + 1;
+      return new qc.LiteralTyping(qc.asLiteral(type.value));
     }
-    if (type.flags & TypeFlags.BooleanLiteral) {
-      this.approximateLength += (<qt.IntrinsicType>type).intrinsicName.length;
-      return (<qt.IntrinsicType>type).intrinsicName === 'true' ? new qc.BooleanLiteral(true) : new qc.BooleanLiteral(false);
+    if (qf.type.is.booleanLiteral(type)) {
+      this.approximateLength += type.intrinsicName.length;
+      return type.intrinsicName === 'true' ? new qc.BooleanLiteral(true) : new qc.BooleanLiteral(false);
     }
-    if (type.flags & TypeFlags.UniqueESSymbol) {
+    if (qf.type.is.uniqueESSymbol(type)) {
       if (!(this.flags & NodeBuilderFlags.AllowUniqueESSymbolType)) {
         if (type.symbol?.isValueAccessible(this.enclosingDeclaration)) {
           this.approximateLength += 6;
           return this.symbolToTypeNode(type.symbol, SymbolFlags.Value);
         }
-        if (this.tracker.reportInaccessibleUniqueSymbolError) {
-          this.tracker.reportInaccessibleUniqueSymbolError();
-        }
+        if (this.tracker.reportInaccessibleUniqueSymbolError) this.tracker.reportInaccessibleUniqueSymbolError();
       }
       this.approximateLength += 13;
       return new qc.TypingOperator(Syntax.UniqueKeyword, new qc.KeywordTyping(Syntax.SymbolKeyword));
     }
-    if (type.flags & TypeFlags.Void) {
+    if (qf.type.is.kind(type, TypeFlags.Void)) {
       this.approximateLength += 4;
       return new qc.KeywordTyping(Syntax.VoidKeyword);
     }
-    if (type.flags & TypeFlags.Undefined) {
+    if (qf.type.is.kind(type, TypeFlags.Undefined)) {
       this.approximateLength += 9;
       return new qc.KeywordTyping(Syntax.UndefinedKeyword);
     }
-    if (type.flags & TypeFlags.Null) {
+    if (qf.type.is.kind(type, TypeFlags.Null)) {
       this.approximateLength += 4;
       return new qc.KeywordTyping(Syntax.NullKeyword);
     }
-    if (type.flags & TypeFlags.Never) {
+    if (qf.type.is.kind(type, TypeFlags.Never)) {
       this.approximateLength += 5;
       return new qc.KeywordTyping(Syntax.NeverKeyword);
     }
-    if (type.flags & TypeFlags.ESSymbol) {
+    if (qf.type.is.kind(type, TypeFlags.ESSymbol)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.SymbolKeyword);
     }
-    if (type.flags & TypeFlags.NonPrimitive) {
+    if (qf.type.is.kind(type, TypeFlags.NonPrimitive)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.ObjectKeyword);
     }
@@ -182,30 +180,30 @@ export class QContext {
       qf.assert.true(!!qf.type.is.object(type));
       return this.createAnonymousTypeNode(<qt.ObjectType>type);
     }
-    if (type.flags & TypeFlags.Index) {
-      const indexedType = (<qt.IndexType>type).type;
+    if (qf.type.is.index(type)) {
+      const indexedType = type.type;
       this.approximateLength += 6;
       const indexTypeNode = this.typeToTypeNodeHelper(indexedType);
       return new qc.TypingOperator(indexTypeNode);
     }
-    if (type.flags & TypeFlags.IndexedAccess) {
-      const objectTypeNode = this.typeToTypeNodeHelper((<qt.IndexedAccessType>type).objectType);
-      const indexTypeNode = this.typeToTypeNodeHelper((<qt.IndexedAccessType>type).indexType);
+    if (qf.type.is.indexedAccess(type)) {
+      const objectTypeNode = this.typeToTypeNodeHelper(type.objectType);
+      const indexTypeNode = this.typeToTypeNodeHelper(type.indexType);
       this.approximateLength += 2;
       return new qc.IndexedAccessTyping(objectTypeNode, indexTypeNode);
     }
-    if (type.flags & TypeFlags.Conditional) {
-      const checkTypeNode = this.typeToTypeNodeHelper((<qt.ConditionalType>type).checkType);
+    if (qf.type.is.conditional(type)) {
+      const checkTypeNode = this.typeToTypeNodeHelper(type.checkType);
       const saveInferTypeParams = this.inferTypeParams;
       this.inferTypeParams = (<qt.ConditionalType>type).root.inferTypeParams;
-      const extendsTypeNode = this.typeToTypeNodeHelper((<qt.ConditionalType>type).extendsType);
+      const extendsTypeNode = this.typeToTypeNodeHelper(type.extendsType);
       this.inferTypeParams = saveInferTypeParams;
-      const trueTypeNode = this.typeToTypeNodeHelper(getTrueTypeFromConditionalType(<qt.ConditionalType>type));
-      const falseTypeNode = this.typeToTypeNodeHelper(getFalseTypeFromConditionalType(<qt.ConditionalType>type));
+      const trueTypeNode = this.typeToTypeNodeHelper(getTrueTypeFromConditionalType(type));
+      const falseTypeNode = this.typeToTypeNodeHelper(getFalseTypeFromConditionalType(type));
       this.approximateLength += 15;
       return new qc.ConditionalTyping(checkTypeNode, extendsTypeNode, trueTypeNode, falseTypeNode);
     }
-    if (type.flags & TypeFlags.Substitution) return this.typeToTypeNodeHelper((<qt.SubstitutionType>type).baseType);
+    if (qf.type.is.substitution(type)) return this.typeToTypeNodeHelper(type.baseType);
     return fail('Should be unreachable.');
     function appendReferenceToType(root: qt.TypingReference | qt.ImportTyping, ref: qt.TypingReference): qt.TypingReference | qt.ImportTyping {
       if (root.kind === Syntax.ImportTyping) {
@@ -549,7 +547,7 @@ export class QContext {
         if (NumericLiteral.name(name) && startsWith(name, '-')) return new qc.ComputedPropertyName(qc.asLiteral(+name));
         return createPropertyNameNodeForIdentifierOrLiteral(name);
       }
-      if (nameType.flags & TypeFlags.UniqueESSymbol) return new qc.ComputedPropertyName(this.symbolToExpression((<qt.UniqueESSymbolType>nameType).symbol, SymbolFlags.Value));
+      if (qf.type.is.uniqueESSymbol(nameType)) return new qc.ComputedPropertyName(this.symbolToExpression(nameType.symbol, SymbolFlags.Value));
     }
   }
   addPropertyToElemList(propertySymbol: qt.Symbol, typeElems: qt.TypeElem[]) {
@@ -576,7 +574,7 @@ export class QContext {
     const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined;
     if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(propertyType).length && !isReadonlySymbol(propertySymbol)) {
       const signatures = getSignaturesOfType(
-        filterType(propertyType, (t) => !(t.flags & TypeFlags.Undefined)),
+        filterType(propertyType, (t) => !qf.type.is.kind(t, TypeFlags.Undefined)),
         qt.SignatureKind.Call
       );
       for (const signature of signatures) {
@@ -801,7 +799,7 @@ export class QContext {
       }
     }
     const oldFlags = this.flags;
-    if (type.flags & TypeFlags.UniqueESSymbol && type.symbol === symbol) this.flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
+    if (qf.type.is.kind(type, TypeFlags.UniqueESSymbol) && type.symbol === symbol) this.flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
     const result = this.typeToTypeNodeHelper(type);
     this.flags = oldFlags;
     return result;
