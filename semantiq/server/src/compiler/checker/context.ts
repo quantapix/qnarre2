@@ -49,24 +49,24 @@ export class QContext {
     if (!(this.flags & NodeBuilderFlags.NoTypeReduction)) {
       type = getReducedType(type);
     }
-    if (qf.type.is.kind(type, TypeFlags.Any)) {
+    if (type.isa(TypeFlags.Any)) {
       this.approximateLength += 3;
       return new qc.KeywordTyping(Syntax.AnyKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Unknown)) return new qc.KeywordTyping(Syntax.UnknownKeyword);
-    if (qf.type.is.kind(type, TypeFlags.String)) {
+    if (type.isa(TypeFlags.Unknown)) return new qc.KeywordTyping(Syntax.UnknownKeyword);
+    if (type.isa(TypeFlags.String)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.StringKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Number)) {
+    if (type.isa(TypeFlags.Number)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.NumberKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.BigInt)) {
+    if (type.isa(TypeFlags.BigInt)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.BigIntKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Boolean)) {
+    if (type.isa(TypeFlags.Boolean)) {
       this.approximateLength += 7;
       return new qc.KeywordTyping(Syntax.BooleanKeyword);
     }
@@ -77,7 +77,7 @@ export class QContext {
         getDeclaredTypeOfSymbol(parentSymbol) === type ? parentName : appendReferenceToType(parentName as qt.TypingReference | qt.ImportTyping, new qc.TypingReference(type.symbol.name, undefined));
       return enumLiteralName;
     }
-    if (qf.type.is.kind(type, TypeFlags.EnumLike)) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
+    if (type.isa(TypeFlags.EnumLike)) return this.symbolToTypeNode(type.symbol, SymbolFlags.Type);
     if (qf.type.is.stringLiteral(type)) {
       this.approximateLength += type.value.length + 2;
       return new qc.LiteralTyping(qf.emit.setFlags(qc.asLiteral(type.value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
@@ -106,27 +106,27 @@ export class QContext {
       this.approximateLength += 13;
       return new qc.TypingOperator(Syntax.UniqueKeyword, new qc.KeywordTyping(Syntax.SymbolKeyword));
     }
-    if (qf.type.is.kind(type, TypeFlags.Void)) {
+    if (type.isa(TypeFlags.Void)) {
       this.approximateLength += 4;
       return new qc.KeywordTyping(Syntax.VoidKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Undefined)) {
+    if (type.isa(TypeFlags.Undefined)) {
       this.approximateLength += 9;
       return new qc.KeywordTyping(Syntax.UndefinedKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Null)) {
+    if (type.isa(TypeFlags.Null)) {
       this.approximateLength += 4;
       return new qc.KeywordTyping(Syntax.NullKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.Never)) {
+    if (type.isa(TypeFlags.Never)) {
       this.approximateLength += 5;
       return new qc.KeywordTyping(Syntax.NeverKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.ESSymbol)) {
+    if (type.isa(TypeFlags.ESSymbol)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.SymbolKeyword);
     }
-    if (qf.type.is.kind(type, TypeFlags.NonPrimitive)) {
+    if (type.isa(TypeFlags.NonPrimitive)) {
       this.approximateLength += 6;
       return new qc.KeywordTyping(Syntax.ObjectKeyword);
     }
@@ -148,11 +148,11 @@ export class QContext {
       return this.symbolToTypeNode(type.aliasSymbol, SymbolFlags.Type, typeArgNodes);
     }
     const objectFlags = type.objectFlags;
-    if (objectFlags & ObjectFlags.Reference) {
+    if (qf.type.is.reference(type)) {
       qf.assert.true(!!qf.type.is.object(type));
-      return (<qt.TypeReference>type).node ? this.visitAndTransformType(type, this.typeReferenceToTypeNode) : this.typeReferenceToTypeNode(<qt.TypeReference>type);
+      return type.node ? this.visitAndTransformType(type, this.typeReferenceToTypeNode) : this.typeReferenceToTypeNode(type);
     }
-    if (qf.type.is.param(type) || objectFlags & ObjectFlags.ClassOrInterface) {
+    if (qf.type.is.param(type) || qf.type.is.classOrInterface(type)) {
       if (qf.type.is.param(type) && contains(this.inferTypeParams, type)) {
         this.approximateLength += type.symbol.name.length + 6;
         return new qc.InferTyping(this.typeParamToDeclarationWithConstraint(type as qt.TypeParam, undefined));
@@ -574,7 +574,7 @@ export class QContext {
     const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined;
     if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(propertyType).length && !isReadonlySymbol(propertySymbol)) {
       const signatures = getSignaturesOfType(
-        filterType(propertyType, (t) => !qf.type.is.kind(t, TypeFlags.Undefined)),
+        filterType(propertyType, (t) => !t.isa(TypeFlags.Undefined)),
         qt.SignatureKind.Call
       );
       for (const signature of signatures) {
@@ -799,7 +799,7 @@ export class QContext {
       }
     }
     const oldFlags = this.flags;
-    if (qf.type.is.kind(type, TypeFlags.UniqueESSymbol) && type.symbol === symbol) this.flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
+    if (type.isa(TypeFlags.UniqueESSymbol) && type.symbol === symbol) this.flags |= NodeBuilderFlags.AllowUniqueESSymbolType;
     const result = this.typeToTypeNodeHelper(type);
     this.flags = oldFlags;
     return result;
@@ -1195,7 +1195,7 @@ export class QContext {
         }
         if (resolvedType.stringIndexInfo) {
           let indexSignature: qt.IndexSignatureDeclaration;
-          if (resolvedType.objectFlags & ObjectFlags.ReverseMapped) {
+          if (resolvedType.isObj(ObjectFlags.ReverseMapped)) {
             indexSignature = indexInfoToIndexSignatureDeclarationHelper(
               createIndexInfo(anyType, resolvedType.stringIndexInfo.isReadonly, resolvedType.stringIndexInfo.declaration),
               IndexKind.String,
@@ -1279,7 +1279,7 @@ export class QContext {
       const elemType = this.typeToTypeNodeHelper(typeArgs[0]);
       const arrayType = new qc.ArrayTyping(elemType);
       return type.target === globalArrayType ? arrayType : new qc.TypingOperator(Syntax.ReadonlyKeyword, arrayType);
-    } else if (type.target.objectFlags & ObjectFlags.Tuple) {
+    } else if (type.target.isObj(ObjectFlags.Tuple)) {
       if (typeArgs.length > 0) {
         const arity = getTypeReferenceArity(type);
         const tupleConstituentNodes = this.mapToTypeNodes(typeArgs.slice(0, arity));

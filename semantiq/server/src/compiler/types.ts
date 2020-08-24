@@ -2355,6 +2355,8 @@ export interface Type {
   symbol?: Symbol;
   typeArgs?: readonly Type[];
   widened?: Type;
+  isa(f: qt.TypeFlags): boolean;
+  isObj(f: qt.ObjectFlags): boolean;
 }
 export interface TypeAcquisition {
   enableAutoDiscovery?: boolean;

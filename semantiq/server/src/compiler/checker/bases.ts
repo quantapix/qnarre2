@@ -29,7 +29,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (!ls.type) {
       qf.assert.defined(ls.deferralParent);
       qf.assert.defined(ls.deferralConstituents);
-      ls.type = ls.deferralParent!.flags & qt.TypeFlags.Union ? qf.get.unionType(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
+      ls.type = ls.deferralParent.isa(qt.TypeFlags.Union) ? qf.get.unionType(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
     }
     return ls.type!;
   }
@@ -874,7 +874,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   }
   getBaseTypeVariableOfClass() {
     const t = getBaseConstructorTypeOfClass(this.getDeclaredTypeOfClassOrInterface());
-    return t.flags & qt.TypeFlags.TypeVariable ? t : t.flags & qt.TypeFlags.Intersection ? qf.find.up((t as qt.IntersectionType).types, (t) => !!(t.flags & qt.TypeFlags.TypeVariable)) : undefined;
+    return t.isa(qt.TypeFlags.TypeVariable) ? t : t.isa(qt.TypeFlags.Intersection) ? qf.find.up((t as qt.IntersectionType).types, (t) => !!t.isa(qt.TypeFlags.TypeVariable)) : undefined;
   }
   getTypeOfFuncClassEnumModule(): qt.Type {
     let ls = this.links;
@@ -1061,7 +1061,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       }
       if (memberTypeList.length) {
         const e = qf.get.unionType(memberTypeList, qt.UnionReduction.Literal, this, undefined);
-        if (e.flags & qt.TypeFlags.Union) {
+        if (e.isa(qt.TypeFlags.Union)) {
           e.flags |= qt.TypeFlags.EnumLiteral;
           e.symbol = this;
         }
@@ -1595,13 +1595,13 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   getNameOfSymbolFromNameType(c?: QContext) {
     const t = this.links.nameType;
     if (t) {
-      if (t.flags & qt.TypeFlags.StringOrNumberLiteral) {
+      if (t.isa(qt.TypeFlags.StringOrNumberLiteral)) {
         const n = '' + (<qt.StringLiteralType | qt.NumberLiteralType>t).value;
         if (!qy.is.identifierText(n) && !NumericLiteral.name(n)) return `"${escapeString(n, Codes.doubleQuote)}"`;
         if (NumericLiteral.name(n) && startsWith(n, '-')) return `[${n}]`;
         return n;
       }
-      if (t.flags & qt.TypeFlags.UniqueESSymbol) return `[${getNameOfSymbolAsWritten((<qt.UniqueESSymbolType>t).symbol, c)}]`;
+      if (t.isa(qt.TypeFlags.UniqueESSymbol)) return `[${getNameOfSymbolAsWritten((<qt.UniqueESSymbolType>t).symbol, c)}]`;
     }
   }
   getNameOfSymbolAsWritten(c?: QContext): string {
@@ -1622,7 +1622,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         if (d.kind === Syntax.CallExpression && qf.is.bindableObjectDefinePropertyCall(d)) return this.name;
         if (name.kind === Syntax.ComputedPropertyName && !(this.checkFlags & CheckFlags.Late)) {
           const nameType = this.links.nameType;
-          if (nameType && nameType.flags & qt.TypeFlags.StringOrNumberLiteral) {
+          if (nameType && nameType.isa(qt.TypeFlags.StringOrNumberLiteral)) {
             const result = getNameOfSymbolFromNameType(this, c);
             if (result !== undefined) return result;
           }
@@ -1905,7 +1905,7 @@ export class Signature extends qc.Signature {
       }
     }
     const restType = getEffectiveRestType(context);
-    if (restType && restType.flags & qt.TypeFlags.TypeParam) {
+    if (restType && restType.isa(qt.TypeFlags.TypeParam)) {
       const instantiatedContext = instantiateSignature(context, inferenceContext.nonFixingMapper);
       assignContextualParamTypes(signature, instantiatedContext);
       const restPos = getParamCount(context) - 1;

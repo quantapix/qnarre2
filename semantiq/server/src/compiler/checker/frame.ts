@@ -1541,11 +1541,11 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const nullWideningType = strictNullChecks ? nullType : qf.make.intrinsicType(TypeFlags.Null, 'null', ObjectFlags.ContainsWideningType);
   const numberOrBigIntType = qf.get.unionType([numberType, bigintType]);
   const optionalType = qf.make.intrinsicType(TypeFlags.Undefined, 'undefined');
-  const permissiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? wildcardType : t));
+  const permissiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.isa(qt.TypeFlags.TypeParam) ? wildcardType : t));
   const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qu.__String);
   const resolvingDefaultType = qf.make.anonymousType(undefined, emptySymbols, qu.empty, qu.empty, undefined, undefined);
   const resolvingSignature = qf.make.signature(undefined, undefined, undefined, qu.empty, anyType, undefined, 0, SignatureFlags.None);
-  const restrictiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.flags & qt.TypeFlags.TypeParam ? getRestrictiveTypeParam(<qt.TypeParam>t) : t));
+  const restrictiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.isa(qt.TypeFlags.TypeParam) ? getRestrictiveTypeParam(<qt.TypeParam>t) : t));
   const silentNeverType = qf.make.intrinsicType(TypeFlags.Never, 'never');
   const silentNeverSignature = qf.make.signature(undefined, undefined, undefined, qu.empty, silentNeverType, undefined, 0, SignatureFlags.None);
   const strictBindCallApply = getStrictOptionValue(compilerOpts, 'strictBindCallApply');
@@ -1772,7 +1772,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
         literalOfContextualType(t: Type, c?: Type) {
           if (c) {
             if (this.unionOrIntersection(c)) return qu.some(c.types, (t) => isLiteralOfContextualType(t, t));
-            if (qf.type.is.kind(c, TypeFlags.InstantiableNonPrimitive)) {
+            if (c.isa(TypeFlags.InstantiableNonPrimitive)) {
               const b = qf.get.baseConstraintOfType(c) || unknownType;
               return (
                 (maybeTypeOfKind(b, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
@@ -1785,9 +1785,9 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
             return !!(
               (c.flags & (TypeFlags.StringLiteral | TypeFlags.Index) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
               (qf.type.is.numberLiteral(c) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||
-              (qf.type.is.kind(c, TypeFlags.BigIntLiteral) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
-              (qf.type.is.kind(c, TypeFlags.BooleanLiteral) && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
-              (qf.type.is.kind(c, TypeFlags.UniqueESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
+              (c.isa(TypeFlags.BigIntLiteral) && maybeTypeOfKind(t, TypeFlags.BigIntLiteral)) ||
+              (c.isa(TypeFlags.BooleanLiteral) && maybeTypeOfKind(t, TypeFlags.BooleanLiteral)) ||
+              (c.isa(TypeFlags.UniqueESSymbol) && maybeTypeOfKind(t, TypeFlags.UniqueESSymbol))
             );
           }
           return false;
@@ -1808,12 +1808,11 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
         qu.addMixins(this.is, [t.is]);
       }
       literalTypeToNode(t: qt.FreshableType, enclosing: Node, tracker: qt.SymbolTracker): qt.Expression {
-        const r =
-          t.flags & qt.TypeFlags.EnumLiteral
-            ? nodeBuilder.symbolToExpression(t.symbol, qt.SymbolFlags.Value, enclosing, undefined, tracker)
-            : t === trueType
-            ? new qc.BooleanLiteral(true)
-            : t === falseType && new qc.BooleanLiteral(false);
+        const r = t.isa(qt.TypeFlags.EnumLiteral)
+          ? nodeBuilder.symbolToExpression(t.symbol, qt.SymbolFlags.Value, enclosing, undefined, tracker)
+          : t === trueType
+          ? new qc.BooleanLiteral(true)
+          : t === falseType && new qc.BooleanLiteral(false);
         return r || qc.asLiteral((t as qt.LiteralType).value);
       }
     })());

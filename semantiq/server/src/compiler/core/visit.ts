@@ -1046,10 +1046,10 @@ export function createGetSymbolWalker(
       if (qf.type.is.object(t)) {
         const objectType = t as qt.ObjectType;
         const objectFlags = objectType.objectFlags;
-        if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as qt.TypeReference);
-        if (objectFlags & ObjectFlags.Mapped) visitMappedType(t as qt.MappedType);
-        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as qt.InterfaceType);
-        if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
+        if (qf.type.is.reference(t)) visitTypeReference(t);
+        if (qf.type.is.mapped(t)) visitMappedType(t);
+        if (t.isObj(ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t);
+        if (t.isObj(ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(t);
       }
       if (qf.type.is.param(t)) visitTypeParam(t);
       if (qf.type.is.unionOrIntersection(t)) visitUnionOrIntersectionType(t);
