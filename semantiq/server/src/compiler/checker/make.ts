@@ -117,7 +117,7 @@ export function newMake(f: qt.Frame) {
       for (const current of containingType.types) {
         const type = getApparentType(current);
         if (!(type === errorType || type.isa(qt.TypeFlags.Never))) {
-          const prop = qf.get.propertyOfType(type, name);
+          const prop = qf.type.get.property(type, name);
           const modifiers = prop ? prop.declarationModifierFlags() : 0;
           if (prop) {
             if (isUnion) optionalFlag |= prop.flags & qt.SymbolFlags.Optional;
@@ -143,7 +143,7 @@ export function newMake(f: qt.Frame) {
             if (indexInfo) {
               checkFlags |= qt.CheckFlags.WritePartial | (indexInfo.isReadonly ? qt.CheckFlags.Readonly : 0);
               indexTypes = append(indexTypes, qf.type.is.tuple(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
-            } else if (type.isObj(ObjectFlags.ObjectLiteral)) {
+            } else if (type.isobj(ObjectFlags.ObjectLiteral)) {
               checkFlags |= qt.CheckFlags.WritePartial;
               indexTypes = append(indexTypes, undefinedType);
             } else checkFlags |= qt.CheckFlags.ReadPartial;
@@ -403,7 +403,7 @@ export function newMake(f: qt.Frame) {
       return this.anonymousType(undefined, members, empty, empty, indexInfo, undefined);
     }
     reverseMappedType(source: qt.Type, target: qt.MappedType, constraint: qt.IndexType) {
-      if (!(qf.get.indexInfoOfType(source, IndexKind.String) || (qf.get.propertiesOfType(source).length !== 0 && qf.type.is.partiallyInferable(source)))) return;
+      if (!(qf.get.indexInfoOfType(source, IndexKind.String) || (qf.type.get.properties(source).length !== 0 && qf.type.is.partiallyInferable(source)))) return;
       if (qf.type.is.array(source)) return this.arrayType(inferReverseMappedType(getTypeArgs(<qt.TypeReference>source)[0], target, constraint), qf.type.is.readonlyArray(source));
       if (qf.type.is.tuple(source)) {
         const elemTypes = map(getTypeArgs(source), (t) => inferReverseMappedType(t, target, constraint));
@@ -452,7 +452,7 @@ export function newMake(f: qt.Frame) {
         const member = attributeDecl.symbol;
         if (attributeDecl.kind === Syntax.JsxAttribute) {
           const exprType = check.jsxAttribute(attributeDecl, checkMode);
-          objectFlags |= exprType.isObj(ObjectFlags.PropagatingFlags);
+          objectFlags |= exprType.isobj(ObjectFlags.PropagatingFlags);
           const attributeSymbol = new qc.Symbol(SymbolFlags.Property | qt.SymbolFlags.Transient | member.flags, member.escName);
           attributeSymbol.declarations = member.declarations;
           attributeSymbol.parent = member.parent;
@@ -934,7 +934,7 @@ export function newInstantiate(f: qt.Frame) {
     }
     anonymousType(type: qt.AnonymousType, mapper: qt.TypeMapper): qt.AnonymousType {
       const result = <qt.AnonymousType>qf.make.objectType(type.objectFlags | ObjectFlags.Instantiated, type.symbol);
-      if (type.isObj(ObjectFlags.Mapped)) {
+      if (type.isobj(ObjectFlags.Mapped)) {
         (<qt.MappedType>result).declaration = (<qt.MappedType>type).declaration;
         const origTypeParam = getTypeParamFromMappedType(<qt.MappedType>type);
         const freshTypeParam = cloneTypeParam(origTypeParam);
@@ -1063,7 +1063,7 @@ export function newInstantiate(f: qt.Frame) {
         if (signature && signature.typeParams) {
           const contextualType = getApparentTypeOfContextualType(<qt.Expression>node, ContextFlags.NoConstraints);
           if (contextualType) {
-            const contextualSignature = getSingleSignature(getNonNullableType(contextualType), callSignature ? SignatureKind.Call : SignatureKind.Construct, false);
+            const contextualSignature = getSingleSignature(qf.type.get.nonNullable(contextualType), callSignature ? SignatureKind.Call : SignatureKind.Construct, false);
             if (contextualSignature && !contextualSignature.typeParams) {
               if (checkMode & CheckMode.SkipGenericFunctions) {
                 skippedGenericFunction(node, checkMode);
@@ -1383,7 +1383,7 @@ export function newResolve(f: qt.Frame) {
     }
     exportByName(moduleSymbol: qt.Symbol, name: qu.__String, sourceNode: qt.TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
       const exportValue = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
-      if (exportValue) return qf.get.propertyOfType(exportValue.typeOfSymbol(), name);
+      if (exportValue) return qf.type.get.property(exportValue.typeOfSymbol(), name);
       const exportSymbol = moduleSymbol.exports!.get(name);
       const resolved = exportSymbol.resolve.symbol(dontResolveAlias);
       markSymbolOfAliasDeclarationIfTypeOnly(sourceNode, exportSymbol, resolved, false);
@@ -1534,8 +1534,8 @@ export function newResolve(f: qt.Frame) {
           const referenceParent = referencingLocation.parent;
           if ((referenceParent.kind === Syntax.ImportDeclaration && qf.get.namespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
             const type = this.typeOfSymbol();
-            let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
-            if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
+            let sigs = qf.type.get.structuredSignatures(type, SignatureKind.Call);
+            if (!sigs || !sigs.length) sigs = qf.type.get.structuredSignatures(type, SignatureKind.Construct);
             if (sigs && sigs.length) {
               const moduleType = getTypeWithSyntheticDefaultImportType(type, symbol, moduleSymbol!);
               const result = new qc.Symbol(symbol.flags, symbol.escName);
@@ -1587,7 +1587,7 @@ export function newResolve(f: qt.Frame) {
         diagnostics.add(qf.make.diagForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
         return (type.resolvedBaseTypes = empty);
       }
-      if (type === reducedBaseType || hasBaseType(reducedBaseType, type)) {
+      if (type === reducedBaseType || qf.type.has.base(reducedBaseType, type)) {
         error(type.symbol.valueDeclaration, qd.msgs.Type_0_recursively_references_itself_as_a_base_type, typeToString(type, undefined, TypeFormatFlags.WriteArrayAsGenericType));
         return (type.resolvedBaseTypes = empty);
       }
@@ -1602,7 +1602,7 @@ export function newResolve(f: qt.Frame) {
             const baseType = getReducedType(qf.get.typeFromTypeNode(node));
             if (baseType !== errorType) {
               if (qf.type.is.validBase(baseType)) {
-                if (type !== baseType && !hasBaseType(baseType, type)) {
+                if (type !== baseType && !qf.type.has.base(baseType, type)) {
                   if (type.resolvedBaseTypes === empty) type.resolvedBaseTypes = [<qt.ObjectType>baseType];
                   else {
                     type.resolvedBaseTypes.push(baseType);
@@ -1653,14 +1653,14 @@ export function newResolve(f: qt.Frame) {
         stringIndexInfo = qf.instantiate.indexInfo(source.declaredStringIndexInfo, mapper);
         numberIndexInfo = qf.instantiate.indexInfo(source.declaredNumberIndexInfo, mapper);
       }
-      const baseTypes = getBaseTypes(source);
+      const baseTypes = qf.type.get.bases(source);
       if (baseTypes.length) {
         if (source.symbol && members === qf.get.membersOfSymbol(source.symbol)) members = new qc.SymbolTable(source.declaredProperties);
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArg = lastOrUndefined(typeArgs);
         for (const baseType of baseTypes) {
           const instantiatedBaseType = thisArg ? qf.get.typeWithThisArg(qf.instantiate.type(baseType, mapper), thisArg) : baseType;
-          addInheritedMembers(members, qf.get.propertiesOfType(instantiatedBaseType));
+          addInheritedMembers(members, qf.type.get.properties(instantiatedBaseType));
           callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
           constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));
           if (!stringIndexInfo) stringIndexInfo = instantiatedBaseType === anyType ? qf.make.indexInfo(anyType, false) : qf.get.indexInfoOfType(instantiatedBaseType, IndexKind.String);
@@ -1750,7 +1750,7 @@ export function newResolve(f: qt.Frame) {
           const baseConstructorType = getBaseConstructorTypeOfClass(classType);
           if (baseConstructorType.flags & (TypeFlags.Object | qt.TypeFlags.Intersection | qt.TypeFlags.TypeVariable)) {
             members = new qc.SymbolTable(getNamedMembers(members));
-            addInheritedMembers(members, qf.get.propertiesOfType(baseConstructorType));
+            addInheritedMembers(members, qf.type.get.properties(baseConstructorType));
           } else if (baseConstructorType === anyType) {
             stringIndexInfo = qf.make.indexInfo(anyType, false);
           }
@@ -1786,7 +1786,7 @@ export function newResolve(f: qt.Frame) {
       const optionalMask = modifiers & MappedTypeModifiers.IncludeOptional ? 0 : qt.SymbolFlags.Optional;
       const stringIndexInfo = indexInfo && qf.make.indexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
       const members = new qc.SymbolTable();
-      for (const prop of qf.get.propertiesOfType(type.source)) {
+      for (const prop of qf.type.get.properties(type.source)) {
         const f = qt.CheckFlags.ReverseMapped | (readonlyMask && isReadonlySymbol(prop) ? qt.CheckFlags.Readonly : 0);
         const inferredProp = new qc.Symbol(SymbolFlags.Property | (prop.flags & optionalMask), prop.escName, f) as qt.ReverseMappedSymbol;
         inferredProp.declarations = prop.declarations;
@@ -1810,7 +1810,7 @@ export function newResolve(f: qt.Frame) {
       const templateModifiers = getMappedTypeModifiers(type);
       const include = keyofStringsOnly ? qt.TypeFlags.StringLiteral : qt.TypeFlags.StringOrNumberLiteralOrUnique;
       if (isMappedTypeWithKeyofConstraintDeclaration(type)) {
-        for (const prop of qf.get.propertiesOfType(modifiersType)) {
+        for (const prop of qf.type.get.properties(modifiersType)) {
           addMemberForKeyType(qf.get.literalTypeFromProperty(prop, include));
         }
         if (modifiersType.isa(qt.TypeFlags.Any) || qf.get.indexInfoOfType(modifiersType, IndexKind.String)) addMemberForKeyType(stringType);
@@ -1823,7 +1823,7 @@ export function newResolve(f: qt.Frame) {
         const templateMapper = appendTypeMapping(type.mapper, typeParam, t);
         if (qf.type.is.usableAsPropertyName(t)) {
           const propName = getPropertyNameFromType(t);
-          const modifiersProp = qf.get.propertyOfType(modifiersType, propName);
+          const modifiersProp = qf.type.get.property(modifiersType, propName);
           const isOptional = !!(
             templateModifiers & MappedTypeModifiers.IncludeOptional ||
             (!(templateModifiers & MappedTypeModifiers.ExcludeOptional) && modifiersProp && modifiersProp.flags & qt.SymbolFlags.Optional)

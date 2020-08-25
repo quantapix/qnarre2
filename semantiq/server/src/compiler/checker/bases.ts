@@ -92,7 +92,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   forEachProperty<T>(cb: (p: Symbol) => T): T | undefined {
     if (this.checkFlags & qt.CheckFlags.Synthetic) {
       for (const t of this.containingType!.types) {
-        const p = qf.get.propertyOfType(t, this.escName);
+        const p = qf.type.get.property(t, this.escName);
         const r = p && p.forEachProperty(cb);
         if (r) return r;
       }
@@ -400,7 +400,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     }
     const needsPostExportDefault =
       isDefault &&
-      !!(this.flags & SymbolFlags.ExportDoesNotSupportDefaultModifier || (this.flags & SymbolFlags.Function && qu.length(qf.get.propertiesOfType(this.typeOfSymbol())))) &&
+      !!(this.flags & SymbolFlags.ExportDoesNotSupportDefaultModifier || (this.flags & SymbolFlags.Function && qu.length(qf.type.get.properties(this.typeOfSymbol())))) &&
       !(this.flags & SymbolFlags.Alias);
     if (needsPostExportDefault) isPrivate = true;
     const modifierFlags = (!isPrivate ? ModifierFlags.Export : 0) | (isDefault && !needsPostExportDefault ? ModifierFlags.Default : 0);
@@ -491,9 +491,9 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const interfaceType = this.getDeclaredTypeOfClassOrInterface();
     const localParams = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
     const typeParamDecls = map(localParams, (p) => typeParamToDeclaration(p, context));
-    const baseTypes = getBaseTypes(interfaceType);
+    const baseTypes = qf.type.get.bases(interfaceType);
     const baseType = qu.length(baseTypes) ? qf.get.intersectionType(baseTypes) : undefined;
-    const members = flatMap<Symbol, qt.TypeElem>(qf.get.propertiesOfType(interfaceType), (p) => serializePropertySymbolForInterface(p, baseType));
+    const members = flatMap<Symbol, qt.TypeElem>(qf.type.get.properties(interfaceType), (p) => serializePropertySymbolForInterface(p, baseType));
     const callSignatures = serializeSignatures(SignatureKind.Call, interfaceType, baseType, Syntax.CallSignature) as qt.CallSignatureDeclaration[];
     const constructSignatures = serializeSignatures(SignatureKind.Construct, interfaceType, baseType, Syntax.ConstructSignature) as qt.ConstructSignatureDeclaration[];
     const indexSignatures = serializeIndexSignatures(interfaceType, baseType);
@@ -567,7 +567,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         qf.make.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
         this.getInternalSymbol(symbolName),
         map(
-          qu.filter(qf.get.propertiesOfType(this.typeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
+          qu.filter(qf.type.get.properties(this.typeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
           (p) => {
             const initializedValue = p.declarations && p.declarations[0] && p.declarations[0].kind === Syntax.EnumMember && getConstantValue(p.declarations[0] as qt.EnumMember);
             return new qc.EnumMember(qy.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : qc.asLiteral(initializedValue));
@@ -1421,7 +1421,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return rs ? flatMap(rs, this.getRootSymbols) : [this];
   }
   getImmediateRootSymbols(): readonly Symbol[] | undefined {
-    if (this.checkFlags & CheckFlags.Synthetic) return mapDefined(this.links.containingType!.types, (t) => qf.get.propertyOfType(t, this.escName));
+    if (this.checkFlags & CheckFlags.Synthetic) return mapDefined(this.links.containingType!.types, (t) => qf.type.get.property(t, this.escName));
     if (this.flags & SymbolFlags.Transient) {
       const { leftSpread, rightSpread, syntheticOrigin } = this as qt.TransientSymbol;
       return leftSpread ? [leftSpread, rightSpread!] : syntheticOrigin ? [syntheticOrigin] : singleElemArray(this.tryGetAliasTarget());
@@ -1532,7 +1532,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   etPropertyOfVariable(name: qu.__String): Symbol | undefined {
     if (this.flags & SymbolFlags.Variable) {
       const typeAnnotation = (<qt.VariableDeclaration>this.valueDeclaration).type;
-      if (typeAnnotation) return qf.get.propertyOfType(qf.get.typeFromTypeNode(typeAnnotation), name)?.resolveSymbol();
+      if (typeAnnotation) return qf.type.get.property(qf.get.typeFromTypeNode(typeAnnotation), name)?.resolveSymbol();
     }
     return;
   }
@@ -1771,8 +1771,8 @@ export class Signature extends qc.Signature {
     for (let i = 0; i < paramCount; i++) {
       const sourceType = i === restIndex ? getRestTypeAtPosition(source, i) : getTypeAtPosition(source, i);
       const targetType = i === restIndex ? getRestTypeAtPosition(target, i) : getTypeAtPosition(target, i);
-      const sourceSig = checkMode & SignatureCheckMode.Callback ? undefined : getSingleCallSignature(getNonNullableType(sourceType));
-      const targetSig = checkMode & SignatureCheckMode.Callback ? undefined : getSingleCallSignature(getNonNullableType(targetType));
+      const sourceSig = checkMode & SignatureCheckMode.Callback ? undefined : getSingleCallSignature(qf.type.get.nonNullable(sourceType));
+      const targetSig = checkMode & SignatureCheckMode.Callback ? undefined : getSingleCallSignature(qf.type.get.nonNullable(targetType));
       const callbacks =
         sourceSig &&
         targetSig &&

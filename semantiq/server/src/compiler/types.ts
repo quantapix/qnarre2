@@ -2356,7 +2356,7 @@ export interface Type {
   typeArgs?: readonly Type[];
   widened?: Type;
   isa(f: qt.TypeFlags): boolean;
-  isObj(f: qt.ObjectFlags): boolean;
+  isobj(f: qt.ObjectFlags): boolean;
 }
 export interface TypeAcquisition {
   enableAutoDiscovery?: boolean;
@@ -2378,17 +2378,10 @@ export interface TypeAssertion extends UnaryExpr {
 }
 export interface CheckerGet {
   aliasedSymbol(s: Symbol): Symbol;
-  augmentedPropertiesOfType(t: Type): Symbol[];
   baseConstraintOfType(t: Type): Type | undefined;
-  baseTypes(t: InterfaceType): BaseType[];
   defaultFromTypeParam(t: Type): Type | undefined;
   indexTypeOfType(t: Type, k: qt.IndexKind): Type | undefined;
-  nonNullableType(t: Type): Type;
-  nonOptionalType(t: Type): Type;
-  propertiesOfType(t: Type): Symbol[];
-  propertyOfType(t: Type, prop: string): Symbol | undefined;
   returnTypeOfSignature(s: Signature): Type;
-  signaturesOfType(t: Type, l: qt.SignatureKind): readonly Signature[];
   typeArgs(r: TypeReference): readonly Type[];
   typeAtLocation(n: Node): Type;
 }

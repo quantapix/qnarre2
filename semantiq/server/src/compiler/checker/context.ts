@@ -1036,7 +1036,7 @@ export class QContext {
       addResult(decl.setRange((sig.declaration && sig.declaration.parent.kind === Syntax.VariableDeclaration && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
     }
     if (!(symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) && !!symbol.exports && !!symbol.exports.size)) {
-      const props = filter(qf.get.propertiesOfType(type), isNamespaceMember);
+      const props = filter(qf.type.get.properties(type), isNamespaceMember);
       serializeAsNamespaceDeclaration(props, localName, modifierFlags, true);
     }
   }
@@ -1044,7 +1044,7 @@ export class QContext {
     const localParams = this.getLocalTypeParamsOfClassOrInterfaceOrTypeAlias();
     const typeParamDecls = map(localParams, (p) => this.typeParamToDeclaration(p));
     const classType = this.getDeclaredTypeOfClassOrInterface();
-    const baseTypes = getBaseTypes(classType);
+    const baseTypes = qf.type.get.bases(classType);
     const implementsTypes = getImplementsTypes(classType);
     const staticType = this.typeOfSymbol();
     const isClass = !!staticType.symbol?.valueDeclaration && qf.is.classLike(staticType.symbol.valueDeclaration);
@@ -1067,7 +1067,7 @@ export class QContext {
             ),
           ]),
     ];
-    const symbolProps = getNonInterhitedProperties(classType, baseTypes, qf.get.propertiesOfType(classType));
+    const symbolProps = getNonInterhitedProperties(classType, baseTypes, qf.type.get.properties(classType));
     const publicSymbolProps = filter(symbolProps, (s) => {
       const valueDecl = s.valueDeclaration;
       return valueDecl && !(qf.is.namedDeclaration(valueDecl) && valueDecl.name.kind === Syntax.PrivateIdentifier);
@@ -1079,7 +1079,7 @@ export class QContext {
     const privateProperties = hasPrivateIdentifier ? [new qc.PropertyDeclaration(undefined, undefined, new qc.PrivateIdentifier('#private'), undefined, undefined, undefined)] : empty;
     const publicProperties = flatMap<qt.Symbol, qt.ClassElem>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, false, baseTypes[0]));
     const staticMembers = flatMap(
-      filter(qf.get.propertiesOfType(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
+      filter(qf.type.get.properties(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
       (p) => serializePropertySymbolForClass(p, true, staticBaseType)
     );
     const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, qt.SignatureKind.Construct));
@@ -1195,7 +1195,7 @@ export class QContext {
         }
         if (resolvedType.stringIndexInfo) {
           let indexSignature: qt.IndexSignatureDeclaration;
-          if (resolvedType.isObj(ObjectFlags.ReverseMapped)) {
+          if (resolvedType.isobj(ObjectFlags.ReverseMapped)) {
             indexSignature = indexInfoToIndexSignatureDeclarationHelper(
               createIndexInfo(anyType, resolvedType.stringIndexInfo.isReadonly, resolvedType.stringIndexInfo.declaration),
               IndexKind.String,
@@ -1279,7 +1279,7 @@ export class QContext {
       const elemType = this.typeToTypeNodeHelper(typeArgs[0]);
       const arrayType = new qc.ArrayTyping(elemType);
       return type.target === globalArrayType ? arrayType : new qc.TypingOperator(Syntax.ReadonlyKeyword, arrayType);
-    } else if (type.target.isObj(ObjectFlags.Tuple)) {
+    } else if (type.target.isobj(ObjectFlags.Tuple)) {
       if (typeArgs.length > 0) {
         const arity = getTypeReferenceArity(type);
         const tupleConstituentNodes = this.mapToTypeNodes(typeArgs.slice(0, arity));
@@ -1419,9 +1419,9 @@ export class QContext {
       if (
         p.flags & SymbolFlags.Prototype ||
         (baseType &&
-          qf.get.propertyOfType(baseType, p.escName) &&
-          isReadonlySymbol(qf.get.propertyOfType(baseType, p.escName)!) === isReadonlySymbol(p) &&
-          (p.flags & SymbolFlags.Optional) === (qf.get.propertyOfType(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
+          qf.type.get.property(baseType, p.escName) &&
+          isReadonlySymbol(qf.type.get.property(baseType, p.escName)!) === isReadonlySymbol(p) &&
+          (p.flags & SymbolFlags.Optional) === (qf.type.get.property(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
           qf.type.is.identicalTo(p.typeOfSymbol(), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
       ) {
         return [];
@@ -1716,13 +1716,13 @@ export class QContext {
         typeToSerialize.objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.String) &&
         !qf.get.indexInfoOfType(typeToSerialize, IndexKind.Number) &&
-        !!(length(qf.get.propertiesOfType(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
+        !!(length(qf.type.get.properties(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
         !length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Construct)) &&
         !getDeclarationWithTypeAnnotation(hostSymbol, enclosingDeclaration) &&
         !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => d.sourceFile !== ctxSrc)) &&
-        !some(qf.get.propertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escName)) &&
-        !some(qf.get.propertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => d.sourceFile !== ctxSrc)) &&
-        every(qf.get.propertiesOfType(typeToSerialize), (p) => qy.is.identifierText(p.name) && !qy.is.stringAndKeyword(p.name))
+        !some(qf.type.get.properties(typeToSerialize), (p) => isLateBoundName(p.escName)) &&
+        !some(qf.type.get.properties(typeToSerialize), (p) => some(p.declarations, (d) => d.sourceFile !== ctxSrc)) &&
+        every(qf.type.get.properties(typeToSerialize), (p) => qy.is.identifierText(p.name) && !qy.is.stringAndKeyword(p.name))
       );
     }
     function serializePropertySymbolForInterface(p: qt.Symbol, baseType: qt.Type | undefined) {

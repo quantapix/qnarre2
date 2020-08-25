@@ -1048,8 +1048,8 @@ export function createGetSymbolWalker(
         const objectFlags = objectType.objectFlags;
         if (qf.type.is.reference(t)) visitTypeReference(t);
         if (qf.type.is.mapped(t)) visitMappedType(t);
-        if (t.isObj(ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t);
-        if (t.isObj(ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(t);
+        if (t.isobj(ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t);
+        if (t.isobj(ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(t);
       }
       if (qf.type.is.param(t)) visitTypeParam(t);
       if (qf.type.is.unionOrIntersection(t)) visitUnionOrIntersectionType(t);
@@ -1093,7 +1093,7 @@ export function createGetSymbolWalker(
     function visitInterfaceType(interfaceT: qt.InterfaceType) {
       visitObjectType(interfaceT);
       qf.each.up(interfaceT.typeParams, visitType);
-      qf.each.up(getBaseTypes(interfaceT), visitType);
+      qf.each.up(qf.type.get.bases(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
     function visitObjectType(t: qt.ObjectType) {

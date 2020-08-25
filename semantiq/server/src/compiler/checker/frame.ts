@@ -824,7 +824,7 @@ export function newIs(f: qt.Frame) {
     }
     validPropertyAccessWithType(n: qt.PropertyAccessExpression | qt.QualifiedName | qt.ImportTyping, isSuper: boolean, propertyName: qu.__String, t: Type): boolean {
       if (t === errorType || this.any(t)) return true;
-      const prop = qf.get.propertyOfType(t, propertyName);
+      const prop = qf.type.get.property(t, propertyName);
       if (prop) {
         if (n.kind === Syntax.PropertyAccessExpression && this.privateIdentifierPropertyDeclaration(prop.valueDeclaration)) {
           const declClass = qf.get.containingClass(prop.valueDeclaration);
@@ -937,7 +937,7 @@ export function newIs(f: qt.Frame) {
       const objectLitType = check.expressionCached(d.args[2]);
       const valueType = qf.get.typeOfPropertyOfType(objectLitType, 'value' as qu.__String);
       if (valueType) {
-        const writableProp = qf.get.propertyOfType(objectLitType, 'writable' as qu.__String);
+        const writableProp = qf.type.get.property(objectLitType, 'writable' as qu.__String);
         const writableType = writableProp && writableProp.typeOfSymbol();
         if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
         if (writableProp && writableProp.valueDeclaration && writableProp.valueDeclaration.kind === Syntax.PropertyAssignment) {
@@ -947,7 +947,7 @@ export function newIs(f: qt.Frame) {
         }
         return false;
       }
-      const setProp = qf.get.propertyOfType(objectLitType, 'set' as qu.__String);
+      const setProp = qf.type.get.property(objectLitType, 'set' as qu.__String);
       return !setProp;
     }
     assignmentToReadonlyEntity(e: qt.Expression, s: Symbol, assignmentKind: qt.AssignmentKind) {

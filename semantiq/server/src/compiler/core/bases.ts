@@ -601,7 +601,7 @@ export class Type implements qt.Type {
   isa(f: TypeFlags) {
     return !!(this.flags & f);
   }
-  isObj(k: ObjectFlags) {
+  isobj(k: ObjectFlags) {
     return !!(this.objectFlags & k);
   }
 }
@@ -627,9 +627,9 @@ export class Ftype {
     }
     return t.isa(TypeFlags.Unit);
   }
-  findMatchingDiscriminantType(t: qt.Type, from: qt.Type, cb: (t: qt.Type, to: qt.Type) => Ternary, skipPartial?: boolean) {
+  findMatchingDiscriminantType(t: qt.Type, from: qt.Type, cb: (t: qt.Type, to: qt.Type) => qt.Ternary, skipPartial?: boolean) {
     if (from.isa(qt.TypeFlags.Union) && t.flags & (TypeFlags.Intersection | qt.TypeFlags.Object)) {
-      const ps = qf.get.propertiesOfType(t);
+      const ps = qf.type.get.properties(t);
       if (ps) {
         const ps2 = findDiscriminantProperties(ps, from);
         if (ps2) {
@@ -660,7 +660,7 @@ export class Ftype {
     return;
   }
   findBestTypeForObjectLiteral(t: qt.Type, from: qt.UnionOrIntersectionType) {
-    if (t.isObj(ObjectFlags.ObjectLiteral) && forEachType(from, qf.type.is.arrayLike)) return qf.find.up(from.types, (t) => !qf.type.is.arrayLike(t));
+    if (t.isobj(ObjectFlags.ObjectLiteral) && forEachType(from, qf.type.is.arrayLike)) return qf.find.up(from.types, (t) => !qf.type.is.arrayLike(t));
     return;
   }
   findBestTypeForInvokable(t: qt.Type, from: qt.UnionOrIntersectionType) {
@@ -825,9 +825,6 @@ export class Ftype {
   addOptionalTypeMarker(t: qt.Type) {
     return strictNullChecks ? qf.get.unionType([t, optionalType]) : t;
   }
-  removeOptionalTypeMarker(t: qt.Type): qt.Type {
-    return strictNullChecks ? filterType(t, qf.type.is.notOptionalMarker) : t;
-  }
   propagateOptionalTypeMarker(t: qt.Type, c: qt.OptionalChain, optional: boolean) {
     return optional ? (qf.is.outermostOptionalChain(c) ? qf.get.optionalType(t) : addOptionalTypeMarker(t)) : t;
   }
@@ -842,7 +839,7 @@ export class Ftype {
   }
   reportWideningErrorsInType(t: qt.Type): boolean {
     let e = false;
-    if (t.isObj(ObjectFlags.ContainsWideningType)) {
+    if (t.isobj(ObjectFlags.ContainsWideningType)) {
       if (t.isa(qt.TypeFlags.Union)) {
         if (some((<qt.UnionType>t).types, qf.type.is.emptyObject)) e = true;
         else {
@@ -856,10 +853,10 @@ export class Ftype {
           if (reportWideningErrorsInType(x)) e = true;
         }
       }
-      if (t.isObj(ObjectFlags.ObjectLiteral)) {
+      if (t.isobj(ObjectFlags.ObjectLiteral)) {
         for (const p of getPropertiesOfObjectType(t)) {
           const x = p.typeOfSymbol();
-          if (x.isObj(ObjectFlags.ContainsWideningType)) {
+          if (x.isobj(ObjectFlags.ContainsWideningType)) {
             if (!reportWideningErrorsInType(x)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.get.widenedType(x)));
             e = true;
           }
@@ -868,14 +865,14 @@ export class Ftype {
     }
     return e;
   }
-  compareTypesIdentical(trce: qt.Type, to: qt.Type): Ternary {
-    return qf.type.is.relatedTo(trce, to, identityRelation) ? Ternary.True : Ternary.False;
+  compareTypesIdentical(trce: qt.Type, to: qt.Type): qt.Ternary {
+    return qf.type.is.relatedTo(trce, to, identityRelation) ? qt.Ternary.True : qt.Ternary.False;
   }
-  compareTypesAssignable(t: qt.Type, to: qt.Type): Ternary {
-    return qf.type.is.relatedTo(t, to, assignableRelation) ? Ternary.True : Ternary.False;
+  compareTypesAssignable(t: qt.Type, to: qt.Type): qt.Ternary {
+    return qf.type.is.relatedTo(t, to, assignableRelation) ? qt.Ternary.True : qt.Ternary.False;
   }
-  compareTypesSubtypeOf(t: qt.Type, to: qt.Type): Ternary {
-    return qf.type.is.relatedTo(t, to, subtypeRelation) ? Ternary.True : Ternary.False;
+  compareTypesSubtypeOf(t: qt.Type, to: qt.Type): qt.Ternary {
+    return qf.type.is.relatedTo(t, to, subtypeRelation) ? qt.Ternary.True : qt.Ternary.False;
   }
   areTypesComparable(t: qt.Type, to: qt.Type): boolean {
     return qf.type.is.comparableTo(t, to) || qf.type.is.comparableTo(to, t);
@@ -932,7 +929,7 @@ export class Ftype {
       if (f & qt.TypeFlags.StructuredOrInstantiable) includes |= qt.TypeFlags.IncludesStructuredOrInstantiable;
       if (t === wildcardType) includes |= qt.TypeFlags.IncludesWildcard;
       if (!strictNullChecks && f & qt.TypeFlags.Nullable)
-        if (!t.isObj(ObjectFlags.ContainsWideningType)) includes |= qt.TypeFlags.IncludesNonWideningType;
+        if (!t.isobj(ObjectFlags.ContainsWideningType)) includes |= qt.TypeFlags.IncludesNonWideningType;
         else {
           const l = ts.length;
           const i = l && t.id > ts[l - 1].id ? ~l : binarySearch(ts, t, getTypeId, compareNumbers);
@@ -1751,7 +1748,7 @@ function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.S
   const findInherited = (d: qt.Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
     return qf.find.defined(d.parent ? qf.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
       const superType = c?.get.typeAtLocation(n);
-      const baseProperty = superType && c?.get.propertyOfType(superType, pName);
+      const baseProperty = superType && qf.type.get.property(superType, pName);
       const inheritedDocs = baseProperty && baseProperty.getDocComment(c);
       return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
     });
