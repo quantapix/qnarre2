@@ -935,7 +935,7 @@ export function newIs(f: qt.Frame) {
       if (!d.kind === Syntax.CallExpression) return false;
       if (!this.bindableObjectDefinePropertyCall(d)) return false;
       const objectLitType = check.expressionCached(d.args[2]);
-      const valueType = qf.get.typeOfPropertyOfType(objectLitType, 'value' as qu.__String);
+      const valueType = qf.type.get.typeOfProperty(objectLitType, 'value' as qu.__String);
       if (valueType) {
         const writableProp = qf.type.get.property(objectLitType, 'writable' as qu.__String);
         const writableType = writableProp && writableProp.typeOfSymbol();
@@ -1047,7 +1047,7 @@ export function newIs(f: qt.Frame) {
       return (qf.has.effectiveModifier(n, ModifierFlags.Private) || this.privateIdentifierPropertyDeclaration(n)) && !!(n.flags & NodeFlags.Ambient);
     }
     thenableType(t: Type): boolean {
-      const thenFunction = qf.get.typeOfPropertyOfType(t, 'then' as qu.__String);
+      const thenFunction = qf.type.get.typeOfProperty(t, 'then' as qu.__String);
       return !!thenFunction && SignaturesOfType(getTypeWithFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
     }
     identifierThatStartsWithUnderscore(n: Node) {
@@ -1766,14 +1766,14 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
           );
         }
         iteratorResult(t: Type, k: qt.IterationTypeKind.Yield | qt.IterationTypeKind.Return) {
-          const d = qf.get.typeOfPropertyOfType(t, 'done' as qu.__String) || falseType;
+          const d = qf.type.get.typeOfProperty(t, 'done' as qu.__String) || falseType;
           return this.check.assignableTo(k === qt.IterationTypeKind.Yield ? falseType : trueType, d);
         }
         literalOfContextualType(t: Type, c?: Type) {
           if (c) {
             if (this.unionOrIntersection(c)) return qu.some(c.types, (t) => isLiteralOfContextualType(t, t));
             if (c.isa(TypeFlags.InstantiableNonPrimitive)) {
-              const b = qf.get.baseConstraintOfType(c) || unknownType;
+              const b = qf.get.qf.type.get.baseConstraint(c) || unknownType;
               return (
                 (maybeTypeOfKind(b, TypeFlags.String) && maybeTypeOfKind(t, TypeFlags.StringLiteral)) ||
                 (maybeTypeOfKind(b, TypeFlags.Number) && maybeTypeOfKind(t, TypeFlags.NumberLiteral)) ||

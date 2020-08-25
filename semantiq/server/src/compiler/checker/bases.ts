@@ -736,7 +736,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
               d.kind === Syntax.BinaryExpression &&
               qf.get.assignmentDeclarationKind(d) === qt.AssignmentDeclarationKind.ThisProperty &&
               (d.left.kind !== Syntax.ElemAccessExpression || qf.is.stringOrNumericLiteralLike((<qt.ElemAccessExpression>d.left).argExpression)) &&
-              !getAnnotatedTypeForAssignmentDeclaration(undefined, d, this, d)
+              !qf.type.get.annotatedForAssignmentDeclaration(undefined, d, this, d)
           );
       }
       return ls.qf.is.constructorDeclaredProperty;

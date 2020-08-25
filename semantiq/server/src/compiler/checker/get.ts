@@ -419,7 +419,7 @@ export function newGet(f: qt.Frame) {
           for (const elem of pattern.elems) {
             if (!elem.dot3Token) literalMembers.push(elem.propertyName || (elem.name as qt.Identifier));
           }
-          type = this.restType(parentType, literalMembers, declaration.symbol);
+          type = qf.type.get.rest(parentType, literalMembers, declaration.symbol);
         } else {
           const name = declaration.propertyName || <qt.Identifier>declaration.name;
           const indexType = this.literalTypeFromPropertyName(name);
@@ -1534,7 +1534,7 @@ export function newGet(f: qt.Frame) {
         const siblings: qt.Type[] = [];
         for (const type of this.siblingsOfContext(context.parent!)) {
           if (t.isobj(ObjectFlags.ObjectLiteral)) {
-            const prop = this.propertyOfObjectType(t, context.propertyName!);
+            const prop = qf.type.get.propertyOfObject(t, context.propertyName!);
             if (prop) {
               forEachType(this.typeOfSymbol(prop), (t) => {
                 siblings.push(t);
@@ -1602,10 +1602,10 @@ export function newGet(f: qt.Frame) {
           inferredType = this.typeFromInference(inference);
         }
         inference.inferredType = inferredType || this.defaultTypeArgType(!!(context.flags & InferenceFlags.AnyDefault));
-        const constraint = this.constraintOfTypeParam(inference.typeParam);
+        const constraint = qf.type.get.constraintOfParam(inference.typeParam);
         if (constraint) {
           const instantiatedConstraint = instantiateType(constraint, context.nonFixingMapper);
-          if (!inferredType || !context.compareTypes(inferredType, this.typeWithThisArg(instantiatedConstraint, inferredType))) inference.inferredType = inferredType = instantiatedConstraint;
+          if (!inferredType || !context.compareTypes(inferredType, qf.type.get.withThisArg(instantiatedConstraint, inferredType))) inference.inferredType = inferredType = instantiatedConstraint;
         }
       }
       return inference.inferredType;
@@ -2332,7 +2332,7 @@ export function newGet(f: qt.Frame) {
         const nameType = this.literalTypeFromPropertyName(name);
         if (qf.type.is.usableAsPropertyName(nameType)) {
           const text = this.propertyNameFromType(nameType);
-          return this.typeOfPropertyOfType(parentType, text);
+          return qf.type.get.typeOfProperty(parentType, text);
         }
       }
     }
@@ -3159,7 +3159,7 @@ export function newGet(f: qt.Frame) {
         typeArgs.pop();
       }
       while (typeArgs.length < typeParams.length) {
-        typeArgs.push(this.constraintOfTypeParam(typeParams[typeArgs.length]) || this.defaultTypeArgType(isJs));
+        typeArgs.push(qf.type.get.constraintOfParam(typeParams[typeArgs.length]) || this.defaultTypeArgType(isJs));
       }
       return typeArgs;
     }
@@ -3419,7 +3419,7 @@ export function newGet(f: qt.Frame) {
       const typeReferenceNode = qu.tryCast(n.parent, isTypeReferenceType);
       if (!typeReferenceNode) return;
       const typeParams = this.typeParamsForTypeReference(typeReferenceNode)!;
-      const constraint = this.constraintOfTypeParam(typeParams[typeReferenceNode.typeArgs!.indexOf(n)]);
+      const constraint = qf.type.get.constraintOfParam(typeParams[typeReferenceNode.typeArgs!.indexOf(n)]);
       return constraint && instantiateType(constraint, qf.make.typeMapper(typeParams, this.effectiveTypeArgs(typeReferenceNode, typeParams)));
     }
     effectiveDeclarationFlags(n: qt.Declaration, flagsToCheck: ModifierFlags): ModifierFlags {
@@ -3852,12 +3852,12 @@ export function newGet(f: qt.Frame) {
       const classType = classDecl && this.declaredTypeOfClassOrInterface(this.symbolOfNode(classDecl.class));
       if (qf.is.partOfTypeNode(n)) {
         const typeFromTypeNode = this.typeFromTypeNode(<qt.Typing>n);
-        return classType ? this.typeWithThisArg(typeFromTypeNode, classType.thisType) : typeFromTypeNode;
+        return classType ? qf.type.get.withThisArg(typeFromTypeNode, classType.thisType) : typeFromTypeNode;
       }
       if (qf.is.expressionNode(n)) return this.regularTypeOfExpression(n);
       if (classType && !classDecl!.isImplements) {
         const baseType = firstOrUndefined(qf.type.get.bases(classType));
-        return baseType ? this.typeWithThisArg(baseType, classType.thisType) : errorType;
+        return baseType ? qf.type.get.withThisArg(baseType, classType.thisType) : errorType;
       }
       if (qf.is.typeDeclaration(n)) {
         const s = this.symbolOfNode(n);

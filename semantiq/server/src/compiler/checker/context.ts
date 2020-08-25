@@ -572,7 +572,7 @@ export class QContext {
     const propertyName = this.getPropertyNameNodeForSymbol(propertySymbol);
     this.approximateLength += propertySymbol.name.length + 1;
     const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined;
-    if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(propertyType).length && !isReadonlySymbol(propertySymbol)) {
+    if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !qf.type.get.propertiesOfObject(propertyType).length && !isReadonlySymbol(propertySymbol)) {
       const signatures = getSignaturesOfType(
         filterType(propertyType, (t) => !t.isa(TypeFlags.Undefined)),
         qt.SignatureKind.Call
@@ -717,7 +717,7 @@ export class QContext {
     this.flags = savedContextFlags;
     return new qc.TypeParamDeclaration(name, constraintNode, defaultParamNode);
   }
-  typeParamToDeclaration(type: qt.TypeParam, constraint = qf.get.constraintOfTypeParam(type)): qt.TypeParamDeclaration {
+  typeParamToDeclaration(type: qt.TypeParam, constraint = qf.type.get.constraintOfParam(type)): qt.TypeParamDeclaration {
     const constraintNode = constraint && this.typeToTypeNodeHelper(constraint);
     return this.typeParamToDeclarationWithConstraint(type, constraintNode);
   }
@@ -838,7 +838,7 @@ export class QContext {
       return new qc.TypingLiteral(
         map(node.docPropertyTags, (t) => {
           const name = t.name.kind === Syntax.Identifier ? t.name : t.name.right;
-          const typeViaParent = qf.get.typeOfPropertyOfType(qf.get.typeFromTypeNode(node), name.escapedText);
+          const typeViaParent = qf.type.get.typeOfProperty(qf.get.typeFromTypeNode(node), name.escapedText);
           const overrideTypeNode = typeViaParent && t.typeExpression && qf.get.typeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
           return new qc.PropertySignature(
             undefined,
@@ -1261,7 +1261,7 @@ export class QContext {
       )
         return this.symbolToTypeNode(symbol, SymbolFlags.Value);
       if (this.visitedTypes && this.visitedTypes.has(typeId)) {
-        const typeAlias = getTypeAliasForTypeLiteral(type);
+        const typeAlias = qf.type.get.aliasForLiteral(type);
         if (typeAlias) return this.symbolToTypeNode(typeAlias, SymbolFlags.Type);
         return createElidedInformationPlaceholder(this);
       }
@@ -1422,7 +1422,7 @@ export class QContext {
           qf.type.get.property(baseType, p.escName) &&
           isReadonlySymbol(qf.type.get.property(baseType, p.escName)!) === isReadonlySymbol(p) &&
           (p.flags & SymbolFlags.Optional) === (qf.type.get.property(baseType, p.escName)!.flags & SymbolFlags.Optional) &&
-          qf.type.is.identicalTo(p.typeOfSymbol(), qf.get.typeOfPropertyOfType(baseType, p.escName)!))
+          qf.type.is.identicalTo(p.typeOfSymbol(), qf.type.get.typeOfProperty(baseType, p.escName)!))
       ) {
         return [];
       }

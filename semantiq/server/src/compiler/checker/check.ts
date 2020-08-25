@@ -1220,7 +1220,7 @@ export function newCheck(f: qt.Frame) {
         error(n, qd.super_cannot_be_referenced_in_constructor_args);
         return errorType;
       }
-      return nodeCheckFlag === NodeCheckFlags.SuperStatic ? getBaseConstructorTypeOfClass(classType) : qf.get.typeWithThisArg(baseClassType, classType.thisType);
+      return nodeCheckFlag === NodeCheckFlags.SuperStatic ? getBaseConstructorTypeOfClass(classType) : qf.type.get.withThisArg(baseClassType, classType.thisType);
       function isLegalUsageOfSuperExpression(container: Node): boolean {
         if (!container) return false;
         if (isCallExpression) return container.kind === Syntax.Constructor;
@@ -1509,10 +1509,10 @@ export function newCheck(f: qt.Frame) {
           return false;
         }
         const thisType = qf.get.typeFromTypeNode(thisParam.type);
-        enclosingClass = ((qf.type.is.param(thisType) ? qf.get.constraintOfTypeParam(<TypeParam>thisType) : thisType) as TypeReference).target;
+        enclosingClass = ((qf.type.is.param(thisType) ? qf.type.get.constraintOfParam(<TypeParam>thisType) : thisType) as TypeReference).target;
       }
       if (flags & ModifierFlags.Static) return true;
-      if (qf.type.is.param(type)) type = (type as TypeParam).isThisType ? qf.get.constraintOfTypeParam(<TypeParam>type)! : qf.get.baseConstraintOfType(<TypeParam>type)!;
+      if (qf.type.is.param(type)) type = (type as TypeParam).isThisType ? qf.type.get.constraintOfParam(<TypeParam>type)! : qf.get.qf.type.get.baseConstraint(<TypeParam>type)!;
       if (!type || !qf.type.has.base(type, enclosingClass)) {
         error(errorNode, qd.msgs.Property_0_is_protected_and_only_accessible_through_an_instance_of_class_1, prop.symbolToString(), typeToString(enclosingClass));
         return false;
@@ -2084,7 +2084,7 @@ export function newCheck(f: qt.Frame) {
               if (!otherProperty.kind === Syntax.SpreadAssignment) nonRestNames.push(otherProperty.name);
             }
           }
-          const type = getRestType(t, nonRestNames, t.symbol);
+          const type = qf.type.get.rest(t, nonRestNames, t.symbol);
           checkGrammar.forDisallowedTrailingComma(allProperties, qd.msgs.A_rest_param_or_binding_pattern_may_not_have_a_trailing_comma);
           return this.destructuringAssignment(property.expression, type);
         }
@@ -2391,7 +2391,7 @@ export function newCheck(f: qt.Frame) {
       }
       function checkAssignmentDeclaration(kind: qt.AssignmentDeclarationKind, rightType: Type) {
         if (kind === qt.AssignmentDeclarationKind.ModuleExports) {
-          for (const prop of getPropertiesOfObjectType(rightType)) {
+          for (const prop of qf.type.get.propertiesOfObject(rightType)) {
             const propType = prop.typeOfSymbol();
             if (propType.symbol && propType.symbol.flags & SymbolFlags.Class) {
               const name = prop.escName;
@@ -2478,7 +2478,7 @@ export function newCheck(f: qt.Frame) {
         let effectiveLeft = leftType;
         let effectiveRight = rightType;
         if (!wouldWorkWithAwait && isRelated) [effectiveLeft, effectiveRight] = getBaseTypesIfUnrelated(leftType, rightType, isRelated);
-        const [leftStr, rightStr] = getTypeNamesForErrorDisplay(effectiveLeft, effectiveRight);
+        const [leftStr, rightStr] = qf.type.get.namesForErrorDisplay(effectiveLeft, effectiveRight);
         if (!tryGiveBetterPrimaryError(errNode, wouldWorkWithAwait, leftStr, rightStr))
           errorAndMaybeSuggestAwait(errNode, wouldWorkWithAwait, qd.msgs.Operator_0_cannot_be_applied_to_types_1_and_2, qt.Token.toString(operatorToken.kind), leftStr, rightStr);
       }
@@ -2731,14 +2731,14 @@ export function newCheck(f: qt.Frame) {
       this.sourceElem(n.constraint);
       this.sourceElem(n.default);
       const typeParam = getDeclaredTypeOfTypeParam(qf.get.symbolOfNode(n));
-      qf.get.baseConstraintOfType(typeParam);
+      qf.get.qf.type.get.baseConstraint(typeParam);
       if (!qf.type.has.nonCircularParamDefault(typeParam)) error(n.default, qd.msgs.Type_param_0_has_a_circular_default, typeToString(typeParam));
-      const constraintType = qf.get.constraintOfTypeParam(typeParam);
+      const constraintType = qf.type.get.constraintOfParam(typeParam);
       const defaultType = getDefaultFromTypeParam(typeParam);
       if (constraintType && defaultType) {
         qf.type.check.assignableTo(
           defaultType,
-          qf.get.typeWithThisArg(instantiateType(constraintType, makeUnaryTypeMapper(typeParam, defaultType)), defaultType),
+          qf.type.get.withThisArg(instantiateType(constraintType, makeUnaryTypeMapper(typeParam, defaultType)), defaultType),
           n.default,
           qd.msgs.Type_0_does_not_satisfy_the_constraint_1
         );
@@ -2858,7 +2858,7 @@ export function newCheck(f: qt.Frame) {
       let mapper: TypeMapper | undefined;
       let result = true;
       for (let i = 0; i < typeParams.length; i++) {
-        const constraint = qf.get.constraintOfTypeParam(typeParams[i]);
+        const constraint = qf.type.get.constraintOfParam(typeParams[i]);
         if (constraint) {
           if (!typeArgs) {
             typeArgs = getEffectiveTypeArgs(n, typeParams);

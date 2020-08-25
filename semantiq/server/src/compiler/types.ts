@@ -2378,7 +2378,6 @@ export interface TypeAssertion extends UnaryExpr {
 }
 export interface CheckerGet {
   aliasedSymbol(s: Symbol): Symbol;
-  baseConstraintOfType(t: Type): Type | undefined;
   defaultFromTypeParam(t: Type): Type | undefined;
   indexTypeOfType(t: Type, k: qt.IndexKind): Type | undefined;
   returnTypeOfSignature(s: Signature): Type;

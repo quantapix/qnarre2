@@ -1061,7 +1061,7 @@ export function createGetSymbolWalker(
       qf.each.up(getTypeArgs(t), visitType);
     }
     function visitTypeParam(t: qt.TypeParam) {
-      visitType(qf.get.constraintOfTypeParam(t));
+      visitType(qf.type.get.constraintOfParam(t));
     }
     function visitUnionOrIntersectionType(t: qt.UnionOrIntersectionType) {
       qf.each.up(t.types, visitType);

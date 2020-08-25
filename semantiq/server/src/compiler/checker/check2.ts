@@ -629,7 +629,7 @@ export function newDecl(f: qt.Frame) {
         this.exportsOnMergedDeclarations(n);
         const symbol = qf.get.symbolOfNode(n);
         const type = <qt.InterfaceType>getDeclaredTypeOfSymbol(symbol);
-        const typeWithThis = qf.get.typeWithThisArg(type);
+        const typeWithThis = qf.type.get.withThisArg(type);
         const staticType = <qt.ObjectType>this.typeOfSymbol();
         this.typeParamListsIdentical(symbol);
         this.classForDuplicateDeclarations(n);
@@ -648,11 +648,11 @@ export function newDecl(f: qt.Frame) {
             this.sourceElem(baseTypeNode.expression);
             if (qu.some(baseTypeNode.typeArgs)) {
               forEach(baseTypeNode.typeArgs, checkSourceElem);
-              for (const constructor of getConstructorsForTypeArgs(staticBaseType, baseTypeNode.typeArgs, baseTypeNode)) {
+              for (const constructor of qf.type.get.constructorsForArgs(staticBaseType, baseTypeNode.typeArgs, baseTypeNode)) {
                 if (!this.typeArgConstraints(baseTypeNode, constructor.typeParams!)) break;
               }
             }
-            const baseWithThis = qf.get.typeWithThisArg(baseType, type.thisType);
+            const baseWithThis = qf.type.get.withThisArg(baseType, type.thisType);
             if (!qf.type.check.assignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, qd.msgs.Class_0_incorrectly_extends_base_class_1);
             else {
               qf.type.check.assignableTo(staticType, getTypeWithoutSignatures(staticBaseType), n.name || n, qd.msgs.Class_static_side_0_incorrectly_extends_base_class_static_side_1);
@@ -660,7 +660,7 @@ export function newDecl(f: qt.Frame) {
             if (baseConstructorType.isa(TypeFlags.TypeVariable) && !qf.type.is.mixinConstructor(staticType))
               error(n.name || n, qd.msgs.A_mixin_class_must_have_a_constructor_with_a_single_rest_param_of_type_any);
             if (!(staticBaseType.symbol && staticBaseType.symbol.flags & SymbolFlags.Class) && !baseConstructorType.isa(TypeFlags.TypeVariable)) {
-              const constructors = getInstantiatedConstructorsForTypeArgs(staticBaseType, baseTypeNode.typeArgs, baseTypeNode);
+              const constructors = qf.type.get.instantiatedConstructorsForArgs(staticBaseType, baseTypeNode.typeArgs, baseTypeNode);
               if (forEach(constructors, (sig) => !qf.is.jsConstructor(sig.declaration) && !qf.type.is.identicalTo(qf.get.returnTypeOfSignature(sig), baseType)))
                 error(baseTypeNode.expression, qd.msgs.Base_constructors_must_all_have_the_same_return_type);
             }
@@ -680,7 +680,7 @@ export function newDecl(f: qt.Frame) {
                     t.symbol && t.symbol.flags & SymbolFlags.Class
                       ? qd.msgs.Class_0_incorrectly_implements_class_1_Did_you_mean_to_extend_1_and_inherit_its_members_as_a_subclass
                       : qd.msgs.Class_0_incorrectly_implements_interface_1;
-                  const baseWithThis = qf.get.typeWithThisArg(t, type.thisType);
+                  const baseWithThis = qf.type.get.withThisArg(t, type.thisType);
                   if (!qf.type.check.assignableTo(typeWithThis, baseWithThis, undefined)) issueMemberSpecificError(n, typeWithThis, baseWithThis, genericDiag);
                 } else {
                   error(typeRefNode, qd.msgs.A_class_can_only_implement_an_object_type_or_intersection_of_object_types_with_statically_known_members);
@@ -723,10 +723,10 @@ export function newDecl(f: qt.Frame) {
           const firstInterfaceDecl = symbol.declarationOfKind<qt.InterfaceDeclaration>(Syntax.InterfaceDeclaration);
           if (n === firstInterfaceDecl) {
             const type = <qt.InterfaceType>getDeclaredTypeOfSymbol(symbol);
-            const typeWithThis = qf.get.typeWithThisArg(type);
+            const typeWithThis = qf.type.get.withThisArg(type);
             if (this.inheritedPropertiesAreIdentical(type, n.name)) {
               for (const baseType of qf.type.get.bases(type)) {
-                qf.type.check.assignableTo(typeWithThis, qf.get.typeWithThisArg(baseType, type.thisType), n.name, qd.msgs.Interface_0_incorrectly_extends_interface_1);
+                qf.type.check.assignableTo(typeWithThis, qf.type.get.withThisArg(baseType, type.thisType), n.name, qd.msgs.Interface_0_incorrectly_extends_interface_1);
               }
               qf.type.check.qf.type.check.indexConstraints(type);
             }
@@ -1419,15 +1419,15 @@ export function newType(f: qt.Frame) {
         }
         function reportRelationError(message: qd.Message | undefined, source: Type, target: Type) {
           if (incompatibleStack.length) reportIncompatibleStack();
-          const [sourceType, targetType] = getTypeNamesForErrorDisplay(source, target);
+          const [sourceType, targetType] = qf.type.get.namesForErrorDisplay(source, target);
           let generalizedSource = source;
           let generalizedSourceType = sourceType;
           if (qf.type.is.literal(source) && !typeCouldHaveTopLevelSingletonTypes(target)) {
             generalizedSource = getBaseTypeOfLiteralType(source);
-            generalizedSourceType = getTypeNameForErrorDisplay(generalizedSource);
+            generalizedSourceType = qf.type.get.ameForErrorDisplay(generalizedSource);
           }
           if (qf.type.is.param(target)) {
-            const constraint = qf.get.baseConstraintOfType(target);
+            const constraint = qf.get.qf.type.get.baseConstraint(target);
             let needsOriginalSource;
             if (constraint && (qf.type.is.assignableTo(generalizedSource, constraint) || (needsOriginalSource = qf.type.is.assignableTo(source, constraint)))) {
               reportError(
@@ -1487,7 +1487,7 @@ export function newType(f: qt.Frame) {
           let target = getNormalizedType(originalTarget, true);
           if (source === target) return qt.Ternary.True;
           if (relation === identityRelation) return isIdenticalTo(source, target);
-          if (qf.type.is.param(source) && getConstraintOfType(source) === target) return qt.Ternary.True;
+          if (qf.type.is.param(source) && qf.type.get.constraint(source) === target) return qt.Ternary.True;
           if (qf.type.is.union(target) && qf.type.is.object(source) && (target as qt.UnionType).types.length <= 3 && maybeTypeOfKind(target, TypeFlags.Nullable)) {
             const nullStrippedTarget = extractTypesOfKind(target, ~TypeFlags.Nullable);
             if (!(nullStrippedTarget.flags & (TypeFlags.Union | TypeFlags.Never))) {
@@ -1623,7 +1623,7 @@ export function newType(f: qt.Frame) {
         function getTypeOfPropertyInTypes(ts: Type[], name: qu.__String) {
           const appendPropType = (ps: Type[] | undefined, t: Type) => {
             t = getApparentType(t);
-            const prop = qf.type.is.unionOrIntersection(t) ? getPropertyOfqt.UnionOrIntersectionType(t, name) : getPropertyOfObjectType(t, name);
+            const prop = qf.type.is.unionOrIntersection(t) ? getPropertyOfqt.UnionOrIntersectionType(t, name) : qf.type.get.propertyOfObject(t, name);
             const p = (prop && prop.typeOfSymbol()) || (NumericLiteral.name(name) && qf.get.indexTypeOfType(t, IndexKind.Number)) || qf.get.indexTypeOfType(t, IndexKind.String) || undefinedType;
             return qu.append(ps, p);
           };
@@ -1896,7 +1896,7 @@ export function newType(f: qt.Frame) {
             if (qf.type.is.index(source)) {
               if ((result = isRelatedTo(target.type, source.type, false))) return result;
             }
-            const constraint = getSimplifiedTypeOrConstraint(target.type);
+            const constraint = qf.type.get.simplifiedOrConstraint(target.type);
             if (constraint) {
               if (isRelatedTo(source, qf.get.indexType(constraint, target.stringsOnly), reportErrors) === qt.Ternary.True) return qt.Ternary.True;
             }
@@ -1904,8 +1904,8 @@ export function newType(f: qt.Frame) {
             if (relation !== identityRelation) {
               const objectType = target.objectType;
               const indexType = target.indexType;
-              const baseObjectType = qf.get.baseConstraintOfType(objectType) || objectType;
-              const baseIndexType = qf.get.baseConstraintOfType(indexType) || indexType;
+              const baseObjectType = qf.get.qf.type.get.baseConstraint(objectType) || objectType;
+              const baseIndexType = qf.get.qf.type.get.baseConstraint(indexType) || indexType;
               if (!qf.type.is.genericObject(baseObjectType) && !qf.type.is.genericIndex(baseIndexType)) {
                 const accessFlags = AccessFlags.Writing | (baseObjectType !== objectType ? AccessFlags.NoIndexSignatures : 0);
                 const constraint = qf.get.indexedAccessTypeOrUndefined(baseObjectType, baseIndexType, undefined, accessFlags);
@@ -1942,7 +1942,7 @@ export function newType(f: qt.Frame) {
                 return result;
               }
             } else {
-              const constraint = getConstraintOfType(<TypeVariable>source);
+              const constraint = qf.type.get.constraint(<TypeVariable>source);
               if (!constraint || (qf.type.is.param(source) && constraint.isa(TypeFlags.Any))) {
                 if ((result = isRelatedTo(emptyObjectType, extractTypesOfKind(target, ~TypeFlags.NonPrimitive)))) {
                   resetErrorInfo(saveErrorInfo);
@@ -1951,7 +1951,7 @@ export function newType(f: qt.Frame) {
               } else if ((result = isRelatedTo(constraint, target, false, undefined, intersectionState))) {
                 resetErrorInfo(saveErrorInfo);
                 return result;
-              } else if ((result = isRelatedTo(qf.get.typeWithThisArg(constraint, source), target, reportErrors, undefined, intersectionState))) {
+              } else if ((result = isRelatedTo(qf.type.get.withThisArg(constraint, source), target, reportErrors, undefined, intersectionState))) {
                 resetErrorInfo(saveErrorInfo);
                 return result;
               }
@@ -2297,7 +2297,7 @@ export function newType(f: qt.Frame) {
           }
           if (props.length === 1) {
             const propName = unmatchedProperty.symbolToString();
-            reportError(qd.msgs.Property_0_is_missing_in_type_1_but_required_in_type_2, propName, ...getTypeNamesForErrorDisplay(source, target));
+            reportError(qd.msgs.Property_0_is_missing_in_type_1_but_required_in_type_2, propName, ...qf.type.get.namesForErrorDisplay(source, target));
             if (length(unmatchedProperty.declarations)) associateRelatedInfo(qf.make.diagForNode(unmatchedProperty.declarations[0], qd.msgs._0_is_declared_here, propName));
             if (shouldSkipElaboration && errorInfo) overrideNextErrorInfo++;
           } else if (tryElaborateArrayLikeErrors(source, target, false)) {
@@ -2326,7 +2326,7 @@ export function newType(f: qt.Frame) {
           }
           if (target.isobj(ObjectFlags.ObjectLiteral)) {
             for (const sourceProp of excludeProperties(qf.type.get.properties(source), excludedProperties)) {
-              if (!getPropertyOfObjectType(target, sourceProp.escName)) {
+              if (!qf.type.get.propertyOfObject(target, sourceProp.escName)) {
                 const sourceType = sourceProp.typeOfSymbol();
                 if (!(sourceType === undefinedType || sourceType === undefinedWideningType || sourceType === optionalType)) {
                   if (reportErrors) reportError(qd.msgs.Property_0_does_not_exist_on_type_1, sourceProp.symbolToString(), typeToString(target));
@@ -2375,12 +2375,12 @@ export function newType(f: qt.Frame) {
         }
         function propertiesIdenticalTo(source: Type, target: Type, excludedProperties: EscapedMap<true> | undefined): qt.Ternary {
           if (!(qf.type.is.object(source) && qf.type.is.object(target))) return qt.Ternary.False;
-          const sourceProperties = excludeProperties(getPropertiesOfObjectType(source), excludedProperties);
-          const targetProperties = excludeProperties(getPropertiesOfObjectType(target), excludedProperties);
+          const sourceProperties = excludeProperties(qf.type.get.propertiesOfObject(source), excludedProperties);
+          const targetProperties = excludeProperties(qf.type.get.propertiesOfObject(target), excludedProperties);
           if (sourceProperties.length !== targetProperties.length) return qt.Ternary.False;
           let result = qt.Ternary.True;
           for (const sourceProp of sourceProperties) {
-            const targetProp = getPropertyOfObjectType(target, sourceProp.escName);
+            const targetProp = qf.type.get.propertyOfObject(target, sourceProp.escName);
             if (!targetProp) return qt.Ternary.False;
             const related = compareProperties(sourceProp, targetProp, isRelatedTo);
             if (!related) return qt.Ternary.False;
@@ -2471,7 +2471,7 @@ export function newType(f: qt.Frame) {
         }
         function eachPropertyRelatedTo(source: Type, target: Type, kind: IndexKind, reportErrors: boolean): qt.Ternary {
           let result = qt.Ternary.True;
-          const props = qf.type.is.intersection(source) ? getPropertiesOfqt.UnionOrIntersectionType(<qt.IntersectionType>source) : getPropertiesOfObjectType(source);
+          const props = qf.type.is.intersection(source) ? getPropertiesOfqt.UnionOrIntersectionType(<qt.IntersectionType>source) : qf.type.get.propertiesOfObject(source);
           for (const prop of props) {
             if (qf.type.is.ignoredJsxProperty(source, prop)) continue;
             const nameType = prop.links.nameType;
@@ -2682,7 +2682,7 @@ export function newType(f: qt.Frame) {
           } else if (containingType.isobj(ObjectFlags.Interface)) {
             const someBaseClassHasBothPropertyAndIndexer = forEach(
               qf.type.get.bases(<qt.InterfaceType>containingType),
-              (b) => getPropertyOfObjectType(b, s.escName) && qf.get.indexTypeOfType(b, indexKind)
+              (b) => qf.type.get.propertyOfObject(b, s.escName) && qf.get.indexTypeOfType(b, indexKind)
             );
             errorNode = someBaseClassHasBothPropertyAndIndexer ? undefined : containingType.symbol.declarations[0];
           }
@@ -2693,7 +2693,7 @@ export function newType(f: qt.Frame) {
           }
         };
         if (stringIndexType || numberIndexType) {
-          forEach(getPropertiesOfObjectType(t), (p) => {
+          forEach(qf.type.get.propertiesOfObject(t), (p) => {
             const propType = p.typeOfSymbol();
             checkIndexConstraintForProperty(p, propType, t, declaredStringIndexer, stringIndexType, IndexKind.String);
             checkIndexConstraintForProperty(p, propType, t, declaredNumberIndexer, numberIndexType, IndexKind.Number);
@@ -2736,7 +2736,7 @@ export function newType(f: qt.Frame) {
         basePropertyCheck: for (const baseProperty of baseProperties) {
           const base = getTargetSymbol(baseProperty);
           if (base.flags & qt.SymbolFlags.Prototype) continue;
-          const baseSymbol = getPropertyOfObjectType(type, base.escName);
+          const baseSymbol = qf.type.get.propertyOfObject(type, base.escName);
           if (!baseSymbol) continue;
           const derived = getTargetSymbol(baseSymbol);
           const baseDeclarationFlags = base.declarationModifierFlags();
@@ -2746,7 +2746,7 @@ export function newType(f: qt.Frame) {
             if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !qf.has.syntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
               for (const otherBaseType of qf.type.get.bases(type)) {
                 if (otherBaseType === baseType) continue;
-                const baseSymbol = getPropertyOfObjectType(otherBaseType, base.escName);
+                const baseSymbol = qf.type.get.propertyOfObject(otherBaseType, base.escName);
                 const derivedElsewhere = baseSymbol && getTargetSymbol(baseSymbol);
                 if (derivedElsewhere && derivedElsewhere !== base) continue basePropertyCheck;
               }
@@ -2836,7 +2836,7 @@ export function newType(f: qt.Frame) {
         });
         let ok = true;
         for (const base of baseTypes) {
-          const properties = qf.type.get.properties(qf.get.typeWithThisArg(base, type.thisType));
+          const properties = qf.type.get.properties(qf.type.get.withThisArg(base, type.thisType));
           for (const prop of properties) {
             const existing = seen.get(prop.escName);
             if (!existing) seen.set(prop.escName, { prop, containingType: base });
@@ -2930,13 +2930,15 @@ export function newSign(f: qt.Frame) {
         let mapper: qt.TypeMapper | undefined;
         for (let i = 0; i < typeArgNodes.length; i++) {
           qf.assert.true(typeParams[i] !== undefined, 'Should not call checkTypeArgs with too many type args');
-          const constraint = qf.get.constraintOfTypeParam(typeParams[i]);
+          const constraint = qf.type.get.constraintOfParam(typeParams[i]);
           if (constraint) {
             const errorInfo = reportErrors && headMessage ? () => chainqd.Messages(undefined, qd.msgs.Type_0_does_not_satisfy_the_constraint_1) : undefined;
             const typeArgHeadMessage = headMessage || qd.msgs.Type_0_does_not_satisfy_the_constraint_1;
             if (!mapper) mapper = createTypeMapper(typeParams, typeArgTypes);
             const typeArg = typeArgTypes[i];
-            if (!qf.type.check.assignableTo(typeArg, qf.get.typeWithThisArg(instantiateType(constraint, mapper), typeArg), reportErrors ? typeArgNodes[i] : undefined, typeArgHeadMessage, errorInfo)) {
+            if (
+              !qf.type.check.assignableTo(typeArg, qf.type.get.withThisArg(instantiateType(constraint, mapper), typeArg), reportErrors ? typeArgNodes[i] : undefined, typeArgHeadMessage, errorInfo)
+            ) {
               return;
             }
           }

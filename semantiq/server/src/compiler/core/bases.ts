@@ -622,7 +622,7 @@ export class Ftype {
   typeCouldHaveTopLevelSingletonTypes(t: qt.Type): boolean {
     if (t.isa(qt.TypeFlags.UnionOrIntersection)) return !!forEach((t as qt.IntersectionType).types, this.typeCouldHaveTopLevelSingletonTypes);
     if (t.isa(qt.TypeFlags.Instantiable)) {
-      const c = getConstraintOfType(t);
+      const c = qf.type.get.constraint(t);
       if (c) return typeCouldHaveTopLevelSingletonTypes(c);
     }
     return t.isa(TypeFlags.Unit);
@@ -755,7 +755,7 @@ export class Ftype {
     return !!t.isa(qt.TypeFlags.Void);
   }
   typeHasNullableConstraint(t: qt.Type) {
-    return t.isa(qt.TypeFlags.InstantiableNonPrimitive) && maybeTypeOfKind(qf.get.baseConstraintOfType(t) || unknownType, qt.TypeFlags.Nullable);
+    return t.isa(qt.TypeFlags.InstantiableNonPrimitive) && maybeTypeOfKind(qf.get.qf.type.get.baseConstraint(t) || unknownType, qt.TypeFlags.Nullable);
   }
   extractTypesOfKind(t: qt.Type, k: qt.TypeFlags) {
     return this.filterType(t, (x) => (x.flags & k) !== 0);
@@ -830,7 +830,7 @@ export class Ftype {
   }
   transformTypeOfMembers(t: qt.Type, f: (t: qt.Type) => Type) {
     const ss = new SymbolTable();
-    for (const p of getPropertiesOfObjectType(t)) {
+    for (const p of qf.type.get.propertiesOfObject(t)) {
       const o = p.typeOfSymbol();
       const r = f(o);
       ss.set(p.escName, r === o ? p : createSymbolWithType(p, r));
@@ -854,7 +854,7 @@ export class Ftype {
         }
       }
       if (t.isobj(ObjectFlags.ObjectLiteral)) {
-        for (const p of getPropertiesOfObjectType(t)) {
+        for (const p of qf.type.get.propertiesOfObject(t)) {
           const x = p.typeOfSymbol();
           if (x.isobj(ObjectFlags.ContainsWideningType)) {
             if (!reportWideningErrorsInType(x)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.get.widenedType(x)));
@@ -1028,7 +1028,7 @@ export class Signature implements qt.Signature {
     const ps = this.typeParams;
     if (ps) {
       const typeEraser = qf.make.typeEraser(ps);
-      const baseConstraints = qu.map(ps, (p) => instantiateType(this.baseConstraintOfType(p), typeEraser) || unknownType);
+      const baseConstraints = qu.map(ps, (p) => instantiateType(this.qf.type.get.baseConstraint(p), typeEraser) || unknownType);
       return instantiateSignature(this, qf.make.typeMapper(ps, baseConstraints), true);
     }
     return this;

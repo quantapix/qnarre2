@@ -77,14 +77,14 @@ export function newSign(f: qt.Frame) {
           for (const signature of sig.unions) {
             const instance = this.returnTypeOfSignature(signature);
             if (qf.type.is.any(instance)) return instance;
-            const propType = this.typeOfPropertyOfType(instance, forcedLookupLocation);
+            const propType = qf.type.get.typeOfProperty(instance, forcedLookupLocation);
             if (!propType) return;
             results.push(propType);
           }
           return this.intersectionType(results);
         }
         const instanceType = this.returnTypeOfSignature(sig);
-        return qf.type.is.any(instanceType) ? instanceType : this.typeOfPropertyOfType(instanceType, forcedLookupLocation);
+        return qf.type.is.any(instanceType) ? instanceType : qf.type.get.typeOfProperty(instanceType, forcedLookupLocation);
       }
       jsxPropsTypeFromClassType(sig: Signature, context: qt.JsxOpeningLikeElem) {
         const ns = this.jsxNamespaceAt(context);
@@ -374,7 +374,7 @@ export function newSymb(f: qt.Frame) {
                 definedInMethod = true;
               }
             }
-            if (!expression.kind === Syntax.CallExpression) jsdocType = this.annotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
+            if (!expression.kind === Syntax.CallExpression) jsdocType = qf.type.get.annotatedForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
             if (!jsdocType) {
               (types || (types = [])).push(
                 expression.kind === Syntax.BinaryExpression || expression.kind === Syntax.CallExpression
@@ -409,14 +409,14 @@ export function newSymb(f: qt.Frame) {
         if (expression.kind === Syntax.CallExpression) {
           if (resolvedSymbol) return this.typeOfSymbol(resolvedSymbol);
           const objectLitType = qf.check.expressionCached((expression as qt.BindableObjectDefinePropertyCall).args[2]);
-          const valueType = this.typeOfPropertyOfType(objectLitType, 'value' as qu.__String);
+          const valueType = qf.type.get.typeOfProperty(objectLitType, 'value' as qu.__String);
           if (valueType) return valueType;
-          const getFunc = this.typeOfPropertyOfType(objectLitType, 'get' as qu.__String);
+          const getFunc = qf.type.get.typeOfProperty(objectLitType, 'get' as qu.__String);
           if (getFunc) {
             const getSig = this.singleCSignature(getFunc);
             if (getSig) return this.returnTypSignature(getSig);
           }
-          const setFunc = this.typeOfPropertyOfType(objectLitType, 'set' as qu.__String);
+          const setFunc = qf.type.get.typeOfProperty(objectLitType, 'set' as qu.__String);
           if (setFunc) {
             const setSig = this.singleCSignature(setFunc);
             if (setSig) return this.typeOfFirstParaSignature(setSig);
@@ -604,7 +604,7 @@ export function newSymb(f: qt.Frame) {
       typeOfPropertyInBaseClass(property: Symbol) {
         const classType = this.declaringClass(property);
         const baseClassType = classType && qf.type.get.bases(classType)[0];
-        return baseClassType && this.typeOfPropertyOfType(baseClassType, property.escName);
+        return baseClassType && qf.type.get.typeOfProperty(baseClassType, property.escName);
       }
       widenedProperty(prop: Symbol, context: qt.WideningContext | undefined): Symbol {
         if (!(prop.flags & SymbolFlags.Property)) return prop;
@@ -1052,7 +1052,7 @@ export function newType(f: qt.Frame) {
         return t.typeParam || (t.typeParam = this.declaredTypeOfTypeParam(this.symbolOfNode(t.declaration.typeParam)));
       }
       constraintTypeFromMappedType(t: qt.MappedType) {
-        return t.constraintType || (t.constraintType = this.constraintOfTypeParam(this.typeParamFromMappedType(t)) || errorType);
+        return t.constraintType || (t.constraintType = qf.type.get.constraintOfParam(this.typeParamFromMappedType(t)) || errorType);
       }
       templateTypeFromMappedType(t: qt.MappedType) {
         return (
@@ -1072,7 +1072,7 @@ export function newType(f: qt.Frame) {
           else {
             const declaredType = <qt.MappedType>this.typeFromMappedTyping(t.declaration);
             const constraint = this.constraintTypeFromMappedType(declaredType);
-            const extendedConstraint = constraint && qf.type.is.param(constraint) ? this.constraintOfTypeParam(<TypeParam>constraint) : constraint;
+            const extendedConstraint = constraint && qf.type.is.param(constraint) ? qf.type.get.constraintOfParam(<TypeParam>constraint) : constraint;
             t.modifiersType = extendedConstraint && extendedConstraint.isa(TypeFlags.Index) ? instantiateType((<qt.IndexType>extendedConstraint).type, t.mapper) : unknownType;
           }
         }
@@ -1094,22 +1094,6 @@ export function newType(f: qt.Frame) {
         const modifiersType = this.modifiersTypeFromMappedType(t);
         return optionality || (qf.type.is.genericMapped(modifiersType) ? this.mappedTypeOptionality(modifiersType) : 0);
       }
-      propertiesOfUnionOrIntersectionType(t: qt.UnionOrIntersectionType): Symbol[] {
-        if (!type.resolvedProperties) {
-          const members = new qc.SymbolTable();
-          for (const current of t.types) {
-            for (const prop of qf.type.get.properties(current)) {
-              if (!members.has(prop.escName)) {
-                const combinedProp = this.propertyOfUnionOrIntersectionType(t, prop.escName);
-                if (combinedProp) members.set(prop.escName, combinedProp);
-              }
-            }
-            if (qf.type.is.union(t) && !this.indexInfoOfType(current, qt.IndexKind.String) && !this.indexInfoOfType(current, qt.IndexKind.Number)) break;
-          }
-          t.resolvedProperties = this.namedMembers(members);
-        }
-        return t.resolvedProperties;
-      }
       allPossiblePropertiesOfTypes(types: readonly Type[]): Symbol[] {
         const unionType = this.unionType(types);
         if (!(qf.type.is.union(unionType))) return this.augmentedProperties(unionType);
@@ -1126,23 +1110,23 @@ export function newType(f: qt.Frame) {
       }
       constraintOfType(t: qt.InstantiableType | qt.UnionOrIntersectionType): Type | undefined {
         return qf.type.is.param(t)
-          ? this.constraintOfTypeParam(<TypeParam>type)
+          ? qf.type.get.constraintOfParam(<TypeParam>type)
           : t.isa(TypeFlags.IndexedAccess)
           ? this.constraintOfIndexedAccess(<qt.IndexedAccessType>type)
           : t.isa(TypeFlags.Conditional)
           ? this.constraintOfConditionalType(<qt.ConditionalType>type)
-          : this.baseConstraintOfType(t);
+          : this.qf.type.get.baseConstraint(t);
       }
       constraintOfIndexedAccess(t: qt.IndexedAccessType) {
         return qf.has.nonCircularBaseConstraint(t) ? this.constraintFromIndexedAccess(t) : undefined;
       }
       constraintFromIndexedAccess(t: qt.IndexedAccessType) {
-        const indexConstraint = this.simplifiedTypeOrConstraint(t.indexType);
+        const indexConstraint = qf.type.get.simplifiedOrConstraint(t.indexType);
         if (indexConstraint && indexConstraint !== t.indexType) {
           const indexedAccess = this.indexedAccessTypeOrUndefined(t.objectType, indexConstraint);
           if (indexedAccess) return indexedAccess;
         }
-        const objectConstraint = this.simplifiedTypeOrConstraint(t.objectType);
+        const objectConstraint = qf.type.get.simplifiedOrConstraint(t.objectType);
         if (objectConstraint && objectConstraint !== t.objectType) return this.indexedAccessTypeOrUndefined(objectConstraint, t.indexType);
         return;
       }
@@ -1157,7 +1141,7 @@ export function newType(f: qt.Frame) {
       constraintOfDistributiveConditionalType(t: qt.ConditionalType): Type | undefined {
         if (t.root.isDistributive && t.restrictive !== type) {
           const simplified = this.simplifiedType(t.checkType, false);
-          const constraint = simplified === t.checkType ? this.constraintOfType(simplified) : simplified;
+          const constraint = simplified === t.checkType ? qf.type.get.constraint(simplified) : simplified;
           if (constraint && constraint !== t.checkType) {
             const instantiated = this.conditionalTypeInstantiation(t, prependTypeMapping(t.root.checkType, constraint, t.mapper));
             if (!(instantiated.isa(TypeFlags.Never))) return instantiated;
@@ -1176,9 +1160,9 @@ export function newType(f: qt.Frame) {
         let hasDisjointDomainType = false;
         for (const t of types) {
           if (t.isa(TypeFlags.Instantiable)) {
-            let constraint = this.constraintOfType(t);
+            let constraint = qf.type.get.constraint(t);
             while (constraint && constraint.flags & (TypeFlags.TypeParam | TypeFlags.Index | TypeFlags.Conditional)) {
-              constraint = this.constraintOfType(constraint);
+              constraint = qf.type.get.constraint(constraint);
             }
             if (constraint) {
               constraints = append(constraints, constraint);
@@ -1198,7 +1182,7 @@ export function newType(f: qt.Frame) {
       }
       resolvedBaseConstraint(t: qt.InstantiableType | qt.UnionOrIntersectionType): Type {
         let nonTerminating = false;
-        return t.resolvedBaseConstraint || (t.resolvedBaseConstraint = this.typeWithThisArg(this.immediateBaseConstraint(t), type));
+        return t.resolvedBaseConstraint || (t.resolvedBaseConstraint = qf.type.get.withThisArg(this.immediateBaseConstraint(t), type));
         const immediateBaseConstraint = (t: Type): Type => {
           if (!t.immediateBaseConstraint) {
             if (!pushTypeResolution(t, qt.TypeSystemPropertyName.ImmediateBaseConstraint)) return circularConstraintType;
@@ -1267,7 +1251,7 @@ export function newType(f: qt.Frame) {
         };
       }
       apparentTypeOfIntersectionType(t: qt.IntersectionType) {
-        return t.resolvedApparentType || (t.resolvedApparentType = this.typeWithThisArg(t, type, true));
+        return t.resolvedApparentType || (t.resolvedApparentType = qf.type.get.withThisArg(t, type, true));
       }
       apparentTypeOfMappedType(t: qt.MappedType) {
         return t.resolvedApparentType || (t.resolvedApparentType = this.resolvedApparentTypeOfMappedType(t));
@@ -1275,7 +1259,7 @@ export function newType(f: qt.Frame) {
       resolvedApparentTypeOfMappedType(t: qt.MappedType) {
         const r = this.homomorphicTypeVariable(t);
         if (r) {
-          const c = this.constraintOfTypeParam(r);
+          const c = qf.type.get.constraintOfParam(r);
           if (c && (qf.type.is.array(c) || qf.type.is.tuple(c))) return instantiateType(t, prependTypeMapping(r, c, t.mapper));
         }
         return t;
@@ -1288,10 +1272,6 @@ export function newType(f: qt.Frame) {
           if (property) properties.set(name, property);
         }
         return property;
-      }
-      propertyOfUnionOrIntersectionType(t: qt.UnionOrIntersectionType, name: qu.__String): Symbol | undefined {
-        const property = this.unionOrIntersectionProperty(t, name);
-        return property && !(this.checkFlags(property) & qt.CheckFlags.ReadPartial) ? property : undefined;
       }
       reducedUnionType(unionType: qt.UnionType) {
         const reducedTypes = sameMap(unionType.types, getReducedType);
@@ -1871,7 +1851,7 @@ export function newType(f: qt.Frame) {
           seen.set(p.escName, p);
         });
         for (const base of baseTypes) {
-          const properties = qf.type.get.properties(this.typeWithThisArg(base, t.thisType));
+          const properties = qf.type.get.properties(qf.type.get.withThisArg(base, t.thisType));
           for (const prop of properties) {
             const existing = seen.get(prop.escName);
             if (existing && !qf.is.propertyIdenticalTo(existing, prop)) seen.delete(prop.escName);
@@ -1892,7 +1872,7 @@ export function newType(f: qt.Frame) {
         narrowTypeByDiscriminant(t: Type, access: qt.AccessExpression, narrowType: (t: Type) => Type): Type {
           const propName = this.accessedPropertyName(access);
           if (propName === undefined) return type;
-          const propType = this.typeOfPropertyOfType(t, propName);
+          const propType = qf.type.get.typeOfProperty(t, propName);
           if (!propType) return type;
           const narrowedPropType = narrowType(propType);
           return filterType(t, (t) => {
@@ -2073,7 +2053,7 @@ export function newType(f: qt.Frame) {
             if (qf.type.is.subtypeOf(t, candidate)) return type;
             if (qf.type.is.subtypeOf(candidate, type)) return candidate;
             if (t.isa(TypeFlags.Instantiable)) {
-              const constraint = this.baseConstraintOfType(t) || anyType;
+              const constraint = this.qf.type.get.baseConstraint(t) || anyType;
               if (qf.type.is.subtypeOf(candidate, constraint)) return this.intersectionType([type, candidate]);
             }
             return type;
@@ -2284,7 +2264,7 @@ export function newType(f: qt.Frame) {
               }
             }
             c++;
-            if (this.is.relatedTo(s, t, strictSubtypeRelation) && (!getTargetType(s).isobj(ObjectFlags.Class) || !getTargetType(t).isobj(ObjectFlags.Class) || this.is.derivedFrom(s, t))) {
+            if (this.is.relatedTo(s, t, strictSubtypeRelation) && (!qf.type.get.target(s).isobj(ObjectFlags.Class) || !qf.type.get.target(t).isobj(ObjectFlags.Class) || this.is.derivedFrom(s, t))) {
               qu.orderedRemoveItemAt(ts, i);
               break;
             }

@@ -94,7 +94,6 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const lexicallyScopedIdentifier = lookupSymbolForPrivateIdentifierDeclaration(propName, node);
       return lexicallyScopedIdentifier ? getPrivateIdentifierPropertyOfType(leftType, lexicallyScopedIdentifier) : undefined;
     }
-    typeOfPropertyOfType(type, name) { return qf.get.typeOfPropertyOfType(type, qy.get.escUnderscores(name)); }
     getIndexInfoOfType;
     getSignaturesOfType;
     getIndexTypeOfType;
@@ -652,7 +651,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       flags |= t.flags;
       if (!(t.isa(qt.TypeFlags.Nullable))) {
         if (t.flags & (TypeFlags.BooleanLiteral | qt.TypeFlags.EnumLiteral)) {
-          const baseType = t.isa(qt.TypeFlags.BooleanLiteral) ? booleanType : getBaseTypeOfEnumLiteralType(<qt.LiteralType>t);
+          const baseType = t.isa(qt.TypeFlags.BooleanLiteral) ? booleanType : qf.type.get.baseOfEnumLiteral(<qt.LiteralType>t);
           if (baseType.isa(qt.TypeFlags.Union)) {
             const count = (<qt.UnionType>baseType).types.length;
             if (i + count <= types.length && getRegularTypeOfLiteralType(types[i + count - 1]) === getRegularTypeOfLiteralType((<qt.UnionType>baseType).types[count - 1])) {
@@ -768,7 +767,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function elaborateNeverIntersection(errorInfo: qd.MessageChain | undefined, type: qt.Type) {
     if (type.isobj(ObjectFlags.IsNeverIntersection)) {
-      const neverProp = qf.find.up(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.discriminantWithNeverType);
+      const neverProp = qf.find.up(qf.type.get.propertiesOfUnionOrIntersection(<qt.IntersectionType>type), qf.is.discriminantWithNeverType);
       if (neverProp) {
         return chainqd.Messages(
           errorInfo,
@@ -777,7 +776,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           neverProp.symbolToString()
         );
       }
-      const privateProp = qf.find.up(getPropertiesOfUnionOrIntersectionType(<qt.IntersectionType>type), qf.is.conflictingPrivateProperty);
+      const privateProp = qf.find.up(qf.type.get.propertiesOfUnionOrIntersection(<qt.IntersectionType>type), qf.is.conflictingPrivateProperty);
       if (privateProp) {
         return chainqd.Messages(
           errorInfo,
@@ -1031,7 +1030,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
         if (
           (qf.get.functionFlags(node) & FunctionFlags.Async) === 0 &&
-          !qf.get.typeOfPropertyOfType(sourceReturn, 'then' as qu.__String) &&
+          !qf.type.get.typeOfProperty(sourceReturn, 'then' as qu.__String) &&
           qf.type.check.relatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {
           addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], qf.make.diagForNode(node, qd.msgs.Did_you_mean_to_mark_this_function_as_async));
@@ -1329,7 +1328,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (skipPartial && targetProp && targetProp.checkFlags() & qt.CheckFlags.ReadPartial) continue;
       let i = 0;
       for (const type of target.types) {
-        const targetType = qf.get.typeOfPropertyOfType(type, propertyName);
+        const targetType = qf.type.get.typeOfProperty(type, propertyName);
         if (targetType && related(getDiscriminatingType(), targetType)) discriminable[i] = discriminable[i] === undefined ? true : discriminable[i];
         else {
           discriminable[i] = false;
@@ -1770,7 +1769,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       if (constraintType.isa(qt.TypeFlags.TypeParam)) {
         inferWithPriority(qf.get.indexType(source), constraintType, InferencePriority.MappedTypeConstraint);
-        const extendedConstraint = getConstraintOfType(constraintType);
+        const extendedConstraint = qf.type.get.constraint(constraintType);
         if (extendedConstraint && inferToMappedType(source, target, extendedConstraint)) return true;
         const propTypes = map(qf.type.get.properties(source), qf.get.typeOfSymbol);
         const stringIndexType = qf.get.indexTypeOfType(source, IndexKind.String);
@@ -1843,7 +1842,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
     function inferFromProperties(source: qt.Type, target: qt.Type) {
-      const properties = getPropertiesOfObjectType(target);
+      const properties = qf.type.get.propertiesOfObject(target);
       for (const targetProp of properties) {
         const sourceProp = qf.type.get.property(source, targetProp.escName);
         if (sourceProp) inferFromTypes(sourceProp.typeOfSymbol(), targetProp.typeOfSymbol());
@@ -2231,7 +2230,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const operandType = qf.get.typeOfExpression((node.expression as qt.TypeOfExpression).expression);
       const witnesses = getSwitchClauseTypeOfWitnesses(node, false);
       const notEqualFacts = getFactsFromTypeofSwitch(0, 0, witnesses, true);
-      const type = qf.get.baseConstraintOfType(operandType) || operandType;
+      const type = qf.get.qf.type.get.baseConstraint(operandType) || operandType;
       return !!(filterType(type, (t) => (getTypeFacts(t) & notEqualFacts) === notEqualFacts).isa(qt.TypeFlags.Never));
     }
     const type = qf.get.typeOfExpression(node.expression);
@@ -2459,7 +2458,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (source.name.escapedText !== target.symbol.escName) return false;
         const constraint = qf.get.effectiveConstraintOfTypeParam(source);
         const sourceConstraint = constraint && qf.get.typeFromTypeNode(constraint);
-        const targetConstraint = qf.get.constraintOfTypeParam(target);
+        const targetConstraint = qf.type.get.constraintOfParam(target);
         if (sourceConstraint && targetConstraint && !qf.type.is.identicalTo(sourceConstraint, targetConstraint)) return false;
         const sourceDefault = source.default && qf.get.typeFromTypeNode(source.default);
         const targetDefault = getDefaultFromTypeParam(target);
@@ -2858,7 +2857,7 @@ export interface TypeCheckerOld {
   qf.get.typeOfSymbolAtLocation(symbol: qt.Symbol, node: Node): qt.Type;
   getDeclaredTypeOfSymbol(symbol: qt.Symbol): qt.Type;
   getPrivateIdentifierPropertyOfType(leftType: qt.Type, name: string, location: Node): qt.Symbol | undefined;
-  qf.get.typeOfPropertyOfType(type: qt.Type, propertyName: string): qt.Type | undefined;
+  qf.type.get.typeOfProperty(type: qt.Type, propertyName: string): qt.Type | undefined;
   qf.get.indexInfoOfType(type: qt.Type, kind: qt.IndexKind): qt.IndexInfo | undefined;
   getBaseTypeOfLiteralType(type: qt.Type): qt.Type;
   qf.get.widenedType(type: qt.Type): qt.Type;

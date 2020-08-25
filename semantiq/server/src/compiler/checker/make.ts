@@ -221,7 +221,7 @@ export function newMake(f: qt.Frame) {
     canonicalSignature(s: qt.Signature) {
       return getSignatureInstantiation(
         s,
-        map(s.typeParams, (p) => (p.target && !qf.get.constraintOfTypeParam(p.target) ? p.target : p)),
+        map(s.typeParams, (p) => (p.target && !qf.type.get.constraintOfParam(p.target) ? p.target : p)),
         qf.is.inJSFile(s.declaration)
       );
     }
@@ -1568,7 +1568,7 @@ export function newResolve(f: qt.Frame) {
       else if (baseConstructorType.isa(qt.TypeFlags.Any)) {
         baseType = baseConstructorType;
       } else {
-        const constructors = getInstantiatedConstructorsForTypeArgs(baseConstructorType, baseTypeNode.typeArgs, baseTypeNode);
+        const constructors = qf.type.get.instantiatedConstructorsForArgs(baseConstructorType, baseTypeNode.typeArgs, baseTypeNode);
         if (!constructors.length) {
           error(baseTypeNode.expression, qd.msgs.No_base_constructor_has_the_specified_number_of_type_args);
           return (type.resolvedBaseTypes = empty);
@@ -1659,7 +1659,7 @@ export function newResolve(f: qt.Frame) {
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArg = lastOrUndefined(typeArgs);
         for (const baseType of baseTypes) {
-          const instantiatedBaseType = thisArg ? qf.get.typeWithThisArg(qf.instantiate.type(baseType, mapper), thisArg) : baseType;
+          const instantiatedBaseType = thisArg ? qf.type.get.withThisArg(qf.instantiate.type(baseType, mapper), thisArg) : baseType;
           addInheritedMembers(members, qf.type.get.properties(instantiatedBaseType));
           callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
           constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));
@@ -1717,7 +1717,7 @@ export function newResolve(f: qt.Frame) {
       const symbol = qf.get.mergedSymbol(type.symbol);
       if (type.target) {
         setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
-        const members = qf.make.instantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, false);
+        const members = qf.make.instantiatedSymbolTable(qf.type.get.propertiesOfObject(type.target), type.mapper!, false);
         const callSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Call), type.mapper!);
         const constructSignatures = qf.instantiate.signatures(getSignaturesOfType(type.target, SignatureKind.Construct), type.mapper!);
         const stringIndexInfo = qf.instantiate.indexInfo(qf.get.indexInfoOfType(type.target, IndexKind.String), type.mapper!);
@@ -1816,7 +1816,7 @@ export function newResolve(f: qt.Frame) {
         if (modifiersType.isa(qt.TypeFlags.Any) || qf.get.indexInfoOfType(modifiersType, IndexKind.String)) addMemberForKeyType(stringType);
         if (!keyofStringsOnly && qf.get.indexInfoOfType(modifiersType, IndexKind.Number)) addMemberForKeyType(numberType);
       } else {
-        forEachType(getLowerBoundOfKeyType(constraintType), addMemberForKeyType);
+        forEachType(qf.type.get.lowerBoundOfKey(constraintType), addMemberForKeyType);
       }
       setStructuredTypeMembers(type, members, empty, empty, stringIndexInfo, numberIndexInfo);
       function addMemberForKeyType(t: qt.Type) {
@@ -2082,7 +2082,7 @@ export function newResolve(f: qt.Frame) {
         if (superType !== errorType) {
           const baseTypeNode = qf.get.effectiveBaseTypeNode(qf.get.containingClass(node)!);
           if (baseTypeNode) {
-            const baseConstructors = getInstantiatedConstructorsForTypeArgs(superType, baseTypeNode.typeArgs, baseTypeNode);
+            const baseConstructors = qf.type.get.instantiatedConstructorsForArgs(superType, baseTypeNode.typeArgs, baseTypeNode);
             return this.call(node, baseConstructors, candidatesOutArray, checkMode, SignatureFlags.None);
           }
         }
