@@ -611,7 +611,7 @@ export class Ftype {
     for (let i = 0; i < ts.length; i++) {
       if (i === index) r.push(t);
       else if (flags[i]) {
-        r.push(qf.get.returnTypeOfSignature(getSignaturesOfType(ts[i], qt.SignatureKind.Construct)[0]));
+        r.push(qf.get.returnTypeOfSignature(qf.type.get.signatures(ts[i], qt.SignatureKind.Construct)[0]));
       }
     }
     return qf.get.intersectionType(r);
@@ -665,8 +665,8 @@ export class Ftype {
   }
   findBestTypeForInvokable(t: qt.Type, from: qt.UnionOrIntersectionType) {
     let k = qt.SignatureKind.Call;
-    const has = getSignaturesOfType(t, k).length > 0 || ((k = qt.SignatureKind.Construct), getSignaturesOfType(t, k).length > 0);
-    if (has) return qf.find.up(from.types, (t) => getSignaturesOfType(t, k).length > 0);
+    const has = qf.type.get.signatures(t, k).length > 0 || ((k = qt.SignatureKind.Construct), qf.type.get.signatures(t, k).length > 0);
+    if (has) return qf.find.up(from.types, (t) => qf.type.get.signatures(t, k).length > 0);
     return;
   }
   findMostOverlappyType(t: qt.Type, from: qt.UnionOrIntersectionType) {
@@ -690,7 +690,7 @@ export class Ftype {
     }
     return r;
   }
-  setCachedIterationTypes(t: qt.Type, k: qt.MatchingKeys<qt.IterableOrIteratorType, qt.IterationTypes | undefined>, v: qt.IterationTypes) {
+  qf.type.setCachedIters(t: qt.Type, k: qt.MatchingKeys<qt.IterableOrIteratorType, qt.IterationTypes | undefined>, v: qt.IterationTypes) {
     return ((t as qt.IterableOrIteratorType)[k] = v);
   }
   convertAutoToAny(t: qt.Type) {
@@ -729,7 +729,7 @@ export class Ftype {
     if (t.isa(qt.TypeFlags.Union)) {
       const ts = (<qt.UnionType>t).types;
       const r = filter(ts, f);
-      return r === ts ? t : qf.get.unionTypeFromSortedList(r, (<qt.UnionType>t).objectFlags);
+      return r === ts ? t : qf.type.get.unionFromSortedList(r, (<qt.UnionType>t).objectFlags);
     }
     return t.isa(qt.TypeFlags.Never) || f(t) ? t : neverType;
   }
@@ -749,7 +749,7 @@ export class Ftype {
         else ts.push(y);
       }
     }
-    return ts && qf.get.unionType(ts, noReductions ? qt.UnionReduction.None : qt.UnionReduction.Literal);
+    return ts && qf.type.get.union(ts, noReductions ? qt.UnionReduction.None : qt.UnionReduction.Literal);
   }
   acceptsVoid(t: qt.Type) {
     return !!t.isa(qt.TypeFlags.Void);
@@ -825,7 +825,7 @@ export class Ftype {
     return mapType(t, getDefinitelyFalsyPartOfType);
   }
   addOptionalTypeMarker(t: qt.Type) {
-    return strictNullChecks ? qf.get.unionType([t, optionalType]) : t;
+    return strictNullChecks ? qf.type.get.union([t, optionalType]) : t;
   }
   propagateOptionalTypeMarker(t: qt.Type, c: qt.OptionalChain, optional: boolean) {
     return optional ? (qf.is.outermostOptionalChain(c) ? qf.type.get.optional(t) : addOptionalTypeMarker(t)) : t;
@@ -883,14 +883,14 @@ export class Ftype {
   distributeIndexOverObjectType(t: qt.Type, i: qt.Type, writing: boolean) {
     if (t.isa(qt.TypeFlags.UnionOrIntersection)) {
       const ts = qu.map((t as qt.UnionOrIntersectionType).types, (x) => qf.type.get.simplified(qf.type.get.indexedAccess(x, i), writing));
-      return t.isa(qt.TypeFlags.Intersection) || writing ? qf.get.intersectionType(ts) : qf.get.unionType(ts);
+      return t.isa(qt.TypeFlags.Intersection) || writing ? qf.get.intersectionType(ts) : qf.type.get.union(ts);
     }
     return;
   }
   distributeObjectOverIndexType(t: qt.Type, i: qt.Type, writing: boolean) {
     if (i.isa(qt.TypeFlags.Union)) {
       const ts = qu.map((i as qt.UnionType).types, (x) => qf.type.get.simplified(qf.type.get.indexedAccess(t, x), writing));
-      return writing ? qf.get.intersectionType(ts) : qf.get.unionType(ts);
+      return writing ? qf.get.intersectionType(ts) : qf.type.get.union(ts);
     }
     return;
   }
@@ -900,7 +900,7 @@ export class Ftype {
   }
   eachUnionContains(ts: qt.UnionType[], t: qt.Type) {
     for (const x of ts) {
-      if (!containsType(x.types, t)) {
+      if (!qf.type.has.type(x.types, t)) {
         const r = t.isa(qt.TypeFlags.StringLiteral)
           ? stringType
           : t.isa(qt.TypeFlags.NumberLiteral)
@@ -910,7 +910,7 @@ export class Ftype {
           : t.isa(qt.TypeFlags.UniqueESSymbol)
           ? esSymbolType
           : undefined;
-        if (!r || !containsType(x.types, r)) return false;
+        if (!r || !qf.type.has.type(x.types, r)) return false;
       }
     }
     return true;
@@ -1069,7 +1069,7 @@ export class Signature implements qt.Signature {
       let type = this.target
         ? instantiateType(this.returnTypeOfSignature(this.target), this.mapper)
         : this.unions
-        ? this.unionType(map(this.unions, this.returnTypeOfSignature), qt.UnionReduction.Subtype)
+        ? qf.type.get.union(map(this.unions, this.returnTypeOfSignature), qt.UnionReduction.Subtype)
         : this.returnTypeFromAnnotation(this.declaration!) ||
           (qf.is.missing((<qt.FunctionLikeDeclaration>this.declaration).body) ? anyType : this.returnTypeFromBody(<qt.FunctionLikeDeclaration>this.declaration));
       if (this.flags & qt.SignatureFlags.IsInnerCallChain) type = addOptionalTypeMarker(t);

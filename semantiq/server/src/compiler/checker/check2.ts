@@ -107,7 +107,7 @@ export function newDecl(f: qt.Frame) {
           qu.pushIfUnique(yieldTypes, getYieldedTypeOfYieldExpression(yieldExpression, yieldExpressionType, anyType, isAsync));
           let nextType: Type | undefined;
           if (yieldExpression.asteriskToken) {
-            const iterationTypes = getIterationTypesOfIterable(yieldExpressionType, isAsync ? IterationUse.AsyncYieldStar : IterationUse.YieldStar, yieldExpression.expression);
+            const iterationTypes = qf.type.get.itersOfIterable(yieldExpressionType, isAsync ? IterationUse.AsyncYieldStar : IterationUse.YieldStar, yieldExpression.expression);
             nextType = iterationTypes && iterationTypes.nextType;
           } else nextType = getContextualType(yieldExpression);
           if (nextType) qu.pushIfUnique(nextTypes, nextType);
@@ -221,9 +221,9 @@ export function newDecl(f: qt.Frame) {
               const returnType = qf.get.typeFromTypeNode(returnTypeNode);
               if (returnType === voidType) error(returnTypeNode, qd.msgs.A_generator_cannot_have_a_void_type_annotation);
               else {
-                const generatorYieldType = getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Yield, returnType, (functionFlags & FunctionFlags.Async) !== 0) || anyType;
-                const generatorReturnType = getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Return, returnType, (functionFlags & FunctionFlags.Async) !== 0) || generatorYieldType;
-                const generatorNextType = getIterationTypeOfGeneratorFunctionReturnType(IterationTypeKind.Next, returnType, (functionFlags & FunctionFlags.Async) !== 0) || unknownType;
+                const generatorYieldType = qf.type.get.iterOfGeneratorFunctionReturn(IterationTypeKind.Yield, returnType, (functionFlags & FunctionFlags.Async) !== 0) || anyType;
+                const generatorReturnType = qf.type.get.iterOfGeneratorFunctionReturn(IterationTypeKind.Return, returnType, (functionFlags & FunctionFlags.Async) !== 0) || generatorYieldType;
+                const generatorNextType = qf.type.get.iterOfGeneratorFunctionReturn(IterationTypeKind.Next, returnType, (functionFlags & FunctionFlags.Async) !== 0) || unknownType;
                 const generatorInstantiation = createGeneratorReturnType(generatorYieldType, generatorReturnType, generatorNextType, !!(functionFlags & FunctionFlags.Async));
                 qf.type.check.assignableTo(generatorInstantiation, returnType, returnTypeNode);
               }
@@ -540,7 +540,7 @@ export function newDecl(f: qt.Frame) {
           const parentType = qf.get.typeForBindingElemParent(parent);
           const name = n.propertyName || n.name;
           if (parentType && !name.kind === Syntax.BindingPattern) {
-            const exprType = qf.get.literalTypeFromPropertyName(name);
+            const exprType = qf.type.get.literalFromPropertyName(name);
             if (qf.type.is.usableAsPropertyName(exprType)) {
               const nameText = getPropertyNameFromType(exprType);
               const property = qf.type.get.property(parentType, nameText);
@@ -1518,8 +1518,8 @@ export function newType(f: qt.Frame) {
             (qf.type.get.properties(source).length > 0 || qf.type.is.withCallOrConstructSignatures(source));
           if (isPerformingCommonPropertyChecks && !qf.type.has.commonProperties(source, target, isComparingJsxAttributes)) {
             if (reportErrors) {
-              const calls = getSignaturesOfType(source, SignatureKind.Call);
-              const constructs = getSignaturesOfType(source, SignatureKind.Construct);
+              const calls = qf.type.get.signatures(source, SignatureKind.Call);
+              const constructs = qf.type.get.signatures(source, SignatureKind.Construct);
               if (
                 (calls.length > 0 && isRelatedTo(qf.get.returnTypeOfSignature(calls[0]), target, false)) ||
                 (constructs.length > 0 && isRelatedTo(qf.get.returnTypeOfSignature(constructs[0]), target, false))
@@ -1627,7 +1627,7 @@ export function newType(f: qt.Frame) {
             const p = (prop && prop.typeOfSymbol()) || (NumericLiteral.name(name) && qf.get.indexTypeOfType(t, IndexKind.Number)) || qf.get.indexTypeOfType(t, IndexKind.String) || undefinedType;
             return qu.append(ps, p);
           };
-          return qf.get.unionType(reduceLeft(ts, appendPropType, undefined) || empty);
+          return qf.type.get.union(reduceLeft(ts, appendPropType, undefined) || empty);
         }
         function hasExcessProperties(source: qt.FreshObjectLiteralType, target: Type, reportErrors: boolean): boolean {
           if (!qf.type.is.excessPropCheckable(target) || (!noImplicitAny && target.isobj(ObjectFlags.JSLiteral))) return false;
@@ -1696,7 +1696,7 @@ export function newType(f: qt.Frame) {
         }
         function relatedToSomeType(source: Type, target: qt.UnionOrIntersectionType, reportErrors: boolean): qt.Ternary {
           const targetTypes = target.types;
-          if (qf.type.is.union(target) && containsType(targetTypes, source)) return qt.Ternary.True;
+          if (qf.type.is.union(target) && qf.type.has.type(targetTypes, source)) return qt.Ternary.True;
           for (const type of targetTypes) {
             const related = isRelatedTo(source, type, false);
             if (related) return related;
@@ -1719,7 +1719,7 @@ export function newType(f: qt.Frame) {
         }
         function someTypeRelatedToType(source: qt.UnionOrIntersectionType, target: Type, reportErrors: boolean, intersectionState: IntersectionState): qt.Ternary {
           const sourceTypes = source.types;
-          if (qf.type.is.union(source) && containsType(sourceTypes, target)) return qt.Ternary.True;
+          if (qf.type.is.union(source) && qf.type.has.type(sourceTypes, target)) return qt.Ternary.True;
           const len = sourceTypes.length;
           for (let i = 0; i < len; i++) {
             const related = isRelatedTo(sourceTypes[i], target, reportErrors && i === len - 1, undefined, intersectionState);
@@ -1908,7 +1908,7 @@ export function newType(f: qt.Frame) {
               const baseIndexType = qf.get.qf.type.get.baseConstraint(indexType) || indexType;
               if (!qf.type.is.genericObject(baseObjectType) && !qf.type.is.genericIndex(baseIndexType)) {
                 const accessFlags = AccessFlags.Writing | (baseObjectType !== objectType ? AccessFlags.NoIndexSignatures : 0);
-                const constraint = qf.get.indexedAccessTypeOrUndefined(baseObjectType, baseIndexType, undefined, accessFlags);
+                const constraint = qf.type.get.indexedAccessOrUndefined(baseObjectType, baseIndexType, undefined, accessFlags);
                 if (constraint && (result = isRelatedTo(source, constraint, reportErrors))) return result;
               }
             }
@@ -2393,8 +2393,8 @@ export function newType(f: qt.Frame) {
           if (target === anyFunctionType || source === anyFunctionType) return qt.Ternary.True;
           const sourceIsJSConstructor = source.symbol && qf.is.jsConstructor(source.symbol.valueDeclaration);
           const targetIsJSConstructor = target.symbol && qf.is.jsConstructor(target.symbol.valueDeclaration);
-          const sourceSignatures = getSignaturesOfType(source, sourceIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
-          const targetSignatures = getSignaturesOfType(target, targetIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
+          const sourceSignatures = qf.type.get.signatures(source, sourceIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
+          const targetSignatures = qf.type.get.signatures(target, targetIsJSConstructor && kind === SignatureKind.Construct ? SignatureKind.Call : kind);
           if (kind === SignatureKind.Construct && sourceSignatures.length && targetSignatures.length) {
             if (qf.type.is.abstractConstructor(source) && !qf.type.is.abstractConstructor(target)) {
               if (reportErrors) reportError(qd.msgs.Cannot_assign_an_abstract_constructor_type_to_a_non_abstract_constructor_type);
@@ -2458,8 +2458,8 @@ export function newType(f: qt.Frame) {
           );
         }
         function signaturesIdenticalTo(source: Type, target: Type, kind: SignatureKind): qt.Ternary {
-          const sourceSignatures = getSignaturesOfType(source, kind);
-          const targetSignatures = getSignaturesOfType(target, kind);
+          const sourceSignatures = qf.type.get.signatures(source, kind);
+          const targetSignatures = qf.type.get.signatures(target, kind);
           if (sourceSignatures.length !== targetSignatures.length) return qt.Ternary.False;
           let result = qt.Ternary.True;
           for (let i = 0; i < sourceSignatures.length; i++) {
@@ -2722,7 +2722,7 @@ export function newType(f: qt.Frame) {
           error(errorNode, qd.msgs.Numeric_index_type_0_is_not_assignable_to_string_index_type_1, typeToString(numberIndexType!), typeToString(stringIndexType!));
       }
       baseAccessibility(s: Type, n: qt.ExpressionWithTypings) {
-        const ss = getSignaturesOfType(s, SignatureKind.Construct);
+        const ss = qf.type.get.signatures(s, SignatureKind.Construct);
         if (ss.length) {
           const d = ss[0].declaration;
           if (d && qf.has.effectiveModifier(d, ModifierFlags.Private)) {

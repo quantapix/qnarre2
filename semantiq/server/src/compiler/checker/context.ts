@@ -71,7 +71,7 @@ export class QContext {
       return new qc.KeywordTyping(Syntax.BooleanKeyword);
     }
     if (qf.type.is.enumLiteral(type) && !qf.type.is.union(type)) {
-      const parentSymbol = getParentOfSymbol(type.symbol)!;
+      const parentSymbol = qf.symb.get.parent(type.symbol)!;
       const parentName = this.symbolToTypeNode(parentSymbol, SymbolFlags.Type);
       const enumLiteralName =
         getDeclaredTypeOfSymbol(parentSymbol) === type ? parentName : appendReferenceToType(parentName as qt.TypingReference | qt.ImportTyping, new qc.TypingReference(type.symbol.name, undefined));
@@ -448,8 +448,8 @@ export class QContext {
   }
   typeParamToName(type: qt.TypeParam) {
     if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && this.typeParamNames) {
-      const cached = this.typeParamNames.get('' + getTypeId(type));
-      if (cached) return cached;
+      const c = this.typeParamNames.get('' + type.id);
+      if (c) return c;
     }
     let result = this.symbolToName(type.symbol, SymbolFlags.Type, true);
     if (!(result.kind & Syntax.Identifier)) return new qc.Identifier('(Missing type param)');
@@ -462,7 +462,7 @@ export class QContext {
         text = `${rawtext}_${i}`;
       }
       if (text !== rawtext) result = new qc.Identifier(text, result.typeArgs);
-      (this.typeParamNames || (this.typeParamNames = new QMap())).set('' + getTypeId(type), result);
+      (this.typeParamNames || (this.typeParamNames = new QMap())).set('' + type.id, result);
       (this.typeParamNamesByText || (this.typeParamNamesByText = new QMap())).set(result.escapedText as string, true);
     }
     return result;
@@ -573,7 +573,7 @@ export class QContext {
     this.approximateLength += propertySymbol.name.length + 1;
     const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? new qc.Token(Syntax.QuestionToken) : undefined;
     if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !qf.type.get.propertiesOfObject(propertyType).length && !isReadonlySymbol(propertySymbol)) {
-      const signatures = getSignaturesOfType(
+      const signatures = qf.type.get.signatures(
         filterType(propertyType, (t) => !t.isa(TypeFlags.Undefined)),
         qt.SignatureKind.Call
       );
@@ -971,11 +971,11 @@ export class QContext {
     return qf.visit.children(node, this.visitExistingNodeTreeSymbols, nullTrafoContext);
   }
   serializeSignatures(kind: qt.SignatureKind, input: qt.Type, baseType: qt.Type | undefined, outputKind: Syntax) {
-    const signatures = getSignaturesOfType(input, kind);
+    const signatures = qf.type.get.signatures(input, kind);
     if (kind === qt.SignatureKind.Construct) {
       if (!baseType && every(signatures, (s) => length(s.params) === 0)) return [];
       if (baseType) {
-        const baseSigs = getSignaturesOfType(baseType, qt.SignatureKind.Construct);
+        const baseSigs = qf.type.get.signatures(baseType, qt.SignatureKind.Construct);
         if (!length(baseSigs) && every(signatures, (s) => length(s.params) === 0)) return [];
         if (baseSigs.length === signatures.length) {
           let failed = false;
@@ -1029,7 +1029,7 @@ export class QContext {
     if (reference) return new qc.ExpressionWithTypings(typeArgs, reference);
   }
   serializeAsFunctionNamespaceMerge(type: qt.Type, symbol: qt.Symbol, localName: string, modifierFlags: ModifierFlags) {
-    const signatures = getSignaturesOfType(type, qt.SignatureKind.Call);
+    const signatures = qf.type.get.signatures(type, qt.SignatureKind.Call);
     for (const sig of signatures) {
       const decl = this.signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, includePrivateSymbol, bundled) as qt.FunctionDeclaration;
       decl.name = new qc.Identifier(localName);
@@ -1082,7 +1082,8 @@ export class QContext {
       filter(qf.type.get.properties(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
       (p) => serializePropertySymbolForClass(p, true, staticBaseType)
     );
-    const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, qt.SignatureKind.Construct));
+    const isNonConstructableClassLikeInJsFile =
+      !isClass && !!symbol.valueDeclaration && qf.is.inJSFile(symbol.valueDeclaration) && !some(qf.type.get.signatures(staticType, qt.SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
       ? [new qc.ConstructorDeclaration(undefined, qf.make.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as qt.ConstructorDeclaration[]);
@@ -1327,10 +1328,10 @@ export class QContext {
         const length = outerTypeParams.length;
         while (i < length) {
           const start = i;
-          const parent = getParentSymbolOfTypeParam(outerTypeParams[i])!;
+          const parent = qf.type.get.parentSymbolOfParam(outerTypeParams[i])!;
           do {
             i++;
-          } while (i < length && getParentSymbolOfTypeParam(outerTypeParams[i]) === parent);
+          } while (i < length && qf.type.get.parentSymbolOfParam(outerTypeParams[i]) === parent);
           if (!rangeEquals(outerTypeParams, typeArgs, start, i)) {
             const typeArgSlice = this.mapToTypeNodes(typeArgs.slice(start, i));
             const flags = this.flags;
@@ -1480,7 +1481,7 @@ export class QContext {
       }
       if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
         const type = p.typeOfSymbol();
-        const signatures = getSignaturesOfType(type, qt.SignatureKind.Call);
+        const signatures = qf.type.get.signatures(type, qt.SignatureKind.Call);
         if (flag & ModifierFlags.Private) {
           return createProperty(
             undefined,
@@ -1716,8 +1717,8 @@ export class QContext {
         typeToSerialize.objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
         !qf.type.get.indexInfo(typeToSerialize, IndexKind.String) &&
         !qf.type.get.indexInfo(typeToSerialize, IndexKind.Number) &&
-        !!(length(qf.type.get.properties(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
-        !length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Construct)) &&
+        !!(length(qf.type.get.properties(typeToSerialize)) || length(qf.type.get.signatures(typeToSerialize, qt.SignatureKind.Call))) &&
+        !length(qf.type.get.signatures(typeToSerialize, qt.SignatureKind.Construct)) &&
         !getDeclarationWithTypeAnnotation(hostSymbol, enclosingDeclaration) &&
         !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => d.sourceFile !== ctxSrc)) &&
         !some(qf.type.get.properties(typeToSerialize), (p) => isLateBoundName(p.escName)) &&

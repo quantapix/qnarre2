@@ -754,10 +754,10 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return !info1 ? info2 : !info2 ? info1 : qf.make.indexInfo(qf.get.intersectionType([info1.type, info2.type]), info1.isReadonly && info2.isReadonly);
   }
   function unionSpreadIndexInfos(info1: qt.IndexInfo | undefined, info2: qt.IndexInfo | undefined): qt.IndexInfo | undefined {
-    return info1 && info2 && qf.make.indexInfo(qf.get.unionType([info1.type, info2.type]), info1.isReadonly || info2.isReadonly);
+    return info1 && info2 && qf.make.indexInfo(qf.type.get.union([info1.type, info2.type]), info1.isReadonly || info2.isReadonly);
   }
   function findMixins(types: readonly qt.Type[]): readonly boolean[] {
-    const constructorTypeCount = countWhere(types, (t) => getSignaturesOfType(t, qt.SignatureKind.Construct).length > 0);
+    const constructorTypeCount = countWhere(types, (t) => qf.type.get.signatures(t, qt.SignatureKind.Construct).length > 0);
     const mixinFlags = map(types, qf.type.is.mixinConstructor);
     if (constructorTypeCount > 0 && constructorTypeCount === countWhere(mixinFlags, (b) => b)) {
       const firstMixinIndex = mixinFlags.indexOf(true);
@@ -978,8 +978,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
-    const callSignatures = getSignaturesOfType(source, qt.SignatureKind.Call);
-    const constructSignatures = getSignaturesOfType(source, qt.SignatureKind.Construct);
+    const callSignatures = qf.type.get.signatures(source, qt.SignatureKind.Call);
+    const constructSignatures = qf.type.get.signatures(source, qt.SignatureKind.Construct);
     for (const signatures of [constructSignatures, callSignatures]) {
       if (
         some(signatures, (s) => {
@@ -1011,11 +1011,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (some(node.params, qc.hasType)) return false;
     const sourceSig = getSingleCallSignature(source);
     if (!sourceSig) return false;
-    const targetSignatures = getSignaturesOfType(target, qt.SignatureKind.Call);
+    const targetSignatures = qf.type.get.signatures(target, qt.SignatureKind.Call);
     if (!length(targetSignatures)) return false;
     const returnExpression = node.body;
     const sourceReturn = qf.get.returnTypeOfSignature(sourceSig);
-    const targetReturn = qf.get.unionType(map(targetSignatures, qf.get.returnTypeOfSignature));
+    const targetReturn = qf.type.get.union(map(targetSignatures, qf.get.returnTypeOfSignature));
     if (!qf.type.check.relatedTo(sourceReturn, targetReturn, relation, undefined)) {
       const elaborated = returnExpression && elaborateError(returnExpression, sourceReturn, targetReturn, relation, undefined, containingMessageChain, errorOutputContainer);
       if (elaborated) return elaborated;
@@ -1057,9 +1057,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     let reportedError = false;
     for (let status = iterator.next(); !status.done; status = iterator.next()) {
       const { errorNode: prop, innerExpression: next, nameType, errorMessage } = status.value;
-      const targetPropType = getBestMatchIndexedAccessTypeOrUndefined(source, target, nameType);
+      const targetPropType = qf.type.get.bestMatchIndexedAccessOrUndefined(source, target, nameType);
       if (!targetPropType || targetPropType.isa(qt.TypeFlags.IndexedAccess)) continue;
-      const sourcePropType = qf.get.indexedAccessTypeOrUndefined(source, nameType);
+      const sourcePropType = qf.type.get.indexedAccessOrUndefined(source, nameType);
       if (sourcePropType && !qf.type.check.relatedTo(sourcePropType, targetPropType, relation, undefined)) {
         const elaborated = next && elaborateError(next, sourcePropType, targetPropType, relation, undefined, containingMessageChain, errorOutputContainer);
         if (elaborated) reportedError = true;
@@ -1240,7 +1240,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (!length(node.properties)) return;
     for (const prop of node.properties) {
       if (prop.kind === Syntax.SpreadAssignment) continue;
-      const type = qf.get.literalTypeFromProperty(qf.get.symbolOfNode(prop), qt.TypeFlags.StringOrNumberLiteralOrUnique);
+      const type = qf.type.get.literalFromProperty(qf.get.symbolOfNode(prop), qt.TypeFlags.StringOrNumberLiteralOrUnique);
       if (!type || type.isa(qt.TypeFlags.Never)) continue;
       switch (prop.kind) {
         case Syntax.SetAccessor:
@@ -1496,12 +1496,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const [tempSources, tempTargets] = inferFromMatchingTypes(source.isa(qt.TypeFlags.Union) ? (<qt.UnionType>source).types : [source], (<qt.UnionType>target).types, qf.type.is.orBaseIdenticalTo);
         const [sources, targets] = inferFromMatchingTypes(tempSources, tempTargets, qf.type.is.closelyMatchedBy);
         if (targets.length === 0) return;
-        target = qf.get.unionType(targets);
+        target = qf.type.get.union(targets);
         if (sources.length === 0) {
           inferWithPriority(source, target, InferencePriority.NakedTypeVariable);
           return;
         }
-        source = qf.get.unionType(sources);
+        source = qf.type.get.union(sources);
       } else if (
         target.isa(qt.TypeFlags.Intersection) &&
         some((<qt.IntersectionType>target).types, (t) => !!getInferenceInfoForType(t) || (qf.type.is.genericMapped(t) && !!getInferenceInfoForType(qf.get.homomorphicTypeVariable(t) || neverType)))
@@ -1727,7 +1727,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (typeVariableCount === 1 && !inferenceCircularity) {
           const unmatched = flatMap(sources, (s, i) => (matched[i] ? undefined : s));
           if (unmatched.length) {
-            inferFromTypes(qf.get.unionType(unmatched), nakedTypeVariable!);
+            inferFromTypes(qf.type.get.union(unmatched), nakedTypeVariable!);
             return;
           }
         }
@@ -1775,7 +1775,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const stringIndexType = qf.get.indexTypeOfType(source, IndexKind.String);
         const numberIndexInfo = getNonEnumNumberIndexInfo(source);
         const numberIndexType = numberIndexInfo && numberIndexInfo.type;
-        inferFromTypes(qf.get.unionType(append(append(propTypes, stringIndexType), numberIndexType)), getTemplateTypeFromMappedType(target));
+        inferFromTypes(qf.type.get.union(append(append(propTypes, stringIndexType), numberIndexType)), getTemplateTypeFromMappedType(target));
         return true;
       }
       return false;
@@ -1826,7 +1826,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             if (targetRestType) {
               const types = fixedLength < sourceLength ? getTypeArgs(<qt.TypeReference>source).slice(fixedLength, sourceLength) : [];
               if (sourceRestType) types.push(sourceRestType);
-              if (types.length) inferFromTypes(qf.get.unionType(types), targetRestType);
+              if (types.length) inferFromTypes(qf.type.get.union(types), targetRestType);
             }
             return;
           }
@@ -1849,8 +1849,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
     function inferFromSignatures(source: qt.Type, target: qt.Type, kind: qt.SignatureKind) {
-      const sourceSignatures = getSignaturesOfType(source, kind);
-      const targetSignatures = getSignaturesOfType(target, kind);
+      const sourceSignatures = qf.type.get.signatures(source, kind);
+      const targetSignatures = qf.type.get.signatures(target, kind);
       const sourceLen = sourceSignatures.length;
       const targetLen = targetSignatures.length;
       const len = sourceLen < targetLen ? sourceLen : targetLen;
@@ -2121,12 +2121,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     let errorInfo: qd.MessageChain | undefined;
     const isCall = kind === qt.SignatureKind.Call;
     const awaitedType = getAwaitedType(apparentType);
-    const maybeMissingAwait = awaitedType && getSignaturesOfType(awaitedType, kind).length > 0;
+    const maybeMissingAwait = awaitedType && qf.type.get.signatures(awaitedType, kind).length > 0;
     if (apparentType.isa(qt.TypeFlags.Union)) {
       const types = (apparentType as qt.UnionType).types;
       let hasSignatures = false;
       for (const constituent of types) {
-        const signatures = getSignaturesOfType(constituent, kind);
+        const signatures = qf.type.get.signatures(constituent, kind);
         if (signatures.length !== 0) {
           hasSignatures = true;
           if (errorInfo) break;
@@ -2182,7 +2182,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (!apparentType.symbol) return;
     const importNode = apparentType.symbol.links.originatingImport;
     if (importNode && !is.importCall(importNode)) {
-      const sigs = getSignaturesOfType(apparentType.symbol.links.target!.typeOfSymbol(), kind);
+      const sigs = qf.type.get.signatures(apparentType.symbol.links.target!.typeOfSymbol(), kind);
       if (!sigs || !sigs.length) return;
       addRelatedInfo(
         diagnostic,
@@ -2259,7 +2259,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const contextualSignature = getContextualSignature(node);
       if (!(links.flags & NodeCheckFlags.ContextChecked)) {
         links.flags |= NodeCheckFlags.ContextChecked;
-        const signature = firstOrUndefined(getSignaturesOfType(qf.get.symbolOfNode(node).typeOfSymbol(), qt.SignatureKind.Call));
+        const signature = firstOrUndefined(qf.type.get.signatures(qf.get.symbolOfNode(node).typeOfSymbol(), qt.SignatureKind.Call));
         if (!signature) return;
         if (qf.is.contextSensitive(node)) {
           if (contextualSignature) {
@@ -2436,7 +2436,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       nextTypes = append(nextTypes, iterationTypes.nextType);
     }
     if (yieldTypes || returnTypes || nextTypes)
-      return qf.make.iterationTypes(yieldTypes && qf.get.unionType(yieldTypes), returnTypes && qf.get.unionType(returnTypes), nextTypes && qf.get.intersectionType(nextTypes));
+      return qf.make.iterationTypes(yieldTypes && qf.type.get.union(yieldTypes), returnTypes && qf.type.get.union(returnTypes), nextTypes && qf.get.intersectionType(nextTypes));
     return noIterationTypes;
   }
   function reportTypeNotIterableError(errorNode: Node, type: qt.Type, allowAsyncIterables: boolean): void {

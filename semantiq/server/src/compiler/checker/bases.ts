@@ -12,7 +12,7 @@ export class Ftype {
   unwrapReturnType(t: qt.Type, f: qt.FunctionFlags) {
     const isGenerator = !!(f & qt.FunctionFlags.Generator);
     const isAsync = !!(f & qt.FunctionFlags.Async);
-    return isGenerator ? getIterationTypeOfGeneratorFunctionReturnType(qt.IterationTypeKind.Return, t, isAsync) ?? errorType : isAsync ? getAwaitedType(t) ?? errorType : t;
+    return isGenerator ? qf.type.get.iterOfGeneratorFunctionReturn(qt.IterationTypeKind.Return, t, isAsync) ?? errorType : isAsync ? getAwaitedType(t) ?? errorType : t;
   }
 }
 export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
@@ -29,7 +29,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (!ls.type) {
       qf.assert.defined(ls.deferralParent);
       qf.assert.defined(ls.deferralConstituents);
-      ls.type = ls.deferralParent.isa(qt.TypeFlags.Union) ? qf.get.unionType(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
+      ls.type = ls.deferralParent.isa(qt.TypeFlags.Union) ? qf.type.get.union(ls.deferralConstituents!) : qf.get.intersectionType(ls.deferralConstituents);
     }
     return ls.type!;
   }
@@ -271,9 +271,6 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     };
     return ls.resolvedExports || (ls.resolvedExports = worker());
   }
-  getParentOfSymbol(): Symbol | undefined {
-    return this.parent?.qf.get.lateBoundSymbol().qf.get.mergedSymbol();
-  }
   getAlternativeContainingModules(n: Node): Symbol[] {
     const containingFile = n.sourceFile;
     const id = '' + containingFile.qf.get.nodeId();
@@ -306,7 +303,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     return (ls.extendedContainers = results || qu.empty);
   }
   getContainersOfSymbol(n: Node | undefined): Symbol[] | undefined {
-    const container = this.getParentOfSymbol();
+    const container = this.qf.symb.get.parent();
     if (container && !(this.flags & SymbolFlags.TypeParam)) {
       const additionalContainers = mapDefined(container.declarations, fileSymbolIfFileSymbolExportEqualsContainer);
       const reexportContainers = n && this.getAlternativeContainingModules(n);
@@ -997,7 +994,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         type.outerTypeParams = outerTypeParams;
         type.localTypeParams = localTypeParams;
         (<qt.GenericType>type).instantiations = new qu.QMap<qt.TypeReference>();
-        (<qt.GenericType>type).instantiations.set(getTypeListId(type.typeParams), <qt.GenericType>type);
+        (<qt.GenericType>type).instantiations.set(qf.type.get.listId(type.typeParams), <qt.GenericType>type);
         (<qt.GenericType>type).target = <qt.GenericType>type;
         (<qt.GenericType>type).resolvedTypeArgs = type.typeParams;
         type.thisType = createTypeParam(this);
@@ -1019,7 +1016,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         if (ps) {
           ls.typeParams = ps;
           ls.instantiations = new qu.QMap<Type>();
-          ls.instantiations.set(getTypeListId(ps), type);
+          ls.instantiations.set(qf.type.get.listId(ps), type);
         }
       } else {
         type = errorType;
@@ -1060,7 +1057,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         }
       }
       if (memberTypeList.length) {
-        const e = qf.get.unionType(memberTypeList, qt.UnionReduction.Literal, this, undefined);
+        const e = qf.type.get.union(memberTypeList, qt.UnionReduction.Literal, this, undefined);
         if (e.isa(qt.TypeFlags.Union)) {
           e.flags |= qt.TypeFlags.EnumLiteral;
           e.symbol = this;
@@ -1075,7 +1072,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
   getDeclaredTypeOfEnumMember(): qt.Type {
     const ls = this.links;
     if (!ls.declaredType) {
-      const e = this.getParentOfSymbol()!.getDeclaredTypeOfEnum();
+      const e = this.qf.symb.get.parent()!.getDeclaredTypeOfEnum();
       if (!ls.declaredType) ls.declaredType = e;
     }
     return ls.declaredType;
@@ -1487,7 +1484,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     if (!this.declarations) return false;
     let current = this;
     while (true) {
-      const p = current.getParentOfSymbol();
+      const p = current.qf.symb.get.parent();
       if (p) current = p;
       else break;
     }
@@ -1542,7 +1539,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       : this.symbolToString(containingLocation, undefined, qt.SymbolFormatFlags.DoNotIncludeSymbolChain | qt.SymbolFormatFlags.AllowAnyNodeKind);
   }
   getAliasForSymbolInContainer(container: Symbol) {
-    if (container === this.getParentOfSymbol()) return this;
+    if (container === this.qf.symb.get.parent()) return this;
     const exportEquals = container.exports && container.exports.get(InternalSymbol.ExportEquals);
     if (exportEquals && qf.get.symbolIfSameReference(exportEquals, this)) return container;
     const exports = container.getExportsOfSymbol();
@@ -1846,7 +1843,7 @@ export class Signature extends qc.Signature {
         if (
           !(
             s === t ||
-            (compareTypes(instantiateType(getConstraintFromTypeParam(s), mapper) || unknownType, getConstraintFromTypeParam(t) || unknownType) &&
+            (compareTypes(instantiateType(qf.type.get.constraintFromParam(s), mapper) || unknownType, qf.type.get.constraintFromParam(t) || unknownType) &&
               compareTypes(instantiateType(getDefaultFromTypeParam(s), mapper) || unknownType, getDefaultFromTypeParam(t) || unknownType))
           )
         ) {

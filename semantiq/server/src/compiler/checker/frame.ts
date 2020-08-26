@@ -1520,7 +1520,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const implicitNeverType = qf.make.intrinsicType(TypeFlags.Never, 'never');
   const iterationTypesCache = new qu.QMap<qt.IterationTypes>();
   const numberType = qf.make.intrinsicType(TypeFlags.Number, 'number');
-  const stringNumberSymbolType = qf.get.unionType([stringType, numberType, esSymbolType]);
+  const stringNumberSymbolType = qf.type.get.union([stringType, numberType, esSymbolType]);
   const keyofStringsOnly = !!compilerOpts.keyofStringsOnly;
   const keyofConstraintType = keyofStringsOnly ? stringType : stringNumberSymbolType;
   const languageVersion = getEmitScriptTarget(compilerOpts);
@@ -1539,7 +1539,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   const nullType = qf.make.intrinsicType(TypeFlags.Null, 'null');
   const strictNullChecks = getStrictOptionValue(compilerOpts, 'strictNullChecks');
   const nullWideningType = strictNullChecks ? nullType : qf.make.intrinsicType(TypeFlags.Null, 'null', ObjectFlags.ContainsWideningType);
-  const numberOrBigIntType = qf.get.unionType([numberType, bigintType]);
+  const numberOrBigIntType = qf.type.get.union([numberType, bigintType]);
   const optionalType = qf.make.intrinsicType(TypeFlags.Undefined, 'undefined');
   const permissiveMapper: qt.TypeMapper = makeFunctionTypeMapper((t) => (t.isa(qt.TypeFlags.TypeParam) ? wildcardType : t));
   const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qu.__String);
