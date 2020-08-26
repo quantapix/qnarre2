@@ -705,7 +705,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       context.tracker.trackSymbol = oldTrack;
     } else {
       const varName = getUnusedName(name, this);
-      const typeToSerialize = qf.get.widenedType(qf.get.mergedSymbol(this).typeOfSymbol());
+      const typeToSerialize = qf.type.get.widened(qf.get.mergedSymbol(this).typeOfSymbol());
       if (isTypeRepresentableAsFunctionNamespaceMerge(typeToSerialize, this))
         serializeAsFunctionNamespaceMerge(typeToSerialize, this, varName, isExportAssignment ? ModifierFlags.None : ModifierFlags.Export);
       else {
@@ -773,7 +773,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         if (qf.is.catchClauseVariableDeclarationOrBindingElem(d)) return anyType;
         if (d.kind === Syntax.SourceFile && qf.is.jsonSourceFile(d)) {
           if (!d.statements.length) return emptyObjectType;
-          return qf.get.widenedType(qf.get.widenedLiteralType(qf.check.expression(d.statements[0].expression)));
+          return qf.type.get.widened(qf.type.get.widenedLiteral(qf.check.expression(d.statements[0].expression)));
         }
         if (!pushTypeResolution(this, TypeSystemPropertyName.Type)) {
           if (this.flags & SymbolFlags.ValueModule && !(this.flags & SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
@@ -908,7 +908,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
       const baseTypeVariable = getBaseTypeVariableOfClass(this);
       return baseTypeVariable ? qf.get.intersectionType([type, baseTypeVariable]) : type;
     }
-    return strictNullChecks && this.flags & SymbolFlags.Optional ? qf.get.optionalType(type) : type;
+    return strictNullChecks && this.flags & SymbolFlags.Optional ? qf.type.get.optional(type) : type;
   }
   getTypeOfEnumMember(): qt.Type {
     const ls = this.links;
@@ -1053,9 +1053,9 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
         if (d.kind === Syntax.EnumDeclaration) {
           for (const m of (<qt.EnumDeclaration>d).members) {
             const v = getEnumMemberValue(m);
-            const t = getFreshTypeOfLiteralType(qf.get.literalType(v !== undefined ? v : 0, enumCount, qf.get.symbolOfNode(m)));
+            const t = qf.type.get.freshOfLiteral(qf.get.literalType(v !== undefined ? v : 0, enumCount, qf.get.symbolOfNode(m)));
             qf.get.symbolOfNode(m).links.declaredType = t;
-            memberTypeList.push(getRegularTypeOfLiteralType(t));
+            memberTypeList.push(qf.type.get.regularOfLiteral(t));
           }
         }
       }
@@ -1209,7 +1209,7 @@ export abstract class Symbol extends qc.Symbol implements qt.TransientSymbol {
     const t = this.typeOfSymbol();
     if (strictNullChecks) {
       const d = this.valueDeclaration;
-      if (d && qf.is.withIniter(d)) return qf.get.optionalType(t);
+      if (d && qf.is.withIniter(d)) return qf.type.get.optional(t);
     }
     return t;
   }
@@ -1778,7 +1778,7 @@ export class Signature extends qc.Signature {
         targetSig &&
         !getTypePredicateOfSignature(sourceSig) &&
         !getTypePredicateOfSignature(targetSig) &&
-        (getFalsyFlags(sourceType) & qt.TypeFlags.Nullable) === (getFalsyFlags(targetType) & qt.TypeFlags.Nullable);
+        (qf.type.get.falsyFlags(sourceType) & qt.TypeFlags.Nullable) === (qf.type.get.falsyFlags(targetType) & qt.TypeFlags.Nullable);
       let related = callbacks
         ? compareSignaturesRelated(
             targetSig!,
@@ -1891,7 +1891,7 @@ export class Signature extends qc.Signature {
     if (signature.hasRestParam()) {
       const restType = signature.params[paramCount].typeOfSymbol();
       const index = pos - paramCount;
-      if (!qf.type.is.tuple(restType) || restType.target.hasRestElem || index < getTypeArgs(restType).length) return qf.get.indexedAccessType(restType, qf.get.literalType(index));
+      if (!qf.type.is.tuple(restType) || restType.target.hasRestElem || index < getTypeArgs(restType).length) return qf.type.get.indexedAccess(restType, qf.get.literalType(index));
     }
     return;
   }

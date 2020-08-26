@@ -654,7 +654,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           const baseType = t.isa(qt.TypeFlags.BooleanLiteral) ? booleanType : qf.type.get.baseOfEnumLiteral(<qt.LiteralType>t);
           if (baseType.isa(qt.TypeFlags.Union)) {
             const count = (<qt.UnionType>baseType).types.length;
-            if (i + count <= types.length && getRegularTypeOfLiteralType(types[i + count - 1]) === getRegularTypeOfLiteralType((<qt.UnionType>baseType).types[count - 1])) {
+            if (i + count <= types.length && qf.type.get.regularOfLiteral(types[i + count - 1]) === qf.type.get.regularOfLiteral((<qt.UnionType>baseType).types[count - 1])) {
               result.push(baseType);
               i += count - 1;
               continue;
@@ -910,7 +910,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function addTypesToIntersection(typeSet: qu.QMap<qt.Type>, includes: qt.TypeFlags, types: readonly qt.Type[]) {
     for (const type of types) {
-      includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
+      includes = addTypeToIntersection(typeSet, includes, qf.type.get.regularOfLiteral(type));
     }
     return includes;
   }
@@ -1075,7 +1075,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
             let issuedElaboration = false;
             if (!targetProp) {
               const indexInfo =
-                (qf.type.is.assignableToKind(nameType, qt.TypeFlags.NumberLike) && qf.get.indexInfoOfType(target, IndexKind.Number)) || qf.get.indexInfoOfType(target, IndexKind.String) || undefined;
+                (qf.type.is.assignableToKind(nameType, qt.TypeFlags.NumberLike) && qf.type.get.indexInfo(target, IndexKind.Number)) || qf.type.get.indexInfo(target, IndexKind.String) || undefined;
               if (indexInfo && indexInfo.declaration && !indexInfo.declaration.sourceFile.hasNoDefaultLib) {
                 issuedElaboration = true;
                 addRelatedInfo(reportedDiag, qf.make.diagForNode(indexInfo.declaration, qd.msgs.The_expected_type_comes_from_this_index_signature));
@@ -1137,7 +1137,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const childPropName = getJsxElemChildrenPropertyName(getJsxNamespaceAt(node));
       const childrenPropName = childPropName === undefined ? 'children' : qy.get.unescUnderscores(childPropName);
       const childrenNameType = qf.get.literalType(childrenPropName);
-      const childrenTargetType = qf.get.indexedAccessType(target, childrenNameType);
+      const childrenTargetType = qf.type.get.indexedAccess(target, childrenNameType);
       const validChildren = getSemanticJsxChildren(containingElem.children);
       if (!length(validChildren)) return result;
       const moreThanOneRealChildren = length(validChildren) > 1;
@@ -1148,7 +1148,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           const realSource = createTupleType(check.jsxChildren(containingElem, CheckMode.Normal));
           const children = generateJsxChildren(containingElem, getInvalidTextualChildDiagnostic);
           result = elaborateElemwise(children, realSource, arrayLikeTargetParts, relation, containingMessageChain, errorOutputContainer) || result;
-        } else if (!qf.type.is.relatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
+        } else if (!qf.type.is.relatedTo(qf.type.get.indexedAccess(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
             containingElem.opening.tagName,
@@ -1175,7 +1175,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
                 errorOutputContainer
               ) || result;
           }
-        } else if (!qf.type.is.relatedTo(qf.get.indexedAccessType(source, childrenNameType), childrenTargetType, relation)) {
+        } else if (!qf.type.is.relatedTo(qf.type.get.indexedAccess(source, childrenNameType), childrenTargetType, relation)) {
           result = true;
           const diag = error(
             containingElem.opening.tagName,
@@ -1193,7 +1193,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const tagNameText = qf.get.textOf(node.parent.tagName);
         const childPropName = getJsxElemChildrenPropertyName(getJsxNamespaceAt(node));
         const childrenPropName = childPropName === undefined ? 'children' : qy.get.unescUnderscores(childPropName);
-        const childrenTargetType = qf.get.indexedAccessType(target, qf.get.literalType(childrenPropName));
+        const childrenTargetType = qf.type.get.indexedAccess(target, qf.get.literalType(childrenPropName));
         const diagnostic = qd.msgs._0_components_don_t_accept_text_as_child_elems_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2;
         invalidTextDiagnostic = {
           ...diagnostic,
@@ -1349,7 +1349,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       : qt.Ternary.False;
   }
   function reportImplicitAny(declaration: qt.Declaration, type: qt.Type, wideningKind?: WideningKind) {
-    const typeAsString = typeToString(qf.get.widenedType(type));
+    const typeAsString = typeToString(qf.type.get.widened(type));
     if (qf.is.inJSFile(declaration) && !declaration.sourceFile.isCheckJsEnabled(compilerOpts)) return;
     let diagnostic: qd.Message;
     switch (declaration.kind) {
@@ -1517,7 +1517,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           target = qf.get.intersectionType(targets);
         }
       } else if (target.flags & (TypeFlags.IndexedAccess | qt.TypeFlags.Substitution)) {
-        target = getActualTypeVariable(target);
+        target = qf.type.get.actualVariable(target);
       }
       if (target.isa(qt.TypeFlags.TypeVariable)) {
         if (
@@ -1563,12 +1563,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           inferencePriority = Math.min(inferencePriority, priority);
           return;
         } else {
-          const simplified = getSimplifiedType(target, false);
+          const simplified = qf.type.get.simplified(target, false);
           if (simplified !== target) invokeOnce(source, simplified, inferFromTypes);
           else if (target.isa(qt.TypeFlags.IndexedAccess)) {
-            const indexType = getSimplifiedType((target as qt.IndexedAccessType).indexType, false);
+            const indexType = qf.type.get.simplified((target as qt.IndexedAccessType).indexType, false);
             if (indexType.isa(qt.TypeFlags.Instantiable)) {
-              const simplified = distributeIndexOverObjectType(getSimplifiedType((target as qt.IndexedAccessType).objectType, false), indexType, false);
+              const simplified = distributeIndexOverObjectType(qf.type.get.simplified((target as qt.IndexedAccessType).objectType, false), indexType, false);
               if (simplified && simplified !== target) invokeOnce(source, simplified, inferFromTypes);
             }
           }
@@ -1612,9 +1612,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           inferFromTypes(sourceType, target);
         }
       } else {
-        source = getReducedType(source);
+        source = qf.type.get.reduced(source);
         if (!(priority & InferencePriority.NoConstraints && source.flags & (TypeFlags.Intersection | qt.TypeFlags.Instantiable))) {
-          const apparentSource = getApparentType(source);
+          const apparentSource = qf.type.get.apparent(source);
           if (apparentSource !== source && allowComplexConstraintInference && !(apparentSource.flags & (TypeFlags.Object | qt.TypeFlags.Intersection))) {
             allowComplexConstraintInference = false;
             return inferFromTypes(apparentSource, target);
@@ -1624,7 +1624,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (source.flags & (TypeFlags.Object | qt.TypeFlags.Intersection)) invokeOnce(source, target, inferFromObjectTypes);
       }
       if (source.isa(qt.TypeFlags.Simplifiable)) {
-        const simplified = getSimplifiedType(source, contravariant);
+        const simplified = qf.type.get.simplified(source, contravariant);
         if (simplified !== source) inferFromTypes(simplified, target);
       }
     }
@@ -1768,7 +1768,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         return true;
       }
       if (constraintType.isa(qt.TypeFlags.TypeParam)) {
-        inferWithPriority(qf.get.indexType(source), constraintType, InferencePriority.MappedTypeConstraint);
+        inferWithPriority(qf.type.get.index(source), constraintType, InferencePriority.MappedTypeConstraint);
         const extendedConstraint = qf.type.get.constraint(constraintType);
         if (extendedConstraint && inferToMappedType(source, target, extendedConstraint)) return true;
         const propTypes = map(qf.type.get.properties(source), qf.get.typeOfSymbol);
@@ -1817,7 +1817,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           if (qf.type.is.tuple(target)) {
             const sourceLength = qf.type.is.tuple(source) ? getLengthOfTupleType(source) : 0;
             const targetLength = getLengthOfTupleType(target);
-            const sourceRestType = qf.type.is.tuple(source) ? getRestTypeOfTupleType(source) : getElemTypeOfArrayType(source);
+            const sourceRestType = qf.type.is.tuple(source) ? getRestTypeOfTupleType(source) : qf.type.get.elemOfArray(source);
             const targetRestType = getRestTypeOfTupleType(target);
             const fixedLength = targetLength < sourceLength || sourceRestType ? targetLength : sourceLength;
             for (let i = 0; i < fixedLength; i++) {
@@ -2011,7 +2011,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     let relatedInfo: qd.Diagnostic | undefined;
     if (propNode.kind !== Syntax.PrivateIdentifier && containingType.isa(qt.TypeFlags.Union) && !(containingType.isa(qt.TypeFlags.Primitive))) {
       for (const subtype of (containingType as qt.UnionType).types) {
-        if (!qf.type.get.property(subtype, propNode.escapedText) && !qf.get.indexInfoOfType(subtype, IndexKind.String)) {
+        if (!qf.type.get.property(subtype, propNode.escapedText) && !qf.type.get.indexInfo(subtype, IndexKind.String)) {
           errorInfo = chainqd.Messages(errorInfo, qd.msgs.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
           break;
         }
@@ -2231,7 +2231,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const witnesses = getSwitchClauseTypeOfWitnesses(node, false);
       const notEqualFacts = getFactsFromTypeofSwitch(0, 0, witnesses, true);
       const type = qf.get.qf.type.get.baseConstraint(operandType) || operandType;
-      return !!(filterType(type, (t) => (getTypeFacts(t) & notEqualFacts) === notEqualFacts).isa(qt.TypeFlags.Never));
+      return !!(filterType(type, (t) => (qf.type.get.facts(t) & notEqualFacts) === notEqualFacts).isa(qt.TypeFlags.Never));
     }
     const type = qf.get.typeOfExpression(node.expression);
     if (!qf.type.is.literal(type)) return false;
@@ -2298,7 +2298,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return createTupleType(elemTypes, type.target.minLength, false, type.target.readonly);
   }
   function widenTypeInferredFromIniter(declaration: qt.HasExpressionIniter, type: qt.Type) {
-    const widened = qf.get.combinedFlagsOf(declaration) & NodeFlags.Const || qf.is.declarationReadonly(declaration) ? type : qf.get.widenedLiteralType(type);
+    const widened = qf.get.combinedFlagsOf(declaration) & NodeFlags.Const || qf.is.declarationReadonly(declaration) ? type : qf.type.get.widenedLiteral(type);
     if (qf.is.inJSFile(declaration)) {
       if (widened.isa(qt.TypeFlags.Nullable)) {
         reportImplicitAny(declaration, anyType);
@@ -2858,13 +2858,11 @@ export interface TypeCheckerOld {
   getDeclaredTypeOfSymbol(symbol: qt.Symbol): qt.Type;
   getPrivateIdentifierPropertyOfType(leftType: qt.Type, name: string, location: Node): qt.Symbol | undefined;
   qf.type.get.typeOfProperty(type: qt.Type, propertyName: string): qt.Type | undefined;
-  qf.get.indexInfoOfType(type: qt.Type, kind: qt.IndexKind): qt.IndexInfo | undefined;
-  getBaseTypeOfLiteralType(type: qt.Type): qt.Type;
-  qf.get.widenedType(type: qt.Type): qt.Type;
+  qf.type.get.baseOfLiteral(type: qt.Type): qt.Type;
   getPromisedTypeOfPromise(promise: qt.Type, errorNode?: Node): qt.Type | undefined;
   getAwaitedType(type: qt.Type): qt.Type | undefined;
   getParamType(signature: qt.Signature, paramIndex: number): qt.Type;
-  getNullableType(type: qt.Type, flags: qt.TypeFlags): qt.Type;
+  qf.type.get.nullable(type: qt.Type, flags: qt.TypeFlags): qt.Type;
   typeToTypeNode(type: qt.Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined): qt.Typing | undefined;
   typeToTypeNode(type: qt.Type, enclosingDeclaration: Node | undefined, flags: qt.NodeBuilderFlags | undefined, tracker?: qt.SymbolTracker): qt.Typing | undefined;
   signatureToSignatureDeclaration(
@@ -2939,7 +2937,7 @@ export interface TypeCheckerOld {
   getAmbientModules(): qt.Symbol[];
   tryGetMemberInModuleExports(memberName: string, moduleSymbol: qt.Symbol): qt.Symbol | undefined;
   tryGetMemberInModuleExportsAndProperties(memberName: string, moduleSymbol: qt.Symbol): qt.Symbol | undefined;
-  getApparentType(type: qt.Type): qt.Type;
+  qf.type.get.apparent(type: qt.Type): qt.Type;
   getSuggestedSymbolForNonexistentProperty(name: qt.Identifier | qt.PrivateIdentifier | string, containingType: qt.Type): qt.Symbol | undefined;
   getSuggestionForNonexistentProperty(name: qt.Identifier | qt.PrivateIdentifier | string, containingType: qt.Type): string | undefined;
   getSuggestedSymbolForNonexistentSymbol(location: Node, name: string, meaning: qt.SymbolFlags): qt.Symbol | undefined;
@@ -2956,9 +2954,8 @@ export interface TypeCheckerOld {
   getUndefinedType(): qt.Type;
   getNullType(): qt.Type;
   getESSymbolType(): qt.Type;
-  qf.get.unionType(types: qt.Type[], subtypeReduction?: qt.UnionReduction): qt.Type;
   createArrayType(elemType: qt.Type): qt.Type;
-  getElemTypeOfArrayType(arrayType: qt.Type): qt.Type | undefined;
+  qf.type.get.elemOfArray(arrayType: qt.Type): qt.Type | undefined;
   createPromiseType(type: qt.Type): qt.Type;
   qf.type.is.assignableTo(source: qt.Type, target: qt.Type): boolean;
   qf.make.anonymousType(

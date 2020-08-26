@@ -673,7 +673,7 @@ export class Ftype {
     let r: qt.Type | undefined;
     let c = 0;
     for (const x of from.types) {
-      const overlap = qf.get.intersectionType([qf.get.indexType(t), qf.get.indexType(x)]);
+      const overlap = qf.get.intersectionType([qf.type.get.index(t), qf.type.get.index(x)]);
       if (overlap.isa(qt.TypeFlags.Index)) {
         r = x;
         c = Infinity;
@@ -779,7 +779,9 @@ export class Ftype {
     return p;
   }
   typesDefinitelyUnrelated(t: qt.Type, from: qt.Type) {
-    return (qf.type.is.tuple(t) && qf.type.is.tuple(from) && tupleTypesDefinitelyUnrelated(t, from)) || (!!getUnmatchedProperty(t, from, true) && !!getUnmatchedProperty(from, t, true));
+    return (
+      (qf.type.is.tuple(t) && qf.type.is.tuple(from) && tupleTypesDefinitelyUnrelated(t, from)) || (!!qf.type.get.unmatchedProperty(t, from, true) && !!qf.type.get.unmatchedProperty(from, t, true))
+    );
   }
   couldContainTypeVariables(t: qt.Type): boolean {
     const f = t.objectFlags;
@@ -810,14 +812,14 @@ export class Ftype {
     return r;
   }
   inferReverseMappedType(t: qt.Type, m: qt.MappedType, constraint: qt.IndexType): qt.Type {
-    const p = <qt.TypeParam>qf.get.indexedAccessType(constraint.type, getTypeParamFromMappedType(m));
+    const p = <qt.TypeParam>qf.type.get.indexedAccess(constraint.type, getTypeParamFromMappedType(m));
     const templ = getTemplateTypeFromMappedType(m);
     const i = createInferenceInfo(p);
     inferTypes([i], t, templ);
     return getTypeFromInference(i) || unknownType;
   }
   removeDefinitelyFalsyTypes(t: qt.Type): qt.Type {
-    return getFalsyFlags(t) & qt.TypeFlags.DefinitelyFalsy ? filterType(t, (x) => !(getFalsyFlags(x) & qt.TypeFlags.DefinitelyFalsy)) : t;
+    return qf.type.get.falsyFlags(t) & qt.TypeFlags.DefinitelyFalsy ? filterType(t, (x) => !(qf.type.get.falsyFlags(x) & qt.TypeFlags.DefinitelyFalsy)) : t;
   }
   extractDefinitelyFalsyTypes(t: qt.Type): qt.Type {
     return mapType(t, getDefinitelyFalsyPartOfType);
@@ -826,7 +828,7 @@ export class Ftype {
     return strictNullChecks ? qf.get.unionType([t, optionalType]) : t;
   }
   propagateOptionalTypeMarker(t: qt.Type, c: qt.OptionalChain, optional: boolean) {
-    return optional ? (qf.is.outermostOptionalChain(c) ? qf.get.optionalType(t) : addOptionalTypeMarker(t)) : t;
+    return optional ? (qf.is.outermostOptionalChain(c) ? qf.type.get.optional(t) : addOptionalTypeMarker(t)) : t;
   }
   transformTypeOfMembers(t: qt.Type, f: (t: qt.Type) => Type) {
     const ss = new SymbolTable();
@@ -857,7 +859,7 @@ export class Ftype {
         for (const p of qf.type.get.propertiesOfObject(t)) {
           const x = p.typeOfSymbol();
           if (x.isobj(ObjectFlags.ContainsWideningType)) {
-            if (!reportWideningErrorsInType(x)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.get.widenedType(x)));
+            if (!reportWideningErrorsInType(x)) error(p.valueDeclaration, qd.msgs.Object_literal_s_property_0_implicitly_has_an_1_type, p.symbolToString(), typeToString(qf.type.get.widened(x)));
             e = true;
           }
         }
@@ -880,14 +882,14 @@ export class Ftype {
 
   distributeIndexOverObjectType(t: qt.Type, i: qt.Type, writing: boolean) {
     if (t.isa(qt.TypeFlags.UnionOrIntersection)) {
-      const ts = qu.map((t as qt.UnionOrIntersectionType).types, (x) => getSimplifiedType(qf.get.indexedAccessType(x, i), writing));
+      const ts = qu.map((t as qt.UnionOrIntersectionType).types, (x) => qf.type.get.simplified(qf.type.get.indexedAccess(x, i), writing));
       return t.isa(qt.TypeFlags.Intersection) || writing ? qf.get.intersectionType(ts) : qf.get.unionType(ts);
     }
     return;
   }
   distributeObjectOverIndexType(t: qt.Type, i: qt.Type, writing: boolean) {
     if (i.isa(qt.TypeFlags.Union)) {
-      const ts = qu.map((i as qt.UnionType).types, (x) => getSimplifiedType(qf.get.indexedAccessType(t, x), writing));
+      const ts = qu.map((i as qt.UnionType).types, (x) => qf.type.get.simplified(qf.type.get.indexedAccess(t, x), writing));
       return writing ? qf.get.intersectionType(ts) : qf.get.unionType(ts);
     }
     return;
@@ -944,7 +946,7 @@ export class Ftype {
     return !t ? to : !to ? t : qf.get.intersectionType([t, to]);
   }
   addOptionality(t: qt.Type, optional = true): qt.Type {
-    return strictNullChecks && optional ? qf.get.optionalType(t) : t;
+    return strictNullChecks && optional ? qf.type.get.optional(t) : t;
   }
   areAllOuterTypeParamsApplied(t: qt.Type): boolean {
     const ps = (<qt.InterfaceType>t).outerTypeParams;
@@ -959,7 +961,7 @@ export class Ftype {
     if (t) {
       if (err) reportErrorsFromWidening(d, t);
       if (t.isa(qt.TypeFlags.UniqueESSymbol) && (d.kind === Syntax.BindingElem || !d.type) && t.symbol !== qf.get.symbolOfNode(d)) t = esSymbolType;
-      return qf.get.widenedType(t);
+      return qf.type.get.widened(t);
     }
     t = d.kind === Syntax.Param && d.dot3Token ? anyArrayType : anyType;
     if (err) {
@@ -1072,7 +1074,7 @@ export class Signature implements qt.Signature {
           (qf.is.missing((<qt.FunctionLikeDeclaration>this.declaration).body) ? anyType : this.returnTypeFromBody(<qt.FunctionLikeDeclaration>this.declaration));
       if (this.flags & qt.SignatureFlags.IsInnerCallChain) type = addOptionalTypeMarker(t);
       else if (this.flags & qt.SignatureFlags.IsOuterCallChain) {
-        type = this.optionalType(t);
+        type = qf.type.get.optional(t);
       }
       if (!popTypeResolution()) {
         if (this.declaration) {
@@ -1176,7 +1178,7 @@ export class Signature implements qt.Signature {
       else names = undefined;
     }
     if (restType) {
-      types.push(this.indexedAccessType(restType, numberType));
+      types.push(qf.type.get.indexedAccess(restType, numberType));
       const name = this.nameableDeclarationAtPosition(source, nonRestCount);
       if (name && names) names.push(name);
       else names = undefined;
@@ -1213,7 +1215,7 @@ export class Signature implements qt.Signature {
   }
   nonArrayRestType() {
     const t = this.effectiveRestType(this);
-    return t && !qf.type.is.array(t) && !qf.type.is.any(t) && !qf.get.reducedType(t).isa(qt.TypeFlags.Never) ? t : undefined;
+    return t && !qf.type.is.array(t) && !qf.type.is.any(t) && !qf.type.get.reduced(t).isa(qt.TypeFlags.Never) ? t : undefined;
   }
   typeOfFirstParamOfSignature() {
     return this.typeOfFirstParamOfSignatureWithFallback(neverType);

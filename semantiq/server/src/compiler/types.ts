@@ -2384,9 +2384,7 @@ export interface CheckerGet {
   typeArgs(r: TypeReference): readonly Type[];
   typeAtLocation(n: Node): Type;
 }
-export interface CheckerIs {
-  nullableType(t: Type): boolean;
-}
+export interface CheckerIs {}
 export interface TypeChecker {
   get: CheckerGet;
   is: CheckerIs;

@@ -1100,7 +1100,7 @@ export function newCheck(f: qt.Frame) {
           : type
         : type === autoType || type === autoArrayType
         ? undefinedType
-        : qf.get.optionalType(type);
+        : qf.type.get.optional(type);
       const f = qf.get.flow.typeOfReference(n, type, initialType, c, !assumeInitialized);
       if (!isEvolvingArrayOperationTarget(n) && (type === autoType || type === autoArrayType)) {
         if (f === autoType || f === autoArrayType) {
@@ -1110,11 +1110,11 @@ export function newCheck(f: qt.Frame) {
           }
           return convertAutoToAny(f);
         }
-      } else if (!assumeInitialized && !(getFalsyFlags(type) & TypeFlags.Undefined) && getFalsyFlags(f) & TypeFlags.Undefined) {
+      } else if (!assumeInitialized && !(qf.type.get.falsyFlags(type) & TypeFlags.Undefined) && qf.type.get.falsyFlags(f) & TypeFlags.Undefined) {
         error(n, qd.msgs.Variable_0_is_used_before_being_assigned, s.symbolToString());
         return type;
       }
-      return k ? getBaseTypeOfLiteralType(f) : f;
+      return k ? qf.type.get.baseOfLiteral(f) : f;
     }
     nestedBlockScopedBinding(n: qt.Identifier, s: Symbol) {
       return;
@@ -1374,7 +1374,7 @@ export function newCheck(f: qt.Frame) {
           } else if (contextualTypeHasPattern && !contextualType.isobj(ObjectFlags.ObjectLiteralPatternWithComputedProperties)) {
             const impliedProp = qf.type.get.property(contextualType!, member.escName);
             if (impliedProp) prop.flags |= impliedProp.flags & SymbolFlags.Optional;
-            else if (!compilerOpts.suppressExcessPropertyErrors && !qf.get.indexInfoOfType(contextualType!, IndexKind.String)) {
+            else if (!compilerOpts.suppressExcessPropertyErrors && !qf.type.get.indexInfo(contextualType!, IndexKind.String)) {
               error(memberDecl.name, qd.msgs.Object_literal_may_only_specify_known_properties_and_0_does_not_exist_in_type_1, member.symbolToString(), typeToString(contextualType!));
             }
           }
@@ -1387,19 +1387,19 @@ export function newCheck(f: qt.Frame) {
           allPropertiesTable?.set(prop.escName, prop);
         } else if (memberDecl.kind === Syntax.SpreadAssignment) {
           if (propertiesArray.length > 0) {
-            spread = getSpreadType(spread, createObjectLiteralType(), n.symbol, objectFlags, inConstContext);
+            spread = qf.type.get.spread(spread, createObjectLiteralType(), n.symbol, objectFlags, inConstContext);
             propertiesArray = [];
             propertiesTable = new qc.SymbolTable();
             hasComputedStringProperty = false;
             hasComputedNumberProperty = false;
           }
-          const type = getReducedType(this.expression(memberDecl.expression));
+          const type = qf.type.get.reduced(this.expression(memberDecl.expression));
           if (!qf.type.is.validSpread(type)) {
             error(memberDecl, qd.msgs.Spread_types_may_only_be_created_from_object_types);
             return errorType;
           }
           if (allPropertiesTable) qf.type.check.spreadPropOverrides(type, allPropertiesTable, memberDecl);
-          spread = getSpreadType(spread, type, n.symbol, objectFlags, inConstContext);
+          spread = qf.type.get.spread(spread, type, n.symbol, objectFlags, inConstContext);
           offset = i + 1;
           continue;
         } else {
@@ -1431,7 +1431,7 @@ export function newCheck(f: qt.Frame) {
       }
       if (spread !== emptyObjectType) {
         if (propertiesArray.length > 0) {
-          spread = getSpreadType(spread, createObjectLiteralType(), n.symbol, objectFlags, inConstContext);
+          spread = qf.type.get.spread(spread, createObjectLiteralType(), n.symbol, objectFlags, inConstContext);
           propertiesArray = [];
           propertiesTable = new qc.SymbolTable();
           hasComputedStringProperty = false;
@@ -1529,7 +1529,7 @@ export function newCheck(f: qt.Frame) {
     }
     propertyAccessChain(n: qt.PropertyAccessChain) {
       const left = this.expression(n.expression);
-      const nonOptionalType = getOptionalExpressionType(left, n.expression);
+      const nonOptionalType = qf.type.get.optionalExpression(left, n.expression);
       return propagateOptionalTypeMarker(this.propertyAccessExpressionOrQualifiedName(n, n.expression, qf.type.check.nonNull(nonOptionalType, n.expression), n.name), n, nonOptionalType !== left);
     }
     qualifiedName(n: qt.QualifiedName) {
@@ -1538,7 +1538,7 @@ export function newCheck(f: qt.Frame) {
     propertyAccessExpressionOrQualifiedName(n: qt.PropertyAccessExpression | qt.QualifiedName, left: qt.Expression | qt.QualifiedName, leftType: Type, right: qt.Identifier | qt.PrivateIdentifier) {
       const parentSymbol = qf.get.nodeLinks(left).resolvedSymbol;
       const assignmentKind = qf.get.assignmentTargetKind(n);
-      const apparentType = getApparentType(assignmentKind !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(leftType) : leftType);
+      const apparentType = qf.type.get.apparent(assignmentKind !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.type.get.widened(leftType) : leftType);
       if (right.kind === Syntax.PrivateIdentifier) this.externalEmitHelpers(n, ExternalEmitHelpers.ClassPrivateFieldGet);
       const isAnyLike = qf.type.is.any(apparentType) || apparentType === silentNeverType;
       let prop: Symbol | undefined;
@@ -1565,7 +1565,7 @@ export function newCheck(f: qt.Frame) {
       if (!prop) {
         const indexInfo =
           !right.kind === Syntax.PrivateIdentifier && (assignmentKind === qt.AssignmentKind.None || !qf.type.is.genericObject(leftType) || qf.type.is.thisParam(leftType))
-            ? qf.get.indexInfoOfType(apparentType, IndexKind.String)
+            ? qf.type.get.indexInfo(apparentType, IndexKind.String)
             : undefined;
         if (!(indexInfo && indexInfo.type)) {
           if (qf.type.is.jsLiteral(leftType)) return anyType;
@@ -1600,11 +1600,11 @@ export function newCheck(f: qt.Frame) {
     }
     elemAccessChain(n: qt.ElemAccessChain) {
       const e = this.expression(n.expression);
-      const nonOptionalType = getOptionalExpressionType(e, n.expression);
+      const nonOptionalType = qf.type.get.optionalExpression(e, n.expression);
       return propagateOptionalTypeMarker(this.elemAccessExpression(n, qf.type.check.nonNull(nonOptionalType, n.expression)), n, nonOptionalType !== e);
     }
     elemAccessExpression(n: qt.ElemAccessExpression, exprType: Type): Type {
-      const objectType = qf.get.assignmentTargetKind(n) !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.get.widenedType(exprType) : exprType;
+      const objectType = qf.get.assignmentTargetKind(n) !== qt.AssignmentKind.None || isMethodAccessForCall(n) ? qf.type.get.widened(exprType) : exprType;
       const indexExpression = n.argExpression;
       const indexType = this.expression(indexExpression);
       if (objectType === errorType || objectType === silentNeverType) return objectType;
@@ -1771,13 +1771,13 @@ export function newCheck(f: qt.Frame) {
       let exprType = this.expression(expression, checkMode);
       if (qf.is.constTypeReference(type)) {
         if (!isValidConstAssertionArg(expression)) error(expression, qd.msgs.A_const_assertions_can_only_be_applied_to_references_to_enum_members_or_string_number_boolean_array_or_object_literals);
-        return getRegularTypeOfLiteralType(exprType);
+        return qf.type.get.regularOfLiteral(exprType);
       }
       this.sourceElem(type);
-      exprType = getRegularTypeOfObjectLiteral(getBaseTypeOfLiteralType(exprType));
+      exprType = qf.type.get.regularOfObjectLiteral(qf.type.get.baseOfLiteral(exprType));
       const targetType = qf.get.typeFromTypeNode(type);
       if (produceDiagnostics && targetType !== errorType) {
-        const widenedType = qf.get.widenedType(exprType);
+        const widenedType = qf.type.get.widened(exprType);
         if (!qf.type.is.comparableTo(targetType, widenedType)) {
           qf.type.check.comparableTo(
             exprType,
@@ -1791,7 +1791,7 @@ export function newCheck(f: qt.Frame) {
     }
     nonNullChain(n: qt.NonNullChain) {
       const left = this.expression(n.expression);
-      const o = getOptionalExpressionType(left, n.expression);
+      const o = qf.type.get.optionalExpression(left, n.expression);
       return propagateOptionalTypeMarker(qf.type.get.nonNullable(o), n, o !== left);
     }
     nonNullAssertion(n: qt.NonNullExpression) {
@@ -1906,7 +1906,7 @@ export function newCheck(f: qt.Frame) {
     }
     deleteExpressionMustBeOptional(expr: qt.AccessExpression, type: Type) {
       const AnyOrUnknownOrNeverFlags = TypeFlags.AnyOrUnknown | TypeFlags.Never;
-      if (strictNullChecks && !(type.flags & AnyOrUnknownOrNeverFlags) && !(getFalsyFlags(type) & TypeFlags.Undefined)) error(expr, qd.msgs.The_operand_of_a_delete_operator_must_be_optional);
+      if (strictNullChecks && !(type.flags & AnyOrUnknownOrNeverFlags) && !(qf.type.get.falsyFlags(type) & TypeFlags.Undefined)) error(expr, qd.msgs.The_operand_of_a_delete_operator_must_be_optional);
     }
     typeOfExpression(n: TypeOfExpression): Type {
       this.expression(n.expression);
@@ -1973,14 +1973,14 @@ export function newCheck(f: qt.Frame) {
         case Syntax.NumericLiteral:
           switch (n.operator) {
             case Syntax.MinusToken:
-              return getFreshTypeOfLiteralType(qf.get.literalType(-(n.operand as qt.NumericLiteral).text));
+              return qf.type.get.freshOfLiteral(qf.get.literalType(-(n.operand as qt.NumericLiteral).text));
             case Syntax.PlusToken:
-              return getFreshTypeOfLiteralType(qf.get.literalType(+(n.operand as qt.NumericLiteral).text));
+              return qf.type.get.freshOfLiteral(qf.get.literalType(+(n.operand as qt.NumericLiteral).text));
           }
           break;
         case Syntax.BigIntLiteral:
           if (n.operator === Syntax.MinusToken) {
-            return getFreshTypeOfLiteralType(
+            return qf.type.get.freshOfLiteral(
               qf.get.literalType({
                 negative: true,
                 base10Value: parsePseudoBigInt((n.operand as qt.BigIntLiteral).text),
@@ -1996,13 +1996,13 @@ export function newCheck(f: qt.Frame) {
           if (maybeTypeOfKind(operandType, TypeFlags.ESSymbolLike)) error(n.operand, qd.msgs.The_0_operator_cannot_be_applied_to_type_symbol, qt.Token.toString(n.operator));
           if (n.operator === Syntax.PlusToken) {
             if (maybeTypeOfKind(operandType, TypeFlags.BigIntLike))
-              error(n.operand, qd.msgs.Operator_0_cannot_be_applied_to_type_1, qt.Token.toString(n.operator), typeToString(getBaseTypeOfLiteralType(operandType)));
+              error(n.operand, qd.msgs.Operator_0_cannot_be_applied_to_type_1, qt.Token.toString(n.operator), typeToString(qf.type.get.baseOfLiteral(operandType)));
             return numberType;
           }
           return getUnaryResultType(operandType);
         case Syntax.ExclamationToken:
           this.truthinessExpression(n.operand);
-          const facts = getTypeFacts(operandType) & (TypeFacts.Truthy | TypeFacts.Falsy);
+          const facts = qf.type.get.facts(operandType) & (TypeFacts.Truthy | TypeFacts.Falsy);
           return facts === TypeFacts.Truthy ? falseType : facts === TypeFacts.Falsy ? trueType : booleanType;
         case Syntax.Plus2Token:
         case Syntax.Minus2Token:
@@ -2071,7 +2071,7 @@ export function newCheck(f: qt.Frame) {
             this.propertyAccessibility(property, false, t, prop);
           }
         }
-        const elemType = qf.get.indexedAccessType(t, exprType, name);
+        const elemType = qf.type.get.indexedAccess(t, exprType, name);
         const type = qf.get.flowTypeOfDestructuring(property, elemType);
         return this.destructuringAssignment(property.kind === Syntax.ShorthandPropertyAssignment ? property : property.initer, type);
       } else if (property.kind === Syntax.SpreadAssignment) {
@@ -2109,7 +2109,7 @@ export function newCheck(f: qt.Frame) {
           if (qf.type.is.arrayLike(sourceType)) {
             const accessFlags = hasDefaultValue(elem) ? AccessFlags.NoTupleBoundsCheck : 0;
             const elemType = qf.get.indexedAccessTypeOrUndefined(sourceType, indexType, createSyntheticExpression(elem, indexType), accessFlags) || errorType;
-            const assignedType = hasDefaultValue(elem) ? getTypeWithFacts(elemType, TypeFacts.NEUndefined) : elemType;
+            const assignedType = hasDefaultValue(elem) ? qf.type.get.withFacts(elemType, TypeFacts.NEUndefined) : elemType;
             const type = qf.get.flowTypeOfDestructuring(elem, assignedType);
             return this.destructuringAssignment(elem, type, checkMode);
           }
@@ -2134,7 +2134,7 @@ export function newCheck(f: qt.Frame) {
       if (exprOrAssignment.kind === Syntax.ShorthandPropertyAssignment) {
         const prop = <qt.ShorthandPropertyAssignment>exprOrAssignment;
         if (prop.objectAssignmentIniter) {
-          if (strictNullChecks && !(getFalsyFlags(this.expression(prop.objectAssignmentIniter)) & TypeFlags.Undefined)) sourceType = getTypeWithFacts(sourceType, TypeFacts.NEUndefined);
+          if (strictNullChecks && !(qf.type.get.falsyFlags(this.expression(prop.objectAssignmentIniter)) & TypeFlags.Undefined)) sourceType = qf.type.get.withFacts(sourceType, TypeFacts.NEUndefined);
           this.binaryLikeExpression(prop.name, prop.equalsToken!, prop.objectAssignmentIniter, checkMode);
         }
         target = (<qt.ShorthandPropertyAssignment>exprOrAssignment).name;
@@ -2335,8 +2335,8 @@ export function newCheck(f: qt.Frame) {
         case Syntax.LessThanEqualsToken:
         case Syntax.GreaterThanEqualsToken:
           if (this.forDisallowedESSymbolOperand(operator)) {
-            leftType = getBaseTypeOfLiteralType(qf.type.check.nonNull(leftType, left));
-            rightType = getBaseTypeOfLiteralType(qf.type.check.nonNull(rightType, right));
+            leftType = qf.type.get.baseOfLiteral(qf.type.check.nonNull(leftType, left));
+            rightType = qf.type.get.baseOfLiteral(qf.type.check.nonNull(rightType, right));
             reportOperatorErrorUnless(
               (left, right) =>
                 qf.type.is.comparableTo(left, right) ||
@@ -2356,11 +2356,11 @@ export function newCheck(f: qt.Frame) {
         case Syntax.InKeyword:
           return this.inExpression(left, right, leftType, rightType);
         case Syntax.Ampersand2Token:
-          return getTypeFacts(leftType) & TypeFacts.Truthy ? qf.get.unionType([extractDefinitelyFalsyTypes(strictNullChecks ? leftType : getBaseTypeOfLiteralType(rightType)), rightType]) : leftType;
+          return qf.type.get.facts(leftType) & TypeFacts.Truthy ? qf.get.unionType([extractDefinitelyFalsyTypes(strictNullChecks ? leftType : qf.type.get.baseOfLiteral(rightType)), rightType]) : leftType;
         case Syntax.Bar2Token:
-          return getTypeFacts(leftType) & TypeFacts.Falsy ? qf.get.unionType([removeDefinitelyFalsyTypes(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
+          return qf.type.get.facts(leftType) & TypeFacts.Falsy ? qf.get.unionType([removeDefinitelyFalsyTypes(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
         case Syntax.Question2Token:
-          return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? qf.get.unionType([qf.type.get.nonNullable(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
+          return qf.type.get.facts(leftType) & TypeFacts.EQUndefinedOrNull ? qf.get.unionType([qf.type.get.nonNullable(leftType), rightType], qt.UnionReduction.Subtype) : leftType;
         case Syntax.EqualsToken:
           const declKind = left.parent.kind === Syntax.BinaryExpression ? qf.get.assignmentDeclarationKind(left.parent) : qt.AssignmentDeclarationKind.None;
           this.assignmentDeclaration(declKind, rightType);
@@ -2378,7 +2378,7 @@ export function newCheck(f: qt.Frame) {
             return leftType;
           } else {
             this.assignmentOperator(rightType);
-            return getRegularTypeOfObjectLiteral(rightType);
+            return qf.type.get.regularOfObjectLiteral(rightType);
           }
         case Syntax.CommaToken:
           if (!compilerOpts.allowUnreachableCode && isSideEffectFree(left) && !isEvalNode(right)) error(left, qd.msgs.Left_side_of_comma_operator_is_unused_and_has_no_side_effects);
@@ -2548,7 +2548,7 @@ export function newCheck(f: qt.Frame) {
         context.contextualType = contextualType;
         context.inferenceContext = inferenceContext;
         const type = this.expression(n, checkMode | CheckMode.Contextual | (inferenceContext ? CheckMode.Inferential : 0));
-        const result = maybeTypeOfKind(type, TypeFlags.Literal) && isLiteralOfContextualType(type, instantiateContextualType(contextualType, n)) ? getRegularTypeOfLiteralType(type) : type;
+        const result = maybeTypeOfKind(type, TypeFlags.Literal) && isLiteralOfContextualType(type, instantiateContextualType(contextualType, n)) ? qf.type.get.regularOfLiteral(type) : type;
         return result;
       } finally {
         context.contextualType = saveContextualType;
@@ -2583,10 +2583,10 @@ export function newCheck(f: qt.Frame) {
     expressionForMutableLocation(n: qt.Expression, checkMode: CheckMode | undefined, contextualType?: Type, forceTuple?: boolean): Type {
       const type = this.expression(n, checkMode, forceTuple);
       return isConstContext(n)
-        ? getRegularTypeOfLiteralType(type)
+        ? qf.type.get.regularOfLiteral(type)
         : n.kind === Syntax.TypeAssertion
         ? type
-        : getWidenedLiteralLikeTypeForContextualType(type, instantiateContextualType(args.length === 2 ? getContextualType(n) : contextualType, n));
+        : qf.type.get.widenedLiteralLikeForContextual(type, instantiateContextualType(args.length === 2 ? getContextualType(n) : contextualType, n));
     }
     propertyAssignment(n: qt.PropertyAssignment, checkMode?: CheckMode): Type {
       if (n.name.kind === Syntax.ComputedPropertyName) this.computedPropertyName(n.name);
@@ -2642,13 +2642,13 @@ export function newCheck(f: qt.Frame) {
           return nullWideningType;
         case Syntax.NoSubstitutionLiteral:
         case Syntax.StringLiteral:
-          return getFreshTypeOfLiteralType(qf.get.literalType((n as qt.StringLiteralLike).text));
+          return qf.type.get.freshOfLiteral(qf.get.literalType((n as qt.StringLiteralLike).text));
         case Syntax.NumericLiteral:
           checkGrammar.numericLiteral(n as qt.NumericLiteral);
-          return getFreshTypeOfLiteralType(qf.get.literalType(+(n as qt.NumericLiteral).text));
+          return qf.type.get.freshOfLiteral(qf.get.literalType(+(n as qt.NumericLiteral).text));
         case Syntax.BigIntLiteral:
           checkGrammar.bigIntLiteral(n as qt.BigIntLiteral);
-          return getFreshTypeOfLiteralType(getBigIntLiteralType(n as qt.BigIntLiteral));
+          return qf.type.get.freshOfLiteral(getBigIntLiteralType(n as qt.BigIntLiteral));
         case Syntax.TrueKeyword:
           return trueType;
         case Syntax.FalseKeyword:
@@ -3288,7 +3288,7 @@ export function newCheck(f: qt.Frame) {
       if (!strictNullChecks) return;
       const testedNode = condExpr.kind === Syntax.Identifier ? condExpr : condExpr.kind === Syntax.PropertyAccessExpression ? condExpr.name : undefined;
       if (!testedNode) return;
-      const possiblyFalsy = getFalsyFlags(type);
+      const possiblyFalsy = qf.type.get.falsyFlags(type);
       if (possiblyFalsy) return;
       const callSignatures = getSignaturesOfType(type, SignatureKind.Call);
       if (callSignatures.length === 0) return;
@@ -3611,9 +3611,9 @@ export function newCheck(f: qt.Frame) {
         case Syntax.DocTypingExpression:
           return this.sourceElem((n as qt.DocTypingExpression).type);
         case Syntax.IndexedAccessTyping:
-          return this.indexedAccessType(<qt.IndexedAccessTyping>n);
+          return qf.type.get.indexedAccess(<qt.IndexedAccessTyping>n);
         case Syntax.MappedTyping:
-          return this.mappedType(<qt.MappedTyping>n);
+          return qf.type.get.mapped(<qt.MappedTyping>n);
         case Syntax.FunctionDeclaration:
           return this.functionDeclaration(<qt.FunctionDeclaration>n);
         case Syntax.Block:

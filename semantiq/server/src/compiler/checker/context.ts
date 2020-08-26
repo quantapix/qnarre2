@@ -47,7 +47,7 @@ export class QContext {
       return new qc.KeywordTyping(Syntax.AnyKeyword);
     }
     if (!(this.flags & NodeBuilderFlags.NoTypeReduction)) {
-      type = getReducedType(type);
+      type = qf.type.get.reduced(type);
     }
     if (type.isa(TypeFlags.Any)) {
       this.approximateLength += 3;
@@ -260,7 +260,7 @@ export class QContext {
       if (nextSymbol.checkFlags() & CheckFlags.Instantiated) {
         const params = getTypeParamsOfClassOrInterface(parentSymbol.flags & SymbolFlags.Alias ? parentSymbol.resolveAlias() : parentSymbol);
         typeParamNodes = mapToTypeNodes(
-          map(params, (t) => getMappedType(t, (nextSymbol as qt.TransientSymbol).mapper!)),
+          map(params, (t) => qf.type.get.mapped(t, (nextSymbol as qt.TransientSymbol).mapper!)),
           this
         );
       } else typeParamNodes = symbol.typeParamsToTypeParamDeclarations(this);
@@ -727,7 +727,7 @@ export class QContext {
       paramDeclaration = s.declarationOfKind<qt.DocParamTag>(Syntax.DocParamTag);
     }
     let paramType = s.typeOfSymbol();
-    if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = qf.get.optionalType(paramType);
+    if (paramDeclaration && isRequiredInitializedParam(paramDeclaration)) paramType = qf.type.get.optional(paramType);
     const paramTypeNode = this.serializeTypeForDeclaration(paramType, s, this.enclosingDeclaration, privateSymbolVisitor, bundledImports);
     const modifiers =
       !(this.flags & NodeBuilderFlags.OmitParamModifiers) && preserveModifierFlags && paramDeclaration && paramDeclaration.modifiers
@@ -1004,10 +1004,10 @@ export class QContext {
   serializeIndexSignatures(input: qt.Type, baseType: qt.Type | undefined) {
     const results: qt.IndexSignatureDeclaration[] = [];
     for (const type of [IndexKind.String, IndexKind.Number]) {
-      const info = qf.get.indexInfoOfType(input, type);
+      const info = qf.type.get.indexInfo(input, type);
       if (info) {
         if (baseType) {
-          const baseInfo = qf.get.indexInfoOfType(baseType, type);
+          const baseInfo = qf.type.get.indexInfo(baseType, type);
           if (baseInfo) {
             if (qf.type.is.identicalTo(info.type, baseInfo.type)) continue;
           }
@@ -1714,8 +1714,8 @@ export class QContext {
       const ctxSrc = this.enclosingDeclaration.sourceFile;
       return (
         typeToSerialize.objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped) &&
-        !qf.get.indexInfoOfType(typeToSerialize, IndexKind.String) &&
-        !qf.get.indexInfoOfType(typeToSerialize, IndexKind.Number) &&
+        !qf.type.get.indexInfo(typeToSerialize, IndexKind.String) &&
+        !qf.type.get.indexInfo(typeToSerialize, IndexKind.Number) &&
         !!(length(qf.type.get.properties(typeToSerialize)) || length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Call))) &&
         !length(getSignaturesOfType(typeToSerialize, qt.SignatureKind.Construct)) &&
         !getDeclarationWithTypeAnnotation(hostSymbol, enclosingDeclaration) &&

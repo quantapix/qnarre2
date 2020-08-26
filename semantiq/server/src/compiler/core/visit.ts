@@ -1097,9 +1097,9 @@ export function createGetSymbolWalker(
       visitType(interfaceT.thisType);
     }
     function visitObjectType(t: qt.ObjectType) {
-      const stringIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.String);
+      const stringIndexType = qf.type.get.indexOfStructured(t, qt.IndexKind.String);
       visitType(stringIndexType);
-      const numberIndexType = qf.get.indexTypeOfStructuredType(t, qt.IndexKind.Number);
+      const numberIndexType = qf.type.get.indexOfStructured(t, qt.IndexKind.Number);
       visitType(numberIndexType);
       const resolved = resolveStructuredTypeMembers(t);
       for (const signature of resolved.callSignatures) {

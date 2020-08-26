@@ -812,9 +812,9 @@ export function newIs(f: qt.Frame) {
     validPropertyAccess(n: qt.PropertyAccessExpression | qt.QualifiedName | qt.ImportTyping, propertyName: qu.__String): boolean {
       switch (n.kind) {
         case Syntax.PropertyAccessExpression:
-          return this.validPropertyAccessWithType(n, n.expression.kind === Syntax.SuperKeyword, propertyName, qf.get.widenedType(check.expression(n.expression)));
+          return this.validPropertyAccessWithType(n, n.expression.kind === Syntax.SuperKeyword, propertyName, qf.type.get.widened(check.expression(n.expression)));
         case Syntax.QualifiedName:
-          return this.validPropertyAccessWithType(n, false, propertyName, qf.get.widenedType(check.expression(n.left)));
+          return this.validPropertyAccessWithType(n, false, propertyName, qf.type.get.widened(check.expression(n.left)));
         case Syntax.ImportTyping:
           return this.validPropertyAccessWithType(n, false, propertyName, qf.get.typeFromTypeNode(n));
       }
@@ -1048,7 +1048,7 @@ export function newIs(f: qt.Frame) {
     }
     thenableType(t: Type): boolean {
       const thenFunction = qf.type.get.typeOfProperty(t, 'then' as qu.__String);
-      return !!thenFunction && SignaturesOfType(getTypeWithFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
+      return !!thenFunction && SignaturesOfType(qf.type.get.withFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
     }
     identifierThatStartsWithUnderscore(n: Node) {
       return n.kind === Syntax.Identifier && idText(n).charCodeAt(0) === qy.Codes._;
@@ -1086,8 +1086,8 @@ export function newIs(f: qt.Frame) {
       reference.expression.parent = reference;
       reference.parent = constructor;
       reference.flowNode = constructor.returnFlowNode;
-      const flowType = qf.get.flow.typeOfReference(reference, propType, qf.get.optionalType(propType));
-      return !(getFalsyFlags(flowType) & TypeFlags.Undefined);
+      const flowType = qf.get.flow.typeOfReference(reference, propType, qf.type.get.optional(propType));
+      return !(qf.type.get.falsyFlags(flowType) & TypeFlags.Undefined);
     }
     constantMemberAccess(n: qt.Expression): boolean {
       return (
@@ -1792,8 +1792,8 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
           }
           return false;
         }
-        nullableType(t: Type) {
-          return !!((strictNullChecks ? getFalsyFlags(t) : t.flags) & TypeFlags.Nullable);
+        qf.type.get.nullable(t: Type) {
+          return !!((strictNullChecks ? qf.type.get.falsyFlags(t) : t.flags) & TypeFlags.Nullable);
         }
         untypedFunctionCall(t: Type, f: Type, calls: number, constructs: number) {
           return this.any(t) || (this.any(f) && !!qf.type.is.param(t)) || (!calls && !constructs && !(f.flags & (TypeFlags.Union | TypeFlags.Never)) && this.check.assignableTo(t, globalFunctionType));

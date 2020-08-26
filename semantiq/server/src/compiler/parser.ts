@@ -1564,10 +1564,10 @@ function create() {
           n.name = this.identifierName();
           n.questionToken = this.optionalToken(Syntax.QuestionToken);
           this.expected(Syntax.ColonToken);
-          n.type = this.tupleElemType();
+          n.type = qf.type.get.tupleElem();
           return addDocComment(finishNode(n));
         }
-        return this.tupleElemType();
+        return qf.type.get.tupleElem();
       };
       n.elems = ctx.parseBracketedList(Context.TupleElemTypes, nameOrType, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       return finishNode(n);
