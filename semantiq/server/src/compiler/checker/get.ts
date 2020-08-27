@@ -1598,7 +1598,7 @@ export function newGet(f: qt.Frame) {
           } else if (context.flags & InferenceFlags.NoDefault) {
             inferredType = silentNeverType;
           } else {
-            const defaultType = this.defaultFromTypeParam(inference.typeParam);
+            const defaultType = qf.type.get.defaultFromParam(inference.typeParam);
             if (defaultType) inferredType = instantiateType(defaultType, mergeTypeMappers(qf.make.backreferenceMapper(context, index), context.nonFixingMapper));
           }
         } else {

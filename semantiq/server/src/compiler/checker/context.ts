@@ -712,7 +712,7 @@ export class QContext {
     const savedContextFlags = this.flags;
     this.flags &= ~NodeBuilderFlags.WriteTypeParamsInQualifiedName;
     const name = this.typeParamToName(type);
-    const defaultParam = getDefaultFromTypeParam(type);
+    const defaultParam = qf.type.get.defaultFromParam(type);
     const defaultParamNode = defaultParam && this.typeToTypeNodeHelper(defaultParam);
     this.flags = savedContextFlags;
     return new qc.TypeParamDeclaration(name, constraintNode, defaultParamNode);

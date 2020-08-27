@@ -874,17 +874,90 @@ export function newType(f: qt.Frame) {
     _get = new (class extends Base {
       unionObjectAndArrayLiteralCandidates(ts: qt.Type[]): qt.Type[] {
         if (ts.length > 1) {
-          const objectLiterals = qu.filter(ts, qf.type.is.objectOrArrayLiteral);
-          if (objectLiterals.length) {
-            const literalsType = qf.type.get.union(objectLiterals, qt.UnionReduction.Subtype);
+          const ls = qu.filter(ts, this.is.objectOrArrayLiteral);
+          if (ls.length) {
+            const l = this.union(ls, qt.UnionReduction.Subtype);
             return qu.concatenate(
-              qu.filter(ts, (t) => !qf.type.is.objectOrArrayLiteral(t)),
-              [literalsType]
+              qu.filter(ts, (t) => !this.is.objectOrArrayLiteral(t)),
+              [l]
             );
           }
         }
         return ts;
       }
+      factsOf(ts: Type[]): qt.TypeFacts {
+        let r: qt.TypeFacts = qt.TypeFacts.None;
+        for (const t of ts) {
+          r |= this.facts(t);
+        }
+        return r;
+      }
+      facts(t: Type): qt.TypeFacts {
+        const flags = t.flags;
+        if (flags & TypeFlags.String) return strictNullChecks ? qt.TypeFacts.StringStrictFacts : qt.TypeFacts.StringFacts;
+        if (flags & TypeFlags.StringLiteral) {
+          const isEmpty = (<qt.StringLiteralType>t).value === '';
+          return strictNullChecks
+            ? isEmpty
+              ? qt.TypeFacts.EmptyStringStrictFacts
+              : qt.TypeFacts.NonEmptyStringStrictFacts
+            : isEmpty
+            ? qt.TypeFacts.EmptyStringFacts
+            : qt.TypeFacts.NonEmptyStringFacts;
+        }
+        if (flags & (TypeFlags.Number | TypeFlags.Enum)) return strictNullChecks ? qt.TypeFacts.NumberStrictFacts : qt.TypeFacts.NumberFacts;
+        if (flags & TypeFlags.NumberLiteral) {
+          const isZero = (<qt.NumberLiteralType>t).value === 0;
+          return strictNullChecks ? (isZero ? qt.TypeFacts.ZeroNumberStrictFacts : qt.TypeFacts.NonZeroNumberStrictFacts) : isZero ? qt.TypeFacts.ZeroNumberFacts : qt.TypeFacts.NonZeroNumberFacts;
+        }
+        if (flags & TypeFlags.BigInt) return strictNullChecks ? qt.TypeFacts.BigIntStrictFacts : qt.TypeFacts.BigIntFacts;
+        if (flags & TypeFlags.BigIntLiteral) {
+          const isZero = qf.is.zeroBigInt(<qt.BigIntLiteralType>t);
+          return strictNullChecks ? (isZero ? qt.TypeFacts.ZeroBigIntStrictFacts : qt.TypeFacts.NonZeroBigIntStrictFacts) : isZero ? qt.TypeFacts.ZeroBigIntFacts : qt.TypeFacts.NonZeroBigIntFacts;
+        }
+        if (flags & TypeFlags.Boolean) return strictNullChecks ? qt.TypeFacts.BooleanStrictFacts : qt.TypeFacts.BooleanFacts;
+        if (flags & TypeFlags.BooleanLike) {
+          return strictNullChecks
+            ? t === falseType || t === regularFalseType
+              ? qt.TypeFacts.FalseStrictFacts
+              : qt.TypeFacts.TrueStrictFacts
+            : t === falseType || t === regularFalseType
+            ? qt.TypeFacts.FalseFacts
+            : qt.TypeFacts.TrueFacts;
+        }
+        if (flags & TypeFlags.Object) {
+          return this.is.anonymous(t) && this.is.emptyObject(<qt.ObjectType>t)
+            ? strictNullChecks
+              ? qt.TypeFacts.EmptyObjectStrictFacts
+              : qt.TypeFacts.EmptyObjectFacts
+            : this.is.functionObject(<qt.ObjectType>t)
+            ? strictNullChecks
+              ? qt.TypeFacts.FunctionStrictFacts
+              : qt.TypeFacts.FunctionFacts
+            : strictNullChecks
+            ? qt.TypeFacts.ObjectStrictFacts
+            : qt.TypeFacts.ObjectFacts;
+        }
+        if (flags & (TypeFlags.Void | TypeFlags.Undefined)) return qt.TypeFacts.UndefinedFacts;
+        if (flags & TypeFlags.Null) return qt.TypeFacts.NullFacts;
+        if (flags & TypeFlags.ESSymbolLike) return strictNullChecks ? qt.TypeFacts.SymbolStrictFacts : qt.TypeFacts.SymbolFacts;
+        if (flags & TypeFlags.NonPrimitive) return strictNullChecks ? qt.TypeFacts.ObjectStrictFacts : qt.TypeFacts.ObjectFacts;
+        if (flags & TypeFlags.Never) return qt.TypeFacts.None;
+        if (flags & TypeFlags.Instantiable) return this.facts(this.baseConstraint(t) || unknownType);
+        if (this.is.unionOrIntersection(t)) return this.factsOf(t.types);
+        return qt.TypeFacts.All;
+      }
+      withFacts(t: Type, include: qt.TypeFacts) {
+        return filterType(t, (t) => (this.facts(t) & include) !== 0);
+      }
+      withDefault(t: Type, e: qt.Expression) {
+        if (e) {
+          const defaultType = this.typeOfExpression(e);
+          return this.union([this.withFacts(t, qt.TypeFacts.NEUndefined), defaultType]);
+        }
+        return t;
+      }
+
       /*
       intersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArgs?: readonly Type[]): Type {
         const typeMembershipMap: qu.QMap<Type> = new qu.QMap();

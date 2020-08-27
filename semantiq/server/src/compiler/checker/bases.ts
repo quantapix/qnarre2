@@ -1844,7 +1844,7 @@ export class Signature extends qc.Signature {
           !(
             s === t ||
             (compareTypes(instantiateType(qf.type.get.constraintFromParam(s), mapper) || unknownType, qf.type.get.constraintFromParam(t) || unknownType) &&
-              compareTypes(instantiateType(getDefaultFromTypeParam(s), mapper) || unknownType, getDefaultFromTypeParam(t) || unknownType))
+              compareTypes(instantiateType(qf.type.get.defaultFromParam(s), mapper) || unknownType, qf.type.get.defaultFromParam(t) || unknownType))
           )
         ) {
           return Ternary.False;

@@ -2734,7 +2734,7 @@ export function newCheck(f: qt.Frame) {
       qf.get.qf.type.get.baseConstraint(typeParam);
       if (!qf.type.has.nonCircularParamDefault(typeParam)) error(n.default, qd.msgs.Type_param_0_has_a_circular_default, typeToString(typeParam));
       const constraintType = qf.type.get.constraintOfParam(typeParam);
-      const defaultType = getDefaultFromTypeParam(typeParam);
+      const defaultType = qf.type.get.defaultFromParam(typeParam);
       if (constraintType && defaultType) {
         qf.type.check.assignableTo(
           defaultType,

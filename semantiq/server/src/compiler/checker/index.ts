@@ -299,7 +299,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     qf.get.suggestedSymbolForNonexistentModule;
     getSuggestionForNonexistentExport;
     qf.get.baseConstraintOfType;
-    getDefaultFromTypeParam(type) {return (type && type.isa(qt.TypeFlags.TypeParam) ? getDefaultFromTypeParam(type as qt.TypeParam) : undefined);}
+    qf.type.get.defaultFromParam(type) {return (type && type.isa(qt.TypeFlags.TypeParam) ? qf.type.get.defaultFromParam(type as qt.TypeParam) : undefined);}
     resolveName(name, location, meaning, excludeGlobals) {
       return resolveName(location, qy.get.escUnderscores(name), meaning, undefined, undefined, false, excludeGlobals);
     }
@@ -811,7 +811,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       const baseDefaultType = getDefaultTypeArgType(isJavaScriptImplicitAny);
       for (let i = numTypeArgs; i < numTypeParams; i++) {
-        let defaultType = getDefaultFromTypeParam(typeParams![i]);
+        let defaultType = qf.type.get.defaultFromParam(typeParams![i]);
         if (isJavaScriptImplicitAny && defaultType && (qf.type.is.identicalTo(defaultType, unknownType) || qf.type.is.identicalTo(defaultType, emptyObjectType))) defaultType = anyType;
         result[i] = defaultType ? instantiateType(defaultType, createTypeMapper(typeParams!, result)) : baseDefaultType;
       }
@@ -2461,7 +2461,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         const targetConstraint = qf.type.get.constraintOfParam(target);
         if (sourceConstraint && targetConstraint && !qf.type.is.identicalTo(sourceConstraint, targetConstraint)) return false;
         const sourceDefault = source.default && qf.get.typeFromTypeNode(source.default);
-        const targetDefault = getDefaultFromTypeParam(target);
+        const targetDefault = qf.type.get.defaultFromParam(target);
         if (sourceDefault && targetDefault && !qf.type.is.identicalTo(sourceDefault, targetDefault)) return false;
       }
     }
