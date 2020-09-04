@@ -1,0 +1,10 @@
+
+Encapsulation: objects contain both the data and the methods that affect that data
+
+Abstraction: is a complementary concept to encapsulation; where encapsulation hides internal information, abstraction provides an easier-to-use public interface to data
+
+Inheritance: objects can inherit variables and methods to support operations without having to provide own definition. The goal is to not repeat yourself—multiple uses of the same code is hard to maintain
+
+Composition: with no inheritance, objects and methods quickly dissolve as the syntactic sugar for structs and procedures
+
+Polymorphism: shape-changing allows one object or method to serve as the template for other objects and methods
