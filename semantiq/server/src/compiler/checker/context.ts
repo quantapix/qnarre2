@@ -33,8 +33,8 @@ export class QContext {
     return new qc.KeywordTyping(Syntax.AnyKeyword);
   }
   typeToTypeNodeHelper(type: qt.Type): qt.Typing {
-    if (cancellationToken && cancellationToken.throwIfCancellationRequested) {
-      cancellationToken.throwIfCancellationRequested();
+    if (cancelToken && cancelToken.throwIfCancelRequested) {
+      cancelToken.throwIfCancelRequested();
     }
     const inTypeAlias = this.flags & NodeBuilderFlags.InTypeAlias;
     this.flags &= ~NodeBuilderFlags.InTypeAlias;
@@ -820,7 +820,7 @@ export class QContext {
     return this.typeToTypeNodeHelper(type);
   }
   serializeExistingTypeNode(existing: qt.Typing, includePrivateSymbol?: (s: qt.Symbol) => void, bundled?: boolean) {
-    if (cancellationToken && cancellationToken.throwIfCancellationRequested) cancellationToken.throwIfCancellationRequested();
+    if (cancelToken && cancelToken.throwIfCancelRequested) cancelToken.throwIfCancelRequested();
     let hadError = false;
     const file = existing.sourceFile;
     const transformed = qf.visit.node(existing, this.visitExistingNodeTreeSymbols);

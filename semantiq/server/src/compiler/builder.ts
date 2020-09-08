@@ -22,24 +22,24 @@ export interface BuilderProgram {
   getCompilerOpts(): qt.CompilerOpts;
   getSourceFile(fileName: string): qt.SourceFile | undefined;
   getSourceFiles(): readonly qt.SourceFile[];
-  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly DiagnosticWithLocation[];
   getAllDependencies(sourceFile: qt.SourceFile): readonly string[];
-  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancelToken?: qt.CancelToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
   getCurrentDirectory(): string;
   close(): void;
 }
 export interface SemanticDiagnosticsBuilderProgram extends BuilderProgram {
-  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
+  getSemanticDiagnosticsOfNextAffectedFile(cancelToken?: qt.CancelToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
 }
 export interface EmitAndSemanticDiagnosticsBuilderProgram extends SemanticDiagnosticsBuilderProgram {
   emitNextAffectedFile(
     writeFile?: qt.WriteFileCallback,
-    cancellationToken?: qt.CancellationToken,
+    cancelToken?: qt.CancelToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
   ): AffectedFileResult<qt.EmitResult>;
@@ -309,7 +309,7 @@ function cloneBuilderProgramState(state: Readonly<BuilderProgramState>): Builder
 function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: qt.SourceFile | undefined) {
   qf.assert.true(!sourceFile || !state.affectedFiles || state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile || !state.semanticDiagnosticsPerFile!.has(sourceFile.resolvedPath));
 }
-function getNextAffectedFile(state: BuilderProgramState, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash): qt.SourceFile | qt.Program | undefined {
+function getNextAffectedFile(state: BuilderProgramState, cancelToken: qt.CancelToken | undefined, computeHash: BuilderState.ComputeHash): qt.SourceFile | qt.Program | undefined {
   while (true) {
     const { affectedFiles } = state;
     if (affectedFiles) {
@@ -319,7 +319,7 @@ function getNextAffectedFile(state: BuilderProgramState, cancellationToken: qt.C
         const affectedFile = affectedFiles[affectedFilesIndex];
         if (!seenAffectedFiles.has(affectedFile.resolvedPath)) {
           state.affectedFilesIndex = affectedFilesIndex;
-          handleDtsMayChangeOfAffectedFile(state, affectedFile, cancellationToken, computeHash);
+          handleDtsMayChangeOfAffectedFile(state, affectedFile, cancelToken, computeHash);
           return affectedFile;
         }
         affectedFilesIndex++;
@@ -349,7 +349,7 @@ function getNextAffectedFile(state: BuilderProgramState, cancellationToken: qt.C
       state,
       program,
       nextKey.value as qt.Path,
-      cancellationToken,
+      cancelToken,
       computeHash,
       state.currentAffectedFilesSignatures,
       state.currentAffectedFilesExportedModulesMap
@@ -380,7 +380,7 @@ function getNextAffectedFilePendingEmit(state: BuilderProgramState) {
   }
   return;
 }
-function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFile: qt.SourceFile, cancelToken: qt.CancelToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, affectedFile.resolvedPath);
   if (state.allFilesExcludingDefaultLibraryFile === state.affectedFiles) {
     if (!state.cleanedDiagnosticsOfLibFiles) {
@@ -392,10 +392,10 @@ function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFi
     return;
   }
   if (!state.compilerOpts.assumeChangesOnlyAffectDirectDependencies) {
-    forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) => handleDtsMayChangeOf(state, path, cancellationToken, computeHash));
+    forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) => handleDtsMayChangeOf(state, path, cancelToken, computeHash));
   }
 }
-function handleDtsMayChangeOf(state: BuilderProgramState, path: qt.Path, cancellationToken: qt.CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOf(state: BuilderProgramState, path: qt.Path, cancelToken: qt.CancelToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, path);
   if (!state.changedFilesSet.has(path)) {
     const program = qf.check.defined(state.program);
@@ -406,7 +406,7 @@ function handleDtsMayChangeOf(state: BuilderProgramState, path: qt.Path, cancell
         program,
         sourceFile,
         qf.check.defined(state.currentAffectedFilesSignatures),
-        cancellationToken,
+        cancelToken,
         computeHash,
         state.currentAffectedFilesExportedModulesMap
       );
@@ -535,16 +535,16 @@ function toAffectedFileEmitResult(
   doneWithAffectedFile(state, affected, emitKind, isPendingEmit, isBuildInfoEmit);
   return { result, affected };
 }
-function getSemanticDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
-  return concatenate(getBinderAndCheckerDiagnosticsOfFile(state, sourceFile, cancellationToken), qf.check.defined(state.program).getProgramDiagnostics(sourceFile));
+function getSemanticDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
+  return concatenate(getBinderAndCheckerDiagnosticsOfFile(state, sourceFile, cancelToken), qf.check.defined(state.program).getProgramDiagnostics(sourceFile));
 }
-function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
+function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, sourceFile: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
   const path = sourceFile.resolvedPath;
   if (state.semanticDiagnosticsPerFile) {
     const cachedDiagnostics = state.semanticDiagnosticsPerFile.get(path);
     if (cachedDiagnostics) return cachedDiagnostics;
   }
-  const diagnostics = qf.check.defined(state.program).getBindAndCheckDiagnostics(sourceFile, cancellationToken);
+  const diagnostics = qf.check.defined(state.program).getBindAndCheckDiagnostics(sourceFile, cancelToken);
   if (state.semanticDiagnosticsPerFile) {
     state.semanticDiagnosticsPerFile.set(path, diagnostics);
   }
@@ -744,11 +744,11 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   return builderProgram;
   function emitNextAffectedFile(
     writeFile?: qt.WriteFileCallback,
-    cancellationToken?: qt.CancellationToken,
+    cancelToken?: qt.CancelToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
   ): AffectedFileResult<qt.EmitResult> {
-    let affected = getNextAffectedFile(state, cancellationToken, computeHash);
+    let affected = getNextAffectedFile(state, cancelToken, computeHash);
     let emitKind = BuilderFileEmit.Full;
     let isPendingEmitFile = false;
     if (!affected) {
@@ -759,7 +759,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
             return;
           }
           const affected = qf.check.defined(state.program);
-          return toAffectedFileEmitResult(state, affected.emitBuildInfo(writeFile || maybeBind(host, host.writeFile), cancellationToken), affected, BuilderFileEmit.Full, false, true);
+          return toAffectedFileEmitResult(state, affected.emitBuildInfo(writeFile || maybeBind(host, host.writeFile), cancelToken), affected, BuilderFileEmit.Full, false, true);
         }
         ({ affectedFile: affected, emitKind } = pendingAffectedFile);
         isPendingEmitFile = true;
@@ -774,7 +774,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
       qf.check.defined(state.program).emit(
         affected === state.program ? undefined : (affected as qt.SourceFile),
         writeFile || maybeBind(host, host.writeFile),
-        cancellationToken,
+        cancelToken,
         emitOnlyDtsFiles || emitKind === BuilderFileEmit.DtsOnly,
         customTransformers
       ),
@@ -786,13 +786,13 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   function emit(
     targetSourceFile?: qt.SourceFile,
     writeFile?: qt.WriteFileCallback,
-    cancellationToken?: qt.CancellationToken,
+    cancelToken?: qt.CancelToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
   ): qt.EmitResult {
     if (kind === BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram) {
       assertSourceFileOkWithoutNextAffectedCall(state, targetSourceFile);
-      const result = handleNoEmitOpts(builderProgram, targetSourceFile, cancellationToken);
+      const result = handleNoEmitOpts(builderProgram, targetSourceFile, cancelToken);
       if (result) return result;
       if (!targetSourceFile) {
         let sourceMaps: qt.SourceMapEmitResult[] = [];
@@ -800,7 +800,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         let diagnostics: Diagnostic[] | undefined;
         let emittedFiles: string[] = [];
         let affectedEmitResult: AffectedFileResult<qt.EmitResult>;
-        while ((affectedEmitResult = emitNextAffectedFile(writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers))) {
+        while ((affectedEmitResult = emitNextAffectedFile(writeFile, cancelToken, emitOnlyDtsFiles, customTransformers))) {
           emitSkipped = emitSkipped || affectedEmitResult.result.emitSkipped;
           diagnostics = qu.addRange(diagnostics, affectedEmitResult.result.diagnostics);
           emittedFiles = qu.addRange(emittedFiles, affectedEmitResult.result.emittedFiles);
@@ -814,15 +814,15 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         };
       }
     }
-    return qf.check.defined(state.program).emit(targetSourceFile, writeFile || maybeBind(host, host.writeFile), cancellationToken, emitOnlyDtsFiles, customTransformers);
+    return qf.check.defined(state.program).emit(targetSourceFile, writeFile || maybeBind(host, host.writeFile), cancelToken, emitOnlyDtsFiles, customTransformers);
   }
-  function getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]> {
+  function getSemanticDiagnosticsOfNextAffectedFile(cancelToken?: qt.CancelToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]> {
     while (true) {
-      const affected = getNextAffectedFile(state, cancellationToken, computeHash);
+      const affected = getNextAffectedFile(state, cancelToken, computeHash);
       if (!affected) {
         return;
       } else if (affected === state.program) {
-        return toAffectedFileResult(state, state.program.getSemanticDiagnostics(undefined, cancellationToken), affected);
+        return toAffectedFileResult(state, state.program.getSemanticDiagnostics(undefined, cancelToken), affected);
       }
       if (kind === BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram) {
         addToAffectedFilesPendingEmit(state, (affected as qt.SourceFile).resolvedPath, BuilderFileEmit.Full);
@@ -831,21 +831,21 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         doneWithAffectedFile(state, affected);
         continue;
       }
-      return toAffectedFileResult(state, getSemanticDiagnosticsOfFile(state, affected as qt.SourceFile, cancellationToken), affected);
+      return toAffectedFileResult(state, getSemanticDiagnosticsOfFile(state, affected as qt.SourceFile, cancelToken), affected);
     }
   }
-  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
+  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
     assertSourceFileOkWithoutNextAffectedCall(state, sourceFile);
     const compilerOpts = qf.check.defined(state.program).getCompilerOpts();
     if (compilerOpts.outFile || compilerOpts.out) {
       qf.assert.true(!state.semanticDiagnosticsPerFile);
-      return qf.check.defined(state.program).getSemanticDiagnostics(sourceFile, cancellationToken);
+      return qf.check.defined(state.program).getSemanticDiagnostics(sourceFile, cancelToken);
     }
-    if (sourceFile) return getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken);
-    while (getSemanticDiagnosticsOfNextAffectedFile(cancellationToken)) {}
+    if (sourceFile) return getSemanticDiagnosticsOfFile(state, sourceFile, cancelToken);
+    while (getSemanticDiagnosticsOfNextAffectedFile(cancelToken)) {}
     let diagnostics: Diagnostic[] | undefined;
     for (const sourceFile of qf.check.defined(state.program).getSourceFiles()) {
-      diagnostics = qu.addRange(diagnostics, getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken));
+      diagnostics = qu.addRange(diagnostics, getSemanticDiagnosticsOfFile(state, sourceFile, cancelToken));
     }
     return diagnostics || emptyArray;
   }
@@ -934,13 +934,13 @@ export function createRedirectedBuilderProgram(state: { program: qt.Program | un
     getCompilerOpts: () => state.compilerOpts,
     getSourceFile: (fileName) => getProgram().getSourceFile(fileName),
     getSourceFiles: () => getProgram().getSourceFiles(),
-    getOptsDiagnostics: (cancellationToken) => getProgram().getOptsDiagnostics(cancellationToken),
-    getGlobalDiagnostics: (cancellationToken) => getProgram().getGlobalDiagnostics(cancellationToken),
+    getOptsDiagnostics: (cancelToken) => getProgram().getOptsDiagnostics(cancelToken),
+    getGlobalDiagnostics: (cancelToken) => getProgram().getGlobalDiagnostics(cancelToken),
     getConfigFileParsingDiagnostics: () => configFileParsingDiagnostics,
-    getSyntacticDiagnostics: (sourceFile, cancellationToken) => getProgram().getSyntacticDiagnostics(sourceFile, cancellationToken),
-    getDeclarationDiagnostics: (sourceFile, cancellationToken) => getProgram().getDeclarationDiagnostics(sourceFile, cancellationToken),
-    getSemanticDiagnostics: (sourceFile, cancellationToken) => getProgram().getSemanticDiagnostics(sourceFile, cancellationToken),
-    emit: (sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers) => getProgram().emit(sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers),
+    getSyntacticDiagnostics: (sourceFile, cancelToken) => getProgram().getSyntacticDiagnostics(sourceFile, cancelToken),
+    getDeclarationDiagnostics: (sourceFile, cancelToken) => getProgram().getDeclarationDiagnostics(sourceFile, cancelToken),
+    getSemanticDiagnostics: (sourceFile, cancelToken) => getProgram().getSemanticDiagnostics(sourceFile, cancelToken),
+    emit: (sourceFile, writeFile, cancelToken, emitOnlyDts, customTransformers) => getProgram().emit(sourceFile, writeFile, cancelToken, emitOnlyDts, customTransformers),
     getAllDependencies: notImplemented,
     getCurrentDirectory: () => getProgram().getCurrentDirectory(),
     close: noop,
@@ -964,12 +964,12 @@ export function getFileEmitOutput(
   program: qt.Program,
   sourceFile: qt.SourceFile,
   emitOnlyDtsFiles: boolean,
-  cancellationToken?: qt.CancellationToken,
+  cancelToken?: qt.CancelToken,
   customTransformers?: qt.CustomTransformers,
   forceDtsEmit?: boolean
 ): EmitOutput {
   const outputFiles: OutputFile[] = [];
-  const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers, forceDtsEmit);
+  const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(sourceFile, writeFile, cancelToken, emitOnlyDtsFiles, customTransformers, forceDtsEmit);
   return { outputFiles, emitSkipped, diagnostics, exportedModulesFromDeclarationEmit };
   function writeFile(fileName: string, text: string, writeByteOrderMark: boolean) {
     outputFiles.push({ name: fileName, writeByteOrderMark, text });
@@ -1112,7 +1112,7 @@ export namespace BuilderState {
     state: BuilderState,
     programOfThisState: qt.Program,
     path: qt.Path,
-    cancellationToken: qt.CancellationToken | undefined,
+    cancelToken: qt.CancelToken | undefined,
     computeHash: ComputeHash,
     cacheToUpdateSignature?: QMap<string>,
     exportedModulesMapCache?: ComputingExportedModulesMap
@@ -1120,13 +1120,13 @@ export namespace BuilderState {
     const signatureCache = cacheToUpdateSignature || new QMap();
     const sourceFile = programOfThisState.getSourceFileByPath(path);
     if (!sourceFile) return empty;
-    if (!updateShapeSignature(state, programOfThisState, sourceFile, signatureCache, cancellationToken, computeHash, exportedModulesMapCache)) return [sourceFile];
+    if (!updateShapeSignature(state, programOfThisState, sourceFile, signatureCache, cancelToken, computeHash, exportedModulesMapCache)) return [sourceFile];
     const result = (state.referencedMap ? getFilesAffectedByUpdatedShapeWhenModuleEmit : getFilesAffectedByUpdatedShapeWhenNonModuleEmit)(
       state,
       programOfThisState,
       sourceFile,
       signatureCache,
-      cancellationToken,
+      cancelToken,
       computeHash,
       exportedModulesMapCache
     );
@@ -1145,7 +1145,7 @@ export namespace BuilderState {
     programOfThisState: qt.Program,
     sourceFile: qt.SourceFile,
     cacheToUpdateSignature: QMap<string>,
-    cancellationToken: qt.CancellationToken | undefined,
+    cancelToken: qt.CancelToken | undefined,
     computeHash: ComputeHash,
     exportedModulesMapCache?: ComputingExportedModulesMap
   ) {
@@ -1280,7 +1280,7 @@ export namespace BuilderState {
     programOfThisState: qt.Program,
     sourceFileWithUpdatedShape: qt.SourceFile,
     cacheToUpdateSignature: QMap<string>,
-    cancellationToken: qt.CancellationToken | undefined,
+    cancelToken: qt.CancelToken | undefined,
     computeHash: ComputeHash | undefined,
     exportedModulesMapCache: ComputingExportedModulesMap | undefined
   ) {
@@ -1295,7 +1295,7 @@ export namespace BuilderState {
       if (!seenFileNamesMap.has(currentPath)) {
         const currentSourceFile = programOfThisState.getSourceFileByPath(currentPath)!;
         seenFileNamesMap.set(currentPath, currentSourceFile);
-        if (currentSourceFile && updateShapeSignature(state, programOfThisState, currentSourceFile, cacheToUpdateSignature, cancellationToken, computeHash!, exportedModulesMapCache)) {
+        if (currentSourceFile && updateShapeSignature(state, programOfThisState, currentSourceFile, cacheToUpdateSignature, cancelToken, computeHash!, exportedModulesMapCache)) {
           queue.push(...getReferencedByPaths(state, currentSourceFile.resolvedPath));
         }
       }

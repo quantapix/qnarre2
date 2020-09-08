@@ -2623,12 +2623,12 @@ export function newCheck(f: qt.Frame) {
     }
     expressionWorker(n: qt.Expression | qt.QualifiedName, checkMode: CheckMode | undefined, forceTuple?: boolean): Type {
       const kind = n.kind;
-      if (cancellationToken) {
+      if (cancelToken) {
         switch (kind) {
           case Syntax.ClassExpression:
           case Syntax.FunctionExpression:
           case Syntax.ArrowFunction:
-            cancellationToken.throwIfCancellationRequested();
+            cancelToken.throwIfCancelRequested();
         }
       }
       switch (kind) {
@@ -3514,13 +3514,13 @@ export function newCheck(f: qt.Frame) {
     sourceElemWorker(n: Node): void {
       if (qf.is.inJSFile(n)) forEach((n as qt.DocContainer).doc, ({ tags }) => forEach(tags, checkSourceElem));
       const kind = n.kind;
-      if (cancellationToken) {
+      if (cancelToken) {
         switch (kind) {
           case Syntax.ModuleDeclaration:
           case Syntax.ClassDeclaration:
           case Syntax.InterfaceDeclaration:
           case Syntax.FunctionDeclaration:
-            cancellationToken.throwIfCancellationRequested();
+            cancelToken.throwIfCancelRequested();
         }
       }
       if (kind >= Syntax.FirstStatement && kind <= Syntax.LastStatement && n.flowNode && !isReachableFlowNode(n.flowNode))

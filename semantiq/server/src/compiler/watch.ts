@@ -667,13 +667,13 @@ export interface ProgramToEmitFilesAndReportErrors {
   getCurrentDirectory(): string;
   getCompilerOpts(): qt.CompilerOpts;
   getSourceFiles(): readonly qt.SourceFile[];
-  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[];
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly DiagnosticWithLocation[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
+  emit(targetSourceFile?: qt.SourceFile, writeFile?: qt.WriteFileCallback, cancelToken?: qt.CancelToken, emitOnlyDtsFiles?: boolean, customTransformers?: qt.CustomTransformers): qt.EmitResult;
 }
 export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileName: (s: string) => void) {
   if (program.getCompilerOpts().listFiles || program.getCompilerOpts().listFilesOnly) {
@@ -688,24 +688,24 @@ export function emitFilesAndReportErrors(
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
   writeFile?: qt.WriteFileCallback,
-  cancellationToken?: qt.CancellationToken,
+  cancelToken?: qt.CancelToken,
   emitOnlyDtsFiles?: boolean,
   customTransformers?: qt.CustomTransformers
 ) {
   const isListFilesOnly = !!program.getCompilerOpts().listFilesOnly;
   const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
   const configFileParsingDiagnosticsLength = allqd.length;
-  qu.addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
+  qu.addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancelToken));
   if (allqd.length === configFileParsingDiagnosticsLength) {
-    qu.addRange(allDiagnostics, program.getOptsDiagnostics(cancellationToken));
+    qu.addRange(allDiagnostics, program.getOptsDiagnostics(cancelToken));
     if (!isListFilesOnly) {
-      qu.addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
+      qu.addRange(allDiagnostics, program.getGlobalDiagnostics(cancelToken));
       if (allqd.length === configFileParsingDiagnosticsLength) {
-        qu.addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancellationToken));
+        qu.addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancelToken));
       }
     }
   }
-  const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
+  const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(undefined, writeFile, cancelToken, emitOnlyDtsFiles, customTransformers);
   const { emittedFiles, diagnostics: emitDiagnostics } = emitResult;
   qu.addRange(allDiagnostics, emitDiagnostics);
   const diagnostics = sortAndDeduplicateDiagnostics(allDiagnostics);
@@ -732,11 +732,11 @@ export function emitFilesAndReportErrorsAndGetExitStatus(
   writeFileName?: (s: string) => void,
   reportSummary?: ReportEmitErrorSummary,
   writeFile?: qt.WriteFileCallback,
-  cancellationToken?: qt.CancellationToken,
+  cancelToken?: qt.CancelToken,
   emitOnlyDtsFiles?: boolean,
   customTransformers?: qt.CustomTransformers
 ) {
-  const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
+  const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancelToken, emitOnlyDtsFiles, customTransformers);
   if (emitResult.emitSkipped && diagnostics.length > 0) return qt.ExitStatus.DiagnosticsPresent_OutputsSkipped;
   if (diagnostics.length > 0) return qt.ExitStatus.DiagnosticsPresent_OutputsGenerated;
   return qt.ExitStatus.Success;

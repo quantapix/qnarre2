@@ -105,11 +105,11 @@ export function getBuildOrderFromAnyBuildOrder(anyBuildOrder: AnyBuildOrder): Bu
   return isCircularBuildOrder(anyBuildOrder) ? anyBuildOrder.buildOrder : anyBuildOrder;
 }
 export interface SolutionBuilder<T extends BuilderProgram> {
-  build(project?: string, cancellationToken?: qt.CancellationToken): ExitStatus;
+  build(project?: string, cancelToken?: qt.CancelToken): ExitStatus;
   clean(project?: string): ExitStatus;
-  buildReferences(project: string, cancellationToken?: qt.CancellationToken): ExitStatus;
+  buildReferences(project: string, cancelToken?: qt.CancelToken): ExitStatus;
   cleanReferences(project?: string): ExitStatus;
-  getNextInvalidatedProject(cancellationToken?: qt.CancellationToken): InvalidatedProject<T> | undefined;
+  getNextInvalidatedProject(cancelToken?: qt.CancelToken): InvalidatedProject<T> | undefined;
   getBuildOrder(): AnyBuildOrder;
   getUpToDateStatusOfProject(project: string): UpToDateStatus;
   invalidateProject(configFilePath: ResolvedConfigFilePath, reloadLevel?: ConfigFileProgramReloadLevel): void;
@@ -466,7 +466,7 @@ function addProjToQueue({ projectPendingBuild }: SolutionBuilderState, proj: Res
     projectPendingBuild.set(proj, reloadLevel);
   }
 }
-function setupInitialBuild(state: SolutionBuilderState, cancellationToken: qt.CancellationToken | undefined) {
+function setupInitialBuild(state: SolutionBuilderState, cancelToken: qt.CancelToken | undefined) {
   if (!state.allProjectBuildPending) return;
   state.allProjectBuildPending = false;
   if (state.opts.watch) {
@@ -475,8 +475,8 @@ function setupInitialBuild(state: SolutionBuilderState, cancellationToken: qt.Ca
   enableCache(state);
   const buildOrder = getBuildOrderFromAnyBuildOrder(getBuildOrder(state));
   buildOrder.forEach((configFileName) => state.projectPendingBuild.set(toResolvedConfigFilePath(state, configFileName), ConfigFileProgramReloadLevel.None));
-  if (cancellationToken) {
-    cancellationToken.throwIfCancellationRequested();
+  if (cancelToken) {
+    cancelToken.throwIfCancelRequested();
   }
 }
 export enum InvalidatedProjectKind {
@@ -489,7 +489,7 @@ export interface InvalidatedProjectBase {
   readonly project: qt.ResolvedConfigFileName;
   readonly projectPath: ResolvedConfigFilePath;
   readonly buildOrder: readonly qt.ResolvedConfigFileName[];
-  done(cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): ExitStatus;
+  done(cancelToken?: qt.CancelToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers): ExitStatus;
   getCompilerOpts(): qt.CompilerOpts;
   getCurrentDirectory(): string;
 }
@@ -503,17 +503,17 @@ export interface BuildInvalidedProject<T extends BuilderProgram> extends Invalid
   getProgram(): qt.Program | undefined;
   getSourceFile(fileName: string): qt.SourceFile | undefined;
   getSourceFiles(): readonly qt.SourceFile[];
-  getOptsDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getOptsDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getGlobalDiagnostics(cancelToken?: qt.CancelToken): readonly Diagnostic[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
+  getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
   getAllDependencies(sourceFile: qt.SourceFile): readonly string[];
-  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-  getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: qt.CancellationToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
+  getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+  getSemanticDiagnosticsOfNextAffectedFile(cancelToken?: qt.CancelToken, ignoreSourceFile?: (sourceFile: qt.SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
   emit(
     targetSourceFile?: qt.SourceFile,
     writeFile?: qt.WriteFileCallback,
-    cancellationToken?: qt.CancellationToken,
+    cancelToken?: qt.CancelToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers
   ): qt.EmitResult | undefined;
@@ -590,23 +590,23 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         getProgram: () => withProgramOrUndefined((program) => program.getProgramOrUndefined()),
         getSourceFile: (fileName) => withProgramOrUndefined((program) => program.getSourceFile(fileName)),
         getSourceFiles: () => withProgramOrEmptyArray((program) => program.getSourceFiles()),
-        getOptsDiagnostics: (cancellationToken) => withProgramOrEmptyArray((program) => program.getOptsDiagnostics(cancellationToken)),
-        getGlobalDiagnostics: (cancellationToken) => withProgramOrEmptyArray((program) => program.getGlobalDiagnostics(cancellationToken)),
+        getOptsDiagnostics: (cancelToken) => withProgramOrEmptyArray((program) => program.getOptsDiagnostics(cancelToken)),
+        getGlobalDiagnostics: (cancelToken) => withProgramOrEmptyArray((program) => program.getGlobalDiagnostics(cancelToken)),
         getConfigFileParsingDiagnostics: () => withProgramOrEmptyArray((program) => program.getConfigFileParsingDiagnostics()),
-        getSyntacticDiagnostics: (sourceFile, cancellationToken) => withProgramOrEmptyArray((program) => program.getSyntacticDiagnostics(sourceFile, cancellationToken)),
+        getSyntacticDiagnostics: (sourceFile, cancelToken) => withProgramOrEmptyArray((program) => program.getSyntacticDiagnostics(sourceFile, cancelToken)),
         getAllDependencies: (sourceFile) => withProgramOrEmptyArray((program) => program.getAllDependencies(sourceFile)),
-        getSemanticDiagnostics: (sourceFile, cancellationToken) => withProgramOrEmptyArray((program) => program.getSemanticDiagnostics(sourceFile, cancellationToken)),
-        getSemanticDiagnosticsOfNextAffectedFile: (cancellationToken, ignoreSourceFile) =>
+        getSemanticDiagnostics: (sourceFile, cancelToken) => withProgramOrEmptyArray((program) => program.getSemanticDiagnostics(sourceFile, cancelToken)),
+        getSemanticDiagnosticsOfNextAffectedFile: (cancelToken, ignoreSourceFile) =>
           withProgramOrUndefined(
             (program) =>
               ((program as any) as SemanticDiagnosticsBuilderProgram).getSemanticDiagnosticsOfNextAffectedFile &&
-              ((program as any) as SemanticDiagnosticsBuilderProgram).getSemanticDiagnosticsOfNextAffectedFile(cancellationToken, ignoreSourceFile)
+              ((program as any) as SemanticDiagnosticsBuilderProgram).getSemanticDiagnosticsOfNextAffectedFile(cancelToken, ignoreSourceFile)
           ),
-        emit: (targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers) => {
-          if (targetSourceFile || emitOnlyDtsFiles) return withProgramOrUndefined((program) => program.emit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers));
-          executeSteps(Step.SemanticDiagnostics, cancellationToken);
+        emit: (targetSourceFile, writeFile, cancelToken, emitOnlyDtsFiles, customTransformers) => {
+          if (targetSourceFile || emitOnlyDtsFiles) return withProgramOrUndefined((program) => program.emit(targetSourceFile, writeFile, cancelToken, emitOnlyDtsFiles, customTransformers));
+          executeSteps(Step.SemanticDiagnostics, cancelToken);
           if (step !== Step.Emit) return;
-          return emit(writeFile, cancellationToken, customTransformers);
+          return emit(writeFile, cancelToken, customTransformers);
         },
         done,
       }
@@ -623,8 +623,8 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
         },
         done,
       };
-  function done(cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
-    executeSteps(Step.Done, cancellationToken, writeFile, customTransformers);
+  function done(cancelToken?: qt.CancelToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
+    executeSteps(Step.Done, cancelToken, writeFile, customTransformers);
     return doneInvalidatedProject(state, projectPath);
   }
   function withProgramOrUndefined<U>(action: (program: T) => U | undefined): U | undefined {
@@ -663,23 +663,23 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       step++;
     }
   }
-  function getSyntaxDiagnostics(cancellationToken?: qt.CancellationToken) {
+  function getSyntaxDiagnostics(cancelToken?: qt.CancelToken) {
     qf.assert.defined(program);
     handleDiagnostics(
       [
         ...program.getConfigFileParsingDiagnostics(),
-        ...program.getOptsDiagnostics(cancellationToken),
-        ...program.getGlobalDiagnostics(cancellationToken),
-        ...program.getSyntacticDiagnostics(undefined, cancellationToken),
+        ...program.getOptsDiagnostics(cancelToken),
+        ...program.getGlobalDiagnostics(cancelToken),
+        ...program.getSyntacticDiagnostics(undefined, cancelToken),
       ],
       BuildResultFlags.SyntaxErrors,
       'Syntactic'
     );
   }
-  function getSemanticDiagnostics(cancellationToken?: qt.CancellationToken) {
-    handleDiagnostics(qf.check.defined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
+  function getSemanticDiagnostics(cancelToken?: qt.CancelToken) {
+    handleDiagnostics(qf.check.defined(program).getSemanticDiagnostics(undefined, cancelToken), BuildResultFlags.TypeErrors, 'Semantic');
   }
-  function emit(writeFileCallback?: qt.WriteFileCallback, cancellationToken?: qt.CancellationToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
+  function emit(writeFileCallback?: qt.WriteFileCallback, cancelToken?: qt.CancelToken, customTransformers?: qt.CustomTransformers): qt.EmitResult {
     qf.assert.defined(program);
     qf.assert.true(step === Step.Emit);
     program.backupState();
@@ -692,7 +692,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
       undefined,
       undefined,
       (name, text, writeByteOrderMark) => outputFiles.push({ name, text, writeByteOrderMark }),
-      cancellationToken,
+      cancelToken,
       false,
       customTransformers
     );
@@ -805,7 +805,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
     const emitDiagnostics = finishEmit(emitterDiagnostics, emittedOutputs, minimumDate, false, outputFiles[0].name, BuildResultFlags.DeclarationOutputUnchanged);
     return { emitSkipped: false, diagnostics: emitDiagnostics };
   }
-  function executeSteps(till: Step, cancellationToken?: qt.CancellationToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
+  function executeSteps(till: Step, cancelToken?: qt.CancelToken, writeFile?: qt.WriteFileCallback, customTransformers?: qt.CustomTransformers) {
     while (step <= till && step < Step.Done) {
       const currentStep = step;
       switch (step) {
@@ -813,19 +813,19 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
           createProgram();
           break;
         case Step.SyntaxDiagnostics:
-          getSyntaxDiagnostics(cancellationToken);
+          getSyntaxDiagnostics(cancelToken);
           break;
         case Step.SemanticDiagnostics:
-          getSemanticDiagnostics(cancellationToken);
+          getSemanticDiagnostics(cancelToken);
           break;
         case Step.Emit:
-          emit(writeFile, cancellationToken, customTransformers);
+          emit(writeFile, cancelToken, customTransformers);
           break;
         case Step.EmitBundle:
           emitBundle(writeFile, customTransformers);
           break;
         case Step.BuildInvalidatedProjectOfBundle:
-          qf.check.defined(invalidatedProjectOfBundle).done(cancellationToken);
+          qf.check.defined(invalidatedProjectOfBundle).done(cancelToken);
           step = Step.Done;
           break;
         case Step.QueueReferencingProjects:
@@ -1235,17 +1235,17 @@ function queueReferencingProjects(
     }
   }
 }
-function build(state: SolutionBuilderState, project?: string, cancellationToken?: qt.CancellationToken, onlyReferences?: boolean): ExitStatus {
+function build(state: SolutionBuilderState, project?: string, cancelToken?: qt.CancelToken, onlyReferences?: boolean): ExitStatus {
   const buildOrder = getBuildOrderFor(state, project, onlyReferences);
   if (!buildOrder) return ExitStatus.InvalidProject_OutputsSkipped;
-  setupInitialBuild(state, cancellationToken);
+  setupInitialBuild(state, cancelToken);
   let reportQueue = true;
   let successfulProjects = 0;
   while (true) {
     const invalidatedProject = getNextInvalidatedProject(state, buildOrder, reportQueue);
     if (!invalidatedProject) break;
     reportQueue = false;
-    invalidatedProject.done(cancellationToken);
+    invalidatedProject.done(cancelToken);
     if (!state.diagnostics.has(invalidatedProject.projectPath)) successfulProjects++;
   }
   disableCache(state);
@@ -1451,12 +1451,12 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(
 ): SolutionBuilder<T> {
   const state = createSolutionBuilderState(watch, hostOrHostWithWatch, rootNames, opts, baseWatchOpts);
   return {
-    build: (project, cancellationToken) => build(state, project, cancellationToken),
+    build: (project, cancelToken) => build(state, project, cancelToken),
     clean: (project) => clean(state, project),
-    buildReferences: (project, cancellationToken) => build(state, project, cancellationToken, true),
+    buildReferences: (project, cancelToken) => build(state, project, cancelToken, true),
     cleanReferences: (project) => clean(state, project, true),
-    getNextInvalidatedProject: (cancellationToken) => {
-      setupInitialBuild(state, cancellationToken);
+    getNextInvalidatedProject: (cancelToken) => {
+      setupInitialBuild(state, cancelToken);
       return getNextInvalidatedProject(state, getBuildOrder(state), false);
     },
     getBuildOrder: () => getBuildOrder(state),

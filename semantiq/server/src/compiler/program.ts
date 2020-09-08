@@ -247,17 +247,17 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     readFileWithCache,
   };
 }
-export function getPreEmitDiagnostics(program: qt.Program, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[];
-export function getPreEmitDiagnostics(program: qt.Program | BuilderProgram, sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
+export function getPreEmitDiagnostics(program: qt.Program, sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: qt.Program | BuilderProgram, sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
   let diagnostics: Diagnostic[] | undefined;
   diagnostics = qu.addRange(diagnostics, program.getConfigFileParsingDiagnostics());
-  diagnostics = qu.addRange(diagnostics, program.getOptsDiagnostics(cancellationToken));
-  diagnostics = qu.addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancellationToken));
-  diagnostics = qu.addRange(diagnostics, program.getGlobalDiagnostics(cancellationToken));
-  diagnostics = qu.addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancellationToken));
+  diagnostics = qu.addRange(diagnostics, program.getOptsDiagnostics(cancelToken));
+  diagnostics = qu.addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancelToken));
+  diagnostics = qu.addRange(diagnostics, program.getGlobalDiagnostics(cancelToken));
+  diagnostics = qu.addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancelToken));
   if (getEmitDeclarations(program.getCompilerOpts())) {
-    diagnostics = qu.addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
+    diagnostics = qu.addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancelToken));
   }
   return sortAndDeduplicateDiagnostics(diagnostics || emptyArray);
 }
@@ -1103,12 +1103,12 @@ export function createProgram(
   function emit(
     sourceFile?: qt.SourceFile,
     writeFileCallback?: qt.WriteFileCallback,
-    cancellationToken?: qt.CancellationToken,
+    cancelToken?: qt.CancelToken,
     emitOnlyDtsFiles?: boolean,
     transformers?: qt.CustomTransformers,
     forceDtsEmit?: boolean
   ): qt.EmitResult {
-    return runWithCancellationToken(() => emitWorker(program, sourceFile, writeFileCallback, cancellationToken, emitOnlyDtsFiles, transformers, forceDtsEmit));
+    return runWithCancelToken(() => emitWorker(program, sourceFile, writeFileCallback, cancelToken, emitOnlyDtsFiles, transformers, forceDtsEmit));
   }
   function isEmitBlocked(emitFileName: string): boolean {
     return hasEmitBlockingqd.has(toPath(emitFileName));
@@ -1117,16 +1117,16 @@ export function createProgram(
     program: qt.Program,
     sourceFile: qt.SourceFile | undefined,
     writeFileCallback: qt.WriteFileCallback | undefined,
-    cancellationToken: qt.CancellationToken | undefined,
+    cancelToken: qt.CancelToken | undefined,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: qt.CustomTransformers,
     forceDtsEmit?: boolean
   ): qt.EmitResult {
     if (!forceDtsEmit) {
-      const result = handleNoEmitOpts(program, sourceFile, cancellationToken);
+      const result = handleNoEmitOpts(program, sourceFile, cancelToken);
       if (result) return result;
     }
-    const emitResolver = getDiagnosticsProducingTypeChecker().getEmitResolver(opts.outFile || opts.out ? undefined : sourceFile, cancellationToken);
+    const emitResolver = getDiagnosticsProducingTypeChecker().getEmitResolver(opts.outFile || opts.out ? undefined : sourceFile, cancelToken);
     performance.mark('beforeEmit');
     const emitResult = emitFiles(emitResolver, getEmitHost(writeFileCallback), sourceFile, getTransformers(opts, customTransformers, emitOnlyDtsFiles), emitOnlyDtsFiles, false, forceDtsEmit);
     performance.mark('afterEmit');
@@ -1141,27 +1141,27 @@ export function createProgram(
   }
   function getDiagnosticsHelper<T extends Diagnostic>(
     sourceFile: qt.SourceFile | undefined,
-    getDiagnostics: (sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined) => readonly T[],
-    cancellationToken: qt.CancellationToken | undefined
+    getDiagnostics: (sourceFile: qt.SourceFile, cancelToken: qt.CancelToken | undefined) => readonly T[],
+    cancelToken: qt.CancelToken | undefined
   ): readonly T[] {
-    if (sourceFile) return getDiagnostics(sourceFile, cancellationToken);
+    if (sourceFile) return getDiagnostics(sourceFile, cancelToken);
     return sortAndDeduplicateDiagnostics(
       flatMap(program.getSourceFiles(), (sourceFile) => {
-        if (cancellationToken) {
-          cancellationToken.throwIfCancellationRequested();
+        if (cancelToken) {
+          cancelToken.throwIfCancelRequested();
         }
-        return getDiagnostics(sourceFile, cancellationToken);
+        return getDiagnostics(sourceFile, cancelToken);
       })
     );
   }
-  function getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[] {
-    return getDiagnosticsHelper(sourceFile, getSyntacticDiagnosticsForFile, cancellationToken);
+  function getSyntacticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly DiagnosticWithLocation[] {
+    return getDiagnosticsHelper(sourceFile, getSyntacticDiagnosticsForFile, cancelToken);
   }
-  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
-    return getDiagnosticsHelper(sourceFile, getSemanticDiagnosticsForFile, cancellationToken);
+  function getSemanticDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
+    return getDiagnosticsHelper(sourceFile, getSemanticDiagnosticsForFile, cancelToken);
   }
-  function getBindAndCheckDiagnostics(sourceFile: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly Diagnostic[] {
-    return getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken);
+  function getBindAndCheckDiagnostics(sourceFile: qt.SourceFile, cancelToken?: qt.CancelToken): readonly Diagnostic[] {
+    return getBindAndCheckDiagnosticsForFile(sourceFile, cancelToken);
   }
   function getProgramDiagnostics(sourceFile: qt.SourceFile): readonly Diagnostic[] {
     if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
@@ -1174,10 +1174,10 @@ export function createProgram(
     if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     return getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics).diagnostics;
   }
-  function getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): readonly DiagnosticWithLocation[] {
     const opts = program.getCompilerOpts();
-    if (!sourceFile || opts.out || opts.outFile) return getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
-    return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancellationToken);
+    if (!sourceFile || opts.out || opts.outFile) return getDeclarationDiagnosticsWorker(sourceFile, cancelToken);
+    return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancelToken);
   }
   function getSyntacticDiagnosticsForFile(sourceFile: qt.SourceFile): readonly DiagnosticWithLocation[] {
     if (sourceFile.isJS()) {
@@ -1188,7 +1188,7 @@ export function createProgram(
     }
     return sourceFile.parseDiagnostics;
   }
-  function runWithCancellationToken<T>(func: () => T): T {
+  function runWithCancelToken<T>(func: () => T): T {
     try {
       return func();
     } catch (e) {
@@ -1199,14 +1199,14 @@ export function createProgram(
       throw e;
     }
   }
-  function getSemanticDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
-    return concatenate(getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken), getProgramDiagnostics(sourceFile));
+  function getSemanticDiagnosticsForFile(sourceFile: qt.SourceFile, cancelToken: qt.CancelToken | undefined): readonly Diagnostic[] {
+    return concatenate(getBindAndCheckDiagnosticsForFile(sourceFile, cancelToken), getProgramDiagnostics(sourceFile));
   }
-  function getBindAndCheckDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
-    return getAndCacheDiagnostics(sourceFile, cancellationToken, cachedBindAndCheckDiagnosticsForFile, getBindAndCheckDiagnosticsForFileNoCache);
+  function getBindAndCheckDiagnosticsForFile(sourceFile: qt.SourceFile, cancelToken: qt.CancelToken | undefined): readonly Diagnostic[] {
+    return getAndCacheDiagnostics(sourceFile, cancelToken, cachedBindAndCheckDiagnosticsForFile, getBindAndCheckDiagnosticsForFileNoCache);
   }
-  function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken | undefined): readonly Diagnostic[] {
-    return runWithCancellationToken(() => {
+  function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: qt.SourceFile, cancelToken: qt.CancelToken | undefined): readonly Diagnostic[] {
+    return runWithCancelToken(() => {
       if (sourceFile.skipTypeChecking(opts, program)) return emptyArray;
       const typeChecker = getDiagnosticsProducingTypeChecker();
       qf.assert.true(!!sourceFile.bindDiagnostics);
@@ -1220,7 +1220,7 @@ export function createProgram(
           isCheckJs ||
           sourceFile.scriptKind === qt.ScriptKind.Deferred);
       const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
-      const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : emptyArray;
+      const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancelToken) : emptyArray;
       return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.docDiagnostics : undefined);
     });
   }
@@ -1238,9 +1238,9 @@ export function createProgram(
     const diagnostics = flatqd.filter((diagnostic) => markPrecedingCommentDirectiveLine(diagnostic, directives) === -1);
     return { diagnostics, directives };
   }
-  function getSuggestionDiagnostics(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken): readonly DiagnosticWithLocation[] {
-    return runWithCancellationToken(() => {
-      return getDiagnosticsProducingTypeChecker().getSuggestionDiagnostics(sourceFile, cancellationToken);
+  function getSuggestionDiagnostics(sourceFile: qt.SourceFile, cancelToken: qt.CancelToken): readonly DiagnosticWithLocation[] {
+    return runWithCancelToken(() => {
+      return getDiagnosticsProducingTypeChecker().getSuggestionDiagnostics(sourceFile, cancelToken);
     });
   }
   function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: qt.CommentDirectivesMap) {
@@ -1257,7 +1257,7 @@ export function createProgram(
     return -1;
   }
   function getJSSyntacticDiagnosticsForFile(sourceFile: qt.SourceFile): DiagnosticWithLocation[] {
-    return runWithCancellationToken(() => {
+    return runWithCancelToken(() => {
       const diagnostics: DiagnosticWithLocation[] = [];
       walk(sourceFile, sourceFile);
       qf.each.childRecursively(sourceFile, walk, walkArray);
@@ -1428,24 +1428,24 @@ export function createProgram(
       }
     });
   }
-  function getDeclarationDiagnosticsWorker(sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): readonly DiagnosticWithLocation[] {
-    return getAndCacheDiagnostics(sourceFile, cancellationToken, cachedDeclarationDiagnosticsForFile, getDeclarationDiagnosticsForFileNoCache);
+  function getDeclarationDiagnosticsWorker(sourceFile: qt.SourceFile | undefined, cancelToken: qt.CancelToken | undefined): readonly DiagnosticWithLocation[] {
+    return getAndCacheDiagnostics(sourceFile, cancelToken, cachedDeclarationDiagnosticsForFile, getDeclarationDiagnosticsForFileNoCache);
   }
-  function getDeclarationDiagnosticsForFileNoCache(sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): readonly DiagnosticWithLocation[] {
-    return runWithCancellationToken(() => {
-      const resolver = getDiagnosticsProducingTypeChecker().getEmitResolver(sourceFile, cancellationToken);
+  function getDeclarationDiagnosticsForFileNoCache(sourceFile: qt.SourceFile | undefined, cancelToken: qt.CancelToken | undefined): readonly DiagnosticWithLocation[] {
+    return runWithCancelToken(() => {
+      const resolver = getDiagnosticsProducingTypeChecker().getEmitResolver(sourceFile, cancelToken);
       return qnr.getDeclarationDiagnostics(getEmitHost(noop), resolver, sourceFile) || emptyArray;
     });
   }
   function getAndCacheDiagnostics<T extends qt.SourceFile | undefined, U extends Diagnostic>(
     sourceFile: T,
-    cancellationToken: qt.CancellationToken | undefined,
+    cancelToken: qt.CancelToken | undefined,
     cache: DiagnosticCache<U>,
-    getDiagnostics: (sourceFile: T, cancellationToken: qt.CancellationToken | undefined) => readonly U[]
+    getDiagnostics: (sourceFile: T, cancelToken: qt.CancelToken | undefined) => readonly U[]
   ): readonly U[] {
     const cachedResult = sourceFile ? cache.perFile && cache.perFile.get(sourceFile.path) : cache.allDiagnostics;
     if (cachedResult) return cachedResult;
-    const result = getDiagnostics(sourceFile, cancellationToken);
+    const result = getDiagnostics(sourceFile, cancelToken);
     if (sourceFile) {
       if (!cache.perFile) {
         cache.perFile = qu.createMap();
@@ -1456,8 +1456,8 @@ export function createProgram(
     }
     return result;
   }
-  function getDeclarationDiagnosticsForFile(sourceFile: qt.SourceFile, cancellationToken: qt.CancellationToken): readonly DiagnosticWithLocation[] {
-    return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
+  function getDeclarationDiagnosticsForFile(sourceFile: qt.SourceFile, cancelToken: qt.CancelToken): readonly DiagnosticWithLocation[] {
+    return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancelToken);
   }
   function getOptsDiagnostics(): SortedReadonlyArray<Diagnostic> {
     return sortAndDeduplicateDiagnostics(concatenate(fileProcessingqd.getGlobalDiagnostics(), concatenate(programqd.getGlobalDiagnostics(), getOptsDiagnosticsOfConfigFile())));
@@ -2615,18 +2615,18 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     );
   }
 }
-export function handleNoEmitOpts(program: ProgramToEmitFilesAndReportErrors, sourceFile: qt.SourceFile | undefined, cancellationToken: qt.CancellationToken | undefined): qt.EmitResult | undefined {
+export function handleNoEmitOpts(program: ProgramToEmitFilesAndReportErrors, sourceFile: qt.SourceFile | undefined, cancelToken: qt.CancelToken | undefined): qt.EmitResult | undefined {
   const opts = program.getCompilerOpts();
   if (opts.noEmit) return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
   if (!opts.noEmitOnError) return;
   let diagnostics: readonly Diagnostic[] = [
-    ...program.getOptsDiagnostics(cancellationToken),
-    ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
-    ...program.getGlobalDiagnostics(cancellationToken),
-    ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
+    ...program.getOptsDiagnostics(cancelToken),
+    ...program.getSyntacticDiagnostics(sourceFile, cancelToken),
+    ...program.getGlobalDiagnostics(cancelToken),
+    ...program.getSemanticDiagnostics(sourceFile, cancelToken),
   ];
   if (diagnostics.length === 0 && getEmitDeclarations(program.getCompilerOpts())) {
-    diagnostics = program.getDeclarationDiagnostics(undefined, cancellationToken);
+    diagnostics = program.getDeclarationDiagnostics(undefined, cancelToken);
   }
   return diagnostics.length > 0 ? { diagnostics, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true } : undefined;
 }

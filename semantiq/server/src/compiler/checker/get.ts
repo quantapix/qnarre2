@@ -82,7 +82,7 @@ export function newGet(f: qt.Frame) {
         return qf.visit.children(n, markAsSynthetic, nullTrafoContext);
       };
     }
-    emitResolver(s: qt.SourceFile, t: qt.CancellationToken) {
+    emitResolver(s: qt.SourceFile, t: qt.CancelToken) {
       this.diagnostics(s, t);
       return emitResolver;
     }
@@ -3519,12 +3519,12 @@ export function newGet(f: qt.Frame) {
     potentiallyUnusedIdentifiers(sourceFile: qt.SourceFile): readonly PotentiallyUnusedIdentifier[] {
       return allPotentiallyUnusedIdentifiers.get(sourceFile.path) || qu.empty;
     }
-    diagnostics(sourceFile: qt.SourceFile, ct: qt.CancellationToken): qd.Diagnostic[] {
+    diagnostics(sourceFile: qt.SourceFile, ct: qt.CancelToken): qd.Diagnostic[] {
       try {
-        cancellationToken = ct;
+        cancelToken = ct;
         return this.diagnosticsWorker(sourceFile);
       } finally {
-        cancellationToken = undefined;
+        cancelToken = undefined;
       }
     }
     diagnosticsWorker(sourceFile: qt.SourceFile): qd.Diagnostic[] {

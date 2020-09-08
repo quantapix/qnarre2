@@ -322,7 +322,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (file.skipTypeChecking(compilerOpts, host)) return empty;
       let diagnostics: qd.DiagnosticWithLocation[] | undefined;
       try {
-        cancellationToken = ct;
+        cancelToken = ct;
         check.sourceFile(file);
         qf.assert.true(!!(qf.get.nodeLinks(file).flags & NodeCheckFlags.TypeChecked));
         diagnostics = qu.addRange(diagnostics, suggestionqd.msgs.getDiagnostics(file.fileName));
@@ -332,15 +332,15 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         });
         return diagnostics || empty;
       } finally {
-        cancellationToken = undefined;
+        cancelToken = undefined;
       }
     }
-    runWithCancellationToken(token, callback) {
+    runWithCancelToken(token, callback) {
       try {
-        cancellationToken = token;
+        cancelToken = token;
         return callback(checker);
       } finally {
-        cancellationToken = undefined;
+        cancelToken = undefined;
       }
     }
     getLocalTypeParamsOfClassOrInterfaceOrTypeAlias;
@@ -2979,9 +2979,9 @@ export interface TypeCheckerOld {
   qf.make.indexInfo(type: qt.Type, isReadonly: boolean, declaration?: qt.SignatureDeclaration): qt.IndexInfo;
   tryFindAmbientModuleWithoutAugmentations(moduleName: string): qt.Symbol | undefined;
   getSymbolWalker(accept?: (symbol: qt.Symbol) => boolean): qt.SymbolWalker;
-  getDiagnostics(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): qd.Diagnostic[];
+  getDiagnostics(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): qd.Diagnostic[];
   getGlobalDiagnostics(): qd.Diagnostic[];
-  getEmitResolver(sourceFile?: qt.SourceFile, cancellationToken?: qt.CancellationToken): qt.EmitResolver;
+  getEmitResolver(sourceFile?: qt.SourceFile, cancelToken?: qt.CancelToken): qt.EmitResolver;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
   qf.type.is.array(type: qt.Type): boolean;
   qf.type.is.tuple(type: qt.Type): boolean;
@@ -2996,8 +2996,8 @@ export interface TypeCheckerOld {
   resolveExternalModuleSymbol(symbol: qt.Symbol): qt.Symbol;
   tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): qt.Type | undefined;
   getTypeArgConstraint(node: qt.Typing): qt.Type | undefined;
-  getSuggestionDiagnostics(file: qt.SourceFile, cancellationToken?: qt.CancellationToken): readonly qd.DiagnosticWithLocation[];
-  runWithCancellationToken<T>(token: qt.CancellationToken, cb: (checker: qt.TypeChecker) => T): T;
+  getSuggestionDiagnostics(file: qt.SourceFile, cancelToken?: qt.CancelToken): readonly qd.DiagnosticWithLocation[];
+  runWithCancelToken<T>(token: qt.CancelToken, cb: (checker: qt.TypeChecker) => T): T;
   getLocalTypeParamsOfClassOrInterfaceOrTypeAlias(symbol: qt.Symbol): readonly qt.TypeParam[] | undefined;
   qf.is.declarationVisible(node: qt.Declaration | qt.AnyImportSyntax): boolean;
 }

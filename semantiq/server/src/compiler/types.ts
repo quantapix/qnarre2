@@ -174,9 +174,9 @@ export interface CallExpression extends LeftExpr, Decl {
 export interface CallSignatureDeclaration extends SignatureDecl, TypeElem {
   kind: Syntax.CallSignature;
 }
-export interface CancellationToken {
-  isCancellationRequested(): boolean;
-  throwIfCancellationRequested(): void;
+export interface CancelToken {
+  isCancelRequested(): boolean;
+  throwIfCancelRequested(): void;
 }
 export interface CaseBlock extends Nobj {
   kind: Syntax.CaseBlock;
@@ -269,7 +269,7 @@ export interface CommentRange extends qu.Range {
 export interface CompilerHost extends ModuleResolutionHost {
   getSourceFile(fileName: string, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getSourceFileByPath?(fileName: string, path: Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
-  getCancellationToken?(): CancellationToken;
+  getCancelToken?(): CancelToken;
   getDefaultLibFileName(opts: CompilerOpts): string;
   getDefaultLibLocation?(): string;
   writeFile: WriteFileCallback;
@@ -1709,24 +1709,24 @@ export interface Program extends ScriptReferenceHost {
   getMissingFilePaths(): readonly Path[];
   getRefFileMap(): qu.MultiMap<RefFile> | undefined;
   getFilesByNameMap(): qu.QMap<SourceFile | false | undefined>;
-  emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
+  emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancelToken?: CancelToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
   emit(
     targetSourceFile?: SourceFile,
     writeFile?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
+    cancelToken?: CancelToken,
     emitOnlyDtsFiles?: boolean,
     customTransformers?: CustomTransformers,
     forceDtsEmit?: boolean
   ): EmitResult;
-  getOptsDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
-  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
+  getOptsDiagnostics(cancelToken?: CancelToken): readonly qd.Diagnostic[];
+  getGlobalDiagnostics(cancelToken?: CancelToken): readonly qd.Diagnostic[];
+  getSyntacticDiagnostics(sourceFile?: SourceFile, cancelToken?: CancelToken): readonly qd.DiagnosticWithLocation[];
+  getSemanticDiagnostics(sourceFile?: SourceFile, cancelToken?: CancelToken): readonly qd.Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: SourceFile, cancelToken?: CancelToken): readonly qd.DiagnosticWithLocation[];
   getConfigFileParsingDiagnostics(): readonly qd.Diagnostic[];
-  getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
-  getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
-  getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getSuggestionDiagnostics(sourceFile: SourceFile, cancelToken?: CancelToken): readonly qd.DiagnosticWithLocation[];
+  getBindAndCheckDiagnostics(sourceFile: SourceFile, cancelToken?: CancelToken): readonly qd.Diagnostic[];
+  getProgramDiagnostics(sourceFile: SourceFile, cancelToken?: CancelToken): readonly qd.Diagnostic[];
   getTypeChecker(): TypeChecker;
   getCommonSourceDirectory(): string;
   getDiagnosticsProducingTypeChecker(): TypeChecker;
@@ -1757,7 +1757,7 @@ export interface Program extends ScriptReferenceHost {
   getResolvedProjectReferenceByPath(projectReferencePath: Path): ResolvedProjectReference | undefined;
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   getProgramBuildInfo?(): ProgramBuildInfo | undefined;
-  emitBuildInfo(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
+  emitBuildInfo(writeFile?: WriteFileCallback, cancelToken?: CancelToken): EmitResult;
   getProbableSymlinks(): qu.QReadonlyMap<string>;
   fileExists(fileName: string): boolean;
 }

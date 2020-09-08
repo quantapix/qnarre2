@@ -1670,7 +1670,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
   let _jsxFactoryEntity: qt.EntityName | undefined;
   let nextMergeId = 1;
   let nextFlowId = 1;
-  let cancellationToken: qt.CancellationToken | undefined;
+  let cancelToken: qt.CancelToken | undefined;
   let requestedExternalEmitHelpers: qt.ExternalEmitHelpers;
   let externalHelpersModule: qt.Symbol;
   let enumCount = 0;
