@@ -34,3 +34,6 @@
 [submodule "semantiq/julia"]
 	path = semantiq/julia
 	url = https://github.com/JuliaLang/julia.git
+[submodule "semantiq/purescript"]
+	path = semantiq/purescript
+	url = https://github.com/purescript/purescript.git
