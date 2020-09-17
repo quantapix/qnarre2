@@ -181,17 +181,14 @@ export class Ffind {
 export class Fget {}
 export class Fhas {}
 export class Fis {
-  patternMatch({ prefix, suffix }: Pattern, s: string) {
-    return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
-  }
-  array(x: unknown): x is readonly {}[] {
-    return Array.isArray ? Array.isArray(x) : x instanceof Array;
+  number(x: unknown): x is number {
+    return typeof x === 'number';
   }
   string(x: unknown): x is string {
     return typeof x === 'string';
   }
-  number(x: unknown): x is number {
-    return typeof x === 'number';
+  array(x: unknown): x is readonly {}[] {
+    return Array.isArray ? Array.isArray(x) : x instanceof Array;
   }
   infOrNaN(n: string | __String) {
     return n === 'Infinity' || n === '-Infinity' || n === 'NaN';
@@ -208,6 +205,9 @@ export class Fis {
   }
   wildcard(s: string) {
     return s === '*' || s === 'x' || s === 'X';
+  }
+  patternMatch({ prefix, suffix }: Pattern, s: string) {
+    return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
   }
 }
 const qf: Frame = { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), get: new Fget(), has: new Fhas(), is: new Fis() };

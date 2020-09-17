@@ -669,18 +669,18 @@ const slash3TypeRef = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
 const slash3AMDRef = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
 const defaultLibRef = /^(\/\/\/\s*<reference\s+no-default-lib\s*=\s*)('|")(.+?)\2\s*\/>/;
 const MAX_SMI_X86 = 0x3fff_ffff;
-export const is = new (class {
-  assignmentOperator(k: Syntax) {
-    return k >= Syntax.FirstAssignment && k <= Syntax.LastAssignment;
+export const is = new (class extends qu.Fis {
+  assignmentOperator(s: Syntax) {
+    return s >= Syntax.FirstAssignment && s <= Syntax.LastAssignment;
   }
-  classMemberModifier(k: Syntax) {
-    return this.paramPropertyModifier(k) || k === Syntax.StaticKeyword;
+  classMemberModifier(s: Syntax) {
+    return this.paramPropertyModifier(s) || s === Syntax.StaticKeyword;
   }
   codePoint(c: number) {
     return c <= 0x10ffff;
   }
-  contextualKeyword(k: Syntax) {
-    return Syntax.FirstContextualKeyword <= k && k <= Syntax.LastContextualKeyword;
+  contextualKeyword(s: Syntax) {
+    return Syntax.FirstContextualKeyword <= s && s <= Syntax.LastContextualKeyword;
   }
   couldStartTrivia(s: string, pos: number) {
     const c = s.charCodeAt(pos);
@@ -702,8 +702,8 @@ export const is = new (class {
     }
     return c > Codes.maxAsciiCharacter;
   }
-  declaration(k?: Syntax) {
-    switch (k) {
+  declaration(s?: Syntax) {
+    switch (s) {
       case Syntax.ArrowFunction:
       case Syntax.BindingElem:
       case Syntax.ClassDeclaration:
@@ -742,8 +742,8 @@ export const is = new (class {
     }
     return false;
   }
-  declarationStatement(k: Syntax) {
-    switch (k) {
+  declarationStatement(s: Syntax) {
+    switch (s) {
       case Syntax.ClassDeclaration:
       case Syntax.EnumDeclaration:
       case Syntax.ExportAssignment:
@@ -769,8 +769,8 @@ export const is = new (class {
   docLike(s: string, i: number) {
     return s.charCodeAt(i + 1) === Codes.asterisk && s.charCodeAt(i + 2) === Codes.asterisk && s.charCodeAt(i + 3) !== Codes.slash;
   }
-  expression(k: Syntax) {
-    switch (k) {
+  expression(s: Syntax) {
+    switch (s) {
       case Syntax.ArrowFunction:
       case Syntax.AsExpression:
       case Syntax.BinaryExpression:
@@ -782,10 +782,10 @@ export const is = new (class {
       case Syntax.YieldExpression:
         return true;
     }
-    return this.unaryExpression(k);
+    return this.unaryExpression(s);
   }
-  functionLike(k?: Syntax) {
-    switch (k) {
+  functionLike(s?: Syntax) {
+    switch (s) {
       case Syntax.CallSignature:
       case Syntax.ConstructorTyping:
       case Syntax.ConstructSignature:
@@ -796,10 +796,10 @@ export const is = new (class {
       case Syntax.MethodSignature:
         return true;
     }
-    return this.functionLikeDeclaration(k);
+    return this.functionLikeDeclaration(s);
   }
-  functionLikeDeclaration(k?: Syntax) {
-    switch (k) {
+  functionLikeDeclaration(s?: Syntax) {
+    switch (s) {
       case Syntax.ArrowFunction:
       case Syntax.Constructor:
       case Syntax.FunctionDeclaration:
@@ -811,17 +811,17 @@ export const is = new (class {
     }
     return false;
   }
-  futureReservedKeyword(k: Syntax) {
-    return Syntax.FirstFutureReservedWord <= k && k <= Syntax.LastFutureReservedWord;
+  futureReservedKeyword(s: Syntax) {
+    return Syntax.FirstFutureReservedWord <= s && s <= Syntax.LastFutureReservedWord;
   }
   hexDigit(c: number) {
     return this.digit(c) || (c >= Codes.A && c <= Codes.F) || (c >= Codes.a && c <= Codes.f);
   }
-  identifierOrKeyword(t: Syntax) {
-    return t >= Syntax.Identifier;
+  identifierOrKeyword(s: Syntax) {
+    return s >= Syntax.Identifier;
   }
-  identifierOrKeywordOrGreaterThan(t: Syntax) {
-    return t === Syntax.GreaterThanToken || this.identifierOrKeyword(t);
+  identifierOrKeywordOrGreaterThan(s: Syntax) {
+    return s === Syntax.GreaterThanToken || this.identifierOrKeyword(s);
   }
   identifierPart(c: number, l?: LanguageVariant) {
     return (
@@ -849,11 +849,11 @@ export const is = new (class {
     const c = (s as string).charCodeAt(0);
     return (c >= Codes.a && c <= Codes.z) || qu.stringContains(s as string, '-');
   }
-  keyword(k: Syntax) {
-    return Syntax.FirstKeyword <= k && k <= Syntax.LastKeyword;
+  keyword(s: Syntax) {
+    return Syntax.FirstKeyword <= s && s <= Syntax.LastKeyword;
   }
-  leftHandSideExpression(k: Syntax) {
-    switch (k) {
+  leftHandSideExpression(s: Syntax) {
+    switch (s) {
       case Syntax.ArrayLiteralExpression:
       case Syntax.BigIntLiteral:
       case Syntax.CallExpression:
@@ -889,11 +889,11 @@ export const is = new (class {
   lineBreak(c: number) {
     return c === Codes.lineFeed || c === Codes.carriageReturn || c === Codes.lineSeparator || c === Codes.paragraphSeparator;
   }
-  literal(k: Syntax) {
-    return Syntax.FirstLiteralToken <= k && k <= Syntax.LastLiteralToken;
+  literal(s: Syntax) {
+    return Syntax.FirstLiteralToken <= s && s <= Syntax.LastLiteralToken;
   }
-  logicalOperator(k: Syntax) {
-    return k === Syntax.Bar2Token || k === Syntax.Ampersand2Token || k === Syntax.ExclamationToken;
+  logicalOperator(s: Syntax) {
+    return s === Syntax.Bar2Token || s === Syntax.Ampersand2Token || s === Syntax.ExclamationToken;
   }
   markerTrivia(s: string, pos: number) {
     qf.assert.true(pos >= 0);
@@ -908,8 +908,8 @@ export const is = new (class {
     }
     return false;
   }
-  modifier(k: Syntax): k is Modifier['kind'] {
-    switch (k) {
+  modifier(s: Syntax): s is Modifier['kind'] {
+    switch (s) {
       case Syntax.AbstractKeyword:
       case Syntax.AsyncKeyword:
       case Syntax.ConstKeyword:
@@ -925,11 +925,11 @@ export const is = new (class {
     }
     return false;
   }
-  node(k: Syntax) {
-    return k >= Syntax.FirstNode;
+  node(s: Syntax) {
+    return s >= Syntax.FirstNode;
   }
-  nonContextualKeyword(k: Syntax) {
-    return this.keyword(k) && !this.contextualKeyword(k);
+  nonContextualKeyword(s: Syntax) {
+    return this.keyword(s) && !this.contextualKeyword(s);
   }
   octalDigit(c: number) {
     return c >= Codes._0 && c <= Codes._7;
@@ -948,8 +948,8 @@ export const is = new (class {
     }
     return false;
   }
-  paramPropertyModifier(k: Syntax) {
-    return !!(get.modifierFlag(k) & ModifierFlags.ParamPropertyModifier);
+  paramPropertyModifier(s: Syntax) {
+    return !!(get.modifierFlag(s) & ModifierFlags.ParamPropertyModifier);
   }
   pinnedComment(s: string, start: number) {
     return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
@@ -972,8 +972,8 @@ export const is = new (class {
   singleOrDoubleQuote(c: number) {
     return c === Codes.singleQuote || c === Codes.doubleQuote;
   }
-  statementKindButNotDeclaration(k: Syntax) {
-    switch (k) {
+  statementKindButNotDeclaration(s: Syntax) {
+    switch (s) {
       case Syntax.BreakStatement:
       case Syntax.ContinueStatement:
       case Syntax.DebuggerStatement:
@@ -1007,18 +1007,18 @@ export const is = new (class {
     const k = fromString(s);
     return k !== undefined && this.nonContextualKeyword(k);
   }
-  templateLiteral(k: Syntax) {
-    return Syntax.FirstTemplateToken <= k && k <= Syntax.LastTemplateToken;
+  templateLiteral(s: Syntax) {
+    return Syntax.FirstTemplateToken <= s && s <= Syntax.LastTemplateToken;
   }
-  token(k: Syntax) {
-    return k >= Syntax.FirstToken && k <= Syntax.LastToken;
+  token(s: Syntax) {
+    return s >= Syntax.FirstToken && s <= Syntax.LastToken;
   }
-  trivia(k: Syntax): k is TriviaKind {
-    return Syntax.FirstTriviaToken <= k && k <= Syntax.LastTriviaToken;
+  trivia(s: Syntax): s is TriviaKind {
+    return Syntax.FirstTriviaToken <= s && s <= Syntax.LastTriviaToken;
   }
-  typeNode(k?: Syntax) {
-    if (k && k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) return true;
-    switch (k) {
+  typeNode(s?: Syntax) {
+    if (s && s >= Syntax.FirstTypeNode && s <= Syntax.LastTypeNode) return true;
+    switch (s) {
       case Syntax.AnyKeyword:
       case Syntax.BigIntKeyword:
       case Syntax.BooleanKeyword:
@@ -1044,8 +1044,8 @@ export const is = new (class {
     }
     return false;
   }
-  unaryExpression(k: Syntax) {
-    switch (k) {
+  unaryExpression(s: Syntax) {
+    switch (s) {
       case Syntax.AwaitExpression:
       case Syntax.DeleteExpression:
       case Syntax.PostfixUnaryExpression:
@@ -1055,7 +1055,7 @@ export const is = new (class {
       case Syntax.VoidExpression:
         return true;
     }
-    return this.leftHandSideExpression(k);
+    return this.leftHandSideExpression(s);
   }
   volumeChar(c: number) {
     return (c >= Codes.a && c <= Codes.z) || (c >= Codes.A && c <= Codes.Z);
