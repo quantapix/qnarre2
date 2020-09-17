@@ -1,4 +1,4 @@
-import { DocSyntax, JsxTokenSyntax, LanguageVariant, Syntax } from './syntax';
+import { DocSyntax, JsxTokenSyntax, Language, Syntax } from './syntax';
 import { Modifier, Node, NodeFlags, TokenFlags } from './types';
 import { qf, Nodes } from './core';
 import * as qc from './core';
@@ -587,7 +587,7 @@ function create() {
       s.bindSuggestionDiagnostics = undefined;
       s.languageVersion = languageVersion;
       s.fileName = normalizePath(fileName);
-      s.languageVariant = getLanguage(scriptKind);
+      s.language = getLanguage(scriptKind);
       s.isDeclarationFile = declaration;
       s.scriptKind = scriptKind;
       return s;
@@ -1913,7 +1913,7 @@ function create() {
               } else {
                 qf.assert.true(first === Syntax.LessThanToken);
                 if (!is.identifier()) return Tristate.False;
-                if (source.languageVariant === LanguageVariant.JSX) {
+                if (source.language === Language.JSX) {
                   const isArrowFunctionInJsx = lookAhead(() => {
                     const third = next.tok();
                     if (third === Syntax.ExtendsKeyword) {
@@ -2101,7 +2101,7 @@ function create() {
           case Syntax.AwaitKeyword:
             return false;
           case Syntax.LessThanToken:
-            if (source.languageVariant !== LanguageVariant.JSX) return false;
+            if (source.language !== Language.JSX) return false;
           default:
             return true;
         }
@@ -2163,7 +2163,7 @@ function create() {
         next.tok();
         n.operand = this.leftHandSideExpressionOrHigher();
         return finishNode(n);
-      } else if (source.languageVariant === LanguageVariant.JSX && tok() === Syntax.LessThanToken && lookAhead(next.isIdentifierOrKeywordOrGreaterThan)) {
+      } else if (source.language === Language.JSX && tok() === Syntax.LessThanToken && lookAhead(next.isIdentifierOrKeywordOrGreaterThan)) {
         return parseJsx.elemOrSelfClosingElemOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
@@ -4289,7 +4289,7 @@ function create() {
     }
   })();
   function getLanguage(k: ScriptKind) {
-    return k === ScriptKind.TSX || k === ScriptKind.JSX || k === ScriptKind.JS || k === ScriptKind.JSON ? LanguageVariant.TX : LanguageVariant.TS;
+    return k === ScriptKind.TSX || k === ScriptKind.JSX || k === ScriptKind.JS || k === ScriptKind.JSON ? Language.TX : Language.TS;
   }
   function initializeState(_sourceText: string, languageVersion: qt.ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
     sourceText = _sourceText;
@@ -4316,7 +4316,7 @@ function create() {
     scanner.setText(sourceText);
     scanner.setOnError(scanError);
     //scanner.setScriptTarget(languageVersion);
-    scanner.setLanguageVariant(getLanguage(scriptKind));
+    scanner.setLanguage(getLanguage(scriptKind));
   }
   function clearState() {
     scanner.clearDirectives();
@@ -4476,7 +4476,7 @@ function create() {
   }
   function parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: Diagnostic[] } | undefined {
     initializeState(t, qt.ScriptTarget.ESNext, undefined, ScriptKind.JS);
-    source = { languageVariant: LanguageVariant.TS, text: t } as qt.SourceFile;
+    source = { language: Language.TS, text: t } as qt.SourceFile;
     const doc = flags.withContext(NodeFlags.Doc, () => parseDoc.comment(start, length));
     const diagnostics = diags;
     clearState();

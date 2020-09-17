@@ -2000,7 +2000,7 @@ export interface SourceFile extends Decl {
   isDeclarationFile: boolean;
   jsGlobalAugmentations?: SymbolTable;
   kind: Syntax.SourceFile;
-  languageVariant: qy.LanguageVariant;
+  language: qy.Language;
   languageVersion: qt.ScriptTarget;
   libReferenceDirectives: readonly FileReference[];
   lineMap?: readonly number[];

@@ -1251,7 +1251,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
   isDefaultLib!: boolean;
   jsGlobalAugmentations?: SymbolTable;
   kind!: Syntax.SourceFile;
-  languageVariant!: qy.LanguageVariant;
+  language!: qy.Language;
   languageVersion!: qt.ScriptTarget;
   libReferenceDirectives!: qt.FileReference[];
   lineMap?: number[];
@@ -1460,7 +1460,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
     return false;
   }
   spanOfTokenAtPos(pos: number) {
-    const scanner = qs_create(true, this.languageVariant);
+    const scanner = qs_create(true, this.language);
     scanner.setText(this.text, pos);
     scanner.scan();
     const s = scanner.getTokenPos();
@@ -1515,7 +1515,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
       updated.libReferenceDirectives = libReferences === undefined ? n.libReferenceDirectives : libReferences;
       if (n.amdDependencies !== undefined) updated.amdDependencies = n.amdDependencies;
       if (n.moduleName !== undefined) updated.moduleName = n.moduleName;
-      if (n.languageVariant !== undefined) updated.languageVariant = n.languageVariant;
+      if (n.language !== undefined) updated.language = n.language;
       if (n.renamedDependencies !== undefined) updated.renamedDependencies = n.renamedDependencies;
       if (n.languageVersion !== undefined) updated.languageVersion = n.languageVersion;
       if (n.scriptKind !== undefined) updated.scriptKind = n.scriptKind;

@@ -496,11 +496,11 @@ export const enum Syntax {
   LastContextualKeyword = OfKeyword,
 }
 // prettier-ignore
-export const enum LanguageVariant { TS, TX, PY, JL }
+export const enum Language { TS, TX, PY, JL, RS, HS }
 // prettier-ignore
-export type KeywordSyntax = | Syntax.AbstractKeyword | Syntax.AnyKeyword | Syntax.AsKeyword | Syntax.AssertsKeyword | Syntax.BigIntKeyword | Syntax.BooleanKeyword | Syntax.BreakKeyword | Syntax.CaseKeyword | Syntax.CatchKeyword | Syntax.ClassKeyword | Syntax.ContinueKeyword | Syntax.ConstKeyword | Syntax.ConstructorKeyword | Syntax.DebuggerKeyword | Syntax.DeclareKeyword | Syntax.DefaultKeyword | Syntax.DeleteKeyword | Syntax.DoKeyword | Syntax.ElseKeyword | Syntax.EnumKeyword | Syntax.ExportKeyword | Syntax.ExtendsKeyword | Syntax.FalseKeyword | Syntax.FinallyKeyword | Syntax.ForKeyword | Syntax.FromKeyword | Syntax.FunctionKeyword | Syntax.GetKeyword | Syntax.IfKeyword | Syntax.ImplementsKeyword | Syntax.ImportKeyword | Syntax.InKeyword | Syntax.InferKeyword | Syntax.InstanceOfKeyword | Syntax.InterfaceKeyword | Syntax.IsKeyword | Syntax.KeyOfKeyword | Syntax.LetKeyword | Syntax.ModuleKeyword | Syntax.NamespaceKeyword | Syntax.NeverKeyword | Syntax.NewKeyword | Syntax.NullKeyword | Syntax.NumberKeyword | Syntax.ObjectKeyword | Syntax.PackageKeyword | Syntax.PrivateKeyword | Syntax.ProtectedKeyword | Syntax.PublicKeyword | Syntax.ReadonlyKeyword | Syntax.RequireKeyword | Syntax.GlobalKeyword | Syntax.ReturnKeyword | Syntax.SetKeyword | Syntax.StaticKeyword | Syntax.StringKeyword | Syntax.SuperKeyword | Syntax.SwitchKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.ThrowKeyword | Syntax.TrueKeyword | Syntax.TryKeyword | Syntax.TypeKeyword | Syntax.TypeOfKeyword | Syntax.UndefinedKeyword | Syntax.UniqueKeyword | Syntax.UnknownKeyword | Syntax.VarKeyword | Syntax.VoidKeyword | Syntax.WhileKeyword | Syntax.WithKeyword | Syntax.YieldKeyword | Syntax.AsyncKeyword | Syntax.AwaitKeyword | Syntax.OfKeyword;
+export type Keyword = | Syntax.AbstractKeyword | Syntax.AnyKeyword | Syntax.AsKeyword | Syntax.AssertsKeyword | Syntax.BigIntKeyword | Syntax.BooleanKeyword | Syntax.BreakKeyword | Syntax.CaseKeyword | Syntax.CatchKeyword | Syntax.ClassKeyword | Syntax.ContinueKeyword | Syntax.ConstKeyword | Syntax.ConstructorKeyword | Syntax.DebuggerKeyword | Syntax.DeclareKeyword | Syntax.DefaultKeyword | Syntax.DeleteKeyword | Syntax.DoKeyword | Syntax.ElseKeyword | Syntax.EnumKeyword | Syntax.ExportKeyword | Syntax.ExtendsKeyword | Syntax.FalseKeyword | Syntax.FinallyKeyword | Syntax.ForKeyword | Syntax.FromKeyword | Syntax.FunctionKeyword | Syntax.GetKeyword | Syntax.IfKeyword | Syntax.ImplementsKeyword | Syntax.ImportKeyword | Syntax.InKeyword | Syntax.InferKeyword | Syntax.InstanceOfKeyword | Syntax.InterfaceKeyword | Syntax.IsKeyword | Syntax.KeyOfKeyword | Syntax.LetKeyword | Syntax.ModuleKeyword | Syntax.NamespaceKeyword | Syntax.NeverKeyword | Syntax.NewKeyword | Syntax.NullKeyword | Syntax.NumberKeyword | Syntax.ObjectKeyword | Syntax.PackageKeyword | Syntax.PrivateKeyword | Syntax.ProtectedKeyword | Syntax.PublicKeyword | Syntax.ReadonlyKeyword | Syntax.RequireKeyword | Syntax.GlobalKeyword | Syntax.ReturnKeyword | Syntax.SetKeyword | Syntax.StaticKeyword | Syntax.StringKeyword | Syntax.SuperKeyword | Syntax.SwitchKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.ThrowKeyword | Syntax.TrueKeyword | Syntax.TryKeyword | Syntax.TypeKeyword | Syntax.TypeOfKeyword | Syntax.UndefinedKeyword | Syntax.UniqueKeyword | Syntax.UnknownKeyword | Syntax.VarKeyword | Syntax.VoidKeyword | Syntax.WhileKeyword | Syntax.WithKeyword | Syntax.YieldKeyword | Syntax.AsyncKeyword | Syntax.AwaitKeyword | Syntax.OfKeyword;
 // prettier-ignore
-export type DocSyntax = | Syntax.EndOfFileToken | Syntax.WhitespaceTrivia | Syntax.AtToken | Syntax.NewLineTrivia | Syntax.AsteriskToken | Syntax.OpenBraceToken | Syntax.CloseBraceToken | Syntax.LessThanToken | Syntax.GreaterThanToken | Syntax.OpenBracketToken | Syntax.CloseBracketToken | Syntax.EqualsToken | Syntax.CommaToken | Syntax.DotToken | Syntax.Identifier | Syntax.BacktickToken | Syntax.Unknown | KeywordSyntax;
+export type DocSyntax = | Syntax.EndOfFileToken | Syntax.WhitespaceTrivia | Syntax.AtToken | Syntax.NewLineTrivia | Syntax.AsteriskToken | Syntax.OpenBraceToken | Syntax.CloseBraceToken | Syntax.LessThanToken | Syntax.GreaterThanToken | Syntax.OpenBracketToken | Syntax.CloseBracketToken | Syntax.EqualsToken | Syntax.CommaToken | Syntax.DotToken | Syntax.Identifier | Syntax.BacktickToken | Syntax.Unknown | Keyword;
 // prettier-ignore
 export type JsxTokenSyntax = | Syntax.LessThanSlashToken | Syntax.EndOfFileToken | Syntax.ConflictMarkerTrivia | Syntax.JsxText | Syntax.JsxTextAllWhiteSpaces | Syntax.OpenBraceToken | Syntax.LessThanToken;
 export type CommentKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia;
@@ -514,7 +514,7 @@ const altDirSeparator = '\\';
 const urlSchemeSeparator = '://';
 const markerLength = '<<<<<<<'.length;
 const shebangRegex = /^#!.*/;
-const keywords: qu.MapLike<KeywordSyntax> = {
+const keywords: qu.MapLike<Keyword> = {
   abstract: Syntax.AbstractKeyword,
   any: Syntax.AnyKeyword,
   as: Syntax.AsKeyword,
@@ -828,21 +828,21 @@ export function newIs(f: qu.Frame) {
     identifierOrKeywordOrGreaterThan(s: Syntax) {
       return s === Syntax.GreaterThanToken || this.identifierOrKeyword(s);
     }
-    identifierPart(c: number, l?: LanguageVariant) {
+    identifierPart(c: number, l?: Language) {
       return (
         (c >= Codes.A && c <= Codes.Z) ||
         (c >= Codes.a && c <= Codes.z) ||
         (c >= Codes._0 && c <= Codes._9) ||
         c === Codes.$ ||
         c === Codes._ ||
-        (l === LanguageVariant.TX ? c === Codes.minus || c === Codes.colon : false) ||
+        (l === Language.TX ? c === Codes.minus || c === Codes.colon : false) ||
         (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierPart))
       );
     }
     identifierStart(c: number) {
       return (c >= Codes.A && c <= Codes.Z) || (c >= Codes.a && c <= Codes.z) || c === Codes.$ || c === Codes._ || (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierStart));
     }
-    identifierText(s: string, l?: LanguageVariant) {
+    identifierText(s: string, l?: Language) {
       let c = s.codePointAt(0)!;
       if (!this.identifierStart(c)) return false;
       for (let i = qf.get.charSize(c); i < s.length; i += qf.get.charSize(c)) {
@@ -1624,7 +1624,7 @@ export function hasAsterisks(s: string) {
   for (let i = 0; i < s.length; i++) {
     if (s.charCodeAt(i) === Codes.asterisk) {
       if (!has) has = true;
-      return false;
+      else return false;
     }
   }
   return true;

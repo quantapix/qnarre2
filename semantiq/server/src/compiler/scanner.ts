@@ -1,4 +1,4 @@
-import { Codes, DocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+import { Codes, DocSyntax, JsxTokenSyntax, Keyword, Language, Syntax } from './syntax';
 import { qf } from './core';
 import { TokenFlags } from './types';
 import * as qc from './core';
@@ -7,7 +7,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qy from './syntax';
 export interface Scanner {
-  setLanguageVariant(l: LanguageVariant): void;
+  setLanguage(l: Language): void;
   setOnError(cb?: qt.ErrorCallback): void;
   getText(): string;
   setText(t?: string, start?: number, length?: number): void;
@@ -47,7 +47,7 @@ export interface Scanner {
 }
 const directiveRegExSingleLine = /^\s*\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
 const directiveRegExMultiLine = /^\s*(?:\/|\*)*\s*@(ts-expect-error|ts-ignore)/;
-export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError?: qt.ErrorCallback): Scanner {
+export function qs_create(skipTrivia = false, lang = Language.TS, onError?: qt.ErrorCallback): Scanner {
   let pos: number; // Current position (end position of text of current token)
   let end: number; // end of text
   let text: string;
@@ -59,7 +59,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   let directives: qt.CommentDirective[] | undefined;
   let inDocType = 0;
   const scanner: Scanner = {
-    setLanguageVariant: (l) => {
+    setLanguage: (l) => {
       lang = l;
     },
     setOnError: (cb) => {
@@ -356,7 +356,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (pos += 2), (token = Syntax.LessThan2Token);
           }
           if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.LessThanEqualsToken);
-          if (lang === LanguageVariant.TX && text.charCodeAt(pos + 1) === Codes.slash && text.charCodeAt(pos + 2) !== Codes.asterisk) return (pos += 2), (token = Syntax.LessThanSlashToken);
+          if (lang === Language.TX && text.charCodeAt(pos + 1) === Codes.slash && text.charCodeAt(pos + 2) !== Codes.asterisk) return (pos += 2), (token = Syntax.LessThanSlashToken);
           pos++;
           return (token = Syntax.LessThanToken);
         case Codes.equals:
@@ -610,7 +610,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     }
     return r;
   }
-  function scanIdentifier(): Syntax.Identifier | KeywordSyntax {
+  function scanIdentifier(): Syntax.Identifier | Keyword {
     const l = tokValue.length;
     if (l >= 2 && l <= 11) {
       const c = tokValue.charCodeAt(0);

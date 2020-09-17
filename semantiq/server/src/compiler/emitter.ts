@@ -155,7 +155,7 @@ export function getOutputExtension(sourceFile: qt.SourceFile, opts: qt.CompilerO
   if (opts.jsx === qt.JsxEmit.Preserve) {
     if (sourceFile.isJS()) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
-    } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
+    } else if (sourceFile.language === Language.JSX) {
       return Extension.Jsx;
     }
   }
