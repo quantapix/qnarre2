@@ -512,7 +512,7 @@ export const enum RelationComparisonResult {
   ReportsUnreliable = 1 << 4,
   ReportsMask = ReportsUnmeasurable | ReportsUnreliable,
 }
-export const enum ScriptKind {
+export const enum Script {
   Unknown = 0,
   JS = 1,
   JSX = 2,

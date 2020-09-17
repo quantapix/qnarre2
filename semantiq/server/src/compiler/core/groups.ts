@@ -751,8 +751,8 @@ export function newType(f: qt.Frame) {
       }
       constructorsForArgs(t: Type, args: readonly qt.Typing[] | undefined, n: Node): readonly Signature[] {
         const typeArgCount = qu.length(args);
-        const isJavascript = qf.is.inJSFile(n);
-        return qu.filter(this.signatures(t, qt.SignatureKind.Construct), (s) => (isJavascript || typeArgCount >= this.minTypeArgCount(s.typeParams)) && typeArgCount <= qu.length(s.typeParams));
+        const isJS = qf.is.inJSFile(n);
+        return qu.filter(this.signatures(t, qt.SignatureKind.Construct), (s) => (isJS || typeArgCount >= this.minTypeArgCount(s.typeParams)) && typeArgCount <= qu.length(s.typeParams));
       }
       instantiatedConstructorsForArgs(t: Type, args: readonly qt.Typing[] | undefined, n: Node): readonly Signature[] {
         const ss = this.constructorsForArgs(t, args, n);

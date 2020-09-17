@@ -1,5 +1,6 @@
 // generated from './diagnosticInformationMap.generated.ts' by 'src/compiler'
-import { qt.SourceFile } from './types';
+import { SourceFile } from './types';
+import { qf } from './utils';
 import * as qu from './utils';
 export enum Category {
   Warning,
@@ -19,7 +20,7 @@ export interface MessageChain {
 export interface DiagnosticRelatedInformation {
   cat: Category;
   code: number;
-  file?: qt.SourceFile;
+  file?: SourceFile;
   length?: number;
   start?: number;
   text: string | MessageChain;
@@ -30,7 +31,7 @@ export interface Diagnostic extends DiagnosticRelatedInformation {
   relatedInformation?: DiagnosticRelatedInformation[];
 }
 export interface DiagnosticWithLocation extends Diagnostic {
-  file: qt.SourceFile;
+  file: SourceFile;
   start: number;
   length: number;
 }
@@ -40,7 +41,7 @@ export interface DiagnosticCollection {
   getGlobalDiagnostics(): Diagnostic[];
   getDiagnostics(): Diagnostic[];
   getDiagnostics(fileName: string): DiagnosticWithLocation[];
-  reattachFileDiagnostics(newFile: qt.SourceFile): void;
+  reattachFileDiagnostics(newFile: SourceFile): void;
 }
 export let localizedMessages: qu.MapLike<string> | undefined;
 export function setLocalizedMessages(ms: typeof localizedMessages) {
@@ -149,7 +150,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     getDiagnostics,
     reattachFileDiagnostics,
   };
-  function reattachFileDiagnostics(s: qt.SourceFile) {
+  function reattachFileDiagnostics(s: SourceFile) {
     qf.each.up(fileDiags.get(s.fileName), (d) => (d.file = s));
   }
   function lookup(d: Diagnostic): Diagnostic | undefined {
@@ -186,8 +187,8 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function getDiagnostics(fileName: string): DiagnosticWithLocation[];
   function getDiagnostics(): Diagnostic[];
   function getDiagnostics(fileName?: string): Diagnostic[] {
-    if (fileName) return fileDiags.get(fileName) || [];
     const fileDiags: Diagnostic[] = qu.flatMapToMutable(filesWithDiagnostics, (f) => fileDiags.get(f));
+    if (fileName) return fileDiags.get(fileName) || [];
     if (!nonFileDiagnostics.length) return fileDiags;
     fileDiags.unshift(...nonFileDiagnostics);
     return fileDiags;
@@ -4259,7 +4260,7 @@ export const msgs = {
   Found_package_json_at_0: new Message(6099, Category.Message, 'Found_package_json_at_0_6099', "Found 'package.json' at '{0}'."),
   package_json_does_not_have_a_0_field: new Message(6100, Category.Message, 'package_json_does_not_have_a_0_field_6100', "'package.json' does not have a '{0}' field."),
   package_json_has_0_field_1_that_references_2: new Message(6101, Category.Message, 'package_json_has_0_field_1_that_references_2_6101', "'package.json' has '{0}' field '{1}' that references '{2}'."),
-  Allow_javascript_files_to_be_compiled: new Message(6102, Category.Message, 'Allow_javascript_files_to_be_compiled_6102', 'Allow javascript files to be compiled.'),
+  Allow_js_files_to_be_compiled: new Message(6102, Category.Message, 'Allow_js_files_to_be_compiled_6102', 'Allow js files to be compiled.'),
   Option_0_should_have_array_of_strings_as_a_value: new Message(6103, Category.Error, 'Option_0_should_have_array_of_strings_as_a_value_6103', "Option '{0}' should have array of strings as a value."),
   Checking_if_0_is_the_longest_matching_prefix_for_1_2: new Message(
     6104,

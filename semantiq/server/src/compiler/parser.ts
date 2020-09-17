@@ -1,5 +1,5 @@
 import { DocSyntax, JsxTokenSyntax, Language, Syntax } from './syntax';
-import { Modifier, Node, NodeFlags, TokenFlags } from './types';
+import { Modifier, Node, NodeFlags, Script, TokenFlags } from './types';
 import { qf, Nodes } from './core';
 import * as qc from './core';
 import * as qd from './diags';
@@ -7,7 +7,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qy from './syntax';
 interface Parser {
-  parseSource(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): qt.SourceFile;
+  parseSource(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: Script): qt.SourceFile;
   parseJsonText(fileName: string, text: string, lang?: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): qt.JsonSourceFile;
   parseIsolatedEntityName(s: string, languageVersion: qt.ScriptTarget): qt.EntityName | undefined;
   parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: Diagnostic[] } | undefined;
@@ -67,21 +67,31 @@ const enum Tristate {
 interface MissingList<T extends Node> extends Nodes<T> {
   isMissingList: true;
 }
-function create() {
+function newParser(f: qy.Frame) {
+  interface Frame extends qy.Frame {
+    check: Fcheck;
+    get: Fget;
+    has: Fhas;
+  }
+  const qf = f as Frame;
   const scanner = qs_create(true);
   let currentToken: Syntax;
   let identifiers: qu.QMap<string>;
   let privateIdentifiers: qu.QMap<string>;
   const withDisallowInDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
   let source: qt.SourceFile;
-  let diags: DiagnosticWithLocation[];
+  let diags: qd.DiagnosticWithLocation[];
   let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
   let sourceText: string;
   let notParenthesizedArrow: qu.QMap<true> | undefined;
   let parseErrorBeforeNextFinishedNode = false;
   const tok = () => currentToken;
   const getNodePos = () => scanner.getStartPos();
-  const is = new (class {
+  interface _Fis extends qy.Fis {}
+  class _Fis {}
+  const i = qy.newIs(qf);
+  qu.addMixins(_Fis, [i]);
+  const is = new (class extends _Fis {
     identifier() {
       if (tok() === Syntax.Identifier) return true;
       if (tok() === Syntax.YieldKeyword && flags.inContext(NodeFlags.YieldContext)) return false;
@@ -92,13 +102,13 @@ function create() {
       return tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken || tok() === Syntax.PrivateIdentifier || this.identifier();
     }
     literalPropertyName() {
-      return qy.is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral;
+      return this.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral;
     }
     indexSignature() {
       const isUnambiguouslyIndexSignature = () => {
         next.tok();
         if (tok() === Syntax.Dot3Token || tok() === Syntax.CloseBracketToken) return true;
-        if (qy.is.modifier(tok())) {
+        if (this.modifier(tok())) {
           next.tok();
           if (this.identifier()) return true;
         } else if (!this.identifier()) return false;
@@ -110,8 +120,8 @@ function create() {
       };
       return tok() === Syntax.OpenBracketToken && lookAhead(isUnambiguouslyIndexSignature);
     }
-    declareModifier(modifier: Modifier) {
-      return modifier.kind === Syntax.DeclareKeyword;
+    declareModifier(m: Modifier) {
+      return m.kind === Syntax.DeclareKeyword;
     }
     heritageClause() {
       return tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
@@ -226,7 +236,7 @@ function create() {
       }
     }
     startOfParam(isDocParam: boolean) {
-      return tok() === Syntax.Dot3Token || this.identifierOrPrivateIdentifierOrPattern() || qy.is.modifier(tok()) || tok() === Syntax.AtToken || this.startOfType(!isDocParam);
+      return tok() === Syntax.Dot3Token || this.identifierOrPrivateIdentifierOrPattern() || this.modifier(tok()) || tok() === Syntax.AtToken || this.startOfType(!isDocParam);
     }
     startOfStatement() {
       switch (tok()) {
@@ -296,7 +306,7 @@ function create() {
         default:
           const isBinaryOperator = () => {
             if (flags.inContext(NodeFlags.DisallowInContext) && tok() === Syntax.InKeyword) return false;
-            return qy.get.binaryOperatorPrecedence(tok()) > 0;
+            return get.binaryOperatorPrecedence(tok()) > 0;
           };
           if (isBinaryOperator()) return true;
           return this.identifier();
@@ -330,8 +340,8 @@ function create() {
           return this.identifier();
       }
     }
-    inOrOfKeyword(t: Syntax) {
-      return t === Syntax.InKeyword || t === Syntax.OfKeyword;
+    inOrOfKeyword(s: Syntax) {
+      return s === Syntax.InKeyword || s === Syntax.OfKeyword;
     }
     templateStartOfTaggedTemplate() {
       return tok() === Syntax.NoSubstitutionLiteral || tok() === Syntax.TemplateHead;
@@ -341,7 +351,7 @@ function create() {
         case Syntax.ObjectKeyword:
           return true;
         case Syntax.ArrayTyping:
-          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTyping).elemType);
+          return this.objectOrObjectArrayTypeReference(n.elemType);
         default:
           return n.kind === Syntax.TypingReference && n.typeName.kind === Syntax.Identifier && n.typeName.escapedText === 'Object' && !n.typeArgs;
       }
@@ -394,7 +404,7 @@ function create() {
   })();
   const next = new (class {
     tok(check = true): Syntax {
-      if (check && qy.is.keyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
+      if (check && is.keyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
         parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), qd.msgs.Keywords_cannot_contain_escape_characters);
       }
       return (currentToken = scanner.scan());
@@ -427,7 +437,7 @@ function create() {
       if (scanner.hasPrecedingLineBreak()) return false;
       return can.followModifier();
     }
-    isNonwhitespaceTokenEndOfFile(): boolean {
+    isNonwhitespaceTokenEndOfFile() {
       while (true) {
         next.tokDoc();
         if (tok() === Syntax.EndOfFileToken) return true;
@@ -454,11 +464,11 @@ function create() {
     }
     isIdentifierOrKeyword() {
       this.tok();
-      return qy.is.identifierOrKeyword(tok());
+      return is.identifierOrKeyword(tok());
     }
     isIdentifierOrKeywordOrGreaterThan() {
       this.tok();
-      return qy.is.identifierOrKeywordOrGreaterThan(tok());
+      return is.identifierOrKeywordOrGreaterThan(tok());
     }
     isStartOfExpression() {
       this.tok();
@@ -490,11 +500,11 @@ function create() {
     }
     isIdentifierOrKeywordOrOpenBracketOrTemplate() {
       this.tok();
-      return qy.is.identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || is.templateStartOfTaggedTemplate();
+      return is.identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || is.templateStartOfTaggedTemplate();
     }
     isIdentifierOrKeywordOnSameLine() {
       this.tok();
-      return qy.is.identifierOrKeyword(tok()) && !scanner.hasPrecedingLineBreak();
+      return is.identifierOrKeyword(tok()) && !scanner.hasPrecedingLineBreak();
     }
     isClassKeywordOnSameLine() {
       this.tok();
@@ -506,7 +516,7 @@ function create() {
     }
     isIdentifierOrKeywordOrLiteralOnSameLine() {
       this.tok();
-      return (qy.is.identifierOrKeyword(tok()) || tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral || tok() === Syntax.StringLiteral) && !scanner.hasPrecedingLineBreak();
+      return (is.identifierOrKeyword(tok()) || tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral || tok() === Syntax.StringLiteral) && !scanner.hasPrecedingLineBreak();
     }
     isIdentifierOrStartOfDestructuring() {
       this.tok();
@@ -579,7 +589,7 @@ function create() {
   const create = new (class {
     nodeCount = 0;
     identifierCount = 0;
-    source(fileName: string, languageVersion: qt.ScriptTarget, scriptKind: ScriptKind, declaration: boolean): qt.SourceFile {
+    source(fileName: string, languageVersion: qt.ScriptTarget, scriptKind: Script, declaration: boolean): qt.SourceFile {
       const s = new SourceFileC(Syntax.SourceFile, 0, sourceText.length) as qt.SourceFile;
       this.nodeCount++;
       s.text = sourceText;
@@ -1116,9 +1126,9 @@ function create() {
     }
   })();
   const parse = new (class {
-    source(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes = false, scriptKind?: ScriptKind): qt.SourceFile {
-      scriptKind = ensureScriptKind(fileName, scriptKind);
-      if (scriptKind === ScriptKind.JSON) {
+    source(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes = false, scriptKind?: Script): qt.SourceFile {
+      scriptKind = ensureScript(fileName, scriptKind);
+      if (scriptKind === Script.JSON) {
         const r = this.jsonText(fileName, t, languageVersion, syntaxCursor, setParentNodes);
         convertToObjectWorker(r, r.diags, false, undefined, undefined);
         r.referencedFiles = emptyArray;
@@ -1173,8 +1183,8 @@ function create() {
       return r;
     }
     jsonText(fileName: string, text: string, lang: qt.ScriptTarget = qt.ScriptTarget.ES2020, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): qt.JsonSourceFile {
-      initializeState(text, lang, syntaxCursor, ScriptKind.JSON);
-      source = create.source(fileName, qt.ScriptTarget.ES2020, ScriptKind.JSON, false);
+      initializeState(text, lang, syntaxCursor, Script.JSON);
+      source = create.source(fileName, qt.ScriptTarget.ES2020, Script.JSON, false);
       source.flags = flags.value;
       next.tok();
       const p = getNodePos();
@@ -1220,7 +1230,7 @@ function create() {
       return r;
     }
     isolatedEntityName(s: string, languageVersion: qt.ScriptTarget): qt.EntityName | undefined {
-      initializeState(s, languageVersion, undefined, ScriptKind.JS);
+      initializeState(s, languageVersion, undefined, Script.JS);
       next.tok();
       const n = parse.entityName(true);
       const invalid = tok() === Syntax.EndOfFileToken && !diags.length;
@@ -1240,16 +1250,16 @@ function create() {
     expectedToken(t: Syntax, m?: qd.Message, arg0?: any): Node {
       return this.optionalToken(t) || create.missingNode(t, false, m || qd.msgs._0_expected, arg0 || qy.toString(t));
     }
-    optional(t: Syntax): boolean {
-      if (tok() === t) {
+    optional(s: Syntax): boolean {
+      if (tok() === s) {
         next.tok();
         return true;
       }
       return false;
     }
     optionalToken<T extends Syntax>(t: T): qt.Token<T>;
-    optionalToken(t: Syntax): Node | undefined {
-      if (tok() === t) return this.tokenNode();
+    optionalToken(s: Syntax): Node | undefined {
+      if (tok() === s) return this.tokenNode();
       return;
     }
     tokenNode<T extends Node>(): T {
@@ -1268,9 +1278,9 @@ function create() {
       return create.identifier(is.identifier(), m, pm);
     }
     identifierName(m?: qd.Message): qc.Identifier {
-      return create.identifier(qy.is.identifierOrKeyword(tok()), m);
+      return create.identifier(is.identifierOrKeyword(tok()), m);
     }
-    propertyName(computed = true): qc.PropertyName {
+    propertyName(computed = true): qt.PropertyName {
       if (tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral) {
         const n = this.literalNode() as qc.StringLiteral | qc.NumericLiteral;
         n.text = internIdentifier(n.text);
@@ -1294,7 +1304,7 @@ function create() {
         if (i === undefined) privateIdentifiers.set(s, (i = s));
         return i;
       };
-      n.escapedText = qy.get.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
+      n.escapedText = qf.get.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
       next.tok();
       return finishNode(n);
     }
@@ -1361,10 +1371,10 @@ function create() {
       n.literal = l;
       return finishNode(n);
     }
-    literalNode(): qc.LiteralExpression {
-      return this.literalLikeNode(tok()) as qc.LiteralExpression;
+    literalNode(): qt.LiteralExpression {
+      return this.literalLikeNode(tok()) as qt.LiteralExpression;
     }
-    literalLikeNode(k: Syntax): qc.LiteralLikeNode {
+    literalLikeNode(k: Syntax): qt.LiteralLikeNode {
       const n = create.node(k);
       n.text = scanner.getTokenValue();
       switch (k) {
@@ -1380,7 +1390,7 @@ function create() {
       if (scanner.hasExtendedEscape()) n.hasExtendedEscape = true;
       if (scanner.isUnterminated()) n.isUnterminated = true;
       if (n.kind === Syntax.NumericLiteral) (<qt.NumericLiteral>n).numericLiteralFlags = scanner.getTokenFlags() & TokenFlags.NumericLiteralFlags;
-      if (qy.is.templateLiteral(n.kind))
+      if (is.templateLiteral(n.kind))
         (<qt.TemplateHead | qc.TemplateMiddle | qc.TemplateTail | qt.NoSubstitutionLiteral>n).templateFlags = scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
       next.tok();
       finishNode(n);
@@ -1498,10 +1508,10 @@ function create() {
       n.members = this.objectTypeMembers();
       return finishNode(n);
     }
-    objectTypeMembers(): Nodes<qc.TypeElem> {
-      let es: Nodes<qc.TypeElem>;
+    objectTypeMembers(): Nodes<qt.TypeElem> {
+      let es: Nodes<qt.TypeElem>;
       if (this.expected(Syntax.OpenBraceToken)) {
-        const typeMember = (): qc.TypeElem => {
+        const typeMember = (): qt.TypeElem => {
           if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.signatureMember(Syntax.CallSignature);
           if (tok() === Syntax.NewKeyword && lookAhead(next.isOpenParenOrLessThan)) return this.signatureMember(Syntax.ConstructSignature);
           const n = create.nodeWithDoc(Syntax.Unknown);
@@ -1511,7 +1521,7 @@ function create() {
         };
         es = ctx.parseList(Context.TypeMembers, typeMember);
         this.expected(Syntax.CloseBraceToken);
-      } else es = create.missingList<qc.TypeElem>();
+      } else es = create.missingList<qt.TypeElem>();
       return es;
     }
     mappedTypeParam() {
@@ -1598,7 +1608,7 @@ function create() {
         m.operator = Syntax.MinusToken;
         next.tok();
       }
-      let e: qt.BooleanLiteral | qc.LiteralExpression | qc.PrefixUnaryExpression =
+      let e: qt.BooleanLiteral | qt.LiteralExpression | qc.PrefixUnaryExpression =
         tok() === Syntax.TrueKeyword || tok() === Syntax.FalseKeyword ? this.tokenNode<qt.BooleanLiteral>() : (this.literalLikeNode(tok()) as qc.LiteralExpression);
       if (negative) {
         m.operand = e;
@@ -1722,10 +1732,10 @@ function create() {
       }
       return type;
     }
-    typeOperator(operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword) {
+    typeOperator(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword) {
       const n = create.node(Syntax.TypingOperator);
-      this.expected(operator);
-      n.operator = operator;
+      this.expected(o);
+      n.operator = o;
       n.type = this.typeOperatorOrHigher();
       return finishNode(n);
     }
@@ -1807,7 +1817,7 @@ function create() {
           next.tok();
           if (tok() === Syntax.CloseParenToken || tok() === Syntax.Dot3Token) return true;
           const skipParamStart = () => {
-            if (qy.is.modifier(tok())) parse.modifiers();
+            if (is.modifier(tok())) parse.modifiers();
             if (is.identifier() || tok() === Syntax.ThisKeyword) {
               next.tok();
               return true;
@@ -1851,9 +1861,9 @@ function create() {
       const dc = flags.inContext(NodeFlags.DecoratorContext);
       if (dc) flags.set(false, NodeFlags.DecoratorContext);
       let expr = this.assignmentExpressionOrHigher();
-      let operatorToken: qc.BinaryOperatorToken;
-      while ((operatorToken = this.optionalToken(Syntax.CommaToken))) {
-        expr = create.binaryExpression(expr, operatorToken, this.assignmentExpressionOrHigher());
+      let o: qt.BinaryOperatorToken;
+      while ((o = this.optionalToken(Syntax.CommaToken))) {
+        expr = create.binaryExpression(expr, o, this.assignmentExpressionOrHigher());
       }
       if (dc) flags.set(true, NodeFlags.DecoratorContext);
       return expr;
@@ -1895,7 +1905,7 @@ function create() {
                 }
                 if (second === Syntax.OpenBracketToken || second === Syntax.OpenBraceToken) return Tristate.Unknown;
                 if (second === Syntax.Dot3Token) return Tristate.True;
-                if (qy.is.modifier(second) && second !== Syntax.AsyncKeyword && lookAhead(next.isIdentifier)) return Tristate.True;
+                if (is.modifier(second) && second !== Syntax.AsyncKeyword && lookAhead(next.isIdentifier)) return Tristate.True;
                 if (!is.identifier() && second !== Syntax.ThisKeyword) return Tristate.False;
                 switch (next.tok()) {
                   case Syntax.ColonToken:
@@ -1972,7 +1982,7 @@ function create() {
       if (arrow) return arrow;
       const e = this.binaryExpressionOrHigher(0);
       if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as qc.Identifier);
-      if (qf.is.leftHandSideExpression(e) && qy.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+      if (qf.is.leftHandSideExpression(e) && is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
       return this.conditionalExpressionRest(e);
     }
     yieldExpression(): qc.YieldExpression {
@@ -2043,7 +2053,7 @@ function create() {
     binaryExpressionRest(precedence: number, leftOperand: qt.Expression): qt.Expression {
       while (true) {
         reScanGreaterToken();
-        const newPrecedence = qy.get.binaryOperatorPrecedence(tok());
+        const newPrecedence = qf.get.binaryOperatorPrecedence(tok());
         const consumeCurrentOperator = tok() === Syntax.Asterisk2Token ? newPrecedence >= precedence : newPrecedence > precedence;
         if (!consumeCurrentOperator) break;
         if (tok() === Syntax.InKeyword && flags.inContext(NodeFlags.DisallowInContext)) break;
@@ -2059,7 +2069,7 @@ function create() {
     }
     prefixUnaryExpression() {
       const n = create.node(Syntax.PrefixUnaryExpression);
-      n.operator = tok() as qc.PrefixUnaryOperator;
+      n.operator = tok() as qt.PrefixUnaryOperator;
       next.tok();
       n.operand = this.simpleUnaryExpression();
       return finishNode(n);
@@ -2088,7 +2098,7 @@ function create() {
       n.expression = this.simpleUnaryExpression();
       return finishNode(n);
     }
-    unaryExpressionOrHigher(): qc.UnaryExpression | qc.BinaryExpression {
+    unaryExpressionOrHigher(): qt.UnaryExpression | qc.BinaryExpression {
       const isUpdateExpression = () => {
         switch (tok()) {
           case Syntax.PlusToken:
@@ -2108,7 +2118,7 @@ function create() {
       };
       if (isUpdateExpression()) {
         const e = this.updateExpression();
-        return tok() === Syntax.Asterisk2Token ? <qt.BinaryExpression>this.binaryExpressionRest(qy.get.binaryOperatorPrecedence(tok()), e) : e;
+        return tok() === Syntax.Asterisk2Token ? <qt.BinaryExpression>this.binaryExpressionRest(qf.get.binaryOperatorPrecedence(tok()), e) : e;
       }
       const unaryOperator = tok();
       const e = this.simpleUnaryExpression();
@@ -2128,7 +2138,7 @@ function create() {
       }
       return e;
     }
-    simpleUnaryExpression(): qc.UnaryExpression {
+    simpleUnaryExpression(): qt.UnaryExpression {
       switch (tok()) {
         case Syntax.PlusToken:
         case Syntax.MinusToken:
@@ -2178,7 +2188,7 @@ function create() {
       return expression;
     }
     leftHandSideExpressionOrHigher(): qt.LeftExpression {
-      let expression: qc.MemberExpression;
+      let expression: qt.MemberExpression;
       if (tok() === Syntax.ImportKeyword) {
         if (lookAhead(next.isOpenParenOrLessThan)) {
           source.flags |= NodeFlags.PossiblyContainsDynamicImport;
@@ -2200,20 +2210,20 @@ function create() {
       }
       return this.callExpressionRest(expression);
     }
-    memberExpressionOrHigher(): qc.MemberExpression {
-      const expression = this.primaryExpression();
-      return this.memberExpressionRest(expression, true);
+    memberExpressionOrHigher(): qt.MemberExpression {
+      const e = this.primaryExpression();
+      return this.memberExpressionRest(e, true);
     }
-    superExpression(): qc.MemberExpression {
-      const expression = this.tokenNode<qt.PrimaryExpression>();
+    superExpression(): qt.MemberExpression {
+      const e = this.tokenNode<qt.PrimaryExpression>();
       if (tok() === Syntax.LessThanToken) {
         const startPos = getNodePos();
         const typeArgs = tryParse(this.typeArgsInExpression);
         if (typeArgs !== undefined) this.errorAt(startPos, getNodePos(), qd.msgs.super_may_not_use_type_args);
       }
-      if (tok() === Syntax.OpenParenToken || tok() === Syntax.DotToken || tok() === Syntax.OpenBracketToken) return expression;
-      const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
-      n.expression = expression;
+      if (tok() === Syntax.OpenParenToken || tok() === Syntax.DotToken || tok() === Syntax.OpenBracketToken) return e;
+      const n = create.node(Syntax.PropertyAccessExpression, e.pos);
+      n.expression = e;
       this.expectedToken(Syntax.DotToken, qd.msgs.super_must_be_followed_by_an_arg_list_or_member_access);
       n.name = this.rightSideOfDot(true, true);
       return finishNode(n);
@@ -2245,7 +2255,7 @@ function create() {
         n.argExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_elem_access_expression_should_take_an_arg);
       } else {
         const arg = flags.withoutDisallowIn(this.expression);
-        if (qf.is.stringOrNumericLiteralLike(arg)) arg.text = internIdentifier(arg.text);
+        if (is.stringOrNumericLiteralLike(arg)) arg.text = internIdentifier(arg.text);
         n.argExpression = arg;
       }
       this.expected(Syntax.CloseBracketToken);
@@ -2261,7 +2271,7 @@ function create() {
         };
         if (allowOptionalChain && isStartOfChain()) {
           questionDotToken = this.expectedToken(Syntax.QuestionDotToken);
-          isPropertyAccess = qy.is.identifierOrKeyword(tok());
+          isPropertyAccess = is.identifierOrKeyword(tok());
         } else isPropertyAccess = this.optional(Syntax.DotToken);
         if (isPropertyAccess) {
           expression = this.propertyAccessExpressionRest(expression, questionDotToken);
@@ -2294,46 +2304,46 @@ function create() {
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
-    callExpressionRest(expression: qt.LeftExpression): qt.LeftExpression {
+    callExpressionRest(e: qt.LeftExpression): qt.LeftExpression {
       while (true) {
-        expression = this.memberExpressionRest(expression, true);
+        e = this.memberExpressionRest(e, true);
         const questionDotToken = this.optionalToken(Syntax.QuestionDotToken);
         if (tok() === Syntax.LessThanToken || tok() === Syntax.LessThan2Token) {
           const typeArgs = tryParse(this.typeArgsInExpression);
           if (typeArgs) {
             if (is.templateStartOfTaggedTemplate()) {
-              expression = this.taggedTemplateRest(expression, questionDotToken, typeArgs);
+              e = this.taggedTemplateRest(e, questionDotToken, typeArgs);
               continue;
             }
-            const n = create.node(Syntax.CallExpression, expression.pos);
-            n.expression = expression;
+            const n = create.node(Syntax.CallExpression, e.pos);
+            n.expression = e;
             n.questionDotToken = questionDotToken;
             n.typeArgs = typeArgs;
             n.args = this.argList();
-            if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
-            expression = finishNode(n);
+            if (questionDotToken || parse.reparseOptionalChain(e)) n.flags |= NodeFlags.OptionalChain;
+            e = finishNode(n);
             continue;
           }
         } else if (tok() === Syntax.OpenParenToken) {
-          const n = create.node(Syntax.CallExpression, expression.pos);
-          n.expression = expression;
+          const n = create.node(Syntax.CallExpression, e.pos);
+          n.expression = e;
           n.questionDotToken = questionDotToken;
           n.args = this.argList();
-          if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
-          expression = finishNode(n);
+          if (questionDotToken || parse.reparseOptionalChain(e)) n.flags |= NodeFlags.OptionalChain;
+          e = finishNode(n);
           continue;
         }
         if (questionDotToken) {
-          const n = create.node(Syntax.PropertyAccessExpression, expression.pos) as qt.PropertyAccessExpression;
-          n.expression = expression;
+          const n = create.node(Syntax.PropertyAccessExpression, e.pos) as qt.PropertyAccessExpression;
+          n.expression = e;
           n.questionDotToken = questionDotToken;
           n.name = create.missingNode(Syntax.Identifier, false, qd.msgs.Identifier_expected);
           n.flags |= NodeFlags.OptionalChain;
-          expression = finishNode(n);
+          e = finishNode(n);
         }
         break;
       }
-      return expression;
+      return e;
     }
     argList() {
       this.expected(Syntax.OpenParenToken);
@@ -2348,7 +2358,7 @@ function create() {
       if (!this.expected(Syntax.GreaterThanToken)) return;
       return typeArgs && can.followTypeArgsInExpression() ? typeArgs : undefined;
     }
-    primaryExpression(): qc.PrimaryExpression {
+    primaryExpression(): qt.PrimaryExpression {
       switch (tok()) {
         case Syntax.NumericLiteral:
         case Syntax.BigIntLiteral:
@@ -2412,7 +2422,7 @@ function create() {
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    objectLiteralElem(): qc.ObjectLiteralElemLike {
+    objectLiteralElem(): qt.ObjectLiteralElemLike {
       const n = create.nodeWithDoc(Syntax.Unknown);
       if (this.optionalToken(Syntax.Dot3Token)) {
         n.kind = Syntax.SpreadAssignment;
@@ -2492,7 +2502,7 @@ function create() {
         n.name = this.identifierName();
         return finishNode(n);
       }
-      let expression: qc.MemberExpression = this.primaryExpression();
+      let expression: qt.MemberExpression = this.primaryExpression();
       let typeArgs;
       while (true) {
         expression = this.memberExpressionRest(expression, false);
@@ -2539,7 +2549,7 @@ function create() {
       flags.set(af, NodeFlags.AwaitContext);
       return block;
     }
-    emptyStatement(): qc.Statement {
+    emptyStatement(): qt.Statement {
       const n = create.node(Syntax.EmptyStatement);
       this.expected(Syntax.SemicolonToken);
       return finishNode(n);
@@ -2574,7 +2584,7 @@ function create() {
       n.statement = this.statement();
       return finishNode(n);
     }
-    forOrForInOrForOfStatement(): qc.Statement {
+    forOrForInOrForOfStatement(): qt.Statement {
       const pos = getNodePos();
       this.expected(Syntax.ForKeyword);
       const awaitToken = this.optionalToken(Syntax.AwaitKeyword);
@@ -2584,7 +2594,7 @@ function create() {
         if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initer = this.variableDeclarationList(true);
         else initer = flags.withDisallowIn(this.expression);
       }
-      let n: qc.IterationStmt;
+      let n: qt.IterationStmt;
       if (awaitToken ? this.expected(Syntax.OfKeyword) : this.optional(Syntax.OfKeyword)) {
         const n2 = create.node(Syntax.ForOfStatement, pos);
         n2.awaitModifier = awaitToken;
@@ -2611,7 +2621,7 @@ function create() {
       n.statement = this.statement();
       return finishNode(n);
     }
-    breakOrContinueStatement(kind: Syntax): qc.BreakOrContinueStatement {
+    breakOrContinueStatement(kind: Syntax): qt.BreakOrContinueStatement {
       const n = create.node(kind);
       this.expected(kind === Syntax.BreakStatement ? Syntax.BreakKeyword : Syntax.ContinueKeyword);
       if (!can.parseSemicolon()) n.label = this.identifier();
@@ -2649,7 +2659,7 @@ function create() {
       n.statements = ctx.parseList(Context.SwitchClauseStatements, this.statement);
       return finishNode(n);
     }
-    caseOrDefaultClause(): qc.CaseOrDefaultClause {
+    caseOrDefaultClause(): qt.CaseOrDefaultClause {
       return tok() === Syntax.CaseKeyword ? this.caseClause() : this.defaultClause();
     }
     switchStatement(): qc.SwitchStatement {
@@ -2701,19 +2711,19 @@ function create() {
     }
     expressionOrLabeledStatement(): qt.ExpressionStatement | qc.LabeledStatement {
       const n = create.nodeWithDoc(tok() === Syntax.Identifier ? Syntax.Unknown : Syntax.ExpressionStatement);
-      const expression = flags.withoutDisallowIn(this.expression);
-      if (expression.kind === Syntax.Identifier && this.optional(Syntax.ColonToken)) {
+      const e = flags.withoutDisallowIn(this.expression);
+      if (e.kind === Syntax.Identifier && this.optional(Syntax.ColonToken)) {
         n.kind = Syntax.LabeledStatement;
-        (n as qc.LabeledStatement).label = <qc.Identifier>expression;
+        (n as qc.LabeledStatement).label = <qc.Identifier>e;
         (n as qc.LabeledStatement).statement = this.statement();
       } else {
         n.kind = Syntax.ExpressionStatement;
-        (n as qt.ExpressionStatement).expression = expression;
+        (n as qt.ExpressionStatement).expression = e;
         this.semicolon();
       }
       return finishNode(n);
     }
-    statement(): qc.Statement {
+    statement(): qt.Statement {
       switch (tok()) {
         case Syntax.SemicolonToken:
           return this.emptyStatement();
@@ -2779,7 +2789,7 @@ function create() {
       }
       return this.expressionOrLabeledStatement();
     }
-    declaration(): qc.Statement {
+    declaration(): qt.Statement {
       const modifiers = lookAhead(() => (this.decorators(), this.modifiers()));
       const isAmbient = some(modifiers, is.declareModifier);
       if (isAmbient) {
@@ -2796,7 +2806,7 @@ function create() {
         return flags.withContext(NodeFlags.Ambient, () => this.declarationWorker(n));
       } else return this.declarationWorker(n);
     }
-    declarationWorker(n: qc.Statement): qc.Statement {
+    declarationWorker(n: qt.Statement): qt.Statement {
       switch (tok()) {
         case Syntax.VarKeyword:
         case Syntax.LetKeyword:
@@ -2847,7 +2857,7 @@ function create() {
       }
       return this.functionBlock(flags, m);
     }
-    arrayBindingElem(): qc.ArrayBindingElem {
+    arrayBindingElem(): qt.ArrayBindingElem {
       if (tok() === Syntax.CommaToken) return create.node(Syntax.OmittedExpression);
       const n = create.node(Syntax.BindingElem);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
@@ -3014,17 +3024,17 @@ function create() {
       return list && create.nodes(list, listPos);
     }
     modifiersForArrowFunction(): Nodes<Modifier> | undefined {
-      let modifiers: Nodes<Modifier> | undefined;
+      let ms: Nodes<Modifier> | undefined;
       if (tok() === Syntax.AsyncKeyword) {
-        const modifierStart = scanner.getStartPos();
-        const modifierKind = tok();
+        const s = scanner.getStartPos();
+        const k = tok();
         next.tok();
-        const modifier = finishNode(create.node(modifierKind, modifierStart));
-        modifiers = create.nodes<Modifier>([modifier], modifierStart);
+        const m = finishNode(create.node(k, s));
+        ms = create.nodes<Modifier>([m], s);
       }
-      return modifiers;
+      return ms;
     }
-    classElem(): qc.ClassElem {
+    classElem(): qt.ClassElem {
       if (tok() === Syntax.SemicolonToken) {
         const n = create.node(Syntax.SemicolonClassElem);
         next.tok();
@@ -3051,7 +3061,7 @@ function create() {
         if (d) return d;
       }
       if (is.indexSignature()) return this.indexSignatureDeclaration(<qt.IndexSignatureDeclaration>n);
-      if (qy.is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
+      if (is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
         const isAmbient = n.modifiers && some(n.modifiers, is.declareModifier);
         if (isAmbient) {
           for (const m of n.modifiers!) {
@@ -3265,12 +3275,12 @@ function create() {
       n.name = this.identifier();
       return finishNode(n);
     }
-    namedImportsOrExports(kind: Syntax.NamedImports): qt.NamedImports;
-    namedImportsOrExports(kind: Syntax.NamedExports): qt.NamedExports;
-    namedImportsOrExports(kind: Syntax): qt.NamedImportsOrExports {
-      const n = create.node(kind);
+    namedImportsOrExports(k: Syntax.NamedImports): qt.NamedImports;
+    namedImportsOrExports(k: Syntax.NamedExports): qt.NamedExports;
+    namedImportsOrExports(k: Syntax): qt.NamedImportsOrExports {
+      const n = create.node(k);
       n.elems = <Nodes<qt.ImportSpecifier> | Nodes<qt.ExportSpecifier>>(
-        ctx.parseBracketedList(Context.ImportOrExportSpecifiers, kind === Syntax.NamedImports ? this.importSpecifier : this.exportSpecifier, Syntax.OpenBraceToken, Syntax.CloseBraceToken)
+        ctx.parseBracketedList(Context.ImportOrExportSpecifiers, k === Syntax.NamedImports ? this.importSpecifier : this.exportSpecifier, Syntax.OpenBraceToken, Syntax.CloseBraceToken)
       );
       return finishNode(n);
     }
@@ -3280,21 +3290,21 @@ function create() {
     importSpecifier() {
       return this.importOrExportSpecifier(Syntax.ImportSpecifier);
     }
-    importOrExportSpecifier(kind: Syntax): qt.ImportOrExportSpecifier {
-      const n = create.node(kind);
-      let checkIdentifierIsKeyword = qy.is.keyword(tok()) && !is.identifier();
+    importOrExportSpecifier(s: Syntax): qt.ImportOrExportSpecifier {
+      const n = create.node(s);
+      let checkIdentifierIsKeyword = is.keyword(tok()) && !is.identifier();
       let checkIdentifierStart = scanner.getTokenPos();
       let checkIdentifierEnd = scanner.getTextPos();
       const identifierName = this.identifierName();
       if (tok() === Syntax.AsKeyword) {
         n.propertyName = identifierName;
         this.expected(Syntax.AsKeyword);
-        checkIdentifierIsKeyword = qy.is.keyword(tok()) && !is.identifier();
+        checkIdentifierIsKeyword = is.keyword(tok()) && !is.identifier();
         checkIdentifierStart = scanner.getTokenPos();
         checkIdentifierEnd = scanner.getTextPos();
         n.name = this.identifierName();
       } else n.name = identifierName;
-      if (kind === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, qd.msgs.Identifier_expected);
+      if (s === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, qd.msgs.Identifier_expected);
       return finishNode(n);
     }
     namespaceExport(pos: number): qt.NamespaceExport {
@@ -3770,8 +3780,8 @@ function create() {
       return finishNode(n);
     }
     typeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: qt.DocTypingExpression; diagnostics: Diagnostic[] } | undefined {
-      initializeState(content, qt.ScriptTarget.ESNext, undefined, ScriptKind.JS);
-      source = create.source('file.js', qt.ScriptTarget.ESNext, ScriptKind.JS, false);
+      initializeState(content, qt.ScriptTarget.ESNext, undefined, Script.JS);
+      source = create.source('file.js', qt.ScriptTarget.ESNext, Script.JS, false);
       scanner.setText(content, start, length);
       currentToken = scanner.scan();
       const docTypeExpression = this.typeExpression();
@@ -4288,10 +4298,10 @@ function create() {
       return n;
     }
   })();
-  function getLanguage(k: ScriptKind) {
-    return k === ScriptKind.TSX || k === ScriptKind.JSX || k === ScriptKind.JS || k === ScriptKind.JSON ? Language.TX : Language.TS;
+  function getLanguage(s: Script) {
+    return s === Script.TSX || s === Script.JSX || s === Script.JS || s === Script.JSON ? Language.TX : Language.TS;
   }
-  function initializeState(_sourceText: string, languageVersion: qt.ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
+  function initializeState(_sourceText: string, languageVersion: qt.ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: Script) {
     sourceText = _sourceText;
     syntaxCursor = _syntaxCursor;
     diags = [];
@@ -4301,11 +4311,11 @@ function create() {
     create.identifierCount = 0;
     create.nodeCount = 0;
     switch (scriptKind) {
-      case ScriptKind.JS:
-      case ScriptKind.JSX:
+      case Script.JS:
+      case Script.JSX:
         flags.value = NodeFlags.JavaScriptFile;
         break;
-      case ScriptKind.JSON:
+      case Script.JSON:
         flags.value = NodeFlags.JavaScriptFile | NodeFlags.JsonFile;
         break;
       default:
@@ -4475,7 +4485,7 @@ function create() {
     return comment;
   }
   function parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: Diagnostic[] } | undefined {
-    initializeState(t, qt.ScriptTarget.ESNext, undefined, ScriptKind.JS);
+    initializeState(t, qt.ScriptTarget.ESNext, undefined, Script.JS);
     source = { language: Language.TS, text: t } as qt.SourceFile;
     const doc = flags.withContext(NodeFlags.Doc, () => parseDoc.comment(start, length));
     const diagnostics = diags;
@@ -4506,13 +4516,13 @@ function create() {
 }
 let parser: Parser;
 function getParser() {
-  return parser || (parser = create());
+  return parser || (parser = newParser());
 }
-export function qp_createSource(fileName: string, t: string, lang: qt.ScriptTarget, parents = false, script?: ScriptKind): qt.SourceFile {
+export function qp_createSource(fileName: string, t: string, lang: qt.ScriptTarget, parents = false, script?: Script): qt.SourceFile {
   performance.mark('beforeParse');
   let r: qt.SourceFile;
   perfLogger.logStartParseSourceFile(fileName);
-  if (lang === qt.ScriptTarget.JSON) r = getParser().parseSource(fileName, t, lang, undefined, parents, ScriptKind.JSON);
+  if (lang === qt.ScriptTarget.JSON) r = getParser().parseSource(fileName, t, lang, undefined, parents, Script.JSON);
   else r = getParser().parseSource(fileName, t, lang, undefined, parents, script);
   perfLogger.logStopParseSourceFile();
   performance.mark('afterParse');

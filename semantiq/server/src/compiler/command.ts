@@ -311,7 +311,7 @@ export const optionDeclarations: qt.CommandLineOption[] = [
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
     category: qd.Basic_Opts,
-    description: qd.Allow_javascript_files_to_be_compiled,
+    description: qd.Allow_js_files_to_be_compiled,
   },
   {
     name: 'checkJs',

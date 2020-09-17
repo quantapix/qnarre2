@@ -127,7 +127,7 @@ import * as qy from '../syntax';
 type Label = number;
 const enum OpCode {
   Nop, // No operation, used to force a new case in the state machine
-  qt.Statement, // A regular javascript statement
+  qt.Statement, // A regular js statement
   Assign, // An assignment
   Break, // A break instruction used to jump to a label
   BreakWhenTrue, // A break instruction used to jump to a label if a condition evaluates to true

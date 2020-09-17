@@ -1214,11 +1214,11 @@ export function createProgram(
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       const includeBindAndCheckDiagnostics =
         !isTsNoCheck &&
-        (sourceFile.scriptKind === qt.ScriptKind.TS ||
-          sourceFile.scriptKind === qt.ScriptKind.TSX ||
-          sourceFile.scriptKind === qt.ScriptKind.External ||
+        (sourceFile.scriptKind === qt.Script.TS ||
+          sourceFile.scriptKind === qt.Script.TSX ||
+          sourceFile.scriptKind === qt.Script.External ||
           isCheckJs ||
-          sourceFile.scriptKind === qt.ScriptKind.Deferred);
+          sourceFile.scriptKind === qt.Script.Deferred);
       const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
       const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancelToken) : emptyArray;
       return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.docDiagnostics : undefined);
@@ -2230,7 +2230,7 @@ export function createProgram(
     const outFile = opts.outFile || opts.out;
     const firstNonAmbientExternalModuleSourceFile = qf.find.up(files, (f) => qf.is.externalModule(f) && !f.isDeclarationFile);
     if (opts.isolatedModules) {
-      const firstNonExternalModuleSourceFile = qf.find.up(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = qf.find.up(files, (f) => !qf.is.externalModule(f) && !f.isJS() && !f.isDeclarationFile && f.scriptKind !== qt.Script.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.make.fileDiag(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));

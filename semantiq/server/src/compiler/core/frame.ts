@@ -2286,7 +2286,7 @@ export function newIs(f: qt.Frame) {
       return (f.externalModuleIndicator || f.commonJsModuleIndicator) !== undefined;
     }
     jsonSourceFile(f: qt.SourceFile): f is qt.JsonSourceFile {
-      return f.scriptKind === qt.ScriptKind.JSON;
+      return f.scriptKind === qt.Script.JSON;
     }
     anyPrologueDirective(n: Node) {
       return this.prologueDirective(n) || !!(qf.get.emitFlags(n) & EmitFlags.CustomPrologue);

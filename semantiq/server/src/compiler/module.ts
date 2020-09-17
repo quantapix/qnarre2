@@ -333,7 +333,7 @@ function tryGetAnyFileFromPath(host: qt.ModuleSpecifierResolutionHost, path: str
   if (!host.fileExists) return;
   const extensions = getSupportedExtensions({ allowJs: true }, [
     { extension: 'node', isMixedContent: false },
-    { extension: 'json', isMixedContent: false, scriptKind: qt.ScriptKind.JSON },
+    { extension: 'json', isMixedContent: false, scriptKind: qt.Script.JSON },
   ]);
   for (const e of extensions) {
     const fullPath = path + e;

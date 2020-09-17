@@ -2924,9 +2924,9 @@ export function newSign(f: qt.Frame) {
   return (qf.sign = new (class Fsign {
     check = new (class extends Fsignature {
       typeArgs(signature: qt.Signature, typeArgNodes: readonly qt.Typing[], reportErrors: boolean, headMessage?: qd.Message): qt.Type[] | undefined {
-        const isJavascript = qf.is.inJSFile(signature.declaration);
+        const isJS = qf.is.inJSFile(signature.declaration);
         const typeParams = signature.typeParams!;
-        const typeArgTypes = fillMissingTypeArgs(map(typeArgNodes, qf.get.typeFromTypeNode), typeParams, getMinTypeArgCount(typeParams), isJavascript);
+        const typeArgTypes = fillMissingTypeArgs(map(typeArgNodes, qf.get.typeFromTypeNode), typeParams, getMinTypeArgCount(typeParams), isJS);
         let mapper: qt.TypeMapper | undefined;
         for (let i = 0; i < typeArgNodes.length; i++) {
           qf.assert.true(typeParams[i] !== undefined, 'Should not call checkTypeArgs with too many type args');

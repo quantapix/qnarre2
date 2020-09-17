@@ -1274,7 +1274,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
   resolvedModules?: qu.QMap<qt.ResolvedModuleFull | undefined>;
   resolvedPath!: qt.Path;
   resolvedTypeReferenceDirectiveNames!: qu.QMap<qt.ResolvedTypeReferenceDirective>;
-  scriptKind!: qt.ScriptKind;
+  scriptKind!: qt.Script;
   //scriptSnapshot!: IScriptSnapshot;
   statements!: qt.Nodes<qt.Statement>;
   symbolCount!: number;
@@ -1442,10 +1442,10 @@ export class SourceFile extends Decl implements qt.SourceFile {
   }
   isEffectiveStrictMode(o: qt.CompilerOpts) {
     switch (this.scriptKind) {
-      case qt.ScriptKind.JS:
-      case qt.ScriptKind.TS:
-      case qt.ScriptKind.JSX:
-      case qt.ScriptKind.TSX:
+      case qt.Script.JS:
+      case qt.Script.TS:
+      case qt.Script.JSX:
+      case qt.Script.TSX:
         break;
       default:
         return false;
@@ -1583,17 +1583,17 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
     let bundleFileInfo: qt.BundleFileInfo | undefined;
     if (!qf.is.string(textOrInputFiles)) {
       qf.assert.true(mapPathOrType === 'js' || mapPathOrType === 'dts');
-      r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
-      r.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.javascriptMapPath : textOrInputFiles.declarationMapPath;
+      r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.jsPath : textOrInputFiles.declarationPath) || '';
+      r.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.jsMapPath : textOrInputFiles.declarationMapPath;
       Object.defineProperties(r, {
         text: {
           get() {
-            return mapPathOrType === 'js' ? textOrInputFiles.javascriptText : textOrInputFiles.declarationText;
+            return mapPathOrType === 'js' ? textOrInputFiles.jsText : textOrInputFiles.declarationText;
           },
         },
         sourceMapText: {
           get() {
-            return mapPathOrType === 'js' ? textOrInputFiles.javascriptMapText : textOrInputFiles.declarationMapText;
+            return mapPathOrType === 'js' ? textOrInputFiles.jsMapText : textOrInputFiles.declarationMapText;
           },
         },
       });

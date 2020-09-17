@@ -24,10 +24,10 @@ export function newSign(f: qt.Frame) {
   qu.addMixins(_Fsign, [qc.newSign(qf)]);
   return (qf.sign = new (class extends _Fsign {
     get = new (class extends Base {
-      signatureInstantiation(s: Signature, typeArgs: Type[] | undefined, isJavascript: boolean, inferredTypeParams?: readonly qt.TypeParam[]): Signature {
+      signatureInstantiation(s: Signature, typeArgs: Type[] | undefined, isJS: boolean, inferredTypeParams?: readonly qt.TypeParam[]): Signature {
         const instantiatedSignature = this.signatureInstantiationWithoutFillingInTypeArgs(
           signature,
-          fillMissingTypeArgs(typeArgs, signature.typeParams, this.minTypeArgCount(signature.typeParams), isJavascript)
+          fillMissingTypeArgs(typeArgs, signature.typeParams, this.minTypeArgCount(signature.typeParams), isJS)
         );
         if (inferredTypeParams) {
           const returnSignature = this.singleCallOrConstructSignature(this.returnTypeOfSignature(instantiatedSignature));

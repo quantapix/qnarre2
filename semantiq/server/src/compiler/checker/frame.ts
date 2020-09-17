@@ -1792,7 +1792,7 @@ export function newChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean
           }
           return false;
         }
-        qf.type.get.nullable(t: Type) {
+        nullable(t: Type) {
           return !!((strictNullChecks ? qf.type.get.falsyFlags(t) : t.flags) & TypeFlags.Nullable);
         }
         untypedFunctionCall(t: Type, f: Type, calls: number, constructs: number) {

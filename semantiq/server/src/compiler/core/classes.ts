@@ -1476,10 +1476,10 @@ InferTyping.prototype.kind = InferTyping.kind;
 export class InputFiles extends qb.Nobj implements qt.InputFiles {
   static readonly kind = Syntax.InputFiles;
   kind!: Syntax.InputFiles;
-  javascriptPath?: string;
-  javascriptText!: string;
-  javascriptMapPath?: string;
-  javascriptMapText?: string;
+  jsPath?: string;
+  jsText!: string;
+  jsMapPath?: string;
+  jsMapText?: string;
   declarationPath?: string;
   declarationText!: string;
   declarationMapPath?: string;
@@ -1487,57 +1487,43 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
   buildInfoPath?: string;
   buildInfo?: qt.BuildInfo;
   oldFileOfCurrentEmit?: boolean;
-  constructor(javascriptText: string, declarationText: string);
+  constructor(jsText: string, declarationText: string);
+  constructor(readFileText: (path: string) => string | undefined, jsPath: string, jsMapPath: string | undefined, declarationPath: string, declarationMapPath?: string, buildInfoPath?: string);
+  constructor(jsText: string, declarationText: string, jsMapPath: string | undefined, jsMapText: string | undefined, declarationMapPath: string | undefined, declarationMapText: string | undefined);
   constructor(
-    readFileText: (path: string) => string | undefined,
-    javascriptPath: string,
-    javascriptMapPath: string | undefined,
-    declarationPath: string,
-    declarationMapPath?: string,
-    buildInfoPath?: string
-  );
-  constructor(
-    javascriptText: string,
+    jsText: string,
     declarationText: string,
-    javascriptMapPath: string | undefined,
-    javascriptMapText: string | undefined,
-    declarationMapPath: string | undefined,
-    declarationMapText: string | undefined
-  );
-  constructor(
-    javascriptText: string,
-    declarationText: string,
-    javascriptMapPath: string | undefined,
-    javascriptMapText: string | undefined,
+    jsMapPath: string | undefined,
+    jsMapText: string | undefined,
     declarationMapPath: string | undefined,
     declarationMapText: string | undefined,
-    javascriptPath: string | undefined,
+    jsPath: string | undefined,
     declarationPath: string | undefined,
     buildInfoPath?: string | undefined,
     buildInfo?: qt.BuildInfo,
     oldFileOfCurrentEmit?: boolean
   );
   constructor(
-    javascriptTextOrReadFileText: string | ((path: string) => string | undefined),
-    declarationTextOrJavascriptPath: string,
-    javascriptMapPath?: string,
-    javascriptMapTextOrDeclarationPath?: string,
+    jsTextOrReadFileText: string | ((path: string) => string | undefined),
+    declarationTextOrJSPath: string,
+    jsMapPath?: string,
+    jsMapTextOrDeclarationPath?: string,
     declarationMapPath?: string,
     declarationMapTextOrBuildInfoPath?: string,
-    javascriptPath?: string | undefined,
+    jsPath?: string | undefined,
     declarationPath?: string | undefined,
     buildInfoPath?: string | undefined,
     buildInfo?: qt.BuildInfo,
     oldFileOfCurrentEmit?: boolean
   ) {
     super();
-    if (!qf.is.string(javascriptTextOrReadFileText)) {
+    if (!qf.is.string(jsTextOrReadFileText)) {
       const cache = new qu.QMap<string | false>();
       const textGetter = (path: string | undefined) => {
         if (path === undefined) return;
         let v = cache.get(path);
         if (v === undefined) {
-          v = javascriptTextOrReadFileText(path);
+          v = jsTextOrReadFileText(path);
           cache.set(path, v !== undefined ? v : false);
         }
         return v !== false ? (v as string) : undefined;
@@ -1554,25 +1540,25 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
         }
         return buildInfo || undefined;
       };
-      this.javascriptPath = declarationTextOrJavascriptPath;
-      this.javascriptMapPath = javascriptMapPath;
-      this.declarationPath = qf.check.defined(javascriptMapTextOrDeclarationPath);
+      this.jsPath = declarationTextOrJSPath;
+      this.jsMapPath = jsMapPath;
+      this.declarationPath = qf.check.defined(jsMapTextOrDeclarationPath);
       this.declarationMapPath = declarationMapPath;
       this.buildInfoPath = declarationMapTextOrBuildInfoPath;
       Object.defineProperties(this, {
-        javascriptText: {
+        jsText: {
           get() {
-            return definedTextGetter(declarationTextOrJavascriptPath);
+            return definedTextGetter(declarationTextOrJSPath);
           },
         },
-        javascriptMapText: {
+        jsMapText: {
           get() {
-            return textGetter(javascriptMapPath);
+            return textGetter(jsMapPath);
           },
         },
         declarationText: {
           get() {
-            return definedTextGetter(qf.check.defined(javascriptMapTextOrDeclarationPath));
+            return definedTextGetter(qf.check.defined(jsMapTextOrDeclarationPath));
           },
         },
         declarationMapText: {
@@ -1587,13 +1573,13 @@ export class InputFiles extends qb.Nobj implements qt.InputFiles {
         },
       });
     } else {
-      this.javascriptText = javascriptTextOrReadFileText;
-      this.javascriptMapPath = javascriptMapPath;
-      this.javascriptMapText = javascriptMapTextOrDeclarationPath;
-      this.declarationText = declarationTextOrJavascriptPath;
+      this.jsText = jsTextOrReadFileText;
+      this.jsMapPath = jsMapPath;
+      this.jsMapText = jsMapTextOrDeclarationPath;
+      this.declarationText = declarationTextOrJSPath;
       this.declarationMapPath = declarationMapPath;
       this.declarationMapText = declarationMapTextOrBuildInfoPath;
-      this.javascriptPath = javascriptPath;
+      this.jsPath = jsPath;
       this.declarationPath = declarationPath;
       this.buildInfoPath = buildInfoPath;
       this.buildInfo = buildInfo;

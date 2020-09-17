@@ -879,7 +879,7 @@ export interface ExternalModuleReference extends Nobj {
 export interface FileExtensionInfo {
   extension: string;
   isMixedContent: boolean;
-  scriptKind?: qt.ScriptKind;
+  scriptKind?: qt.Script;
 }
 export interface FileReference extends qu.Range {
   fileName: string;
@@ -1125,10 +1125,10 @@ export interface InferTyping extends Tobj {
 }
 export interface InputFiles extends Nobj {
   kind: Syntax.InputFiles;
-  javascriptPath?: string;
-  javascriptText: string;
-  javascriptMapPath?: string;
-  javascriptMapText?: string;
+  jsPath?: string;
+  jsText: string;
+  jsMapPath?: string;
+  jsMapText?: string;
   declarationPath?: string;
   declarationText: string;
   declarationMapPath?: string;
@@ -2020,7 +2020,7 @@ export interface SourceFile extends Decl {
   resolvedModules?: qu.QMap<ResolvedModuleFull | undefined>;
   resolvedPath: Path;
   resolvedTypeReferenceDirectiveNames: qu.QMap<ResolvedTypeReferenceDirective | undefined>;
-  scriptKind: qt.ScriptKind;
+  scriptKind: qt.Script;
   statements: Nodes<Statement>;
   symbolCount: number;
   text: string;

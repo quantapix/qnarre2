@@ -31,14 +31,14 @@ export const nullTrafoContext: qt.TrafoContext = {
 };
 export interface TransformationResult<T extends Node> {
   transformed: T[];
-  diagnostics?: DiagnosticWithLocation[];
+  diagnostics?: qd.DiagnosticWithLocation[];
   substituteNode(hint: qt.EmitHint, node: Node): Node;
   emitNodeWithNotification(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void): void;
   isEmitNotificationEnabled?(node: Node): boolean;
   dispose(): void;
 }
-export type qt.Transformer<T extends Node> = (node: T) => T;
-export type qt.TransformerFactory<T extends Node> = (c: qt.TrafoContext) => qt.Transformer<T>;
+export type Transformer<T extends Node> = (node: T) => T;
+export type TransformerFactory<T extends Node> = (c: qt.TrafoContext) => qt.Transformer<T>;
 function getModuleTransformer(moduleKind: qt.ModuleKind): qt.TransformerFactory<qt.SourceFile | qt.Bundle> {
   switch (moduleKind) {
     case qt.ModuleKind.ESNext:
@@ -137,7 +137,7 @@ export function transformNodes<T extends Node>(
   let onSubstituteNode: qt.TrafoContext['onSubstituteNode'] = noEmitSubstitution;
   let onEmitNode: qt.TrafoContext['onEmitNode'] = noEmitNotification;
   let state = TransformationState.Uninitialized;
-  const diagnostics: DiagnosticWithLocation[] = [];
+  const diagnostics: qd.DiagnosticWithLocation[] = [];
   const context: qt.TrafoContext = {
     getCompilerOpts: () => opts,
     getEmitResolver: () => resolver!,
@@ -201,15 +201,15 @@ export function transformNodes<T extends Node>(
     dispose,
     diagnostics,
   };
-  function transformRoot(node: T) {
-    return node && (!node.kind === Syntax.SourceFile || !node.isDeclarationFile) ? transformation(node) : node;
+  function transformRoot(n: T) {
+    return n && (n.kind !== Syntax.SourceFile || !n.isDeclarationFile) ? transformation(n) : n;
   }
   function enableSubstitution(kind: Syntax) {
     qf.assert.true(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
   }
   function isSubstitutionEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qf.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
+    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qf.get.emitFlags(node) & qt.EmitFlags.NoSubstitution) === 0;
   }
   function substituteNode(hint: qt.EmitHint, node: Node) {
     qf.assert.true(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
@@ -220,7 +220,7 @@ export function transformNodes<T extends Node>(
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
   }
   function isEmitNotificationEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qf.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qf.get.emitFlags(node) & qt.EmitFlags.AdviseOnEmitNode) !== 0;
   }
   function emitNodeWithNotification(hint: qt.EmitHint, node: Node, emitCallback: (hint: qt.EmitHint, node: Node) => void) {
     qf.assert.true(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
@@ -232,7 +232,7 @@ export function transformNodes<T extends Node>(
   function hoistVariableDeclaration(name: qt.Identifier): void {
     qf.assert.true(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qf.assert.true(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    const decl = qf.emit.setFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
+    const decl = qf.emit.setFlags(new qc.VariableDeclaration(name), qt.EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
     if (lexicalEnvironmentFlags & qt.LexicalEnvFlags.InParams) lexicalEnvironmentFlags |= qt.LexicalEnvFlags.VariablesHoistedInParams;
@@ -240,14 +240,14 @@ export function transformNodes<T extends Node>(
   function hoistFunctionDeclaration(func: qt.FunctionDeclaration): void {
     qf.assert.true(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qf.assert.true(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qf.emit.setFlags(func, EmitFlags.CustomPrologue);
+    qf.emit.setFlags(func, qt.EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentFunctionDeclarations) lexicalEnvironmentFunctionDeclarations = [func];
     else lexicalEnvironmentFunctionDeclarations.push(func);
   }
   function addInitializationStatement(node: qt.Statement): void {
     qf.assert.true(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qf.assert.true(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qf.emit.setFlags(node, EmitFlags.CustomPrologue);
+    qf.emit.setFlags(node, qt.EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentStatements) lexicalEnvironmentStatements = [node];
     else lexicalEnvironmentStatements.push(node);
   }
@@ -286,7 +286,7 @@ export function transformNodes<T extends Node>(
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
       if (lexicalEnvironmentVariableDeclarations) {
         const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(lexicalEnvironmentVariableDeclarations));
-        qf.emit.setFlags(statement, EmitFlags.CustomPrologue);
+        qf.emit.setFlags(statement, qt.EmitFlags.CustomPrologue);
         if (!statements) statements = [statement];
         else statements.push(statement);
       }

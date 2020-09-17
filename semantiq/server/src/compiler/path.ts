@@ -1,5 +1,5 @@
 import { dirSeparator } from './syntax';
-import { Extension, Path, ScriptKind } from './types';
+import { Extension, Path, Script } from './types';
 import * as qd from './diags';
 import * as qt from './types';
 import * as qu from './utils';
@@ -631,24 +631,24 @@ function getIncludeBasePath(absolute: string): string {
   if (wildcardOffset < 0) return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(getDirectoryPath(absolute));
   return absolute.substring(0, absolute.lastIndexOf(dirSeparator, wildcardOffset));
 }
-export function ensureScriptKind(fileName: string, scriptKind: ScriptKind | undefined): ScriptKind {
-  return scriptKind || getScriptKindFromFileName(fileName) || ScriptKind.TS;
+export function ensureScript(fileName: string, scriptKind: Script | undefined): Script {
+  return scriptKind || getScriptFromFileName(fileName) || Script.TS;
 }
-export function getScriptKindFromFileName(fileName: string): ScriptKind {
+export function getScriptFromFileName(fileName: string): Script {
   const ext = fileName.substr(fileName.lastIndexOf('.'));
   switch (ext.toLowerCase()) {
     case Extension.Js:
-      return ScriptKind.JS;
+      return Script.JS;
     case Extension.Jsx:
-      return ScriptKind.JSX;
+      return Script.JSX;
     case Extension.Ts:
-      return ScriptKind.TS;
+      return Script.TS;
     case Extension.Tsx:
-      return ScriptKind.TSX;
+      return Script.TSX;
     case Extension.Json:
-      return ScriptKind.JSON;
+      return Script.JSON;
     default:
-      return ScriptKind.Unknown;
+      return Script.Unknown;
   }
 }
 export const supportedTSExtensions: readonly Extension[] = [Extension.Ts, Extension.Tsx, Extension.Dts];
@@ -665,7 +665,7 @@ export function getSupportedExtensions(opts?: qt.CompilerOpts, extraFileExtensio
   if (!extraFileExtensions || extraFileExtensions.length === 0) return needJsExtensions ? allSupportedExtensions : supportedTSExtensions;
   const extensions = [
     ...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions),
-    ...qu.mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
+    ...qu.mapDefined(extraFileExtensions, (x) => (x.scriptKind === Script.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
   ];
   return qu.deduplicate<string>(extensions, qu.equateStringsCaseSensitive, qu.compareCaseSensitive);
 }
@@ -675,8 +675,8 @@ export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(opts: qt.Comp
   if (supportedExtensions === supportedTSExtensions) return supportedTSExtensionsWithJson;
   return [...supportedExtensions, Extension.Json];
 }
-function isJSLike(scriptKind: ScriptKind | undefined): boolean {
-  return scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSX;
+function isJSLike(scriptKind: Script | undefined): boolean {
+  return scriptKind === Script.JS || scriptKind === Script.JSX;
 }
 export function hasJSFileExtension(fileName: string): boolean {
   return qu.some(supportedJSExtensions, (extension) => fileExtensionIs(fileName, extension));

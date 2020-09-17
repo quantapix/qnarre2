@@ -1327,9 +1327,9 @@ export function newCheck(f: qt.Frame) {
         contextualType && contextualType.pattern && (contextualType.pattern.kind === Syntax.ObjectBindingPattern || contextualType.pattern.kind === Syntax.ObjectLiteralExpression);
       const inConstContext = isConstContext(n);
       const checkFlags = inConstContext ? qt.CheckFlags.Readonly : 0;
-      const isInJavascript = qf.is.inJSFile(n) && !qf.is.inJsonFile(n);
+      const isInJS = qf.is.inJSFile(n) && !qf.is.inJsonFile(n);
       const enumTag = qf.get.doc.enumTag(n);
-      const isJSObjectLiteral = !contextualType && isInJavascript && !enumTag;
+      const isJSObjectLiteral = !contextualType && isInJS && !enumTag;
       let objectFlags: ObjectFlags = freshObjectLiteralFlag;
       let patternWithComputedProperties = false;
       let hasComputedStringProperty = false;
@@ -1352,7 +1352,7 @@ export function newCheck(f: qt.Frame) {
               : memberDecl.kind === Syntax.ShorthandPropertyAssignment
               ? this.expressionForMutableLocation(memberDecl.name, checkMode)
               : this.objectLiteralMethod(memberDecl, checkMode);
-          if (isInJavascript) {
+          if (isInJS) {
             const docType = getTypeForDeclarationFromDocComment(memberDecl);
             if (docType) {
               qf.type.check.assignableTo(type, docType, memberDecl);
