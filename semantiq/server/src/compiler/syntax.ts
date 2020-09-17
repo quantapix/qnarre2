@@ -669,906 +669,942 @@ const slash3TypeRef = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
 const slash3AMDRef = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
 const defaultLibRef = /^(\/\/\/\s*<reference\s+no-default-lib\s*=\s*)('|")(.+?)\2\s*\/>/;
 const MAX_SMI_X86 = 0x3fff_ffff;
-export const is = new (class extends qu.Fis {
-  assignmentOperator(s: Syntax) {
-    return s >= Syntax.FirstAssignment && s <= Syntax.LastAssignment;
+export function newIs(f: qu.Frame) {
+  interface Frame extends qu.Frame {
+    get: Fget;
   }
-  classMemberModifier(s: Syntax) {
-    return this.paramPropertyModifier(s) || s === Syntax.StaticKeyword;
-  }
-  codePoint(c: number) {
-    return c <= 0x10ffff;
-  }
-  contextualKeyword(s: Syntax) {
-    return Syntax.FirstContextualKeyword <= s && s <= Syntax.LastContextualKeyword;
-  }
-  couldStartTrivia(s: string, pos: number) {
-    const c = s.charCodeAt(pos);
-    switch (c) {
-      case Codes.bar:
-      case Codes.carriageReturn:
-      case Codes.equals:
-      case Codes.formFeed:
-      case Codes.greaterThan:
-      case Codes.lessThan:
-      case Codes.lineFeed:
-      case Codes.slash:
-      case Codes.space:
-      case Codes.tab:
-      case Codes.verticalTab:
-        return true;
-      case Codes.hash:
-        return pos === 0;
+  const qf: Frame = f as Frame;
+  return (qf.is = new (class extends qu.Fis {
+    assignmentOperator(s: Syntax) {
+      return s >= Syntax.FirstAssignment && s <= Syntax.LastAssignment;
     }
-    return c > Codes.maxAsciiCharacter;
-  }
-  declaration(s?: Syntax) {
-    switch (s) {
-      case Syntax.ArrowFunction:
-      case Syntax.BindingElem:
-      case Syntax.ClassDeclaration:
-      case Syntax.ClassExpression:
-      case Syntax.Constructor:
-      case Syntax.DocCallbackTag:
-      case Syntax.DocPropertyTag:
-      case Syntax.DocTypedefTag:
-      case Syntax.EnumDeclaration:
-      case Syntax.EnumMember:
-      case Syntax.ExportSpecifier:
-      case Syntax.FunctionDeclaration:
-      case Syntax.FunctionExpression:
-      case Syntax.GetAccessor:
-      case Syntax.ImportClause:
-      case Syntax.ImportEqualsDeclaration:
-      case Syntax.ImportSpecifier:
-      case Syntax.InterfaceDeclaration:
-      case Syntax.JsxAttribute:
-      case Syntax.MethodDeclaration:
-      case Syntax.MethodSignature:
-      case Syntax.ModuleDeclaration:
-      case Syntax.NamespaceExport:
-      case Syntax.NamespaceExportDeclaration:
-      case Syntax.NamespaceImport:
-      case Syntax.Param:
-      case Syntax.PropertyAssignment:
-      case Syntax.PropertyDeclaration:
-      case Syntax.PropertySignature:
-      case Syntax.SetAccessor:
-      case Syntax.ShorthandPropertyAssignment:
-      case Syntax.TypeAliasDeclaration:
-      case Syntax.TypeParam:
-      case Syntax.VariableDeclaration:
-        return true;
+    classMemberModifier(s: Syntax) {
+      return this.paramPropertyModifier(s) || s === Syntax.StaticKeyword;
     }
-    return false;
-  }
-  declarationStatement(s: Syntax) {
-    switch (s) {
-      case Syntax.ClassDeclaration:
-      case Syntax.EnumDeclaration:
-      case Syntax.ExportAssignment:
-      case Syntax.ExportDeclaration:
-      case Syntax.FunctionDeclaration:
-      case Syntax.ImportDeclaration:
-      case Syntax.ImportEqualsDeclaration:
-      case Syntax.InterfaceDeclaration:
-      case Syntax.MissingDeclaration:
-      case Syntax.ModuleDeclaration:
-      case Syntax.NamespaceExportDeclaration:
-      case Syntax.TypeAliasDeclaration:
-        return true;
+    codePoint(c: number) {
+      return c <= 0x10ffff;
     }
-    return false;
-  }
-  digit(c: number) {
-    return c >= Codes._0 && c <= Codes._9;
-  }
-  dirSeparator(c: number) {
-    return c === Codes.slash || c === Codes.backslash;
-  }
-  docLike(s: string, i: number) {
-    return s.charCodeAt(i + 1) === Codes.asterisk && s.charCodeAt(i + 2) === Codes.asterisk && s.charCodeAt(i + 3) !== Codes.slash;
-  }
-  expression(s: Syntax) {
-    switch (s) {
-      case Syntax.ArrowFunction:
-      case Syntax.AsExpression:
-      case Syntax.BinaryExpression:
-      case Syntax.CommaListExpression:
-      case Syntax.ConditionalExpression:
-      case Syntax.OmittedExpression:
-      case Syntax.PartiallyEmittedExpression:
-      case Syntax.SpreadElem:
-      case Syntax.YieldExpression:
-        return true;
+    contextualKeyword(s: Syntax) {
+      return Syntax.FirstContextualKeyword <= s && s <= Syntax.LastContextualKeyword;
     }
-    return this.unaryExpression(s);
-  }
-  functionLike(s?: Syntax) {
-    switch (s) {
-      case Syntax.CallSignature:
-      case Syntax.ConstructorTyping:
-      case Syntax.ConstructSignature:
-      case Syntax.DocFunctionTyping:
-      case Syntax.DocSignature:
-      case Syntax.FunctionTyping:
-      case Syntax.IndexSignature:
-      case Syntax.MethodSignature:
-        return true;
-    }
-    return this.functionLikeDeclaration(s);
-  }
-  functionLikeDeclaration(s?: Syntax) {
-    switch (s) {
-      case Syntax.ArrowFunction:
-      case Syntax.Constructor:
-      case Syntax.FunctionDeclaration:
-      case Syntax.FunctionExpression:
-      case Syntax.GetAccessor:
-      case Syntax.MethodDeclaration:
-      case Syntax.SetAccessor:
-        return true;
-    }
-    return false;
-  }
-  futureReservedKeyword(s: Syntax) {
-    return Syntax.FirstFutureReservedWord <= s && s <= Syntax.LastFutureReservedWord;
-  }
-  hexDigit(c: number) {
-    return this.digit(c) || (c >= Codes.A && c <= Codes.F) || (c >= Codes.a && c <= Codes.f);
-  }
-  identifierOrKeyword(s: Syntax) {
-    return s >= Syntax.Identifier;
-  }
-  identifierOrKeywordOrGreaterThan(s: Syntax) {
-    return s === Syntax.GreaterThanToken || this.identifierOrKeyword(s);
-  }
-  identifierPart(c: number, l?: LanguageVariant) {
-    return (
-      (c >= Codes.A && c <= Codes.Z) ||
-      (c >= Codes.a && c <= Codes.z) ||
-      (c >= Codes._0 && c <= Codes._9) ||
-      c === Codes.$ ||
-      c === Codes._ ||
-      (l === LanguageVariant.TX ? c === Codes.minus || c === Codes.colon : false) ||
-      (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierPart))
-    );
-  }
-  identifierStart(c: number) {
-    return (c >= Codes.A && c <= Codes.Z) || (c >= Codes.a && c <= Codes.z) || c === Codes.$ || c === Codes._ || (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierStart));
-  }
-  identifierText(s: string, l?: LanguageVariant) {
-    let c = s.codePointAt(0)!;
-    if (!this.identifierStart(c)) return false;
-    for (let i = get.charSize(c); i < s.length; i += get.charSize(c)) {
-      if (!this.identifierPart((c = s.codePointAt(i)!), l)) return false;
-    }
-    return true;
-  }
-  intrinsicJsxName(s: qu.__String | string) {
-    const c = (s as string).charCodeAt(0);
-    return (c >= Codes.a && c <= Codes.z) || qu.stringContains(s as string, '-');
-  }
-  keyword(s: Syntax) {
-    return Syntax.FirstKeyword <= s && s <= Syntax.LastKeyword;
-  }
-  leftHandSideExpression(s: Syntax) {
-    switch (s) {
-      case Syntax.ArrayLiteralExpression:
-      case Syntax.BigIntLiteral:
-      case Syntax.CallExpression:
-      case Syntax.ClassExpression:
-      case Syntax.ElemAccessExpression:
-      case Syntax.FalseKeyword:
-      case Syntax.FunctionExpression:
-      case Syntax.Identifier:
-      case Syntax.ImportKeyword:
-      case Syntax.JsxElem:
-      case Syntax.JsxFragment:
-      case Syntax.JsxSelfClosingElem:
-      case Syntax.MetaProperty:
-      case Syntax.NewExpression:
-      case Syntax.NonNullExpression:
-      case Syntax.NoSubstitutionLiteral:
-      case Syntax.NullKeyword:
-      case Syntax.NumericLiteral:
-      case Syntax.ObjectLiteralExpression:
-      case Syntax.ParenthesizedExpression:
-      case Syntax.PropertyAccessExpression:
-      case Syntax.RegexLiteral:
-      case Syntax.StringLiteral:
-      case Syntax.SuperKeyword:
-      case Syntax.TaggedTemplateExpression:
-      case Syntax.TemplateExpression:
-      case Syntax.ThisKeyword:
-      case Syntax.TrueKeyword:
-        return true;
-    }
-    return false;
-  }
-  lineBreak(c: number) {
-    return c === Codes.lineFeed || c === Codes.carriageReturn || c === Codes.lineSeparator || c === Codes.paragraphSeparator;
-  }
-  literal(s: Syntax) {
-    return Syntax.FirstLiteralToken <= s && s <= Syntax.LastLiteralToken;
-  }
-  logicalOperator(s: Syntax) {
-    return s === Syntax.Bar2Token || s === Syntax.Ampersand2Token || s === Syntax.ExclamationToken;
-  }
-  markerTrivia(s: string, pos: number) {
-    qf.assert.true(pos >= 0);
-    if (pos === 0 || this.lineBreak(s.charCodeAt(pos - 1))) {
+    couldStartTrivia(s: string, pos: number) {
       const c = s.charCodeAt(pos);
-      if (pos + markerLength < s.length) {
-        for (let i = 0; i < markerLength; i++) {
-          if (s.charCodeAt(pos + i) !== c) return false;
-        }
-        return c === Codes.equals || s.charCodeAt(pos + markerLength) === Codes.space;
-      }
-    }
-    return false;
-  }
-  modifier(s: Syntax): s is Modifier['kind'] {
-    switch (s) {
-      case Syntax.AbstractKeyword:
-      case Syntax.AsyncKeyword:
-      case Syntax.ConstKeyword:
-      case Syntax.DeclareKeyword:
-      case Syntax.DefaultKeyword:
-      case Syntax.ExportKeyword:
-      case Syntax.PrivateKeyword:
-      case Syntax.ProtectedKeyword:
-      case Syntax.PublicKeyword:
-      case Syntax.ReadonlyKeyword:
-      case Syntax.StaticKeyword:
-        return true;
-    }
-    return false;
-  }
-  node(s: Syntax) {
-    return s >= Syntax.FirstNode;
-  }
-  nonContextualKeyword(s: Syntax) {
-    return this.keyword(s) && !this.contextualKeyword(s);
-  }
-  octalDigit(c: number) {
-    return c >= Codes._0 && c <= Codes._7;
-  }
-  oneOf(c: number, cs: readonly number[]) {
-    if (c < cs[0]) return false;
-    let lo = 0;
-    let hi = cs.length;
-    let mid: number;
-    while (lo + 1 < hi) {
-      mid = lo + (hi - lo) / 2;
-      mid -= mid % 2;
-      if (cs[mid] <= c && c <= cs[mid + 1]) return true;
-      if (c < cs[mid]) hi = mid;
-      else lo = mid + 2;
-    }
-    return false;
-  }
-  paramPropertyModifier(s: Syntax) {
-    return !!(get.modifierFlag(s) & ModifierFlags.ParamPropertyModifier);
-  }
-  pinnedComment(s: string, start: number) {
-    return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
-  }
-  recognizedTripleSlashComment(s: string, pos: number, end: number) {
-    if (s.charCodeAt(pos + 1) === Codes.slash && pos + 2 < end && s.charCodeAt(pos + 2) === Codes.slash) {
-      const ss = s.substring(pos, end);
-      return ss.match(slash3Ref) || ss.match(slash3AMDRef) || ss.match(slash3TypeRef) || ss.match(defaultLibRef) ? true : false;
-    }
-    return false;
-  }
-  reservedName(x: qu.__String) {
-    const n = x as string;
-    return n.charCodeAt(0) === Codes._ && n.charCodeAt(1) === Codes._ && n.charCodeAt(2) !== Codes._ && n.charCodeAt(2) !== Codes.at && n.charCodeAt(2) !== Codes.hash;
-  }
-  shebangTrivia(s: string, pos: number) {
-    qf.assert.true(pos === 0);
-    return shebangRegex.test(s);
-  }
-  singleOrDoubleQuote(c: number) {
-    return c === Codes.singleQuote || c === Codes.doubleQuote;
-  }
-  statementKindButNotDeclaration(s: Syntax) {
-    switch (s) {
-      case Syntax.BreakStatement:
-      case Syntax.ContinueStatement:
-      case Syntax.DebuggerStatement:
-      case Syntax.DoStatement:
-      case Syntax.EmptyStatement:
-      case Syntax.EndOfDeclarationMarker:
-      case Syntax.ExpressionStatement:
-      case Syntax.ForInStatement:
-      case Syntax.ForOfStatement:
-      case Syntax.ForStatement:
-      case Syntax.IfStatement:
-      case Syntax.LabeledStatement:
-      case Syntax.MergeDeclarationMarker:
-      case Syntax.NotEmittedStatement:
-      case Syntax.ReturnStatement:
-      case Syntax.SwitchStatement:
-      case Syntax.ThrowStatement:
-      case Syntax.TryStatement:
-      case Syntax.VariableStatement:
-      case Syntax.WhileStatement:
-      case Syntax.WithStatement:
-        return true;
-    }
-    return false;
-  }
-  stringAndKeyword(s: string) {
-    const k = fromString(s);
-    return k !== undefined && this.keyword(k);
-  }
-  stringANonContextualKeyword(s: string) {
-    const k = fromString(s);
-    return k !== undefined && this.nonContextualKeyword(k);
-  }
-  templateLiteral(s: Syntax) {
-    return Syntax.FirstTemplateToken <= s && s <= Syntax.LastTemplateToken;
-  }
-  token(s: Syntax) {
-    return s >= Syntax.FirstToken && s <= Syntax.LastToken;
-  }
-  trivia(s: Syntax): s is TriviaKind {
-    return Syntax.FirstTriviaToken <= s && s <= Syntax.LastTriviaToken;
-  }
-  typeNode(s?: Syntax) {
-    if (s && s >= Syntax.FirstTypeNode && s <= Syntax.LastTypeNode) return true;
-    switch (s) {
-      case Syntax.AnyKeyword:
-      case Syntax.BigIntKeyword:
-      case Syntax.BooleanKeyword:
-      case Syntax.DocAllTyping:
-      case Syntax.DocFunctionTyping:
-      case Syntax.DocNonNullableTyping:
-      case Syntax.DocNullableTyping:
-      case Syntax.DocOptionalTyping:
-      case Syntax.DocUnknownTyping:
-      case Syntax.DocVariadicTyping:
-      case Syntax.ExpressionWithTypings:
-      case Syntax.NeverKeyword:
-      case Syntax.NullKeyword:
-      case Syntax.NumberKeyword:
-      case Syntax.ObjectKeyword:
-      case Syntax.StringKeyword:
-      case Syntax.SymbolKeyword:
-      case Syntax.ThisKeyword:
-      case Syntax.UndefinedKeyword:
-      case Syntax.UnknownKeyword:
-      case Syntax.VoidKeyword:
-        return true;
-    }
-    return false;
-  }
-  unaryExpression(s: Syntax) {
-    switch (s) {
-      case Syntax.AwaitExpression:
-      case Syntax.DeleteExpression:
-      case Syntax.PostfixUnaryExpression:
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.TypeAssertionExpression:
-      case Syntax.TypeOfExpression:
-      case Syntax.VoidExpression:
-        return true;
-    }
-    return this.leftHandSideExpression(s);
-  }
-  volumeChar(c: number) {
-    return (c >= Codes.a && c <= Codes.z) || (c >= Codes.A && c <= Codes.Z);
-  }
-  whiteSpaceLike(c: number) {
-    return this.whiteSpaceSingleLine(c) || this.lineBreak(c);
-  }
-  whiteSpaceSingleLine(c: number) {
-    switch (c) {
-      case Codes.byteOrderMark:
-      case Codes.formFeed:
-      case Codes.ideographicSpace:
-      case Codes.mathematicalSpace:
-      case Codes.narrowNoBreakSpace:
-      case Codes.nextLine:
-      case Codes.nonBreakingSpace:
-      case Codes.ogham:
-      case Codes.space:
-      case Codes.tab:
-      case Codes.verticalTab:
-        return true;
-    }
-    return c >= Codes.enQuad && c <= Codes.zeroWidthSpace;
-  }
-})();
-export const get = new (class {
-  binaryOperatorPrecedence(k: Syntax): number {
-    switch (k) {
-      case Syntax.Question2Token:
-        return 4;
-      case Syntax.Bar2Token:
-        return 5;
-      case Syntax.Ampersand2Token:
-        return 6;
-      case Syntax.BarToken:
-        return 7;
-      case Syntax.CaretToken:
-        return 8;
-      case Syntax.AmpersandToken:
-        return 9;
-      case Syntax.Equals2Token:
-      case Syntax.ExclamationEqualsToken:
-      case Syntax.Equals3Token:
-      case Syntax.ExclamationEquals2Token:
-        return 10;
-      case Syntax.LessThanToken:
-      case Syntax.GreaterThanToken:
-      case Syntax.LessThanEqualsToken:
-      case Syntax.GreaterThanEqualsToken:
-      case Syntax.InstanceOfKeyword:
-      case Syntax.InKeyword:
-      case Syntax.AsKeyword:
-        return 11;
-      case Syntax.LessThan2Token:
-      case Syntax.GreaterThan2Token:
-      case Syntax.GreaterThan3Token:
-        return 12;
-      case Syntax.PlusToken:
-      case Syntax.MinusToken:
-        return 13;
-      case Syntax.AsteriskToken:
-      case Syntax.SlashToken:
-      case Syntax.PercentToken:
-        return 14;
-      case Syntax.Asterisk2Token:
-        return 15;
-    }
-    return -1;
-  }
-  charSize(c: number) {
-    return c >= 0x10000 ? 2 : 1;
-  }
-  encodedRootLength(path: string): number {
-    if (!path) return 0;
-    const c = path.charCodeAt(0);
-    if (c === Codes.slash || c === Codes.backslash) {
-      if (path.charCodeAt(1) !== c) return 1;
-      const i = path.indexOf(c === Codes.slash ? dirSeparator : altDirSeparator, 2);
-      if (i < 0) return path.length;
-      return i + 1;
-    }
-    if (is.volumeChar(c) && path.charCodeAt(1) === Codes.colon) {
-      const c2 = path.charCodeAt(2);
-      if (c2 === Codes.slash || c2 === Codes.backslash) return 3;
-      if (path.length === 2) return 2;
-    }
-    const i = path.indexOf(urlSchemeSeparator);
-    if (i !== -1) {
-      const s = i + urlSchemeSeparator.length;
-      const j = path.indexOf(dirSeparator, s);
-      if (j !== -1) {
-        const scheme = path.slice(0, i);
-        const auth = path.slice(s, j);
-        if (scheme === 'file' && (auth === '' || auth === 'localhost') && is.volumeChar(path.charCodeAt(j + 1))) {
-          const e = this.urlVolumeEnd(path, j + 2);
-          if (e !== -1) {
-            if (path.charCodeAt(e) === Codes.slash) return ~(e + 1);
-            if (e === path.length) return ~e;
-          }
-        }
-        return ~(j + 1);
-      }
-      return ~path.length;
-    }
-    return 0;
-  }
-  escUnderscores(s: string): qu.__String {
-    return (s.length >= 2 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ ? '_' + s : s) as qu.__String;
-  }
-  extensionFrom(path: string, ext: string, eq: (a: string, b: string) => boolean): string | undefined {
-    if (!qu.startsWith(ext, '.')) ext = '.' + ext;
-    if (path.length >= ext.length && path.charCodeAt(path.length - ext.length) === Codes.dot) {
-      const e = path.slice(path.length - ext.length);
-      if (eq(e, ext)) return e;
-    }
-    return;
-  }
-  indentation(ls: string[]) {
-    let i = MAX_SMI_X86;
-    for (const l of ls) {
-      if (!l.length) continue;
-      let i = 0;
-      for (; i < l.length && i < i; i++) {
-        if (!is.whiteSpaceLike(l.charCodeAt(i))) break;
-      }
-      if (i < i) i = i;
-      if (i === 0) return 0;
-    }
-    return i === MAX_SMI_X86 ? undefined : i;
-  }
-  leadingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
-    return each.reduceLeadingCommentRange(s, pos, appendCommentRange, undefined, undefined);
-  }
-  lineAndCharOf(starts: readonly number[], pos: number): LineAndChar {
-    const line = this.lineOf(starts, pos);
-    return { line, char: pos - starts[line] };
-  }
-  lineOf(starts: readonly number[], pos: number, lowerBound?: number): number {
-    let l = qu.binarySearch(starts, pos, qu.identity, qu.compareNumbers, lowerBound);
-    if (l < 0) {
-      l = ~l - 1;
-      qf.assert.true(l !== -1, 'position before beginning of file');
-    }
-    return l;
-  }
-  lineStarts(t: string): number[] {
-    const ss = [] as number[];
-    let s = 0;
-    let pos = 0;
-    while (pos < t.length) {
-      const c = t.charCodeAt(pos);
-      pos++;
       switch (c) {
+        case Codes.bar:
         case Codes.carriageReturn:
-          if (t.charCodeAt(pos) === Codes.lineFeed) pos++;
+        case Codes.equals:
+        case Codes.formFeed:
+        case Codes.greaterThan:
+        case Codes.lessThan:
         case Codes.lineFeed:
-          ss.push(s);
-          s = pos;
-          break;
-        default:
-          if (c > Codes.maxAsciiCharacter && is.lineBreak(c)) {
-            ss.push(s);
-            s = pos;
-          }
-          break;
-      }
-    }
-    ss.push(s);
-    return ss;
-  }
-  modifierFlag(k: Syntax): ModifierFlags {
-    switch (k) {
-      case Syntax.StaticKeyword:
-        return ModifierFlags.Static;
-      case Syntax.PublicKeyword:
-        return ModifierFlags.Public;
-      case Syntax.ProtectedKeyword:
-        return ModifierFlags.Protected;
-      case Syntax.PrivateKeyword:
-        return ModifierFlags.Private;
-      case Syntax.AbstractKeyword:
-        return ModifierFlags.Abstract;
-      case Syntax.ExportKeyword:
-        return ModifierFlags.Export;
-      case Syntax.DeclareKeyword:
-        return ModifierFlags.Ambient;
-      case Syntax.ConstKeyword:
-        return ModifierFlags.Const;
-      case Syntax.DefaultKeyword:
-        return ModifierFlags.Default;
-      case Syntax.AsyncKeyword:
-        return ModifierFlags.Async;
-      case Syntax.ReadonlyKeyword:
-        return ModifierFlags.Readonly;
-    }
-    return ModifierFlags.None;
-  }
-  operatorAssociativity(k: Syntax, o: Syntax, args?: boolean): Associativity {
-    switch (k) {
-      case Syntax.NewExpression:
-        return args ? Associativity.Left : Associativity.Right;
-      case Syntax.AwaitExpression:
-      case Syntax.ConditionalExpression:
-      case Syntax.DeleteExpression:
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.TypeOfExpression:
-      case Syntax.VoidExpression:
-      case Syntax.YieldExpression:
-        return Associativity.Right;
-      case Syntax.BinaryExpression:
-        switch (o) {
-          case Syntax.AmpersandEqualsToken:
-          case Syntax.Asterisk2EqualsToken:
-          case Syntax.Asterisk2Token:
-          case Syntax.AsteriskEqualsToken:
-          case Syntax.BarEqualsToken:
-          case Syntax.CaretEqualsToken:
-          case Syntax.EqualsToken:
-          case Syntax.GreaterThan2EqualsToken:
-          case Syntax.GreaterThan3EqualsToken:
-          case Syntax.LessThan2EqualsToken:
-          case Syntax.MinusEqualsToken:
-          case Syntax.PercentEqualsToken:
-          case Syntax.PlusEqualsToken:
-          case Syntax.SlashEqualsToken:
-            return Associativity.Right;
-        }
-    }
-    return Associativity.Left;
-  }
-  operatorPrecedence(k: Syntax, o: Syntax, args?: boolean): number {
-    switch (k) {
-      case Syntax.CommaListExpression:
-        return 0;
-      case Syntax.SpreadElem:
-        return 1;
-      case Syntax.YieldExpression:
-        return 2;
-      case Syntax.ConditionalExpression:
-        return 4;
-      case Syntax.BinaryExpression:
-        switch (o) {
-          case Syntax.CommaToken:
-            return 0;
-          case Syntax.AmpersandEqualsToken:
-          case Syntax.Asterisk2EqualsToken:
-          case Syntax.AsteriskEqualsToken:
-          case Syntax.BarEqualsToken:
-          case Syntax.CaretEqualsToken:
-          case Syntax.EqualsToken:
-          case Syntax.GreaterThan2EqualsToken:
-          case Syntax.GreaterThan3EqualsToken:
-          case Syntax.LessThan2EqualsToken:
-          case Syntax.MinusEqualsToken:
-          case Syntax.PercentEqualsToken:
-          case Syntax.PlusEqualsToken:
-          case Syntax.SlashEqualsToken:
-            return 3;
-          default:
-            return this.binaryOperatorPrecedence(o);
-        }
-      case Syntax.AwaitExpression:
-      case Syntax.DeleteExpression:
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.TypeOfExpression:
-      case Syntax.VoidExpression:
-        return 16;
-      case Syntax.PostfixUnaryExpression:
-        return 17;
-      case Syntax.CallExpression:
-        return 18;
-      case Syntax.NewExpression:
-        return args ? 19 : 18;
-      case Syntax.ElemAccessExpression:
-      case Syntax.PropertyAccessExpression:
-      case Syntax.TaggedTemplateExpression:
-        return 19;
-      case Syntax.ArrayLiteralExpression:
-      case Syntax.ArrowFunction:
-      case Syntax.BigIntLiteral:
-      case Syntax.ClassExpression:
-      case Syntax.FalseKeyword:
-      case Syntax.FunctionExpression:
-      case Syntax.Identifier:
-      case Syntax.JsxElem:
-      case Syntax.JsxFragment:
-      case Syntax.JsxSelfClosingElem:
-      case Syntax.NoSubstitutionLiteral:
-      case Syntax.NullKeyword:
-      case Syntax.NumericLiteral:
-      case Syntax.ObjectLiteralExpression:
-      case Syntax.OmittedExpression:
-      case Syntax.ParenthesizedExpression:
-      case Syntax.RegexLiteral:
-      case Syntax.StringLiteral:
-      case Syntax.SuperKeyword:
-      case Syntax.TemplateExpression:
-      case Syntax.ThisKeyword:
-      case Syntax.TrueKeyword:
-        return 20;
-    }
-    return -1;
-  }
-  posOf(starts: readonly number[], line: number, char: number, debug?: string, edits?: true): number {
-    if (line < 0 || line >= starts.length) {
-      if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
-      else {
-        qu.fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? qu.arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
-      }
-    }
-    const p = starts[line] + char;
-    if (edits) return p > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && p > debug.length ? debug.length : p;
-    if (line < starts.length - 1) qf.assert.true(p < starts[line + 1]);
-    else if (debug !== undefined) qf.assert.true(p <= debug.length);
-    return p;
-  }
-  shebang(s: string): string | undefined {
-    const m = shebangRegex.exec(s);
-    return m ? m[0] : undefined;
-  }
-  trafoFlagsSubtreeExclusions(k: Syntax) {
-    if (k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) return TrafoFlags.TypeExcludes;
-    switch (k) {
-      case Syntax.ArrayLiteralExpression:
-      case Syntax.CallExpression:
-      case Syntax.NewExpression:
-        return TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
-      case Syntax.ModuleDeclaration:
-        return TrafoFlags.ModuleExcludes;
-      case Syntax.Param:
-        return TrafoFlags.ParamExcludes;
-      case Syntax.ArrowFunction:
-        return TrafoFlags.ArrowFunctionExcludes;
-      case Syntax.FunctionDeclaration:
-      case Syntax.FunctionExpression:
-        return TrafoFlags.FunctionExcludes;
-      case Syntax.VariableDeclarationList:
-        return TrafoFlags.VariableDeclarationListExcludes;
-      case Syntax.ClassDeclaration:
-      case Syntax.ClassExpression:
-        return TrafoFlags.ClassExcludes;
-      case Syntax.Constructor:
-        return TrafoFlags.ConstructorExcludes;
-      case Syntax.GetAccessor:
-      case Syntax.MethodDeclaration:
-      case Syntax.SetAccessor:
-        return TrafoFlags.MethodOrAccessorExcludes;
-      case Syntax.AnyKeyword:
-      case Syntax.BigIntKeyword:
-      case Syntax.BooleanKeyword:
-      case Syntax.CallSignature:
-      case Syntax.ConstructSignature:
-      case Syntax.IndexSignature:
-      case Syntax.InterfaceDeclaration:
-      case Syntax.MethodSignature:
-      case Syntax.NeverKeyword:
-      case Syntax.NumberKeyword:
-      case Syntax.ObjectKeyword:
-      case Syntax.PropertySignature:
-      case Syntax.StringKeyword:
-      case Syntax.SymbolKeyword:
-      case Syntax.TypeAliasDeclaration:
-      case Syntax.TypeParam:
-      case Syntax.VoidKeyword:
-        return TrafoFlags.TypeExcludes;
-      case Syntax.ObjectLiteralExpression:
-        return TrafoFlags.ObjectLiteralExcludes;
-      case Syntax.CatchClause:
-        return TrafoFlags.CatchClauseExcludes;
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ObjectBindingPattern:
-        return TrafoFlags.BindingPatternExcludes;
-      case Syntax.AsExpression:
-      case Syntax.ParenthesizedExpression:
-      case Syntax.PartiallyEmittedExpression:
-      case Syntax.SuperKeyword:
-      case Syntax.TypeAssertionExpression:
-        return TrafoFlags.OuterExpressionExcludes;
-      case Syntax.ElemAccessExpression:
-      case Syntax.PropertyAccessExpression:
-        return TrafoFlags.PropertyAccessExcludes;
-    }
-    return TrafoFlags.NodeExcludes;
-  }
-  trailingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
-    return each.reduceTrailingCommentRange(s, pos, appendCommentRange, undefined, undefined);
-  }
-  unescUnderscores(x: qu.__String): string {
-    const s = x as string;
-    return s.length >= 3 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ && s.charCodeAt(2) === Codes._ ? s.substr(1) : s;
-  }
-  urlVolumeEnd(url: string, i: number): number {
-    const c = url.charCodeAt(i);
-    if (c === Codes.colon) return i + 1;
-    if (c === Codes.percent && url.charCodeAt(i + 1) === Codes._3) {
-      const c2 = url.charCodeAt(i + 2);
-      if (c2 === Codes.a || c2 === Codes.A) return i + 3;
-    }
-    return -1;
-  }
-})();
-export const each = new (class {
-  commentRange<T, U>(
-    reduce: boolean,
-    text: string,
-    pos: number,
-    trailing: boolean,
-    cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U,
-    state?: T,
-    initial?: U
-  ): U | undefined {
-    let pendingPos!: number;
-    let pendingEnd!: number;
-    let pendingKind!: CommentKind;
-    let pendingHasTrailingNewLine!: boolean;
-    let hasPendingCommentRange = false;
-    let collecting = trailing;
-    let accumulator = initial;
-    if (pos === 0) {
-      collecting = true;
-      const shebang = get.shebang(text);
-      if (shebang) {
-        pos = shebang.length;
-      }
-    }
-    scan: while (pos >= 0 && pos < text.length) {
-      const ch = text.charCodeAt(pos);
-      switch (ch) {
-        case Codes.carriageReturn:
-          if (text.charCodeAt(pos + 1) === Codes.lineFeed) pos++;
-        case Codes.lineFeed:
-          pos++;
-          if (trailing) break scan;
-          collecting = true;
-          if (hasPendingCommentRange) pendingHasTrailingNewLine = true;
-          continue;
+        case Codes.slash:
+        case Codes.space:
         case Codes.tab:
         case Codes.verticalTab:
-        case Codes.formFeed:
-        case Codes.space:
-          pos++;
-          continue;
-        case Codes.slash:
-          const nextChar = text.charCodeAt(pos + 1);
-          let hasTrailingNewLine = false;
-          if (nextChar === Codes.slash || nextChar === Codes.asterisk) {
-            const kind = nextChar === Codes.slash ? Syntax.SingleLineCommentTrivia : Syntax.MultiLineCommentTrivia;
-            const startPos = pos;
-            pos += 2;
-            if (nextChar === Codes.slash) {
-              while (pos < text.length) {
-                if (is.lineBreak(text.charCodeAt(pos))) {
-                  hasTrailingNewLine = true;
-                  break;
-                }
-                pos++;
-              }
-            } else {
-              while (pos < text.length) {
-                if (text.charCodeAt(pos) === Codes.asterisk && text.charCodeAt(pos + 1) === Codes.slash) {
-                  pos += 2;
-                  break;
-                }
-                pos++;
-              }
-            }
-            if (collecting) {
-              if (hasPendingCommentRange) {
-                accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
-                if (!reduce && accumulator) return accumulator;
-              }
-              pendingPos = startPos;
-              pendingEnd = pos;
-              pendingKind = kind;
-              pendingHasTrailingNewLine = hasTrailingNewLine;
-              hasPendingCommentRange = true;
-            }
-            continue;
+          return true;
+        case Codes.hash:
+          return pos === 0;
+      }
+      return c > Codes.maxAsciiCharacter;
+    }
+    declaration(s?: Syntax) {
+      switch (s) {
+        case Syntax.ArrowFunction:
+        case Syntax.BindingElem:
+        case Syntax.ClassDeclaration:
+        case Syntax.ClassExpression:
+        case Syntax.Constructor:
+        case Syntax.DocCallbackTag:
+        case Syntax.DocPropertyTag:
+        case Syntax.DocTypedefTag:
+        case Syntax.EnumDeclaration:
+        case Syntax.EnumMember:
+        case Syntax.ExportSpecifier:
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
+        case Syntax.GetAccessor:
+        case Syntax.ImportClause:
+        case Syntax.ImportEqualsDeclaration:
+        case Syntax.ImportSpecifier:
+        case Syntax.InterfaceDeclaration:
+        case Syntax.JsxAttribute:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
+        case Syntax.ModuleDeclaration:
+        case Syntax.NamespaceExport:
+        case Syntax.NamespaceExportDeclaration:
+        case Syntax.NamespaceImport:
+        case Syntax.Param:
+        case Syntax.PropertyAssignment:
+        case Syntax.PropertyDeclaration:
+        case Syntax.PropertySignature:
+        case Syntax.SetAccessor:
+        case Syntax.ShorthandPropertyAssignment:
+        case Syntax.TypeAliasDeclaration:
+        case Syntax.TypeParam:
+        case Syntax.VariableDeclaration:
+          return true;
+      }
+      return false;
+    }
+    declarationStatement(s: Syntax) {
+      switch (s) {
+        case Syntax.ClassDeclaration:
+        case Syntax.EnumDeclaration:
+        case Syntax.ExportAssignment:
+        case Syntax.ExportDeclaration:
+        case Syntax.FunctionDeclaration:
+        case Syntax.ImportDeclaration:
+        case Syntax.ImportEqualsDeclaration:
+        case Syntax.InterfaceDeclaration:
+        case Syntax.MissingDeclaration:
+        case Syntax.ModuleDeclaration:
+        case Syntax.NamespaceExportDeclaration:
+        case Syntax.TypeAliasDeclaration:
+          return true;
+      }
+      return false;
+    }
+    digit(c: number) {
+      return c >= Codes._0 && c <= Codes._9;
+    }
+    dirSeparator(c: number) {
+      return c === Codes.slash || c === Codes.backslash;
+    }
+    docLike(s: string, i: number) {
+      return s.charCodeAt(i + 1) === Codes.asterisk && s.charCodeAt(i + 2) === Codes.asterisk && s.charCodeAt(i + 3) !== Codes.slash;
+    }
+    expression(s: Syntax) {
+      switch (s) {
+        case Syntax.ArrowFunction:
+        case Syntax.AsExpression:
+        case Syntax.BinaryExpression:
+        case Syntax.CommaListExpression:
+        case Syntax.ConditionalExpression:
+        case Syntax.OmittedExpression:
+        case Syntax.PartiallyEmittedExpression:
+        case Syntax.SpreadElem:
+        case Syntax.YieldExpression:
+          return true;
+      }
+      return this.unaryExpression(s);
+    }
+    functionLike(s?: Syntax) {
+      switch (s) {
+        case Syntax.CallSignature:
+        case Syntax.ConstructorTyping:
+        case Syntax.ConstructSignature:
+        case Syntax.DocFunctionTyping:
+        case Syntax.DocSignature:
+        case Syntax.FunctionTyping:
+        case Syntax.IndexSignature:
+        case Syntax.MethodSignature:
+          return true;
+      }
+      return this.functionLikeDeclaration(s);
+    }
+    functionLikeDeclaration(s?: Syntax) {
+      switch (s) {
+        case Syntax.ArrowFunction:
+        case Syntax.Constructor:
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
+        case Syntax.GetAccessor:
+        case Syntax.MethodDeclaration:
+        case Syntax.SetAccessor:
+          return true;
+      }
+      return false;
+    }
+    futureReservedKeyword(s: Syntax) {
+      return Syntax.FirstFutureReservedWord <= s && s <= Syntax.LastFutureReservedWord;
+    }
+    hexDigit(c: number) {
+      return this.digit(c) || (c >= Codes.A && c <= Codes.F) || (c >= Codes.a && c <= Codes.f);
+    }
+    identifierOrKeyword(s: Syntax) {
+      return s >= Syntax.Identifier;
+    }
+    identifierOrKeywordOrGreaterThan(s: Syntax) {
+      return s === Syntax.GreaterThanToken || this.identifierOrKeyword(s);
+    }
+    identifierPart(c: number, l?: LanguageVariant) {
+      return (
+        (c >= Codes.A && c <= Codes.Z) ||
+        (c >= Codes.a && c <= Codes.z) ||
+        (c >= Codes._0 && c <= Codes._9) ||
+        c === Codes.$ ||
+        c === Codes._ ||
+        (l === LanguageVariant.TX ? c === Codes.minus || c === Codes.colon : false) ||
+        (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierPart))
+      );
+    }
+    identifierStart(c: number) {
+      return (c >= Codes.A && c <= Codes.Z) || (c >= Codes.a && c <= Codes.z) || c === Codes.$ || c === Codes._ || (c > Codes.maxAsciiCharacter && this.oneOf(c, identifierStart));
+    }
+    identifierText(s: string, l?: LanguageVariant) {
+      let c = s.codePointAt(0)!;
+      if (!this.identifierStart(c)) return false;
+      for (let i = qf.get.charSize(c); i < s.length; i += qf.get.charSize(c)) {
+        if (!this.identifierPart((c = s.codePointAt(i)!), l)) return false;
+      }
+      return true;
+    }
+    intrinsicJsxName(s: qu.__String | string) {
+      const c = (s as string).charCodeAt(0);
+      return (c >= Codes.a && c <= Codes.z) || qu.stringContains(s as string, '-');
+    }
+    keyword(s: Syntax) {
+      return Syntax.FirstKeyword <= s && s <= Syntax.LastKeyword;
+    }
+    leftHandSideExpression(s: Syntax) {
+      switch (s) {
+        case Syntax.ArrayLiteralExpression:
+        case Syntax.BigIntLiteral:
+        case Syntax.CallExpression:
+        case Syntax.ClassExpression:
+        case Syntax.ElemAccessExpression:
+        case Syntax.FalseKeyword:
+        case Syntax.FunctionExpression:
+        case Syntax.Identifier:
+        case Syntax.ImportKeyword:
+        case Syntax.JsxElem:
+        case Syntax.JsxFragment:
+        case Syntax.JsxSelfClosingElem:
+        case Syntax.MetaProperty:
+        case Syntax.NewExpression:
+        case Syntax.NonNullExpression:
+        case Syntax.NoSubstitutionLiteral:
+        case Syntax.NullKeyword:
+        case Syntax.NumericLiteral:
+        case Syntax.ObjectLiteralExpression:
+        case Syntax.ParenthesizedExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.RegexLiteral:
+        case Syntax.StringLiteral:
+        case Syntax.SuperKeyword:
+        case Syntax.TaggedTemplateExpression:
+        case Syntax.TemplateExpression:
+        case Syntax.ThisKeyword:
+        case Syntax.TrueKeyword:
+          return true;
+      }
+      return false;
+    }
+    lineBreak(c: number) {
+      return c === Codes.lineFeed || c === Codes.carriageReturn || c === Codes.lineSeparator || c === Codes.paragraphSeparator;
+    }
+    literal(s: Syntax) {
+      return Syntax.FirstLiteralToken <= s && s <= Syntax.LastLiteralToken;
+    }
+    logicalOperator(s: Syntax) {
+      return s === Syntax.Bar2Token || s === Syntax.Ampersand2Token || s === Syntax.ExclamationToken;
+    }
+    markerTrivia(s: string, pos: number) {
+      qf.assert.true(pos >= 0);
+      if (pos === 0 || this.lineBreak(s.charCodeAt(pos - 1))) {
+        const c = s.charCodeAt(pos);
+        if (pos + markerLength < s.length) {
+          for (let i = 0; i < markerLength; i++) {
+            if (s.charCodeAt(pos + i) !== c) return false;
           }
-          break scan;
-        default:
-          if (ch > Codes.maxAsciiCharacter && is.whiteSpaceLike(ch)) {
-            if (hasPendingCommentRange && is.lineBreak(ch)) {
-              pendingHasTrailingNewLine = true;
+          return c === Codes.equals || s.charCodeAt(pos + markerLength) === Codes.space;
+        }
+      }
+      return false;
+    }
+    modifier(s: Syntax): s is Modifier['kind'] {
+      switch (s) {
+        case Syntax.AbstractKeyword:
+        case Syntax.AsyncKeyword:
+        case Syntax.ConstKeyword:
+        case Syntax.DeclareKeyword:
+        case Syntax.DefaultKeyword:
+        case Syntax.ExportKeyword:
+        case Syntax.PrivateKeyword:
+        case Syntax.ProtectedKeyword:
+        case Syntax.PublicKeyword:
+        case Syntax.ReadonlyKeyword:
+        case Syntax.StaticKeyword:
+          return true;
+      }
+      return false;
+    }
+    node(s: Syntax) {
+      return s >= Syntax.FirstNode;
+    }
+    nonContextualKeyword(s: Syntax) {
+      return this.keyword(s) && !this.contextualKeyword(s);
+    }
+    octalDigit(c: number) {
+      return c >= Codes._0 && c <= Codes._7;
+    }
+    oneOf(c: number, cs: readonly number[]) {
+      if (c < cs[0]) return false;
+      let lo = 0;
+      let hi = cs.length;
+      let mid: number;
+      while (lo + 1 < hi) {
+        mid = lo + (hi - lo) / 2;
+        mid -= mid % 2;
+        if (cs[mid] <= c && c <= cs[mid + 1]) return true;
+        if (c < cs[mid]) hi = mid;
+        else lo = mid + 2;
+      }
+      return false;
+    }
+    paramPropertyModifier(s: Syntax) {
+      return !!(qf.get.modifierFlag(s) & ModifierFlags.ParamPropertyModifier);
+    }
+    pinnedComment(s: string, start: number) {
+      return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
+    }
+    recognizedTripleSlashComment(s: string, pos: number, end: number) {
+      if (s.charCodeAt(pos + 1) === Codes.slash && pos + 2 < end && s.charCodeAt(pos + 2) === Codes.slash) {
+        const ss = s.substring(pos, end);
+        return ss.match(slash3Ref) || ss.match(slash3AMDRef) || ss.match(slash3TypeRef) || ss.match(defaultLibRef) ? true : false;
+      }
+      return false;
+    }
+    reservedName(x: qu.__String) {
+      const n = x as string;
+      return n.charCodeAt(0) === Codes._ && n.charCodeAt(1) === Codes._ && n.charCodeAt(2) !== Codes._ && n.charCodeAt(2) !== Codes.at && n.charCodeAt(2) !== Codes.hash;
+    }
+    shebangTrivia(s: string, pos: number) {
+      qf.assert.true(pos === 0);
+      return shebangRegex.test(s);
+    }
+    singleOrDoubleQuote(c: number) {
+      return c === Codes.singleQuote || c === Codes.doubleQuote;
+    }
+    statementKindButNotDeclaration(s: Syntax) {
+      switch (s) {
+        case Syntax.BreakStatement:
+        case Syntax.ContinueStatement:
+        case Syntax.DebuggerStatement:
+        case Syntax.DoStatement:
+        case Syntax.EmptyStatement:
+        case Syntax.EndOfDeclarationMarker:
+        case Syntax.ExpressionStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+        case Syntax.ForStatement:
+        case Syntax.IfStatement:
+        case Syntax.LabeledStatement:
+        case Syntax.MergeDeclarationMarker:
+        case Syntax.NotEmittedStatement:
+        case Syntax.ReturnStatement:
+        case Syntax.SwitchStatement:
+        case Syntax.ThrowStatement:
+        case Syntax.TryStatement:
+        case Syntax.VariableStatement:
+        case Syntax.WhileStatement:
+        case Syntax.WithStatement:
+          return true;
+      }
+      return false;
+    }
+    stringAndKeyword(s: string) {
+      const k = fromString(s);
+      return k !== undefined && this.keyword(k);
+    }
+    stringANonContextualKeyword(s: string) {
+      const k = fromString(s);
+      return k !== undefined && this.nonContextualKeyword(k);
+    }
+    templateLiteral(s: Syntax) {
+      return Syntax.FirstTemplateToken <= s && s <= Syntax.LastTemplateToken;
+    }
+    token(s: Syntax) {
+      return s >= Syntax.FirstToken && s <= Syntax.LastToken;
+    }
+    trivia(s: Syntax): s is TriviaKind {
+      return Syntax.FirstTriviaToken <= s && s <= Syntax.LastTriviaToken;
+    }
+    typeNode(s?: Syntax) {
+      if (s && s >= Syntax.FirstTypeNode && s <= Syntax.LastTypeNode) return true;
+      switch (s) {
+        case Syntax.AnyKeyword:
+        case Syntax.BigIntKeyword:
+        case Syntax.BooleanKeyword:
+        case Syntax.DocAllTyping:
+        case Syntax.DocFunctionTyping:
+        case Syntax.DocNonNullableTyping:
+        case Syntax.DocNullableTyping:
+        case Syntax.DocOptionalTyping:
+        case Syntax.DocUnknownTyping:
+        case Syntax.DocVariadicTyping:
+        case Syntax.ExpressionWithTypings:
+        case Syntax.NeverKeyword:
+        case Syntax.NullKeyword:
+        case Syntax.NumberKeyword:
+        case Syntax.ObjectKeyword:
+        case Syntax.StringKeyword:
+        case Syntax.SymbolKeyword:
+        case Syntax.ThisKeyword:
+        case Syntax.UndefinedKeyword:
+        case Syntax.UnknownKeyword:
+        case Syntax.VoidKeyword:
+          return true;
+      }
+      return false;
+    }
+    unaryExpression(s: Syntax) {
+      switch (s) {
+        case Syntax.AwaitExpression:
+        case Syntax.DeleteExpression:
+        case Syntax.PostfixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
+        case Syntax.TypeAssertionExpression:
+        case Syntax.TypeOfExpression:
+        case Syntax.VoidExpression:
+          return true;
+      }
+      return this.leftHandSideExpression(s);
+    }
+    volumeChar(c: number) {
+      return (c >= Codes.a && c <= Codes.z) || (c >= Codes.A && c <= Codes.Z);
+    }
+    whiteSpaceLike(c: number) {
+      return this.whiteSpaceSingleLine(c) || this.lineBreak(c);
+    }
+    whiteSpaceSingleLine(c: number) {
+      switch (c) {
+        case Codes.byteOrderMark:
+        case Codes.formFeed:
+        case Codes.ideographicSpace:
+        case Codes.mathematicalSpace:
+        case Codes.narrowNoBreakSpace:
+        case Codes.nextLine:
+        case Codes.nonBreakingSpace:
+        case Codes.ogham:
+        case Codes.space:
+        case Codes.tab:
+        case Codes.verticalTab:
+          return true;
+      }
+      return c >= Codes.enQuad && c <= Codes.zeroWidthSpace;
+    }
+  })());
+}
+export interface Fis extends ReturnType<typeof newIs> {}
+export function newGet(f: qu.Frame) {
+  interface Frame extends qu.Frame {
+    each: Feach;
+    is: Fis;
+  }
+  const qf: Frame = f as Frame;
+  return (qf.get = new (class Fget extends qu.Fget {
+    binaryOperatorPrecedence(s: Syntax): number {
+      switch (s) {
+        case Syntax.Question2Token:
+          return 4;
+        case Syntax.Bar2Token:
+          return 5;
+        case Syntax.Ampersand2Token:
+          return 6;
+        case Syntax.BarToken:
+          return 7;
+        case Syntax.CaretToken:
+          return 8;
+        case Syntax.AmpersandToken:
+          return 9;
+        case Syntax.Equals2Token:
+        case Syntax.ExclamationEqualsToken:
+        case Syntax.Equals3Token:
+        case Syntax.ExclamationEquals2Token:
+          return 10;
+        case Syntax.LessThanToken:
+        case Syntax.GreaterThanToken:
+        case Syntax.LessThanEqualsToken:
+        case Syntax.GreaterThanEqualsToken:
+        case Syntax.InstanceOfKeyword:
+        case Syntax.InKeyword:
+        case Syntax.AsKeyword:
+          return 11;
+        case Syntax.LessThan2Token:
+        case Syntax.GreaterThan2Token:
+        case Syntax.GreaterThan3Token:
+          return 12;
+        case Syntax.PlusToken:
+        case Syntax.MinusToken:
+          return 13;
+        case Syntax.AsteriskToken:
+        case Syntax.SlashToken:
+        case Syntax.PercentToken:
+          return 14;
+        case Syntax.Asterisk2Token:
+          return 15;
+      }
+      return -1;
+    }
+    charSize(c: number) {
+      return c >= 0x10000 ? 2 : 1;
+    }
+    encodedRootLength(path: string): number {
+      if (!path) return 0;
+      const c = path.charCodeAt(0);
+      if (c === Codes.slash || c === Codes.backslash) {
+        if (path.charCodeAt(1) !== c) return 1;
+        const i = path.indexOf(c === Codes.slash ? dirSeparator : altDirSeparator, 2);
+        if (i < 0) return path.length;
+        return i + 1;
+      }
+      if (qf.is.volumeChar(c) && path.charCodeAt(1) === Codes.colon) {
+        const c2 = path.charCodeAt(2);
+        if (c2 === Codes.slash || c2 === Codes.backslash) return 3;
+        if (path.length === 2) return 2;
+      }
+      const i = path.indexOf(urlSchemeSeparator);
+      if (i !== -1) {
+        const s = i + urlSchemeSeparator.length;
+        const j = path.indexOf(dirSeparator, s);
+        if (j !== -1) {
+          const scheme = path.slice(0, i);
+          const auth = path.slice(s, j);
+          if (scheme === 'file' && (auth === '' || auth === 'localhost') && qf.is.volumeChar(path.charCodeAt(j + 1))) {
+            const e = this.urlVolumeEnd(path, j + 2);
+            if (e !== -1) {
+              if (path.charCodeAt(e) === Codes.slash) return ~(e + 1);
+              if (e === path.length) return ~e;
             }
+          }
+          return ~(j + 1);
+        }
+        return ~path.length;
+      }
+      return 0;
+    }
+    escUnderscores(s: string): qu.__String {
+      return (s.length >= 2 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ ? '_' + s : s) as qu.__String;
+    }
+    extensionFrom(path: string, ext: string, eq: (a: string, b: string) => boolean): string | undefined {
+      if (!qu.startsWith(ext, '.')) ext = '.' + ext;
+      if (path.length >= ext.length && path.charCodeAt(path.length - ext.length) === Codes.dot) {
+        const e = path.slice(path.length - ext.length);
+        if (eq(e, ext)) return e;
+      }
+      return;
+    }
+    indentation(ls: string[]) {
+      let i = MAX_SMI_X86;
+      for (const l of ls) {
+        if (!l.length) continue;
+        let i = 0;
+        for (; i < l.length && i < i; i++) {
+          if (!qf.is.whiteSpaceLike(l.charCodeAt(i))) break;
+        }
+        if (i < i) i = i;
+        if (i === 0) return 0;
+      }
+      return i === MAX_SMI_X86 ? undefined : i;
+    }
+    leadingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
+      return qf.each.reduceLeadingCommentRange(s, pos, appendCommentRange, undefined, undefined);
+    }
+    lineAndCharOf(starts: readonly number[], pos: number): LineAndChar {
+      const line = this.lineOf(starts, pos);
+      return { line, char: pos - starts[line] };
+    }
+    lineOf(starts: readonly number[], pos: number, lowerBound?: number): number {
+      let l = qu.binarySearch(starts, pos, qu.identity, qu.compareNumbers, lowerBound);
+      if (l < 0) {
+        l = ~l - 1;
+        qf.assert.true(l !== -1, 'position before beginning of file');
+      }
+      return l;
+    }
+    lineStarts(t: string): number[] {
+      const ss = [] as number[];
+      let s = 0;
+      let pos = 0;
+      while (pos < t.length) {
+        const c = t.charCodeAt(pos);
+        pos++;
+        switch (c) {
+          case Codes.carriageReturn:
+            if (t.charCodeAt(pos) === Codes.lineFeed) pos++;
+          case Codes.lineFeed:
+            ss.push(s);
+            s = pos;
+            break;
+          default:
+            if (c > Codes.maxAsciiCharacter && qf.is.lineBreak(c)) {
+              ss.push(s);
+              s = pos;
+            }
+            break;
+        }
+      }
+      ss.push(s);
+      return ss;
+    }
+    modifierFlag(s: Syntax): ModifierFlags {
+      switch (s) {
+        case Syntax.StaticKeyword:
+          return ModifierFlags.Static;
+        case Syntax.PublicKeyword:
+          return ModifierFlags.Public;
+        case Syntax.ProtectedKeyword:
+          return ModifierFlags.Protected;
+        case Syntax.PrivateKeyword:
+          return ModifierFlags.Private;
+        case Syntax.AbstractKeyword:
+          return ModifierFlags.Abstract;
+        case Syntax.ExportKeyword:
+          return ModifierFlags.Export;
+        case Syntax.DeclareKeyword:
+          return ModifierFlags.Ambient;
+        case Syntax.ConstKeyword:
+          return ModifierFlags.Const;
+        case Syntax.DefaultKeyword:
+          return ModifierFlags.Default;
+        case Syntax.AsyncKeyword:
+          return ModifierFlags.Async;
+        case Syntax.ReadonlyKeyword:
+          return ModifierFlags.Readonly;
+      }
+      return ModifierFlags.None;
+    }
+    operatorAssociativity(s: Syntax, o: Syntax, args?: boolean): Associativity {
+      switch (s) {
+        case Syntax.NewExpression:
+          return args ? Associativity.Left : Associativity.Right;
+        case Syntax.AwaitExpression:
+        case Syntax.ConditionalExpression:
+        case Syntax.DeleteExpression:
+        case Syntax.PrefixUnaryExpression:
+        case Syntax.TypeOfExpression:
+        case Syntax.VoidExpression:
+        case Syntax.YieldExpression:
+          return Associativity.Right;
+        case Syntax.BinaryExpression:
+          switch (o) {
+            case Syntax.AmpersandEqualsToken:
+            case Syntax.Asterisk2EqualsToken:
+            case Syntax.Asterisk2Token:
+            case Syntax.AsteriskEqualsToken:
+            case Syntax.BarEqualsToken:
+            case Syntax.CaretEqualsToken:
+            case Syntax.EqualsToken:
+            case Syntax.GreaterThan2EqualsToken:
+            case Syntax.GreaterThan3EqualsToken:
+            case Syntax.LessThan2EqualsToken:
+            case Syntax.MinusEqualsToken:
+            case Syntax.PercentEqualsToken:
+            case Syntax.PlusEqualsToken:
+            case Syntax.SlashEqualsToken:
+              return Associativity.Right;
+          }
+      }
+      return Associativity.Left;
+    }
+    operatorPrecedence(s: Syntax, o: Syntax, args?: boolean): number {
+      switch (s) {
+        case Syntax.CommaListExpression:
+          return 0;
+        case Syntax.SpreadElem:
+          return 1;
+        case Syntax.YieldExpression:
+          return 2;
+        case Syntax.ConditionalExpression:
+          return 4;
+        case Syntax.BinaryExpression:
+          switch (o) {
+            case Syntax.CommaToken:
+              return 0;
+            case Syntax.AmpersandEqualsToken:
+            case Syntax.Asterisk2EqualsToken:
+            case Syntax.AsteriskEqualsToken:
+            case Syntax.BarEqualsToken:
+            case Syntax.CaretEqualsToken:
+            case Syntax.EqualsToken:
+            case Syntax.GreaterThan2EqualsToken:
+            case Syntax.GreaterThan3EqualsToken:
+            case Syntax.LessThan2EqualsToken:
+            case Syntax.MinusEqualsToken:
+            case Syntax.PercentEqualsToken:
+            case Syntax.PlusEqualsToken:
+            case Syntax.SlashEqualsToken:
+              return 3;
+            default:
+              return this.binaryOperatorPrecedence(o);
+          }
+        case Syntax.AwaitExpression:
+        case Syntax.DeleteExpression:
+        case Syntax.PrefixUnaryExpression:
+        case Syntax.TypeOfExpression:
+        case Syntax.VoidExpression:
+          return 16;
+        case Syntax.PostfixUnaryExpression:
+          return 17;
+        case Syntax.CallExpression:
+          return 18;
+        case Syntax.NewExpression:
+          return args ? 19 : 18;
+        case Syntax.ElemAccessExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.TaggedTemplateExpression:
+          return 19;
+        case Syntax.ArrayLiteralExpression:
+        case Syntax.ArrowFunction:
+        case Syntax.BigIntLiteral:
+        case Syntax.ClassExpression:
+        case Syntax.FalseKeyword:
+        case Syntax.FunctionExpression:
+        case Syntax.Identifier:
+        case Syntax.JsxElem:
+        case Syntax.JsxFragment:
+        case Syntax.JsxSelfClosingElem:
+        case Syntax.NoSubstitutionLiteral:
+        case Syntax.NullKeyword:
+        case Syntax.NumericLiteral:
+        case Syntax.ObjectLiteralExpression:
+        case Syntax.OmittedExpression:
+        case Syntax.ParenthesizedExpression:
+        case Syntax.RegexLiteral:
+        case Syntax.StringLiteral:
+        case Syntax.SuperKeyword:
+        case Syntax.TemplateExpression:
+        case Syntax.ThisKeyword:
+        case Syntax.TrueKeyword:
+          return 20;
+      }
+      return -1;
+    }
+    posOf(starts: readonly number[], line: number, char: number, debug?: string, edits?: true): number {
+      if (line < 0 || line >= starts.length) {
+        if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
+        else {
+          qu.fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? qu.arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
+        }
+      }
+      const p = starts[line] + char;
+      if (edits) return p > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && p > debug.length ? debug.length : p;
+      if (line < starts.length - 1) qf.assert.true(p < starts[line + 1]);
+      else if (debug !== undefined) qf.assert.true(p <= debug.length);
+      return p;
+    }
+    shebang(s: string): string | undefined {
+      const m = shebangRegex.exec(s);
+      return m ? m[0] : undefined;
+    }
+    trafoFlagsSubtreeExclusions(s: Syntax) {
+      if (s >= Syntax.FirstTypeNode && s <= Syntax.LastTypeNode) return TrafoFlags.TypeExcludes;
+      switch (s) {
+        case Syntax.ArrayLiteralExpression:
+        case Syntax.CallExpression:
+        case Syntax.NewExpression:
+          return TrafoFlags.ArrayLiteralOrCallOrNewExcludes;
+        case Syntax.ModuleDeclaration:
+          return TrafoFlags.ModuleExcludes;
+        case Syntax.Param:
+          return TrafoFlags.ParamExcludes;
+        case Syntax.ArrowFunction:
+          return TrafoFlags.ArrowFunctionExcludes;
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
+          return TrafoFlags.FunctionExcludes;
+        case Syntax.VariableDeclarationList:
+          return TrafoFlags.VariableDeclarationListExcludes;
+        case Syntax.ClassDeclaration:
+        case Syntax.ClassExpression:
+          return TrafoFlags.ClassExcludes;
+        case Syntax.Constructor:
+          return TrafoFlags.ConstructorExcludes;
+        case Syntax.GetAccessor:
+        case Syntax.MethodDeclaration:
+        case Syntax.SetAccessor:
+          return TrafoFlags.MethodOrAccessorExcludes;
+        case Syntax.AnyKeyword:
+        case Syntax.BigIntKeyword:
+        case Syntax.BooleanKeyword:
+        case Syntax.CallSignature:
+        case Syntax.ConstructSignature:
+        case Syntax.IndexSignature:
+        case Syntax.InterfaceDeclaration:
+        case Syntax.MethodSignature:
+        case Syntax.NeverKeyword:
+        case Syntax.NumberKeyword:
+        case Syntax.ObjectKeyword:
+        case Syntax.PropertySignature:
+        case Syntax.StringKeyword:
+        case Syntax.SymbolKeyword:
+        case Syntax.TypeAliasDeclaration:
+        case Syntax.TypeParam:
+        case Syntax.VoidKeyword:
+          return TrafoFlags.TypeExcludes;
+        case Syntax.ObjectLiteralExpression:
+          return TrafoFlags.ObjectLiteralExcludes;
+        case Syntax.CatchClause:
+          return TrafoFlags.CatchClauseExcludes;
+        case Syntax.ArrayBindingPattern:
+        case Syntax.ObjectBindingPattern:
+          return TrafoFlags.BindingPatternExcludes;
+        case Syntax.AsExpression:
+        case Syntax.ParenthesizedExpression:
+        case Syntax.PartiallyEmittedExpression:
+        case Syntax.SuperKeyword:
+        case Syntax.TypeAssertionExpression:
+          return TrafoFlags.OuterExpressionExcludes;
+        case Syntax.ElemAccessExpression:
+        case Syntax.PropertyAccessExpression:
+          return TrafoFlags.PropertyAccessExcludes;
+      }
+      return TrafoFlags.NodeExcludes;
+    }
+    trailingCommentRanges(s: string, pos: number): Range.Comment[] | undefined {
+      return qf.each.reduceTrailingCommentRange(s, pos, appendCommentRange, undefined, undefined);
+    }
+    unescUnderscores(x: qu.__String): string {
+      const s = x as string;
+      return s.length >= 3 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ && s.charCodeAt(2) === Codes._ ? s.substr(1) : s;
+    }
+    urlVolumeEnd(s: string, i: number): number {
+      const c = s.charCodeAt(i);
+      if (c === Codes.colon) return i + 1;
+      if (c === Codes.percent && s.charCodeAt(i + 1) === Codes._3) {
+        const c2 = s.charCodeAt(i + 2);
+        if (c2 === Codes.a || c2 === Codes.A) return i + 3;
+      }
+      return -1;
+    }
+  })());
+}
+export interface Fget extends ReturnType<typeof newGet> {}
+export function newEach(f: qu.Frame) {
+  interface Frame extends qu.Frame {
+    get: Fget;
+    is: Fis;
+  }
+  const qf = f as Frame;
+  return (qf.each = new (class extends qu.Feach {
+    commentRange<T, U>(
+      reduce: boolean,
+      text: string,
+      pos: number,
+      trailing: boolean,
+      cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U,
+      state?: T,
+      initial?: U
+    ): U | undefined {
+      let pendingPos!: number;
+      let pendingEnd!: number;
+      let pendingKind!: CommentKind;
+      let pendingHasTrailingNewLine!: boolean;
+      let hasPendingCommentRange = false;
+      let collecting = trailing;
+      let accumulator = initial;
+      if (pos === 0) {
+        collecting = true;
+        const shebang = qf.get.shebang(text);
+        if (shebang) {
+          pos = shebang.length;
+        }
+      }
+      scan: while (pos >= 0 && pos < text.length) {
+        const ch = text.charCodeAt(pos);
+        switch (ch) {
+          case Codes.carriageReturn:
+            if (text.charCodeAt(pos + 1) === Codes.lineFeed) pos++;
+          case Codes.lineFeed:
+            pos++;
+            if (trailing) break scan;
+            collecting = true;
+            if (hasPendingCommentRange) pendingHasTrailingNewLine = true;
+            continue;
+          case Codes.tab:
+          case Codes.verticalTab:
+          case Codes.formFeed:
+          case Codes.space:
             pos++;
             continue;
-          }
-          break scan;
+          case Codes.slash:
+            const nextChar = text.charCodeAt(pos + 1);
+            let hasTrailingNewLine = false;
+            if (nextChar === Codes.slash || nextChar === Codes.asterisk) {
+              const kind = nextChar === Codes.slash ? Syntax.SingleLineCommentTrivia : Syntax.MultiLineCommentTrivia;
+              const startPos = pos;
+              pos += 2;
+              if (nextChar === Codes.slash) {
+                while (pos < text.length) {
+                  if (qf.is.lineBreak(text.charCodeAt(pos))) {
+                    hasTrailingNewLine = true;
+                    break;
+                  }
+                  pos++;
+                }
+              } else {
+                while (pos < text.length) {
+                  if (text.charCodeAt(pos) === Codes.asterisk && text.charCodeAt(pos + 1) === Codes.slash) {
+                    pos += 2;
+                    break;
+                  }
+                  pos++;
+                }
+              }
+              if (collecting) {
+                if (hasPendingCommentRange) {
+                  accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
+                  if (!reduce && accumulator) return accumulator;
+                }
+                pendingPos = startPos;
+                pendingEnd = pos;
+                pendingKind = kind;
+                pendingHasTrailingNewLine = hasTrailingNewLine;
+                hasPendingCommentRange = true;
+              }
+              continue;
+            }
+            break scan;
+          default:
+            if (ch > Codes.maxAsciiCharacter && qf.is.whiteSpaceLike(ch)) {
+              if (hasPendingCommentRange && qf.is.lineBreak(ch)) {
+                pendingHasTrailingNewLine = true;
+              }
+              pos++;
+              continue;
+            }
+            break scan;
+        }
       }
+      if (hasPendingCommentRange) {
+        accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
+      }
+      return accumulator;
     }
-    if (hasPendingCommentRange) {
-      accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
+    leadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+    leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
+      return this.commentRange(false, text, pos, false, cb, state);
     }
-    return accumulator;
-  }
-  leadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-  leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-  leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
-    return this.commentRange(false, text, pos, false, cb, state);
-  }
-  trailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-  trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-  trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
-    return this.commentRange(false, text, pos, true, cb, state);
-  }
-  reduceLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
-    return this.commentRange(true, text, pos, false, cb, state, initial);
-  }
-  reduceTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
-    return this.commentRange(true, text, pos, true, cb, state, initial);
-  }
-})();
+    trailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+    trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
+      return this.commentRange(false, text, pos, true, cb, state);
+    }
+    reduceLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
+      return this.commentRange(true, text, pos, false, cb, state, initial);
+    }
+    reduceTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
+      return this.commentRange(true, text, pos, true, cb, state, initial);
+    }
+  })());
+}
+export interface Feach extends ReturnType<typeof newEach> {}
+export interface Frame extends qu.Frame {
+  each: Feach;
+  get: Fget;
+  is: Fis;
+}
+export function newFrame() {
+  const f = qu.newFrame() as Frame;
+  newEach(f);
+  newGet(f);
+  newIs(f);
+  return f;
+}
+export const qf: Frame = newFrame();
 export function toString(t: Syntax) {
   return tokStrings[t];
 }
@@ -1651,7 +1687,7 @@ export function parsePseudoBigInt(s: string) {
 }
 export function calculateIndent(s: string, pos: number, end: number) {
   let i = 0;
-  for (; pos < end && is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
+  for (; pos < end && qf.is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
     if (s.charCodeAt(pos) === Codes.tab) i += qu.getIndentSize() - (i % qu.getIndentSize());
     else i++;
   }
@@ -1662,14 +1698,14 @@ export function markerTrivia(s: string, pos: number, e?: (m: qd.Message, pos?: n
   const c = s.charCodeAt(pos);
   const l = s.length;
   if (c === Codes.lessThan || c === Codes.greaterThan) {
-    while (pos < l && !is.lineBreak(s.charCodeAt(pos))) {
+    while (pos < l && !qf.is.lineBreak(s.charCodeAt(pos))) {
       pos++;
     }
   } else {
     qf.assert.true(c === Codes.bar || c === Codes.equals);
     while (pos < l) {
       const c2 = s.charCodeAt(pos);
-      if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && is.markerTrivia(s, pos)) break;
+      if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && qf.is.markerTrivia(s, pos)) break;
       pos++;
     }
   }
@@ -1701,7 +1737,7 @@ export function skipTrivia(s: string, pos: number, stopAfterLineBreak = false, s
         if (s.charCodeAt(pos + 1) === Codes.slash) {
           pos += 2;
           while (pos < s.length) {
-            if (is.lineBreak(s.charCodeAt(pos))) break;
+            if (qf.is.lineBreak(s.charCodeAt(pos))) break;
             pos++;
           }
           continue;
@@ -1722,19 +1758,19 @@ export function skipTrivia(s: string, pos: number, stopAfterLineBreak = false, s
       case Codes.bar:
       case Codes.equals:
       case Codes.greaterThan:
-        if (is.markerTrivia(s, pos)) {
+        if (qf.is.markerTrivia(s, pos)) {
           pos = markerTrivia(s, pos);
           continue;
         }
         break;
       case Codes.hash:
-        if (pos === 0 && is.shebangTrivia(s, pos)) {
+        if (pos === 0 && qf.is.shebangTrivia(s, pos)) {
           pos = shebangTrivia(s, pos);
           continue;
         }
         break;
       default:
-        if (c > Codes.maxAsciiCharacter && is.whiteSpaceLike(c)) {
+        if (c > Codes.maxAsciiCharacter && qf.is.whiteSpaceLike(c)) {
           pos++;
           continue;
         }
@@ -1757,15 +1793,15 @@ export class SourceFile implements SourceFileLike {
   text = '';
   lineMap?: number[];
   lineStarts(): readonly number[] {
-    return this.lineMap ?? (this.lineMap = get.lineStarts(this.text));
+    return this.lineMap ?? (this.lineMap = qf.get.lineStarts(this.text));
   }
   lineAndCharOf(pos: number) {
-    return get.lineAndCharOf(this.lineStarts(), pos);
+    return qf.get.lineAndCharOf(this.lineStarts(), pos);
   }
   posOf(line: number, char: number): number;
   posOf(line: number, char: number, edits?: true): number;
   posOf(line: number, char: number, edits?: true): number {
-    return get.posOf(this.lineStarts(), line, char, this.text, edits);
+    return qf.get.posOf(this.lineStarts(), line, char, this.text, edits);
   }
   linesBetween(p1: number, p2: number): number;
   linesBetween(r1: qu.Range, r2: qu.Range, comments: boolean): number;
@@ -1777,8 +1813,8 @@ export class SourceFile implements SourceFileLike {
       const min = Math.min(x1, x2);
       const isNegative = min === x2;
       const max = isNegative ? x1 : x2;
-      const lower = get.lineOf(ss, min);
-      const upper = get.lineOf(ss, max, lower);
+      const lower = qf.get.lineOf(ss, min);
+      const upper = qf.get.lineOf(ss, max, lower);
       return isNegative ? lower - upper : upper - lower;
     }
     const s = this.startPos(x2 as qu.Range, comments);
@@ -1801,7 +1837,7 @@ export class SourceFile implements SourceFileLike {
   }
   prevNonWhitespacePos(pos: number, stop = 0) {
     while (pos-- > stop) {
-      if (!is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+      if (!qf.is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
     }
     return;
   }
@@ -1828,18 +1864,18 @@ export class SourceFile implements SourceFileLike {
   }
   getStartPositionOfLine(line: number) {
     qf.assert.true(line >= 0);
-    return get.lineStarts(this.text)[line];
+    return qf.get.lineStarts(this.text)[line];
   }
   getEndLinePosition(line: number) {
     qf.assert.true(line >= 0);
-    const ss = get.lineStarts(this.text);
+    const ss = qf.get.lineStarts(this.text);
     const i = line;
     const t = this.text;
     if (i + 1 === ss.length) return t.length - 1;
     const s = ss[i];
     let pos = ss[i + 1] - 1;
-    qf.assert.true(is.lineBreak(t.charCodeAt(pos)));
-    while (s <= pos && is.lineBreak(t.charCodeAt(pos))) {
+    qf.assert.true(qf.is.lineBreak(t.charCodeAt(pos)));
+    while (s <= pos && qf.is.lineBreak(t.charCodeAt(pos))) {
       pos--;
     }
     return pos;

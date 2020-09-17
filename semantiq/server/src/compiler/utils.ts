@@ -210,7 +210,10 @@ export class Fis {
     return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
   }
 }
-const qf: Frame = { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), get: new Fget(), has: new Fhas(), is: new Fis() };
+export function newFrame() {
+  return { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), get: new Fget(), has: new Fhas(), is: new Fis() } as Frame;
+}
+export const qf: Frame = newFrame();
 export function getFunctionName(f: AnyFunction) {
   if (typeof f !== 'function') return '';
   if (f.hasOwnProperty('name')) return (f as any).name;
