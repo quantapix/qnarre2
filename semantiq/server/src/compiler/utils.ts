@@ -1723,6 +1723,7 @@ export class TextRange implements Range {
   }
   setRange(r?: Range): this {
     if (r) {
+      qf.assert.true(r.pos <= r.end || r.end === -1);
       this.pos = r.pos;
       this.end = r.end;
     }

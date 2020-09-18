@@ -126,17 +126,18 @@ export function newMake(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.make = new (class {
     nextAutoGenId = 0;
-    node<T extends Syntax>(t: T, pos: number, end: number, parent?: Node): NodeType<T> {
+    node<T extends Syntax>(t: T, r?: qu.Range, parent?: Node): NodeType<T> {
       const n =
         qf.is.node(t) || t === Syntax.Unknown
-          ? new Nobj(t, pos, end)
+          ? new Nobj(t)
           : t === Syntax.SourceFile
-          ? new qb.SourceFile(pos, end)
+          ? new qb.SourceFile()
           : t === Syntax.Identifier
-          ? new qc.Identifier(pos, end)
+          ? new qc.Identifier()
           : t === Syntax.PrivateIdentifier
-          ? new qc.PrivateIdentifier(pos, end)
-          : new qb.Token<T>(t, pos, end);
+          ? new qc.PrivateIdentifier()
+          : new qb.Token<T>(t);
+      n.setRange(r);
       if (parent) {
         n.parent = parent;
         n.flags = parent.flags & NodeFlags.ContextFlags;
@@ -144,12 +145,11 @@ export function newMake(f: qt.Frame) {
       return (n as unknown) as NodeType<T>;
     }
     synthesized<T extends Syntax>(t: T): NodeType<T> {
-      const n = this.node<T>(t, -1, -1);
+      const n = this.node<T>(t);
       n.flags |= NodeFlags.Synthesized;
       return n;
     }
     synthesizedClone<T extends Node>(n: T): T {
-      if (n === undefined) return n;
       const r = this.synthesized(n.kind) as T;
       r.flags |= n.flags;
       r.setOriginal(n);
@@ -167,7 +167,7 @@ export function newMake(f: qt.Frame) {
       return r;
     }
     unparsedNode(s: qt.BundleFileSection, p: qt.UnparsedSource): qt.UnparsedNode {
-      const r = new qc.UnparsedNode(mapBundleFileSectionKindToSyntax(s.kind), s.pos, s.end);
+      const r = new qb.UnparsedNode(mapBundleFileSectionKindToSyntax(s.kind), s.pos, s.end);
       r.parent = p;
       r.data = s.data;
       return r;

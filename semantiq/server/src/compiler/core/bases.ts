@@ -115,10 +115,9 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   original?: Node;
   symbol!: qt.Symbol;
   trafoFlags = TrafoFlags.None;
-  constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
-    super(pos, end);
+  constructor(k?: Syntax, public parent?: qt.Node) {
+    super();
     if (k && this.kind !== k) this.kind = k;
-    if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
   get range() {
@@ -137,7 +136,7 @@ export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   }
   posToString(): string {
     const s = this.sourceFile as SourceFile;
-    const r = qy.get.lineAndCharOf(s.lineStarts(), this.pos);
+    const r = qy.qf.get.lineAndCharOf(s.lineStarts(), this.pos);
     return `${s.fileName}(${r.line + 1},${r.char + 1})`;
   }
   tokenPos(s?: SourceFileLike, doc?: boolean): number {
@@ -312,14 +311,8 @@ export abstract class ClassLikeDecl extends NamedDecl implements qt.ClassLikeDec
   typeParams?: qt.Nodes<qt.TypeParamDeclaration>;
   heritageClauses?: qt.Nodes<qt.HeritageClause>;
   members: qt.Nodes<qt.ClassElem>;
-  constructor(
-    s: boolean,
-    k: Syntax.ClassDeclaration | Syntax.ClassExpression,
-    ts: readonly qt.TypeParamDeclaration[] | undefined,
-    hs: readonly qt.HeritageClause[] | undefined,
-    es: readonly qt.ClassElem[]
-  ) {
-    super(s, k);
+  constructor(k: Syntax.ClassDeclaration | Syntax.ClassExpression, ts: readonly qt.TypeParamDeclaration[] | undefined, hs: readonly qt.HeritageClause[] | undefined, es: readonly qt.ClassElem[]) {
+    super(k);
     this.typeParams = Nodes.from(ts);
     this.heritageClauses = Nodes.from(hs);
     this.members = new Nodes(es);
@@ -344,8 +337,8 @@ export abstract class SignatureDecl extends NamedDecl implements qt.SignatureDec
   params!: qt.Nodes<qt.ParamDeclaration>;
   type?: qt.Typing;
   typeArgs?: qt.Nodes<qt.Typing>;
-  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParamDeclaration[] | undefined, ps?: readonly qt.ParamDeclaration[], t?: qt.Typing, ta?: readonly qt.Typing[]) {
-    super(s, k);
+  constructor(k: qt.SignatureDeclaration['kind'], ts?: readonly qt.TypeParamDeclaration[], ps?: readonly qt.ParamDeclaration[], t?: qt.Typing, ta?: readonly qt.Typing[]) {
+    super(k);
     this.typeParams = Nodes.from(ts);
     this.params = new Nodes(ps);
     this.type = t;
@@ -373,8 +366,8 @@ export abstract class FunctionOrConstructorTobj extends SignatureDecl implements
   type!: qt.Typing;
   cache?: readonly qt.DocTag[];
   _typingBrand: any;
-  constructor(s: boolean, k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
-    super(s, k, ts, ps, t);
+  constructor(k: Syntax.FunctionTyping | Syntax.ConstructorTyping, ts: readonly qt.TypeParamDeclaration[] | undefined, ps: readonly qt.ParamDeclaration[], t?: qt.Typing) {
+    super(k, ts, ps, t);
   }
 }
 export abstract class Expr extends Nobj implements qt.Expr {
@@ -406,8 +399,8 @@ export abstract class TokenOrIdentifier extends Nobj {
 }
 export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
   kind!: T;
-  constructor(t: T, pos?: number, end?: number) {
-    super(undefined, t, pos, end);
+  constructor(t: T) {
+    super(t);
   }
 }
 export abstract class Stmt extends Nobj implements qt.Stmt {
@@ -424,7 +417,7 @@ export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode
 export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements qt.TemplateLiteralLikeNode {
   rawText?: string;
   constructor(k: qt.TemplateLiteralToken['kind'], t: string, raw?: string) {
-    super(true, k);
+    super(k);
     this.text = t;
     if (raw === undefined || t === raw) this.rawText = raw;
     else {
@@ -449,7 +442,7 @@ export abstract class DocTag extends Nobj implements qt.DocTag {
   tagName: qt.Identifier;
   comment?: string;
   constructor(k: Syntax, n: string, c?: string) {
-    super(true, k);
+    super(k);
     this.tagName = new qc.Identifier(n);
     this.comment = c;
   }
@@ -556,7 +549,7 @@ export class SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S> 
     };
     ss.forEach((s, n) => {
       const t = this.get(n);
-      if (t) qf.each.up(t.declarations, addDiagnostic(qy.get.unescUnderscores(n), m));
+      if (t) qf.each.up(t.declarations, addDiagnostic(qy.qf.get.unescUnderscores(n), m));
       else this.set(n, s);
     });
   }
@@ -1282,11 +1275,11 @@ export class SourceFile extends Decl implements qt.SourceFile {
   text!: string;
   typeReferenceDirectives!: qt.FileReference[];
   version!: string;
-  constructor(pos: number, end: number) {
-    super(false, SourceFile.kind, pos, end);
+  constructor() {
+    super(SourceFile.kind);
   }
   getLeadingCommentRangesOfNode(n: Node) {
-    return n.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(this.text, n.pos) : undefined;
+    return n.kind !== Syntax.JsxText ? qy.qf.get.leadingCommentRanges(this.text, n.pos) : undefined;
   }
   isStringDoubleQuoted(s: qt.StringLiteralLike) {
     return this.qf.get.sourceTextOfNodeFromSourceFile(s).charCodeAt(0) === qy.Codes.doubleQuote;
@@ -1316,7 +1309,7 @@ export class SourceFile extends Decl implements qt.SourceFile {
     );
   }
   lineOfLocalPos(pos: number) {
-    const s = qy.get.lineStarts(this);
+    const s = qy.qf.get.lineStarts(this);
     return Scanner.lineOf(s, pos);
   }
   update(t: string, c: qu.TextChange): SourceFile {
@@ -1567,12 +1560,12 @@ export class UnparsedSource extends Nobj implements qt.UnparsedSource {
   oldFileOfCurrentEmit?: boolean;
   parsedSourceMap?: qt.RawSourceMap | false | undefined;
   lineAndCharOf(pos: number): LineAndChar;
-  createUnparsedSource() {
+  constructor() {
     super();
     this.prologues = qu.empty;
     this.referencedFiles = qu.empty;
     this.libReferenceDirectives = qu.empty;
-    this.lineAndCharOf = (pos) => qy.get.lineAndCharOf(this, pos);
+    this.lineAndCharOf = (pos) => qy.qf.get.lineAndCharOf(this, pos);
   }
   createUnparsedSourceFile(text: string): UnparsedSource;
   createUnparsedSourceFile(inputFile: qt.InputFiles, type: 'js' | 'dts', stripInternal?: boolean): UnparsedSource;
@@ -1743,7 +1736,7 @@ export function failBadSyntax(n: Node, m?: string, mark?: qu.AnyFunction): never
   return qu.fail(`${m || 'Unexpected node.'}\r\nNode ${format.syntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
 export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
-  return qy.get.unescUnderscores(n.escapedText);
+  return qy.qf.get.unescUnderscores(n.escapedText);
 }
 function getDocComment(ds?: readonly qt.Declaration[], c?: qt.TypeChecker): qt.SymbolDisplayPart[] {
   if (!ds) return qu.empty;
