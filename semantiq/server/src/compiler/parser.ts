@@ -10,8 +10,8 @@ interface Parser {
   parseSource(fileName: string, t: string, languageVersion: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: Script): qt.SourceFile;
   parseJsonText(fileName: string, text: string, lang?: qt.ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): qt.JsonSourceFile;
   parseIsolatedEntityName(s: string, languageVersion: qt.ScriptTarget): qt.EntityName | undefined;
-  parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: Diagnostic[] } | undefined;
-  parseDocTypingExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: qt.DocTypingExpression; diagnostics: Diagnostic[] } | undefined;
+  parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: qd.Diagnostic[] } | undefined;
+  parseDocTypingExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: qt.DocTypingExpression; diagnostics: qd.Diagnostic[] } | undefined;
 }
 const enum PropertyLike {
   Property = 1 << 0,
@@ -84,10 +84,9 @@ function newParser(f: qt.Frame) {
   let parseErrorBeforeNextFinishedNode = false;
   const tok = () => currentToken;
   const getNodePos = () => scanner.getStartPos();
-  interface _Fis extends qy.Fis {}
+  interface _Fis extends qc.Fis {}
   class _Fis {}
-  const i = qy.newIs(qf);
-  qu.addMixins(_Fis, [i]);
+  qu.addMixins(_Fis, [qc.newIs(qf)]);
   const is = new (class extends _Fis {
     identifier() {
       if (tok() === Syntax.Identifier) return true;
@@ -303,7 +302,7 @@ function newParser(f: qt.Frame) {
         default:
           const isBinaryOperator = () => {
             if (flags.inContext(NodeFlags.DisallowInContext) && tok() === Syntax.InKeyword) return false;
-            return get.binaryOperatorPrecedence(tok()) > 0;
+            return qf.get.binaryOperatorPrecedence(tok()) > 0;
           };
           if (isBinaryOperator()) return true;
           return this.identifier();
@@ -633,7 +632,7 @@ function newParser(f: qt.Frame) {
       if (isIdentifier) {
         const n = this.node(Syntax.Identifier);
         if (tok() !== Syntax.Identifier) n.originalKeywordKind = tok();
-        n.escapedText = qy.get.escUnderscores(internIdentifier(scanner.getTokenValue()));
+        n.escapedText = qf.get.escUnderscores(internIdentifier(scanner.getTokenValue()));
         next.tok(false);
         return finishNode(n);
       }
@@ -782,7 +781,7 @@ function newParser(f: qt.Frame) {
       };
       if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
       const n = syntaxCursor.currentNode(scanner.getStartPos());
-      if (qf.is.missing(n) || n.intersectsChange || qf.has.parseError(n)) return;
+      if (is.missing(n) || n.intersectsChange || qf.has.parseError(n)) return;
       const fs = n.flags & NodeFlags.ContextFlags;
       if (fs !== flags.value) return;
       const canReuse = () => {
@@ -3776,7 +3775,7 @@ function newParser(f: qt.Frame) {
       fixupParentReferences(n);
       return finishNode(n);
     }
-    typeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: qt.DocTypingExpression; diagnostics: Diagnostic[] } | undefined {
+    typeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: qt.DocTypingExpression; diagnostics: qd.Diagnostic[] } | undefined {
       initializeState(content, qt.ScriptTarget.ESNext, undefined, Script.JS);
       source = create.source('file.js', qt.ScriptTarget.ESNext, Script.JS, false);
       scanner.setText(content, start, length);
@@ -4289,7 +4288,7 @@ function newParser(f: qt.Frame) {
       const end = scanner.getTextPos();
       const n = create.node(Syntax.Identifier, pos);
       if (tok() !== Syntax.Identifier) n.originalKeywordKind = tok();
-      n.escapedText = qy.get.escUnderscores(internIdentifier(scanner.getTokenValue()));
+      n.escapedText = qf.get.escUnderscores(internIdentifier(scanner.getTokenValue()));
       finishNode(n, end);
       next.tokDoc();
       return n;
@@ -4481,7 +4480,7 @@ function newParser(f: qt.Frame) {
     parseErrorBeforeNextFinishedNode = saveParseErrorBeforeNextFinishedNode;
     return comment;
   }
-  function parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: Diagnostic[] } | undefined {
+  function parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: qt.Doc; diagnostics: qd.Diagnostic[] } | undefined {
     initializeState(t, qt.ScriptTarget.ESNext, undefined, Script.JS);
     source = { language: Language.TS, text: t } as qt.SourceFile;
     const doc = flags.withContext(NodeFlags.Doc, () => parseDoc.comment(start, length));
@@ -4881,7 +4880,7 @@ interface PragmaContext {
 }
 export function processCommentPragmas(ctx: PragmaContext, sourceText: string): void {
   const ps: qt.PragmaPseudoMapEntry[] = [];
-  for (const r of qy.get.leadingCommentRanges(sourceText, 0) || emptyArray) {
+  for (const r of qf.get.leadingCommentRanges(sourceText, 0) || emptyArray) {
     const comment = sourceText.substring(r.pos, r.end);
     extractPragmas(ps, r, comment);
   }

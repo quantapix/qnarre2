@@ -128,7 +128,7 @@ export function newMake(f: qt.Frame) {
     nextAutoGenId = 0;
     node<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
       const n =
-        qy.is.node(k) || k === Syntax.Unknown
+        qf.is.node(k) || k === Syntax.Unknown
           ? new Nobj(k, pos, end)
           : k === Syntax.SourceFile
           ? new SourceFileObj(Syntax.SourceFile, pos, end)
@@ -577,7 +577,10 @@ export function newEach(f: qt.Frame) {
     is: Fis;
   }
   const qf = f as Frame;
-  return (qf.each = new (class extends qu.Feach {
+  interface _Feach extends qy.Feach {}
+  class _Feach {}
+  qu.addMixins(_Feach, [qy.newEach(qf)]);
+  return (qf.each = new (class extends _Feach {
     returnStatement<T>(n: Node, cb: (s: qt.ReturnStatement) => T): T | undefined {
       const traverse = (n?: Node): T | undefined => {
         switch (n?.kind) {
@@ -1009,8 +1012,11 @@ export function newIs(f: qt.Frame) {
     has: Fhas;
     skip: Fskip;
   }
-  const qf = f as Frame;
-  return (qf.is = new (class extends qu.Fis {
+  const qf: Frame = f as Frame;
+  interface _Fis extends qy.Fis {}
+  class _Fis {}
+  qu.addMixins(_Fis, [qy.newIs(qf)]);
+  return (qf.is = new (class extends _Fis {
     setAccessor(n: Node): n is qt.SetAccessorDeclaration {
       return n.kind === Syntax.SetAccessor;
     }
@@ -1158,7 +1164,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     identifierANonContextualKeyword({ originalKeywordKind }: qt.Identifier) {
-      return !!originalKeywordKind && !qy.is.contextualKeyword(originalKeywordKind);
+      return !!originalKeywordKind && !this.contextualKeyword(originalKeywordKind);
     }
     pushOrUnshiftIdentifier(i: qt.Identifier) {
       return i.escapedText === 'push' || i.escapedText === 'unshift';
@@ -1727,10 +1733,10 @@ export function newIs(f: qt.Frame) {
       return this.unparsedTextLike(n) || k === Syntax.UnparsedPrologue || k === Syntax.UnparsedSyntheticReference;
     }
     literalExpression(n: Node): n is qt.LiteralExpression {
-      return qy.is.literal(n.kind);
+      return this.literal(n.kind);
     }
     templateLiteralToken(n: Node): n is qt.TemplateLiteralToken {
-      return qy.is.templateLiteral(n.kind);
+      return this.templateLiteral(n);
     }
     importOrExportSpecifier(n: Node): n is qt.ImportSpecifier | qt.ExportSpecifier {
       const k = n.kind;
@@ -1751,7 +1757,7 @@ export function newIs(f: qt.Frame) {
     }
     stringTextContainingNode(n: Node): n is qt.StringLiteral | qt.TemplateLiteralToken {
       const k = n.kind;
-      return k === Syntax.StringLiteral || qy.is.templateLiteral(k);
+      return k === Syntax.StringLiteral || this.templateLiteral(n);
     }
     generatedIdentifier(n: Node): n is qt.GeneratedIdentifier {
       return n.kind === Syntax.Identifier && (n.autoGenFlags! & qt.GeneratedIdentifierFlags.KindMask) > qt.GeneratedIdentifierFlags.None;
@@ -1760,13 +1766,13 @@ export function newIs(f: qt.Frame) {
       return n.kind === Syntax.PropertyAccessExpression && n.name.kind === Syntax.PrivateIdentifier;
     }
     modifier(n: Node): n is Modifier {
-      return qy.is.modifier(n.kind);
+      return this.modifier(n.kind);
     }
     functionLike(n?: Node): n is qt.SignatureDeclaration {
-      return qy.is.functionLike(n?.kind);
+      return this.functionLike(n?.kind);
     }
     functionLikeDeclaration(n: Node): n is qt.FunctionLikeDeclaration {
-      return qy.is.functionLikeDeclaration(n.kind);
+      return this.functionLikeDeclaration(n.kind);
     }
     functionOrModuleBlock(n: Node) {
       const k = n.kind;
@@ -1814,7 +1820,7 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     typeNode(n?: Node): n is qt.Typing {
-      return qy.is.typeNode(n?.kind);
+      return this.typeNode(n?.kind);
     }
     functionOrConstructorTyping(n: Node): n is qt.FunctionTyping | qt.ConstructorTyping {
       const k = n.kind;
@@ -1833,10 +1839,10 @@ export function newIs(f: qt.Frame) {
       return false;
     }
     leftHandSideExpression(n: Node): n is qt.LeftExpression {
-      return qy.is.leftHandSideExpression(qf.skip.partiallyEmittedExpressions(n).kind);
+      return this.leftHandSideExpression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     unaryExpression(n: Node): n is qt.UnaryExpression {
-      return qy.is.unaryExpression(qf.skip.partiallyEmittedExpressions(n).kind);
+      return this.unaryExpression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     unaryExpressionWithWrite(n: Node): n is qt.PrefixUnaryExpression | qt.PostfixUnaryExpression {
       switch (n.kind) {
@@ -1850,7 +1856,7 @@ export function newIs(f: qt.Frame) {
       }
     }
     expression(n: Node): n is qt.Expression {
-      return qy.is.expression(qf.skip.partiallyEmittedExpressions(n).kind);
+      return this.expression(qf.skip.partiallyEmittedExpressions(n).kind);
     }
     notEmittedOrPartiallyEmittedNode(n: Node): n is qt.NotEmittedStatement | qt.PartiallyEmittedExpression {
       const k = n.kind;
@@ -2609,7 +2615,10 @@ export function newGet(f: qt.Frame) {
     skip: qg.Fskip;
   }
   const qf = f as Frame;
-  return (qf.get = new (class Fget extends qu.Fget {
+  interface _Fget extends qy.Fget {}
+  class _Fget {}
+  qu.addMixins(_Fget, [qy.newGet(qf)]);
+  return (qf.get = new (class Fget extends _Fget {
     nextNodeId = 1;
     static nextAutoGenId = 1;
     mapBundleFileSectionKindToSyntax(k: qt.BundleFileSectionKind): Syntax {

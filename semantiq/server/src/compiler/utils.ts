@@ -1,6 +1,15 @@
 import { InternalSymbol, ReadonlyPragmaMap } from './types';
 export type AnyFunction = (...args: never[]) => void;
 export type AnyConstructor = new (...args: unknown[]) => unknown;
+export function getFunctionName(f: AnyFunction) {
+  if (typeof f !== 'function') return '';
+  if (f.hasOwnProperty('name')) return (f as any).name;
+  else {
+    const t = Function.prototype.toString.call(f);
+    const m = /^function\s+([\w\$]+)\s*\(/.exec(t);
+    return m ? m[1] : '';
+  }
+}
 export function fail(m?: string, f?: AnyFunction): never {
   debugger;
   const e = new Error(m ? `Failure. ${m}` : 'Failure.');
@@ -12,15 +21,6 @@ export const enum AssertionLevel {
   Normal = 1,
   Aggressive = 2,
   VeryAggressive = 3,
-}
-export interface Frame {
-  assert: Fassert;
-  check: Fcheck;
-  each: Feach;
-  find: Ffind;
-  get: Fget;
-  has: Fhas;
-  is: Fis;
 }
 export class Fassert {
   true(cond: unknown, m?: string, info?: string | (() => string), f?: AnyFunction): asserts cond {
@@ -210,19 +210,19 @@ export class Fis {
     return s.length >= prefix.length + suffix.length && startsWith(s, prefix) && endsWith(s, suffix);
   }
 }
+export interface Frame {
+  assert: Fassert;
+  check: Fcheck;
+  each: Feach;
+  find: Ffind;
+  get: Fget;
+  has: Fhas;
+  is: Fis;
+}
 export function newFrame() {
   return { assert: new Fassert(), check: new Fcheck(), each: new Feach(), find: new Ffind(), get: new Fget(), has: new Fhas(), is: new Fis() } as Frame;
 }
 export const qf: Frame = newFrame();
-export function getFunctionName(f: AnyFunction) {
-  if (typeof f !== 'function') return '';
-  if (f.hasOwnProperty('name')) return (f as any).name;
-  else {
-    const t = Function.prototype.toString.call(f);
-    const m = /^function\s+([\w\$]+)\s*\(/.exec(t);
-    return m ? m[1] : '';
-  }
-}
 export function getEnumMembers(e: any) {
   const ms: [number, string][] = [];
   for (const k in e) {
@@ -1098,38 +1098,38 @@ export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLi
   }
   return true;
 }
-export function arrayToMap<T>(array: readonly T[], makeKey: (value: T) => string | undefined): QMap<T>;
-export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => U): QMap<U>;
-export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => T | U = identity): QMap<T | U> {
+export function arrayToMap<T>(ts: readonly T[], makeKey: (t: T) => string | undefined): QMap<T>;
+export function arrayToMap<T, U>(ts: readonly T[], makeKey: (t: T) => string | undefined, makeValue: (t: T) => U): QMap<U>;
+export function arrayToMap<T, U>(ts: readonly T[], makeKey: (t: T) => string | undefined, makeValue: (t: T) => T | U = identity): QMap<T | U> {
   const r = new QMap<T | U>();
-  for (const value of array) {
+  for (const value of ts) {
     const key = makeKey(value);
     if (key !== undefined) r.set(key, makeValue(value));
   }
   return r;
 }
-export function arrayToNumericMap<T>(array: readonly T[], makeKey: (value: T) => number): T[];
-export function arrayToNumericMap<T, U>(array: readonly T[], makeKey: (value: T) => number, makeValue: (value: T) => U): U[];
-export function arrayToNumericMap<T, U>(array: readonly T[], makeKey: (value: T) => number, makeValue: (value: T) => T | U = identity): (T | U)[] {
+export function arrayToNumericMap<T>(ts: readonly T[], makeKey: (t: T) => number): T[];
+export function arrayToNumericMap<T, U>(ts: readonly T[], makeKey: (t: T) => number, makeValue: (t: T) => U): U[];
+export function arrayToNumericMap<T, U>(ts: readonly T[], makeKey: (t: T) => number, makeValue: (t: T) => T | U = identity): (T | U)[] {
   const r: (T | U)[] = [];
-  for (const value of array) {
+  for (const value of ts) {
     r[makeKey(value)] = makeValue(value);
   }
   return r;
 }
-export function arrayToMultiMap<T>(values: readonly T[], makeKey: (value: T) => string): MultiMap<T>;
-export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => U): MultiMap<U>;
-export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => T | U = identity): MultiMap<T | U> {
+export function arrayToMultiMap<T>(ts: readonly T[], makeKey: (t: T) => string): MultiMap<T>;
+export function arrayToMultiMap<T, U>(ts: readonly T[], makeKey: (t: T) => string, makeValue: (t: T) => U): MultiMap<U>;
+export function arrayToMultiMap<T, U>(ts: readonly T[], makeKey: (t: T) => string, makeValue: (t: T) => T | U = identity): MultiMap<T | U> {
   const r = new MultiMap<T | U>();
-  for (const value of values) {
+  for (const value of ts) {
     r.add(makeKey(value), makeValue(value));
   }
   return r;
 }
-export function group<T>(values: readonly T[], getGroupId: (value: T) => string): readonly (readonly T[])[];
-export function group<T, R>(values: readonly T[], getGroupId: (value: T) => string, resultSelector: (values: readonly T[]) => R): R[];
-export function group<T>(values: readonly T[], getGroupId: (value: T) => string, resultSelector: (values: readonly T[]) => readonly T[] = identity): readonly (readonly T[])[] {
-  return arrayFrom(arrayToMultiMap(values, getGroupId).values(), resultSelector);
+export function group<T>(ts: readonly T[], getGroupId: (t: T) => string): readonly (readonly T[])[];
+export function group<T, R>(ts: readonly T[], getGroupId: (t: T) => string, resultSelector: (ts: readonly T[]) => R): R[];
+export function group<T>(ts: readonly T[], getGroupId: (t: T) => string, resultSelector: (ts: readonly T[]) => readonly T[] = identity): readonly (readonly T[])[] {
+  return arrayFrom(arrayToMultiMap(ts, getGroupId).values(), resultSelector);
 }
 export function clone<T>(t: T): T {
   const r: any = {};
@@ -1374,32 +1374,32 @@ export function removeMinAndVersionNumbers(fileName: string) {
   const trailingMinOrVersion = /[.-]((min)|(\d+(\.\d+)*))$/;
   return fileName.replace(trailingMinOrVersion, '').replace(trailingMinOrVersion, '');
 }
-export function orderedRemoveItem<T>(array: T[], item: T): boolean {
-  for (let i = 0; i < array.length; i++) {
-    if (array[i] === item) {
-      orderedRemoveItemAt(array, i);
+export function orderedRemoveItem<T>(ts: T[], item: T): boolean {
+  for (let i = 0; i < ts.length; i++) {
+    if (ts[i] === item) {
+      orderedRemoveItemAt(ts, i);
       return true;
     }
   }
   return false;
 }
-export function orderedRemoveItemAt<T>(array: T[], index: number): void {
-  for (let i = index; i < array.length - 1; i++) {
-    array[i] = array[i + 1];
+export function orderedRemoveItemAt<T>(ts: T[], index: number): void {
+  for (let i = index; i < ts.length - 1; i++) {
+    ts[i] = ts[i + 1];
   }
-  array.pop();
+  ts.pop();
 }
-export function unorderedRemoveItemAt<T>(array: T[], index: number): void {
-  array[index] = array[array.length - 1];
-  array.pop();
+export function unorderedRemoveItemAt<T>(ts: T[], index: number): void {
+  ts[index] = ts[ts.length - 1];
+  ts.pop();
 }
-export function unorderedRemoveItem<T>(array: T[], item: T) {
-  return unorderedRemoveFirstItemWhere(array, (elem) => elem === item);
+export function unorderedRemoveItem<T>(ts: T[], item: T) {
+  return unorderedRemoveFirstItemWhere(ts, (elem) => elem === item);
 }
-function unorderedRemoveFirstItemWhere<T>(array: T[], cb: (elem: T) => boolean) {
-  for (let i = 0; i < array.length; i++) {
-    if (cb(array[i])) {
-      unorderedRemoveItemAt(array, i);
+function unorderedRemoveFirstItemWhere<T>(ts: T[], cb: (elem: T) => boolean) {
+  for (let i = 0; i < ts.length; i++) {
+    if (cb(ts[i])) {
+      unorderedRemoveItemAt(ts, i);
       return true;
     }
   }
@@ -1416,9 +1416,9 @@ export interface Pattern {
 export function patternText({ prefix, suffix }: Pattern): string {
   return `${prefix}*${suffix}`;
 }
-export function matchedText(pattern: Pattern, candidate: string): string {
-  qf.assert.true(qf.is.patternMatch(pattern, candidate));
-  return candidate.substring(pattern.prefix.length, candidate.length - pattern.suffix.length);
+export function matchedText(p: Pattern, candidate: string): string {
+  qf.assert.true(qf.is.patternMatch(p, candidate));
+  return candidate.substring(p.prefix.length, candidate.length - p.suffix.length);
 }
 export function startsWith(s: string, pre: string): boolean {
   return s.lastIndexOf(pre, 0) === 0;

@@ -1481,32 +1481,30 @@ export function newEach(f: qu.Frame) {
   return (qf.each = new (class extends qu.Feach {
     commentRange<T, U>(
       reduce: boolean,
-      text: string,
+      s: string,
       pos: number,
       trailing: boolean,
       cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U,
       state?: T,
-      initial?: U
+      init?: U
     ): U | undefined {
-      let pendingPos!: number;
-      let pendingEnd!: number;
-      let pendingKind!: CommentKind;
+      let p!: number;
+      let e!: number;
+      let k!: CommentKind;
       let pendingHasTrailingNewLine!: boolean;
       let hasPendingCommentRange = false;
       let collecting = trailing;
-      let accumulator = initial;
+      let r = init;
       if (pos === 0) {
         collecting = true;
-        const shebang = qf.get.shebang(text);
-        if (shebang) {
-          pos = shebang.length;
-        }
+        const shebang = qf.get.shebang(s);
+        if (shebang) pos = shebang.length;
       }
-      scan: while (pos >= 0 && pos < text.length) {
-        const ch = text.charCodeAt(pos);
-        switch (ch) {
+      scan: while (pos >= 0 && pos < s.length) {
+        const c = s.charCodeAt(pos);
+        switch (c) {
           case Codes.carriageReturn:
-            if (text.charCodeAt(pos + 1) === Codes.lineFeed) pos++;
+            if (s.charCodeAt(pos + 1) === Codes.lineFeed) pos++;
           case Codes.lineFeed:
             pos++;
             if (trailing) break scan;
@@ -1520,23 +1518,23 @@ export function newEach(f: qu.Frame) {
             pos++;
             continue;
           case Codes.slash:
-            const nextChar = text.charCodeAt(pos + 1);
+            const c2 = s.charCodeAt(pos + 1);
             let hasTrailingNewLine = false;
-            if (nextChar === Codes.slash || nextChar === Codes.asterisk) {
-              const kind = nextChar === Codes.slash ? Syntax.SingleLineCommentTrivia : Syntax.MultiLineCommentTrivia;
+            if (c2 === Codes.slash || c2 === Codes.asterisk) {
+              const kind = c2 === Codes.slash ? Syntax.SingleLineCommentTrivia : Syntax.MultiLineCommentTrivia;
               const startPos = pos;
               pos += 2;
-              if (nextChar === Codes.slash) {
-                while (pos < text.length) {
-                  if (qf.is.lineBreak(text.charCodeAt(pos))) {
+              if (c2 === Codes.slash) {
+                while (pos < s.length) {
+                  if (qf.is.lineBreak(s.charCodeAt(pos))) {
                     hasTrailingNewLine = true;
                     break;
                   }
                   pos++;
                 }
               } else {
-                while (pos < text.length) {
-                  if (text.charCodeAt(pos) === Codes.asterisk && text.charCodeAt(pos + 1) === Codes.slash) {
+                while (pos < s.length) {
+                  if (s.charCodeAt(pos) === Codes.asterisk && s.charCodeAt(pos + 1) === Codes.slash) {
                     pos += 2;
                     break;
                   }
@@ -1545,12 +1543,12 @@ export function newEach(f: qu.Frame) {
               }
               if (collecting) {
                 if (hasPendingCommentRange) {
-                  accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
-                  if (!reduce && accumulator) return accumulator;
+                  r = cb(p, e, k, pendingHasTrailingNewLine, state, r);
+                  if (!reduce && r) return r;
                 }
-                pendingPos = startPos;
-                pendingEnd = pos;
-                pendingKind = kind;
+                p = startPos;
+                e = pos;
+                k = kind;
                 pendingHasTrailingNewLine = hasTrailingNewLine;
                 hasPendingCommentRange = true;
               }
@@ -1558,8 +1556,8 @@ export function newEach(f: qu.Frame) {
             }
             break scan;
           default:
-            if (ch > Codes.maxAsciiCharacter && qf.is.whiteSpaceLike(ch)) {
-              if (hasPendingCommentRange && qf.is.lineBreak(ch)) {
+            if (c > Codes.maxAsciiCharacter && qf.is.whiteSpaceLike(c)) {
+              if (hasPendingCommentRange && qf.is.lineBreak(c)) {
                 pendingHasTrailingNewLine = true;
               }
               pos++;
@@ -1568,26 +1566,24 @@ export function newEach(f: qu.Frame) {
             break scan;
         }
       }
-      if (hasPendingCommentRange) {
-        accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
-      }
-      return accumulator;
+      if (hasPendingCommentRange) r = cb(p, e, k, pendingHasTrailingNewLine, state, r);
+      return r;
     }
-    leadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-    leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-    leadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
-      return this.commentRange(false, text, pos, false, cb, state);
+    leadingCommentRange<U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    leadingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+    leadingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
+      return this.commentRange(false, s, pos, false, cb, state);
     }
-    trailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-    trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-    trailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
-      return this.commentRange(false, text, pos, true, cb, state);
+    trailingCommentRange<U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    trailingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+    trailingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
+      return this.commentRange(false, s, pos, true, cb, state);
     }
-    reduceLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
-      return this.commentRange(true, text, pos, false, cb, state, initial);
+    reduceLeadingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
+      return this.commentRange(true, s, pos, false, cb, state, initial);
     }
-    reduceTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
-      return this.commentRange(true, text, pos, true, cb, state, initial);
+    reduceTrailingCommentRange<T, U>(s: string, pos: number, cb: (pos: number, end: number, k: CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
+      return this.commentRange(true, s, pos, true, cb, state, initial);
     }
   })());
 }
