@@ -1304,7 +1304,7 @@ export interface LateBoundName extends ComputedPropertyName {
   expression: EntityNameExpression;
 }
 export interface LeftExpr extends UpdateExpr {
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
 }
 export interface LiteralExpr extends PrimaryExpr, LiteralLikeNode {
   _literalExpressionBrand: any;

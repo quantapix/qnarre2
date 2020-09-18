@@ -1065,7 +1065,7 @@ export function newStmt(f: qt.Frame) {
         if (n.initer.kind === Syntax.VariableDeclarationList) this.forInOrForOfVariableDeclaration(n);
         else {
           const varExpr = n.initer;
-          const iteratedType = this.rightHandSideOfForOf(n);
+          const iteratedType = this.rightOfForOf(n);
           if (varExpr.kind === Syntax.ArrayLiteralExpression || varExpr.kind === Syntax.ObjectLiteralExpression) this.destructuringAssignment(varExpr, iteratedType || errorType);
           else {
             const leftType = this.expression(varExpr);
@@ -1114,7 +1114,7 @@ export function newStmt(f: qt.Frame) {
           this.variableDeclaration(decl);
         }
       }
-      rightHandSideOfForOf(statement: qt.ForOfStatement): Type {
+      rightOfForOf(statement: qt.ForOfStatement): Type {
         const use = statement.awaitModifier ? IterationUse.ForAwaitOf : IterationUse.ForOf;
         return this.iteratedTypeOrElemType(use, this.nonNullExpression(statement.expression), undefinedType, statement.expression);
       }

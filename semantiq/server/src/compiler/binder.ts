@@ -1661,7 +1661,7 @@ function createBinder(): (file: qt.SourceFile, opts: qt.CompilerOpts) => void {
     }
   }
   function checkStrictModeBinaryExpression(node: qt.BinaryExpression) {
-    if (inStrictMode && qf.is.leftHandSideExpression(node.left) && qy.is.assignmentOperator(node.operatorToken.kind)) {
+    if (inStrictMode && qf.is.leftExpression(node.left) && qy.is.assignmentOperator(node.operatorToken.kind)) {
       checkStrictModeEvalOrArgs(node, <qt.Identifier>node.left);
     }
   }

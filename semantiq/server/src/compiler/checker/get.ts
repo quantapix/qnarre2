@@ -459,7 +459,7 @@ export function newGet(f: qt.Frame) {
       }
       if (declaration.kind === Syntax.VariableDeclaration && declaration.parent?.parent?.kind === Syntax.ForOfStatement) {
         const forOfStatement = declaration.parent?.parent;
-        return qf.check.rightHandSideOfForOf(forOfStatement) || anyType;
+        return qf.check.rightOfForOf(forOfStatement) || anyType;
       }
       if (declaration.parent?.kind === Syntax.BindingPattern) return this.typeForBindingElem(<qt.BindingElem>declaration);
       const isOptional =
@@ -1740,7 +1740,7 @@ export function newGet(f: qt.Frame) {
         case Syntax.ForInStatement:
           return stringType;
         case Syntax.ForOfStatement:
-          return qf.check.rightHandSideOfForOf(<qt.ForOfStatement>parent) || errorType;
+          return qf.check.rightOfForOf(<qt.ForOfStatement>parent) || errorType;
         case Syntax.BinaryExpression:
           return this.assignedTypeOfBinaryExpression(parent);
         case Syntax.DeleteExpression:
@@ -1774,7 +1774,7 @@ export function newGet(f: qt.Frame) {
     initialTypeOfVariableDeclaration(n: qt.VariableDeclaration) {
       if (n.initer) return this.typeOfIniter(n.initer);
       if (n.parent?.parent?.kind === Syntax.ForInStatement) return stringType;
-      if (n.parent?.parent?.kind === Syntax.ForOfStatement) return qf.check.rightHandSideOfForOf(n.parent?.parent) || errorType;
+      if (n.parent?.parent?.kind === Syntax.ForOfStatement) return qf.check.rightOfForOf(n.parent?.parent) || errorType;
       return errorType;
     }
     initialType(n: qt.VariableDeclaration | qt.BindingElem) {
@@ -3763,7 +3763,7 @@ export function newGet(f: qt.Frame) {
     typeOfAssignmentPattern(e: qt.AssignmentPattern): qt.Type | undefined {
       qf.assert.true(e.kind === Syntax.ObjectLiteralExpression || e.kind === Syntax.ArrayLiteralExpression);
       if (e.parent?.kind === Syntax.ForOfStatement) {
-        const t = qf.check.rightHandSideOfForOf(e.parent);
+        const t = qf.check.rightOfForOf(e.parent);
         return qf.check.destructuringAssignment(e, t || errorType);
       }
       if (e.parent?.kind === Syntax.BinaryExpression) {

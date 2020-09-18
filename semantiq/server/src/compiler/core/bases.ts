@@ -387,7 +387,7 @@ export abstract class UpdateExpr extends UnaryExpr implements qt.UpdateExpr {
   _updateExpressionBrand: any;
 }
 export abstract class LeftExpr extends UpdateExpr implements qt.LeftExpr {
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
 }
 export abstract class MemberExpr extends LeftExpr implements qt.MemberExpr {
   _memberExpressionBrand: any;

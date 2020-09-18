@@ -1154,7 +1154,7 @@ export function transformGenerators(context: qt.TrafoContext) {
         variable = <qt.Identifier>qf.make.synthesizedClone(initer.declarations[0].name);
       } else {
         variable = qf.visit.node(initer, visitor, isExpression);
-        qf.assert.true(qf.is.leftHandSideExpression(variable));
+        qf.assert.true(qf.is.leftExpression(variable));
       }
       emitAssignment(variable, new qc.ElemAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);

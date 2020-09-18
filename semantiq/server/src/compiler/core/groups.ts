@@ -3438,11 +3438,11 @@ export function newNest(f: qt.Frame) {
     forAccess(e: qt.Expression): qt.LeftExpression {
       const e2 = qf.skip.partiallyEmittedExpressions(e);
       const n = e2 as Node;
-      if (qf.is.leftHandSideExpression(n) && (n.kind !== Syntax.NewExpression || n.args)) return e as qt.LeftExpression;
+      if (qf.is.leftExpression(n) && (n.kind !== Syntax.NewExpression || n.args)) return e as qt.LeftExpression;
       return new qc.ParenthesizedExpression(e).setRange(e);
     }
     postfixOperand(e: qt.Expression): qt.LeftExpression {
-      return qf.is.leftHandSideExpression(e) ? e : new qc.ParenthesizedExpression(e).setRange(e);
+      return qf.is.leftExpression(e) ? e : new qc.ParenthesizedExpression(e).setRange(e);
     }
     prefixOperand(e: qt.Expression): qt.UnaryExpression {
       return qf.is.unaryExpression(e) ? e : new qc.ParenthesizedExpression(e).setRange(e);

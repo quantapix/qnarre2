@@ -1626,13 +1626,13 @@ export function newCheck(f: qt.Frame) {
         if (reportError) error(expression, qd.msgs.A_computed_property_name_of_the_form_0_must_be_of_type_symbol, qf.get.textOf(expression));
         return false;
       }
-      const leftHandSide = <qc.Identifier>(<qt.PropertyAccessExpression>expression).expression;
-      const leftHandSideSymbol = getResolvedSymbol(leftHandSide);
-      if (!leftHandSideSymbol) return false;
+      const left = <qc.Identifier>(<qt.PropertyAccessExpression>expression).expression;
+      const leftSymbol = getResolvedSymbol(left);
+      if (!leftSymbol) return false;
       const globalESSymbol = getGlobalESSymbolConstructorSymbol(true);
       if (!globalESSymbol) return false;
-      if (leftHandSideSymbol !== globalESSymbol) {
-        if (reportError) error(leftHandSide, qd.msgs.Symbol_reference_does_not_refer_to_the_global_Symbol_constructor_object);
+      if (leftSymbol !== globalESSymbol) {
+        if (reportError) error(left, qd.msgs.Symbol_reference_does_not_refer_to_the_global_Symbol_constructor_object);
         return false;
       }
       return true;

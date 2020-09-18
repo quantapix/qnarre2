@@ -1978,7 +1978,7 @@ function newParser(f: qt.Frame) {
       if (arrow) return arrow;
       const e = this.binaryExpressionOrHigher(0);
       if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as qc.Identifier);
-      if (qf.is.leftHandSideExpression(e) && is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+      if (qf.is.leftExpression(e) && is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
       return this.conditionalExpressionRest(e);
     }
     yieldExpression(): qc.YieldExpression {
@@ -2167,13 +2167,13 @@ function newParser(f: qt.Frame) {
         const n = create.node(Syntax.PrefixUnaryExpression);
         n.operator = <qt.PrefixUnaryOperator>tok();
         next.tok();
-        n.operand = this.leftHandSideExpressionOrHigher();
+        n.operand = this.leftExpressionOrHigher();
         return finishNode(n);
       } else if (source.language === Language.JSX && tok() === Syntax.LessThanToken && lookAhead(next.isIdentifierOrKeywordOrGreaterThan)) {
         return parseJsx.elemOrSelfClosingElemOrFragment(true);
       }
-      const expression = this.leftHandSideExpressionOrHigher();
-      qf.assert.true(qf.is.leftHandSideExpression(expression));
+      const expression = this.leftExpressionOrHigher();
+      qf.assert.true(qf.is.leftExpression(expression));
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
@@ -2183,7 +2183,7 @@ function newParser(f: qt.Frame) {
       }
       return expression;
     }
-    leftHandSideExpressionOrHigher(): qt.LeftExpression {
+    leftExpressionOrHigher(): qt.LeftExpression {
       let expression: qt.MemberExpression;
       if (tok() === Syntax.ImportKeyword) {
         if (lookAhead(next.isOpenParenOrLessThan)) {
@@ -2999,7 +2999,7 @@ function newParser(f: qt.Frame) {
         const decoratorStart = getNodePos();
         if (!this.optional(Syntax.AtToken)) break;
         const n = create.node(Syntax.Decorator, decoratorStart);
-        n.expression = flags.withDecorator(this.leftHandSideExpressionOrHigher);
+        n.expression = flags.withDecorator(this.leftExpressionOrHigher);
         finishNode(n);
         (list || (list = [])).push(n);
       }
@@ -3110,7 +3110,7 @@ function newParser(f: qt.Frame) {
     }
     expressionWithTypeArgs(): qt.ExpressionWithTypings {
       const n = create.node(Syntax.ExpressionWithTypings);
-      n.expression = this.leftHandSideExpressionOrHigher();
+      n.expression = this.leftExpressionOrHigher();
       n.typeArgs = parse.typeArgs();
       return finishNode(n);
     }

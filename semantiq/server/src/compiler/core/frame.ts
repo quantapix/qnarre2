@@ -1765,14 +1765,20 @@ export function newIs(f: qt.Frame) {
     privateIdentifierPropertyAccessExpression(n: Node): n is qt.PrivateIdentifierPropertyAccessExpression {
       return n.kind === Syntax.PropertyAccessExpression && n.name.kind === Syntax.PrivateIdentifier;
     }
-    modifier(n: Node): n is Modifier {
-      return this.modifier(n.kind);
+    modifier(s: Syntax): s is Modifier['kind'];
+    modifier(n: Node): n is Modifier;
+    modifier(x: Syntax | Node) {
+      return qy.qf.is.modifier(typeof x === 'object' ? x.kind : x);
     }
-    functionLike(n?: Node): n is qt.SignatureDeclaration {
-      return this.functionLike(n?.kind);
+    functionLike(s?: Syntax): boolean;
+    functionLike(n?: Node): n is qt.SignatureDeclaration;
+    functionLike(x?: Syntax | Node) {
+      return qy.qf.is.functionLike(typeof x === 'object' ? x.kind : x);
     }
-    functionLikeDeclaration(n: Node): n is qt.FunctionLikeDeclaration {
-      return this.functionLikeDeclaration(n.kind);
+    functionLikeDeclaration(s?: Syntax): boolean;
+    functionLikeDeclaration(n: Node): n is qt.FunctionLikeDeclaration;
+    functionLikeDeclaration(x?: Syntax | Node) {
+      return qy.qf.is.functionLikeDeclaration(typeof x === 'object' ? x.kind : x);
     }
     functionOrModuleBlock(n: Node) {
       const k = n.kind;
@@ -1819,8 +1825,10 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    typeNode(n?: Node): n is qt.Typing {
-      return this.typeNode(n?.kind);
+    typeNode(s?: Syntax): boolean;
+    typeNode(n?: Node): n is qt.Typing;
+    typeNode(x?: Syntax | Node) {
+      return qy.qf.is.typeNode(typeof x === 'object' ? x.kind : x);
     }
     functionOrConstructorTyping(n: Node): n is qt.FunctionTyping | qt.ConstructorTyping {
       const k = n.kind;
@@ -1838,11 +1846,17 @@ export function newIs(f: qt.Frame) {
       }
       return false;
     }
-    leftHandSideExpression(n: Node): n is qt.LeftExpression {
-      return this.leftHandSideExpression(qf.skip.partiallyEmittedExpressions(n).kind);
+    leftExpression(s: Syntax): boolean;
+    leftExpression(n: Node): n is qt.LeftExpression;
+    leftExpression(x: Syntax | Node) {
+      x = typeof x === 'object' ? qf.skip.partiallyEmittedExpressions(x).kind : x;
+      return qy.qf.is.leftExpression(x);
     }
-    unaryExpression(n: Node): n is qt.UnaryExpression {
-      return this.unaryExpression(qf.skip.partiallyEmittedExpressions(n).kind);
+    unaryExpression(s: Syntax): boolean;
+    unaryExpression(n: Node): n is qt.UnaryExpression;
+    unaryExpression(x: Syntax | Node) {
+      x = typeof x === 'object' ? qf.skip.partiallyEmittedExpressions(x).kind : x;
+      return qy.qf.is.unaryExpression(x);
     }
     unaryExpressionWithWrite(n: Node): n is qt.PrefixUnaryExpression | qt.PostfixUnaryExpression {
       switch (n.kind) {
@@ -1855,8 +1869,11 @@ export function newIs(f: qt.Frame) {
           return false;
       }
     }
-    expression(n: Node): n is qt.Expression {
-      return this.expression(qf.skip.partiallyEmittedExpressions(n).kind);
+    expression(s: Syntax): boolean;
+    expression(n: Node): n is qt.Expression;
+    expression(x: Syntax | Node) {
+      x = typeof x === 'object' ? qf.skip.partiallyEmittedExpressions(x).kind : x;
+      return qy.qf.is.expression(x);
     }
     notEmittedOrPartiallyEmittedNode(n: Node): n is qt.NotEmittedStatement | qt.PartiallyEmittedExpression {
       const k = n.kind;
@@ -1890,19 +1907,28 @@ export function newIs(f: qt.Frame) {
     forIniter(n: qt.Nobj): n is qt.ForIniter {
       return n.kind === Syntax.VariableDeclarationList || this.expression(n as Node);
     }
-    declaration(n?: Node): n is qt.NamedDecl {
-      if (n?.kind === Syntax.TypeParam) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || this.inJSFile(n);
-      return qy.is.declaration(n?.kind);
+    declaration(s?: Syntax): boolean;
+    declaration(n?: Node): n is qt.NamedDecl;
+    declaration(x?: Syntax | Node) {
+      if (typeof x === 'object') {
+        if (x.kind === Syntax.TypeParam) return (x.parent && x.parent.kind !== Syntax.DocTemplateTag) || this.inJSFile(x);
+        x = x.kind;
+      }
+      return qy.qf.is.declaration(x);
     }
-    declarationStatement(n: Node): n is qt.DeclarationStmt {
-      return qy.is.declarationStatement(n.kind);
+    declarationStatement(s: Syntax): boolean;
+    declarationStatement(n: Node): n is qt.DeclarationStmt;
+    declarationStatement(x: Syntax | Node) {
+      return qy.qf.is.declarationStatement(typeof x === 'object' ? x.kind : x);
     }
-    statementButNotDeclaration(n: Node): n is qt.Statement {
-      return qy.is.statementKindButNotDeclaration(n.kind);
+    statementButNotDeclaration(s: Syntax): boolean;
+    statementButNotDeclaration(n: Node): n is qt.Statement;
+    statementButNotDeclaration(x: Syntax | Node) {
+      return qy.qf.is.statementButNotDeclaration(typeof x === 'object' ? x.kind : x);
     }
     statement(n: Node): n is qt.Statement {
       const k = n.kind;
-      return qy.is.statementKindButNotDeclaration(k) || qy.is.declarationStatement(k) || this.blockStatement(n);
+      return qy.qf.is.statementButNotDeclaration(k) || qy.qf.is.declarationStatement(k) || this.blockStatement(n);
     }
     blockStatement(n: Node): n is qt.Block {
       if (n.kind !== Syntax.Block) return false;
@@ -1984,9 +2010,14 @@ export function newIs(f: qt.Frame) {
       const k = n.kind;
       return k === Syntax.CallExpression || k === Syntax.NewExpression;
     }
-    templateLiteral(n: Node): n is qt.TemplateLiteral {
-      const k = n.kind;
-      return k === Syntax.TemplateExpression || k === Syntax.NoSubstitutionLiteral;
+    templateLiteral(s: Syntax): boolean;
+    templateLiteral(n: Node): n is qt.TemplateLiteral;
+    templateLiteral(x: Syntax | Node) {
+      if (typeof x === 'object') {
+        const k = x.kind;
+        return k === Syntax.TemplateExpression || k === Syntax.NoSubstitutionLiteral;
+      }
+      return qy.qf.is.templateLiteral(x);
     }
     assertionExpression(n: Node): n is qt.AssertionExpression {
       const k = n.kind;
@@ -2221,8 +2252,7 @@ export function newIs(f: qt.Frame) {
     assignmentExpression(n: Node, noCompound: true): n is qt.AssignmentExpression<qt.EqualsToken>;
     assignmentExpression(n: Node, noCompound?: false): n is qt.AssignmentExpression<qt.AssignmentOperatorToken>;
     assignmentExpression(n: Node, noCompound?: boolean): n is qt.AssignmentExpression<qt.AssignmentOperatorToken> {
-      if (n.kind === Syntax.BinaryExpression)
-        return (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && this.leftHandSideExpression(n.left as Node);
+      if (n.kind === Syntax.BinaryExpression) return (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && this.leftExpression(n.left as Node);
       return false;
     }
     privateIdentifierPropertyDeclaration(n?: Node): n is qt.PrivateIdentifierPropertyDeclaration {
@@ -2403,8 +2433,10 @@ export function newIs(f: qt.Frame) {
     caseBlock(n: Node): n is qt.CaseBlock {
       return n.kind === Syntax.CaseBlock;
     }
-    token(n: Node): boolean {
-      return n.kind >= Syntax.FirstToken && n.kind <= Syntax.LastToken;
+    token(s: Syntax): boolean;
+    token(n: Node): boolean;
+    token(x: Syntax | Node) {
+      return qy.qf.is.token(typeof x === 'object' ? x.kind : x);
     }
     templateSpan(n: Node): n is qt.TemplateSpan {
       return n.kind === Syntax.TemplateSpan;

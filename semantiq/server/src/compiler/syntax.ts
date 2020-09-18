@@ -857,7 +857,7 @@ export function newIs(f: qu.Frame) {
     keyword(s: Syntax) {
       return Syntax.FirstKeyword <= s && s <= Syntax.LastKeyword;
     }
-    leftHandSideExpression(s: Syntax) {
+    leftExpression(s: Syntax) {
       switch (s) {
         case Syntax.ArrayLiteralExpression:
         case Syntax.BigIntLiteral:
@@ -977,7 +977,7 @@ export function newIs(f: qu.Frame) {
     singleOrDoubleQuote(c: number) {
       return c === Codes.singleQuote || c === Codes.doubleQuote;
     }
-    statementKindButNotDeclaration(s: Syntax) {
+    statementButNotDeclaration(s: Syntax) {
       switch (s) {
         case Syntax.BreakStatement:
         case Syntax.ContinueStatement:
@@ -1060,7 +1060,7 @@ export function newIs(f: qu.Frame) {
         case Syntax.VoidExpression:
           return true;
       }
-      return this.leftHandSideExpression(s);
+      return this.leftExpression(s);
     }
     volumeChar(c: number) {
       return (c >= Codes.a && c <= Codes.z) || (c >= Codes.A && c <= Codes.Z);

@@ -392,7 +392,7 @@ export class ClassExpression extends qb.ClassLikeDecl implements qt.ClassExpress
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
   _updateExpressionBrand: any;
   _unaryExpressionBrand: any;
   _expressionBrand: any;
@@ -1215,7 +1215,7 @@ export class FunctionExpression extends qb.FunctionLikeDecl implements qt.Functi
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
   _updateExpressionBrand: any;
   _unaryExpressionBrand: any;
   _expressionBrand: any;
@@ -1310,7 +1310,7 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   }
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
   _updateExpressionBrand: any;
   _unaryExpressionBrand: any;
   _expressionBrand: any;
@@ -2163,7 +2163,7 @@ export class NoSubstitutionLiteral extends qb.TemplateLiteralLikeNode implements
   _literalExpressionBrand: any;
   _primaryExpressionBrand: any;
   _memberExpressionBrand: any;
-  _leftHandSideExpressionBrand: any;
+  _leftExpressionBrand: any;
   _updateExpressionBrand: any;
   _unaryExpressionBrand: any;
   _expressionBrand: any;
