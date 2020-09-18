@@ -406,8 +406,8 @@ export abstract class TokenOrIdentifier extends Nobj {
 }
 export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
   kind!: T;
-  constructor(k: T, pos?: number, end?: number) {
-    super(undefined, k, pos, end);
+  constructor(t: T, pos?: number, end?: number) {
+    super(undefined, t, pos, end);
   }
 }
 export abstract class Stmt extends Nobj implements qt.Stmt {
@@ -484,7 +484,7 @@ export abstract class Symbol implements qt.Symbol {
   get name() {
     const n = this.valueDeclaration;
     if (qf.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
-    return qy.get.unescUnderscores(this.escName);
+    return qy.qf.get.unescUnderscores(this.escName);
   }
   abstract get id(): number;
   abstract get links(): qt.SymbolLinks;
@@ -690,7 +690,7 @@ export class Ftype {
     }
     return r;
   }
-  qf.type.setCachedIters(t: qt.Type, k: qt.MatchingKeys<qt.IterableOrIteratorType, qt.IterationTypes | undefined>, v: qt.IterationTypes) {
+  setCachedIters(t: qt.Type, k: qt.MatchingKeys<qt.IterableOrIteratorType, qt.IterationTypes | undefined>, v: qt.IterationTypes) {
     return ((t as qt.IterableOrIteratorType)[k] = v);
   }
   convertAutoToAny(t: qt.Type) {
@@ -1282,8 +1282,8 @@ export class SourceFile extends Decl implements qt.SourceFile {
   text!: string;
   typeReferenceDirectives!: qt.FileReference[];
   version!: string;
-  constructor(k: Syntax, pos: number, end: number) {
-    super(false, k, pos, end);
+  constructor(pos: number, end: number) {
+    super(false, SourceFile.kind, pos, end);
   }
   getLeadingCommentRangesOfNode(n: Node) {
     return n.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(this.text, n.pos) : undefined;

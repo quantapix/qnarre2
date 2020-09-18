@@ -126,25 +126,25 @@ export function newMake(f: qt.Frame) {
   const qf = f as Frame;
   return (qf.make = new (class {
     nextAutoGenId = 0;
-    node<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+    node<T extends Syntax>(t: T, pos: number, end: number, parent?: Node): NodeType<T> {
       const n =
-        qf.is.node(k) || k === Syntax.Unknown
-          ? new Nobj(k, pos, end)
-          : k === Syntax.SourceFile
-          ? new SourceFileObj(Syntax.SourceFile, pos, end)
-          : k === Syntax.Identifier
-          ? new qc.Identifier(Syntax.Identifier, pos, end)
-          : k === Syntax.PrivateIdentifier
-          ? new qc.PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
-          : new qc.Token<T>(k, pos, end);
+        qf.is.node(t) || t === Syntax.Unknown
+          ? new Nobj(t, pos, end)
+          : t === Syntax.SourceFile
+          ? new qb.SourceFile(pos, end)
+          : t === Syntax.Identifier
+          ? new qc.Identifier(pos, end)
+          : t === Syntax.PrivateIdentifier
+          ? new qc.PrivateIdentifier(pos, end)
+          : new qb.Token<T>(t, pos, end);
       if (parent) {
         n.parent = parent;
         n.flags = parent.flags & NodeFlags.ContextFlags;
       }
       return (n as unknown) as NodeType<T>;
     }
-    synthesized<T extends Syntax>(k: T): NodeType<T> {
-      const n = this.node<T>(k, -1, -1);
+    synthesized<T extends Syntax>(t: T): NodeType<T> {
+      const n = this.node<T>(t, -1, -1);
       n.flags |= NodeFlags.Synthesized;
       return n;
     }
@@ -172,7 +172,7 @@ export function newMake(f: qt.Frame) {
       r.data = s.data;
       return r;
     }
-    from(n: Exclude<qt.PropertyNameLiteral, qt.PrivateIdentifier>): qt.StringLiteral {
+    from(n: Exclude<qt.PropertyNameLiteral, qt.PrivateIdentifier>) {
       const r = new qc.StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
       r.textSourceNode = n;
       return r;
@@ -387,7 +387,7 @@ export function newMake(f: qt.Frame) {
       return new qc.CallExpression(new qc.PropertyAccessExpression(e, qc.asName(n)), undefined, args);
     }
     modifier<T extends Modifier['kind']>(k: T): qt.Token<T> {
-      return new qc.Token(k);
+      return new qb.Token(k);
     }
     modifiersFromFlags(f: ModifierFlags) {
       const r: Modifier[] = [];
@@ -541,14 +541,14 @@ export function newMake(f: qt.Frame) {
       if (reserved) n.autoGenFlags |= qt.GeneratedIdentifierFlags.ReservedInNestedScopes;
       return n;
     }
-    loopVariable(): qt.Identifier {
+    loopVariable() {
       const n = new qc.Identifier('');
       n.autoGenFlags = qt.GeneratedIdentifierFlags.Loop;
       n.autoGenId = this.nextAutoGenId;
       this.nextAutoGenId++;
       return n;
     }
-    uniqueName(t: string): qt.Identifier {
+    uniqueName(t: string) {
       const n = new qc.Identifier(t);
       n.autoGenFlags = qt.GeneratedIdentifierFlags.Unique;
       n.autoGenId = this.nextAutoGenId;
@@ -564,7 +564,7 @@ export function newMake(f: qt.Frame) {
       this.nextAutoGenId++;
       return n;
     }
-    fileLevelUniqueName(t: string): qt.Identifier {
+    fileLevelUniqueName(t: string) {
       const n = this.optimisticUniqueName(t);
       n.autoGenFlags! |= qt.GeneratedIdentifierFlags.FileLevel;
       return n;

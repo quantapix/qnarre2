@@ -1292,14 +1292,14 @@ export class Identifier extends qb.TokenOrIdentifier implements qt.Identifier {
   autoGenId = 0;
   isInDocNamespace?: boolean;
   jsdocDotPos?: number;
-  constructor(t: string);
-  constructor(t: string, typeArgs: readonly (qt.Typing | qt.TypeParamDeclaration)[] | undefined);
-  constructor(t: string, typeArgs?: readonly (qt.Typing | qt.TypeParamDeclaration)[]) {
-    super();
-    this.escapedText = qy.get.escUnderscores(t);
-    this.originalKeywordKind = t ? qy.fromString(t) : Syntax.Unknown;
-    if (typeArgs) {
-      this.typeArgs = new qb.Nodes(typeArgs as readonly qt.Typing[]);
+  constructor(pos: number, end: number);
+  constructor(s: string, ts?: readonly (qt.Typing | qt.TypeParamDeclaration)[]);
+  constructor(x: string | number, y?: readonly (qt.Typing | qt.TypeParamDeclaration)[] | number) {
+    super(false, Identifier.kind, typeof x === 'number' ? x : undefined, typeof y === 'number' ? y : undefined);
+    if (typeof x === 'string') {
+      this.escapedText = qy.qf.get.escUnderscores(x);
+      this.originalKeywordKind = x ? qy.fromString(x) : Syntax.Unknown;
+      if (y) this.typeArgs = new qb.Nodes(y as readonly qt.Typing[]);
     }
   }
   get text(): string {
@@ -2375,10 +2375,14 @@ export class PrivateIdentifier extends qb.TokenOrIdentifier implements qt.Privat
   static readonly kind = Syntax.PrivateIdentifier;
   kind!: Syntax.PrivateIdentifier;
   escapedText!: qu.__String;
-  constructor(t: string) {
-    super(true, PrivateIdentifier.kind);
-    if (t[0] !== '#') qu.fail('First character of private identifier must be #: ' + t);
-    this.escapedText = qy.get.escUnderscores(t);
+  constructor(pos: number, end: number);
+  constructor(t: string);
+  constructor(x: string | number, end?: number) {
+    super(true, PrivateIdentifier.kind, typeof x === 'number' ? x : undefined, end);
+    if (typeof x === 'string') {
+      if (x[0] !== '#') qu.fail('First character of private identifier must be #: ' + x);
+      this.escapedText = qy.qf.get.escUnderscores(x);
+    }
   }
   get text(): string {
     return qb.idText(this);
@@ -3397,7 +3401,7 @@ export interface SynMap {
   [Syntax.BigIntLiteral]: BigIntLiteral;
   [Syntax.BinaryExpression]: BinaryExpression;
   [Syntax.BindingElem]: BindingElem;
-  [Syntax.Block]: qt.Block;
+  [Syntax.Block]: Block;
   [Syntax.BreakStatement]: BreakStatement;
   [Syntax.Bundle]: Bundle;
   [Syntax.CallExpression]: CallExpression;
