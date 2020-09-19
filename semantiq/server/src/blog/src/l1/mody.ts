@@ -8,7 +8,20 @@ export function newIs(f: qt.Frame) {
   interface _Fis extends qb.Fis {}
   class _Fis {}
   qb.addMixins(_Fis, [new qb.Fis()]);
-  return (qf.is = new (class extends _Fis {})());
+  return (qf.is = new (class extends _Fis {
+    a(k: qt.Kind) {
+      return k === qt.Kind.A;
+    }
+    b(k: qt.Kind): boolean;
+    b(n: qt.All): n is qt.B;
+    b(x: qt.Kind | qt.All) {
+      x = typeof x === 'object' ? x.k : x;
+      return x === qt.Kind.B;
+    }
+    c(n: qt.All): n is qt.C {
+      return n.k === qt.Kind.C;
+    }
+  })());
 }
 export interface Fis extends ReturnType<typeof newIs> {}
 export function newGet(f: qt.Frame) {
@@ -36,11 +49,11 @@ export interface Frame extends qt.Frame {
   is: Fis;
   make: Fmake;
 }
-export function newFrame() {
-  const f = {} as Frame;
+export function newFrame(c: qt.Cfg) {
+  const f = c as Frame;
   newIs(f);
   newGet(f);
   newMake(f);
   return f;
 }
-export const qf: Frame = newFrame();
+export const qf: Frame = newFrame({});

@@ -1,7 +1,3 @@
-export class Data {
-  d1 = 123;
-  d2?: number;
-}
 export function addMixins(t: any, ss: any[]) {
   ss.forEach((s: any) => {
     Object.getOwnPropertyNames(s.prototype).forEach((n) => {
@@ -10,6 +6,10 @@ export function addMixins(t: any, ss: any[]) {
       Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
     });
   });
+}
+export class Data {
+  readonly d1 = 123;
+  d2?: number;
 }
 export interface Frame {
   get: Fget;

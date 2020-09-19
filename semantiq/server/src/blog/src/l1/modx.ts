@@ -9,7 +9,7 @@ export abstract class N extends qb.Data implements qt.N {
   }
 }
 export class Ns<T extends qt.N = N> extends Array<T> implements qt.Ns {
-  d1 = 0;
+  readonly d1 = 123;
   ns1 = 0;
   walk<U>(cb?: (n?: qt.All) => U | undefined, cbs?: (ns?: qt.Ns) => U | undefined): U | undefined {
     if (cbs) return cbs(this);
