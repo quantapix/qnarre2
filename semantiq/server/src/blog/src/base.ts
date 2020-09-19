@@ -2,6 +2,15 @@ export class Data {
   d1 = 123;
   d2?: number;
 }
+export function addMixins(t: any, ss: any[]) {
+  ss.forEach((s: any) => {
+    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
+      if (n == 'constructor') return;
+      //console.log(`adding ${s.name}.${n}`);
+      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
+    });
+  });
+}
 export interface Frame {
   get: Fget;
   is: Fis;

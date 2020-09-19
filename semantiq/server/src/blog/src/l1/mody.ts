@@ -1,33 +1,46 @@
-import * as qb from './base';
-export const enum Kind {
-  A,
-  B,
-  C,
-  AB,
-  BC,
-  ABC,
+import * as qb from '../base';
+import * as qt from '../type';
+export function newIs(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    get: Fget;
+  }
+  const qf: Frame = f as Frame;
+  interface _Fis extends qb.Fis {}
+  class _Fis {}
+  qb.addMixins(_Fis, [new qb.Fis()]);
+  return (qf.is = new (class extends _Fis {})());
 }
-export interface N extends qb.Data {
-  k: Kind;
-  readonly n1: number;
-  n2?: number;
-  walk<T>(cb?: (n?: All) => T | undefined): T | undefined;
+export interface Fis extends ReturnType<typeof newIs> {}
+export function newGet(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    is: Fis;
+  }
+  const qf: Frame = f as Frame;
+  interface _Fget extends qb.Fget {}
+  class _Fget {}
+  qb.addMixins(_Fget, [new qb.Fget()]);
+  return (qf.get = new (class extends _Fget {})());
 }
-export interface Ns<T extends N = N> extends ReadonlyArray<T>, qb.Data {
-  ns1: number;
-  walk<T>(cb?: (n?: All) => T | undefined, cbs?: (ns?: Ns) => T | undefined): T | undefined;
+export interface Fget extends ReturnType<typeof newGet> {}
+export function newMake(f: qt.Frame) {
+  interface Frame extends qt.Frame {
+    is: Fis;
+    get: Fget;
+  }
+  const qf: Frame = f as Frame;
+  return (qf.make = new (class {})());
 }
-export interface A extends N {
-  k: Kind.A;
-  a1: number;
+export interface Fmake extends ReturnType<typeof newMake> {}
+export interface Frame extends qt.Frame {
+  get: Fget;
+  is: Fis;
+  make: Fmake;
 }
-export interface B extends N {
-  k: Kind.B;
-  readonly b1: number;
-  b2: A;
+export function newFrame() {
+  const f = {} as Frame;
+  newIs(f);
+  newGet(f);
+  newMake(f);
+  return f;
 }
-export interface C extends N {
-  k: Kind.C;
-  c1?: Ns<B>;
-}
-export type All = A | B | C;
+export const qf: Frame = newFrame();

@@ -1,4 +1,10 @@
 import * as qb from './base';
+export interface Cfg {
+  flip?: boolean;
+}
+export interface Frame extends Cfg, qb.Frame {
+  make: unknown;
+}
 export const enum Kind {
   A,
   B,
