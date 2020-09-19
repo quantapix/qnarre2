@@ -2,7 +2,7 @@ import * as qb from '../base';
 import { Kind } from '../type';
 import * as qt from '../type';
 import { Ctr } from './moda';
-import * as q1 from './moda';
+//import * as q1 from './moda';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;

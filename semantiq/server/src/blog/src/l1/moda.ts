@@ -3,7 +3,7 @@ import { Kind } from '../type';
 import * as qt from '../type';
 export abstract class N extends qb.Data implements qt.N {
   k!: Kind;
-  readonly n1 = 234;
+  n1 = 234;
   n2?: number;
   walk<T>(cb?: (n?: qt.All) => T | undefined): T | undefined {
     return cb?.(this as qt.All);
