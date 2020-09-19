@@ -1,1 +1,1 @@
-export * from './modz';
+export * from './modc';
