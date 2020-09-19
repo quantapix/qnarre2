@@ -1,3 +1,2 @@
-fn main() {
-    println!("Hello, world!");
-}
+import * as qb from '../base';
+import { Kind } from '../type';

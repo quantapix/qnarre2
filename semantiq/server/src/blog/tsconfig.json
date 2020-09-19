@@ -1,7 +1,7 @@
 {
   "extends": "../../../../tsconfig-base",
   "compilerOptions": {
-    "types": ["node"],
+    "types": ["node", "jest"],
     "module": "commonjs",
     "outDir": "out",
     "rootDir": "."

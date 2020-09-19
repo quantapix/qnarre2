@@ -3,7 +3,7 @@ import * as qt from '../type';
 import * as q1 from '../l1';
 export function newIs(f: q1.Frame) {
   interface Frame extends q1.Frame {
-    get: Fget;
+    get: q1.Fget;
   }
   const qf: Frame = f as Frame;
   interface _Fis extends q1.Fis {}
