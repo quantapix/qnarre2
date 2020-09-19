@@ -34,6 +34,7 @@ export interface B extends N {
 }
 export interface C extends N {
   k: Kind.C;
-  c1?: Ns<B>;
+  c1?: number;
+  c2?: Ns<B>;
 }
 export type All = A | B | C;

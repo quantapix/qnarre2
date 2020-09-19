@@ -1,7 +1,8 @@
 import * as qb from '../base';
+import { Kind } from '../type';
 import * as qt from '../type';
 export abstract class N extends qb.Data implements qt.N {
-  k!: qt.Kind;
+  k!: Kind;
   readonly n1 = 234;
   n2?: number;
   walk<T>(cb?: (n?: qt.All) => T | undefined): T | undefined {
@@ -21,8 +22,8 @@ export class Ns<T extends qt.N = N> extends Array<T> implements qt.Ns {
   }
 }
 export class A extends N implements qt.A {
-  static readonly k = qt.Kind.A;
-  k!: qt.Kind.A;
+  static readonly k = Kind.A;
+  k!: Kind.A;
   a1 = 0;
   update(a1: number) {
     this.a1 = a1;
@@ -31,8 +32,8 @@ export class A extends N implements qt.A {
 }
 A.prototype.k = A.k;
 export class B extends N implements qt.B {
-  static readonly k = qt.Kind.B;
-  k!: qt.Kind.B;
+  static readonly k = Kind.B;
+  k!: Kind.B;
   readonly b1 = 567;
   b2!: qt.A;
   update(b2: qt.A) {
@@ -42,12 +43,18 @@ export class B extends N implements qt.B {
 }
 B.prototype.k = B.k;
 export class C extends N implements qt.C {
-  static readonly k = qt.Kind.C;
-  k!: qt.Kind.C;
-  c1?: qt.Ns<qt.B>;
-  update(c1: B[]) {
-    this.c1 = new Ns<qt.B>(...c1);
+  static readonly k = Kind.C;
+  k!: Kind.C;
+  c2?: qt.Ns<qt.B>;
+  update(c2: B[]) {
+    this.c2 = new Ns<qt.B>(...c2);
   }
 }
 C.prototype.k = C.k;
 export type All = A | B | C;
+export interface Ctrs {
+  [Kind.A]: A;
+  [Kind.B]: B;
+  [Kind.C]: C;
+}
+export type Ctr<K extends Kind> = K extends keyof Ctrs ? Ctrs[K] : never;

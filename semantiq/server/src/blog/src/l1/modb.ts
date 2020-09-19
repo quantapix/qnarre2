@@ -1,5 +1,8 @@
 import * as qb from '../base';
+import { Kind } from '../type';
 import * as qt from '../type';
+import { Ctr, Ctrs } from './moda';
+import * as q1 from './moda';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -9,17 +12,20 @@ export function newIs(f: qt.Frame) {
   class _Fis {}
   qb.addMixins(_Fis, [new qb.Fis()]);
   return (qf.is = new (class extends _Fis {
-    a(k: qt.Kind) {
-      return k === qt.Kind.A;
+    kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.All): n is Ctr<C['k']> {
+      return n?.k === c.k;
     }
-    b(k: qt.Kind): boolean;
+    a(k: Kind) {
+      return k === Kind.A;
+    }
+    b(k: Kind): boolean;
     b(n: qt.All): n is qt.B;
-    b(x: qt.Kind | qt.All) {
+    b(x: Kind | qt.All) {
       x = typeof x === 'object' ? x.k : x;
-      return x === qt.Kind.B;
+      return x === Kind.B;
     }
     c(n: qt.All): n is qt.C {
-      return n.k === qt.Kind.C;
+      return n.k === Kind.C;
     }
   })());
 }
@@ -32,7 +38,27 @@ export function newGet(f: qt.Frame) {
   interface _Fget extends qb.Fget {}
   class _Fget {}
   qb.addMixins(_Fget, [new qb.Fget()]);
-  return (qf.get = new (class extends _Fget {})());
+  return (qf.get = new (class extends _Fget {
+    v(n?: qt.All): number | undefined {
+      switch (n?.k) {
+        case Kind.A:
+          return n.a1;
+        case Kind.B:
+          return n.b1;
+        case Kind.C:
+          return n.c1;
+      }
+      return;
+    }
+    b2(n: qt.All) {
+      if (qf.is.b(n)) return n.b2;
+      return;
+    }
+    c2(n: qt.All) {
+      if (qf.is.c(n)) return n.c2;
+      return;
+    }
+  })());
 }
 export interface Fget extends ReturnType<typeof newGet> {}
 export function newMake(f: qt.Frame) {
@@ -41,7 +67,11 @@ export function newMake(f: qt.Frame) {
     get: Fget;
   }
   const qf: Frame = f as Frame;
-  return (qf.make = new (class {})());
+  return (qf.make = new (class {
+    n<C extends { k: Kind } = q1.All>(k: Kind): Ctr<C['k']> {
+      return new (class extends Ctrs[k] {})();
+    }
+  })());
 }
 export interface Fmake extends ReturnType<typeof newMake> {}
 export interface Frame extends qt.Frame {
