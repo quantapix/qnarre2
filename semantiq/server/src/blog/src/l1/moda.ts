@@ -58,3 +58,4 @@ export interface Ctrs {
   [Kind.C]: C;
 }
 export type Ctr<K extends Kind> = K extends keyof Ctrs ? Ctrs[K] : never;
+export const all = { [Kind.A]: A, [Kind.B]: B, [Kind.C]: C };

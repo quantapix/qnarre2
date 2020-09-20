@@ -1,8 +1,8 @@
 import * as qb from '../base';
 import { Kind } from '../type';
 import * as qt from '../type';
-import { Ctr } from './moda';
-//import * as q1 from './moda';
+import { Ctr, Ctrs } from './moda';
+import * as q1 from './moda';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -68,9 +68,9 @@ export function newMake(f: qt.Frame) {
   }
   const qf: Frame = f as Frame;
   return (qf.make = new (class {
-    //n<C extends { k: Kind } = q1.All>(k: Kind): Ctr<C['k']> {
-    //  return new (class extends Ctrs[k] {})();
-    //}
+    n<K extends Kind.A | Kind.B | Kind.C>(k: K) {
+      return new q1.all[k]();
+    }
   })());
 }
 export interface Fmake extends ReturnType<typeof newMake> {}
