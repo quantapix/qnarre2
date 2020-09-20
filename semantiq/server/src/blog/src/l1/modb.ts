@@ -10,7 +10,7 @@ export function newIs(f: qt.Frame) {
   const qf: Frame = f as Frame;
   interface _Fis extends qb.Fis {}
   class _Fis {}
-  qb.addMixins(_Fis, [new qb.Fis()]);
+  qb.addMixins(_Fis, [qb.Fis]);
   return (qf.is = new (class extends _Fis {
     kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.N): n is Ctr<C['k']> {
       return n?.k === c.k;
@@ -37,7 +37,7 @@ export function newGet(f: qt.Frame) {
   const qf: Frame = f as Frame;
   interface _Fget extends qb.Fget {}
   class _Fget {}
-  qb.addMixins(_Fget, [new qb.Fget()]);
+  qb.addMixins(_Fget, [qb.Fget]);
   return (qf.get = new (class extends _Fget {
     v(n?: qt.All): number | undefined {
       switch (n?.k) {

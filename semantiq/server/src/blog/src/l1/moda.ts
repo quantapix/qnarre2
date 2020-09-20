@@ -45,9 +45,11 @@ B.prototype.k = B.k;
 export class C extends N implements qt.C {
   static readonly k = Kind.C;
   k!: Kind.C;
+  c1?: number;
   c2?: qt.Ns<qt.B>;
   update(c2: B[]) {
     this.c2 = new Ns<qt.B>(...c2);
+    return this;
   }
 }
 C.prototype.k = C.k;
