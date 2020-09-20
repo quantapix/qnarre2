@@ -6,5 +6,6 @@
     "outDir": "out",
     "rootDir": "."
   },
-  "include": ["**/*.ts"]
+  "files": ["src/base.ts", "src/base.test.ts"],
+  "xinclude": ["**/*.ts"]
 }

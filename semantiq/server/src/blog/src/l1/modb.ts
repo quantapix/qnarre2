@@ -1,8 +1,8 @@
-import * as qb from '../base';
+import { Ctr } from './moda';
 import { Kind } from '../type';
-import * as qt from '../type';
-import { Ctr, Ctrs } from './moda';
 import * as q1 from './moda';
+import * as qb from '../base';
+import * as qt from '../type';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;
@@ -12,7 +12,7 @@ export function newIs(f: qt.Frame) {
   class _Fis {}
   qb.addMixins(_Fis, [new qb.Fis()]);
   return (qf.is = new (class extends _Fis {
-    kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.All): n is Ctr<C['k']> {
+    kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.N): n is Ctr<C['k']> {
       return n?.k === c.k;
     }
     a(k: Kind) {
