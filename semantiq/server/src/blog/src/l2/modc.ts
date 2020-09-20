@@ -27,8 +27,8 @@ export function newNode(f: q1.Frame) {
   }
   const qf: Frame = f as Frame;
   return (qf.node = new (class Base {
-    is = new (class extends Base {
-      kind<K extends Kind, C extends { k: K }>(c: C, n?: q1.All): n is q1.Ctr<C['k']> {
+    is = new (class {
+      kind<K extends Kind, C extends { k: K }>(c: C, n?: q1.N): n is q1.Ctr<C['k']> {
         return n?.k === c.k;
       }
       a(n: q1.All): n is q1.A {
@@ -41,7 +41,17 @@ export function newNode(f: q1.Frame) {
         return n.k === Kind.C;
       }
     })();
-    get = new (class extends Base {})();
+    _get = new (class {
+      b1(n: qt.All) {
+        if (qf.is.b(n)) return n.b1;
+        return;
+      }
+    })();
+    get: Base['_get'] & q1.Fget;
+    constructor() {
+      this.get = this._get as Base['get'];
+      qb.addMixins(this.get, [q1.newGet(qf)]);
+    }
   })());
 }
 export interface Fnode extends ReturnType<typeof newNode> {}

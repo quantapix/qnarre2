@@ -1,9 +1,10 @@
 export function addMixins(t: any, ss: any[]) {
   ss.forEach((s: any) => {
-    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
+    const p = s.prototype || s.__proto__;
+    Object.getOwnPropertyNames(p).forEach((n) => {
       if (n == 'constructor') return;
       //console.log(`adding ${s.name}.${n}`);
-      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
+      Object.defineProperty(t.prototype || t.__proto__, n, Object.getOwnPropertyDescriptor(p, n)!);
     });
   });
 }

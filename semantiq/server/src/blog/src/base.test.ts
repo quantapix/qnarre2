@@ -19,7 +19,7 @@ class T {
   s1 = 1;
 }
 beforeAll(() => {
-  addMixins(T, [S1, S2]);
+  addMixins(T, [S1, new S2()]);
 });
 describe('base', () => {
   let t: T;

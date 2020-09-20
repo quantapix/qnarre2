@@ -21,7 +21,7 @@ export function newNode(f: q2.Frame) {
       }
     })();
     is: Base['_is'] & _Fis;
-    _get = new (class extends Base {})();
+    _get2 = new (class extends Base {})();
     get: Base['_get'] & _Fget;
     constructor() {
       super();
