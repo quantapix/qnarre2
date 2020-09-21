@@ -1,4 +1,4 @@
-import { A, B, C, Ns } from './moda';
+import { A, B, C, Nodes } from './moda';
 import * as qt from '../type';
 beforeAll(() => {});
 describe('moda', () => {
@@ -26,6 +26,6 @@ describe('moda', () => {
     expect(c.c1).toBeUndefined;
     expect(c.c2).toBeUndefined;
     c.update([b]);
-    expect(c.c2 == new Ns<qt.B>(...[b])).toBeTruthy;
+    expect(c.c2 == new Nodes<qt.B>(...[b])).toBeTruthy;
   });
 });

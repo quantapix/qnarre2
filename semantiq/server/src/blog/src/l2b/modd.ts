@@ -11,8 +11,8 @@ export function newIs(f: q1.Frame) {
   qb.addMixins(_Fis, [q1.newIs(qf)]);
   return (qf.is = new (class extends _Fis {
     a(k: qt.Kind): boolean;
-    a(n: qt.All): n is qt.A;
-    a(x: qt.Kind | qt.All) {
+    a(n: qt.Node): n is qt.A;
+    a(x: qt.Kind | qt.Node) {
       x = typeof x === 'object' ? x.k : x;
       return x === qt.Kind.A;
     }

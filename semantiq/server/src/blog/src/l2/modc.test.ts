@@ -45,6 +45,6 @@ describe('modc', () => {
     expect(qf.node.get.b2(a)).toBeUndefined;
     expect(qf.node.get.b2(b)).toBe(a);
     expect(qf.node.get.c2(a)).toBeUndefined;
-    expect(qf.node.get.c2(c) == new q1.Ns<qt.B>(...[b])).toBeTruthy;
+    expect(qf.node.get.c2(c) == new q1.Nodes<qt.B>(...[b])).toBeTruthy;
   });
 });

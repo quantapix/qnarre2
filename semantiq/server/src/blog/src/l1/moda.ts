@@ -1,27 +1,27 @@
 import { Kind } from '../type';
 import * as qb from '../base';
 import * as qt from '../type';
-export abstract class N extends qb.Data implements qt.N {
+export abstract class Nobj extends qb.Data implements qt.Nobj {
   k!: Kind;
   n1 = 234;
   n2?: number;
-  walk<T>(cb?: (n?: qt.All) => T | undefined): T | undefined {
-    return cb?.(this as qt.All);
+  walk<T>(cb?: (n?: qt.Node) => T | undefined): T | undefined {
+    return cb?.(this as qt.Node);
   }
 }
-export class Ns<T extends qt.N = N> extends Array<T> implements qt.Ns {
+export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Nodes {
   readonly d1 = 123;
   ns1 = 0;
-  walk<U>(cb?: (n?: qt.All) => U | undefined, cbs?: (ns?: qt.Ns) => U | undefined): U | undefined {
+  walk<U>(cb?: (n?: qt.Node) => U | undefined, cbs?: (ns?: qt.Nodes) => U | undefined): U | undefined {
     if (cbs) return cbs(this);
     for (const n of this) {
-      const r = cb?.(n as qt.All);
+      const r = cb?.(n as qt.Node);
       if (r) return r;
     }
     return;
   }
 }
-export class A extends N implements qt.A {
+export class A extends Nobj implements qt.A {
   static readonly k = Kind.A;
   k!: Kind.A;
   a1 = 0;
@@ -31,7 +31,7 @@ export class A extends N implements qt.A {
   }
 }
 A.prototype.k = A.k;
-export class B extends N implements qt.B {
+export class B extends Nobj implements qt.B {
   static readonly k = Kind.B;
   k!: Kind.B;
   readonly b1 = 567;
@@ -42,19 +42,19 @@ export class B extends N implements qt.B {
   }
 }
 B.prototype.k = B.k;
-export class C extends N implements qt.C {
+export class C extends Nobj implements qt.C {
   static readonly k = Kind.C;
   k!: Kind.C;
   c1?: number;
-  c2?: qt.Ns<qt.B>;
+  c2?: qt.Nodes<qt.B>;
   update(c2: B[]) {
-    this.c2 = new Ns<qt.B>(...c2);
+    this.c2 = new Nodes<qt.B>(...c2);
     return this;
   }
 }
 C.prototype.k = C.k;
-export type All = A | B | C;
-export const all = { [Kind.A]: A, [Kind.B]: B, [Kind.C]: C };
+export type Node = A | B | C;
+export const Nmap = { [Kind.A]: A, [Kind.B]: B, [Kind.C]: C };
 export interface Ctrs {
   [Kind.A]: A;
   [Kind.B]: B;

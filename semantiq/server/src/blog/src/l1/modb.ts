@@ -12,19 +12,19 @@ export function newIs(f: qt.Frame) {
   class _Fis {}
   qb.addMixins(_Fis, [qb.Fis]);
   return (qf.is = new (class extends _Fis {
-    kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.N): n is Ctr<C['k']> {
+    kind<K extends Kind, C extends { k: K }>(c: C, n?: qt.Nobj): n is Ctr<C['k']> {
       return n?.k === c.k;
     }
     a(k: Kind) {
       return k === Kind.A;
     }
     b(k: Kind): boolean;
-    b(n: qt.All): n is qt.B;
-    b(x: Kind | qt.All) {
+    b(n: qt.Node): n is qt.B;
+    b(x: Kind | qt.Node) {
       x = typeof x === 'object' ? x.k : x;
       return x === Kind.B;
     }
-    c(n: qt.All): n is qt.C {
+    c(n: qt.Node): n is qt.C {
       return n.k === Kind.C;
     }
   })());
@@ -39,7 +39,7 @@ export function newGet(f: qt.Frame) {
   class _Fget {}
   qb.addMixins(_Fget, [qb.Fget]);
   return (qf.get = new (class extends _Fget {
-    v(n?: qt.All): number | undefined {
+    v(n?: qt.Node): number | undefined {
       switch (n?.k) {
         case Kind.A:
           return n.a1;
@@ -50,11 +50,11 @@ export function newGet(f: qt.Frame) {
       }
       return;
     }
-    b2(n: qt.All) {
+    b2(n: qt.Node) {
       if (qf.is.b(n)) return n.b2;
       return;
     }
-    c2(n: qt.All) {
+    c2(n: qt.Node) {
       if (qf.is.c(n)) return n.c2;
       return;
     }
@@ -69,7 +69,7 @@ export function newMake(f: qt.Frame) {
   const qf: Frame = f as Frame;
   return (qf.make = new (class {
     n<K extends Kind.A | Kind.B | Kind.C>(k: K) {
-      return new q1.all[k]();
+      return new q1.Nmap[k]();
     }
   })());
 }
@@ -79,7 +79,7 @@ export interface Frame extends qt.Frame {
   is: Fis;
   make: Fmake;
 }
-export function newFrame(c: qt.Cfg) {
+export function newFrame(c: qt.Config) {
   const f = c as Frame;
   newIs(f);
   newGet(f);

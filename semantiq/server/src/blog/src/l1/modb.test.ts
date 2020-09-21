@@ -1,4 +1,4 @@
-import { A, B, C, Ns } from './moda';
+import { A, B, C, Nodes } from './moda';
 import * as q1 from './modb';
 import * as qt from '../type';
 beforeAll(() => {});
@@ -31,7 +31,7 @@ describe('modb', () => {
     expect(qf.get.b2(a)).toBeUndefined;
     expect(qf.get.b2(b)).toBe(a);
     expect(qf.get.c2(a)).toBeUndefined;
-    expect(qf.get.c2(c) == new Ns<qt.B>(...[b])).toBeTruthy;
+    expect(qf.get.c2(c) == new Nodes<qt.B>(...[b])).toBeTruthy;
   });
   test('make', () => {
     expect(qf.is.kind(A, qf.make.n(qt.Kind.A))).toBeTruthy;

@@ -1,8 +1,8 @@
 import * as qb from './base';
-export interface Cfg {
+export interface Config {
   flip?: boolean;
 }
-export interface Frame extends Cfg, qb.Frame {
+export interface Frame extends Config, qb.Frame {
   make: unknown;
 }
 export const enum Kind {
@@ -13,28 +13,28 @@ export const enum Kind {
   BC,
   ABC,
 }
-export interface N extends qb.Data {
+export interface Nobj extends qb.Data {
   k: Kind;
   readonly n1: number;
   n2?: number;
-  walk<T>(cb?: (n?: All) => T | undefined): T | undefined;
+  walk<T>(cb?: (n?: Node) => T | undefined): T | undefined;
 }
-export interface Ns<T extends N = N> extends ReadonlyArray<T>, qb.Data {
+export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qb.Data {
   ns1: number;
-  walk<U>(cb?: (n?: All) => U | undefined, cbs?: (ns?: Ns) => U | undefined): U | undefined;
+  walk<U>(cb?: (n?: Node) => U | undefined, cbs?: (ns?: Nodes) => U | undefined): U | undefined;
 }
-export interface A extends N {
+export interface A extends Nobj {
   k: Kind.A;
   a1: number;
 }
-export interface B extends N {
+export interface B extends Nobj {
   k: Kind.B;
   readonly b1: number;
   b2: A;
 }
-export interface C extends N {
+export interface C extends Nobj {
   k: Kind.C;
   c1?: number;
-  c2?: Ns<B>;
+  c2?: Nodes<B>;
 }
-export type All = A | B | C;
+export type Node = A | B | C;
