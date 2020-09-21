@@ -9,12 +9,14 @@ describe('moda', () => {
     b = new B();
   });
   test('A', () => {
+    expect(a.d1).toBe(123);
     expect(a.n1).toBe(234);
     expect(a.a1).toBe(0);
     a.update(1).update(2);
     expect(a.a1).toBe(2);
   });
   test('B', () => {
+    expect(b.d1).toBe(123);
     expect(b.n2).toBeUndefined;
     expect(b.b1).toBe(567);
     expect(b.b2).toBeUndefined;

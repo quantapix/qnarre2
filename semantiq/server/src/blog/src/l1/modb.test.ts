@@ -15,6 +15,7 @@ describe('modb', () => {
     expect(qf.flip).toBeTruthy;
   });
   test('is', () => {
+    expect(qf.is.string('xyz')).toBeTruthy;
     expect(qf.is.kind(B)).toBeFalsy;
     expect(qf.is.kind(B, a)).toBeFalsy;
     expect(qf.is.kind(B, b)).toBeTruthy;
@@ -24,6 +25,7 @@ describe('modb', () => {
     expect(qf.is.c(c)).toBeTruthy;
   });
   test('get', () => {
+    expect(qf.get.empty() === {}).toBeTruthy;
     expect(qf.get.v()).toBeUndefined;
     expect(qf.get.v(a)).toBe(1);
     expect(qf.get.v(b)).toBe(567);
