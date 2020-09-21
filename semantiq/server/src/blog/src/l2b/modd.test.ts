@@ -1,50 +1,35 @@
 import * as q1 from '../l1';
-import * as q2 from './modd';
-import * as qt from '../type';
+import * as q2 from '../l2';
+import { newFrame } from './modd';
 beforeAll(() => {});
-describe('modc', () => {
-  const qf = q2.newFrame(q1.newFrame({}));
+describe('modd', () => {
+  const qf = newFrame(q2.newFrame(q1.newFrame({})));
   const a = new q1.A().update(1);
   const b = new q1.B().update(a);
   const c = new q1.C().update([b]);
-  c.c1 = 10;
   beforeEach(() => {});
-  test('qf', () => {
-    expect(qf.flip).toBeUndefined;
-    qf.flip = true;
-    expect(qf.flip).toBeTruthy;
+  test('xxx', () => {
+    expect(qf.x.xx.xxx.f(c)).toBeTruthy;
+    expect(qf.x.xx.xxx.f(b)).toBeTruthy;
+    expect(qf.x.xx.xxx.f(a)).toBeTruthy;
+    expect(qf.x.xx.xxx.g(c)).toBeFalsy;
+    expect(qf.x.xx.xxx.g(b)).toBeFalsy;
+    expect(qf.x.xx.xxx.g(a)).toBeFalsy;
   });
-  test('is', () => {
-    expect(qf.is.kind(q1.B)).toBeFalsy;
-    expect(qf.is.kind(q1.B, a)).toBeFalsy;
-    expect(qf.is.kind(q1.B, b)).toBeTruthy;
-    expect(qf.is.a(qt.Kind.A)).toBeTruthy;
-    expect(qf.is.a(a)).toBeTruthy;
-    expect(qf.is.a(b)).toBeFalsy;
-    expect(qf.is.b(a)).toBeFalsy;
-    expect(qf.is.b(b)).toBeTruthy;
-    expect(qf.is.c(c)).toBeTruthy;
+  test('xx', () => {
+    expect(qf.x.xx.f(c)).toBeFalsy;
+    expect(qf.x.xx.f(b)).toBeTruthy;
+    expect(qf.x.xx.f(a)).toBeTruthy;
+    expect(qf.x.xx.g(c)).toBeTruthy;
+    expect(qf.x.xx.g(b)).toBeFalsy;
+    expect(qf.x.xx.g(a)).toBeFalsy;
   });
-  test('node.is', () => {
-    expect(qf.node.is.kind(q1.B)).toBeFalsy;
-    expect(qf.node.is.kind(q1.B, a)).toBeFalsy;
-    expect(qf.node.is.kind(q1.B, b)).toBeTruthy;
-    expect(qf.node.is.a(a)).toBeTruthy;
-    expect(qf.node.is.a(b)).toBeFalsy;
-    expect(qf.node.is.b(a)).toBeFalsy;
-    expect(qf.node.is.b(b)).toBeTruthy;
-    expect(qf.node.is.c(c)).toBeTruthy;
-  });
-  test('node.get', () => {
-    expect(qf.node.get.v()).toBeUndefined;
-    expect(qf.node.get.v(a)).toBe(1);
-    expect(qf.node.get.v(b)).toBe(567);
-    expect(qf.node.get.v(c)).toBe(10);
-    expect(qf.node.get.b1(a)).toBeUndefined;
-    expect(qf.node.get.b1(b)).toBe(567);
-    expect(qf.node.get.b2(a)).toBeUndefined;
-    expect(qf.node.get.b2(b)).toBe(a);
-    expect(qf.node.get.c2(a)).toBeUndefined;
-    expect(qf.node.get.c2(c) == new q1.Nodes<qt.B>(...[b])).toBeTruthy;
+  test('x', () => {
+    expect(qf.x.f(c)).toBeFalsy;
+    expect(qf.x.f(b)).toBeFalsy;
+    expect(qf.x.f(a)).toBeTruthy;
+    expect(qf.x.f(c)).toBeTruthy;
+    expect(qf.x.f(b)).toBeTruthy;
+    expect(qf.x.f(a)).toBeFalsy;
   });
 });
