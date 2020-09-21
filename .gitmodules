@@ -37,3 +37,6 @@
 [submodule "semantiq/purescript"]
 	path = semantiq/purescript
 	url = https://github.com/purescript/purescript.git
+[submodule "semantiq/server/src/book/rust-book"]
+	path = semantiq/server/src/book/rust-book
+	url = https://github.com/rust-lang/book.git
