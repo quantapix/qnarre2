@@ -40,3 +40,6 @@
 [submodule "semantiq/server/src/book/rust-book"]
 	path = semantiq/server/src/book/rust-book
 	url = https://github.com/rust-lang/book.git
+[submodule "semantiq/rust"]
+	path = semantiq/rust
+	url = https://github.com/rust-lang/rust.git
