@@ -4,19 +4,23 @@ import * as qt from '../type';
 export abstract class Nobj extends qb.Data implements qt.Nobj {
   k!: Kind;
   n1 = 234;
-  n2?: number;
+  get n2(): number | undefined {
+    return;
+  }
   walk<T>(cb?: (n?: qt.Node) => T | undefined): T | undefined {
     return cb?.(this as qt.Node);
   }
 }
-export class Nodes<T extends qt.Nobj = Nobj> extends Array<T> implements qt.Nodes {
+export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.Nodes {
   readonly d1 = 123;
   ns1 = 0;
   walk<U>(cb?: (n?: qt.Node) => U | undefined, cbs?: (ns?: qt.Nodes) => U | undefined): U | undefined {
     if (cbs) return cbs(this);
-    for (const n of this) {
-      const r = cb?.(n as qt.Node);
-      if (r) return r;
+    if (cb) {
+      for (const n of this) {
+        const r = cb(n as qt.Node);
+        if (r) return r;
+      }
     }
     return;
   }

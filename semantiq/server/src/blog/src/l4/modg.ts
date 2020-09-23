@@ -13,10 +13,10 @@ export function newNode(f: q2.Frame) {
   type _Fget = q2.Fnode['get'];
   return (qf.node = new (class Base extends _Fnode {
     _is = new (class extends Base {
-      ab(n: q3.All): n is q3.AB {
+      ab(n: q3.Node): n is q3.AB {
         return n.k === Kind.AB;
       }
-      bc(n: q3.All): n is q3.BC {
+      bc(n: q3.Node): n is q3.BC {
         return n.k === Kind.BC;
       }
     })();
