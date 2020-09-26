@@ -43,3 +43,12 @@
 [submodule "semantiq/rust"]
 	path = semantiq/rust
 	url = https://github.com/rust-lang/rust.git
+[submodule "semantiq/purify"]
+	path = semantiq/purify
+	url = https://github.com/gigobyte/purify.git
+[submodule "semantiq/fp-ts"]
+	path = semantiq/fp-ts
+	url = https://github.com/gcanti/fp-ts.git
+[submodule "semantiq/Catlab.jl"]
+	path = semantiq/Catlab.jl
+	url = https://github.com/AlgebraicJulia/Catlab.jl.git
