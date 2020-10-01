@@ -1,7 +1,7 @@
 module Blog
 
 include("base.jl")
-include("type.jl")
+include("types.jl")
 # include("l1/L1.jl")
 #include("l2/L2.jl")
 #include("l2b/L2b.jl")
