@@ -1,14 +1,12 @@
-# using ..Blog: Dvar, Ndat
+abstract type Nmut <: Dmut end
 
-abstract type Nvar <: Dvar end
-
-mutable struct Vn <: Nvar
+mutable struct Vn <: Nmut
     n2::Union{Number,Nothing}
     d2::Union{Number,Nothing}
     Vn(n2=nothing, d2=nothing) = new(n2, d2)
 end
 
-abstract type Nobj{X,V <: Nvar} <: Ndat{V} end
+abstract type Nobj{H,V <: Nmut} <: Ndat{V} end
 
 @enum Kind kA kB kC kAB kBC kABC
 
@@ -21,13 +19,12 @@ struct On{X,V <: Vn} <: Nobj{X,V}
     On{X,V}(k::Kind, n1, x::X, v::V) where {X,V} = new(k, 123, n1, x, v)
 end
 
-import ..Blog: d1, d2
-n1(_...) = nothing
-n1(n::Nobj,_...) = n.n1
+n1(;_...) = nothing
+n1(n::Nobj;_...) = n.n1
 
 struct Xa end
 
-mutable struct Va <: Nvar
+mutable struct Va <: Nmut
     a1::Number
     n2::Union{Number,Nothing}
     d2::Union{Number,Nothing}
@@ -38,7 +35,7 @@ struct Xb
     b1::Number
 end
 
-mutable struct Vb <: Nvar
+mutable struct Vb <: Nmut
     b2::Number
     n2::Union{Number,Nothing}
     d2::Union{Number,Nothing}
@@ -47,7 +44,7 @@ end
 
 struct Xc end
 
-mutable struct Vc <: Nvar
+mutable struct Vc <: Nmut
     c1::Union{Number,Nothing}
     c2::Union{Number,Nothing}
     n2::Union{Number,Nothing}

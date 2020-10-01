@@ -1,22 +1,22 @@
-abstract type Dvar end
+abstract type Dmut end
 
-mutable struct Vd <: Dvar
+mutable struct Md <: Dmut
   d2::Union{Number,Nothing}
-  Vd(d2=nothing) = new(d2)
+  Md(d2=nothing) = new(d2)
 end
 
-abstract type Ndat{V <: Dvar} end
+abstract type Ndat{M <: Dmut} end
 
-struct Od{V <: Vd} <: Ndat{V}
+struct Od{M <: Md} <: Ndat{M}
     d1::Number
-    v::V
+    m::M
 end
 
-d1(_...) = nothing
-d1(d::Ndat,_...) = d.d1
-d2(_...) = nothing
-d2(d::Ndat,_...) = d.v.d2
-d2(d::Ndat,d2,_...) = d.v.d2 = d2
+d1(;_...) = nothing
+d1(d::Ndat;_...) = d.d1
+d2(;_...) = nothing
+d2(d::Ndat;_...) = d.m.d2
+d2(d::Ndat,d2;_...) = d.m.d2 = d2
 
 module Frame
 

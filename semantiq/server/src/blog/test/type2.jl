@@ -1,6 +1,6 @@
-using Blog: Od, Vd, d1, d2
+using Blog: Od, Md, d1, d2
 
-o = Od(1, Vd(2))
+o = Od(1, Md(2))
 @test o.d1 == 1
 @test d1(o) == 1
 @test o.v.d2 == 2
