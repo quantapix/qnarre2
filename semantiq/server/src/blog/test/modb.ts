@@ -1,6 +1,6 @@
-import { A, B, C, Nodes } from './moda';
-import * as q1 from './modb';
-import * as qt from '../type';
+import { A, B, C, Nodes } from '../src/l1/moda';
+import * as q1 from '../src/l1/modb';
+import * as qt from '../src/type';
 beforeAll(() => {});
 describe('modb', () => {
   const qf = q1.newFrame({});

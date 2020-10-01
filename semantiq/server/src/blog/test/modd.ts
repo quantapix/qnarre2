@@ -1,6 +1,6 @@
-import * as q1 from '../l1';
-import * as q2 from '../l2';
-import { newFrame } from './modd';
+import * as q1 from '../src/l1';
+import * as q2 from '../src/l2';
+import { newFrame } from '../src/l2b/modd';
 beforeAll(() => {});
 describe('modd', () => {
   const qf = newFrame(q2.newFrame(q1.newFrame({})));

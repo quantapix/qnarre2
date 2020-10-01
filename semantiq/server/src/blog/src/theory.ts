@@ -1,3 +1,4 @@
+/*
 interface monoid<T> {
   empty: T;
   concat: (u: T, v: T) => T;
@@ -483,5 +484,4 @@ export class None<T> extends Maybe<T> {
       return pattern.none();
   }
 }
-
-
+*/

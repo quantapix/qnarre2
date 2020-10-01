@@ -1,6 +1,6 @@
-import * as qt from '../type';
-import * as q1 from '../l1';
-import * as q3 from './mode';
+import * as qt from '../src/type';
+import * as q1 from '../src/l1';
+import * as q3 from '../src/l3/mode';
 beforeAll(() => {});
 describe('mode', () => {
   const a = new q1.A().update(1);

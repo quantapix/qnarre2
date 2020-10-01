@@ -1,4 +1,4 @@
-import { addMixins } from './base';
+import { addMixins } from '../src/base';
 class S1 {
   s1 = 0;
   add(x: number, y: number) {

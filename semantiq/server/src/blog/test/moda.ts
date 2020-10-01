@@ -1,5 +1,5 @@
-import { A, B, C, Nodes } from './moda';
-import * as qt from '../type';
+import { A, B, C, Nodes } from '../src/l1/moda';
+import * as qt from '../src/type';
 beforeAll(() => {});
 describe('moda', () => {
   let a: A;
