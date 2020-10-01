@@ -1,6 +1,6 @@
-import { Kind } from '../type';
-import * as qb from '../base';
-import * as qt from '../type';
+import { Kind } from '../q0_b';
+import * as qb from '../q0_a';
+import * as qt from '../q0_b';
 export abstract class Nobj extends qb.Data implements qt.Nobj {
   k!: Kind;
   n1 = 234;

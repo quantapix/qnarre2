@@ -1,4 +1,4 @@
-import * as qb from './base';
+import * as qb from './q0_a';
 export interface Config {
   flip?: boolean;
 }

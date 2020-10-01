@@ -1,7 +1,7 @@
-import * as qb from '../base';
-import { Kind } from '../type';
-import * as q2 from '../l2';
-import * as q3 from '../l3';
+import * as qb from '../q0_a';
+import { Kind } from '../q0_b';
+import * as q2 from '../q2';
+import * as q3 from './q3_a';
 export function newNode(f: q2.Frame) {
   interface Frame extends q2.Frame {}
   const qf: q2.Frame = f as Frame;

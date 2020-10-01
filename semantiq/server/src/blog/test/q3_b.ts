@@ -1,7 +1,7 @@
-//import * as qt from '../type';
-//import * as q1 from '../l1';
-//import * as q2 from '../l2';
-//import * as q3 from './modf';
+//import * as qt from '../q0_b';
+//import * as q1 from '../q1';
+//import * as q2 from '../q2';
+//import * as q3 from './q3_a';
 beforeAll(() => {});
 describe('modd', () => {
   //const qf = q3.newFrame(q2.newFrame(q1.newFrame({})));

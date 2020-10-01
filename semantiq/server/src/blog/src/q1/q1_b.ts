@@ -1,8 +1,8 @@
-import { Ctr } from './moda';
-import { Kind } from '../type';
-import * as q1 from './moda';
-import * as qb from '../base';
-import * as qt from '../type';
+import { Ctr } from './q1_a';
+import { Kind } from '../q0_b';
+import * as q1 from './q1_a';
+import * as qb from '../q0_a';
+import * as qt from '../q0_b';
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
     get: Fget;

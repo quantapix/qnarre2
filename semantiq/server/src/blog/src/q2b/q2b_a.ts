@@ -1,6 +1,6 @@
-import * as qb from '../base';
-import * as qt from '../type';
-import * as q2 from '../l2';
+import * as qb from '../q0_a';
+import * as qt from '../q0_b';
+import * as q2 from '../q2';
 function prev(f: q2.Frame) {
   interface Frame extends q2.Frame {
     x: unknown;

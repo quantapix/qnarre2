@@ -1,6 +1,6 @@
-import { Kind } from '../type';
-import * as qt from '../type';
-import * as q1 from '../l1';
+import { Kind } from '../q0_b';
+import * as qt from '../q0_b';
+import * as q1 from '../q1';
 export interface AB extends qt.Nobj {
   k: Kind.AB;
   readonly n1: number;

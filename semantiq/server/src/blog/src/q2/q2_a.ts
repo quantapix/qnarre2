@@ -1,7 +1,7 @@
-import * as qb from '../base';
-import { Kind } from '../type';
-import * as qt from '../type';
-import * as q1 from '../l1';
+import * as qb from '../q0_a';
+import { Kind } from '../q0_b';
+import * as qt from '../q0_b';
+import * as q1 from '../q1';
 export function newIs(f: q1.Frame) {
   interface Frame extends q1.Frame {
     node: Fnode;
