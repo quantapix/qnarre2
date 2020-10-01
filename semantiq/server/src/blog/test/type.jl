@@ -12,12 +12,12 @@ d2(a, 3)
 
 using Blog: kB, Cb, Mb
 
-b = On{Cb,Mb}(kB, 1, Cb(2), Mb(3))
+b = On{Cb,Mb}(kB, 1, Cb(2), Mb(a))
 @test b.k == kB
 @test b.n1 == 1
 @test n1(b) == 1
 @test b.c.b1 == 2
-@test b.m.b2 === 3
+@test b.m.b2 === a
 d2(b, 4)
 @test d2(b) == 4
 @test b.m.d2 == 4

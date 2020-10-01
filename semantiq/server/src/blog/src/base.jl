@@ -1,7 +1,7 @@
 abstract type Dmut end
 
 mutable struct Md <: Dmut
-  d2::Union{Number,Nothing}
+  d2::NorN
   Md(d2=nothing) = new(d2)
 end
 
