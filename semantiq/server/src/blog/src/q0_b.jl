@@ -63,3 +63,7 @@ end
 abstract type C <: Nobj{Cc,Mc} end
 
 Node = Union{A,B,C}
+
+struct Nodes{N <: Node} = Vector{N}
+
+

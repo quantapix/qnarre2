@@ -1,5 +1,5 @@
 module is
-using ..Blog: Kind, A, B, C, Node
+using ...Blog: Kind, A, B, C, Node
 import .Frame: is
 a(k::Kind, qf=nothing) = k == Kind.kA
 b(k::Kind, qf=nothing) = k == Kind.kB
@@ -8,7 +8,7 @@ c(n::Node,qf=nothing) = n.k == Kind.kC
 end
 
 module get
-using ..Blog: Kind, A, B, C, Node
+using ...Blog: Kind, A, B, C, Node
 import .Frame: get
 d1()
 v(x) = nothing
